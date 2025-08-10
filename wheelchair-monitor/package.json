@@ -1,0 +1,16 @@
+{
+  "name": "wheelchair-monitor",
+  "version": "1.0.0",
+  "description": "Local realtime dashboard for wheelchair tracking via MQTT -> WebSocket -> Browser",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "mqtt": "^5.14.0",
+    "ws": "^8.18.3"
+  }
+}

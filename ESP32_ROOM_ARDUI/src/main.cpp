@@ -13,10 +13,13 @@ extern "C" {
 }
 
 /* ================== CONFIG ================== */
-#define ROOM_ID            2          // <— เปลี่ยนเลขห้องตรงนี้ที่เดียว!
+#define ROOM_ID            1          // <— เปลี่ยนเลขห้องตรงนี้ที่เดียว!
 #define MAX_BEACONS        16
 static const uint32_t SCAN_WINDOW_SEC   = 1;     // สแกน 1 วินาที
 static const uint32_t STALE_TIMEOUT_MS  = 5000;  // เกินนี้ถือว่า stale
+
+// ★ เกณฑ์กรอง RSSI (เริ่มต้นปิดไว้ด้วยค่าต่ำมาก — วัด threshold ได้แล้วค่อยตั้งเช่น -80)
+#define RSSI_MIN_DBM       (-32768)
 
 // Wi-Fi / MQTT
 const char* ssid        = "WittyNotebook";
@@ -65,9 +68,34 @@ struct BeaconData {
   int      rssi;
   unsigned long last_seen_ms;
   bool     stale;
+
+  // ★ สถิติคุณภาพสัญญาณต่อหน้าต่าง 1 วินาที
+  int      seq_seen = 0;       // จำนวน seq (unique) ที่เห็นจริงใน 1 วิ
+  int      seq_expected = 0;   // จำนวนที่ "ควร" จะเห็น (first..last) ภายใน 1 วิ
+  float    rx_ratio = -1.f;    // 0..100 (%), -1 = คำนวนไม่ได้
+  float    avg_rssi = 0.f;     // ค่าเฉลี่ย RSSI ของ adv ที่รับได้ใน 1 วิ
 };
 static BeaconData beacons[MAX_BEACONS];
 static int beacon_count = 0;
+
+/* ====== สถิติ seq ต่อหน้าต่าง 1 วิ (index อิงตาม array beacons[]) ====== */
+static bool    rx_seq_seen[MAX_BEACONS][100];
+static bool    rx_has_first[MAX_BEACONS];
+static uint8_t rx_first_seq[MAX_BEACONS];
+static uint8_t rx_last_seq[MAX_BEACONS];
+static int     rx_seen_count[MAX_BEACONS];
+static int     rx_rssi_sum[MAX_BEACONS];
+static int     rx_rssi_n[MAX_BEACONS];
+
+static void resetRxStatsWindow() {
+  for (int i=0;i<MAX_BEACONS;i++){
+    rx_has_first[i] = false;
+    rx_seen_count[i] = 0;
+    rx_rssi_sum[i] = 0;
+    rx_rssi_n[i] = 0;
+    for (int s=0;s<100;s++) rx_seq_seen[i][s] = false;
+  }
+}
 
 /* ================== BLE ================== */
 BLEScan*           pBLEScan   = nullptr;
@@ -204,13 +232,18 @@ class MyAdvCb : public BLEAdvertisedDeviceCallbacks {
     std::string name = adv.getName();
     if (name.rfind("Wheel_", 0) != 0) return;
 
+    // ★ กรอง RSSI ต่ำกว่า threshold (ค่าเริ่มคือ -32768 = ปล่อยทั้งหมด)
+    if (adv.getRSSI() < RSSI_MIN_DBM) return;
+
     uint8_t ct[16]; if (!extract16(adv.getManufacturerData(), ct)) return;
     AES_ECB_decrypt(&aes_ctx, ct);
 
-    // ฟอร์แมต: [0]=id, [1]=X(i8,0.02g), [2]=Y(i8,0.02g), [4..5]=distance*100 LE, [6]=status, [7]=motion, [8]=batt%
+    // ฟอร์แมต: [0]=id, [1]=X(i8,0.02g), [2]=Y(i8,0.02g), [3]=seq(0..99),
+    // [4..5]=distance*100 LE, [6]=status, [7]=motion, [8]=batt%
     uint8_t  wid      = ct[0];
     int8_t   x_i8     = (int8_t)ct[1];
     int8_t   y_i8     = (int8_t)ct[2];
+    uint8_t  seq100   = (uint8_t)(ct[3] % 100); // ★ อ่าน seq
     uint16_t dist_raw = (uint16_t)ct[4] | ((uint16_t)ct[5] << 8);
     float    dist_m   = dist_raw / 100.0f;
     uint8_t  status   = ct[6];
@@ -227,6 +260,12 @@ class MyAdvCb : public BLEAdvertisedDeviceCallbacks {
 
     int idx = upsert(b);
     if (idx < 0) return;
+
+    // ★ อัปเดตสถิติในหน้าต่าง 1 วิ
+    if (!rx_has_first[idx]) { rx_has_first[idx] = true; rx_first_seq[idx] = seq100; }
+    rx_last_seq[idx] = seq100;
+    if (!rx_seq_seen[idx][seq100]) { rx_seq_seen[idx][seq100] = true; rx_seen_count[idx]++; }
+    rx_rssi_sum[idx] += b.rssi; rx_rssi_n[idx]++;
 
     // แมป slot อัตโนมัติ
     int slot = findSlotByWheel(wid);
@@ -268,17 +307,20 @@ static void publishWheelMqtt(const BeaconData& b) {
     Serial.println("[MQTT] Topic truncated/format error");
     return;
   }
-  char payload[256];
-  // ★ ส่ง status/motion เป็น "ข้อความ" ไม่ใช่ตัวเลข
+  char payload[320];
+  // ★ เพิ่ม rx_ratio / seq_seen / seq_expected / avg_rssi
   int pn = snprintf(payload, sizeof(payload),
     "{\"wheel\":%u,\"rssi\":%d,\"distance\":%.2f,"
     "\"status\":\"%s\",\"motion\":\"%s\","
     "\"batt\":%u,\"x\":%.2f,\"y\":%.2f,"
-    "\"room\":%d,\"stale\":%s}",
+    "\"room\":%d,\"stale\":%s,"
+    "\"rx_ratio\":%.0f,\"seq_seen\":%d,\"seq_expected\":%d,\"avg_rssi\":%.1f}",
     b.wheel_id, b.rssi, b.distance_m,
     statusStr(b.status), motionStr(b.motion),
     b.batt_pct, b.x_g, b.y_g,
-    ROOM_ID, b.stale ? "true" : "false");
+    ROOM_ID, b.stale ? "true" : "false",
+    b.rx_ratio, b.seq_seen, b.seq_expected, b.avg_rssi
+  );
   if (pn > 0 && pn < (int)sizeof(payload)) {
     client.publish(topic, payload, true);  // retain = true
   } else {
@@ -325,6 +367,9 @@ void setup() {
 
   setup_wifi();
   client.setServer(mqtt_server, mqtt_port);
+
+  // ★ เคลียร์ตัวนับหน้าต่างแรก
+  resetRxStatsWindow();
 }
 
 void loop() {
@@ -344,23 +389,39 @@ void loop() {
       if (!beacons[i].stale && (now - beacons[i].last_seen_ms > STALE_TIMEOUT_MS))
         beacons[i].stale = true;
 
+    // ★ คำนวนผลหน้าต่าง 1 วิ ที่เพิ่งจบ (rx_ratio / avg_rssi)
+    for (int i=0;i<beacon_count;i++) {
+      int expected = 0;
+      if (rx_has_first[i]) {
+        uint8_t f = rx_first_seq[i], l = rx_last_seq[i];
+        expected = (l >= f) ? (l - f + 1) : (100 - f + l + 1);
+      }
+      beacons[i].seq_seen     = rx_seen_count[i];
+      beacons[i].seq_expected = expected;
+      beacons[i].rx_ratio     = (expected > 0) ? (100.0f * (float)rx_seen_count[i] / (float)expected) : -1.0f;
+      beacons[i].avg_rssi     = (rx_rssi_n[i] > 0) ? ((float)rx_rssi_sum[i] / (float)rx_rssi_n[i]) : 0.0f;
+    }
+
     // MQTT: รวม (NDJSON) + รายล้อ (retain)
     char topicAgg[64];
     snprintf(topicAgg, sizeof(topicAgg), TOPIC_AGG_FMT, ROOM_ID);
 
     std::string agg;
-    char line[260];
+    char line[320];
     for (int i=0;i<beacon_count;i++) {
       const auto& b = beacons[i];
-      // NDJSON บรรทัดละล้อ — ★ ใช้ข้อความ
+      // NDJSON บรรทัดละล้อ — ★ เพิ่ม field คุณภาพสัญญาณ
       snprintf(line, sizeof(line),
         "{\"wheel\":%u,\"rssi\":%d,\"distance\":%.2f,"
         "\"status\":\"%s\",\"motion\":\"%s\","
         "\"batt\":%u,\"x\":%.2f,\"y\":%.2f,"
-        "\"room\":%d,\"stale\":%s}",
+        "\"room\":%d,\"stale\":%s,"
+        "\"rx_ratio\":%.0f,\"seq_seen\":%d,\"seq_expected\":%d,\"avg_rssi\":%.1f}",
         b.wheel_id, b.rssi, b.distance_m,
         statusStr(b.status), motionStr(b.motion),
-        b.batt_pct, b.x_g, b.y_g, ROOM_ID, b.stale ? "true":"false");
+        b.batt_pct, b.x_g, b.y_g, ROOM_ID, b.stale ? "true":"false",
+        b.rx_ratio, b.seq_seen, b.seq_expected, b.avg_rssi
+      );
       agg += line; if (i!=beacon_count-1) agg += "\n";
 
       // รายล้อ (retain)
@@ -374,6 +435,10 @@ void loop() {
     if (chMQTT) { chMQTT->setValue((uint8_t*)agg.data(), agg.size()); chMQTT->notify(); }
 
     notifyAllSlots();          // ยิง notify ทุกล้อทุก 1 วิ
+
+    // เริ่มหน้าต่างใหม่
+    resetRxStatsWindow();
+
     pBLEScan->clearResults();
   }
 }
