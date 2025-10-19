@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WheelStatus {
+  OK
+  IMU_NOT_FOUND
+  ACCEL_UNRELIABLE
+  DTHETA_CLIPPED
+  UNKNOWN
+}
+
+model Wheel {
+  id               Int                @id
+  name             String
+  assigned_room_id Int?
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @updatedAt
+
+  assigned_room    Room? @relation("RoomWheels", fields: [assigned_room_id], references: [id])
+  raw_data         RawData[]
+  presence         Presence?
+  route_snapshots  MeshRouteSnapshot[]
+}
+
+model Room {
+  id         Int       @id
+  name       String
+  rect_x     Float
+  rect_y     Float
+  rect_w     Float
+  rect_h     Float
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  wheels        Wheel[]            @relation("RoomWheels")
+  raw_data      RawData[]
+  presences     Presence[]
+  route_events  MeshRouteSnapshot[]
+}
+
+model RawData {
+  id                  BigInt     @id @default(autoincrement())
+  ts                  DateTime
+  gateway_ts          DateTime?
+  room_id             Int
+  wheel_id            Int
+  direction_code      Int
+  direction_text      String
+  status_code         Int
+  status_text         WheelStatus
+  motion_code         Int
+  motion_text         String
+  distance_m          Decimal    @db.Decimal(10, 2)
+  distance_raw_uint16 Int
+  rssi                Int
+  stale               Boolean
+  rx_ok               Boolean    @default(true)
+  route_path          String[]
+  route_latency_ms    Int?
+  route_recovery_ms   Int?
+  route_recovered     Boolean?
+
+  room  Room  @relation(fields: [room_id], references: [id])
+  wheel Wheel @relation(fields: [wheel_id], references: [id])
+
+  @@index([ts])
+  @@index([wheel_id, ts])
+  @@index([room_id, ts])
+}
+
+model Presence {
+  wheel_id      Int      @id
+  online        Boolean  @default(false)
+  last_seen     DateTime?
+  avg_rssi      Float?
+  rx_total      BigInt   @default(0)
+  rx_ok         BigInt   @default(0)
+  rx_ratio      Float?   @default(0)
+  status_text   WheelStatus?
+  motion_text   String?
+  direction_text String?
+  distance_m    Decimal? @db.Decimal(10, 2)
+  room_id       Int?
+
+  wheel Wheel @relation(fields: [wheel_id], references: [id])
+  room  Room? @relation(fields: [room_id], references: [id])
+}
+
+model MeshRouteSnapshot {
+  id          BigInt   @id @default(autoincrement())
+  wheel_id    Int
+  room_id     Int
+  path        String[]
+  hop_count   Int
+  recovered   Boolean
+  recovery_ms Int?
+  latency_ms  Int?
+  observed_at DateTime @default(now())
+
+  wheel Wheel @relation(fields: [wheel_id], references: [id])
+  room  Room  @relation(fields: [room_id], references: [id])
+
+  @@index([wheel_id, observed_at])
+  @@index([room_id, observed_at])
+}

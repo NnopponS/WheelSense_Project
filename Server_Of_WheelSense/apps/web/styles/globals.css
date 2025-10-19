@@ -1,0 +1,1 @@
+@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nbody {\n  @apply bg-slate-50 text-slate-900;\n}\n
