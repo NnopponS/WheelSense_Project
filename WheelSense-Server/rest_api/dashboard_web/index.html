@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WheelSense Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="top-bar">
+      <h1>WheelSense Dashboard</h1>
+      <div class="summary">
+        <span id="total-count">Total: 0</span>
+        <span id="online-count" class="online">Online: 0</span>
+        <span id="offline-count" class="offline">Offline: 0</span>
+      </div>
+      <div class="updated-at">
+        Last update: <span id="last-updated">N/A</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Wheel</th>
+              <th>Status</th>
+              <th>Distance (m)</th>
+              <th>RSSI</th>
+              <th>Last Signal</th>
+            </tr>
+          </thead>
+          <tbody id="dashboard-body">
+            <tr>
+              <td colspan="6" class="placeholder">Loading data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <footer>
+      <small>WheelSense &copy; <span id="current-year"></span></small>
+    </footer>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>

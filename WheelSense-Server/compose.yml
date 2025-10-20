@@ -8,30 +8,36 @@ services:
       - ./mqtt_broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - ./mqtt_broker/:/etc/mosquitto/
 
-  mongodb:
-    image: mongo
+  postgres:
+    image: postgres:16
     ports:
-      - "27017:27017"
+      - "5433:5432"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=1234
+      - POSTGRES_USER=wheeluser
+      - POSTGRES_PASSWORD=wheelpass
+      - POSTGRES_DB=iot_log
     volumes:
-      - ./mongo_db/:/docker-entrypoint-initdb.d/
-    expose:
-      - 27017
+      - ./sql_db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wheeluser -d iot_log"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mqtt_collector:
     build: ./mqtt_collector
     ports:
       - "5000:5000"
     environment:
-      - MONGO_URL=mongodb://root:1234@mongodb:27017/
-      - MONGO_DB=iot_log
-      - MONGO_COLLECTION=sensor_data
-      - MQTT_BROKER=mqtt://mosquitto:1883
+      - POSTGRES_URL=postgresql://wheeluser:wheelpass@postgres:5432/iot_log
+      - SQL_TABLE=sensor_data
+      - MQTT_BROKER=${MQTT_BROKER:-mqtt://broker.emqx.io:1883}
+      - MQTT_TOPIC=${MQTT_TOPIC:-WheelSense/data}
     depends_on:
-      - mosquitto
-      - mongodb
+      mosquitto:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
   rest_api:
     build: ./rest_api
@@ -39,19 +45,8 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
-      - MONGO_URL=mongodb://root:1234@mongodb:27017/
-      - MONGO_DB=iot_log
-      - MONGO_COLLECTION=sensor_data
+      - POSTGRES_URL=postgresql://wheeluser:wheelpass@postgres:5432/iot_log
+      - SQL_TABLE=sensor_data
     depends_on:
-      - mongodb
-
-  telegram_bot:
-    build: ./telegram_bot
-    environment:
-      - TELEGRAM_BOT_TOKEN=8399472624:AAEykdGS7kN5PiFph9XffoHh_x6GWhnGhew
-      - MONGO_URL=mongodb://root:1234@mongodb:27017/
-      - MONGO_DB=iot_log
-      - MONGO_COLLECTION=sensor_data
-      - DEFAULT_DEVICE_ID=esp32-sensor-13
-    depends_on:
-      - mongodb
+      postgres:
+        condition: service_healthy
