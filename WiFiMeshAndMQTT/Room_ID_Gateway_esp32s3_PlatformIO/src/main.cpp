@@ -16,6 +16,7 @@
 struct WifiCred { const char* ssid; const char* pass; };
 static WifiCred WIFI_LIST[] = {
   { "KnighTneT", "192837abcd" },
+  { "witty", "eornnrbs" },
 };
 static const int WIFI_COUNT = sizeof(WIFI_LIST)/sizeof(WifiCred);
 
