@@ -31,8 +31,9 @@ services:
     environment:
       - POSTGRES_URL=postgresql://wheeluser:wheelpass@postgres:5432/iot_log
       - SQL_TABLE=sensor_data
-      - MQTT_BROKER=${MQTT_BROKER:-mqtt://broker.emqx.io:1883}
-      - MQTT_TOPIC=${MQTT_TOPIC:-WheelSense/data}
+      - MQTT_BROKER=mqtt://mosquitto:1883
+      - MQTT_TOPIC=WheelSense/data
+      - PG_NOTIFY_CHANNEL=sensor_update
     depends_on:
       mosquitto:
         condition: service_started
@@ -47,6 +48,8 @@ services:
       - PORT=3000
       - POSTGRES_URL=postgresql://wheeluser:wheelpass@postgres:5432/iot_log
       - SQL_TABLE=sensor_data
+      - LABELS_TABLE=device_labels
+      - PG_NOTIFY_CHANNEL=sensor_update
     depends_on:
       postgres:
         condition: service_healthy

@@ -7,44 +7,59 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="top-bar">
-      <h1>WheelSense Dashboard</h1>
-      <div class="summary">
-        <span id="total-count">Total: 0</span>
-        <span id="online-count" class="online">Online: 0</span>
-        <span id="offline-count" class="offline">Offline: 0</span>
+    <div class="app-container">
+      <header class="app-header">
+        <h1>WheelSense</h1>
+        <nav class="app-nav">
+          <a href="index.html" class="nav-tab active">Table View</a>
+          <a href="map.html" class="nav-tab">Live Map</a>
+        </nav>
+        <div class="updated-at">Last update: <span id="last-updated">N/A</span></div>
+      </header>
+
+      <main class="app-content">
+        <!-- Table View -->
+        <div id="table-view" class="content-view active">
+          <div class="summary-bar">
+            <span id="total-count">Total: 0</span>
+            <span id="online-count" class="online">Online: 0</span>
+            <span id="offline-count" class="offline">Offline: 0</span>
+            <span id="avg-rssi">Avg RSSI: --</span>
+            <span id="avg-latency">Avg Latency: --</span>
+          </div>
+          <section class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th>Wheel</th>
+                  <th>Online</th>
+                  <th>Status</th>
+                  <th>Motion</th>
+                  <th>Direction</th>
+                  <th>Distance</th>
+                  <th>RSSI</th>
+                  <th>Last Signal</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-body"></tbody>
+            </table>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2 id="history-modal-title">History</h2>
+        <canvas id="history-chart"></canvas>
       </div>
-      <div class="updated-at">
-        Last update: <span id="last-updated">N/A</span>
-      </div>
-    </header>
+    </div>
 
-    <main>
-      <section class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Room</th>
-              <th>Wheel</th>
-              <th>Status</th>
-              <th>Distance (m)</th>
-              <th>RSSI</th>
-              <th>Last Signal</th>
-            </tr>
-          </thead>
-          <tbody id="dashboard-body">
-            <tr>
-              <td colspan="6" class="placeholder">Loading data...</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-    </main>
-
-    <footer>
-      <small>WheelSense &copy; <span id="current-year"></span></small>
-    </footer>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="script.js"></script>
   </body>
 </html>

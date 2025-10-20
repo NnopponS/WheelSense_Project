@@ -1,5 +1,5 @@
 /*************************************************************
- * Wheel Sense - Room Node (Full)
+ * Wheel Sense - Node (Full)
  * - Mesh minimal (HELLO_ROOT, Scheduler, sendSingle/broadcast)
  * - BLE scan -> AES-128-ECB decrypt -> JSON
  * - Send ONLY when new wheel seen (dirty)
@@ -21,7 +21,7 @@ extern "C" {
 }
 
 /* ===================== User Config ===================== */
-#define ROOM_ID        2          // <-- แก้เป็นห้องของคุณ
+#define NODE_ID        2          // <-- แก้เป็นห้องของคุณ
 #define MAX_WHEELS     32
 #define DEFAULT_MESH_CH  6          // ช่อง default ถ้า auto-discovery ไม่เจอ
 
@@ -270,7 +270,7 @@ static void sendDirtyWheels() {
     if (!w.dirty) continue;
 
     DynamicJsonDocument doc(256);
-    doc["room"]      = ROOM_ID;
+    doc["node"]      = NODE_ID;
     doc["wheel"]     = w.id;
     doc["distance"]  = w.distance_m;
     doc["status"]    = w.status;
@@ -320,7 +320,7 @@ Task taskSwitch(TASK_SECOND * 1, TASK_FOREVER, &switchTaskCallback, &userSchedul
 void setup() {
   Serial.begin(115200);
   delay(700);
-  Serial.println("\n===== Wheel Sense Room Node (Full) =====");
+  Serial.println("\n===== Wheel Sense node node (Full) =====");
 
   // 1) Auto-Discovery channel by SSID (ถ้าพบ ใช้ช่องนั้น)
   int ch = findChannelBySSIDList();
@@ -336,7 +336,7 @@ void setup() {
   AES_init_ctx(&g_aes, AES_KEY);
 
   // 3) BLE init
-  char devName[24]; snprintf(devName,sizeof(devName),"RoomNode-%d",ROOM_ID);
+  char devName[24]; snprintf(devName,sizeof(devName),"Node-%d",NODE_ID);
   NimBLEDevice::init(devName);
   pScan = NimBLEDevice::getScan();
   pScan->setAdvertisedDeviceCallbacks(new AdvCB(), false);
@@ -362,3 +362,7 @@ void loop() {
     pScan->clearResults();
   }
 }
+
+
+
+

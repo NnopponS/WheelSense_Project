@@ -191,7 +191,7 @@ void helloRootTaskCallback() {
 Task taskHelloRoot(TASK_SECOND * 10, TASK_FOREVER, &helloRootTaskCallback, &userScheduler, false);
 
 /* ===== Publish helper ===== */
-static void mqttPublishMinimal(uint16_t room, uint8_t wheel,
+static void mqttPublishMinimal(uint16_t node, uint8_t wheel,
                                float distance, uint8_t status,
                                uint8_t motion, uint8_t direction,
                                int rssi, bool stale, const String& ts_iso,
@@ -201,10 +201,9 @@ static void mqttPublishMinimal(uint16_t room, uint8_t wheel,
   if (!mqttEnsureConnected()) return;
 
   StaticJsonDocument<768> out;
-  out["room"] = room;
-  out["room_name"] = String("Room ") + room;
+  out["node"] = node;
+  out["node_label"] = String("Node ") + node;
   out["wheel"] = wheel;
-  out["wheel_name"] = String("Wheel ") + wheel;
   out["distance"] = distance;
   out["status"] = status;
   out["motion"] = motion;
@@ -239,7 +238,7 @@ void receivedCallback(uint32_t from, String &msg) {
     return;
   }
 
-  uint16_t room        = doc["room"]       | 0;
+  uint16_t node        = doc["node"] | (uint16_t)0;
   uint8_t  wheel       = doc["wheel"]      | 0;
   float    distance    = doc["distance"]   | 0.0f;
   uint8_t  status      = doc["status"]     | 0;
@@ -264,7 +263,7 @@ void receivedCallback(uint32_t from, String &msg) {
     stale = ((int32_t)G_recv_epoch - (int32_t)event_epoch) > STALE_SEC;
   }
 
-  gNodeLabels[from] = String("Room ") + String(room);
+  gNodeLabels[from] = String("Node ") + String(node);
 
   if (gRouteMapDirty) {
     rebuildRouteMap();
@@ -317,10 +316,10 @@ void receivedCallback(uint32_t from, String &msg) {
 
   uint32_t routeLatencyMs = (uint32_t)(proc_ms + d_oneway_ms);
 
-  Serial.printf("[Gateway] room=%u wheel=%u dist=%.2f s=%u m=%u d=%u rssi=%d stale=%d ts=%s path=%s\n",
-                room, wheel, distance, status, motion, direction, rssi, stale, ts_iso.c_str(), pathKey.c_str());
+  Serial.printf("[Gateway] node=%u wheel=%u dist=%.2f s=%u m=%u d=%u rssi=%d stale=%d ts=%s path=%s\n",
+                node, wheel, distance, status, motion, direction, rssi, stale, ts_iso.c_str(), pathKey.c_str());
 
-  mqttPublishMinimal(room, wheel, distance, status, motion, direction, rssi, stale, ts_iso,
+  mqttPublishMinimal(node, wheel, distance, status, motion, direction, rssi, stale, ts_iso,
                      routePath, routeRecovered, routeRecoveryMs, routeLatencyMs);
 }
 
@@ -395,3 +394,5 @@ void loop() {
   mqtt.loop();
   delay(1);
 }
+
+

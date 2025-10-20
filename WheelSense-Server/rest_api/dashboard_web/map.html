@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WheelSense Dashboard - Live Map</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-container">
+      <header class="app-header">
+        <h1>WheelSense</h1>
+        <nav class="app-nav">
+          <a href="index.html" class="nav-tab">Table View</a>
+          <a href="map.html" class="nav-tab active">Live Map</a>
+        </nav>
+        <div class="updated-at">Last update: <span id="last-updated">N/A</span></div>
+      </header>
+
+      <main class="app-content">
+        <!-- Live Map View -->
+        <div id="map-view" class="content-view active">
+          <div id="map-controls">
+            <button id="edit-mode-toggle">Enable Edit Mode</button>
+            <button id="save-layout-button" class="hidden">Save Layout</button>
+          </div>
+          <div id="map-container"></div>
+        </div>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script type="module" src="map.js"></script>
+  </body>
+</html>

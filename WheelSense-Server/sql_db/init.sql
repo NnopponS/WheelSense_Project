@@ -1,11 +1,10 @@
+DROP TABLE IF EXISTS device_labels;
 DROP TABLE IF EXISTS sensor_data;
 
 CREATE TABLE sensor_data (
   id BIGSERIAL PRIMARY KEY,
-  room INTEGER,
-  room_name TEXT,
-  wheel INTEGER,
-  wheel_name TEXT,
+  node_id INTEGER NOT NULL,
+  wheel_id INTEGER NOT NULL,
   distance DOUBLE PRECISION,
   status INTEGER,
   motion INTEGER,
@@ -21,7 +20,27 @@ CREATE TABLE sensor_data (
   raw JSONB NOT NULL DEFAULT '{}'::jsonb
 );
 
-CREATE INDEX idx_sensor_data_room ON sensor_data (room);
-CREATE INDEX idx_sensor_data_wheel ON sensor_data (wheel);
-CREATE INDEX idx_sensor_data_ts ON sensor_data (ts DESC);
-CREATE UNIQUE INDEX idx_sensor_data_room_wheel ON sensor_data (room, wheel);
+CREATE UNIQUE INDEX idx_sensor_unique ON sensor_data (node_id, wheel_id);
+CREATE INDEX idx_sensor_node ON sensor_data (node_id);
+CREATE INDEX idx_sensor_wheel ON sensor_data (wheel_id);
+CREATE INDEX idx_sensor_ts ON sensor_data (ts DESC);
+
+CREATE TABLE device_labels (
+  node_id INTEGER NOT NULL,
+  wheel_id INTEGER NOT NULL,
+  node_label TEXT,
+  wheel_label TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (node_id, wheel_id)
+);
+
+CREATE INDEX idx_labels_node ON device_labels (node_id);
+CREATE INDEX idx_labels_wheel ON device_labels (wheel_id);
+
+CREATE TABLE map_layout (
+  room_id INTEGER PRIMARY KEY,
+  room_name TEXT,
+  x_pos INTEGER NOT NULL DEFAULT 0,
+  y_pos INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

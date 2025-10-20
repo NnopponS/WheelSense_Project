@@ -9,6 +9,8 @@ const SQL_URL =
   process.env.SQL_URL ||
   "postgresql://wheeluser:wheelpass@postgres:5432/iot_log";
 const SQL_TABLE = process.env.SQL_TABLE || "sensor_data";
+const LABELS_TABLE = process.env.LABELS_TABLE || "device_labels";
+const PG_NOTIFY_CHANNEL = process.env.PG_NOTIFY_CHANNEL || "sensor_update";
 
 const mqttClient = mqtt.connect(MQTT_URL, {
   reconnectPeriod: 2000,
@@ -51,6 +53,20 @@ function safeBoolean(value) {
   return undefined;
 }
 
+function safeText(value) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  if (trimmed.length > 255) {
+    return trimmed.slice(0, 255);
+  }
+  return trimmed;
+}
+
 function parseTimestamp(value) {
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? undefined : value;
@@ -79,11 +95,16 @@ function normalizeRoutePath(value) {
       if (item === null || item === undefined) {
         return undefined;
       }
-      if (typeof item === "string") {
-        const trimmed = item.trim();
-        return trimmed.length > 0 ? trimmed : undefined;
+      const asString = typeof item === "string" ? item : String(item);
+      const trimmed = asString.trim();
+      if (trimmed.length === 0) {
+        return undefined;
       }
-      return String(item);
+      const matchRoom = trimmed.match(/^room\s*(\d+)/i);
+      if (matchRoom) {
+        return `Node ${matchRoom[1]}`;
+      }
+      return trimmed.replace(/^Room/i, "Node");
     })
     .filter((item) => item !== undefined);
 }
@@ -91,12 +112,16 @@ function normalizeRoutePath(value) {
 function buildDocument(payload) {
   const receivedAt = new Date();
   const messageTimestamp = parseTimestamp(payload.ts) ?? receivedAt;
+  const nodeId = safeInteger(payload.node ?? payload.room);
+  const wheelId = safeInteger(payload.wheel);
+  const nodeLabel = safeText(payload.node_label ?? payload.nodeLabel ?? payload.nodeName);
+  const wheelLabel = safeText(payload.wheel_label ?? payload.wheelLabel ?? payload.wheelName);
 
   return {
-    room: safeInteger(payload.room),
-    room_name: typeof payload.room_name === "string" ? payload.room_name : null,
-    wheel: safeInteger(payload.wheel),
-    wheel_name: typeof payload.wheel_name === "string" ? payload.wheel_name : null,
+    node_id: nodeId,
+    wheel_id: wheelId,
+    node_label: nodeLabel,
+    wheel_label: wheelLabel,
     distance: safeNumber(payload.distance),
     status: safeInteger(payload.status),
     motion: safeInteger(payload.motion),
@@ -120,6 +145,8 @@ function assertSafeIdentifier(identifier) {
 }
 
 assertSafeIdentifier(SQL_TABLE);
+assertSafeIdentifier(LABELS_TABLE);
+assertSafeIdentifier(PG_NOTIFY_CHANNEL);
 
 async function persistDocument(document) {
   const rawPayload = document.raw ?? {};
@@ -127,12 +154,17 @@ async function persistDocument(document) {
   const receivedAt = document.received_at ?? new Date();
   const routePathJson = JSON.stringify(document.route_path ?? []);
 
+  if (document.node_id === undefined || document.node_id === null) {
+    throw new Error("Missing node identifier in payload");
+  }
+  if (document.wheel_id === undefined || document.wheel_id === null) {
+    throw new Error("Missing wheel identifier in payload");
+  }
+
   const query = `INSERT INTO ${SQL_TABLE}
-    (room, room_name, wheel, wheel_name, distance, status, motion, direction, rssi, stale, ts, route_recovered, route_latency_ms, route_recovery_ms, route_path, received_at, raw)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-    ON CONFLICT (room, wheel) DO UPDATE SET
-      room_name = EXCLUDED.room_name,
-      wheel_name = EXCLUDED.wheel_name,
+    (node_id, wheel_id, distance, status, motion, direction, rssi, stale, ts, route_recovered, route_latency_ms, route_recovery_ms, route_path, received_at, raw)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+    ON CONFLICT (node_id, wheel_id) DO UPDATE SET
       distance = EXCLUDED.distance,
       status = EXCLUDED.status,
       motion = EXCLUDED.motion,
@@ -148,10 +180,8 @@ async function persistDocument(document) {
       raw = EXCLUDED.raw`;
 
   const params = [
-    document.room ?? null,
-    document.room_name ?? null,
-    document.wheel ?? null,
-    document.wheel_name ?? null,
+    document.node_id,
+    document.wheel_id,
     document.distance ?? null,
     document.status ?? null,
     document.motion ?? null,
@@ -168,6 +198,60 @@ async function persistDocument(document) {
   ];
 
   await pool.query(query, params);
+}
+
+async function persistDeviceLabels(document) {
+  if (
+    document.node_id === undefined ||
+    document.node_id === null ||
+    document.wheel_id === undefined ||
+    document.wheel_id === null
+  ) {
+    return;
+  }
+
+  const nodeLabel =
+    document.node_label !== undefined ? document.node_label : undefined;
+  const wheelLabel =
+    document.wheel_label !== undefined ? document.wheel_label : undefined;
+
+  if (nodeLabel === undefined && wheelLabel === undefined) {
+    return;
+  }
+
+  await pool.query(
+    `INSERT INTO ${LABELS_TABLE} (node_id, wheel_id, node_label, wheel_label, updated_at)
+     VALUES ($1, $2, $3, $4, NOW())
+     ON CONFLICT (node_id, wheel_id)
+     DO UPDATE SET
+       node_label = COALESCE(EXCLUDED.node_label, ${LABELS_TABLE}.node_label),
+       wheel_label = COALESCE(EXCLUDED.wheel_label, ${LABELS_TABLE}.wheel_label),
+       updated_at = NOW()`,
+    [
+      document.node_id,
+      document.wheel_id,
+      nodeLabel ?? null,
+      wheelLabel ?? null,
+    ]
+  );
+}
+
+async function notifySensorUpdate(document) {
+  try {
+    const payload = JSON.stringify({
+      node_id: document.node_id ?? null,
+      wheel_id: document.wheel_id ?? null,
+      ts:
+        document.ts instanceof Date
+          ? document.ts.toISOString()
+          : document.received_at instanceof Date
+          ? document.received_at.toISOString()
+          : new Date().toISOString(),
+    });
+    await pool.query("SELECT pg_notify($1, $2)", [PG_NOTIFY_CHANNEL, payload]);
+  } catch (error) {
+    console.error("Failed to emit sensor update notification", error);
+  }
 }
 
 function ensureDatabaseConnection() {
@@ -203,18 +287,83 @@ mqttClient.on("error", (error) => {
 
 mqttClient.on("message", async (_topic, message) => {
   let payload;
+  const rawMessage = message.toString("utf8");
+
+  function attemptParse(input) {
+    const visited = new Set();
+    let current = typeof input === "string" ? input : "";
+
+    while (current && !visited.has(current)) {
+      visited.add(current);
+      const trimmed = current.trim();
+      if (trimmed.length === 0) {
+        return null;
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed && typeof parsed === "string") {
+          current = parsed;
+          continue;
+        }
+        return parsed;
+      } catch (_error) {
+        let next = trimmed;
+
+        if (
+          (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+          (trimmed.startsWith("'") && trimmed.endsWith("'"))
+        ) {
+          next = trimmed.slice(1, -1);
+        }
+
+        if (next.includes('\\"')) {
+          next = next.replace(/\\"/g, '"');
+        }
+
+        if (next.includes("\\'")) {
+          next = next.replace(/\\'/g, "'");
+        }
+
+        if (next.includes("\\\\")) {
+          next = next.replace(/\\\\/g, "\\");
+        }
+
+        if (next === trimmed) {
+          throw _error;
+        }
+
+        current = next;
+      }
+    }
+
+    return null;
+  }
+
   try {
-    payload = JSON.parse(message.toString());
+    payload = attemptParse(rawMessage);
   } catch (error) {
-    console.error("Failed to parse MQTT payload as JSON", error);
+    console.error("Failed to parse MQTT payload as JSON", {
+      error,
+      preview: rawMessage.slice(0, 200),
+    });
+    return;
+  }
+
+  if (payload === null || typeof payload !== "object") {
+    console.error("Ignored MQTT payload that did not decode to an object", {
+      preview: rawMessage.slice(0, 200),
+    });
     return;
   }
 
   try {
     const document = buildDocument(payload);
     await persistDocument(document);
+    await persistDeviceLabels(document);
+    await notifySensorUpdate(document);
     console.log(
-      `Stored reading for room=${document.room ?? "?"} wheel=${document.wheel ?? "?"} at ${
+      `Stored reading for node=${document.node_id ?? "?"} wheel=${document.wheel_id ?? "?"} at ${
         (document.ts ?? document.received_at ?? new Date()).toISOString()
       }`
     );
