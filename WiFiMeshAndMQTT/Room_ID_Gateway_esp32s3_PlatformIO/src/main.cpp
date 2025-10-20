@@ -93,6 +93,7 @@ static const unsigned long MQTT_RETRY_MS = 4000;
 
 static void mqttSetupClient() {
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setBufferSize(1024);  // Allow larger JSON payloads
 }
 static bool mqttEnsureConnected() {
   if (mqtt.connected()) return true;
@@ -222,7 +223,9 @@ static void mqttPublishMinimal(uint16_t room, uint8_t wheel,
   }
 
   String payload; serializeJson(out, payload);
-  mqtt.publish(MQTT_TOPIC_OUT, payload.c_str());
+  if (!mqtt.publish(MQTT_TOPIC_OUT, payload.c_str())) {
+    Serial.printf("[MQTT] publish failed (len=%u)\n", payload.length());
+  }
 }
 
 void receivedCallback(uint32_t from, String &msg) {
