@@ -1,0 +1,24 @@
+{
+  "name": "wheelsense",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "yarn@1.22.22",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "node ./scripts/setup-env.mjs",
+    "build": "yarn workspaces run build",
+    "dev:api": "yarn workspace @wheelsense/api dev",
+    "dev:web": "yarn workspace @wheelsense/web dev",
+    "lint": "yarn workspaces run lint",
+    "format": "prettier --check \"apps/**/*.ts\" \"apps/**/*.tsx\" \"packages/**/*.ts\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  }
+}
