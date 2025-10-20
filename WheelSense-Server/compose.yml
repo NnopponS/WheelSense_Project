@@ -1,0 +1,57 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mqtt_broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mqtt_broker/:/etc/mosquitto/
+
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=1234
+    volumes:
+      - ./mongo_db/:/docker-entrypoint-initdb.d/
+    expose:
+      - 27017
+
+  mqtt_collector:
+    build: ./mqtt_collector
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URL=mongodb://root:1234@mongodb:27017/
+      - MONGO_DB=iot_log
+      - MONGO_COLLECTION=sensor_data
+      - MQTT_BROKER=mqtt://mosquitto:1883
+    depends_on:
+      - mosquitto
+      - mongodb
+
+  rest_api:
+    build: ./rest_api
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGO_URL=mongodb://root:1234@mongodb:27017/
+      - MONGO_DB=iot_log
+      - MONGO_COLLECTION=sensor_data
+    depends_on:
+      - mongodb
+
+  telegram_bot:
+    build: ./telegram_bot
+    environment:
+      - TELEGRAM_BOT_TOKEN=8399472624:AAEykdGS7kN5PiFph9XffoHh_x6GWhnGhew
+      - MONGO_URL=mongodb://root:1234@mongodb:27017/
+      - MONGO_DB=iot_log
+      - MONGO_COLLECTION=sensor_data
+      - DEFAULT_DEVICE_ID=esp32-sensor-13
+    depends_on:
+      - mongodb
