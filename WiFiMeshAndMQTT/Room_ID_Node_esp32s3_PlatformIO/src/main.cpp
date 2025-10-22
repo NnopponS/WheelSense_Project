@@ -21,7 +21,7 @@ extern "C" {
 }
 
 /* ===================== User Config ===================== */
-#define NODE_ID        2          // <-- แก้เป็นห้องของคุณ
+#define NODE_ID        4          // <-- แก้เป็นห้องของคุณ
 #define MAX_WHEELS     32
 #define DEFAULT_MESH_CH  6          // ช่อง default ถ้า auto-discovery ไม่เจอ
 

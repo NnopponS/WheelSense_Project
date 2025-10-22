@@ -1,5 +1,4 @@
 const express = require("express");
-const path = require("path");
 const { Pool } = require("pg");
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -21,12 +20,23 @@ const SSE_RETRY_MS = Number(process.env.SSE_RETRY_MS || 5000);
 const app = express();
 const pool = new Pool({ connectionString: SQL_URL });
 let isReady = false;
-const DASHBOARD_DIR = process.env.DASHBOARD_DIR || path.join(__dirname, "dashboard_web");
 const sseClients = new Set();
 let listenerClient = null;
 let listenerReconnectTimer = null;
 
 app.use(express.json());
+
+// Enable CORS for dashboard
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // --- UTILITY FUNCTIONS ---
 function parseJson(rawValue, fallback) {
@@ -52,12 +62,6 @@ function normalizeLabel(value) {
 }
 
 [SQL_TABLE, LABELS_TABLE, MAP_LAYOUT_TABLE, NOTIFY_CHANNEL].forEach(assertSafeIdentifier);
-
-// --- STATIC & ROOT ENDPOINTS ---
-app.use(express.static(DASHBOARD_DIR));
-app.get("/", (req, res) => {
-  res.sendFile(path.join(DASHBOARD_DIR, "index.html"));
-});
 
 // --- API ROUTER ---
 const apiRouter = express.Router();
@@ -229,8 +233,152 @@ apiRouter.post("/map-layout", async (req, res) => {
   }
 });
 
+// --- ADMIN MAINTENANCE ENDPOINTS ---
+// Delete rows by date or date range; scope can be: sensor, labels, layout, all
+apiRouter.delete("/admin/clear", async (req, res) => {
+  if (!isReady) return res.status(503).json({ error: "Database not ready" });
+
+  const { date, start, end, scope } = req.query;
+
+  // Validate date inputs
+  function validDateString(s) {
+    return typeof s === "string" && !Number.isNaN(Date.parse(s));
+  }
+
+  const hasSingleDate = validDateString(date);
+  const hasRange = validDateString(start) && validDateString(end);
+
+  if (!hasSingleDate && !hasRange) {
+    return res.status(400).json({ error: "Provide ?date=YYYY-MM-DD or ?start=YYYY-MM-DD&end=YYYY-MM-DD" });
+  }
+
+  const effectiveScope = (scope || "all").toString().toLowerCase();
+  const allowedScopes = new Set(["sensor", "labels", "layout", "all"]);
+  if (!allowedScopes.has(effectiveScope)) {
+    return res.status(400).json({ error: "Invalid scope. Use sensor|labels|layout|all" });
+  }
+
+  // Build delete statements
+  const statements = [];
+  const whereClause = hasSingleDate
+    ? `DATE(received_at) = $1`
+    : `DATE(received_at) >= $1 AND DATE(received_at) <= $2`;
+  const whereClauseLabels = hasSingleDate
+    ? `DATE(updated_at) = $1`
+    : `DATE(updated_at) >= $1 AND DATE(updated_at) <= $2`;
+  const whereClauseLayout = hasSingleDate
+    ? `DATE(updated_at) = $1`
+    : `DATE(updated_at) >= $1 AND DATE(updated_at) <= $2`;
+
+  if (effectiveScope === "sensor" || effectiveScope === "all") {
+    statements.push({ sql: `DELETE FROM ${SQL_TABLE} WHERE ${whereClause}`, labels: false });
+  }
+  if (effectiveScope === "labels" || effectiveScope === "all") {
+    statements.push({ sql: `DELETE FROM ${LABELS_TABLE} WHERE ${whereClauseLabels}`, labels: true });
+  }
+  if (effectiveScope === "layout" || effectiveScope === "all") {
+    statements.push({ sql: `DELETE FROM ${MAP_LAYOUT_TABLE} WHERE ${whereClauseLayout}`, labels: true });
+  }
+
+  const params = hasSingleDate ? [new Date(date).toISOString()] : [new Date(start).toISOString(), new Date(end).toISOString()];
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    let affected = 0;
+    for (const stmt of statements) {
+      const result = await client.query(stmt.sql, params);
+      affected += result.rowCount || 0;
+    }
+    await client.query("COMMIT");
+    return res.json({ message: "Cleared successfully", affected });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Failed to clear data", error);
+    return res.status(500).json({ error: "Failed to clear data" });
+  } finally {
+    client.release();
+  }
+});
+
 // --- SSE & NOTIFICATION LISTENER ---
-// ... (SSE and listener logic remains largely the same)
+apiRouter.get("/events", (req, res) => {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Cache-Control"
+  });
+
+  const clientId = Date.now();
+  const client = { id: clientId, res };
+  sseClients.add(client);
+
+  // Send initial keepalive
+  res.write(`data: ${JSON.stringify({ type: "connected", clientId })}\n\n`);
+
+  // Send periodic keepalive
+  const keepaliveInterval = setInterval(() => {
+    if (client.res) {
+      client.res.write(`data: ${JSON.stringify({ type: "keepalive", timestamp: Date.now() })}\n\n`);
+    }
+  }, SSE_KEEPALIVE_MS);
+
+  req.on("close", () => {
+    clearInterval(keepaliveInterval);
+    sseClients.delete(client);
+  });
+});
+
+function broadcastUpdate(data) {
+  const message = `data: ${data}\n\n`;
+  sseClients.forEach(client => {
+    if (client.res) {
+      try {
+        client.res.write(message);
+      } catch (error) {
+        console.error("Error sending SSE message:", error);
+        sseClients.delete(client);
+      }
+    }
+  });
+}
+
+async function setupNotificationListener() {
+  if (listenerClient) return;
+
+  try {
+    listenerClient = new Pool({ connectionString: SQL_URL });
+    await listenerClient.query(`LISTEN ${NOTIFY_CHANNEL}`);
+    
+    listenerClient.on('notification', (msg) => {
+      if (msg.channel === NOTIFY_CHANNEL) {
+        broadcastUpdate(msg.payload);
+      }
+    });
+
+    listenerClient.on('error', (err) => {
+      console.error('PostgreSQL listener error:', err);
+      listenerClient = null;
+      
+      // Reconnect after delay
+      listenerReconnectTimer = setTimeout(() => {
+        setupNotificationListener().catch(console.error);
+      }, 5000);
+    });
+
+    console.log(`Listening for notifications on channel: ${NOTIFY_CHANNEL}`);
+  } catch (error) {
+    console.error('Failed to setup notification listener:', error);
+    listenerClient = null;
+    
+    // Retry after delay
+    listenerReconnectTimer = setTimeout(() => {
+      setupNotificationListener().catch(console.error);
+    }, 5000);
+  }
+}
 
 // --- HEALTH & STARTUP ---
 app.get("/health", (req, res) => {
@@ -242,7 +390,7 @@ async function start() {
   try {
     await pool.query("SELECT 1");
     isReady = true;
-    // setupNotificationListener().catch(...)
+    setupNotificationListener().catch(console.error);
     app.listen(PORT, () => {
       console.log(`REST API listening on port ${PORT}`);
     });

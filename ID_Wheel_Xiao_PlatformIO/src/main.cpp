@@ -10,7 +10,7 @@ extern "C" {
 }
 
 /* ===== CONFIG ===== */
-#define WHEEL_ID 1
+#define WHEEL_ID 2
 
 static const float  WHEEL_RADIUS_M = 0.30f;          // รัศมีล้อ 30 ซม.
 static const uint16_t DISTANCE_ENCODE_FACTOR = 100;  // m*100 -> uint16

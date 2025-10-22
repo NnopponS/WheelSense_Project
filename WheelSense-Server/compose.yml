@@ -53,3 +53,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  dashboard:
+    build: ./WheelSense Dashboard
+    ports:
+      - "8080:80"
+    depends_on:
+      rest_api:
+        condition: service_started
