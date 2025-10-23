@@ -6,15 +6,15 @@
  * เมื่อ Node online แสดง Room ทันทีบนแผนที่
  */
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
-import { Activity, Radio, Users, AlertCircle, RefreshCw, Wifi, MapPin, Flame } from 'lucide-react';
+import { Activity, Radio, Users, AlertCircle, RefreshCw, Wifi, MapPin } from 'lucide-react';
 import { useSensorData, useMapLayout, useSystemStats } from '../hooks/useApi';
 import type { SensorData } from '../services/api';
 import { NodeDetailModal } from './node-detail-modal';
-import { SimpleMapViewer } from './simple-map-viewer';
+import { SystemMap } from './system-map';
 import { toast } from 'sonner';
 
 export function MonitoringDashboard() {
@@ -28,7 +28,6 @@ export function MonitoringDashboard() {
   const [detailOpen, setDetailOpen] = useState<boolean>(false);
   const [mqttLogs, setMqttLogs] = useState<any[]>([]);
   const [statsAnimating, setStatsAnimating] = useState<boolean>(false);
-  const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
   
   // Refs
   const previousSensorData = useRef(new Map<string, string>());
@@ -120,88 +119,9 @@ export function MonitoringDashboard() {
     }
   }, [mqttLogs.length]);
 
-  // **แนวคิดใหม่: Node = Room**
-  // สร้าง rooms จาก nodes ที่ online โดยตรง (ไม่ต้องมี map_layout)
+  // คำนวณจำนวน rooms จาก active nodes
   const activeNodes = Array.from(new Set(sensorData.filter(s => !s.stale).map(s => s.node)));
-  
-  const rooms = activeNodes.map((nodeNum, index) => {
-    const sensor = sensorData.find(s => s.node === nodeNum);
-    const savedLayout = mapLayout.find(m => m.node === nodeNum);
-    
-    // ใช้ตำแหน่งจาก layout ถ้ามี ไม่งั้นสร้างอัตโนมัติ
-    const col = index % 3;
-    const row = Math.floor(index / 3);
-    
-    return {
-      id: `room-${nodeNum}`,
-      node: nodeNum,
-      name: sensor?.node_label || `Node ${nodeNum}`,
-      x: savedLayout?.x_pos ?? (100 + col * 250),
-      y: savedLayout?.y_pos ?? (100 + row * 200),
-      width: 200,
-      height: 150,
-      color: ['#e8f4ff', '#f0fdf4', '#fef3c7', '#ede9fe', '#fee2e2'][index % 5],
-      online: true,
-    };
-  });
-
-  // Wheelchairs ในแต่ละ room
-  const wheelchairs = sensorData.filter(s => !s.stale).map(sensor => {
-    const room = rooms.find(r => r.node === sensor.node);
-    
-    // วาง wheelchair ตรงกลาง room
-    let x: number;
-    let y: number;
-    
-    if (room) {
-      // หาจำนวน wheels ใน room นี้
-      const wheelsInRoom = sensorData.filter(s => s.node === sensor.node && !s.stale);
-      const totalWheels = wheelsInRoom.length;
-      const wheelIndex = wheelsInRoom.findIndex(w => w.wheel === sensor.wheel);
-      
-      if (totalWheels === 1) {
-        // ถ้ามี wheel เดียว วางตรงกลางพอดี
-        x = room.x + room.width / 2;
-        y = room.y + room.height / 2;
-      } else {
-        // ถ้ามีหลาย wheels จัดเรียงแบบวงกลมรอบจุดกลาง
-        const centerX = room.x + room.width / 2;
-        const centerY = room.y + room.height / 2;
-        const radius = 40; // รัศมีวงกลม
-        const angle = (wheelIndex / totalWheels) * 2 * Math.PI - Math.PI / 2; // เริ่มจากด้านบน
-        
-        x = centerX + radius * Math.cos(angle);
-        y = centerY + radius * Math.sin(angle);
-      }
-    } else {
-      // ถ้าไม่มี room ให้วางตามตำแหน่งคงที่
-      x = 200 + (sensor.node * 150) + (sensor.wheel * 50);
-      y = 150 + (sensor.wheel * 80);
-    }
-
-    return {
-      id: `${sensor.node}-${sensor.wheel}`,
-      x,
-      y,
-      node: sensor.node,
-      wheel: sensor.wheel,
-      nodeLabel: sensor.node_label || `Node ${sensor.node}`,
-      wheelLabel: sensor.wheel_label || `Wheel ${sensor.wheel}`,
-      rssi: sensor.rssi || 0,
-      motion: sensor.motion === 1,
-      direction: sensor.direction || 0,
-      distance: sensor.distance,
-      stale: sensor.stale,
-      sensorData: sensor,
-    };
-  });
-
-  // คำนวณสีตาม RSSI
-  const getRssiColor = (rssi: number) => {
-    if (rssi >= -60) return '#00ff00'; // เขียว - สัญญาณดี
-    if (rssi >= -75) return '#ffaa00'; // เหลือง - สัญญาณปานกลาง
-    return '#ff0000'; // แดง - สัญญาณอ่อน
-  };
+  const roomsCount = activeNodes.length;
 
   if (loading && sensorData.length === 0) {
     return (
@@ -273,7 +193,7 @@ export function MonitoringDashboard() {
                 {isConnected && <div className="h-2 w-2 bg-blue-500 rounded-full" />}
               </div>
               <div className="text-3xl font-light text-gray-900 mb-1">
-                {rooms.length}
+                {roomsCount}
               </div>
               <p className="text-sm text-gray-500">Active Rooms</p>
             </CardContent>
@@ -330,194 +250,31 @@ export function MonitoringDashboard() {
 
         {/* แผนที่และ MQTT Logs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* แผนที่ */}
-          <Card className="lg:col-span-2 border border-gray-200">
-            <CardHeader className="border-b border-gray-100">
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <span className="text-base font-medium text-gray-900">Floor Map</span>
-                    {mapLayout.length > 0 && (
-                      <span className="ml-2 text-xs text-gray-400">• Custom</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowHeatmap(!showHeatmap)}
-                    className={`text-xs px-3 py-1.5 border rounded transition-colors flex items-center gap-1.5 ${
-                      showHeatmap
-                        ? 'border-orange-500 bg-orange-50 text-orange-700'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Flame className="h-3 w-3" />
-                    Heatmap
-                  </button>
-                  <span className="text-sm text-gray-500">{rooms.length} Rooms</span>
-                  <button
-                    onClick={() => {
-                      const event = new CustomEvent('navigate', { detail: 'map-layout' });
-                      window.dispatchEvent(event);
-                    }}
-                    className="text-xs px-3 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
-                  >
-                    Edit
-                  </button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {rooms.length === 0 ? (
+          {/* แผนที่ - ใช้ System Map ใหม่ */}
+          {sensorData.length === 0 ? (
+            <Card className="lg:col-span-2 border border-gray-200">
+              <CardContent className="pt-6">
                 <div className="bg-gray-50 rounded-lg border p-20 text-center">
                   <MapPin className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-30" />
                   <p className="text-muted-foreground">ไม่มี Node ออนไลน์</p>
                   <p className="text-sm text-muted-foreground">รอการเชื่อมต่อจากอุปกรณ์</p>
                 </div>
-              ) : (
-                <SimpleMapViewer width={800} height={500} showControls={true}>
-                  <defs>
-                    {/* Grid Pattern - Minimal */}
-                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f3f4f6" strokeWidth="0.5"/>
-                    </pattern>
-                  </defs>
-                  
-                  {/* Background */}
-                  <rect width="800" height="500" fill="#fafafa" />
-                  <rect width="800" height="500" fill="url(#grid)" />
-
-                    {/* Rooms (= Nodes ที่ออนไลน์) */}
-                    {rooms.map((room) => {
-                      const roomSensors = sensorData.filter(s => s.node === room.node && !s.stale);
-                      const avgRssi = roomSensors.length > 0
-                        ? roomSensors.reduce((sum, s) => sum + (s.rssi || 0), 0) / roomSensors.length
-                        : -60;
-                      
-                      // คำนวณ heatmap intensity ตามจำนวน devices และ motion
-                      const movingCount = roomSensors.filter(s => s.motion === 1).length;
-                      const heatIntensity = roomSensors.length === 0 ? 0 :
-                        Math.min((roomSensors.length * 30 + movingCount * 40), 100);
-                      
-                      const getHeatmapColor = (intensity: number) => {
-                        if (intensity === 0) return 'rgba(229, 231, 235, 0.3)'; // gray-200
-                        if (intensity < 30) return 'rgba(134, 239, 172, 0.5)'; // green-300
-                        if (intensity < 60) return 'rgba(253, 224, 71, 0.6)'; // yellow-300
-                        if (intensity < 85) return 'rgba(251, 146, 60, 0.7)'; // orange-400
-                        return 'rgba(239, 68, 68, 0.8)'; // red-500
-                      };
-                      
-                      return (
-                        <g key={room.id} className="room-group">
-                          {/* Room Rectangle - Minimal with Heatmap */}
-                          <rect
-                            x={room.x}
-                            y={room.y}
-                            width={room.width}
-                            height={room.height}
-                            fill={showHeatmap ? getHeatmapColor(heatIntensity) : "white"}
-                            stroke="#e5e7eb"
-                            strokeWidth="1.5"
-                            rx="8"
-                            className="cursor-pointer hover:stroke-gray-400 transition-all"
-                          />
-                          
-                          {/* Room Name */}
-                          <text
-                            x={room.x + room.width / 2}
-                            y={room.y + 24}
-                            textAnchor="middle"
-                            className="text-sm font-medium fill-gray-700"
-                            style={{ fontSize: '13px' }}
-                          >
-                            {room.name}
-                          </text>
-                          
-                          {/* Device Count */}
-                          <text
-                            x={room.x + room.width / 2}
-                            y={room.y + 42}
-                            textAnchor="middle"
-                            className="text-xs fill-gray-400"
-                          >
-                            {roomSensors.length} device{roomSensors.length !== 1 ? 's' : ''}
-                          </text>
-
-                          {/* Signal Indicator */}
-                          <circle
-                            cx={room.x + room.width - 15}
-                            cy={room.y + 15}
-                            r="3"
-                            fill={getRssiColor(avgRssi)}
-                            className="opacity-80"
-                          />
-                        </g>
-                      );
-                    })}
-
-                    {/* Wheelchairs - Minimal */}
-                    {wheelchairs.map((wc) => (
-                      <g
-                        key={wc.id}
-                        onClick={() => {
-                          setSelectedSensor(wc.sensorData);
-                          setDetailOpen(true);
-                        }}
-                        className="wheelchair-icon cursor-pointer hover:opacity-80 transition-opacity"
-                      >
-                        {/* Motion Ring */}
-                        {wc.motion && (
-                          <circle
-                            cx={wc.x}
-                            cy={wc.y}
-                            r="14"
-                            fill="none"
-                            stroke="#22c55e"
-                            strokeWidth="1.5"
-                            opacity="0.5"
-                            className="animate-ping"
-                          />
-                        )}
-                        
-                        {/* Wheelchair Circle */}
-                        <circle
-                          cx={wc.x}
-                          cy={wc.y}
-                          r="10"
-                          fill={wc.motion ? '#22c55e' : '#3b82f6'}
-                          stroke="white"
-                          strokeWidth="2"
-                        />
-                        
-                        {/* Label */}
-                        <text
-                          x={wc.x}
-                          y={wc.y - 16}
-                          textAnchor="middle"
-                          className="text-xs font-medium fill-gray-700"
-                          style={{ fontSize: '11px' }}
-                        >
-                          {wc.wheelLabel}
-                        </text>
-                        
-                        {/* Distance */}
-                        {wc.distance !== null && wc.distance !== undefined && (
-                          <text
-                            x={wc.x}
-                            y={wc.y + 24}
-                            textAnchor="middle"
-                            className="text-[10px] fill-gray-500"
-                          >
-                            {wc.distance.toFixed(1)}m
-                          </text>
-                        )}
-                      </g>
-                    ))}
-                </SimpleMapViewer>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : (
+            <SystemMap
+              sensorData={sensorData}
+              mapLayout={mapLayout}
+              onWheelchairClick={(sensor) => {
+                setSelectedSensor(sensor);
+                setDetailOpen(true);
+              }}
+              onEditClick={() => {
+                const event = new CustomEvent('navigate', { detail: 'map-layout' });
+                window.dispatchEvent(event);
+              }}
+            />
+          )}
 
           {/* MQTT Logs */}
           <Card className="border border-gray-200">
