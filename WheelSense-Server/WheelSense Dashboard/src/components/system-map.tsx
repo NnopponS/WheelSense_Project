@@ -3,10 +3,11 @@
  * Read-only map view showing all rooms and their status
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Building2, MapPin, Users, Maximize2 } from 'lucide-react';
+import { Button } from './ui/button';
+import { Building2, MapPin, Users, Maximize2, ZoomIn, ZoomOut, Minimize2 } from 'lucide-react';
 import { getRooms, getBuildings, getFloors, type Room, type Building, type Floor } from '../services/api';
 import { useSensorData } from '../hooks/useApi';
 import type { SensorData } from '../services/api';
@@ -78,6 +79,15 @@ export function SystemMap({
   const [floors, setFloors] = useState<Floor[]>([]);
   const [loading, setLoading] = useState(true);
   const { data: sensorData } = useSensorData();
+  
+  // Zoom and Pan states
+  const [zoom, setZoom] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     loadMapData();
@@ -105,6 +115,49 @@ export function SystemMap({
     } finally {
       setLoading(false);
     }
+  };
+
+  // Zoom handlers
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.2, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.2, 0.5));
+  };
+
+  const handleResetZoom = () => {
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+  };
+
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      handleZoomIn();
+    } else {
+      handleZoomOut();
+    }
+  };
+
+  // Pan handlers
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === containerRef.current || (e.target as HTMLElement).tagName === 'svg') {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - panX, y: e.clientY - panY });
+    }
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isPanning) {
+      setPanX(e.clientX - panStart.x);
+      setPanY(e.clientY - panStart.y);
+    }
+  };
+
+  const handleCanvasMouseUp = () => {
+    setIsPanning(false);
   };
 
   // Get active nodes from sensor data
@@ -192,14 +245,64 @@ export function SystemMap({
       
       <CardContent className={compact ? 'p-4' : 'p-6'}>
         {/* Map Canvas */}
-        <div className="relative border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-          <svg 
-            width="100%" 
-            height={compact ? "400" : "600"} 
-            viewBox={`0 0 ${maxX} ${maxY}`}
-            className="w-full"
-            style={{ maxHeight: compact ? '400px' : '600px' }}
+        <div className="relative">
+          {/* Zoom Controls */}
+          <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 bg-white rounded-lg shadow-md p-1.5 border border-gray-200">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleZoomIn}
+              title="Zoom In"
+              className="h-7 w-7 p-0"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleResetZoom}
+              title="Reset Zoom"
+              className="h-7 w-7 p-0"
+            >
+              <Minimize2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleZoomOut}
+              title="Zoom Out"
+              className="h-7 w-7 p-0"
+            >
+              <ZoomOut className="h-3.5 w-3.5" />
+            </Button>
+            <div className="text-[10px] text-center text-gray-600 mt-0.5 px-0.5">
+              {(zoom * 100).toFixed(0)}%
+            </div>
+          </div>
+
+          <div 
+            ref={containerRef}
+            className="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50"
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseUp={handleCanvasMouseUp}
+            onMouseLeave={handleCanvasMouseUp}
+            style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
           >
+            <svg 
+              ref={svgRef}
+              width="100%" 
+              height={compact ? "400" : "600"} 
+              viewBox={`0 0 ${maxX} ${maxY}`}
+              className="w-full"
+              style={{ 
+                maxHeight: compact ? '400px' : '600px',
+                transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+                transformOrigin: 'center center',
+                transition: isPanning ? 'none' : 'transform 0.1s ease-out'
+              }}
+              onWheel={handleWheel}
+            >
             {/* Grid */}
             <defs>
               <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
@@ -331,6 +434,7 @@ export function SystemMap({
               );
             })}
           </svg>
+          </div>
         </div>
 
         {/* Legend */}

@@ -497,44 +497,44 @@ export function MapEditor() {
 
   return (
     <div className="h-full bg-[#fafafa] overflow-auto">
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
+      <div className="container mx-auto p-4 space-y-4">
+        {/* Header - Compact */}
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-[#0056B3] flex items-center gap-2">
-              <Edit2 className="h-6 w-6" />
-              Map Editor
-            </h2>
-            <p className="text-muted-foreground">
-              Drag rooms to reposition · Edit properties · Manage buildings and floors
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0056B3] to-[#00945E] flex items-center justify-center">
+              <Edit2 className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-[#0056B3]">Map Editor</h2>
+              <p className="text-xs text-muted-foreground">Drag, edit & manage</p>
+            </div>
           </div>
-          <Button onClick={loadMapData} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button onClick={loadMapData} variant="outline" size="sm">
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
             Refresh
           </Button>
         </div>
 
-        {/* Building and Floor Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Building & Floor Management
+        {/* Building and Floor Selection - Compact */}
+        <Card className="border-gray-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Building & Floor
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               {/* Building Selection */}
-              <div className="space-y-2">
-                <Label>Building</Label>
-                <div className="flex gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-600">Building</Label>
+                <div className="flex gap-1.5">
                   <Select
                     value={selectedBuilding?.toString()}
                     onValueChange={(value) => handleBuildingChange(parseInt(value))}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select building" />
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       {buildings.map(building => (
@@ -544,50 +544,51 @@ export function MapEditor() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button onClick={() => setShowBuildingDialog(true)} size="icon">
-                    <Plus className="h-4 w-4" />
+                  <Button onClick={() => setShowBuildingDialog(true)} size="sm" className="h-9 w-9 p-0">
+                    <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
 
               {/* Floor Selection */}
-              <div className="space-y-2">
-                <Label>Floor</Label>
-                <div className="flex gap-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-600">Floor</Label>
+                <div className="flex gap-1.5">
                   <Select
                     value={selectedFloor?.toString()}
                     onValueChange={(value) => setSelectedFloor(parseInt(value))}
                     disabled={!selectedBuilding}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select floor" />
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       {floors.map(floor => (
                         <SelectItem key={floor.id} value={floor.id.toString()}>
-                          {floor.name} (Floor {floor.floor_number})
+                          {floor.name} (F{floor.floor_number})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <Button 
                     onClick={() => setShowFloorDialog(true)} 
-                    size="icon"
+                    size="sm"
+                    className="h-9 w-9 p-0"
                     disabled={!selectedBuilding}
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
             </div>
 
             {selectedFloor && (
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <Badge variant="outline">
+              <div className="flex items-center gap-2 text-xs">
+                <Badge variant="outline" className="text-xs">
                   <MapPin className="h-3 w-3 mr-1" />
                   {filteredRooms.length} rooms
                 </Badge>
-                <Badge variant="outline" className="bg-green-50">
+                <Badge variant="outline" className="bg-green-50 text-xs">
                   <Activity className="h-3 w-3 mr-1" />
                   {Array.from(activeNodes).length} active
                 </Badge>
@@ -596,19 +597,19 @@ export function MapEditor() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Map Canvas */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="border-b">
-              <CardTitle className="flex items-center gap-2">
-                <Grid3x3 className="h-5 w-5" />
+          <Card className="lg:col-span-2 border-gray-200">
+            <CardHeader className="border-b pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Grid3x3 className="h-4 w-4" />
                 Map Canvas
-                <Badge variant="outline" className="ml-auto">
+                <Badge variant="outline" className="ml-auto text-xs">
                   {filteredRooms.length} rooms
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 relative">
+            <CardContent className="p-4 relative">
               {!selectedFloor ? (
                 <div className="flex flex-col items-center justify-center h-96 text-center">
                   <Layers className="h-16 w-16 text-muted-foreground opacity-30 mb-4" />
@@ -680,7 +681,7 @@ export function MapEditor() {
                     <svg
                       ref={svgRef}
                       width="100%"
-                      height="600"
+                      height="500"
                       viewBox={`0 0 ${maxX} ${maxY}`}
                       className="w-full"
                       onWheel={handleWheel}
@@ -829,22 +830,22 @@ export function MapEditor() {
           </Card>
 
           {/* Room Properties Panel */}
-          <Card>
-            <CardHeader className="border-b">
-              <CardTitle className="flex items-center gap-2">
-                <Edit2 className="h-5 w-5" />
+          <Card className="border-gray-200">
+            <CardHeader className="border-b pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <Edit2 className="h-4 w-4" />
                 Room Properties
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               {selectedRoom === null ? (
-                <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <Move className="h-12 w-12 text-muted-foreground opacity-30 mb-4" />
-                  <p className="text-muted-foreground">Select a room to edit</p>
-                  <p className="text-sm text-muted-foreground">Click on a room in the map</p>
+                <div className="flex flex-col items-center justify-center h-48 text-center">
+                  <Move className="h-10 w-10 text-muted-foreground opacity-30 mb-3" />
+                  <p className="text-sm text-muted-foreground">Select a room to edit</p>
+                  <p className="text-xs text-muted-foreground">Click on a room in the map</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[600px]">
+                <ScrollArea className="h-[500px]">
                   {(() => {
                     const room = filteredRooms.find(r => r.node === selectedRoom);
                     if (!room) return null;
@@ -852,9 +853,9 @@ export function MapEditor() {
                     const isActive = activeNodes.has(room.node);
 
                     return (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {/* Status Badge */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge variant={isActive ? 'default' : 'secondary'}>
                             {isActive ? 'Active' : 'Inactive'}
                           </Badge>
@@ -895,14 +896,15 @@ export function MapEditor() {
 
                         {/* Node ID */}
                         <div>
-                          <Label>Node ID</Label>
-                          <Input value={room.node} disabled />
+                          <Label className="text-xs text-gray-600">Node ID</Label>
+                          <Input value={room.node} disabled className="h-9" />
                         </div>
 
                         {/* Room Name */}
                         <div>
-                          <Label>Room Name</Label>
+                          <Label className="text-xs text-gray-600">Room Name</Label>
                           <Input
+                            className="h-9"
                             value={editingRoom?.node === room.node ? editingRoom.name : room.name}
                             onChange={(e) => {
                               if (editingRoom?.node === room.node) {
@@ -919,9 +921,10 @@ export function MapEditor() {
                         {/* Position */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <Label>X Position</Label>
+                            <Label className="text-xs text-gray-600">X Position</Label>
                             <Input
                               type="number"
+                              className="h-9"
                               value={editingRoom?.node === room.node ? editingRoom.x : room.x}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value) || 0;
@@ -935,9 +938,10 @@ export function MapEditor() {
                             />
                           </div>
                           <div>
-                            <Label>Y Position</Label>
+                            <Label className="text-xs text-gray-600">Y Position</Label>
                             <Input
                               type="number"
+                              className="h-9"
                               value={editingRoom?.node === room.node ? editingRoom.y : room.y}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value) || 0;
@@ -955,9 +959,10 @@ export function MapEditor() {
                         {/* Size */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <Label>Width</Label>
+                            <Label className="text-xs text-gray-600">Width</Label>
                             <Input
                               type="number"
+                              className="h-9"
                               value={editingRoom?.node === room.node ? editingRoom.width : room.width}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value) || 80;
@@ -972,9 +977,10 @@ export function MapEditor() {
                             />
                           </div>
                           <div>
-                            <Label>Height</Label>
+                            <Label className="text-xs text-gray-600">Height</Label>
                             <Input
                               type="number"
+                              className="h-9"
                               value={editingRoom?.node === room.node ? editingRoom.height : room.height}
                               onChange={(e) => {
                                 const value = parseInt(e.target.value) || 60;
@@ -993,7 +999,7 @@ export function MapEditor() {
                         {/* Building and Floor */}
                         <div className="space-y-2">
                           <div>
-                            <Label>Building</Label>
+                            <Label className="text-xs text-gray-600">Building</Label>
                             <Select
                               value={editingRoom?.node === room.node && editingRoom.building_id !== undefined 
                                 ? editingRoom.building_id?.toString() 
@@ -1008,8 +1014,8 @@ export function MapEditor() {
                                 }
                               }}
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select building" />
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Select" />
                               </SelectTrigger>
                               <SelectContent>
                                 {buildings.map(building => (
@@ -1022,7 +1028,7 @@ export function MapEditor() {
                           </div>
 
                           <div>
-                            <Label>Floor</Label>
+                            <Label className="text-xs text-gray-600">Floor</Label>
                             <Select
                               value={editingRoom?.node === room.node && editingRoom.floor_id !== undefined 
                                 ? editingRoom.floor_id?.toString() 
@@ -1037,13 +1043,13 @@ export function MapEditor() {
                                 }
                               }}
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select floor" />
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Select" />
                               </SelectTrigger>
                               <SelectContent>
                                 {floors.map(floor => (
                                   <SelectItem key={floor.id} value={floor.id.toString()}>
-                                    {floor.name} (Floor {floor.floor_number})
+                                    {floor.name} (F{floor.floor_number})
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1053,10 +1059,11 @@ export function MapEditor() {
 
                         {/* Fill Color */}
                         <div>
-                          <Label>Fill Color</Label>
+                          <Label className="text-xs text-gray-600">Fill Color</Label>
                           <div className="flex gap-2">
                             <Input
                               type="color"
+                              className="h-9 w-16"
                               value={editingRoom?.node === room.node ? editingRoom.color : room.color}
                               onChange={(e) => {
                                 if (editingRoom?.node === room.node) {
@@ -1066,9 +1073,9 @@ export function MapEditor() {
                                   setEditingRoom(prev => prev ? { ...prev, color: e.target.value } : null);
                                 }
                               }}
-                              className="w-20"
                             />
                             <Input
+                              className="h-9"
                               value={editingRoom?.node === room.node ? editingRoom.color : room.color}
                               onChange={(e) => {
                                 if (editingRoom?.node === room.node) {
@@ -1085,10 +1092,11 @@ export function MapEditor() {
 
                         {/* Border Color */}
                         <div>
-                          <Label>Border Color</Label>
+                          <Label className="text-xs text-gray-600">Border Color</Label>
                           <div className="flex gap-2">
                             <Input
                               type="color"
+                              className="h-9 w-16"
                               value={editingRoom?.node === room.node && editingRoom.border_color !== undefined
                                 ? editingRoom.border_color 
                                 : (room.border_color || '#9ca3af')}
@@ -1100,9 +1108,9 @@ export function MapEditor() {
                                   setEditingRoom(prev => prev ? { ...prev, border_color: e.target.value } : null);
                                 }
                               }}
-                              className="w-20"
                             />
                             <Input
+                              className="h-9"
                               value={editingRoom?.node === room.node && editingRoom.border_color !== undefined
                                 ? editingRoom.border_color 
                                 : (room.border_color || '#9ca3af')}
@@ -1120,32 +1128,33 @@ export function MapEditor() {
                         </div>
 
                         {/* Actions */}
-                        <div className="space-y-2 pt-4 border-t">
-                          {editingRoom?.node === room.node ? (
-                            <div className="flex gap-2">
-                              <Button 
-                                onClick={handleSaveEdit} 
-                                className="flex-1 bg-green-600 hover:bg-green-700"
-                                disabled={saving}
-                              >
-                                <Save className="h-4 w-4 mr-2" />
-                                {saving ? 'Saving...' : 'Save Changes'}
-                              </Button>
-                              <Button 
-                                onClick={handleCancelEdit}
-                                variant="outline"
-                                disabled={saving}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                              <p className="text-sm text-blue-800">
-                                💡 Edit any field above and click <strong>Save Changes</strong>
-                              </p>
-                            </div>
+                        <div className="space-y-1.5 pt-3 border-t">
+                          <Button 
+                            onClick={() => {
+                              if (editingRoom?.node === room.node) {
+                                handleSaveEdit();
+                              } else {
+                                handleEditRoom(room);
+                              }
+                            }}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            disabled={saving}
+                          >
+                            <Save className="h-4 w-4 mr-2" />
+                            {saving ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                          
+                          {editingRoom?.node === room.node && (
+                            <Button 
+                              onClick={handleCancelEdit}
+                              variant="outline"
+                              className="w-full"
+                              disabled={saving}
+                            >
+                              Cancel Edit
+                            </Button>
                           )}
+                          
                           <Button
                             onClick={() => handleDeleteRoom(room.node)}
                             variant="destructive"
