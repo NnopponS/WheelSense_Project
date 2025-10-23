@@ -25,7 +25,10 @@ import {
   RefreshCw,
   MapPin,
   Layers,
-  Activity
+  Activity,
+  ZoomIn,
+  ZoomOut,
+  Minimize2
 } from 'lucide-react';
 import { 
   getRooms, 
@@ -100,6 +103,7 @@ interface RoomEditState {
   width: number;
   height: number;
   color: string;
+  border_color?: string;
   floor_id?: number;
   building_id?: number;
 }
@@ -121,7 +125,15 @@ export function MapEditor() {
   const [newBuildingName, setNewBuildingName] = useState('');
   const [newFloorName, setNewFloorName] = useState('');
   const [newFloorNumber, setNewFloorNumber] = useState(1);
+  const [zoom, setZoom] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [editingBuilding, setEditingBuilding] = useState(null as Building | null);
+  const [editingFloor, setEditingFloor] = useState(null as Floor | null);
   const svgRef = useRef(null as SVGSVGElement | null);
+  const containerRef = useRef(null as HTMLDivElement | null);
 
   const { data: sensorData } = useSensorData();
 
@@ -349,6 +361,7 @@ export function MapEditor() {
       width: room.width,
       height: room.height,
       color: room.color,
+      border_color: room.border_color,
       floor_id: room.floor_id,
       building_id: room.building_id,
     });
@@ -368,13 +381,21 @@ export function MapEditor() {
       ));
       
       setEditingRoom(null);
-      toast.success('Room updated successfully');
+      toast.success('Room saved successfully! Changes will appear in Dashboard.');
+      
+      // Reload data to ensure sync
+      await loadMapData();
     } catch (error) {
       console.error('Failed to update room:', error);
-      toast.error('Failed to update room');
+      toast.error('Failed to save room changes');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRoom(null);
+    setSelectedRoom(null);
   };
 
   const handleDeleteRoom = async (node: number) => {
@@ -388,6 +409,48 @@ export function MapEditor() {
       console.error('Failed to delete room:', error);
       toast.error('Failed to delete room');
     }
+  };
+
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.2, 3)); // Max zoom 3x
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.2, 0.5)); // Min zoom 0.5x
+  };
+
+  const handleResetZoom = () => {
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+  };
+
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      handleZoomIn();
+    } else {
+      handleZoomOut();
+    }
+  };
+
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only start panning if clicking on the container (not on SVG elements)
+    if (e.target === containerRef.current || (e.target as HTMLElement).tagName === 'svg') {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - panX, y: e.clientY - panY });
+    }
+  };
+
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isPanning) {
+      setPanX(e.clientX - panStart.x);
+      setPanY(e.clientY - panStart.y);
+    }
+  };
+
+  const handleCanvasMouseUp = () => {
+    setIsPanning(false);
   };
 
   // Get active and moving nodes
@@ -545,7 +608,7 @@ export function MapEditor() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-6 relative">
               {!selectedFloor ? (
                 <div className="flex flex-col items-center justify-center h-96 text-center">
                   <Layers className="h-16 w-16 text-muted-foreground opacity-30 mb-4" />
@@ -561,17 +624,72 @@ export function MapEditor() {
                   </p>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-white">
-                  <svg
-                    ref={svgRef}
-                    width="100%"
-                    height="600"
-                    viewBox={`0 0 ${maxX} ${maxY}`}
-                    className="w-full cursor-move"
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
+                <>
+                  {/* Zoom Controls */}
+                  <div className="absolute top-2 right-2 z-10 flex flex-col gap-2 bg-white rounded-lg shadow-lg p-2 border border-gray-200">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleZoomIn}
+                      title="Zoom In"
+                      className="h-8 w-8 p-0"
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleResetZoom}
+                      title="Reset Zoom"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Minimize2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleZoomOut}
+                      title="Zoom Out"
+                      className="h-8 w-8 p-0"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <div className="text-xs text-center text-gray-600 mt-1 px-1">
+                      {(zoom * 100).toFixed(0)}%
+                    </div>
+                  </div>
+
+                  <div 
+                    ref={containerRef}
+                    className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-white"
+                    onMouseDown={handleCanvasMouseDown}
+                    onMouseMove={(e) => {
+                      handleCanvasMouseMove(e);
+                      handleMouseMove(e);
+                    }}
+                    onMouseUp={() => {
+                      handleCanvasMouseUp();
+                      handleMouseUp();
+                    }}
+                    onMouseLeave={() => {
+                      handleCanvasMouseUp();
+                      handleMouseUp();
+                    }}
+                    style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
                   >
+                    <svg
+                      ref={svgRef}
+                      width="100%"
+                      height="600"
+                      viewBox={`0 0 ${maxX} ${maxY}`}
+                      className="w-full"
+                      onWheel={handleWheel}
+                      style={{
+                        transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+                        transformOrigin: 'center center',
+                        transition: isPanning ? 'none' : 'transform 0.1s ease-out'
+                      }}
+                    >
                     {/* Grid */}
                     <defs>
                       <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
@@ -600,7 +718,7 @@ export function MapEditor() {
                             width={room.width}
                             height={room.height}
                             fill={isActive ? room.color : '#e5e7eb'}
-                            stroke={isSelected ? '#ef4444' : hasMotion ? '#10b981' : '#9ca3af'}
+                            stroke={isSelected ? '#ef4444' : hasMotion ? '#10b981' : (room.border_color || '#9ca3af')}
                             strokeWidth={isSelected ? '4' : hasMotion ? '3' : '2'}
                             rx="4"
                             opacity={isActive ? 0.9 : 0.5}
@@ -704,7 +822,8 @@ export function MapEditor() {
                       );
                     })}
                   </svg>
-                </div>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -871,9 +990,70 @@ export function MapEditor() {
                           </div>
                         </div>
 
-                        {/* Color */}
+                        {/* Building and Floor */}
+                        <div className="space-y-2">
+                          <div>
+                            <Label>Building</Label>
+                            <Select
+                              value={editingRoom?.node === room.node && editingRoom.building_id !== undefined 
+                                ? editingRoom.building_id?.toString() 
+                                : (room.building_id?.toString() || '')}
+                              onValueChange={(value) => {
+                                const buildingId = parseInt(value);
+                                if (editingRoom?.node === room.node) {
+                                  setEditingRoom({ ...editingRoom, building_id: buildingId });
+                                } else {
+                                  handleEditRoom(room);
+                                  setEditingRoom(prev => prev ? { ...prev, building_id: buildingId } : null);
+                                }
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select building" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {buildings.map(building => (
+                                  <SelectItem key={building.id} value={building.id.toString()}>
+                                    {building.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label>Floor</Label>
+                            <Select
+                              value={editingRoom?.node === room.node && editingRoom.floor_id !== undefined 
+                                ? editingRoom.floor_id?.toString() 
+                                : (room.floor_id?.toString() || '')}
+                              onValueChange={(value) => {
+                                const floorId = parseInt(value);
+                                if (editingRoom?.node === room.node) {
+                                  setEditingRoom({ ...editingRoom, floor_id: floorId });
+                                } else {
+                                  handleEditRoom(room);
+                                  setEditingRoom(prev => prev ? { ...prev, floor_id: floorId } : null);
+                                }
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select floor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {floors.map(floor => (
+                                  <SelectItem key={floor.id} value={floor.id.toString()}>
+                                    {floor.name} (Floor {floor.floor_number})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Fill Color */}
                         <div>
-                          <Label>Color</Label>
+                          <Label>Fill Color</Label>
                           <div className="flex gap-2">
                             <Input
                               type="color"
@@ -903,17 +1083,68 @@ export function MapEditor() {
                           </div>
                         </div>
 
+                        {/* Border Color */}
+                        <div>
+                          <Label>Border Color</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="color"
+                              value={editingRoom?.node === room.node && editingRoom.border_color !== undefined
+                                ? editingRoom.border_color 
+                                : (room.border_color || '#9ca3af')}
+                              onChange={(e) => {
+                                if (editingRoom?.node === room.node) {
+                                  setEditingRoom({ ...editingRoom, border_color: e.target.value });
+                                } else {
+                                  handleEditRoom(room);
+                                  setEditingRoom(prev => prev ? { ...prev, border_color: e.target.value } : null);
+                                }
+                              }}
+                              className="w-20"
+                            />
+                            <Input
+                              value={editingRoom?.node === room.node && editingRoom.border_color !== undefined
+                                ? editingRoom.border_color 
+                                : (room.border_color || '#9ca3af')}
+                              onChange={(e) => {
+                                if (editingRoom?.node === room.node) {
+                                  setEditingRoom({ ...editingRoom, border_color: e.target.value });
+                                } else {
+                                  handleEditRoom(room);
+                                  setEditingRoom(prev => prev ? { ...prev, border_color: e.target.value } : null);
+                                }
+                              }}
+                              placeholder="#9ca3af"
+                            />
+                          </div>
+                        </div>
+
                         {/* Actions */}
                         <div className="space-y-2 pt-4 border-t">
-                          {editingRoom?.node === room.node && (
-                            <Button 
-                              onClick={handleSaveEdit} 
-                              className="w-full"
-                              disabled={saving}
-                            >
-                              <Save className="h-4 w-4 mr-2" />
-                              {saving ? 'Saving...' : 'Save Changes'}
-                            </Button>
+                          {editingRoom?.node === room.node ? (
+                            <div className="flex gap-2">
+                              <Button 
+                                onClick={handleSaveEdit} 
+                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                disabled={saving}
+                              >
+                                <Save className="h-4 w-4 mr-2" />
+                                {saving ? 'Saving...' : 'Save Changes'}
+                              </Button>
+                              <Button 
+                                onClick={handleCancelEdit}
+                                variant="outline"
+                                disabled={saving}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                              <p className="text-sm text-blue-800">
+                                💡 Edit any field above and click <strong>Save Changes</strong>
+                              </p>
+                            </div>
                           )}
                           <Button
                             onClick={() => handleDeleteRoom(room.node)}

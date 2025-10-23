@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { MonitoringDashboard } from './components/monitoring-dashboard';
+import { MonitoringDashboardCompact } from './components/monitoring-dashboard-compact';
 import { AIAssistantChat } from './components/ai-assistant-chat';
 import { TimelineScreen } from './components/timeline-screen';
 import { DeviceSetupScreen } from './components/device-setup-screen';
@@ -91,7 +91,7 @@ export default function App() {
         <Navigation />
         <div className="flex-1 overflow-auto">
           <Routes>
-            <Route path="/" element={<MonitoringDashboard />} />
+            <Route path="/" element={<MonitoringDashboardCompact />} />
             <Route path="/map" element={<MapEditor />} />
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/network" element={<NetworkTopology />} />

@@ -436,6 +436,7 @@ export interface Room {
   width: number;
   height: number;
   color: string;
+  border_color?: string;
   floor_id?: number;
   building_id?: number;
   created_at?: string;
@@ -453,6 +454,7 @@ export async function getRooms(): Promise<Room[]> {
     width: item.width || 120,
     height: item.height || 80,
     color: item.color || '#0056B3',
+    border_color: item.border_color || '#9ca3af',
     floor_id: item.floor_id,
     building_id: item.building_id,
     created_at: item.created_at,

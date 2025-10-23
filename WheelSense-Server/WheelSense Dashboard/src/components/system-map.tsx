@@ -228,7 +228,7 @@ export function SystemMap({
                     width={room.width}
                     height={room.height}
                     fill={isActive ? room.color : '#e5e7eb'}
-                    stroke={hasMotion ? '#10b981' : '#9ca3af'}
+                    stroke={hasMotion ? '#10b981' : (room.border_color || '#9ca3af')}
                     strokeWidth={hasMotion ? '3' : '2'}
                     rx="4"
                     opacity={isActive ? 0.9 : 0.5}
