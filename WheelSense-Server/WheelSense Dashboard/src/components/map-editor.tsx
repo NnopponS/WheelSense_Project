@@ -837,15 +837,16 @@ export function MapEditor() {
                 Room Properties
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-0 relative">
               {selectedRoom === null ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center">
+                <div className="flex flex-col items-center justify-center h-48 text-center p-4">
                   <Move className="h-10 w-10 text-muted-foreground opacity-30 mb-3" />
                   <p className="text-sm text-muted-foreground">Select a room to edit</p>
                   <p className="text-xs text-muted-foreground">Click on a room in the map</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[500px]">
+                <>
+                  <ScrollArea className="h-[500px] p-4 pb-20">
                   {(() => {
                     const room = filteredRooms.find(r => r.node === selectedRoom);
                     if (!room) return null;
@@ -1127,8 +1128,19 @@ export function MapEditor() {
                           </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="space-y-1.5 pt-3 border-t">
+                      </div>
+                    );
+                  })()}
+                  </ScrollArea>
+
+                  {/* Fixed Save Button at Bottom */}
+                  {(() => {
+                    const room = filteredRooms.find(r => r.node === selectedRoom);
+                    if (!room) return null;
+
+                    return (
+                      <div className="absolute bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-3 shadow-lg">
+                        <div className="space-y-2">
                           <Button 
                             onClick={() => {
                               if (editingRoom?.node === room.node) {
@@ -1137,37 +1149,39 @@ export function MapEditor() {
                                 handleEditRoom(room);
                               }
                             }}
-                            className="w-full bg-green-600 hover:bg-green-700"
+                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-11 text-base shadow-md"
                             disabled={saving}
                           >
-                            <Save className="h-4 w-4 mr-2" />
-                            {saving ? 'Saving...' : 'Save Changes'}
+                            <Save className="h-5 w-5 mr-2" />
+                            {saving ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
                           </Button>
                           
-                          {editingRoom?.node === room.node && (
-                            <Button 
-                              onClick={handleCancelEdit}
-                              variant="outline"
-                              className="w-full"
-                              disabled={saving}
+                          <div className="flex gap-2">
+                            {editingRoom?.node === room.node && (
+                              <Button 
+                                onClick={handleCancelEdit}
+                                variant="outline"
+                                className="flex-1 h-9"
+                                disabled={saving}
+                              >
+                                ยกเลิก
+                              </Button>
+                            )}
+                            
+                            <Button
+                              onClick={() => handleDeleteRoom(room.node)}
+                              variant="destructive"
+                              className="flex-1 h-9"
                             >
-                              Cancel Edit
+                              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                              ลบห้อง
                             </Button>
-                          )}
-                          
-                          <Button
-                            onClick={() => handleDeleteRoom(room.node)}
-                            variant="destructive"
-                            className="w-full"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Room
-                          </Button>
+                          </div>
                         </div>
                       </div>
                     );
                   })()}
-                </ScrollArea>
+                </>
               )}
             </CardContent>
           </Card>
