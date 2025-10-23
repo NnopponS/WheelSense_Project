@@ -1,403 +1,791 @@
+/**
+ * WheelSense REST API
+ * Provides HTTP endpoints for dashboard and external applications
+ * 
+ * Features:
+ * - Real-time sensor data access
+ * - SSE (Server-Sent Events) for live updates
+ * - Device management (labels, layout)
+ * - Historical data queries
+ * - System statistics
+ */
+
 const express = require("express");
 const { Pool } = require("pg");
 
-const PORT = Number(process.env.PORT) || 3000;
-const SQL_URL =
-  process.env.POSTGRES_URL ||
-  process.env.DATABASE_URL ||
-  "postgresql://wheeluser:wheelpass@postgres:5432/iot_log";
+// ============================================
+// Configuration
+// ============================================
+const PORT = parseInt(process.env.PORT || "3000", 10);
+const POSTGRES_URL = process.env.POSTGRES_URL ||
+                     process.env.DATABASE_URL ||
+                     "postgresql://wheeluser:wheelpass@postgres:5432/iot_log";
 
-// Table Names
-const SQL_TABLE = process.env.SQL_TABLE || "sensor_data";
-const LABELS_TABLE = process.env.LABELS_TABLE || "device_labels";
-const MAP_LAYOUT_TABLE = process.env.MAP_LAYOUT_TABLE || "map_layout";
+const NOTIFY_CHANNEL = "sensor_update";
+const SSE_KEEPALIVE_MS = parseInt(process.env.SSE_KEEPALIVE_MS || "15000", 10);
+const STALE_THRESHOLD_SEC = parseInt(process.env.STALE_THRESHOLD_SEC || "30", 10);
 
-// SSE & Notification Settings
-const NOTIFY_CHANNEL = process.env.PG_NOTIFY_CHANNEL || "sensor_update";
-const SSE_KEEPALIVE_MS = Number(process.env.SSE_KEEPALIVE_MS || 30000);
-const SSE_RETRY_MS = Number(process.env.SSE_RETRY_MS || 5000);
+// ============================================
+// Database Setup
+// ============================================
+const pool = new Pool({ 
+  connectionString: POSTGRES_URL,
+  max: 30,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
-const app = express();
-const pool = new Pool({ connectionString: SQL_URL });
 let isReady = false;
-const sseClients = new Set();
 let listenerClient = null;
-let listenerReconnectTimer = null;
+const sseClients = new Set();
 
-app.use(express.json());
+// ============================================
+// Express App Setup
+// ============================================
+const app = express();
+app.use(express.json({ limit: '10mb' }));
 
-// Enable CORS for dashboard
+// CORS middleware
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
   if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
+    return res.sendStatus(200);
   }
+  next();
 });
 
-// --- UTILITY FUNCTIONS ---
-function parseJson(rawValue, fallback) {
-  if (rawValue === null || rawValue === undefined) return fallback;
-  if (typeof rawValue === "object") return rawValue;
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[API] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+  });
+  next();
+});
+
+// ============================================
+// Utility Functions
+// ============================================
+
+function parseJson(value, fallback = null) {
+  if (!value) return fallback;
+  if (typeof value === 'object') return value;
   try {
-    return JSON.parse(rawValue);
-  } catch (_error) {
+    return JSON.parse(value);
+  } catch {
     return fallback;
   }
 }
 
-function assertSafeIdentifier(identifier) {
-  if (!/^[A-Za-z0-9_]+$/.test(identifier)) {
-    throw new Error(`Unsafe SQL identifier: ${identifier}`);
-  }
-}
-
 function normalizeLabel(value) {
-  if (typeof value !== "string") return null;
+  if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
 }
 
-[SQL_TABLE, LABELS_TABLE, MAP_LAYOUT_TABLE, NOTIFY_CHANNEL].forEach(assertSafeIdentifier);
+// ============================================
+// API Routes
+// ============================================
 
-// --- API ROUTER ---
-const apiRouter = express.Router();
-app.use("/api", apiRouter);
+const api = express.Router();
+app.use('/api', api);
 
-apiRouter.get("/sensor-data", async (req, res) => {
-  if (!isReady) return res.status(503).json({ error: "Database not ready" });
+// --------------------------------------------
+// Health Check
+// --------------------------------------------
+app.get('/health', (req, res) => {
+  if (!isReady) {
+    return res.status(503).json({ 
+      status: 'initializing',
+      message: 'Database connection not ready'
+    });
+  }
+  
+  res.json({ 
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    sse_clients: sseClients.size,
+  });
+});
 
-  const params = [];
-  const conditions = [];
-  const responseFilter = {};
-
-  // Filtering logic (node, wheel, limit) remains the same
-  // ...
-
-  const rankedQuery = `WITH ranked AS (
-    SELECT s.*, ROW_NUMBER() OVER (
-      PARTITION BY s.node_id, s.wheel_id
-      ORDER BY COALESCE(s.ts, s.received_at) DESC, s.received_at DESC
-    ) AS rk
-    FROM ${SQL_TABLE} s
-  )
-  SELECT r.*, l.node_label, l.wheel_label
-  FROM ranked r
-  LEFT JOIN ${LABELS_TABLE} l ON l.node_id = r.node_id AND l.wheel_id = r.wheel_id
-  WHERE r.rk = 1
-  ORDER BY r.node_id, r.wheel_id`;
-
+// --------------------------------------------
+// GET /api/sensor-data
+// Get current sensor data for all devices
+// --------------------------------------------
+api.get('/sensor-data', async (req, res) => {
+  if (!isReady) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  
   try {
-    const result = await pool.query(rankedQuery, params);
-    const data = result.rows.map((row) => ({
+    const query = `
+      SELECT 
+        s.*,
+        COALESCE(l.node_label, 'Node ' || s.node) as node_label,
+        COALESCE(l.wheel_label, 'Wheel ' || s.wheel) as wheel_label,
+        m.x_pos,
+        m.y_pos,
+        m.node_name as map_node_name,
+        EXTRACT(EPOCH FROM (NOW() - s.ts)) as age_seconds
+      FROM sensor_data s
+      LEFT JOIN device_labels l ON l.node = s.node AND l.wheel = s.wheel
+      LEFT JOIN map_layout m ON m.node = s.node
+      ORDER BY s.node, s.wheel`;
+    
+    const result = await pool.query(query);
+    
+    const data = result.rows.map(row => ({
       id: row.id,
-      node_id: row.node_id,
-      node_label: normalizeLabel(row.node_label) || `Room ${row.node_id}`,
-      wheel_id: row.wheel_id,
-      wheel_label: normalizeLabel(row.wheel_label) || `Wheel ${row.wheel_id}`,
+      node: row.node,
+      wheel: row.wheel,
+      node_label: row.node_label,
+      wheel_label: row.wheel_label,
       distance: row.distance,
       status: row.status,
       motion: row.motion,
       direction: row.direction,
       rssi: row.rssi,
       stale: row.stale,
-      ts: row.ts instanceof Date ? row.ts.toISOString() : row.ts,
+      ts: row.ts,
+      received_at: row.received_at,
       route_recovered: row.route_recovered,
       route_latency_ms: row.route_latency_ms,
       route_recovery_ms: row.route_recovery_ms,
       route_path: parseJson(row.route_path, []),
-      received_at: row.received_at instanceof Date ? row.received_at.toISOString() : row.received_at,
-      raw: parseJson(row.raw, {}),
+      x_pos: row.x_pos,
+      y_pos: row.y_pos,
+      map_node_name: row.map_node_name,
+      age_seconds: parseFloat(row.age_seconds || 0),
     }));
-    return res.json({ count: data.length, data });
+    
+    res.json({
+      count: data.length,
+      data,
+      timestamp: new Date().toISOString(),
+    });
+    
   } catch (error) {
-    console.error("Failed to query sensor data", error);
-    return res.status(500).json({ error: "Failed to fetch sensor data" });
+    console.error('[API] Error fetching sensor data:', error);
+    res.status(500).json({ error: 'Failed to fetch sensor data' });
   }
 });
 
-apiRouter.get("/sensor-data/history/:node_id/:wheel_id", async (req, res) => {
-  if (!isReady) return res.status(503).json({ error: "Database not ready" });
-
-  const nodeParam = Number(req.params.node_id);
-  const wheelParam = Number(req.params.wheel_id);
-  if (!Number.isInteger(nodeParam) || !Number.isInteger(wheelParam)) {
-    return res.status(400).json({ error: "node_id/wheel_id must be integers" });
+// --------------------------------------------
+// GET /api/sensor-data/:node/:wheel
+// Get current data for specific device
+// --------------------------------------------
+api.get('/sensor-data/:node/:wheel', async (req, res) => {
+  if (!isReady) {
+    return res.status(503).json({ error: 'Database not ready' });
   }
-
-  let limit = Number(req.query.limit) || 100; // Default to 100 entries, max 1000
-  if (limit > 1000) limit = 1000;
-
-  const query = `
-    SELECT ts, rssi, distance
-    FROM ${SQL_TABLE}
-    WHERE node_id = $1 AND wheel_id = $2
-    ORDER BY ts DESC
-    LIMIT $3
-  `;
-
+  
+  const node = parseInt(req.params.node, 10);
+  const wheel = parseInt(req.params.wheel, 10);
+  
+  if (!Number.isInteger(node) || !Number.isInteger(wheel)) {
+    return res.status(400).json({ error: 'node and wheel must be integers' });
+  }
+  
   try {
-    const result = await pool.query(query, [nodeParam, wheelParam, limit]);
-    // reverse the data to have time ascending for the chart
-    const data = result.rows.reverse();
-    return res.json({ data });
+    const query = `
+      SELECT 
+        s.*,
+        COALESCE(l.node_label, 'Node ' || s.node) as node_label,
+        COALESCE(l.wheel_label, 'Wheel ' || s.wheel) as wheel_label,
+        m.x_pos,
+        m.y_pos,
+        m.node_name as map_node_name
+      FROM sensor_data s
+      LEFT JOIN device_labels l ON l.node = s.node AND l.wheel = s.wheel
+      LEFT JOIN map_layout m ON m.node = s.node
+      WHERE s.node = $1 AND s.wheel = $2`;
+    
+    const result = await pool.query(query, [node, wheel]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+    
+    const row = result.rows[0];
+    const data = {
+      id: row.id,
+      node: row.node,
+      wheel: row.wheel,
+      node_label: row.node_label,
+      wheel_label: row.wheel_label,
+      distance: row.distance,
+      status: row.status,
+      motion: row.motion,
+      direction: row.direction,
+      rssi: row.rssi,
+      stale: row.stale,
+      ts: row.ts,
+      received_at: row.received_at,
+      route_recovered: row.route_recovered,
+      route_latency_ms: row.route_latency_ms,
+      route_recovery_ms: row.route_recovery_ms,
+      route_path: parseJson(row.route_path, []),
+      raw: parseJson(row.raw, {}),
+      x_pos: row.x_pos,
+      y_pos: row.y_pos,
+      map_node_name: row.map_node_name,
+    };
+    
+    res.json({ data });
+    
   } catch (error) {
-    console.error("Failed to query sensor history", error);
-    return res.status(500).json({ error: "Failed to fetch sensor history" });
+    console.error('[API] Error fetching device data:', error);
+    res.status(500).json({ error: 'Failed to fetch device data' });
   }
 });
 
-apiRouter.put("/labels/:node/:wheel", async (req, res) => {
-  if (!isReady) return res.status(503).json({ error: "Database not ready" });
-
-  const nodeParam = Number(req.params.node);
-  const wheelParam = Number(req.params.wheel);
-  if (!Number.isInteger(nodeParam) || !Number.isInteger(wheelParam)) {
-    return res.status(400).json({ error: "node/wheel must be integers" });
+// --------------------------------------------
+// GET /api/sensor-data/:node/:wheel/history
+// Get historical data for specific device
+// --------------------------------------------
+api.get('/sensor-data/:node/:wheel/history', async (req, res) => {
+  if (!isReady) {
+    return res.status(503).json({ error: 'Database not ready' });
   }
+  
+  const node = parseInt(req.params.node, 10);
+  const wheel = parseInt(req.params.wheel, 10);
+  const limit = Math.min(parseInt(req.query.limit || "100", 10), 1000);
+  
+  if (!Number.isInteger(node) || !Number.isInteger(wheel)) {
+    return res.status(400).json({ error: 'node and wheel must be integers' });
+  }
+  
+  try {
+    const query = `
+      SELECT ts, distance, rssi, motion, direction
+      FROM sensor_history
+      WHERE node = $1 AND wheel = $2
+      ORDER BY ts DESC
+      LIMIT $3`;
+    
+    const result = await pool.query(query, [node, wheel, limit]);
+    
+    // Reverse to get chronological order
+    const data = result.rows.reverse();
+    
+    res.json({
+      node,
+      wheel,
+      count: data.length,
+      data,
+    });
+    
+  } catch (error) {
+    console.error('[API] Error fetching history:', error);
+    res.status(500).json({ error: 'Failed to fetch history' });
+  }
+});
 
+// --------------------------------------------
+// GET /api/stats
+// Get system statistics
+// --------------------------------------------
+api.get('/stats', async (req, res) => {
+  if (!isReady) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  
+  try {
+    const statsQuery = `
+      SELECT
+        COUNT(DISTINCT node) as total_nodes,
+        COUNT(*) as total_devices,
+        COUNT(*) FILTER (WHERE stale = FALSE) as online_devices,
+        COUNT(*) FILTER (WHERE motion = 1 AND stale = FALSE) as moving_devices,
+        COUNT(*) FILTER (WHERE rssi < -75 AND stale = FALSE) as weak_signal_devices,
+        AVG(rssi) FILTER (WHERE stale = FALSE) as avg_rssi,
+        MIN(rssi) FILTER (WHERE stale = FALSE) as min_rssi,
+        MAX(rssi) FILTER (WHERE stale = FALSE) as max_rssi
+      FROM sensor_data`;
+    
+    const result = await pool.query(statsQuery);
+    const stats = result.rows[0];
+    
+    res.json({
+      nodes: {
+        total: parseInt(stats.total_nodes || 0),
+      },
+      devices: {
+        total: parseInt(stats.total_devices || 0),
+        online: parseInt(stats.online_devices || 0),
+        offline: parseInt(stats.total_devices || 0) - parseInt(stats.online_devices || 0),
+        moving: parseInt(stats.moving_devices || 0),
+      },
+      signal: {
+        average_rssi: parseFloat(stats.avg_rssi || 0).toFixed(1),
+        min_rssi: parseInt(stats.min_rssi || 0),
+        max_rssi: parseInt(stats.max_rssi || 0),
+        weak_signals: parseInt(stats.weak_signal_devices || 0),
+      },
+      timestamp: new Date().toISOString(),
+    });
+    
+  } catch (error) {
+    console.error('[API] Error fetching stats:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// --------------------------------------------
+// PUT /api/labels/:node/:wheel
+// Update device labels
+// --------------------------------------------
+api.put('/labels/:node/:wheel', async (req, res) => {
+  if (!isReady) {
+    return res.status(503).json({ error: 'Database not ready' });
+  }
+  
+  const node = parseInt(req.params.node, 10);
+  const wheel = parseInt(req.params.wheel, 10);
+  
+  if (!Number.isInteger(node) || !Number.isInteger(wheel)) {
+    return res.status(400).json({ error: 'node and wheel must be integers' });
+  }
+  
   const nodeLabel = normalizeLabel(req.body.node_label);
   const wheelLabel = normalizeLabel(req.body.wheel_label);
-
+  
   try {
-    await pool.query(
-      `INSERT INTO ${LABELS_TABLE} (node_id, wheel_id, node_label, wheel_label, updated_at)
-       VALUES ($1, $2, $3, $4, NOW())
-       ON CONFLICT (node_id, wheel_id) DO UPDATE SET
-         node_label = EXCLUDED.node_label,
-         wheel_label = EXCLUDED.wheel_label,
-         updated_at = NOW()`,
-      [nodeParam, wheelParam, nodeLabel, wheelLabel]
-    );
-    broadcastUpdate(JSON.stringify({ reason: "labels", node_id: nodeParam, wheel_id: wheelParam }));
-    return res.json({ node_id: nodeParam, wheel_id: wheelParam, node_label: nodeLabel, wheel_label: wheelLabel });
-  } catch (error) {
-    console.error("Failed to upsert device labels", error);
-    return res.status(500).json({ error: "Failed to update labels" });
-  }
-});
-
-apiRouter.get("/map-layout", async (_req, res) => {
-  if (!isReady) return res.status(503).json({ error: "Database not ready" });
-  try {
-    const result = await pool.query(`SELECT room_id, room_name, x_pos, y_pos FROM ${MAP_LAYOUT_TABLE}`);
-    return res.json({ data: result.rows });
-  } catch (error) {
-    console.error("Failed to fetch map layout", error);
-    return res.status(500).json({ error: "Failed to fetch map layout" });
-  }
-});
-
-apiRouter.post("/map-layout", async (req, res) => {
-  if (!isReady) return res.status(503).json({ error: "Database not ready" });
-  const layout = req.body.layout;
-  if (!Array.isArray(layout)) {
-    return res.status(400).json({ error: "layout must be an array" });
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
     const query = `
-      INSERT INTO ${MAP_LAYOUT_TABLE} (room_id, room_name, x_pos, y_pos, updated_at)
+      INSERT INTO device_labels (node, wheel, node_label, wheel_label, updated_at)
       VALUES ($1, $2, $3, $4, NOW())
-      ON CONFLICT (room_id) DO UPDATE SET
-        room_name = EXCLUDED.room_name,
-        x_pos = EXCLUDED.x_pos,
-        y_pos = EXCLUDED.y_pos,
-        updated_at = NOW()`;
-
-    for (const room of layout) {
-      const id = Number(room.roomId);
-      const x = Number(room.x);
-      const y = Number(room.y);
-      const name = normalizeLabel(room.roomName);
-      if (!Number.isInteger(id) || !Number.isInteger(x) || !Number.isInteger(y)) {
-        throw new Error("Invalid room data in layout array");
-      }
-      await client.query(query, [id, name, x, y]);
-    }
-
-    await client.query("COMMIT");
-    broadcastUpdate(JSON.stringify({ reason: "layout" }));
-    res.status(200).json({ message: "Layout saved successfully" });
+      ON CONFLICT (node, wheel) DO UPDATE SET
+        node_label = COALESCE(EXCLUDED.node_label, device_labels.node_label),
+        wheel_label = COALESCE(EXCLUDED.wheel_label, device_labels.wheel_label),
+        updated_at = NOW()
+      RETURNING *`;
+    
+    const result = await pool.query(query, [node, wheel, nodeLabel, wheelLabel]);
+    
+    // Notify SSE clients
+    broadcastSSE({
+      type: 'labels_updated',
+      node,
+      wheel,
+      node_label: nodeLabel,
+      wheel_label: wheelLabel,
+    });
+    
+    res.json({
+      success: true,
+      data: result.rows[0],
+    });
+    
   } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Failed to save map layout", error);
-    res.status(500).json({ error: "Failed to save map layout" });
-  } finally {
-    client.release();
+    console.error('[API] Error updating labels:', error);
+    res.status(500).json({ error: 'Failed to update labels' });
   }
 });
 
-// --- ADMIN MAINTENANCE ENDPOINTS ---
-// Delete rows by date or date range; scope can be: sensor, labels, layout, all
-apiRouter.delete("/admin/clear", async (req, res) => {
-  if (!isReady) return res.status(503).json({ error: "Database not ready" });
-
-  const { date, start, end, scope } = req.query;
-
-  // Validate date inputs
-  function validDateString(s) {
-    return typeof s === "string" && !Number.isNaN(Date.parse(s));
+// --------------------------------------------
+// GET /api/map-layout
+// Get map layout configuration
+// --------------------------------------------
+api.get('/map-layout', async (req, res) => {
+  if (!isReady) {
+    return res.status(503).json({ error: 'Database not ready' });
   }
-
-  const hasSingleDate = validDateString(date);
-  const hasRange = validDateString(start) && validDateString(end);
-
-  if (!hasSingleDate && !hasRange) {
-    return res.status(400).json({ error: "Provide ?date=YYYY-MM-DD or ?start=YYYY-MM-DD&end=YYYY-MM-DD" });
+  
+  try {
+    const query = 'SELECT * FROM map_layout ORDER BY node';
+    const result = await pool.query(query);
+    
+    res.json({
+      count: result.rows.length,
+      data: result.rows,
+    });
+    
+  } catch (error) {
+    console.error('[API] Error fetching map layout:', error);
+    res.status(500).json({ error: 'Failed to fetch map layout' });
   }
+});
 
-  const effectiveScope = (scope || "all").toString().toLowerCase();
-  const allowedScopes = new Set(["sensor", "labels", "layout", "all"]);
-  if (!allowedScopes.has(effectiveScope)) {
-    return res.status(400).json({ error: "Invalid scope. Use sensor|labels|layout|all" });
+// --------------------------------------------
+// POST /api/map-layout
+// Update map layout configuration
+// --------------------------------------------
+api.post('/map-layout', async (req, res) => {
+  if (!isReady) {
+    return res.status(503).json({ error: 'Database not ready' });
   }
-
-  // Build delete statements
-  const statements = [];
-  const whereClause = hasSingleDate
-    ? `DATE(received_at) = $1`
-    : `DATE(received_at) >= $1 AND DATE(received_at) <= $2`;
-  const whereClauseLabels = hasSingleDate
-    ? `DATE(updated_at) = $1`
-    : `DATE(updated_at) >= $1 AND DATE(updated_at) <= $2`;
-  const whereClauseLayout = hasSingleDate
-    ? `DATE(updated_at) = $1`
-    : `DATE(updated_at) >= $1 AND DATE(updated_at) <= $2`;
-
-  if (effectiveScope === "sensor" || effectiveScope === "all") {
-    statements.push({ sql: `DELETE FROM ${SQL_TABLE} WHERE ${whereClause}`, labels: false });
+  
+  const { layout } = req.body;
+  
+  if (!Array.isArray(layout)) {
+    return res.status(400).json({ error: 'layout must be an array' });
   }
-  if (effectiveScope === "labels" || effectiveScope === "all") {
-    statements.push({ sql: `DELETE FROM ${LABELS_TABLE} WHERE ${whereClauseLabels}`, labels: true });
-  }
-  if (effectiveScope === "layout" || effectiveScope === "all") {
-    statements.push({ sql: `DELETE FROM ${MAP_LAYOUT_TABLE} WHERE ${whereClauseLayout}`, labels: true });
-  }
-
-  const params = hasSingleDate ? [new Date(date).toISOString()] : [new Date(start).toISOString(), new Date(end).toISOString()];
-
+  
   const client = await pool.connect();
   try {
-    await client.query("BEGIN");
-    let affected = 0;
-    for (const stmt of statements) {
-      const result = await client.query(stmt.sql, params);
-      affected += result.rowCount || 0;
+    await client.query('BEGIN');
+    
+    for (const item of layout) {
+      const node = parseInt(item.node || item.roomId, 10);
+      const nodeName = normalizeLabel(item.node_name || item.roomName);
+      const xPos = parseInt(item.x_pos || item.x, 10);
+      const yPos = parseInt(item.y_pos || item.y, 10);
+      
+      if (!Number.isInteger(node) || !Number.isInteger(xPos) || !Number.isInteger(yPos)) {
+        throw new Error('Invalid layout data');
+      }
+      
+      const query = `
+        INSERT INTO map_layout (node, node_name, x_pos, y_pos, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (node) DO UPDATE SET
+          node_name = EXCLUDED.node_name,
+          x_pos = EXCLUDED.x_pos,
+          y_pos = EXCLUDED.y_pos,
+          updated_at = NOW()`;
+      
+      await client.query(query, [node, nodeName, xPos, yPos]);
     }
-    await client.query("COMMIT");
-    return res.json({ message: "Cleared successfully", affected });
+    
+    await client.query('COMMIT');
+    
+    // Notify SSE clients
+    broadcastSSE({
+      type: 'layout_updated',
+      count: layout.length,
+    });
+    
+    res.json({
+      success: true,
+      message: 'Layout updated successfully',
+      count: layout.length,
+    });
+    
   } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Failed to clear data", error);
-    return res.status(500).json({ error: "Failed to clear data" });
+    await client.query('ROLLBACK');
+    console.error('[API] Error updating map layout:', error);
+    res.status(500).json({ error: 'Failed to update map layout' });
   } finally {
     client.release();
   }
 });
 
-// --- SSE & NOTIFICATION LISTENER ---
-apiRouter.get("/events", (req, res) => {
+// --------------------------------------------
+// GET /api/events (SSE)
+// Server-Sent Events for real-time updates
+// --------------------------------------------
+api.get('/events', (req, res) => {
+  // Set SSE headers
   res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Cache-Control"
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
   });
-
-  const clientId = Date.now();
+  
+  const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const client = { id: clientId, res };
+  
   sseClients.add(client);
-
-  // Send initial keepalive
-  res.write(`data: ${JSON.stringify({ type: "connected", clientId })}\n\n`);
-
-  // Send periodic keepalive
+  console.log(`[SSE] Client connected: ${clientId} (total: ${sseClients.size})`);
+  
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({ type: 'connected', clientId, timestamp: new Date().toISOString() })}\n\n`);
+  
+  // Send keepalive messages
   const keepaliveInterval = setInterval(() => {
-    if (client.res) {
-      client.res.write(`data: ${JSON.stringify({ type: "keepalive", timestamp: Date.now() })}\n\n`);
+    try {
+      res.write(`data: ${JSON.stringify({ type: 'keepalive', timestamp: new Date().toISOString() })}\n\n`);
+    } catch (error) {
+      clearInterval(keepaliveInterval);
+      sseClients.delete(client);
     }
   }, SSE_KEEPALIVE_MS);
-
-  req.on("close", () => {
+  
+  // Handle client disconnect
+  req.on('close', () => {
     clearInterval(keepaliveInterval);
     sseClients.delete(client);
+    console.log(`[SSE] Client disconnected: ${clientId} (remaining: ${sseClients.size})`);
   });
 });
 
-function broadcastUpdate(data) {
-  const message = `data: ${data}\n\n`;
+// ============================================
+// SSE Broadcast Function
+// ============================================
+
+function broadcastSSE(data) {
+  const message = `data: ${JSON.stringify(data)}\n\n`;
+  const deadClients = [];
+  
   sseClients.forEach(client => {
-    if (client.res) {
-      try {
-        client.res.write(message);
-      } catch (error) {
-        console.error("Error sending SSE message:", error);
-        sseClients.delete(client);
-      }
+    try {
+      client.res.write(message);
+    } catch (error) {
+      deadClients.push(client);
     }
   });
+  
+  // Clean up dead connections
+  deadClients.forEach(client => sseClients.delete(client));
+  
+  if (deadClients.length > 0) {
+    console.log(`[SSE] Removed ${deadClients.length} dead connections`);
+  }
 }
 
-async function setupNotificationListener() {
-  if (listenerClient) return;
+// ============================================
+// PostgreSQL LISTEN/NOTIFY Setup
+// ============================================
 
+async function setupNotificationListener() {
   try {
-    listenerClient = new Pool({ connectionString: SQL_URL });
+    listenerClient = await pool.connect();
+    
     await listenerClient.query(`LISTEN ${NOTIFY_CHANNEL}`);
     
     listenerClient.on('notification', (msg) => {
       if (msg.channel === NOTIFY_CHANNEL) {
-        broadcastUpdate(msg.payload);
+        try {
+          const payload = JSON.parse(msg.payload);
+          broadcastSSE({
+            type: 'sensor_update',
+            ...payload,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          console.error('[NOTIFY] Failed to parse notification:', error);
+        }
       }
     });
-
-    listenerClient.on('error', (err) => {
-      console.error('PostgreSQL listener error:', err);
-      listenerClient = null;
-      
-      // Reconnect after delay
-      listenerReconnectTimer = setTimeout(() => {
-        setupNotificationListener().catch(console.error);
-      }, 5000);
-    });
-
-    console.log(`Listening for notifications on channel: ${NOTIFY_CHANNEL}`);
-  } catch (error) {
-    console.error('Failed to setup notification listener:', error);
-    listenerClient = null;
     
-    // Retry after delay
-    listenerReconnectTimer = setTimeout(() => {
-      setupNotificationListener().catch(console.error);
-    }, 5000);
+    listenerClient.on('error', (error) => {
+      console.error('[NOTIFY] Listener error:', error);
+      listenerClient = null;
+      setTimeout(setupNotificationListener, 5000);
+    });
+    
+    console.log(`[NOTIFY] ✓ Listening on channel: ${NOTIFY_CHANNEL}`);
+    
+  } catch (error) {
+    console.error('[NOTIFY] ✗ Failed to setup listener:', error);
+    setTimeout(setupNotificationListener, 5000);
   }
 }
 
-// --- HEALTH & STARTUP ---
-app.get("/health", (req, res) => {
-  if (isReady) return res.json({ status: "ok" });
-  return res.status(503).json({ status: "initializing" });
+// ============================================
+// Initialization
+// ============================================
+
+async function initialize() {
+  try {
+    // Test database connection
+    const result = await pool.query('SELECT NOW() as time, COUNT(*) as sensors FROM sensor_data');
+    isReady = true;
+    
+    console.log('[Database] ✓ Connected successfully');
+    console.log(`[Database] Current sensors: ${result.rows[0].sensors}`);
+    
+    // Setup PostgreSQL NOTIFY listener
+    await setupNotificationListener();
+    
+    // Start HTTP server
+    app.listen(PORT, () => {
+      console.log('\n' + '='.repeat(60));
+      console.log('WheelSense REST API - Ready');
+      console.log('='.repeat(60));
+      console.log(`HTTP Server:  http://localhost:${PORT}`);
+      console.log(`Database:     ${POSTGRES_URL.replace(/:[^:@]+@/, ':****@')}`);
+      console.log(`Stale Threshold: ${STALE_THRESHOLD_SEC}s`);
+      console.log(`SSE Keepalive: ${SSE_KEEPALIVE_MS}ms`);
+      console.log('='.repeat(60) + '\n');
+    });
+    
+  } catch (error) {
+    console.error('[Startup] ✗ Initialization failed:', error);
+    console.error('Retrying in 5 seconds...');
+    setTimeout(initialize, 5000);
+  }
+}
+
+// ============================================
+// Buildings, Floors, Pathways API
+// ============================================
+
+// Get all buildings
+app.get('/api/buildings', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT * FROM buildings ORDER BY id
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('[API] /buildings error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
-async function start() {
+// Create building
+app.post('/api/buildings', async (req, res) => {
+  const { name, description } = req.body;
   try {
-    await pool.query("SELECT 1");
-    isReady = true;
-    setupNotificationListener().catch(console.error);
-    app.listen(PORT, () => {
-      console.log(`REST API listening on port ${PORT}`);
-    });
+    const result = await pool.query(`
+      INSERT INTO buildings (name, description)
+      VALUES ($1, $2)
+      RETURNING *
+    `, [name, description || null]);
+    res.json(result.rows[0]);
   } catch (error) {
-    console.error("Failed to start REST API", error);
+    console.error('[API] POST /buildings error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get floors for a building
+app.get('/api/buildings/:building_id/floors', async (req, res) => {
+  const { building_id } = req.params;
+  try {
+    const result = await pool.query(`
+      SELECT * FROM floors 
+      WHERE building_id = $1 
+      ORDER BY floor_number
+    `, [building_id]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('[API] /floors error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Create floor
+app.post('/api/floors', async (req, res) => {
+  const { building_id, floor_number, name, description } = req.body;
+  try {
+    const result = await pool.query(`
+      INSERT INTO floors (building_id, floor_number, name, description)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `, [building_id, floor_number, name, description || null]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('[API] POST /floors error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Get pathways for a floor
+app.get('/api/floors/:floor_id/pathways', async (req, res) => {
+  const { floor_id } = req.params;
+  try {
+    const result = await pool.query(`
+      SELECT * FROM pathways 
+      WHERE floor_id = $1
+    `, [floor_id]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('[API] /pathways error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Create pathway
+app.post('/api/pathways', async (req, res) => {
+  const { floor_id, name, points, width, type } = req.body;
+  try {
+    const result = await pool.query(`
+      INSERT INTO pathways (floor_id, name, points, width, type)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *
+    `, [floor_id, name || null, JSON.stringify(points), width || 50, type || 'corridor']);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('[API] POST /pathways error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Delete pathway
+app.delete('/api/pathways/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM pathways WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[API] DELETE /pathways error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Update map layout with floor/building info
+app.post('/api/map-layout/advanced', async (req, res) => {
+  const { rooms } = req.body; // Array of {node, name, floor_id, building_id, x, y}
+  
+  try {
+    for (const room of rooms) {
+      await pool.query(`
+        INSERT INTO map_layout (node, node_name, floor_id, building_id, x_pos, y_pos)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (node) DO UPDATE SET
+          node_name = EXCLUDED.node_name,
+          floor_id = EXCLUDED.floor_id,
+          building_id = EXCLUDED.building_id,
+          x_pos = EXCLUDED.x_pos,
+          y_pos = EXCLUDED.y_pos,
+          updated_at = NOW()
+      `, [room.node, room.name, room.floor_id, room.building_id, room.x, room.y]);
+    }
+    res.json({ success: true, updated: rooms.length });
+  } catch (error) {
+    console.error('[API] POST /map-layout/advanced error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// ============================================
+// Graceful Shutdown
+// ============================================
+
+async function shutdown(signal) {
+  console.log(`\n[Shutdown] Received ${signal}, closing connections...`);
+  
+  try {
+    // Close all SSE connections
+    sseClients.forEach(client => {
+      try {
+        client.res.end();
+      } catch (error) {
+        // Ignore errors when closing
+      }
+    });
+    sseClients.clear();
+    
+    // Close listener
+    if (listenerClient) {
+      listenerClient.release();
+    }
+    
+    // Close pool
+    await pool.end();
+    
+    console.log('[Shutdown] ✓ Graceful shutdown complete');
+    process.exit(0);
+  } catch (error) {
+    console.error('[Shutdown] ✗ Error during shutdown:', error);
     process.exit(1);
   }
 }
 
-start();
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+// ============================================
+// Start Application
+// ============================================
+
+initialize();

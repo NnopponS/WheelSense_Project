@@ -1,379 +1,435 @@
+/**
+ * WheelSense MQTT Collector
+ * Collects data from ESP32 Gateway via MQTT and stores in PostgreSQL
+ * 
+ * ESP32 Data Format:
+ * {
+ *   "node": 4,
+ *   "node_label": "Node 4",
+ *   "wheel": 2,
+ *   "distance": 1.32,
+ *   "status": 0,
+ *   "motion": 0,
+ *   "direction": 0,
+ *   "rssi": -58,
+ *   "stale": false,
+ *   "ts": "2025-10-23T16:27:33+07:00",
+ *   "route_recovered": false,
+ *   "route_latency_ms": 120,
+ *   "route_recovery_ms": 0,
+ *   "route_path": ["Node 4", "Gateway"]
+ * }
+ */
+
 const mqtt = require("mqtt");
 const { Pool } = require("pg");
 
+// ============================================
+// Configuration
+// ============================================
 const MQTT_TOPIC = process.env.MQTT_TOPIC || "WheelSense/data";
-const MQTT_URL = process.env.MQTT_BROKER || "mqtt://mosquitto:1883";
-const SQL_URL =
-  process.env.POSTGRES_URL ||
-  process.env.DATABASE_URL ||
-  process.env.SQL_URL ||
-  "postgresql://wheeluser:wheelpass@postgres:5432/iot_log";
-const SQL_TABLE = process.env.SQL_TABLE || "sensor_data";
-const LABELS_TABLE = process.env.LABELS_TABLE || "device_labels";
-const PG_NOTIFY_CHANNEL = process.env.PG_NOTIFY_CHANNEL || "sensor_update";
+const MQTT_BROKER = process.env.MQTT_BROKER || "mqtt://mosquitto:1883";
+const POSTGRES_URL = process.env.POSTGRES_URL || 
+                     process.env.DATABASE_URL ||
+                     "postgresql://wheeluser:wheelpass@postgres:5432/iot_log";
 
-const mqttClient = mqtt.connect(MQTT_URL, {
-  reconnectPeriod: 2000,
+const PG_NOTIFY_CHANNEL = "sensor_update";
+const STALE_THRESHOLD_SEC = parseInt(process.env.STALE_THRESHOLD_SEC || "30", 10);
+
+// ============================================
+// Database Connection
+// ============================================
+const pool = new Pool({ 
+  connectionString: POSTGRES_URL,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
-const pool = new Pool({ connectionString: SQL_URL });
 
-function safeNumber(value) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : undefined;
+// ============================================
+// MQTT Connection
+// ============================================
+const mqttClient = mqtt.connect(MQTT_BROKER, {
+  clientId: `wheelsense-collector-${Math.random().toString(16).slice(2, 8)}`,
+  clean: true,
+  reconnectPeriod: 2000,
+  connectTimeout: 10000,
+});
+
+// ============================================
+// Data Validation & Normalization
+// ============================================
+
+function safeInteger(value, defaultValue = null) {
+  if (value === null || value === undefined) return defaultValue;
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.trunc(value);
   }
-  if (typeof value === "string" && value.trim() !== "") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : defaultValue;
   }
-  return undefined;
+  return defaultValue;
 }
 
-function safeInteger(value) {
-  const num = safeNumber(value);
-  if (num === undefined) {
-    return undefined;
-  }
-  const intVal = Math.trunc(num);
-  return Number.isFinite(intVal) ? intVal : undefined;
-}
-
-function safeBoolean(value) {
-  if (typeof value === "boolean") {
+function safeFloat(value, defaultValue = null) {
+  if (value === null || value === undefined) return defaultValue;
+  if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
   }
-  if (typeof value === "number") {
-    if (value === 1) return true;
-    if (value === 0) return false;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : defaultValue;
   }
-  if (typeof value === "string") {
-    const lowered = value.trim().toLowerCase();
-    if (["true", "1", "yes", "y"].includes(lowered)) return true;
-    if (["false", "0", "no", "n"].includes(lowered)) return false;
-  }
-  return undefined;
+  return defaultValue;
 }
 
-function safeText(value) {
-  if (typeof value !== "string") {
-    return undefined;
+function safeBoolean(value, defaultValue = false) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') {
+    if (value === 1 || value === true) return true;
+    if (value === 0 || value === false) return false;
   }
+  if (typeof value === 'string') {
+    const lower = value.trim().toLowerCase();
+    if (['true', '1', 'yes'].includes(lower)) return true;
+    if (['false', '0', 'no'].includes(lower)) return false;
+  }
+  return defaultValue;
+}
+
+function safeString(value, maxLength = 255) {
+  if (typeof value !== 'string') return null;
   const trimmed = value.trim();
-  if (trimmed.length === 0) {
-    return undefined;
-  }
-  if (trimmed.length > 255) {
-    return trimmed.slice(0, 255);
-  }
-  return trimmed;
+  if (trimmed.length === 0) return null;
+  return trimmed.substring(0, maxLength);
 }
 
-function parseTimestamp(value) {
+function safeTimestamp(value) {
+  if (!value) return new Date();
+  
   if (value instanceof Date) {
-    return Number.isNaN(value.getTime()) ? undefined : value;
+    return isNaN(value.getTime()) ? new Date() : value;
   }
-  if (typeof value === "number" && Number.isFinite(value)) {
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? undefined : date;
+  
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
   }
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed.length === 0) {
-      return undefined;
-    }
-    const date = new Date(trimmed);
-    return Number.isNaN(date.getTime()) ? undefined : date;
+  
+  if (typeof value === 'number') {
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
   }
-  return undefined;
+  
+  return new Date();
 }
 
-function normalizeRoutePath(value) {
-  if (!Array.isArray(value)) {
-    return [];
+function safeArray(value) {
+  if (Array.isArray(value)) {
+    return value.filter(item => item !== null && item !== undefined);
   }
-  return value
-    .map((item) => {
-      if (item === null || item === undefined) {
-        return undefined;
-      }
-      const asString = typeof item === "string" ? item : String(item);
-      const trimmed = asString.trim();
-      if (trimmed.length === 0) {
-        return undefined;
-      }
-      const matchRoom = trimmed.match(/^room\s*(\d+)/i);
-      if (matchRoom) {
-        return `Node ${matchRoom[1]}`;
-      }
-      return trimmed.replace(/^Room/i, "Node");
-    })
-    .filter((item) => item !== undefined);
+  return [];
 }
 
-function buildDocument(payload) {
+// ============================================
+// Data Processing
+// ============================================
+
+function normalizePayload(payload) {
   const receivedAt = new Date();
-  const messageTimestamp = parseTimestamp(payload.ts) ?? receivedAt;
-  const nodeId = safeInteger(payload.node ?? payload.room);
-  const wheelId = safeInteger(payload.wheel);
-  const nodeLabel = safeText(payload.node_label ?? payload.nodeLabel ?? payload.nodeName);
-  const wheelLabel = safeText(payload.wheel_label ?? payload.wheelLabel ?? payload.wheelName);
-
+  
+  // Extract and validate required fields
+  const node = safeInteger(payload.node);
+  const wheel = safeInteger(payload.wheel);
+  
+  if (node === null || wheel === null) {
+    throw new Error(`Invalid payload: missing node (${payload.node}) or wheel (${payload.wheel})`);
+  }
+  
+  // Extract timestamp
+  const ts = safeTimestamp(payload.ts);
+  
+  // Check if data is stale based on timestamp
+  const ageSeconds = (receivedAt - ts) / 1000;
+  const isStale = payload.stale !== undefined 
+    ? safeBoolean(payload.stale)
+    : ageSeconds > STALE_THRESHOLD_SEC;
+  
+  // Build normalized document
   return {
-    node_id: nodeId,
-    wheel_id: wheelId,
-    node_label: nodeLabel,
-    wheel_label: wheelLabel,
-    distance: safeNumber(payload.distance),
-    status: safeInteger(payload.status),
-    motion: safeInteger(payload.motion),
-    direction: safeInteger(payload.direction),
+    // Required fields
+    node,
+    wheel,
+    
+    // Sensor data
+    distance: safeFloat(payload.distance),
+    status: safeInteger(payload.status, 0),
+    motion: safeInteger(payload.motion, 0),
+    direction: safeInteger(payload.direction, 0),
     rssi: safeInteger(payload.rssi),
-    stale: safeBoolean(payload.stale),
-    ts: messageTimestamp,
-    route_recovered: safeBoolean(payload.route_recovered),
+    stale: isStale,
+    
+    // Timestamps
+    ts,
+    received_at: receivedAt,
+    
+    // Mesh routing data
+    route_recovered: safeBoolean(payload.route_recovered, false),
     route_latency_ms: safeInteger(payload.route_latency_ms),
     route_recovery_ms: safeInteger(payload.route_recovery_ms),
-    route_path: normalizeRoutePath(payload.route_path),
-    received_at: receivedAt,
+    route_path: safeArray(payload.route_path),
+    
+    // Labels (optional)
+    node_label: safeString(payload.node_label),
+    wheel_label: safeString(payload.wheel_label),
+    
+    // Raw payload for debugging
     raw: payload,
   };
 }
 
-function assertSafeIdentifier(identifier) {
-  if (!/^[A-Za-z0-9_]+$/.test(identifier)) {
-    throw new Error(`Unsafe SQL identifier: ${identifier}`);
-  }
-}
+// ============================================
+// Database Operations
+// ============================================
 
-assertSafeIdentifier(SQL_TABLE);
-assertSafeIdentifier(LABELS_TABLE);
-assertSafeIdentifier(PG_NOTIFY_CHANNEL);
-
-async function persistDocument(document) {
-  const rawPayload = document.raw ?? {};
-  const timestamp = document.ts ?? document.received_at ?? new Date();
-  const receivedAt = document.received_at ?? new Date();
-  const routePathJson = JSON.stringify(document.route_path ?? []);
-
-  if (document.node_id === undefined || document.node_id === null) {
-    throw new Error("Missing node identifier in payload");
-  }
-  if (document.wheel_id === undefined || document.wheel_id === null) {
-    throw new Error("Missing wheel identifier in payload");
-  }
-
-  const query = `INSERT INTO ${SQL_TABLE}
-    (node_id, wheel_id, distance, status, motion, direction, rssi, stale, ts, route_recovered, route_latency_ms, route_recovery_ms, route_path, received_at, raw)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-    ON CONFLICT (node_id, wheel_id) DO UPDATE SET
-      distance = EXCLUDED.distance,
-      status = EXCLUDED.status,
-      motion = EXCLUDED.motion,
-      direction = EXCLUDED.direction,
-      rssi = EXCLUDED.rssi,
-      stale = EXCLUDED.stale,
-      ts = EXCLUDED.ts,
-      route_recovered = EXCLUDED.route_recovered,
-      route_latency_ms = EXCLUDED.route_latency_ms,
-      route_recovery_ms = EXCLUDED.route_recovery_ms,
-      route_path = EXCLUDED.route_path,
-      received_at = EXCLUDED.received_at,
-      raw = EXCLUDED.raw`;
-
-  const params = [
-    document.node_id,
-    document.wheel_id,
-    document.distance ?? null,
-    document.status ?? null,
-    document.motion ?? null,
-    document.direction ?? null,
-    document.rssi ?? null,
-    document.stale ?? false,
-    timestamp,
-    document.route_recovered ?? false,
-    document.route_latency_ms ?? null,
-    document.route_recovery_ms ?? null,
-    routePathJson,
-    receivedAt,
-    JSON.stringify(rawPayload),
-  ];
-
-  await pool.query(query, params);
-}
-
-async function persistDeviceLabels(document) {
-  if (
-    document.node_id === undefined ||
-    document.node_id === null ||
-    document.wheel_id === undefined ||
-    document.wheel_id === null
-  ) {
-    return;
-  }
-
-  const nodeLabel =
-    document.node_label !== undefined ? document.node_label : undefined;
-  const wheelLabel =
-    document.wheel_label !== undefined ? document.wheel_label : undefined;
-
-  if (nodeLabel === undefined && wheelLabel === undefined) {
-    return;
-  }
-
-  await pool.query(
-    `INSERT INTO ${LABELS_TABLE} (node_id, wheel_id, node_label, wheel_label, updated_at)
-     VALUES ($1, $2, $3, $4, NOW())
-     ON CONFLICT (node_id, wheel_id)
-     DO UPDATE SET
-       node_label = COALESCE(EXCLUDED.node_label, ${LABELS_TABLE}.node_label),
-       wheel_label = COALESCE(EXCLUDED.wheel_label, ${LABELS_TABLE}.wheel_label),
-       updated_at = NOW()`,
-    [
-      document.node_id,
-      document.wheel_id,
-      nodeLabel ?? null,
-      wheelLabel ?? null,
-    ]
-  );
-}
-
-async function notifySensorUpdate(document) {
+async function saveSensorData(data) {
+  const client = await pool.connect();
   try {
-    const payload = JSON.stringify({
-      node_id: document.node_id ?? null,
-      wheel_id: document.wheel_id ?? null,
-      ts:
-        document.ts instanceof Date
-          ? document.ts.toISOString()
-          : document.received_at instanceof Date
-          ? document.received_at.toISOString()
-          : new Date().toISOString(),
+    await client.query('BEGIN');
+    
+    // 1. Upsert sensor data
+    const sensorQuery = `
+      INSERT INTO sensor_data (
+        node, wheel, distance, status, motion, direction, rssi, stale,
+        ts, received_at, route_recovered, route_latency_ms, route_recovery_ms,
+        route_path, raw
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      ON CONFLICT (node, wheel) DO UPDATE SET
+        distance = EXCLUDED.distance,
+        status = EXCLUDED.status,
+        motion = EXCLUDED.motion,
+        direction = EXCLUDED.direction,
+        rssi = EXCLUDED.rssi,
+        stale = EXCLUDED.stale,
+        ts = EXCLUDED.ts,
+        received_at = EXCLUDED.received_at,
+        route_recovered = EXCLUDED.route_recovered,
+        route_latency_ms = EXCLUDED.route_latency_ms,
+        route_recovery_ms = EXCLUDED.route_recovery_ms,
+        route_path = EXCLUDED.route_path,
+        raw = EXCLUDED.raw
+      RETURNING id`;
+    
+    const sensorParams = [
+      data.node,
+      data.wheel,
+      data.distance,
+      data.status,
+      data.motion,
+      data.direction,
+      data.rssi,
+      data.stale,
+      data.ts,
+      data.received_at,
+      data.route_recovered,
+      data.route_latency_ms,
+      data.route_recovery_ms,
+      JSON.stringify(data.route_path),
+      JSON.stringify(data.raw),
+    ];
+    
+    const result = await client.query(sensorQuery, sensorParams);
+    
+    // 2. Upsert device labels if provided
+    if (data.node_label || data.wheel_label) {
+      const labelsQuery = `
+        INSERT INTO device_labels (node, wheel, node_label, wheel_label, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (node, wheel) DO UPDATE SET
+          node_label = COALESCE(EXCLUDED.node_label, device_labels.node_label),
+          wheel_label = COALESCE(EXCLUDED.wheel_label, device_labels.wheel_label),
+          updated_at = NOW()`;
+      
+      await client.query(labelsQuery, [
+        data.node,
+        data.wheel,
+        data.node_label,
+        data.wheel_label,
+      ]);
+    }
+    
+    // 3. Notify listeners of update
+    const notifyPayload = JSON.stringify({
+      node: data.node,
+      wheel: data.wheel,
+      ts: data.ts.toISOString(),
+      motion: data.motion,
+      stale: data.stale,
     });
-    await pool.query("SELECT pg_notify($1, $2)", [PG_NOTIFY_CHANNEL, payload]);
+    
+    await client.query('SELECT pg_notify($1, $2)', [PG_NOTIFY_CHANNEL, notifyPayload]);
+    
+    await client.query('COMMIT');
+    
+    return result.rows[0].id;
+    
   } catch (error) {
-    console.error("Failed to emit sensor update notification", error);
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
 }
 
-function ensureDatabaseConnection() {
-  pool
-    .query("SELECT 1")
-    .then(() => {
-      console.log(`Connected to SQL database at ${SQL_URL}`);
-    })
-    .catch((error) => {
-      console.error("Unable to establish SQL connection", error);
-      setTimeout(ensureDatabaseConnection, 5000);
+// ============================================
+// MQTT Message Handler
+// ============================================
+
+async function handleMqttMessage(topic, message) {
+  const startTime = Date.now();
+  
+  try {
+    // Parse JSON payload
+    const rawMessage = message.toString('utf8');
+    let payload;
+    
+    try {
+      payload = JSON.parse(rawMessage);
+    } catch (parseError) {
+      console.error('[MQTT] Failed to parse JSON:', {
+        error: parseError.message,
+        preview: rawMessage.substring(0, 100),
+      });
+      return;
+    }
+    
+    // Validate and normalize data
+    const normalizedData = normalizePayload(payload);
+    
+    // Save to database
+    const id = await saveSensorData(normalizedData);
+    
+    const processingTime = Date.now() - startTime;
+    
+    console.log(`[MQTT] ✓ Stored reading #${id} | Node ${normalizedData.node} Wheel ${normalizedData.wheel} | ` +
+      `Distance: ${normalizedData.distance}m | RSSI: ${normalizedData.rssi}dBm | ` +
+      `Motion: ${normalizedData.motion} | Stale: ${normalizedData.stale} | ` +
+      `Latency: ${normalizedData.route_latency_ms}ms | ` +
+      `Processing: ${processingTime}ms`);
+    
+  } catch (error) {
+    console.error('[MQTT] Error processing message:', {
+      error: error.message,
+      stack: error.stack,
+      topic,
     });
+  }
 }
 
-mqttClient.on("connect", () => {
-  console.log(`Connected to MQTT broker at ${MQTT_URL}`);
+// ============================================
+// MQTT Event Handlers
+// ============================================
+
+mqttClient.on('connect', () => {
+  console.log(`[MQTT] ✓ Connected to broker: ${MQTT_BROKER}`);
+  
   mqttClient.subscribe(MQTT_TOPIC, { qos: 1 }, (err) => {
     if (err) {
-      console.error(`Failed to subscribe to ${MQTT_TOPIC}`, err);
+      console.error(`[MQTT] ✗ Failed to subscribe to topic: ${MQTT_TOPIC}`, err);
     } else {
-      console.log(`Subscribed to MQTT topic ${MQTT_TOPIC}`);
+      console.log(`[MQTT] ✓ Subscribed to topic: ${MQTT_TOPIC}`);
     }
   });
 });
 
-mqttClient.on("reconnect", () => {
-  console.log("Reconnecting to MQTT broker...");
+mqttClient.on('reconnect', () => {
+  console.log('[MQTT] ⟳ Reconnecting to broker...');
 });
 
-mqttClient.on("error", (error) => {
-  console.error("MQTT error", error);
+mqttClient.on('error', (error) => {
+  console.error('[MQTT] ✗ Connection error:', error.message);
 });
 
-mqttClient.on("message", async (_topic, message) => {
-  let payload;
-  const rawMessage = message.toString("utf8");
+mqttClient.on('offline', () => {
+  console.log('[MQTT] ⚠ Broker offline');
+});
 
-  function attemptParse(input) {
-    const visited = new Set();
-    let current = typeof input === "string" ? input : "";
+mqttClient.on('message', handleMqttMessage);
 
-    while (current && !visited.has(current)) {
-      visited.add(current);
-      const trimmed = current.trim();
-      if (trimmed.length === 0) {
-        return null;
-      }
+// ============================================
+// Database Event Handlers
+// ============================================
 
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (parsed && typeof parsed === "string") {
-          current = parsed;
-          continue;
-        }
-        return parsed;
-      } catch (_error) {
-        let next = trimmed;
+pool.on('connect', () => {
+  console.log('[PostgreSQL] ✓ Connected to database');
+});
 
-        if (
-          (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-          (trimmed.startsWith("'") && trimmed.endsWith("'"))
-        ) {
-          next = trimmed.slice(1, -1);
-        }
+pool.on('error', (error) => {
+  console.error('[PostgreSQL] ✗ Unexpected error:', error.message);
+});
 
-        if (next.includes('\\"')) {
-          next = next.replace(/\\"/g, '"');
-        }
+// ============================================
+// Startup & Health Check
+// ============================================
 
-        if (next.includes("\\'")) {
-          next = next.replace(/\\'/g, "'");
-        }
-
-        if (next.includes("\\\\")) {
-          next = next.replace(/\\\\/g, "\\");
-        }
-
-        if (next === trimmed) {
-          throw _error;
-        }
-
-        current = next;
-      }
-    }
-
-    return null;
-  }
-
+async function initialize() {
   try {
-    payload = attemptParse(rawMessage);
+    // Test database connection
+    const result = await pool.query('SELECT NOW() as time, version() as version');
+    console.log('[PostgreSQL] ✓ Database ready:', {
+      time: result.rows[0].time,
+      version: result.rows[0].version.split(' ').slice(0, 2).join(' '),
+    });
+    
+    // Get current sensor count
+    const countResult = await pool.query('SELECT COUNT(*) as count FROM sensor_data');
+    console.log(`[PostgreSQL] Current sensor data records: ${countResult.rows[0].count}`);
+    
+    console.log('\n='.repeat(60));
+    console.log('WheelSense MQTT Collector - Ready');
+    console.log('='.repeat(60));
+    console.log(`MQTT Broker: ${MQTT_BROKER}`);
+    console.log(`MQTT Topic:  ${MQTT_TOPIC}`);
+    console.log(`Database:    ${POSTGRES_URL.replace(/:[^:@]+@/, ':****@')}`);
+    console.log(`Stale Threshold: ${STALE_THRESHOLD_SEC}s`);
+    console.log('='.repeat(60) + '\n');
+    
   } catch (error) {
-    console.error("Failed to parse MQTT payload as JSON", {
-      error,
-      preview: rawMessage.slice(0, 200),
-    });
-    return;
+    console.error('[Startup] ✗ Initialization failed:', error.message);
+    console.error('Retrying in 5 seconds...');
+    setTimeout(initialize, 5000);
   }
+}
 
-  if (payload === null || typeof payload !== "object") {
-    console.error("Ignored MQTT payload that did not decode to an object", {
-      preview: rawMessage.slice(0, 200),
-    });
-    return;
-  }
+// ============================================
+// Graceful Shutdown
+// ============================================
 
+async function shutdown(signal) {
+  console.log(`\n[Shutdown] Received ${signal}, closing connections...`);
+  
   try {
-    const document = buildDocument(payload);
-    await persistDocument(document);
-    await persistDeviceLabels(document);
-    await notifySensorUpdate(document);
-    console.log(
-      `Stored reading for node=${document.node_id ?? "?"} wheel=${document.wheel_id ?? "?"} at ${
-        (document.ts ?? document.received_at ?? new Date()).toISOString()
-      }`
-    );
+    mqttClient.end(false, () => {
+      console.log('[MQTT] ✓ Disconnected');
+    });
+    
+    await pool.end();
+    console.log('[PostgreSQL] ✓ Disconnected');
+    
+    console.log('[Shutdown] ✓ Graceful shutdown complete');
+    process.exit(0);
   } catch (error) {
-    console.error("Failed to persist MQTT payload", error);
+    console.error('[Shutdown] ✗ Error during shutdown:', error.message);
+    process.exit(1);
   }
-});
+}
 
-pool.on("error", (error) => {
-  console.error("Unexpected database error", error);
-});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
-ensureDatabaseConnection();
+// ============================================
+// Start Application
+// ============================================
+
+initialize();

@@ -1,492 +1,397 @@
-import { useState } from 'react';
+/**
+ * Timeline Screen
+ * แสดงกราฟและประวัติข้อมูล sensor
+ */
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { ScrollArea } from './ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Calendar, Download, Clock, MapPin, Activity, TrendingUp, Send, Bot } from 'lucide-react';
+import { useSensorData } from '../hooks/useApi';
+import { getSensorHistory } from '../services/api';
+import type { HistoryDataPoint } from '../services/api';
+import { LineChart, Clock, TrendingUp, Activity, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface TimelineEntry {
-  time: string;
-  room: string;
-  duration_min: number;
-  dist_m: number;
-  avg_rssi: number;
-}
-
-// Timeline data will be fetched from API
-const emptyData = {
-  date: new Date().toISOString().split('T')[0],
-  wheelchairId: '',
-  entries: [] as TimelineEntry[],
-  totals: {
-    moving_min: 0,
-    distance_m: 0,
-    rooms_visited: 0,
-    alerts: 0,
-  },
-};
-
 export function TimelineScreen() {
-  const [selectedEntry, setSelectedEntry] = useState<TimelineEntry | null>(null);
-  const [selectedWheelchair, setSelectedWheelchair] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [showAIDialog, setShowAIDialog] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState('');
-  const [timelineData, setTimelineData] = useState(emptyData);
-  const [availableWheelchairs] = useState<string[]>([]); // To be populated from API
+  const { data: sensorData, loading: sensorsLoading } = useSensorData();
+  
+  const [selectedNode, setSelectedNode] = useState<number | null>(null);
+  const [selectedWheel, setSelectedWheel] = useState<number | null>(null);
+  const [historyData, setHistoryData] = useState<HistoryDataPoint[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [limit, setLimit] = useState(100);
 
-  const exportData = (format: 'csv' | 'json') => {
-    if (format === 'json') {
-      const dataStr = JSON.stringify(timelineData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `wheelsense-timeline-${selectedDate}.json`;
-      link.click();
-      toast.success('Timeline exported as JSON');
-    } else {
-      let csv = 'Time,Room,Duration (min),Distance (m),Avg RSSI\n';
-      timelineData.entries.forEach((entry) => {
-        csv += `${entry.time},${entry.room},${entry.duration_min},${entry.dist_m},${entry.avg_rssi}\n`;
-      });
-      const dataBlob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `wheelsense-timeline-${selectedDate}.csv`;
-      link.click();
-      toast.success('Timeline exported as CSV');
+  // เมื่อเลือก sensor
+  useEffect(() => {
+    if (selectedNode !== null && selectedWheel !== null) {
+      loadHistory(selectedNode, selectedWheel, limit);
+    }
+  }, [selectedNode, selectedWheel, limit]);
+
+  // โหลดข้อมูลประวัติ
+  const loadHistory = async (node: number, wheel: number, limitNum: number) => {
+    try {
+      setLoading(true);
+      const data = await getSensorHistory(node, wheel, limitNum);
+      setHistoryData(data);
+    } catch (error) {
+      console.error('Error loading history:', error);
+      toast.error('โหลดข้อมูลประวัติไม่สำเร็จ');
+      setHistoryData([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const sendToAI = () => {
-    // AI analysis based on real data
-    setShowAIDialog(true);
-    setAiAnalysis('Analyzing timeline data...');
+  // หา unique nodes และ wheels
+  const uniqueNodes = Array.from(new Set(sensorData.map(s => s.node))).sort((a, b) => a - b);
+  const availableWheels = selectedNode
+    ? sensorData.filter(s => s.node === selectedNode).map(s => s.wheel).sort((a, b) => a - b)
+    : [];
+
+  // เลือก node แรกโดยอัตโนมัติ
+  useEffect(() => {
+    if (uniqueNodes.length > 0 && selectedNode === null) {
+      setSelectedNode(uniqueNodes[0]);
+    }
+  }, [uniqueNodes.length]);
+
+  // เลือก wheel แรกโดยอัตโนมัติ
+  useEffect(() => {
+    if (availableWheels.length > 0 && selectedWheel === null && selectedNode !== null) {
+      setSelectedWheel(availableWheels[0]);
+    }
+  }, [availableWheels.length, selectedNode]);
+
+  // คำนวณค่าสถิติ
+  const stats = historyData.length > 0 ? {
+    avgDistance: (historyData.reduce((sum, d) => sum + (d.distance || 0), 0) / historyData.length).toFixed(2),
+    avgRssi: (historyData.reduce((sum, d) => sum + (d.rssi || 0), 0) / historyData.length).toFixed(1),
+    maxDistance: Math.max(...historyData.map(d => d.distance || 0)).toFixed(2),
+    minDistance: Math.min(...historyData.filter(d => d.distance !== null && d.distance > 0).map(d => d.distance || 0)).toFixed(2),
+    maxRssi: Math.max(...historyData.map(d => d.rssi || -100)),
+    minRssi: Math.min(...historyData.filter(d => d.rssi !== null).map(d => d.rssi || 0)),
+    totalMovement: historyData.filter(d => d.motion === 1).length,
+  } : null;
+
+  // สร้าง SVG path สำหรับกราฟ
+  const createPath = (dataPoints: number[], maxValue: number, height: number) => {
+    if (dataPoints.length === 0 || maxValue === 0) return '';
     
-    setTimeout(() => {
-      if (timelineData.entries.length === 0) {
-        setAiAnalysis('No timeline data available for analysis. Please ensure there is activity data for the selected date and wheelchair.');
-        return;
-      }
-
-      const avgRSSI = timelineData.entries.length > 0
-        ? (timelineData.entries.reduce((sum, e) => sum + e.avg_rssi, 0) / timelineData.entries.length).toFixed(1)
-        : '0';
-      
-      const mostTimeEntry = timelineData.entries.reduce((max, e) => e.duration_min > max.duration_min ? e : max, timelineData.entries[0]);
-      const bestSignalEntry = timelineData.entries.reduce((max, e) => e.avg_rssi > max.avg_rssi ? e : max, timelineData.entries[0]);
-      const weakestSignalEntry = timelineData.entries.reduce((min, e) => e.avg_rssi < min.avg_rssi ? e : min, timelineData.entries[0]);
-
-      const analysis = `📊 AI Analysis for ${selectedWheelchair} on ${selectedDate}
-
-🎯 Activity Summary:
-• Total moving time: ${timelineData.totals.moving_min} minutes (${(timelineData.totals.moving_min / 60).toFixed(1)} hours)
-• Total distance covered: ${timelineData.totals.distance_m} meters
-• Rooms visited: ${timelineData.totals.rooms_visited} different locations
-• Alerts: ${timelineData.totals.alerts}
-
-📍 Location Patterns:
-• Most time spent: ${mostTimeEntry.room} (${mostTimeEntry.duration_min} min)
-• Activity locations: ${timelineData.entries.map(e => e.room).join(', ')}
-
-🔋 Signal Strength Analysis:
-• Average RSSI: ${avgRSSI} dBm
-• Best signal: ${bestSignalEntry.room} (${bestSignalEntry.avg_rssi} dBm)
-• Weakest signal: ${weakestSignalEntry.room} (${weakestSignalEntry.avg_rssi} dBm)
-
-💡 Insights & Recommendations:
-1. ${timelineData.totals.moving_min > 180 ? 'High activity level detected' : 'Moderate activity level'}
-2. ${timelineData.totals.alerts > 0 ? `${timelineData.totals.alerts} signal alerts detected - consider signal improvements` : 'No connectivity issues detected'}
-3. Movement pattern suggests ${timelineData.totals.rooms_visited > 5 ? 'high mobility' : 'normal daily activities'}
-
-✅ Overall Status: ${timelineData.totals.alerts === 0 ? 'Normal system performance' : 'Some signal issues detected'}`;
-      
-      setAiAnalysis(analysis);
-    }, 2000);
+    const width = 800;
+    const padding = 40;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+    
+    const xStep = chartWidth / Math.max(dataPoints.length - 1, 1);
+    const yScale = chartHeight / maxValue;
+    
+    const points = dataPoints.map((value, index) => {
+      const x = padding + index * xStep;
+      const y = height - padding - value * yScale;
+      return `${x},${y}`;
+    }).join(' L ');
+    
+    return `M ${points}`;
   };
 
+  if (sensorsLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <RefreshCw className="h-12 w-12 animate-spin mx-auto mb-4 text-[#0056B3]" />
+          <p className="english-text text-xl">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full bg-[#fafafa]">
+    <div className="h-full bg-[#fafafa] overflow-auto">
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="english-text text-[#0056B3]">Timeline (Today)</h2>
-            <p className="thai-text text-muted-foreground">ไทม์ไลน์กิจกรรมประจำวัน</p>
-          </div>
+        <div>
+          <h2 className="english-text text-[#0056B3] flex items-center gap-2">
+            <LineChart className="h-6 w-6" />
+            Historical Data Timeline
+          </h2>
+          <p className="thai-text text-muted-foreground">ประวัติข้อมูลและกราฟ</p>
         </div>
 
-        {/* Filter Bar */}
+        {/* Filters */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm text-muted-foreground mb-2 block english-text">
-                  Date
-                </label>
-                <Select value={selectedDate} onValueChange={setSelectedDate}>
+          <CardHeader>
+            <CardTitle className="text-base">Select Device</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Node</label>
+                <Select
+                  value={selectedNode?.toString() || ''}
+                  onValueChange={(value) => {
+                    setSelectedNode(parseInt(value));
+                    setSelectedWheel(null);
+                    setHistoryData([]);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Node" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {uniqueNodes.map((node) => {
+                      const sensor = sensorData.find(s => s.node === node);
+                      return (
+                        <SelectItem key={node} value={node.toString()}>
+                          {sensor?.node_label || `Node ${node}`}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Wheelchair</label>
+                <Select
+                  value={selectedWheel?.toString() || ''}
+                  onValueChange={(value) => setSelectedWheel(parseInt(value))}
+                  disabled={!selectedNode}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Wheelchair" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableWheels.map((wheel) => {
+                      const sensor = sensorData.find(s => s.node === selectedNode && s.wheel === wheel);
+                      return (
+                        <SelectItem key={wheel} value={wheel.toString()}>
+                          {sensor?.wheel_label || `Wheel ${wheel}`}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Data Points</label>
+                <Select value={limit.toString()} onValueChange={(value) => setLimit(parseInt(value))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={new Date().toISOString().split('T')[0]}>
-                      {new Date().toISOString().split('T')[0]} (Today)
-                    </SelectItem>
-                    <SelectItem value={new Date(Date.now() - 86400000).toISOString().split('T')[0]}>
-                      {new Date(Date.now() - 86400000).toISOString().split('T')[0]}
-                    </SelectItem>
-                    <SelectItem value={new Date(Date.now() - 172800000).toISOString().split('T')[0]}>
-                      {new Date(Date.now() - 172800000).toISOString().split('T')[0]}
-                    </SelectItem>
+                    <SelectItem value="50">50 points</SelectItem>
+                    <SelectItem value="100">100 points</SelectItem>
+                    <SelectItem value="200">200 points</SelectItem>
+                    <SelectItem value="500">500 points</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm text-muted-foreground mb-2 block english-text">
-                  Wheelchair ID
-                </label>
-                <Select value={selectedWheelchair} onValueChange={setSelectedWheelchair}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select wheelchair" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableWheelchairs.length === 0 ? (
-                      <SelectItem value="" disabled>No wheelchairs available</SelectItem>
-                    ) : (
-                      availableWheelchairs.map(id => (
-                        <SelectItem key={id} value={id}>{id}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm text-muted-foreground mb-2 block english-text">
-                  Floor
-                </label>
-                <Select defaultValue="floor-1">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="floor-1">Floor 1</SelectItem>
-                    <SelectItem value="floor-2">Floor 2</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => exportData('csv')}
-                  className="english-text"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  CSV
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => exportData('json')}
-                  className="english-text"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  JSON
-                </Button>
-                <Button
-                  onClick={sendToAI}
-                  className="bg-[#00945E] hover:bg-[#007a4d] text-white english-text"
-                >
-                  <Bot className="mr-2 h-4 w-4" />
-                  AI Analysis
-                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Timeline List */}
-          <div className="lg:col-span-2">
+        {/* Statistics */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-l-4 border-l-blue-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Avg Distance</p>
+                    <p className="text-2xl font-bold text-blue-600">{stats.avgDistance} m</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-blue-600 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 border-l-yellow-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Avg RSSI</p>
+                    <p className="text-2xl font-bold text-yellow-600">{stats.avgRssi} dBm</p>
+                  </div>
+                  <Activity className="h-8 w-8 text-yellow-600 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Movement Events</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.totalMovement}</p>
+                  </div>
+                  <Activity className="h-8 w-8 text-green-600 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 border-l-purple-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Data Points</p>
+                    <p className="text-2xl font-bold text-purple-600">{historyData.length}</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-purple-600 opacity-50" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Charts */}
+        {loading ? (
+          <Card>
+            <CardContent className="py-20 text-center">
+              <RefreshCw className="h-12 w-12 animate-spin mx-auto mb-4 text-[#0056B3]" />
+              <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
+            </CardContent>
+          </Card>
+        ) : historyData.length === 0 ? (
+          <Card>
+            <CardContent className="py-20 text-center">
+              <LineChart className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <p className="text-muted-foreground">ไม่มีข้อมูลประวัติ</p>
+              <p className="text-sm text-muted-foreground">เลือก Node และ Wheelchair เพื่อดูข้อมูล</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Distance Chart */}
             <Card>
               <CardHeader>
-                <CardTitle className="english-text">Activity Timeline</CardTitle>
+                <CardTitle className="english-text text-base">Distance Over Time</CardTitle>
+                <p className="text-sm text-muted-foreground">ระยะทางตามเวลา (เมตร)</p>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4">
-                  <div className="relative">
-                    {/* Vertical line */}
-                    <div className="absolute left-[15px] top-0 bottom-0 w-0.5 bg-border" />
-
-                    <div className="space-y-6">
-                      {timelineData.entries.map((entry, idx) => (
-                        <div
-                          key={idx}
-                          className="relative pl-12 cursor-pointer hover:bg-accent/50 p-3 rounded-lg transition-colors"
-                          onClick={() => setSelectedEntry(entry)}
-                        >
-                          {/* Timeline dot */}
-                          <div className="absolute left-[7px] top-[20px] w-4 h-4 rounded-full bg-[#0056B3] border-4 border-white shadow-md" />
-
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <Badge className="bg-[#0056B3] text-white">
-                                  <Clock className="mr-1 h-3 w-3" />
-                                  {entry.time}
-                                </Badge>
-                                <h4 className="english-text text-[#00945E]">{entry.room}</h4>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Clock className="h-4 w-4" />
-                                <span className="english-text">
-                                  {entry.duration_min} min
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <TrendingUp className="h-4 w-4" />
-                                <span className="english-text">{entry.dist_m}m</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Activity className="h-4 w-4" />
-                                <span className="english-text">{entry.avg_rssi} dBm</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </ScrollArea>
+                <svg width="100%" height="300" viewBox="0 0 800 300" className="bg-white rounded">
+                  {/* Grid */}
+                  <defs>
+                    <pattern id="gridPattern" width="40" height="30" patternUnits="userSpaceOnUse">
+                      <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#e0e0e0" strokeWidth="0.5" />
+                    </pattern>
+                  </defs>
+                  <rect width="800" height="300" fill="url(#gridPattern)" />
+                  
+                  {/* Axes */}
+                  <line x1="40" y1="260" x2="760" y2="260" stroke="#666" strokeWidth="2" />
+                  <line x1="40" y1="40" x2="40" y2="260" stroke="#666" strokeWidth="2" />
+                  
+                  {/* Y-axis labels */}
+                  {stats && (
+                    <>
+                      <text x="30" y="45" textAnchor="end" className="text-xs fill-gray-600">
+                        {stats.maxDistance}m
+                      </text>
+                      <text x="30" y="155" textAnchor="end" className="text-xs fill-gray-600">
+                        {((parseFloat(stats.maxDistance) + parseFloat(stats.minDistance)) / 2).toFixed(1)}m
+                      </text>
+                      <text x="30" y="265" textAnchor="end" className="text-xs fill-gray-600">
+                        {stats.minDistance}m
+                      </text>
+                    </>
+                  )}
+                  
+                  {/* Line */}
+                  {stats && (
+                    <path
+                      d={createPath(
+                        historyData.map(d => d.distance || 0),
+                        parseFloat(stats.maxDistance) || 1,
+                        300
+                      )}
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="2"
+                    />
+                  )}
+                  
+                  {/* Points */}
+                  {stats && historyData.map((d, i) => {
+                    const x = 40 + (i * (720 / Math.max(historyData.length - 1, 1)));
+                    const y = 260 - ((d.distance || 0) / parseFloat(stats.maxDistance)) * 220;
+                    return (
+                      <circle
+                        key={i}
+                        cx={x}
+                        cy={y}
+                        r="3"
+                        fill="#3b82f6"
+                      />
+                    );
+                  })}
+                </svg>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Summary Card (Sticky) */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
+            {/* RSSI Chart */}
+            <Card>
               <CardHeader>
-                <CardTitle className="english-text">Daily Summary</CardTitle>
-                <p className="thai-text text-sm text-muted-foreground">สรุปกิจกรรมประจำวัน</p>
+                <CardTitle className="english-text text-base">Signal Strength Over Time</CardTitle>
+                <p className="text-sm text-muted-foreground">ความแรงสัญญาณตามเวลา (dBm)</p>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-[#e8f4ff] rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-[#0056B3]" />
-                      <span className="english-text text-sm">Total Distance</span>
-                    </div>
-                    <span className="text-[#0056B3]">{timelineData.totals.distance_m}m</span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-[#f0fdf4] rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-[#00945E]" />
-                      <span className="english-text text-sm">Moving Time</span>
-                    </div>
-                    <span className="text-[#00945E]">{timelineData.totals.moving_min} min</span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-[#fef3c7] rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-[#f59e0b]" />
-                      <span className="english-text text-sm">Rooms Visited</span>
-                    </div>
-                    <span className="text-[#f59e0b]">{timelineData.totals.rooms_visited}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-gray-600" />
-                      <span className="english-text text-sm">Alerts</span>
-                    </div>
-                    <span className="text-gray-600">{timelineData.totals.alerts}</span>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t">
-                  <h4 className="text-sm mb-3 english-text">Room Distribution</h4>
-                  <div className="space-y-2">
-                    {timelineData.entries.map((entry, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-[#0056B3]" />
-                        <span className="text-sm flex-1 english-text">{entry.room}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {entry.duration_min}min
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <CardContent>
+                <svg width="100%" height="300" viewBox="0 0 800 300" className="bg-white rounded">
+                  <rect width="800" height="300" fill="url(#gridPattern)" />
+                  
+                  {/* Axes */}
+                  <line x1="40" y1="260" x2="760" y2="260" stroke="#666" strokeWidth="2" />
+                  <line x1="40" y1="40" x2="40" y2="260" stroke="#666" strokeWidth="2" />
+                  
+                  {/* Y-axis labels */}
+                  {stats && (
+                    <>
+                      <text x="30" y="45" textAnchor="end" className="text-xs fill-gray-600">
+                        {stats.maxRssi}
+                      </text>
+                      <text x="30" y="155" textAnchor="end" className="text-xs fill-gray-600">
+                        {Math.round(((stats.maxRssi || 0) + (stats.minRssi || 0)) / 2)}
+                      </text>
+                      <text x="30" y="265" textAnchor="end" className="text-xs fill-gray-600">
+                        {stats.minRssi}
+                      </text>
+                    </>
+                  )}
+                  
+                  {/* Line */}
+                  {stats && (
+                    <path
+                      d={createPath(
+                        historyData.map(d => Math.abs(d.rssi || 0)),
+                        Math.abs(stats.minRssi) || 1,
+                        300
+                      )}
+                      fill="none"
+                      stroke="#eab308"
+                      strokeWidth="2"
+                    />
+                  )}
+                  
+                  {/* Points */}
+                  {stats && historyData.map((d, i) => {
+                    const x = 40 + (i * (720 / Math.max(historyData.length - 1, 1)));
+                    const y = 260 - (Math.abs(d.rssi || 0) / Math.abs(stats.minRssi || 1)) * 220;
+                    return (
+                      <circle
+                        key={i}
+                        cx={x}
+                        cy={y}
+                        r="3"
+                        fill="#eab308"
+                      />
+                    );
+                  })}
+                </svg>
               </CardContent>
             </Card>
-          </div>
-        </div>
-
-        {/* Route Path Dialog */}
-        <Dialog open={selectedEntry !== null} onOpenChange={() => setSelectedEntry(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-[#0056B3]">
-                <span className="english-text">Route Visualization</span>
-                {selectedEntry && (
-                  <>
-                    {' '}
-                    - {selectedEntry.room} ({selectedEntry.time})
-                  </>
-                )}
-              </DialogTitle>
-            </DialogHeader>
-            {selectedEntry && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <div className="text-sm text-muted-foreground english-text">Duration</div>
-                      <div className="text-xl text-[#0056B3]">{selectedEntry.duration_min} min</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <div className="text-sm text-muted-foreground english-text">Distance</div>
-                      <div className="text-xl text-[#00945E]">{selectedEntry.dist_m}m</div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4 text-center">
-                      <div className="text-sm text-muted-foreground english-text">Avg RSSI</div>
-                      <div className="text-xl">{selectedEntry.avg_rssi} dBm</div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Mini Map with Dot Trail */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="w-full h-[300px] bg-gray-50 rounded-lg flex items-center justify-center">
-                      <svg width="100%" height="100%" viewBox="0 0 400 300">
-                        {/* Room outline */}
-                        <rect
-                          x="50"
-                          y="50"
-                          width="300"
-                          height="200"
-                          fill="#e8f4ff"
-                          stroke="#0056B3"
-                          strokeWidth="2"
-                          rx="8"
-                        />
-                        <text
-                          x="200"
-                          y="30"
-                          textAnchor="middle"
-                          className="english-text"
-                          fill="#0056B3"
-                        >
-                          {selectedEntry.room}
-                        </text>
-
-                        {/* Simulated path trail */}
-                        {Array.from({ length: 15 }, (_, i) => {
-                          const t = i / 14;
-                          const x = 80 + Math.sin(t * Math.PI * 2) * 40 + t * 200;
-                          const y = 150 + Math.cos(t * Math.PI * 3) * 30;
-                          return (
-                            <circle
-                              key={i}
-                              cx={x}
-                              cy={y}
-                              r="4"
-                              fill="#0056B3"
-                              opacity={0.3 + t * 0.7}
-                            />
-                          );
-                        })}
-
-                        {/* End position */}
-                        <circle cx="280" cy="150" r="10" fill="#00945E" />
-                        <text
-                          x="280"
-                          y="155"
-                          textAnchor="middle"
-                          fill="white"
-                          fontSize="12"
-                        >
-                          ♿
-                        </text>
-                      </svg>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <p className="text-sm text-muted-foreground text-center english-text">
-                  * This is a simulated route visualization based on movement data
-                </p>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* AI Analysis Dialog */}
-        <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-          <DialogContent className="max-w-3xl max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-[#0056B3]">
-                <Bot className="h-6 w-6" />
-                <div>
-                  <span className="english-text">AI Timeline Analysis</span>
-                  <p className="thai-text text-sm text-muted-foreground">การวิเคราะห์ไทม์ไลน์โดย AI</p>
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh]">
-              <Card className="bg-gradient-to-br from-[#e8f4ff] to-white border-[#0056B3]">
-                <CardContent className="p-6">
-                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
-                    {aiAnalysis}
-                  </pre>
-                </CardContent>
-              </Card>
-            </ScrollArea>
-            <div className="flex gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const dataStr = JSON.stringify({
-                    timeline: timelineData,
-                    analysis: aiAnalysis,
-                  }, null, 2);
-                  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                  const url = URL.createObjectURL(dataBlob);
-                  const link = document.createElement('a');
-                  link.href = url;
-                  link.download = `wheelsense-ai-analysis-${selectedDate}.json`;
-                  link.click();
-                  toast.success('AI analysis exported');
-                }}
-                className="flex-1"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                <span className="english-text">Export Analysis</span>
-              </Button>
-              <Button
-                onClick={() => setShowAIDialog(false)}
-                className="flex-1 bg-[#0056B3] hover:bg-[#004494]"
-              >
-                <span className="english-text">Close</span>
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+          </>
+        )}
       </div>
     </div>
   );

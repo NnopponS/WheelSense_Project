@@ -1,125 +1,305 @@
-import { useState, useEffect, useCallback } from 'react';
-import { apiService, SensorData, SensorHistory, DeviceLabel, MapLayout } from '../services/api';
+/**
+ * WheelSense Custom Hooks
+ * React hooks for accessing backend data with SSE real-time updates
+ */
 
-// Hook for sensor data with real-time updates
-export function useSensorData() {
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  getSensorData,
+  getSensorDataByDevice,
+  getSensorHistory,
+  getSystemStats,
+  getMapLayout,
+  updateDeviceLabels,
+  updateMapLayout,
+  createSSEConnection,
+  type SensorData,
+  type SystemStats,
+  type MapLayout,
+  type HistoryDataPoint,
+  type SSEMessage,
+} from '../services/api';
+
+// ============================================
+// useSensorData Hook
+// ============================================
+
+export interface UseSensorDataResult {
+  data: SensorData[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  isConnected: boolean;
+  isUpdating: boolean;
+  lastUpdate: Date | null;
+}
+
+export function useSensorData(): UseSensorDataResult {
   const [data, setData] = useState<SensorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchData = useCallback(async (showLoading = true) => {
+    try {
+      if (showLoading) {
+        setLoading(true);
+      } else {
+        setIsUpdating(true);
+      }
+      setError(null);
+      
+      const sensorData = await getSensorData();
+      setData(sensorData);
+      setLastUpdate(new Date());
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch sensor data';
+      setError(errorMessage);
+      console.error('[useSensorData] Error:', errorMessage);
+    } finally {
+      setLoading(false);
+      setIsUpdating(false);
+    }
+  }, []);
+
+  // Setup SSE connection
+  useEffect(() => {
+    let isActive = true;
+
+    const setupSSE = () => {
+      if (!isActive) return;
+
+      try {
+        const es = createSSEConnection(
+          (message: SSEMessage) => {
+            if (!isActive) return;
+
+            if (message.type === 'connected') {
+              setIsConnected(true);
+              console.log('[SSE] Connected:', message);
+            } else if (message.type === 'sensor_update') {
+              console.log('[SSE] Sensor update received:', message);
+              // Refetch data without showing loading state
+              fetchData(false);
+            } else if (message.type === 'labels_updated' || message.type === 'layout_updated') {
+              console.log('[SSE] Config update received:', message.type);
+              fetchData(false);
+            }
+          },
+          (error) => {
+            console.error('[SSE] Error:', error);
+            setIsConnected(false);
+            
+            // Retry connection after 5 seconds
+            if (isActive) {
+              fetchTimeoutRef.current = setTimeout(() => {
+                if (isActive) setupSSE();
+              }, 5000);
+            }
+          },
+          () => {
+            setIsConnected(true);
+            console.log('[SSE] Connection opened');
+          }
+        );
+
+        eventSourceRef.current = es;
+      } catch (err) {
+        console.error('[SSE] Failed to create connection:', err);
+        setIsConnected(false);
+      }
+    };
+
+    // Initial data fetch
+    fetchData(true);
+
+    // Setup SSE
+    setupSSE();
+
+    // Cleanup
+    return () => {
+      isActive = false;
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+        fetchTimeoutRef.current = null;
+      }
+    };
+  }, [fetchData]);
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: () => fetchData(false),
+    isConnected,
+    isUpdating,
+    lastUpdate,
+  };
+}
+
+// ============================================
+// useDeviceData Hook
+// ============================================
+
+export interface UseDeviceDataResult {
+  data: SensorData | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+export function useDeviceData(node: number, wheel: number): UseDeviceDataResult {
+  const [data, setData] = useState<SensorData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiService.getSensorData();
-      setData(response.data);
-      setLastUpdate(new Date());
       setError(null);
+      
+      const deviceData = await getSensorDataByDevice(node, wheel);
+      setData(deviceData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch sensor data');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch device data';
+      setError(errorMessage);
+      console.error('[useDeviceData] Error:', errorMessage);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [node, wheel]);
 
   useEffect(() => {
     fetchData();
-
-    // Set up SSE connection for real-time updates
-    const eventSource = apiService.createSSEConnection(
-      (message) => {
-        if (message.type === 'connected' || message.type === 'keepalive') {
-          return; // Ignore connection messages
-        }
-        
-        // Handle sensor data updates
-        if (message.reason === 'sensor_data' || message.reason === 'labels') {
-          fetchData(); // Refresh data when updates occur
-        }
-      },
-      (error) => {
-        console.error('SSE connection lost, retrying...');
-        // Retry connection after 5 seconds
-        setTimeout(fetchData, 5000);
-      }
-    );
-
-    return () => {
-      eventSource.close();
-    };
   }, [fetchData]);
 
-  return { data, loading, error, lastUpdate, refetch: fetchData };
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetchData,
+  };
 }
 
-// Hook for sensor history
-export function useSensorHistory(nodeId: number, wheelId: number, limit: number = 100) {
-  const [data, setData] = useState<SensorHistory[]>([]);
-  const [loading, setLoading] = useState(false);
+// ============================================
+// useDeviceHistory Hook
+// ============================================
+
+export interface UseDeviceHistoryResult {
+  data: HistoryDataPoint[];
+  loading: boolean;
+  error: string | null;
+  refetch: (limit?: number) => Promise<void>;
+}
+
+export function useDeviceHistory(
+  node: number,
+  wheel: number,
+  initialLimit: number = 100
+): UseDeviceHistoryResult {
+  const [data, setData] = useState<HistoryDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHistory = useCallback(async () => {
-    if (!nodeId || !wheelId) return;
-    
+  const fetchData = useCallback(async (limit: number = initialLimit) => {
     try {
       setLoading(true);
-      const response = await apiService.getSensorHistory(nodeId, wheelId, limit);
-      setData(response.data);
       setError(null);
+      
+      const historyData = await getSensorHistory(node, wheel, limit);
+      setData(historyData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch sensor history');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch history data';
+      setError(errorMessage);
+      console.error('[useDeviceHistory] Error:', errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [nodeId, wheelId, limit]);
+  }, [node, wheel, initialLimit]);
 
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+    fetchData();
+  }, [fetchData]);
 
-  return { data, loading, error, refetch: fetchHistory };
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetchData,
+  };
 }
 
-// Hook for device labels
-export function useDeviceLabels() {
-  const [labels, setLabels] = useState<Map<string, DeviceLabel>>(new Map());
-  const [loading, setLoading] = useState(false);
+// ============================================
+// useSystemStats Hook
+// ============================================
+
+export interface UseSystemStatsResult {
+  stats: SystemStats | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+export function useSystemStats(): UseSystemStatsResult {
+  const [stats, setStats] = useState<SystemStats | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const updateLabel = useCallback(async (
-    nodeId: number, 
-    wheelId: number, 
-    nodeLabel: string, 
-    wheelLabel: string
-  ) => {
+  const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
-      const updatedLabel = await apiService.updateDeviceLabels(nodeId, wheelId, nodeLabel, wheelLabel);
-      
-      // Update local state
-      const key = `${nodeId}-${wheelId}`;
-      setLabels(prev => new Map(prev.set(key, updatedLabel)));
       setError(null);
       
-      return updatedLabel;
+      const statsData = await getSystemStats();
+      setStats(statsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update labels');
-      throw err;
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch stats';
+      setError(errorMessage);
+      console.error('[useSystemStats] Error:', errorMessage);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const getLabel = useCallback((nodeId: number, wheelId: number): DeviceLabel | null => {
-    const key = `${nodeId}-${wheelId}`;
-    return labels.get(key) || null;
-  }, [labels]);
+  useEffect(() => {
+    fetchStats();
+    
+    // Refresh stats every 10 seconds
+    const interval = setInterval(fetchStats, 10000);
+    
+    return () => clearInterval(interval);
+  }, [fetchStats]);
 
-  return { labels, loading, error, updateLabel, getLabel };
+  return {
+    stats,
+    loading,
+    error,
+    refetch: fetchStats,
+  };
 }
 
-// Hook for map layout
-export function useMapLayout() {
+// ============================================
+// useMapLayout Hook
+// ============================================
+
+export interface UseMapLayoutResult {
+  layout: MapLayout[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  updateLayout: (newLayout: Partial<MapLayout>[]) => Promise<void>;
+}
+
+export function useMapLayout(): UseMapLayoutResult {
   const [layout, setLayout] = useState<MapLayout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,46 +307,86 @@ export function useMapLayout() {
   const fetchLayout = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiService.getMapLayout();
-      setLayout(response.data);
       setError(null);
+      
+      const layoutData = await getMapLayout();
+      setLayout(layoutData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch map layout');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch map layout';
+      setError(errorMessage);
+      console.error('[useMapLayout] Error:', errorMessage);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const saveLayout = useCallback(async (newLayout: MapLayout[]) => {
+  const updateLayoutData = useCallback(async (newLayout: Partial<MapLayout>[]) => {
+    try {
+      setError(null);
+      
+      await updateMapLayout(newLayout);
+      await fetchLayout();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update map layout';
+      setError(errorMessage);
+      console.error('[useMapLayout] Error:', errorMessage);
+      throw err;
+    }
+  }, [fetchLayout]);
+
+  useEffect(() => {
+    fetchLayout();
+  }, [fetchLayout]);
+
+  return {
+    layout,
+    loading,
+    error,
+    refetch: fetchLayout,
+    updateLayout: updateLayoutData,
+  };
+}
+
+// ============================================
+// useDeviceLabels Hook
+// ============================================
+
+export interface UseDeviceLabelsResult {
+  updateLabels: (node: number, wheel: number, labels: {
+    node_label?: string;
+    wheel_label?: string;
+  }) => Promise<void>;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useDeviceLabels(): UseDeviceLabelsResult {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const updateLabels = useCallback(async (
+    node: number,
+    wheel: number,
+    labels: { node_label?: string; wheel_label?: string }
+  ) => {
     try {
       setLoading(true);
-      await apiService.saveMapLayout(newLayout);
-      setLayout(newLayout);
       setError(null);
+      
+      await updateDeviceLabels(node, wheel, labels);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save map layout');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update labels';
+      setError(errorMessage);
+      console.error('[useDeviceLabels] Error:', errorMessage);
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchLayout();
-  }, [fetchLayout]);
-
-  return { layout, loading, error, saveLayout, refetch: fetchLayout };
-}
-
-// Hook for device statistics
-export function useDeviceStats(sensorData: SensorData[]) {
-  const stats = {
-    totalNodes: new Set(sensorData.map(d => d.node_id)).size,
-    totalWheelchairs: new Set(sensorData.map(d => d.wheel_id)).size,
-    activeWheelchairs: sensorData.filter(d => d.motion === 1).length,
-    onlineDevices: sensorData.filter(d => !d.stale).length,
-    alerts: sensorData.filter(d => d.rssi < -80).length,
+  return {
+    updateLabels,
+    loading,
+    error,
   };
-
-  return stats;
 }

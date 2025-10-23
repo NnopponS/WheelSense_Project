@@ -1,63 +1,187 @@
-services:
-  mosquitto:
-    image: eclipse-mosquitto
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./mqtt_broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - ./mqtt_broker/:/etc/mosquitto/
+# WheelSense Docker Compose Configuration
+# Complete IoT monitoring system for wheelchair tracking
+# Last updated: 2025-10-23
 
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
   postgres:
-    image: postgres:16
-    ports:
-      - "5433:5432"
+    image: postgres:15-alpine
+    container_name: wheelsense-postgres
+    restart: unless-stopped
     environment:
-      - POSTGRES_USER=wheeluser
-      - POSTGRES_PASSWORD=wheelpass
-      - POSTGRES_DB=iot_log
+      POSTGRES_DB: iot_log
+      POSTGRES_USER: wheeluser
+      POSTGRES_PASSWORD: wheelpass
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
+      - postgres_data:/var/lib/postgresql/data
       - ./sql_db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - wheelsense-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U wheeluser -d iot_log"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  mqtt_collector:
-    build: ./mqtt_collector
+  # ============================================
+  # MQTT Broker (Mosquitto)
+  # ============================================
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: wheelsense-mqtt
+    restart: unless-stopped
+    volumes:
+      - ./mqtt_broker/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
     ports:
-      - "5000:5000"
+      - "1883:1883"
+      - "9001:9001"
+    networks:
+      - wheelsense-network
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -t '$$SYS/broker/uptime' -C 1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================
+  # MQTT Collector Service
+  # ============================================
+  mqtt_collector:
+    build:
+      context: ./mqtt_collector
+      dockerfile: Dockerfile
+    container_name: wheelsense-collector
+    restart: unless-stopped
     environment:
-      - POSTGRES_URL=postgresql://wheeluser:wheelpass@postgres:5432/iot_log
-      - SQL_TABLE=sensor_data
-      - MQTT_BROKER=mqtt://mosquitto:1883
-      - MQTT_TOPIC=WheelSense/data
-      - PG_NOTIFY_CHANNEL=sensor_update
+      MQTT_BROKER: mqtt://mosquitto:1883
+      MQTT_TOPIC: WheelSense/data
+      POSTGRES_URL: postgresql://wheeluser:wheelpass@postgres:5432/iot_log
+      STALE_THRESHOLD_SEC: 30
+      NODE_ENV: production
     depends_on:
-      mosquitto:
-        condition: service_started
       postgres:
         condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    networks:
+      - wheelsense-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # ============================================
+  # REST API Service
+  # ============================================
   rest_api:
-    build: ./rest_api
+    build:
+      context: ./rest_api
+      dockerfile: Dockerfile
+    container_name: wheelsense-api
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      POSTGRES_URL: postgresql://wheeluser:wheelpass@postgres:5432/iot_log
+      SSE_KEEPALIVE_MS: 15000
+      STALE_THRESHOLD_SEC: 30
+      NODE_ENV: production
     ports:
       - "3000:3000"
-    environment:
-      - PORT=3000
-      - POSTGRES_URL=postgresql://wheeluser:wheelpass@postgres:5432/iot_log
-      - SQL_TABLE=sensor_data
-      - LABELS_TABLE=device_labels
-      - PG_NOTIFY_CHANNEL=sensor_update
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - wheelsense-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # ============================================
+  # Dashboard (Frontend)
+  # ============================================
   dashboard:
-    build: ./WheelSense Dashboard
+    build:
+      context: ./WheelSense Dashboard
+      dockerfile: Dockerfile
+    container_name: wheelsense-dashboard
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3000/api
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
-      rest_api:
-        condition: service_started
+      - rest_api
+    networks:
+      - wheelsense-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  wheelsense-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  postgres_data:
+    driver: local
+  mosquitto_data:
+    driver: local
+  mosquitto_logs:
+    driver: local
+
+# ============================================
+# Usage Instructions
+# ============================================
+#
+# Start all services:
+#   docker-compose up -d
+#
+# View logs:
+#   docker-compose logs -f [service_name]
+#
+# Stop all services:
+#   docker-compose down
+#
+# Stop and remove all data:
+#   docker-compose down -v
+#
+# Restart specific service:
+#   docker-compose restart [service_name]
+#
+# Check service status:
+#   docker-compose ps
+#
+# ============================================
