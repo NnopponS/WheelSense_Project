@@ -368,26 +368,75 @@ export function MapEditor() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingRoom) return;
+    if (!selectedRoom) {
+      toast.error('กรุณาเลือกห้องก่อน');
+      return;
+    }
+
+    const currentRoom = rooms.find(r => r.node === selectedRoom);
+    if (!currentRoom) {
+      toast.error('ไม่พบข้อมูลห้อง');
+      return;
+    }
 
     try {
       setSaving(true);
-      await updateRoom(editingRoom);
+      
+      // Use editingRoom data if exists, otherwise use current room data
+      const roomToSave = editingRoom?.node === selectedRoom ? editingRoom : currentRoom;
+      
+      console.log('💾 Saving room data:', roomToSave);
+      
+      // Transform to the format the API expects
+      const roomData = {
+        node: roomToSave.node,
+        node_name: roomToSave.name,
+        x_pos: roomToSave.x,
+        y_pos: roomToSave.y,
+        width: roomToSave.width,
+        height: roomToSave.height,
+        color: roomToSave.color,
+        border_color: roomToSave.border_color || '#9ca3af',
+        floor_id: roomToSave.floor_id,
+        building_id: roomToSave.building_id,
+      };
+      
+      console.log('📤 Sending to API:', roomData);
+      
+      // Call the API directly
+      const API_URL = 'http://localhost:3000/api';
+      const response = await fetch(`${API_URL}/map-layout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          layout: [roomData]
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+      
+      console.log('✅ Save successful!');
       
       setRooms(prev => prev.map(room =>
-        room.node === editingRoom.node
-          ? { ...room, ...editingRoom }
+        room.node === selectedRoom
+          ? { ...room, ...roomToSave }
           : room
       ));
       
       setEditingRoom(null);
-      toast.success('Room saved successfully! Changes will appear in Dashboard.');
+      toast.success('✅ บันทึกสำเร็จ! กด Refresh เพื่อดูผล');
       
       // Reload data to ensure sync
-      await loadMapData();
+      setTimeout(() => {
+        loadMapData();
+      }, 500);
     } catch (error) {
-      console.error('Failed to update room:', error);
-      toast.error('Failed to save room changes');
+      console.error('❌ Failed to save room:', error);
+      toast.error('❌ ไม่สามารถบันทึกได้: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setSaving(false);
     }
@@ -837,16 +886,15 @@ export function MapEditor() {
                 Room Properties
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 relative">
+            <CardContent className="p-4">
               {selectedRoom === null ? (
-                <div className="flex flex-col items-center justify-center h-48 text-center p-4">
+                <div className="flex flex-col items-center justify-center h-48 text-center">
                   <Move className="h-10 w-10 text-muted-foreground opacity-30 mb-3" />
                   <p className="text-sm text-muted-foreground">Select a room to edit</p>
                   <p className="text-xs text-muted-foreground">Click on a room in the map</p>
                 </div>
               ) : (
-                <>
-                  <ScrollArea className="h-[500px] p-4 pb-20">
+                <ScrollArea className="h-[500px]">
                   {(() => {
                     const room = filteredRooms.find(r => r.node === selectedRoom);
                     if (!room) return null;
@@ -855,6 +903,18 @@ export function MapEditor() {
 
                     return (
                       <div className="space-y-3">
+                        {/* SAVE BUTTON - ปุ่มบันทึกใหญ่เด่นสุดๆ */}
+                        <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-4 p-3 bg-gradient-to-r from-green-500 to-green-600 shadow-xl">
+                          <Button 
+                            onClick={handleSaveEdit}
+                            className="w-full bg-white hover:bg-green-50 text-green-700 font-bold text-lg h-14 shadow-lg border-2 border-green-300"
+                            disabled={saving}
+                          >
+                            <Save className="h-6 w-6 mr-2" />
+                            {saving ? '⏳ กำลังบันทึก...' : '💾 บันทึกการเปลี่ยนแปลง'}
+                          </Button>
+                        </div>
+
                         {/* Status Badge */}
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge variant={isActive ? 'default' : 'secondary'}>
@@ -913,6 +973,12 @@ export function MapEditor() {
                               } else {
                                 handleEditRoom(room);
                                 setEditingRoom(prev => prev ? { ...prev, name: e.target.value } : null);
+                              }
+                            }}
+                            onBlur={() => {
+                              // Auto-save on blur
+                              if (editingRoom?.node === room.node) {
+                                handleSaveEdit();
                               }
                             }}
                             placeholder="Enter room name"
@@ -1128,60 +1194,32 @@ export function MapEditor() {
                           </div>
                         </div>
 
-                      </div>
-                    );
-                  })()}
-                  </ScrollArea>
-
-                  {/* Fixed Save Button at Bottom */}
-                  {(() => {
-                    const room = filteredRooms.find(r => r.node === selectedRoom);
-                    if (!room) return null;
-
-                    return (
-                      <div className="absolute bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-3 shadow-lg">
-                        <div className="space-y-2">
-                          <Button 
-                            onClick={() => {
-                              if (editingRoom?.node === room.node) {
-                                handleSaveEdit();
-                              } else {
-                                handleEditRoom(room);
-                              }
-                            }}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-11 text-base shadow-md"
-                            disabled={saving}
-                          >
-                            <Save className="h-5 w-5 mr-2" />
-                            {saving ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
-                          </Button>
-                          
-                          <div className="flex gap-2">
-                            {editingRoom?.node === room.node && (
-                              <Button 
-                                onClick={handleCancelEdit}
-                                variant="outline"
-                                className="flex-1 h-9"
-                                disabled={saving}
-                              >
-                                ยกเลิก
-                              </Button>
-                            )}
-                            
-                            <Button
-                              onClick={() => handleDeleteRoom(room.node)}
-                              variant="destructive"
-                              className="flex-1 h-9"
+                        {/* Actions */}
+                        <div className="space-y-2 pt-3 border-t">
+                          {editingRoom?.node === room.node && (
+                            <Button 
+                              onClick={handleCancelEdit}
+                              variant="outline"
+                              className="w-full"
+                              disabled={saving}
                             >
-                              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                              ลบห้อง
+                              ยกเลิกการแก้ไข
                             </Button>
-                          </div>
+                          )}
+                          
+                          <Button
+                            onClick={() => handleDeleteRoom(room.node)}
+                            variant="destructive"
+                            className="w-full"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            ลบห้อง
+                          </Button>
                         </div>
                       </div>
                     );
                   })()}
-                </>
+                </ScrollArea>
               )}
             </CardContent>
           </Card>
