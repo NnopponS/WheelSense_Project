@@ -619,7 +619,7 @@ async function initialize() {
 // ============================================
 
 // Get all buildings
-app.get('/api/buildings', async (req, res) => {
+api.get('/buildings', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT * FROM buildings ORDER BY id
@@ -632,7 +632,7 @@ app.get('/api/buildings', async (req, res) => {
 });
 
 // Create building
-app.post('/api/buildings', async (req, res) => {
+api.post('/buildings', async (req, res) => {
   const { name, description } = req.body;
   try {
     const result = await pool.query(`
@@ -648,7 +648,7 @@ app.post('/api/buildings', async (req, res) => {
 });
 
 // Get floors for a building
-app.get('/api/buildings/:building_id/floors', async (req, res) => {
+api.get('/buildings/:building_id/floors', async (req, res) => {
   const { building_id } = req.params;
   try {
     const result = await pool.query(`
@@ -664,7 +664,7 @@ app.get('/api/buildings/:building_id/floors', async (req, res) => {
 });
 
 // Create floor
-app.post('/api/floors', async (req, res) => {
+api.post('/floors', async (req, res) => {
   const { building_id, floor_number, name, description } = req.body;
   try {
     const result = await pool.query(`
@@ -680,7 +680,7 @@ app.post('/api/floors', async (req, res) => {
 });
 
 // Get pathways for a floor
-app.get('/api/floors/:floor_id/pathways', async (req, res) => {
+api.get('/floors/:floor_id/pathways', async (req, res) => {
   const { floor_id } = req.params;
   try {
     const result = await pool.query(`
@@ -695,7 +695,7 @@ app.get('/api/floors/:floor_id/pathways', async (req, res) => {
 });
 
 // Create pathway
-app.post('/api/pathways', async (req, res) => {
+api.post('/pathways', async (req, res) => {
   const { floor_id, name, points, width, type } = req.body;
   try {
     const result = await pool.query(`
@@ -711,7 +711,7 @@ app.post('/api/pathways', async (req, res) => {
 });
 
 // Delete pathway
-app.delete('/api/pathways/:id', async (req, res) => {
+api.delete('/pathways/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await pool.query('DELETE FROM pathways WHERE id = $1', [id]);
@@ -723,26 +723,66 @@ app.delete('/api/pathways/:id', async (req, res) => {
 });
 
 // Update map layout with floor/building info
-app.post('/api/map-layout/advanced', async (req, res) => {
-  const { rooms } = req.body; // Array of {node, name, floor_id, building_id, x, y}
+api.post('/map-layout/advanced', async (req, res) => {
+  const { rooms } = req.body; // Array of {node, name, floor_id, building_id, x, y, width, height, color}
   
   try {
     for (const room of rooms) {
       await pool.query(`
-        INSERT INTO map_layout (node, node_name, floor_id, building_id, x_pos, y_pos)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO map_layout (node, node_name, floor_id, building_id, x_pos, y_pos, width, height, color, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
         ON CONFLICT (node) DO UPDATE SET
-          node_name = EXCLUDED.node_name,
-          floor_id = EXCLUDED.floor_id,
-          building_id = EXCLUDED.building_id,
-          x_pos = EXCLUDED.x_pos,
-          y_pos = EXCLUDED.y_pos,
+          node_name = COALESCE(EXCLUDED.node_name, map_layout.node_name),
+          floor_id = COALESCE(EXCLUDED.floor_id, map_layout.floor_id),
+          building_id = COALESCE(EXCLUDED.building_id, map_layout.building_id),
+          x_pos = COALESCE(EXCLUDED.x_pos, map_layout.x_pos),
+          y_pos = COALESCE(EXCLUDED.y_pos, map_layout.y_pos),
+          width = COALESCE(EXCLUDED.width, map_layout.width),
+          height = COALESCE(EXCLUDED.height, map_layout.height),
+          color = COALESCE(EXCLUDED.color, map_layout.color),
           updated_at = NOW()
-      `, [room.node, room.name, room.floor_id, room.building_id, room.x, room.y]);
+      `, [
+        room.node, 
+        room.name || null, 
+        room.floor_id || null, 
+        room.building_id || null, 
+        room.x || null, 
+        room.y || null,
+        room.width || null,
+        room.height || null,
+        room.color || null
+      ]);
     }
+    
+    // Notify SSE clients
+    broadcastSSE({
+      type: 'layout_updated',
+      count: rooms.length,
+    });
+    
     res.json({ success: true, updated: rooms.length });
   } catch (error) {
     console.error('[API] POST /map-layout/advanced error:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// Delete room from map layout
+api.delete('/map-layout/:node', async (req, res) => {
+  const { node } = req.params;
+  
+  try {
+    await pool.query('DELETE FROM map_layout WHERE node = $1', [parseInt(node, 10)]);
+    
+    // Notify SSE clients
+    broadcastSSE({
+      type: 'layout_updated',
+      deleted: node,
+    });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[API] DELETE /map-layout error:', error);
     res.status(500).json({ error: 'Database error' });
   }
 });

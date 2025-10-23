@@ -423,3 +423,56 @@ export async function deletePathway(id: number): Promise<void> {
     throw new ApiError('Failed to delete pathway', response.status);
   }
 }
+
+// ============================================
+// Room Management (Map Layout Extended)
+// ============================================
+
+export interface Room {
+  node: number;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  floor_id?: number;
+  building_id?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function getRooms(): Promise<Room[]> {
+  const response = await fetchApi<ApiResponse<any[]>>('/map-layout');
+  // Transform map_layout to Room format with defaults
+  return response.data.map(item => ({
+    node: item.node,
+    name: item.node_name || `Room ${item.node}`,
+    x: item.x_pos || 100,
+    y: item.y_pos || 100,
+    width: item.width || 120,
+    height: item.height || 80,
+    color: item.color || '#0056B3',
+    floor_id: item.floor_id,
+    building_id: item.building_id,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+  }));
+}
+
+export async function updateRooms(rooms: Partial<Room>[]): Promise<void> {
+  await fetchApi('/map-layout/advanced', {
+    method: 'POST',
+    body: JSON.stringify({ rooms }),
+  });
+}
+
+export async function updateRoom(room: Partial<Room> & { node: number }): Promise<void> {
+  await updateRooms([room]);
+}
+
+export async function deleteRoom(node: number): Promise<void> {
+  await fetchApi(`/map-layout/${node}`, {
+    method: 'DELETE',
+  });
+}

@@ -1,14 +1,15 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { MonitoringDashboard } from './components/monitoring-dashboard';
 import { AIAssistantChat } from './components/ai-assistant-chat';
 import { TimelineScreen } from './components/timeline-screen';
 import { DeviceSetupScreen } from './components/device-setup-screen';
-import { MapEditor } from './components/map-editor';
 import { AdminTools } from './components/admin-tools';
 import { NetworkTopology } from './components/network-topology';
 import { ReportsScreen } from './components/reports-screen';
 import { AnalyticsDashboard } from './components/analytics-dashboard';
+import { MapEditor } from './components/map-editor';
 
 function Navigation() {
   const location = useLocation();
@@ -17,9 +18,7 @@ function Navigation() {
   // Listen for custom navigation events from components
   useEffect(() => {
     const handleNavigate = (event: CustomEvent) => {
-      if (event.detail === 'map-layout') {
-        navigate('/map');
-      } else if (event.detail === 'dashboard') {
+      if (event.detail === 'dashboard') {
         navigate('/');
       }
     };
@@ -55,6 +54,9 @@ function Navigation() {
           <Link to="/" className={linkClass('/')}>
             <span className="english-text">Dashboard</span>
           </Link>
+          <Link to="/map" className={linkClass('/map')}>
+            <span className="english-text">Map</span>
+          </Link>
           <Link to="/analytics" className={linkClass('/analytics')}>
             <span className="english-text">Analytics</span>
           </Link>
@@ -69,9 +71,6 @@ function Navigation() {
           </Link>
           <Link to="/devices" className={linkClass('/devices')}>
             <span className="english-text">Devices</span>
-          </Link>
-          <Link to="/map" className={linkClass('/map')}>
-            <span className="english-text">Map Editor</span>
           </Link>
           <Link to="/assistant" className={linkClass('/assistant')}>
             <span className="english-text">AI</span>
@@ -93,12 +92,12 @@ export default function App() {
         <div className="flex-1 overflow-auto">
           <Routes>
             <Route path="/" element={<MonitoringDashboard />} />
+            <Route path="/map" element={<MapEditor />} />
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/network" element={<NetworkTopology />} />
             <Route path="/reports" element={<ReportsScreen />} />
             <Route path="/timeline" element={<TimelineScreen />} />
             <Route path="/devices" element={<DeviceSetupScreen />} />
-            <Route path="/map" element={<MapEditor />} />
             <Route path="/assistant" element={<AIAssistantChat />} />
             <Route path="/admin" element={<AdminTools />} />
           </Routes>

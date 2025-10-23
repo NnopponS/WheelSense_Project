@@ -288,66 +288,6 @@ export function useSystemStats(): UseSystemStatsResult {
 }
 
 // ============================================
-// useMapLayout Hook
-// ============================================
-
-export interface UseMapLayoutResult {
-  layout: MapLayout[];
-  loading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-  updateLayout: (newLayout: Partial<MapLayout>[]) => Promise<void>;
-}
-
-export function useMapLayout(): UseMapLayoutResult {
-  const [layout, setLayout] = useState<MapLayout[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchLayout = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const layoutData = await getMapLayout();
-      setLayout(layoutData);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch map layout';
-      setError(errorMessage);
-      console.error('[useMapLayout] Error:', errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const updateLayoutData = useCallback(async (newLayout: Partial<MapLayout>[]) => {
-    try {
-      setError(null);
-      
-      await updateMapLayout(newLayout);
-      await fetchLayout();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update map layout';
-      setError(errorMessage);
-      console.error('[useMapLayout] Error:', errorMessage);
-      throw err;
-    }
-  }, [fetchLayout]);
-
-  useEffect(() => {
-    fetchLayout();
-  }, [fetchLayout]);
-
-  return {
-    layout,
-    loading,
-    error,
-    refetch: fetchLayout,
-    updateLayout: updateLayoutData,
-  };
-}
-
-// ============================================
 // useDeviceLabels Hook
 // ============================================
 

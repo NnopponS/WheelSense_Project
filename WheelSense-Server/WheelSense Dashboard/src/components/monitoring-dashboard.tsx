@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { Activity, Radio, Users, AlertCircle, RefreshCw, Wifi, MapPin } from 'lucide-react';
-import { useSensorData, useMapLayout, useSystemStats } from '../hooks/useApi';
+import { useSensorData, useSystemStats } from '../hooks/useApi';
 import type { SensorData } from '../services/api';
 import { NodeDetailModal } from './node-detail-modal';
 import { SystemMap } from './system-map';
@@ -20,18 +20,17 @@ import { toast } from 'sonner';
 export function MonitoringDashboard() {
   // ดึงข้อมูลจาก API
   const { data: sensorData, loading, error, isConnected, isUpdating, refetch } = useSensorData();
-  const { layout: mapLayout, refetch: refetchMap } = useMapLayout();
   const { stats, loading: statsLoading } = useSystemStats();
   
   // State สำหรับ UI
-  const [selectedSensor, setSelectedSensor] = useState<SensorData | null>(null);
-  const [detailOpen, setDetailOpen] = useState<boolean>(false);
-  const [mqttLogs, setMqttLogs] = useState<any[]>([]);
-  const [statsAnimating, setStatsAnimating] = useState<boolean>(false);
+  const [selectedSensor, setSelectedSensor] = useState(null as SensorData | null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [mqttLogs, setMqttLogs] = useState([] as any[]);
+  const [statsAnimating, setStatsAnimating] = useState(false);
   
   // Refs
-  const previousSensorData = useRef(new Map<string, string>());
-  const mqttLogsRef = useRef<HTMLDivElement | null>(null);
+  const previousSensorData = useRef(new Map() as Map<string, string>);
+  const mqttLogsRef = useRef(null as HTMLDivElement | null);
   const MAX_LOGS = 50;
 
   // แสดง notification เมื่อเชื่อมต่อ
@@ -43,16 +42,6 @@ export function MonitoringDashboard() {
       });
     }
   }, [isConnected]);
-
-  // Listen for map layout updates from Map Editor
-  useEffect(() => {
-    const handleMapUpdate = () => {
-      refetchMap();
-    };
-    
-    window.addEventListener('map-layout-updated', handleMapUpdate);
-    return () => window.removeEventListener('map-layout-updated', handleMapUpdate);
-  }, [refetchMap]);
 
   // สร้าง MQTT logs จากข้อมูล sensor (แบบ real-time)
   useEffect(() => {
@@ -248,33 +237,86 @@ export function MonitoringDashboard() {
           </Card>
         </div>
 
-        {/* แผนที่และ MQTT Logs */}
+        {/* System Map */}
+        <SystemMap compact={true} />
+
+        {/* รายการอุปกรณ์และ MQTT Logs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* แผนที่ - ใช้ System Map ใหม่ */}
-          {sensorData.length === 0 ? (
-            <Card className="lg:col-span-2 border border-gray-200">
-              <CardContent className="pt-6">
+          {/* รายการอุปกรณ์ */}
+          <Card className="lg:col-span-2 border border-gray-200">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="flex items-center gap-3">
+                <Activity className="h-5 w-5 text-gray-400" />
+                <div>
+                  <span className="text-base font-medium text-gray-900">Active Devices</span>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {sensorData.filter(s => !s.stale).length} online
+                  </p>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {sensorData.length === 0 ? (
                 <div className="bg-gray-50 rounded-lg border p-20 text-center">
-                  <MapPin className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-30" />
-                  <p className="text-muted-foreground">ไม่มี Node ออนไลน์</p>
+                  <Activity className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-30" />
+                  <p className="text-muted-foreground">ไม่มีอุปกรณ์ออนไลน์</p>
                   <p className="text-sm text-muted-foreground">รอการเชื่อมต่อจากอุปกรณ์</p>
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <SystemMap
-              sensorData={sensorData}
-              mapLayout={mapLayout}
-              onWheelchairClick={(sensor) => {
-                setSelectedSensor(sensor);
-                setDetailOpen(true);
-              }}
-              onEditClick={() => {
-                const event = new CustomEvent('navigate', { detail: 'map-layout' });
-                window.dispatchEvent(event);
-              }}
-            />
-          )}
+              ) : (
+                <div className="space-y-3">
+                  {sensorData
+                    .filter(s => !s.stale)
+                    .map(sensor => (
+                      <div
+                        key={`${sensor.node}-${sensor.wheel}`}
+                        onClick={() => {
+                          setSelectedSensor(sensor);
+                          setDetailOpen(true);
+                        }}
+                        className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 cursor-pointer transition-all"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`h-3 w-3 rounded-full ${sensor.motion === 1 ? 'bg-green-500 animate-pulse' : 'bg-blue-500'}`} />
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {sensor.node_label || `Node ${sensor.node}`}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {sensor.wheel_label || `Wheel ${sensor.wheel}`}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant={sensor.motion === 1 ? 'default' : 'secondary'}>
+                            {sensor.motion === 1 ? 'Moving' : 'Idle'}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <p className="text-gray-500">Distance</p>
+                            <p className="font-medium text-gray-900">
+                              {sensor.distance?.toFixed(2) || '-'} m
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">RSSI</p>
+                            <p className="font-medium text-gray-900">
+                              {sensor.rssi || '-'} dBm
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Status</p>
+                            <p className="font-medium text-gray-900">
+                              {sensor.status || '-'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* MQTT Logs */}
           <Card className="border border-gray-200">

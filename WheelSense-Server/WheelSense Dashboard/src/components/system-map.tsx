@@ -1,258 +1,383 @@
 /**
- * System Map - Simple Version
- * แค่แสดงแผนที่ ไม่มี Zoom/Pan
+ * WheelSense System Map
+ * Read-only map view showing all rooms and their status
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
+import { Building2, MapPin, Users, Maximize2 } from 'lucide-react';
+import { getRooms, getBuildings, getFloors, type Room, type Building, type Floor } from '../services/api';
+import { useSensorData } from '../hooks/useApi';
 import type { SensorData } from '../services/api';
 
-interface Room {
-  id: string;
-  node: number;
-  name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  deviceCount: number;
-}
-
-interface Wheelchair {
-  id: string;
-  x: number;
-  y: number;
-  node: number;
-  wheel: number;
-  label: string;
-  distance: number | null;
-  rssi: number;
-  motion: boolean;
-  sensorData: SensorData;
+// Helper function to determine which room each wheelchair is in based on strongest RSSI
+function getWheelchairLocations(sensorData: SensorData[]): Map<number, { node: number; rssi: number; wheelLabel: string; nodeLabel: string; ts: string }> {
+  const wheelchairLocations = new Map();
+  
+  // Group by wheelchair
+  const wheelchairData = new Map<number, SensorData[]>();
+  
+  sensorData.forEach(sensor => {
+    if (sensor.stale) return; // Skip stale data
+    
+    if (!wheelchairData.has(sensor.wheel)) {
+      wheelchairData.set(sensor.wheel, []);
+    }
+    wheelchairData.get(sensor.wheel)!.push(sensor);
+  });
+  
+  // For each wheelchair, find the node with strongest RSSI and most recent timestamp
+  wheelchairData.forEach((sensors, wheel) => {
+    if (sensors.length === 0) return;
+    
+    // Sort by RSSI (higher is better, closer to 0) and then by timestamp (most recent)
+    const bestSensor = sensors.reduce((best, current) => {
+      // RSSI comparison: higher value (closer to 0) is better
+      // -50 dBm is better than -70 dBm
+      if (current.rssi === null) return best;
+      if (best.rssi === null) return current;
+      
+      if (current.rssi > best.rssi) return current;
+      if (current.rssi === best.rssi) {
+        // If same RSSI, prefer more recent timestamp
+        return new Date(current.ts) > new Date(best.ts) ? current : best;
+      }
+      return best;
+    });
+    
+    if (bestSensor.rssi !== null) {
+      wheelchairLocations.set(wheel, {
+        node: bestSensor.node,
+        rssi: bestSensor.rssi,
+        wheelLabel: bestSensor.wheel_label || `Wheel ${wheel}`,
+        nodeLabel: bestSensor.node_label || `Room ${bestSensor.node}`,
+        ts: bestSensor.ts,
+      });
+    }
+  });
+  
+  return wheelchairLocations;
 }
 
 interface SystemMapProps {
-  sensorData: SensorData[];
-  mapLayout: any[];
-  onWheelchairClick?: (sensor: SensorData) => void;
-  onEditClick?: () => void;
+  selectedFloorId?: number;
+  selectedBuildingId?: number;
+  onRoomClick?: (room: Room) => void;
+  compact?: boolean;
 }
 
 export function SystemMap({ 
-  sensorData, 
-  mapLayout, 
-  onWheelchairClick,
-  onEditClick 
+  selectedFloorId, 
+  selectedBuildingId, 
+  onRoomClick,
+  compact = false 
 }: SystemMapProps) {
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [buildings, setBuildings] = useState<Building[]>([]);
+  const [floors, setFloors] = useState<Floor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { data: sensorData } = useSensorData();
+
+  useEffect(() => {
+    loadMapData();
+  }, []);
+
+  const loadMapData = async () => {
+    try {
+      setLoading(true);
+      const [roomsData, buildingsData] = await Promise.all([
+        getRooms(),
+        getBuildings(),
+      ]);
+      
+      setRooms(roomsData);
+      setBuildings(buildingsData);
+      
+      // Load floors for the first building or selected building
+      if (buildingsData.length > 0) {
+        const buildingId = selectedBuildingId || buildingsData[0].id;
+        const floorsData = await getFloors(buildingId);
+        setFloors(floorsData);
+      }
+    } catch (error) {
+      console.error('Failed to load map data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get active nodes from sensor data
+  const activeNodes = new Set(
+    sensorData
+      .filter(s => !s.stale)
+      .map(s => s.node)
+  );
+
+  // Get nodes with motion
+  const movingNodes = new Set(
+    sensorData
+      .filter(s => !s.stale && s.motion === 1)
+      .map(s => s.node)
+  );
+
+  // Get wheelchair locations based on strongest RSSI
+  const wheelchairLocations = getWheelchairLocations(sensorData);
   
-  // สร้าง Rooms จาก nodes ที่ออนไลน์
-  const activeNodes = Array.from(new Set(
-    sensorData.filter(s => !s.stale).map(s => s.node)
-  ));
-  
-  const rooms: Room[] = activeNodes.map((nodeNum, index) => {
-    const sensor = sensorData.find(s => s.node === nodeNum);
-    const savedLayout = mapLayout.find(m => m.node === nodeNum);
-    const devicesInNode = sensorData.filter(s => s.node === nodeNum && !s.stale);
-    
-    const col = index % 3;
-    const row = Math.floor(index / 3);
-    
-    return {
-      id: `room-${nodeNum}`,
-      node: nodeNum,
-      name: savedLayout?.node_name || sensor?.node_label || `Node ${nodeNum}`,
-      x: savedLayout?.x_pos ?? (100 + col * 250),
-      y: savedLayout?.y_pos ?? (100 + row * 200),
-      width: 200,
-      height: 150,
-      deviceCount: devicesInNode.length,
-    };
+  // Group wheelchairs by room
+  const wheelchairsInRoom = new Map<number, Array<{ wheel: number; label: string; rssi: number }>>();
+  wheelchairLocations.forEach((location, wheel) => {
+    if (!wheelchairsInRoom.has(location.node)) {
+      wheelchairsInRoom.set(location.node, []);
+    }
+    wheelchairsInRoom.get(location.node)!.push({
+      wheel,
+      label: location.wheelLabel,
+      rssi: location.rssi,
+    });
   });
 
-  // วาง Wheelchairs ในแต่ละ room
-  const wheelchairs: Wheelchair[] = sensorData
-    .filter(s => !s.stale)
-    .map(sensor => {
-      const room = rooms.find(r => r.node === sensor.node);
-      
-      let x: number;
-      let y: number;
-      
-      if (room) {
-        const wheelsInRoom = sensorData.filter(s => s.node === sensor.node && !s.stale);
-        const totalWheels = wheelsInRoom.length;
-        const wheelIndex = wheelsInRoom.findIndex(w => w.wheel === sensor.wheel);
-        
-        if (totalWheels === 1) {
-          x = room.x + room.width / 2;
-          y = room.y + room.height / 2;
-        } else {
-          const centerX = room.x + room.width / 2;
-          const centerY = room.y + room.height / 2;
-          const radius = 40;
-          const angle = (wheelIndex / totalWheels) * 2 * Math.PI - Math.PI / 2;
-          
-          x = centerX + radius * Math.cos(angle);
-          y = centerY + radius * Math.sin(angle);
-        }
-      } else {
-        x = 200;
-        y = 150;
-      }
+  // Filter rooms by selected floor/building
+  const filteredRooms = rooms.filter(room => {
+    if (selectedFloorId && room.floor_id !== selectedFloorId) return false;
+    if (selectedBuildingId && room.building_id !== selectedBuildingId) return false;
+    return true;
+  });
 
-      return {
-        id: `${sensor.node}-${sensor.wheel}`,
-        x,
-        y,
-        node: sensor.node,
-        wheel: sensor.wheel,
-        label: sensor.wheel_label || `Wheel ${sensor.wheel}`,
-        distance: sensor.distance,
-        rssi: sensor.rssi || 0,
-        motion: sensor.motion === 1,
-        sensorData: sensor,
-      };
-    });
-
-  if (rooms.length === 0) {
+  if (loading) {
     return (
-      <div className="bg-gray-50 rounded-lg border p-20 text-center">
-        <div className="text-gray-400">
-          <svg className="h-16 w-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-          </svg>
-          <p className="font-medium">ไม่มี Node ออนไลน์</p>
-          <p className="text-sm">รอการเชื่อมต่อจากอุปกรณ์</p>
-        </div>
-      </div>
+      <Card className={compact ? 'border-0 shadow-none' : ''}>
+        <CardContent className={compact ? 'p-4' : 'p-6'}>
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">Loading map...</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
+  if (filteredRooms.length === 0) {
+    return (
+      <Card className={compact ? 'border-0 shadow-none' : ''}>
+        <CardContent className={compact ? 'p-4' : 'p-6'}>
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <MapPin className="h-16 w-16 text-muted-foreground opacity-30 mb-4" />
+            <p className="text-muted-foreground">No rooms on this floor</p>
+            <p className="text-sm text-muted-foreground">Rooms will appear automatically when nodes come online</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Calculate canvas bounds
+  const maxX = Math.max(...filteredRooms.map(r => r.x + r.width), 800);
+  const maxY = Math.max(...filteredRooms.map(r => r.y + r.height), 600);
+
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">{rooms.length} Rooms</span>
-          <span className="text-gray-300">•</span>
-          <span className="text-sm text-gray-500">{wheelchairs.length} Devices</span>
-        </div>
-        {onEditClick && (
-          <button
-            onClick={onEditClick}
-            className="text-xs px-3 py-1.5 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+    <Card className={compact ? 'border-0 shadow-none' : ''}>
+      {!compact && (
+        <CardHeader className="border-b">
+          <CardTitle className="flex items-center gap-3">
+            <Building2 className="h-5 w-5 text-gray-400" />
+            <div>
+              <span className="text-base font-medium text-gray-900">System Map</span>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {filteredRooms.length} rooms · {Array.from(activeNodes).length} active
+              </p>
+            </div>
+          </CardTitle>
+        </CardHeader>
+      )}
+      
+      <CardContent className={compact ? 'p-4' : 'p-6'}>
+        {/* Map Canvas */}
+        <div className="relative border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+          <svg 
+            width="100%" 
+            height={compact ? "400" : "600"} 
+            viewBox={`0 0 ${maxX} ${maxY}`}
+            className="w-full"
+            style={{ maxHeight: compact ? '400px' : '600px' }}
           >
-            Edit Layout
-          </button>
-        )}
-      </div>
+            {/* Grid */}
+            <defs>
+              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#e5e7eb" strokeWidth="0.5" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
 
-      {/* Simple Map */}
-      <div className="bg-white rounded border border-gray-100">
-        <svg width="100%" height="500" viewBox="0 0 800 500">
-          <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f3f4f6" strokeWidth="0.5"/>
-            </pattern>
-          </defs>
-          
-          <rect width="800" height="500" fill="#fafafa" />
-          <rect width="800" height="500" fill="url(#grid)" />
+            {/* Rooms */}
+            {filteredRooms.map((room) => {
+              const isActive = activeNodes.has(room.node);
+              const hasMotion = movingNodes.has(room.node);
+              const wheelchairs = wheelchairsInRoom.get(room.node) || [];
+              const hasWheelchairs = wheelchairs.length > 0;
 
-          {/* Rooms */}
-          {rooms.map(room => (
-            <g key={room.id}>
-              <rect
-                x={room.x}
-                y={room.y}
-                width={room.width}
-                height={room.height}
-                fill="white"
-                stroke="#e5e7eb"
-                strokeWidth="1.5"
-                rx="8"
-              />
-              <text
-                x={room.x + room.width / 2}
-                y={room.y + 24}
-                textAnchor="middle"
-                className="text-sm font-medium fill-gray-700"
-                style={{ fontSize: '13px' }}
-              >
-                {room.name}
-              </text>
-              <text
-                x={room.x + room.width / 2}
-                y={room.y + 42}
-                textAnchor="middle"
-                className="text-xs fill-gray-400"
-              >
-                {room.deviceCount} device{room.deviceCount !== 1 ? 's' : ''}
-              </text>
-            </g>
-          ))}
-
-          {/* Wheelchairs */}
-          {wheelchairs.map(wc => (
-            <g
-              key={wc.id}
-              onClick={() => onWheelchairClick?.(wc.sensorData)}
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-            >
-              {/* Motion Ring */}
-              {wc.motion && (
-                <circle
-                  cx={wc.x}
-                  cy={wc.y}
-                  r="14"
-                  fill="none"
-                  stroke="#22c55e"
-                  strokeWidth="1.5"
-                  opacity="0.5"
-                  className="animate-ping"
-                />
-              )}
-              
-              {/* Wheelchair Circle */}
-              <circle
-                cx={wc.x}
-                cy={wc.y}
-                r="10"
-                fill={wc.motion ? '#22c55e' : '#3b82f6'}
-                stroke="white"
-                strokeWidth="2"
-              />
-              
-              {/* Label */}
-              <text
-                x={wc.x}
-                y={wc.y - 16}
-                textAnchor="middle"
-                className="text-xs font-medium fill-gray-700"
-                style={{ fontSize: '11px' }}
-              >
-                {wc.label}
-              </text>
-              
-              {/* Distance */}
-              {wc.distance !== null && wc.distance !== undefined && (
-                <text
-                  x={wc.x}
-                  y={wc.y + 24}
-                  textAnchor="middle"
-                  className="text-[10px] fill-gray-500"
+              return (
+                <g 
+                  key={room.node}
+                  onClick={() => onRoomClick?.(room)}
+                  className={onRoomClick ? 'cursor-pointer' : ''}
                 >
-                  {wc.distance.toFixed(1)}m
-                </text>
-              )}
-            </g>
-          ))}
-        </svg>
-      </div>
+                  {/* Room Rectangle */}
+                  <rect
+                    x={room.x}
+                    y={room.y}
+                    width={room.width}
+                    height={room.height}
+                    fill={isActive ? room.color : '#e5e7eb'}
+                    stroke={hasMotion ? '#10b981' : '#9ca3af'}
+                    strokeWidth={hasMotion ? '3' : '2'}
+                    rx="4"
+                    opacity={isActive ? 0.9 : 0.5}
+                    className="transition-all duration-300"
+                  />
+                  
+                  {/* Motion indicator */}
+                  {hasMotion && (
+                    <circle
+                      cx={room.x + room.width - 12}
+                      cy={room.y + 12}
+                      r="6"
+                      fill="#10b981"
+                      className="animate-pulse"
+                    />
+                  )}
 
-      <div className="mt-2 text-xs text-gray-500 text-center">
-        🖱️ Click on wheelchair to view details
-      </div>
-    </div>
+                  {/* Room Label */}
+                  <text
+                    x={room.x + room.width / 2}
+                    y={room.y + 20}
+                    textAnchor="middle"
+                    fill={isActive ? 'white' : '#6b7280'}
+                    fontSize="14"
+                    fontWeight="600"
+                    className="pointer-events-none"
+                  >
+                    {room.name}
+                  </text>
+                  
+                  {/* Node ID */}
+                  <text
+                    x={room.x + room.width / 2}
+                    y={room.y + 35}
+                    textAnchor="middle"
+                    fill={isActive ? 'white' : '#9ca3af'}
+                    fontSize="10"
+                    opacity="0.8"
+                    className="pointer-events-none"
+                  >
+                    Node {room.node}
+                  </text>
+
+                  {/* Wheelchairs in this room */}
+                  {hasWheelchairs && (
+                    <g>
+                      {/* Wheelchair icon/badge */}
+                      <rect
+                        x={room.x + 5}
+                        y={room.y + room.height - 25}
+                        width={Math.min(room.width - 10, wheelchairs.length * 60 + 10)}
+                        height="20"
+                        fill="rgba(255, 255, 255, 0.95)"
+                        stroke="#3b82f6"
+                        strokeWidth="1.5"
+                        rx="3"
+                      />
+                      
+                      {/* Wheelchair labels */}
+                      {wheelchairs.map((wc, index) => (
+                        <g key={wc.wheel}>
+                          {/* Wheelchair icon (♿) */}
+                          <text
+                            x={room.x + 15 + index * 60}
+                            y={room.y + room.height - 10}
+                            fontSize="12"
+                            fill="#3b82f6"
+                            className="pointer-events-none"
+                          >
+                            ♿
+                          </text>
+                          
+                          {/* Wheelchair label */}
+                          <text
+                            x={room.x + 28 + index * 60}
+                            y={room.y + room.height - 10}
+                            fontSize="10"
+                            fontWeight="600"
+                            fill="#1e40af"
+                            className="pointer-events-none"
+                          >
+                            W{wc.wheel}
+                          </text>
+                        </g>
+                      ))}
+                    </g>
+                  )}
+
+                  {/* Active indicator */}
+                  {isActive && (
+                    <circle
+                      cx={room.x + 12}
+                      cy={room.y + 12}
+                      r="4"
+                      fill="#10b981"
+                      className="animate-pulse"
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Legend */}
+        {!compact && (
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-6 text-sm flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-[#0056B3]" />
+                <span className="text-gray-600">Active Room</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-gray-300" />
+                <span className="text-gray-600">Inactive Room</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border-2 border-green-500" />
+                <span className="text-gray-600">Motion Detected</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">♿</span>
+                <span className="text-gray-600">Wheelchair Location (by strongest RSSI)</span>
+              </div>
+            </div>
+            
+            {/* Wheelchair location summary */}
+            {wheelchairLocations.size > 0 && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                  Current Wheelchair Locations
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                  {Array.from(wheelchairLocations.entries()).map(([wheel, location]) => (
+                    <div key={wheel} className="flex items-center gap-2 text-blue-800">
+                      <span className="text-base">♿</span>
+                      <span className="font-medium">{location.wheelLabel}</span>
+                      <span className="text-gray-600">→</span>
+                      <span className="text-blue-600 font-semibold">{location.nodeLabel}</span>
+                      <span className="text-xs text-gray-500">({location.rssi} dBm)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
+
