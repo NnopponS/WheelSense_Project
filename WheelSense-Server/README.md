@@ -1,604 +1,269 @@
-# WheelSense IoT Monitoring System
+# WheelSense Server (Docker)
 
-**Real-time wheelchair tracking and monitoring system using ESP32 mesh network**
+ระบบ WheelSense ที่รันด้วย Docker - เริ่มใช้งานได้ทันที!
 
-## 📋 Table of Contents
+## 🚀 Quick Start
 
-- [Overview](#overview)
-- [System Architecture](#system-architecture)
-- [Data Flow](#data-flow)
-- [ESP32 Data Format](#esp32-data-format)
-- [Getting Started](#getting-started)
-- [Configuration](#configuration)
-- [API Documentation](#api-documentation)
-- [Troubleshooting](#troubleshooting)
-- [Development](#development)
+### 1. เริ่มระบบ (1 คำสั่งเดียว)
+
+**Windows:**
+```bash
+start-docker.bat
+```
+
+**Linux/Mac:**
+```bash
+chmod +x start-docker.sh
+./start-docker.sh
+```
+
+**หรือรันตรงๆ:**
+```bash
+docker compose up -d
+```
+
+### 2. เข้าใช้งาน
+
+| Service | URL |
+|---------|-----|
+| Dashboard | http://localhost |
+| API Docs | http://localhost:8000/docs |
+| Health Check | http://localhost:8000/api/health |
+
+### 3. หยุดระบบ
+
+```bash
+# Windows
+stop-docker.bat
+
+# Linux/Mac
+./stop-docker.sh
+
+# หรือ
+docker compose down
+```
 
 ---
 
-## 🎯 Overview
+## 📊 Architecture
 
-WheelSense is a comprehensive IoT monitoring system designed to track wheelchairs in real-time using:
-- **ESP32 mesh network** for sensor nodes
-- **MQTT** for data transmission
-- **PostgreSQL** for data storage
-- **REST API with SSE** for real-time updates
-- **React dashboard** for visualization
-
-### Key Features
-
-- ✅ **Real-time monitoring** via Server-Sent Events (SSE)
-- ✅ **Mesh network support** with route tracking
-- ✅ **Historical data** with trend analysis
-- ✅ **Map visualization** with drag-and-drop layout editor
-- ✅ **Signal quality monitoring** (RSSI tracking)
-- ✅ **Motion detection** and direction tracking
-- ✅ **Docker containerized** for easy deployment
+```
+M5StickC + Nodes
+    ↓ (MQTT)
+broker.emqx.io
+    ↓
+┌─────────────────────────────────┐
+│   Docker Compose                │
+│  ┌───────────┐  ┌────────────┐ │
+│  │ Collector │→ │    API     │ │
+│  └───────────┘  └────────────┘ │
+│                       ↓         │
+│                  ┌─────────┐   │
+│                  │  SQLite │   │
+│                  └─────────┘   │
+│                       ↑         │
+│                  ┌──────────┐  │
+│                  │Dashboard │  │
+│                  └──────────┘  │
+└─────────────────────────────────┘
+```
 
 ---
 
-## 🏗️ System Architecture
+## 🐳 Docker Services
 
-```
-┌─────────────┐         ┌──────────────┐         ┌────────────┐
-│   ESP32     │ ──MQTT─→│   Mosquitto  │         │ PostgreSQL │
-│   Gateway   │         │    Broker    │         │  Database  │
-└─────────────┘         └──────┬───────┘         └──────┬─────┘
-                               │                        │
-                               ↓                        │
-                        ┌──────────────┐                │
-                        │     MQTT     │────SQL write───┤
-                        │   Collector  │                │
-                        └──────────────┘                │
-                                                        │
-┌─────────────┐         ┌──────────────┐               │
-│   React     │←─HTTP───│   REST API   │───SQL read────┘
-│  Dashboard  │←─SSE────│   (Node.js)  │
-└─────────────┘         └──────────────┘
-```
-
-### Components
-
-1. **ESP32 Network**
-   - Gateway: Connects to MQTT broker and external WiFi
-   - Nodes: Scan BLE beacons and forward to gateway via mesh
-
-2. **MQTT Broker (Mosquitto)**
-   - Lightweight message broker
-   - Topic: `WheelSense/data`
-
-3. **MQTT Collector**
-   - Subscribes to MQTT topics
-   - Validates and normalizes ESP32 data
-   - Stores in PostgreSQL
-   - Triggers real-time notifications
-
-4. **REST API**
-   - Provides HTTP endpoints
-   - SSE for real-time updates
-   - PostgreSQL LISTEN/NOTIFY integration
-
-5. **Dashboard**
-   - React + TypeScript + Vite
-   - Real-time visualization
-   - Map layout editor
-   - Historical charts
+| Service | Description | Port |
+|---------|-------------|------|
+| **api** | FastAPI Server | 8000 |
+| **collector** | MQTT Collector (Python) | - |
+| **dashboard** | React Dashboard | 80 |
 
 ---
 
-## 📊 Data Flow
+## 🗄️ Database
 
-### 1. Sensor → Gateway
+- **Type:** SQLite
+- **Location:** `./data/wheelsense.db`
+- **Backup:**
+  ```bash
+  cp data/wheelsense.db backups/wheelsense_$(date +%Y%m%d).db
+  ```
 
-```
-ESP32 Node → Mesh Network → ESP32 Gateway
-```
+---
 
-Node scans BLE beacon, decrypts data, sends JSON via mesh.
+## 📡 MQTT Configuration
 
-### 2. Gateway → MQTT
+- **Broker:** broker.emqx.io (Public)
+- **Topic:** WheelSense/data
+- **Format:** JSON
 
+**ตัวอย่างข้อมูลจาก M5StickC:**
 ```json
 {
-  "node": 4,
-  "wheel": 2,
-  "distance": 1.32,
-  "status": 0,
-  "motion": 0,
-  "direction": 0,
-  "rssi": -58,
-  "stale": false,
-  "ts": "2025-10-23T16:27:33+07:00",
-  "route_path": ["Node 4", "Gateway"],
-  "route_latency_ms": 120
-}
-```
-
-### 3. MQTT → Database
-
-MQTT Collector:
-- Validates data
-- Normalizes fields
-- Upserts to `sensor_data` table
-- Archives history to `sensor_history`
-- Triggers `pg_notify('sensor_update')`
-
-### 4. Database → Dashboard
-
-REST API:
-- Listens for PostgreSQL notifications
-- Broadcasts to SSE clients
-- Dashboard auto-updates
-
----
-
-## 📡 ESP32 Data Format
-
-### Gateway Output (MQTT Payload)
-
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `node` | integer | Node ID | `4` |
-| `node_label` | string | Node custom name | `"Node 4"` |
-| `wheel` | integer | Wheel/Wheelchair ID | `2` |
-| `distance` | float | Distance in meters | `1.32` |
-| `status` | integer | Device status code | `0` |
-| `motion` | integer | Motion detected (0=no, 1=yes) | `0` |
-| `direction` | integer | Movement direction | `0` |
-| `rssi` | integer | Signal strength (dBm) | `-58` |
-| `stale` | boolean | Data freshness | `false` |
-| `ts` | string (ISO 8601) | Event timestamp | `"2025-10-23T16:27:33+07:00"` |
-| `route_recovered` | boolean | Route change detected | `false` |
-| `route_latency_ms` | integer | Network latency | `120` |
-| `route_recovery_ms` | integer | Recovery time | `0` |
-| `route_path` | array | Mesh route | `["Node 4", "Gateway"]` |
-
-### Field Descriptions
-
-**`node`**: Physical node/room number (1-255)
-**`wheel`**: Wheelchair identifier per node (1-32)
-**`distance`**: Ultrasonic sensor reading in meters
-**`motion`**: Detected from accelerometer (0=stationary, 1=moving)
-**`direction`**: Compass/gyro direction in degrees (0-359)
-**`rssi`**: WiFi signal strength; -30 (excellent) to -90 (poor)
-**`stale`**: Data age > threshold (default 30s)
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Docker & Docker Compose
-- (Optional) Node.js 18+ for local development
-
-### Quick Start
-
-1. **Clone repository**
-   ```bash
-   cd WheelSense-Server
-   ```
-
-2. **Start all services**
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Access dashboard**
-   - Open http://localhost
-   - API: http://localhost:3000/api
-   - MQTT Broker: localhost:1883
-
-4. **Check logs**
-   ```bash
-   docker-compose logs -f
-   ```
-
-### Service Ports
-
-| Service | Port | Purpose |
-|---------|------|---------|
-| Dashboard | 80 | Web interface |
-| REST API | 3000 | HTTP/SSE endpoints |
-| PostgreSQL | 5432 | Database |
-| MQTT Broker | 1883 | MQTT TCP |
-| MQTT WebSocket | 9001 | MQTT over WS |
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-#### MQTT Collector
-
-```bash
-MQTT_BROKER=mqtt://mosquitto:1883
-MQTT_TOPIC=WheelSense/data
-POSTGRES_URL=postgresql://wheeluser:wheelpass@postgres:5432/iot_log
-STALE_THRESHOLD_SEC=30
-```
-
-#### REST API
-
-```bash
-PORT=3000
-POSTGRES_URL=postgresql://wheeluser:wheelpass@postgres:5432/iot_log
-SSE_KEEPALIVE_MS=15000
-STALE_THRESHOLD_SEC=30
-```
-
-#### Dashboard
-
-```bash
-VITE_API_URL=http://localhost:3000/api
-```
-
-### Database Schema
-
-See `sql_db/init.sql` for complete schema.
-
-**Main Tables:**
-- `sensor_data`: Current readings (one row per node-wheel)
-- `sensor_history`: Historical time-series data
-- `device_labels`: Custom names for nodes/wheels
-- `map_layout`: 2D positions for visualization
-- `system_events`: System event logs
-
----
-
-## 📚 API Documentation
-
-### Base URL
-```
-http://localhost:3000/api
-```
-
-### Endpoints
-
-#### GET /sensor-data
-Get current data for all devices.
-
-**Response:**
-```json
-{
-  "count": 5,
-  "data": [
-    {
-      "id": 1,
-      "node": 4,
-      "wheel": 2,
-      "node_label": "Node 4",
-      "wheel_label": "Wheelchair A",
-      "distance": 1.32,
-      "rssi": -58,
-      "motion": 0,
-      "stale": false,
-      "ts": "2025-10-23T16:27:33+07:00",
-      ...
-    }
-  ]
-}
-```
-
-#### GET /sensor-data/:node/:wheel
-Get data for specific device.
-
-**Example:**
-```bash
-curl http://localhost:3000/api/sensor-data/4/2
-```
-
-#### GET /sensor-data/:node/:wheel/history
-Get historical data.
-
-**Query Parameters:**
-- `limit`: Number of records (default: 100, max: 1000)
-
-**Example:**
-```bash
-curl http://localhost:3000/api/sensor-data/4/2/history?limit=50
-```
-
-#### GET /stats
-Get system statistics.
-
-**Response:**
-```json
-{
-  "nodes": { "total": 4 },
-  "devices": {
-    "total": 8,
-    "online": 6,
-    "offline": 2,
-    "moving": 1
+  "device_id": "WheelSense_M5_001",
+  "wheelchair": {
+    "distance_m": 10.5,
+    "speed_ms": 0.3,
+    "status": "OK"
   },
-  "signal": {
-    "average_rssi": "-62.5",
-    "min_rssi": -75,
-    "max_rssi": -45,
-    "weak_signals": 1
+  "selected_node": {
+    "node_id": 1,
+    "rssi": -45
   }
 }
 ```
 
-#### PUT /labels/:node/:wheel
-Update device labels.
+---
 
-**Request Body:**
-```json
-{
-  "node_label": "Room 301",
-  "wheel_label": "Wheelchair A"
-}
+## 🛠️ คำสั่งที่ใช้บ่อย
+
+```bash
+# ดู logs
+docker compose logs -f
+
+# ดู logs เฉพาะ service
+docker compose logs -f api
+docker compose logs -f collector
+
+# Restart
+docker compose restart
+
+# Rebuild
+docker compose up -d --build
+
+# ดูสถานะ
+docker compose ps
+
+# เข้าไปใน container
+docker compose exec api bash
+docker compose exec collector bash
+
+# ดู database
+docker compose exec api sqlite3 /app/data/wheelsense.db
+SELECT * FROM wheelchairs;
+SELECT * FROM nodes;
+SELECT * FROM rooms;
+.quit
 ```
 
-#### GET /map-layout
-Get map layout configuration.
+---
 
-#### POST /map-layout
-Update map layout.
+## 🗺️ การใช้งาน
 
-**Request Body:**
-```json
-{
-  "layout": [
-    {
-      "node": 1,
-      "node_name": "Room 101",
-      "x_pos": 100,
-      "y_pos": 100
-    }
-  ]
-}
-```
+### 1. Map Editor (สร้างแผนที่และ Map Node)
 
-#### GET /events (SSE)
-Server-Sent Events stream for real-time updates.
+1. เปิด Dashboard: http://localhost
+2. คลิก "**Map**" tab
+3. สร้าง Buildings, Floors, Rooms
+4. **Mapping Node กับห้อง:**
+   - คลิกที่ห้องที่ต้องการ
+   - ในแท็บ "Room Info" จะมี dropdown "Node (สำหรับ Mapping ตำแหน่ง)"
+   - เลือก Node ที่ต้องการ
+   - กด "บันทึก"
+5. เมื่อ M5 Stick C detect node นั้น → wheelchair จะแสดงในห้องที่ถูก map
 
-**Event Types:**
-- `connected`: Initial connection
-- `keepalive`: Periodic heartbeat
-- `sensor_update`: New sensor data
-- `labels_updated`: Labels changed
-- `layout_updated`: Map layout changed
+### 2. Monitoring
 
-**Example (JavaScript):**
-```javascript
-const eventSource = new EventSource('http://localhost:3000/api/events');
+1. Upload code ไป M5StickC
+2. M5StickC detect Node → ส่งข้อมูลไป MQTT
+3. Dashboard แสดงตำแหน่ง Wheelchair แบบ real-time
 
-eventSource.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log('Update:', data);
-};
-```
+### 3. Node Mapping
+
+| ห้อง | Node ID | Description |
+|------|---------|-------------|
+| ห้อง 101 | 1 | ห้องพักผู้ป่วย |
+| ห้อง 102 | 2 | ห้องตรวจ |
+| ห้อง 103 | 3 | ห้องพยาบาล |
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Common Issues
+### ❌ Port already in use
 
-#### 1. No data appearing in dashboard
-
-**Check MQTT connection:**
-```bash
-docker-compose logs mqtt_collector
+แก้ไข `docker-compose.yml`:
+```yaml
+ports:
+  - "8080:80"    # เปลี่ยนจาก 80
+  - "8001:8000"  # เปลี่ยนจาก 8000
 ```
 
-**Test MQTT manually:**
-```bash
-mosquitto_sub -h localhost -t "WheelSense/data" -v
-```
-
-#### 2. Database connection errors
-
-**Check PostgreSQL:**
-```bash
-docker-compose ps postgres
-docker-compose logs postgres
-```
-
-**Connect to database:**
-```bash
-docker exec -it wheelsense-postgres psql -U wheeluser -d iot_log
-```
-
-**Verify data:**
-```sql
-SELECT * FROM sensor_data LIMIT 10;
-```
-
-#### 3. SSE not working
-
-**Check API logs:**
-```bash
-docker-compose logs rest_api
-```
-
-**Verify SSE endpoint:**
-```bash
-curl -N http://localhost:3000/api/events
-```
-
-#### 4. ESP32 not sending data
-
-**Verify ESP32 configuration:**
-- Check MQTT broker address
-- Verify WiFi credentials
-- Check topic name: `WheelSense/data`
-
-**Check MQTT broker:**
-```bash
-docker-compose logs mosquitto
-```
-
-### Reset Everything
+### ❌ Container ไม่เริ่ม
 
 ```bash
-docker-compose down -v
-docker-compose up -d --build
+# ดู error logs
+docker compose logs
+
+# Rebuild
+docker compose down
+docker compose up -d --build
+```
+
+### ❌ Database locked
+
+```bash
+docker compose restart api collector
 ```
 
 ---
 
-## 💻 Development
-
-### Local Development (Without Docker)
-
-#### 1. PostgreSQL
-
-```bash
-# Install PostgreSQL 15
-# Create database
-createdb -U postgres iot_log
-psql -U postgres -d iot_log -f sql_db/init.sql
-```
-
-#### 2. MQTT Broker
-
-```bash
-# Install Mosquitto
-mosquitto -c mqtt_broker/mosquitto.conf
-```
-
-#### 3. MQTT Collector
-
-```bash
-cd mqtt_collector
-npm install
-MQTT_BROKER=mqtt://localhost:1883 \
-POSTGRES_URL=postgresql://wheeluser:wheelpass@localhost:5432/iot_log \
-node app.js
-```
-
-#### 4. REST API
-
-```bash
-cd rest_api
-npm install
-PORT=3000 \
-POSTGRES_URL=postgresql://wheeluser:wheelpass@localhost:5432/iot_log \
-node app.js
-```
-
-#### 5. Dashboard
-
-```bash
-cd "WheelSense Dashboard"
-npm install
-VITE_API_URL=http://localhost:3000/api npm run dev
-```
-
-### Testing
-
-#### Send Test MQTT Message
-
-```bash
-mosquitto_pub -h localhost -t "WheelSense/data" -m '{
-  "node": 1,
-  "wheel": 1,
-  "distance": 2.5,
-  "status": 0,
-  "motion": 1,
-  "direction": 90,
-  "rssi": -55,
-  "stale": false,
-  "ts": "2025-10-23T16:30:00+07:00",
-  "route_path": ["Node 1", "Gateway"]
-}'
-```
-
-#### Query API
-
-```bash
-# Get all sensor data
-curl http://localhost:3000/api/sensor-data
-
-# Get stats
-curl http://localhost:3000/api/stats
-
-# Update labels
-curl -X PUT http://localhost:3000/api/labels/1/1 \
-  -H "Content-Type: application/json" \
-  -d '{"node_label": "Test Node", "wheel_label": "Test Wheel"}'
-```
-
-### Code Structure
+## 📁 โครงสร้างโปรเจค
 
 ```
 WheelSense-Server/
-├── compose.yml                 # Docker Compose configuration
-├── sql_db/
-│   └── init.sql               # Database schema & initialization
-├── mqtt_broker/
-│   └── mosquitto.conf         # MQTT broker config
-├── mqtt_collector/
-│   ├── app.js                 # MQTT → Database service
-│   ├── package.json
-│   └── Dockerfile
-├── rest_api/
-│   ├── app.js                 # REST API + SSE server
-│   ├── package.json
-│   └── Dockerfile
-└── WheelSense Dashboard/
-    ├── src/
-    │   ├── components/        # React components
-    │   ├── services/          # API client
-    │   └── hooks/             # Custom React hooks
-    ├── package.json
-    └── Dockerfile
+├── api/                    # FastAPI Server
+│   └── main.py
+├── mqtt_collector/         # MQTT Collector
+│   └── collector.py
+├── database/               # Database Schema
+│   └── schema.sql
+├── WheelSense-Dashboard/   # React Dashboard
+│   └── src/
+├── data/                   # SQLite Database (auto-created)
+│   └── wheelsense.db
+├── docker-compose.yml      # Production
+├── docker-compose.dev.yml  # Development
+├── Dockerfile.api
+├── Dockerfile.collector
+├── Dockerfile.dashboard
+└── README.md
 ```
 
 ---
 
-## 📝 Notes
+## 🎯 Requirements
 
-### ESP32 Configuration
-
-Ensure your ESP32 Gateway is configured with:
-- **MQTT Broker**: Your server IP
-- **MQTT Topic**: `WheelSense/data`
-- **WiFi**: Correct SSID/password
-
-### Naming Convention
-
-**Consistent field naming throughout:**
-- `node` (not `node_id`, `room`, `room_id`)
-- `wheel` (not `wheel_id`)
-- `node_label` (custom name)
-- `wheel_label` (custom name)
-
-### Database Maintenance
-
-**Archive old data:**
-```sql
-DELETE FROM sensor_history WHERE ts < NOW() - INTERVAL '30 days';
-```
-
-**Vacuum database:**
-```sql
-VACUUM ANALYZE;
-```
+- Docker & Docker Compose
+- Port 80 และ 8000 ว่าง
 
 ---
 
-## 🆘 Support
+## ✅ Checklist
 
-For issues or questions:
-1. Check [Troubleshooting](#troubleshooting) section
-2. Review logs: `docker-compose logs -f`
-3. Check ESP32 serial output
-4. Verify MQTT messages: `mosquitto_sub -v -t "WheelSense/#"`
-
----
-
-## 📄 License
-
-Proprietary - WheelSense Project
+- [ ] Docker ติดตั้งแล้ว
+- [ ] Run `docker compose up -d`
+- [ ] เปิด http://localhost
+- [ ] ทดสอบ http://localhost:8000/docs
+- [ ] สร้าง map ใน Map Editor
+- [ ] Upload M5StickC code
+- [ ] ทดสอบ real-time tracking
 
 ---
 
-**Last Updated:** October 23, 2025  
-**Version:** 2.0 (Complete Restructure)
+**Version:** 2.0.0 (Docker + FastAPI + SQL)  
+**Status:** ✅ Production Ready
+
+## 🆕 การเปลี่ยนแปลงล่าสุด (v2.0.0)
+
+✅ **ลบ Demo Mode ทิ้งแล้ว** - ใช้ข้อมูลจริงจาก MQTT/API เท่านั้น  
+✅ **Node Mapping** - เลือก Node ได้เมื่อสร้าง/แก้ไขห้อง  
+✅ **Real-time Position** - Wheelchair เปลี่ยนห้องตาม Node ที่ detect อัตโนมัติ  
+✅ **Device Tab** - ดึงข้อมูล Node และ Wheelchair จาก database จริง  
+✅ **Production Ready** - Docker ใช้งานได้เลย ไม่มี mockup data
+
+---
+
+🚀 **เพียงแค่ `docker compose up -d` และเริ่มใช้งานได้เลย!**
+
 

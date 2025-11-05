@@ -1,0 +1,99 @@
+version: '3.8'
+
+# Development compose file with hot reload and local MQTT broker
+
+services:
+  # Local MQTT Broker (Mosquitto) - Optional for development
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: wheelsense-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
+    networks:
+      - wheelsense
+    restart: unless-stopped
+
+  # FastAPI Server (Development mode with hot reload)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: wheelsense-api-dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./api:/app/api  # Mount for hot reload
+      - ./database:/app/database:ro
+    environment:
+      - DB_PATH=/app/data/wheelsense.db
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - STALE_THRESHOLD_SEC=30
+      - PYTHONUNBUFFERED=1
+    command: python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    networks:
+      - wheelsense
+    depends_on:
+      - mosquitto
+
+  # MQTT Collector
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    container_name: wheelsense-collector-dev
+    depends_on:
+      - api
+      - mosquitto
+    volumes:
+      - ./mqtt_collector:/app/mqtt_collector  # Mount for hot reload
+    environment:
+      - MQTT_BROKER=mosquitto  # Use local broker
+      - MQTT_PORT=1883
+      - MQTT_TOPIC=WheelSense/data
+      - API_BASE_URL=http://api:8000/api
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - wheelsense
+
+  # Dashboard (Development with Vite dev server)
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard.dev
+    container_name: wheelsense-dashboard-dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./WheelSense-Dashboard:/app
+      - /app/node_modules  # Prevent overwriting node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    command: npm run dev -- --host 0.0.0.0
+    restart: unless-stopped
+    networks:
+      - wheelsense
+    depends_on:
+      - api
+
+networks:
+  wheelsense:
+    driver: bridge
+
+volumes:
+  mosquitto-data:
+  mosquitto-logs:
+
+
+
+
+
+

@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # FastAPI Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: wheelsense-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data  # Persist SQLite database
+      - ./api:/app/api:ro  # Mount source code (read-only for hot reload in dev)
+    environment:
+      - DB_PATH=/app/data/wheelsense.db
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - STALE_THRESHOLD_SEC=30
+    restart: unless-stopped
+    networks:
+      - wheelsense
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # MQTT Collector
+  collector:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    container_name: wheelsense-collector
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - MQTT_BROKER=broker.emqx.io
+      - MQTT_PORT=1883
+      - MQTT_TOPIC=WheelSense/data
+      - API_BASE_URL=http://api:8000/api
+    restart: unless-stopped
+    networks:
+      - wheelsense
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://api:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Dashboard (Frontend) - REMOVED
+  # Dashboard is now deployed separately on Vercel
+  # See WheelSense-Dashboard/VERCEL_DEPLOYMENT.md for deployment instructions
+
+networks:
+  wheelsense:
+    driver: bridge
+
+volumes:
+  # Database volume (for persistence)
+  data:
+    driver: local
+
+
+
+
+
+

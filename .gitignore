@@ -1,0 +1,342 @@
+# WheelSense Platform - Git Ignore File
+
+# ============================================
+# Operating System Files
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+
+# ============================================
+# IDE & Editor
+# ============================================
+
+# Visual Studio Code
+.vscode/
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains IDEs (IntelliJ, PyCharm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ============================================
+# Node.js & npm
+# ============================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Cache
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+
+# Testing
+coverage/
+.nyc_output/
+
+# Vercel
+.vercel
+
+# Next.js
+.next/
+out/
+
+# ============================================
+# Python
+# ============================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mkdocs
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# ============================================
+# PlatformIO (ESP32/Arduino)
+# ============================================
+
+.pio/
+.pioenvs/
+.piolibdeps/
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
+.clang_complete
+.gcc-flags.json
+
+# Build directories
+.pio/build/
+.pio/libdeps/
+
+# ============================================
+# Database Files
+# ============================================
+
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Keep schema files but ignore data
+!schema.sql
+!migrations/
+
+# ============================================
+# Docker
+# ============================================
+
+# Docker volumes
+docker-compose.override.yml
+
+# ============================================
+# Logs
+# ============================================
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ============================================
+# Temporary Files
+# ============================================
+
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.swp
+*.swo
+
+# ============================================
+# Archives
+# ============================================
+
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ============================================
+# Secrets & Credentials
+# ============================================
+
+# Environment variables
+.env*
+!.env.example
+!env.example
+
+# Certificates
+*.pem
+*.key
+*.cert
+*.crt
+
+# API Keys
+**/secrets.json
+**/credentials.json
+
+# ============================================
+# Project Specific
+# ============================================
+
+# Old system (removed from version 1.0)
+Old_System/
+
+# Backup folders
+backup/
+backups/
+
+# Test data
+test-data/
+mock-data/
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Firmware binaries
+*.bin
+*.hex
+*.elf
+
+# nRF Utilities
+nrfutil.exe
+
+# ============================================
+# Build Tools
+# ============================================
+
+# CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+
+# Make
+*.d
+*.o
+*.obj
+
+# ============================================
+# Package Managers
+# ============================================
+
+# npm
+package-lock.json
+
+# Yarn
+yarn.lock
+
+# PNPM
+pnpm-lock.yaml
+
+# Keep these for consistency
+!WheelSense-Server/WheelSense-Dashboard/package-lock.json
+
+# ============================================
+# Misc
+# ============================================
+
+# Project reorganization artifacts
+*.old
+*.orig
+
+# Editor backups
+*~
+\#*\#
+.\#*
+

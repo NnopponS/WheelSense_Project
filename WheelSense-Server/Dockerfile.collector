@@ -1,0 +1,29 @@
+# Dockerfile for MQTT Collector
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy collector code
+COPY mqtt_collector/ ./mqtt_collector/
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV API_BASE_URL=http://api:8000/api
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import requests; requests.get('${API_BASE_URL}/health')" || exit 1
+
+# Run collector
+CMD ["python", "mqtt_collector/collector.py"]
+
+
+
+
+
+

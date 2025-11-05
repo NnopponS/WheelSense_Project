@@ -1,14 +1,20 @@
-FROM node:20-alpine
+FROM node:18-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
 
-RUN npm install
-# If you are building your code for production
-# RUN npm ci --omit=dev
+# Install dependencies
+RUN npm ci --only=production
 
-COPY . .
+# Copy application files
+COPY app.js ./
 
-EXPOSE 5000
-CMD [ "node", "app.js" ]
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+USER nodejs
+
+CMD ["node", "app.js"]
+
+
