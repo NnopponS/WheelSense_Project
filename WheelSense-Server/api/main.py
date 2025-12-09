@@ -122,6 +122,21 @@ class Corridor(BaseModel):
     width: float = 24
     color: str = '#e5e7eb'
 
+class Patient(BaseModel):
+    id: str
+    name: str
+    age: int
+    gender: str  # 'male', 'female', 'other'
+    condition: str
+    wheelchair_id: Optional[str] = None
+    room: Optional[str] = None
+    admission_date: str
+    status: str = 'active'  # 'active', 'discharged', 'transferred'
+    doctor_notes: Optional[str] = None
+    medications: Optional[str] = None  # JSON array
+    emergency_contact: Optional[str] = None
+    phone: Optional[str] = None
+
 # ============================================
 # Wheelchair Endpoints
 # ============================================
@@ -381,6 +396,142 @@ async def get_corridors():
     corridors = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return corridors
+
+# ============================================
+# Patient Endpoints
+# ============================================
+
+@app.get("/api/patients", response_model=List[Dict[str, Any]])
+async def get_patients():
+    """Get all patients"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM patients ORDER BY created_at DESC")
+    patients = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return patients
+
+@app.get("/api/patients/{patient_id}", response_model=Dict[str, Any])
+async def get_patient(patient_id: str):
+    """Get specific patient"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM patients WHERE id = ?", (patient_id,))
+    patient = cursor.fetchone()
+    conn.close()
+    
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    return {"data": dict(patient)}
+
+@app.post("/api/patients")
+async def create_patient(patient: Patient):
+    """Create patient"""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO patients (
+                id, name, age, gender, condition, wheelchair_id, room,
+                admission_date, status, doctor_notes, medications,
+                emergency_contact, phone
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            patient.id, patient.name, patient.age, patient.gender,
+            patient.condition, patient.wheelchair_id, patient.room,
+            patient.admission_date, patient.status, patient.doctor_notes,
+            patient.medications, patient.emergency_contact, patient.phone
+        ))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "id": patient.id}
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/patients/{patient_id}")
+async def update_patient(patient_id: str, patient: Patient):
+    """Update patient"""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE patients SET
+                name = ?, age = ?, gender = ?, condition = ?,
+                wheelchair_id = ?, room = ?, admission_date = ?,
+                status = ?, doctor_notes = ?, medications = ?,
+                emergency_contact = ?, phone = ?
+            WHERE id = ?
+        """, (
+            patient.name, patient.age, patient.gender, patient.condition,
+            patient.wheelchair_id, patient.room, patient.admission_date,
+            patient.status, patient.doctor_notes, patient.medications,
+            patient.emergency_contact, patient.phone, patient_id
+        ))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "id": patient_id}
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/patients/{patient_id}")
+async def delete_patient(patient_id: str):
+    """Delete patient"""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM patients WHERE id = ?", (patient_id,))
+        conn.commit()
+        conn.close()
+        return {"status": "success", "id": patient_id}
+    except Exception as e:
+        conn.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================
+# Reset/Maintenance Endpoints
+# ============================================
+
+@app.post("/api/reset")
+async def reset_all_data():
+    """Reset all data to default state"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        # Delete all data (except default data will be re-inserted by schema)
+        cursor.execute("DELETE FROM wheelchair_history")
+        cursor.execute("DELETE FROM wheelchairs")
+        cursor.execute("DELETE FROM patients WHERE id NOT IN ('P001', 'P002')")
+        cursor.execute("UPDATE patients SET status = 'active' WHERE id IN ('P001', 'P002')")
+        cursor.execute("UPDATE nodes SET status = 'offline', rssi = NULL, last_seen_by = NULL")
+        
+        # Reset rooms to default (remove any user-created rooms)
+        cursor.execute("DELETE FROM rooms WHERE id NOT IN ('room-1', 'room-2', 'room-3', 'room-4')")
+        
+        # Reset default room positions (in case user moved them)
+        cursor.execute("UPDATE rooms SET x = 100, y = 100 WHERE id = 'room-1'")
+        cursor.execute("UPDATE rooms SET x = 320, y = 100 WHERE id = 'room-2'")
+        cursor.execute("UPDATE rooms SET x = 540, y = 100 WHERE id = 'room-3'")
+        cursor.execute("UPDATE rooms SET x = 100, y = 320 WHERE id = 'room-4'")
+        
+        conn.commit()
+        conn.close()
+        
+        print("✅ Database reset to default state")
+        
+        return {
+            "status": "success",
+            "message": "All data reset to default state",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        print(f"❌ Error resetting data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ============================================
 # Health Check

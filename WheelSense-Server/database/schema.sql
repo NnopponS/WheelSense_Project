@@ -95,6 +95,25 @@ CREATE TABLE IF NOT EXISTS wheelchair_history (
     FOREIGN KEY (device_id) REFERENCES wheelchairs(device_id) ON DELETE CASCADE
 );
 
+-- Patients Table (Patient management)
+CREATE TABLE IF NOT EXISTS patients (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    age INTEGER NOT NULL,
+    gender TEXT NOT NULL CHECK(gender IN ('male', 'female', 'other')),
+    condition TEXT NOT NULL,
+    wheelchair_id TEXT,
+    room TEXT,
+    admission_date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'discharged', 'transferred')),
+    doctor_notes TEXT,
+    medications TEXT, -- JSON array of medications
+    emergency_contact TEXT,
+    phone TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_wheelchairs_device_id ON wheelchairs(device_id);
 CREATE INDEX IF NOT EXISTS idx_wheelchairs_current_node ON wheelchairs(current_node);
@@ -105,6 +124,8 @@ CREATE INDEX IF NOT EXISTS idx_rooms_floor_id ON rooms(floor_id);
 CREATE INDEX IF NOT EXISTS idx_rooms_node_id ON rooms(node_id);
 CREATE INDEX IF NOT EXISTS idx_wheelchair_history_device_id ON wheelchair_history(device_id);
 CREATE INDEX IF NOT EXISTS idx_wheelchair_history_timestamp ON wheelchair_history(timestamp);
+CREATE INDEX IF NOT EXISTS idx_patients_wheelchair_id ON patients(wheelchair_id);
+CREATE INDEX IF NOT EXISTS idx_patients_status ON patients(status);
 
 -- Trigger to update updated_at timestamp
 CREATE TRIGGER IF NOT EXISTS update_wheelchairs_timestamp 
@@ -143,6 +164,12 @@ BEGIN
     UPDATE corridors SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
+CREATE TRIGGER IF NOT EXISTS update_patients_timestamp 
+AFTER UPDATE ON patients
+BEGIN
+    UPDATE patients SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
 -- Insert default data
 INSERT OR IGNORE INTO buildings (id, name) VALUES ('B1', 'อาคารหลัก');
 
@@ -163,5 +190,10 @@ INSERT OR IGNORE INTO nodes (node_id, name, status) VALUES
 (2, 'Node 2', 'offline'),
 (3, 'Node 3', 'offline'),
 (4, 'Node 4', 'offline');
+
+-- Default patients
+INSERT OR IGNORE INTO patients (id, name, age, gender, condition, wheelchair_id, room, admission_date, status, doctor_notes, medications, emergency_contact, phone) VALUES
+('P001', 'สมชาย ใจดี', 45, 'male', 'อุบัติเหตุ - บาดเจ็บที่ขา', 'M5_001', 'ห้อง 101', '2025-10-15', 'active', 'ฟื้นฟูสภาพดี ควรออกกำลังกายวันละ 30 นาที', '["ยาแก้ปวด 2 เม็ด/วัน","วิตามินบี 1 เม็ด/เช้า"]', 'สมหญิง ใจดี (ภรรยา)', '081-234-5678'),
+('P002', 'สมหญิง รักษ์ดี', 62, 'female', 'โรคข้อเสื่อม', 'M5_002', 'ห้อง 102', '2025-10-20', 'active', 'ติดตามอาการ กายภาพบำบัดสัปดาห์ละ 3 ครั้ง', '["แคลเซียม 1 เม็ด/วัน","ยาบำรุงข้อ 2 เม็ด/วัน"]', 'นายสมศักดิ์ รักษ์ดี (ลูกชาย)', '089-765-4321');
 
 
