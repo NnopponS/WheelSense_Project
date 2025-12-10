@@ -1,0 +1,802 @@
+/*************************************************************
+ * T-SIM Camera Controller with MQTT Streaming
+ * WheelSense MockUp - Smart Home System
+ * 
+ * Features:
+ * - WiFi Manager สำหรับเชื่อมต่อ WiFi
+ * - Video streaming realtime ผ่าน MQTT
+ * - Audio streaming realtime ผ่าน MQTT
+ * - LED Control สำหรับเครื่องใช้ไฟฟ้า (แยกตามห้อง)
+ * - Wheelchair Detection support
+ * 
+ * ห้องและเครื่องใช้ไฟฟ้า:
+ * - Bedroom: หลอดไฟ, Alarm, แอร์
+ * - Kitchen: หลอดไฟ, Alarm
+ * - Bathroom: หลอดไฟ
+ * - Living Room: หลอดไฟ, พัดลม, TV, แอร์
+ *************************************************************/
+
+#include <WiFi.h>
+#include <WiFiManager.h>
+#include <PubSubClient.h>
+#include <esp_camera.h>
+#include <driver/i2s.h>
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <time.h>
+
+/* ===== Device Configuration ===== */
+// เปลี่ยน DEVICE_ID และ ROOM_TYPE ตามห้องที่ใช้งาน
+#define DEVICE_ID "TSIM_001"
+
+// Room Types: "bedroom", "bathroom", "kitchen", "livingroom"
+#define ROOM_TYPE "bedroom"
+
+/* ===== MQTT Configuration ===== */
+// ใช้ public broker สำหรับทดสอบ
+const char* MQTT_SERVER = "broker.emqx.io";
+const int MQTT_PORT = 1883;
+const char* MQTT_USER = "";
+const char* MQTT_PASS = "";
+
+// MQTT Topics
+const char* MQTT_TOPIC_VIDEO = "WheelSenseMockup/video";
+const char* MQTT_TOPIC_AUDIO = "WheelSenseMockup/audio";
+const char* MQTT_TOPIC_STATUS = "WheelSenseMockup/status";
+const char* MQTT_TOPIC_CONTROL = "WheelSenseMockup/control";
+const char* MQTT_TOPIC_DETECTION = "WheelSenseMockup/detection";
+const char* MQTT_TOPIC_EMERGENCY = "WheelSenseMockup/emergency";
+
+/* ===== Video/Audio Configuration ===== */
+#define VIDEO_FRAME_INTERVAL_MS 40   // 25 fps (1000ms / 25 = 40ms)
+#define AUDIO_BUFFER_SIZE 4096
+#define AUDIO_SAMPLE_RATE 16000
+#define VIDEO_JPEG_QUALITY 8         // ลด quality ลงมากเพื่อให้ส่งได้เร็วขึ้น (8-10 สำหรับ 25fps)
+#define CAMERA_FRAME_SIZE FRAMESIZE_QVGA  // ใช้ QVGA (320x240) แทน VGA เพื่อลดขนาดและเพิ่มความเร็ว
+
+/* ===== T-SIM Camera Pin Definitions (V1.2) ===== */
+#define CAM_PWDN_PIN     -1
+#define CAM_RESET_PIN    18
+#define CAM_XCLK_PIN     14
+#define CAM_SIOD_PIN     4
+#define CAM_SIOC_PIN     5
+#define CAM_Y9_PIN       15
+#define CAM_Y8_PIN       16
+#define CAM_Y7_PIN       17
+#define CAM_Y6_PIN       12
+#define CAM_Y5_PIN       10
+#define CAM_Y4_PIN       8
+#define CAM_Y3_PIN       9
+#define CAM_Y2_PIN       11
+#define CAM_VSYNC_PIN    6
+#define CAM_HREF_PIN     7
+#define CAM_PCLK_PIN     13
+#define PWR_ON_PIN       1
+
+/* ===== Microphone Pin Definitions ===== */
+#define MIC_IIS_WS_PIN   42
+#define MIC_IIS_SCK_PIN  41
+#define MIC_IIS_DATA_PIN 2
+
+/* ===== GPIO Pin Definitions for Appliances ===== */
+// เลือก GPIO ที่ว่างอยู่บน T-SIM Camera
+// หมายเหตุ: ตรวจสอบว่า pin ไม่ซ้ำกับ camera/microphone
+
+// GPIO สำหรับเครื่องใช้ไฟฟ้าทุกห้อง (เตรียมไว้ทั้งหมด)
+#define LED_LIGHT_PIN    21   // หลอดไฟ (ทุกห้อง)
+#define LED_ALARM_PIN    45   // Alarm (Bedroom, Kitchen)
+#define LED_AIRCON_PIN   46   // แอร์ (Bedroom, Living Room)
+#define LED_FAN_PIN      47   // พัดลม (Living Room)
+#define LED_TV_PIN       48   // TV (Living Room)
+
+/* ===== Appliance States ===== */
+struct ApplianceState {
+  bool light;
+  int lightBrightness;
+  bool alarm;
+  bool aircon;
+  int airconTemp;
+  bool fan;
+  int fanSpeed;
+  bool tv;
+};
+
+ApplianceState appliances = {
+  false,  // light
+  100,    // lightBrightness (0-100)
+  false,  // alarm
+  false,  // aircon
+  25,     // airconTemp (16-30)
+  false,  // fan
+  1,      // fanSpeed (0-3)
+  false   // tv
+};
+
+/* ===== Detection State ===== */
+bool wheelchairDetected = false;
+
+/* ===== Globals ===== */
+WiFiClient espClient;
+PubSubClient mqtt(espClient);
+
+static const char BASE64_TABLE[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+unsigned long lastVideoFrameMs = 0;
+unsigned long lastAudioSendMs = 0;
+unsigned long lastStatusPublishMs = 0;
+unsigned long lastMqttTryMs = 0;
+unsigned long videoFrameCount = 0;
+unsigned long lastFpsLogMs = 0;
+
+static const unsigned long STATUS_INTERVAL_MS = 5000;
+static const unsigned long MQTT_RETRY_MS = 5000;
+
+bool videoStreamingEnabled = true;
+bool audioStreamingEnabled = true;
+uint8_t audioBuffer[AUDIO_BUFFER_SIZE];
+
+/* ===== Helper Functions ===== */
+inline size_t base64EncodedLength(size_t rawLen) {
+  return ((rawLen + 2) / 3) * 4;
+}
+
+void writeBase64ToMqtt(const uint8_t* data, size_t length) {
+  if (!data || length == 0) return;
+  
+  size_t i = 0;
+  char encoded[4];
+  
+  while (i + 2 < length) {
+    uint8_t b0 = data[i];
+    uint8_t b1 = data[i + 1];
+    uint8_t b2 = data[i + 2];
+    
+    encoded[0] = BASE64_TABLE[(b0 >> 2) & 0x3F];
+    encoded[1] = BASE64_TABLE[((b0 & 0x3) << 4) | ((b1 & 0xF0) >> 4)];
+    encoded[2] = BASE64_TABLE[((b1 & 0x0F) << 2) | ((b2 & 0xC0) >> 6)];
+    encoded[3] = BASE64_TABLE[b2 & 0x3F];
+    mqtt.write(reinterpret_cast<const uint8_t*>(encoded), 4);
+    i += 3;
+  }
+  
+  size_t remaining = length - i;
+  if (remaining > 0) {
+    uint8_t b0 = data[i];
+    uint8_t b1 = (remaining > 1) ? data[i + 1] : 0;
+    
+    encoded[0] = BASE64_TABLE[(b0 >> 2) & 0x3F];
+    encoded[1] = BASE64_TABLE[((b0 & 0x3) << 4) | ((b1 & 0xF0) >> 4)];
+    encoded[2] = (remaining == 2) ? BASE64_TABLE[((b1 & 0x0F) << 2)] : '=';
+    encoded[3] = '=';
+    mqtt.write(reinterpret_cast<const uint8_t*>(encoded), 4);
+  }
+}
+
+template <typename JsonDoc>
+bool publishBase64Payload(const char* topic, JsonDoc& metaDoc, const uint8_t* data, size_t dataLen) {
+  if (!topic || !data || dataLen == 0) return false;
+  
+  static constexpr size_t META_BUFFER_SIZE = 512;
+  char metaBuffer[META_BUFFER_SIZE];
+  size_t metaLen = serializeJson(metaDoc, metaBuffer, META_BUFFER_SIZE);
+  if (metaLen == 0 || metaLen >= META_BUFFER_SIZE) return false;
+  
+  size_t totalLen = metaLen + 1 + base64EncodedLength(dataLen);
+  if (!mqtt.beginPublish(topic, totalLen, false)) return false;
+  
+  mqtt.write(reinterpret_cast<const uint8_t*>(metaBuffer), metaLen);
+  const char newline = '\n';
+  mqtt.write(reinterpret_cast<const uint8_t*>(&newline), 1);
+  writeBase64ToMqtt(data, dataLen);
+  mqtt.endPublish();
+  return true;
+}
+
+String getTimestamp() {
+  time_t now = time(nullptr);
+  if (now < 100000) return String("1970-01-01T00:00:00+07:00");
+  
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) return String("1970-01-01T00:00:00+07:00");
+  
+  char buffer[30];
+  strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S+07:00", &timeinfo);
+  return String(buffer);
+}
+
+String getRoomNameTh() {
+  if (strcmp(ROOM_TYPE, "bedroom") == 0) return "ห้องนอน";
+  if (strcmp(ROOM_TYPE, "bathroom") == 0) return "ห้องน้ำ";
+  if (strcmp(ROOM_TYPE, "kitchen") == 0) return "ห้องครัว";
+  if (strcmp(ROOM_TYPE, "livingroom") == 0) return "ห้องนั่งเล่น";
+  return ROOM_TYPE;
+}
+
+/* ===== Forward Declarations ===== */
+void publishStatus();
+
+/* ===== LED/Appliance Control ===== */
+void setupAppliances() {
+  // Setup all GPIO pins
+  pinMode(LED_LIGHT_PIN, OUTPUT);
+  digitalWrite(LED_LIGHT_PIN, LOW);
+  
+  pinMode(LED_ALARM_PIN, OUTPUT);
+  digitalWrite(LED_ALARM_PIN, LOW);
+  
+  pinMode(LED_AIRCON_PIN, OUTPUT);
+  digitalWrite(LED_AIRCON_PIN, LOW);
+  
+  pinMode(LED_FAN_PIN, OUTPUT);
+  digitalWrite(LED_FAN_PIN, LOW);
+  
+  pinMode(LED_TV_PIN, OUTPUT);
+  digitalWrite(LED_TV_PIN, LOW);
+  
+  Serial.println("[Appliances] GPIO initialized:");
+  Serial.printf("  - Light:  GPIO %d\n", LED_LIGHT_PIN);
+  Serial.printf("  - Alarm:  GPIO %d\n", LED_ALARM_PIN);
+  Serial.printf("  - AirCon: GPIO %d\n", LED_AIRCON_PIN);
+  Serial.printf("  - Fan:    GPIO %d\n", LED_FAN_PIN);
+  Serial.printf("  - TV:     GPIO %d\n", LED_TV_PIN);
+}
+
+bool isApplianceAvailable(const char* appliance) {
+  // ตรวจสอบว่าเครื่องใช้ไฟฟ้ามีในห้องนี้หรือไม่
+  if (strcmp(appliance, "light") == 0) {
+    return true; // ทุกห้องมีไฟ
+  }
+  if (strcmp(appliance, "alarm") == 0) {
+    return (strcmp(ROOM_TYPE, "bedroom") == 0 || strcmp(ROOM_TYPE, "kitchen") == 0);
+  }
+  if (strcmp(appliance, "aircon") == 0) {
+    return (strcmp(ROOM_TYPE, "bedroom") == 0 || strcmp(ROOM_TYPE, "livingroom") == 0);
+  }
+  if (strcmp(appliance, "fan") == 0) {
+    return (strcmp(ROOM_TYPE, "livingroom") == 0);
+  }
+  if (strcmp(appliance, "tv") == 0) {
+    return (strcmp(ROOM_TYPE, "livingroom") == 0);
+  }
+  return false;
+}
+
+void setAppliance(const char* appliance, bool state, int value = -1) {
+  if (!isApplianceAvailable(appliance)) {
+    Serial.printf("[Control] Appliance '%s' not available in %s\n", appliance, ROOM_TYPE);
+    return;
+  }
+  
+  if (strcmp(appliance, "light") == 0) {
+    appliances.light = state;
+    if (value >= 0 && value <= 100) appliances.lightBrightness = value;
+    digitalWrite(LED_LIGHT_PIN, state ? HIGH : LOW);
+    Serial.printf("[Control] Light: %s (brightness: %d)\n", state ? "ON" : "OFF", appliances.lightBrightness);
+  }
+  else if (strcmp(appliance, "alarm") == 0) {
+    appliances.alarm = state;
+    digitalWrite(LED_ALARM_PIN, state ? HIGH : LOW);
+    Serial.printf("[Control] Alarm: %s\n", state ? "ON" : "OFF");
+  }
+  else if (strcmp(appliance, "aircon") == 0) {
+    appliances.aircon = state;
+    if (value >= 16 && value <= 30) appliances.airconTemp = value;
+    digitalWrite(LED_AIRCON_PIN, state ? HIGH : LOW);
+    Serial.printf("[Control] AirCon: %s (temp: %d°C)\n", state ? "ON" : "OFF", appliances.airconTemp);
+  }
+  else if (strcmp(appliance, "fan") == 0) {
+    appliances.fan = state;
+    if (value >= 0 && value <= 3) appliances.fanSpeed = value;
+    digitalWrite(LED_FAN_PIN, state ? HIGH : LOW);
+    Serial.printf("[Control] Fan: %s (speed: %d)\n", state ? "ON" : "OFF", appliances.fanSpeed);
+  }
+  else if (strcmp(appliance, "tv") == 0) {
+    appliances.tv = state;
+    digitalWrite(LED_TV_PIN, state ? HIGH : LOW);
+    Serial.printf("[Control] TV: %s\n", state ? "ON" : "OFF");
+  }
+}
+
+void turnOffAllAppliances() {
+  appliances.light = false;
+  appliances.alarm = false;
+  appliances.aircon = false;
+  appliances.fan = false;
+  appliances.tv = false;
+  
+  digitalWrite(LED_LIGHT_PIN, LOW);
+  digitalWrite(LED_ALARM_PIN, LOW);
+  digitalWrite(LED_AIRCON_PIN, LOW);
+  digitalWrite(LED_FAN_PIN, LOW);
+  digitalWrite(LED_TV_PIN, LOW);
+  
+  Serial.println("[Control] All appliances turned OFF");
+}
+
+/* ===== Camera Setup ===== */
+bool setupCamera() {
+  camera_config_t config;
+  config.ledc_channel = LEDC_CHANNEL_0;
+  config.ledc_timer = LEDC_TIMER_0;
+  config.pin_d0 = CAM_Y2_PIN;
+  config.pin_d1 = CAM_Y3_PIN;
+  config.pin_d2 = CAM_Y4_PIN;
+  config.pin_d3 = CAM_Y5_PIN;
+  config.pin_d4 = CAM_Y6_PIN;
+  config.pin_d5 = CAM_Y7_PIN;
+  config.pin_d6 = CAM_Y8_PIN;
+  config.pin_d7 = CAM_Y9_PIN;
+  config.pin_xclk = CAM_XCLK_PIN;
+  config.pin_pclk = CAM_PCLK_PIN;
+  config.pin_vsync = CAM_VSYNC_PIN;
+  config.pin_href = CAM_HREF_PIN;
+  config.pin_sccb_sda = CAM_SIOD_PIN;
+  config.pin_sccb_scl = CAM_SIOC_PIN;
+  config.pin_pwdn = CAM_PWDN_PIN;
+  config.pin_reset = CAM_RESET_PIN;
+  config.xclk_freq_hz = 20000000;
+  config.pixel_format = PIXFORMAT_JPEG;
+  
+  if (psramFound()) {
+    config.frame_size = CAMERA_FRAME_SIZE;
+    config.jpeg_quality = VIDEO_JPEG_QUALITY;
+    config.fb_count = 2;
+    config.fb_location = CAMERA_FB_IN_PSRAM;
+    Serial.println("[Camera] PSRAM found, using double buffer");
+  } else {
+    config.frame_size = FRAMESIZE_QVGA;
+    config.jpeg_quality = 20;
+    config.fb_count = 1;
+    config.fb_location = CAMERA_FB_IN_DRAM;
+    Serial.println("[Camera] No PSRAM, using single buffer");
+  }
+  
+  esp_err_t err = esp_camera_init(&config);
+  if (err != ESP_OK) {
+    Serial.printf("[Camera] Init failed: 0x%x\n", err);
+    return false;
+  }
+  
+  sensor_t *s = esp_camera_sensor_get();
+  if (s->id.PID == OV3660_PID) {
+    s->set_vflip(s, 1);
+    s->set_brightness(s, 1);
+    s->set_saturation(s, -2);
+  }
+  s->set_framesize(s, CAMERA_FRAME_SIZE);
+  
+  Serial.println("[Camera] Initialized successfully");
+  return true;
+}
+
+/* ===== Microphone Setup ===== */
+bool setupMicrophone() {
+  i2s_config_t i2s_config = {
+    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+    .sample_rate = AUDIO_SAMPLE_RATE,
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+    .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+    .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+    .dma_buf_count = 8,
+    .dma_buf_len = 1024,
+    .use_apll = false,
+    .tx_desc_auto_clear = true,
+    .fixed_mclk = 0
+  };
+  
+  i2s_pin_config_t pin_config = {
+    .bck_io_num = MIC_IIS_SCK_PIN,
+    .ws_io_num = MIC_IIS_WS_PIN,
+    .data_out_num = I2S_PIN_NO_CHANGE,
+    .data_in_num = MIC_IIS_DATA_PIN
+  };
+  
+  if (i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL) != ESP_OK) return false;
+  if (i2s_set_pin(I2S_NUM_0, &pin_config) != ESP_OK) return false;
+  
+  i2s_zero_dma_buffer(I2S_NUM_0);
+  Serial.println("[Microphone] Initialized successfully");
+  return true;
+}
+
+/* ===== MQTT Callback ===== */
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  Serial.printf("[MQTT] Message on: %s\n", topic);
+  
+  StaticJsonDocument<512> doc;
+  DeserializationError error = deserializeJson(doc, payload, length);
+  
+  if (error) {
+    Serial.printf("[MQTT] JSON error: %s\n", error.c_str());
+    return;
+  }
+  
+  // Handle control commands
+  if (strcmp(topic, MQTT_TOPIC_CONTROL) == 0) {
+    // ตรวจสอบว่าเป็นคำสั่งสำหรับ device นี้
+    const char* targetDevice = doc["device_id"] | "";
+    const char* targetRoom = doc["room"] | "";
+    
+    // รับคำสั่งถ้า:
+    // 1. ไม่ระบุ device_id (broadcast)
+    // 2. device_id ตรงกับ DEVICE_ID
+    // 3. room ตรงกับ ROOM_TYPE
+    bool shouldProcess = (strlen(targetDevice) == 0) ||
+                         (strcmp(targetDevice, DEVICE_ID) == 0) ||
+                         (strcmp(targetRoom, ROOM_TYPE) == 0);
+    
+    if (!shouldProcess) {
+      return;
+    }
+    
+    const char* command = doc["command"] | "";
+    const char* appliance = doc["appliance"] | "";
+    bool state = doc["state"] | false;
+    int value = doc["value"] | -1;
+    
+    // Special commands
+    if (strlen(command) > 0) {
+      if (strcmp(command, "turn_off_all") == 0) {
+        turnOffAllAppliances();
+      }
+      else if (strcmp(command, "get_status") == 0) {
+        // Force publish status
+        publishStatus();
+      }
+      return;
+    }
+    
+    // Appliance control
+    if (strlen(appliance) > 0) {
+      setAppliance(appliance, state, value);
+      
+      // Publish confirmation
+      StaticJsonDocument<256> response;
+      response["device_id"] = DEVICE_ID;
+      response["room"] = ROOM_TYPE;
+      response["appliance"] = appliance;
+      response["state"] = state;
+      if (value >= 0) response["value"] = value;
+      response["timestamp"] = getTimestamp();
+      
+      char buffer[256];
+      serializeJson(response, buffer);
+      mqtt.publish(MQTT_TOPIC_STATUS, buffer);
+    }
+  }
+  // Handle detection results from server
+  else if (strcmp(topic, MQTT_TOPIC_DETECTION) == 0) {
+    const char* targetDevice = doc["device_id"] | "";
+    if (strlen(targetDevice) == 0 || strcmp(targetDevice, DEVICE_ID) == 0) {
+      wheelchairDetected = doc["wheelchair_detected"] | false;
+      Serial.printf("[Detection] Wheelchair: %s\n", wheelchairDetected ? "DETECTED" : "NOT DETECTED");
+    }
+  }
+}
+
+/* ===== MQTT Functions ===== */
+void reconnectMQTT() {
+  if (mqtt.connected()) return;
+  
+  unsigned long now = millis();
+  if (now - lastMqttTryMs < MQTT_RETRY_MS) return;
+  lastMqttTryMs = now;
+  
+  Serial.printf("[MQTT] Connecting to %s:%d...\n", MQTT_SERVER, MQTT_PORT);
+  
+  char clientId[64];
+  snprintf(clientId, sizeof(clientId), "%s_%04X", DEVICE_ID, random(0xffff));
+  
+  bool connected = (strlen(MQTT_USER) > 0 && strlen(MQTT_PASS) > 0)
+    ? mqtt.connect(clientId, MQTT_USER, MQTT_PASS)
+    : mqtt.connect(clientId);
+  
+  if (connected) {
+    Serial.println("[MQTT] Connected!");
+    
+    // Subscribe to topics
+    mqtt.subscribe(MQTT_TOPIC_CONTROL);
+    mqtt.subscribe(MQTT_TOPIC_DETECTION);
+    
+    Serial.printf("[MQTT] Subscribed to:\n  - %s\n  - %s\n",
+                  MQTT_TOPIC_CONTROL, MQTT_TOPIC_DETECTION);
+    
+    // Publish online status
+    publishStatus();
+  } else {
+    Serial.printf("[MQTT] Failed, rc=%d\n", mqtt.state());
+  }
+}
+
+void publishVideoFrame() {
+  if (!mqtt.connected() || !videoStreamingEnabled) return;
+  
+  unsigned long frameStartMs = millis();
+  
+  // Capture frame
+  unsigned long captureStartMs = millis();
+  camera_fb_t *fb = esp_camera_fb_get();
+  unsigned long captureTimeMs = millis() - captureStartMs;
+  
+  if (!fb) {
+    Serial.println("[Video] Failed to capture frame");
+    return;
+  }
+  
+  // Prepare metadata
+  StaticJsonDocument<512> metaDoc;
+  metaDoc["device_id"] = DEVICE_ID;
+  metaDoc["room"] = ROOM_TYPE;
+  metaDoc["timestamp"] = getTimestamp();
+  metaDoc["format"] = "jpeg";
+  metaDoc["width"] = fb->width;
+  metaDoc["height"] = fb->height;
+  metaDoc["size"] = fb->len;
+  metaDoc["wheelchair_detected"] = wheelchairDetected;
+  
+  // Publish to MQTT
+  unsigned long publishStartMs = millis();
+  bool published = publishBase64Payload(MQTT_TOPIC_VIDEO, metaDoc, fb->buf, fb->len);
+  unsigned long publishTimeMs = millis() - publishStartMs;
+  unsigned long frameTimeMs = millis() - frameStartMs;
+  
+  if (published) {
+    videoFrameCount++;
+    
+    // Log FPS every 1 second with detailed timing
+    unsigned long now = millis();
+    if (now - lastFpsLogMs >= 1000) {
+      float fps = (videoFrameCount * 1000.0) / (now - lastFpsLogMs);
+      Serial.printf("[Video] FPS: %.1f | %dx%d (%lu bytes) | Capture: %lu ms | Publish: %lu ms | Total: %lu ms\n", 
+                    fps, fb->width, fb->height, (unsigned long)fb->len, 
+                    captureTimeMs, publishTimeMs, frameTimeMs);
+      videoFrameCount = 0;
+      lastFpsLogMs = now;
+    } else if (frameTimeMs > 50) {
+      // Log if frame time is too high (should be < 40ms for 25fps)
+      Serial.printf("[Video] Slow frame! Capture: %lu ms | Publish: %lu ms | Total: %lu ms\n",
+                    captureTimeMs, publishTimeMs, frameTimeMs);
+    }
+  } else {
+    Serial.printf("[Video] Publish failed! Capture: %lu ms | Publish: %lu ms | Total: %lu ms\n", 
+                  captureTimeMs, publishTimeMs, frameTimeMs);
+  }
+  
+  esp_camera_fb_return(fb);
+}
+
+void publishAudioData() {
+  if (!mqtt.connected() || !audioStreamingEnabled) return;
+  
+  size_t bytesRead = 0;
+  if (i2s_read(I2S_NUM_0, audioBuffer, AUDIO_BUFFER_SIZE, &bytesRead, 0) != ESP_OK || bytesRead == 0) return;
+  
+  StaticJsonDocument<256> metaDoc;
+  metaDoc["device_id"] = DEVICE_ID;
+  metaDoc["room"] = ROOM_TYPE;
+  metaDoc["timestamp"] = getTimestamp();
+  metaDoc["format"] = "pcm16";
+  metaDoc["sample_rate"] = AUDIO_SAMPLE_RATE;
+  metaDoc["channels"] = 1;
+  metaDoc["size"] = bytesRead;
+  
+  publishBase64Payload(MQTT_TOPIC_AUDIO, metaDoc, audioBuffer, bytesRead);
+}
+
+void publishStatus() {
+  if (!mqtt.connected()) return;
+  
+  StaticJsonDocument<768> doc;
+  doc["device_id"] = DEVICE_ID;
+  doc["room"] = ROOM_TYPE;
+  doc["room_name_th"] = getRoomNameTh();
+  doc["timestamp"] = getTimestamp();
+  doc["heap"] = ESP.getFreeHeap();
+  doc["rssi"] = WiFi.RSSI();
+  doc["video_streaming"] = videoStreamingEnabled;
+  doc["audio_streaming"] = audioStreamingEnabled;
+  doc["wheelchair_detected"] = wheelchairDetected;
+  
+  // Appliances status - only include available appliances for this room
+  JsonObject appObj = doc.createNestedObject("appliances");
+  
+  // Light - ทุกห้อง
+  JsonObject lightObj = appObj.createNestedObject("light");
+  lightObj["state"] = appliances.light;
+  lightObj["brightness"] = appliances.lightBrightness;
+  lightObj["pin"] = LED_LIGHT_PIN;
+  
+  // Alarm - Bedroom, Kitchen
+  if (isApplianceAvailable("alarm")) {
+    JsonObject alarmObj = appObj.createNestedObject("alarm");
+    alarmObj["state"] = appliances.alarm;
+    alarmObj["pin"] = LED_ALARM_PIN;
+  }
+  
+  // AirCon - Bedroom, Living Room
+  if (isApplianceAvailable("aircon")) {
+    JsonObject airconObj = appObj.createNestedObject("aircon");
+    airconObj["state"] = appliances.aircon;
+    airconObj["temp"] = appliances.airconTemp;
+    airconObj["pin"] = LED_AIRCON_PIN;
+  }
+  
+  // Fan - Living Room
+  if (isApplianceAvailable("fan")) {
+    JsonObject fanObj = appObj.createNestedObject("fan");
+    fanObj["state"] = appliances.fan;
+    fanObj["speed"] = appliances.fanSpeed;
+    fanObj["pin"] = LED_FAN_PIN;
+  }
+  
+  // TV - Living Room
+  if (isApplianceAvailable("tv")) {
+    JsonObject tvObj = appObj.createNestedObject("tv");
+    tvObj["state"] = appliances.tv;
+    tvObj["pin"] = LED_TV_PIN;
+  }
+  
+  char buffer[768];
+  serializeJson(doc, buffer);
+  mqtt.publish(MQTT_TOPIC_STATUS, buffer);
+  
+  Serial.println("[Status] Published");
+}
+
+void sendEmergencyAlert(const char* eventType, const char* message, const char* severity = "high") {
+  if (!mqtt.connected()) return;
+  
+  StaticJsonDocument<256> doc;
+  doc["device_id"] = DEVICE_ID;
+  doc["room"] = ROOM_TYPE;
+  doc["event_type"] = eventType;
+  doc["severity"] = severity;
+  doc["message"] = message;
+  doc["timestamp"] = getTimestamp();
+  
+  char buffer[256];
+  serializeJson(doc, buffer);
+  mqtt.publish(MQTT_TOPIC_EMERGENCY, buffer);
+  
+  Serial.printf("[EMERGENCY] %s: %s\n", eventType, message);
+}
+
+/* ===== Setup ===== */
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  
+  // Power on
+  pinMode(PWR_ON_PIN, OUTPUT);
+  digitalWrite(PWR_ON_PIN, HIGH);
+  delay(100);
+  
+  Serial.println("\n==========================================");
+  Serial.println("  WheelSense - T-SIM Camera Controller");
+  Serial.printf("  Device: %s\n", DEVICE_ID);
+  Serial.printf("  Room: %s (%s)\n", ROOM_TYPE, getRoomNameTh().c_str());
+  Serial.println("==========================================");
+  Serial.printf("Free Heap: %u bytes\n\n", ESP.getFreeHeap());
+  
+  // Print available appliances for this room
+  Serial.println("[Room] Available appliances:");
+  Serial.printf("  - Light: %s\n", isApplianceAvailable("light") ? "Yes" : "No");
+  Serial.printf("  - Alarm: %s\n", isApplianceAvailable("alarm") ? "Yes" : "No");
+  Serial.printf("  - AirCon: %s\n", isApplianceAvailable("aircon") ? "Yes" : "No");
+  Serial.printf("  - Fan: %s\n", isApplianceAvailable("fan") ? "Yes" : "No");
+  Serial.printf("  - TV: %s\n", isApplianceAvailable("tv") ? "Yes" : "No");
+  Serial.println();
+  
+  // Setup Appliances (GPIO)
+  setupAppliances();
+  
+  // WiFi Manager
+  Serial.println("[Setup] Starting WiFi Manager...");
+  
+  char apName[32];
+  snprintf(apName, sizeof(apName), "%s-Setup", DEVICE_ID);
+  
+  WiFiManager wm;
+  wm.setDebugOutput(true);
+  wm.setConfigPortalBlocking(true);
+  wm.setConnectTimeout(30);
+  wm.setConfigPortalTimeout(300);
+  wm.setCaptivePortalEnable(true);
+  
+  Serial.printf("[WiFi] AP: %s (password: 12345678)\n", apName);
+  Serial.println("[WiFi] Portal: http://192.168.4.1");
+  
+  WiFi.mode(WIFI_STA);
+  WiFi.persistent(false);
+  WiFi.setHostname(DEVICE_ID);
+  
+  if (!wm.autoConnect(apName, "12345678")) {
+    Serial.println("[WiFi] Failed, restarting...");
+    delay(3000);
+    ESP.restart();
+  }
+  
+  Serial.printf("[WiFi] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
+  Serial.printf("[WiFi] RSSI: %d dBm\n", WiFi.RSSI());
+  
+  // NTP Time
+  Serial.println("[Setup] Syncing time...");
+  configTime(7 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+  
+  int retry = 0;
+  while (time(nullptr) < 100000 && retry < 20) {
+    delay(500);
+    retry++;
+  }
+  Serial.printf("[Setup] Time: %s\n", getTimestamp().c_str());
+  
+  // Camera
+  Serial.println("[Setup] Initializing camera...");
+  if (!setupCamera()) {
+    Serial.println("[Setup] Camera failed, restarting...");
+    delay(3000);
+    ESP.restart();
+  }
+  
+  // Microphone
+  Serial.println("[Setup] Initializing microphone...");
+  if (!setupMicrophone()) {
+    Serial.println("[Setup] Microphone failed (continuing without audio)");
+    audioStreamingEnabled = false;
+  }
+  
+  // MQTT
+  mqtt.setServer(MQTT_SERVER, MQTT_PORT);
+  mqtt.setCallback(mqttCallback);
+  mqtt.setBufferSize(32768);  // 32KB (max for PubSubClient), เพียงพอสำหรับ 25fps
+  mqtt.setKeepAlive(60);
+  
+  Serial.println("\n[MQTT] Topics:");
+  Serial.printf("  - Video: %s\n", MQTT_TOPIC_VIDEO);
+  Serial.printf("  - Audio: %s\n", MQTT_TOPIC_AUDIO);
+  Serial.printf("  - Status: %s\n", MQTT_TOPIC_STATUS);
+  Serial.printf("  - Control: %s\n", MQTT_TOPIC_CONTROL);
+  Serial.printf("  - Detection: %s\n", MQTT_TOPIC_DETECTION);
+  
+  Serial.println("\n==========================================");
+  Serial.println("  System Ready!");
+  Serial.println("==========================================\n");
+  
+  lastVideoFrameMs = millis();
+  lastAudioSendMs = millis();
+  lastStatusPublishMs = millis();
+  lastFpsLogMs = millis();
+  videoFrameCount = 0;
+}
+
+/* ===== Loop ===== */
+void loop() {
+  // MQTT reconnect
+  if (!mqtt.connected()) {
+    reconnectMQTT();
+  }
+  mqtt.loop();
+  
+  unsigned long now = millis();
+  
+  // Video frame
+  if (now - lastVideoFrameMs >= VIDEO_FRAME_INTERVAL_MS) {
+    lastVideoFrameMs = now;
+    publishVideoFrame();
+  }
+  
+  // Audio (ทุก 200ms)
+  if (now - lastAudioSendMs >= 200) {
+    lastAudioSendMs = now;
+    publishAudioData();
+  }
+  
+  // Status
+  if (now - lastStatusPublishMs >= STATUS_INTERVAL_MS) {
+    lastStatusPublishMs = now;
+    publishStatus();
+  }
+  
+  delay(1);  // ลด delay เพื่อให้ส่ง frame ได้เร็วขึ้นสำหรับ 25fps
+}

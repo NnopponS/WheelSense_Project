@@ -1,0 +1,226 @@
+# WheelSense MockUp - Docker Compose Configuration
+# ระบบบ้านอัจฉริยะสำหรับผู้ใช้รถเข็น
+# รวม Backend, MCP Server, Ollama Local LLM, Dashboard
+
+services:
+  # ==================== MQTT Broker (Local) ====================
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: wheelsense-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"    # MQTT - สำหรับ TsimCam devices
+      - "9001:9001"    # WebSocket - สำหรับ Dashboard
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      wheelsense-network:
+        ipv4_address: 172.28.0.10
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ==================== MongoDB ====================
+  mongodb:
+    image: mongo:7.0
+    container_name: wheelsense-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: wheelsense123
+      MONGO_INITDB_DATABASE: wheelsense
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongodb/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      wheelsense-network:
+        ipv4_address: 172.28.0.11
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/wheelsense --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ==================== Ollama (Local LLM) ====================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: wheelsense-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      wheelsense-network:
+        ipv4_address: 172.28.0.12
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # สำหรับเครื่องที่ไม่มี GPU ให้ใช้ docker-compose.cpu.yml
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ==================== Backend API ====================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: wheelsense-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "8765:8765"  # WebSocket server for ESP32 camera connections
+    environment:
+      - MONGO_URI=mongodb://admin:wheelsense123@mongodb:27017/wheelsense?authSource=admin
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2
+      - ENVIRONMENT=production
+      - DEBUG=false
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src:ro
+    networks:
+      wheelsense-network:
+        ipv4_address: 172.28.0.20
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ==================== MCP Server (Local LLM Interface) ====================
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    container_name: wheelsense-mcp
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGO_URI=mongodb://admin:wheelsense123@mongodb:27017/wheelsense?authSource=admin
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    networks:
+      wheelsense-network:
+        ipv4_address: 172.28.0.21
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ==================== Camera Service (Wheelchair Detection) ====================
+  camera-service:
+    build:
+      context: ./camera-service
+      dockerfile: Dockerfile
+    container_name: wheelsense-camera-service
+    restart: unless-stopped
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_TOPIC_VIDEO=WheelSenseMockup/video
+      - MQTT_TOPIC_DETECTION=WheelSenseMockup/detection
+      - MQTT_TOPIC_CONTROL=WheelSenseMockup/control
+      - MQTT_TOPIC_STATUS=WheelSenseMockup/status
+      - DEVICE_ID=TSIM_001
+      - DETECTION_CONFIDENCE_THRESHOLD=0.5
+      - DETECTION_INTERVAL_SEC=1.0
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    networks:
+      wheelsense-network:
+        ipv4_address: 172.28.0.22
+
+  # ==================== Dashboard (Frontend) ====================
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+        - VITE_MCP_URL=/mcp
+        - VITE_MQTT_WS_URL=ws://localhost/mqtt
+    container_name: wheelsense-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+    networks:
+      wheelsense-network:
+        ipv4_address: 172.28.0.30
+
+  # ==================== Nginx Reverse Proxy ====================
+  nginx:
+    image: nginx:alpine
+    container_name: wheelsense-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - dashboard
+      - backend
+      - mcp-server
+    networks:
+      wheelsense-network:
+        ipv4_address: 172.28.0.2
+
+networks:
+  wheelsense-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  mongodb_data:
+    driver: local
+  mosquitto_data:
+    driver: local
+  mosquitto_log:
+    driver: local
+  ollama_data:
+    driver: local

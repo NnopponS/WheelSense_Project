@@ -1,0 +1,29 @@
+# WheelSense MCP Server Requirements
+
+# Web Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Database
+motor>=3.3.0
+pymongo>=4.6.0
+
+# MQTT
+paho-mqtt>=1.6.1
+
+# LLM
+httpx>=0.26.0
+
+# MCP Protocol
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Async
+aiofiles>=23.2.0
+
+# JSON Schema
+jsonschema>=4.20.0
+
+# Logging
+structlog>=24.1.0
+

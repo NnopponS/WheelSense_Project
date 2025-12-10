@@ -1,0 +1,10 @@
+# WheelSense MockUp - Docker Compose for CPU-only (No GPU)
+# ใช้สำหรับเครื่องที่ไม่มี NVIDIA GPU
+# Usage: docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+
+services:
+  # Override Ollama to remove GPU requirements
+  ollama:
+    deploy: {}  # Remove GPU reservation
+    environment:
+      - OLLAMA_NUM_GPU=0
