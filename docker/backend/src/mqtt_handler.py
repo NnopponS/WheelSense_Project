@@ -60,6 +60,9 @@ class MQTTHandler:
         # Device IPs for HTTP video streaming (from ESP32 status)
         self.device_ips: Dict[str, str] = {room: "" for room in self.ROOMS}
         self.stream_urls: Dict[str, str] = {room: "" for room in self.ROOMS}
+        
+        # Device registration info (from MQTT registration)
+        self.device_registrations: Dict[str, Dict] = {}  # device_id -> registration info
     
     async def connect(self):
         """Connect to MQTT broker."""
@@ -101,27 +104,23 @@ class MQTTHandler:
         if rc == 0:
             logger.info("MQTT connected successfully")
             
-            # Subscribe to room-based topics (primary - new architecture)
+            # Subscribe to room-based topics - WebSocket is primary, MQTT only for registration
             for room in self.ROOMS:
                 room_topics = [
-                    f"WheelSense/{room}/video",
-                    f"WheelSense/{room}/status",
-                    f"WheelSense/{room}/control",
-                    f"WheelSense/{room}/emergency"
+                    f"WheelSense/{room}/registration",  # สำหรับ IP registration จาก ESP32 เท่านั้น
                 ]
                 for topic in room_topics:
                     client.subscribe(topic)
                     logger.info(f"Subscribed to {topic}")
             
-            # Also subscribe to legacy WheelSenseMockup topics for backward compatibility
-            legacy_topics = [
-                "WheelSenseMockup/video",
-                "WheelSenseMockup/status",
-                "WheelSenseMockup/emergency"
-            ]
-            for topic in legacy_topics:
-                client.subscribe(topic)
-                logger.debug(f"Subscribed to legacy {topic}")
+            # Subscribe to detection topic (from camera-service) - ไม่ส่งกลับไปที่บอร์ด
+            # Detection results จะส่งไปยัง dashboard ผ่าน WebSocket เท่านั้น
+            for room in self.ROOMS:
+                detection_topic = f"WheelSense/{room}/detection"
+                client.subscribe(detection_topic)
+                logger.info(f"Subscribed to {detection_topic} (for dashboard only, not sent to board)")
+            
+            logger.info("MQTT: Only subscribing to registration and detection topics (control/status via WebSocket)")
         else:
             logger.error(f"MQTT connection failed with code {rc}")
     
@@ -145,39 +144,18 @@ class MQTTHandler:
                 logger.error("No event loop available for async operations")
                 return
             
-            # Handle room-based topics: WheelSense/{room}/video, etc.
+            # Handle room-based topics: WheelSense/{room}/registration and /detection only
             for room in self.ROOMS:
                 if topic.startswith(f"WheelSense/{room}/"):
-                    if "/video" in topic:
+                    if "/registration" in topic:
                         asyncio.run_coroutine_threadsafe(
-                            self._handle_video_mockup(room, msg.payload), loop
+                            self._handle_registration(room, msg.payload), loop
                         )
-                    elif "/status" in topic:
+                    elif "/detection" in topic:
                         asyncio.run_coroutine_threadsafe(
-                            self._handle_status_mockup(room, msg.payload), loop
-                        )
-                    elif "/emergency" in topic:
-                        asyncio.run_coroutine_threadsafe(
-                            self._handle_emergency(room, msg.payload), loop
+                            self._handle_detection(room, msg.payload), loop
                         )
                     return  # Found matching room, exit
-            
-            # Handle legacy WheelSenseMockup topics (backward compatibility)
-            if topic.startswith("WheelSenseMockup/"):
-                room = "livingroom"  # Default room for legacy topics
-                
-                if "/video" in topic:
-                    asyncio.run_coroutine_threadsafe(
-                        self._handle_video_mockup(room, msg.payload), loop
-                    )
-                elif "/status" in topic:
-                    asyncio.run_coroutine_threadsafe(
-                        self._handle_status_mockup(room, msg.payload), loop
-                    )
-                elif "/emergency" in topic:
-                    asyncio.run_coroutine_threadsafe(
-                        self._handle_emergency(room, msg.payload), loop
-                    )
                     
         except Exception as e:
             logger.error(f"Error handling MQTT message: {e}", exc_info=True)
@@ -363,23 +341,78 @@ class MQTTHandler:
             logger.error(f"Error handling status: {e}")
     
     async def _handle_detection(self, room: str, payload: bytes):
-        """Handle detection event from device."""
+        """Handle wheelchair detection event from camera-service."""
         try:
             detection = json.loads(payload.decode("utf-8"))
+            detected = detection.get("detected", False)
+            confidence = detection.get("confidence", 0.0)
+            bbox = detection.get("bbox")
+            device_id = detection.get("device_id", "UNKNOWN")
             
-            # Broadcast to WebSocket clients
+            # อัปเดต room status
+            if room not in self.room_status:
+                self.room_status[room] = {}
+            
+            self.room_status[room]["wheelchair_detected"] = detected
+            self.room_status[room]["detection_confidence"] = confidence
+            self.room_status[room]["detection_bbox"] = bbox
+            self.room_status[room]["last_detection_time"] = datetime.now().isoformat()
+            
+            logger.info(f"🦽 Wheelchair detection in {room}: detected={detected}, confidence={confidence:.2f}")
+            
+            # Broadcast to WebSocket clients (dashboard only - ไม่ส่งกลับไปที่บอร์ด)
+            # Dashboard จะรับ detection results และอัปเดต wheelchair position อัตโนมัติ
             await self._broadcast_ws({
-                "type": "detection",
+                "type": "wheelchair_detection",
                 "room": room,
-                "detection": detection
+                "device_id": device_id,
+                "detected": detected,
+                "confidence": confidence,
+                "bbox": bbox,
+                "timestamp": datetime.now().isoformat()
             })
             
-            # Call callback if set
+            # Call callback if set (for updating database)
             if self.on_detection_callback:
                 await self.on_detection_callback(room, detection)
                 
         except Exception as e:
-            logger.error(f"Error handling detection: {e}")
+            logger.error(f"Error handling detection: {e}", exc_info=True)
+    
+    async def _handle_registration(self, room: str, payload: bytes):
+        """Handle device IP registration from ESP32."""
+        try:
+            registration = json.loads(payload.decode("utf-8"))
+            device_id = registration.get("device_id", "UNKNOWN")
+            ip_address = registration.get("ip_address", "")
+            websocket_port = registration.get("websocket_port", 8765)
+            
+            # บันทึก registration info
+            self.device_registrations[device_id] = {
+                "device_id": device_id,
+                "room": room,
+                "ip_address": ip_address,
+                "websocket_port": websocket_port,
+                "websocket_url": f"ws://{ip_address}:{websocket_port}",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # บันทึก IP สำหรับ room
+            self.device_ips[room] = ip_address
+            
+            logger.info(f"📝 Device registered: {device_id} ({room}) - IP: {ip_address}:{websocket_port}")
+            
+            # Broadcast to WebSocket clients
+            await self._broadcast_ws({
+                "type": "device_registered",
+                "room": room,
+                "device_id": device_id,
+                "ip_address": ip_address,
+                "websocket_port": websocket_port
+            })
+            
+        except Exception as e:
+            logger.error(f"Error handling registration: {e}", exc_info=True)
     
     async def _handle_emergency(self, room: str, payload: bytes):
         """Handle emergency alert from device."""
@@ -459,27 +492,37 @@ class MQTTHandler:
         state: bool,
         value: Optional[int] = None
     ) -> bool:
-        """Send control command to a device."""
-        if not self.client or not self.is_connected:
-            logger.error("MQTT not connected")
-            return False
+        """Send control command to a device via WebSocket only (MQTT no longer used for control)."""
+        from .websocket_handler import stream_handler
         
-        topic = f"WheelSense/{room}/control"
-        command = {
-            "appliance": appliance,
-            "state": state,
-            "timestamp": datetime.now().isoformat()
-        }
+        # หา device_id จาก room
+        device_id = None
+        for dev_id, dev_room in stream_handler.device_rooms.items():
+            if dev_room == room:
+                device_id = dev_id
+                break
         
-        if value is not None:
-            command["value"] = value
-        
-        try:
-            self.client.publish(topic, json.dumps(command))
-            logger.info(f"Sent control to {room}: {appliance}={state}")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to send control command: {e}")
+        if device_id and device_id in stream_handler.camera_connections:
+            # ส่งผ่าน WebSocket
+            try:
+                command = {
+                    "type": "control",
+                    "appliance": appliance,
+                    "state": state,
+                    "timestamp": datetime.now().isoformat()
+                }
+                if value is not None:
+                    command["value"] = value
+                
+                websocket = stream_handler.camera_connections[device_id]
+                await websocket.send(json.dumps(command))
+                logger.info(f"✅ Sent control via WebSocket to {device_id} ({room}): {appliance}={state}")
+                return True
+            except Exception as e:
+                logger.error(f"WebSocket control failed: {e}")
+                return False
+        else:
+            logger.warning(f"No WebSocket connection found for room {room} - cannot send control command")
             return False
     
     async def get_video_stream(self, room: str) -> AsyncGenerator[bytes, None]:

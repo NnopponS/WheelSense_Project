@@ -53,8 +53,92 @@ async def lifespan(app: FastAPI):
         broker=settings.MQTT_BROKER,
         port=settings.MQTT_PORT
     )
+    
+    # Set callback for wheelchair detection to update database
+    async def on_wheelchair_detection(room: str, detection: dict):
+        """Callback when wheelchair is detected - update position in database."""
+        if not detection.get("detected", False):
+            return
+        
+        try:
+            # Find wheelchair for this room
+            wheelchairs = await db.db.wheelchairs.find({"room": room}).to_list(length=10)
+            if not wheelchairs:
+                logger.debug(f"No wheelchair found for room {room}")
+                return
+            
+            # Update position for first wheelchair in room
+            wheelchair = wheelchairs[0]
+            wheelchair_id = wheelchair.get("id", wheelchair.get("_id"))
+            
+            # Get current positions
+            map_config = await db.get_map_config()
+            positions = map_config.get("wheelchairPositions", {}) if map_config else {}
+            
+            # Calculate new position from bbox if available
+            bbox = detection.get("bbox")
+            frame_size = detection.get("frame_size", {})
+            
+            if bbox and len(bbox) == 4 and frame_size:
+                # bbox is (x, y, w, h) in pixels
+                # frame_size is {"width": w, "height": h}
+                x, y, w, h = bbox
+                frame_width = frame_size.get("width", 640)
+                frame_height = frame_size.get("height", 480)
+                
+                # Calculate center of bbox in pixel coordinates
+                bbox_center_x = x + w / 2
+                bbox_center_y = y + h / 2
+                
+                # Convert to percentage of video frame (0-100%)
+                video_x_percent = (bbox_center_x / frame_width) * 100
+                video_y_percent = (bbox_center_y / frame_height) * 100
+                
+                # Get room data to map video position to map position
+                room_data = await db.get_room(room)
+                if room_data:
+                    # Map video percentage to room position on map
+                    # Assume video covers the entire room area
+                    # Map video coordinates to room coordinates
+                    room_x = room_data.get("x", 50)
+                    room_y = room_data.get("y", 50)
+                    room_width = room_data.get("width", 20)
+                    room_height = room_data.get("height", 20)
+                    
+                    # Convert video percentage to map percentage
+                    # Video (0-100%) -> Room (room_x to room_x + room_width)
+                    new_x = room_x + (video_x_percent / 100) * room_width
+                    new_y = room_y + (video_y_percent / 100) * room_height
+                    
+                    # Clamp to room bounds
+                    new_x = max(room_x, min(room_x + room_width, new_x))
+                    new_y = max(room_y, min(room_y + room_height, new_y))
+                    
+                    positions[str(wheelchair_id)] = {"x": new_x, "y": new_y}
+                    await db.save_wheelchair_positions(positions)
+                    logger.info(f"📍 Updated wheelchair {wheelchair_id} position in {room} from bbox: ({new_x:.1f}%, {new_y:.1f}%) [bbox center: ({bbox_center_x:.0f}, {bbox_center_y:.0f})]")
+            elif bbox and len(bbox) == 4:
+                # Fallback: use center of room if no frame_size
+                room_data = await db.get_room(room)
+                if room_data:
+                    new_x = room_data.get("x", 50) + room_data.get("width", 20) / 2
+                    new_y = room_data.get("y", 50) + room_data.get("height", 20) / 2
+                    
+                    positions[str(wheelchair_id)] = {"x": new_x, "y": new_y}
+                    await db.save_wheelchair_positions(positions)
+                    logger.info(f"📍 Updated wheelchair {wheelchair_id} position in {room} (center): ({new_x:.1f}%, {new_y:.1f}%)")
+            
+        except Exception as e:
+            logger.error(f"Error updating wheelchair position: {e}", exc_info=True)
+    
+    mqtt_handler.on_detection_callback = on_wheelchair_detection
     await mqtt_handler.connect()
-    logger.info("✅ MQTT connected")
+    logger.info("✅ MQTT connected (for registration only)")
+    
+    # Set detection callback and mqtt_handler reference in websocket handler
+    stream_handler.on_detection_callback = on_wheelchair_detection
+    stream_handler.mqtt_handler = mqtt_handler
+    logger.info("✅ WebSocket handler configured for detection")
     
     # Initialize AI service
     ai_service = AIService(settings.GEMINI_API_KEY)
@@ -322,17 +406,59 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             # Handle incoming WebSocket messages if needed
             message = json.loads(data)
+            msg_type = message.get("type", "")
             
-            if message.get("type") == "control":
+            if msg_type == "control":
                 # Handle control commands via WebSocket
                 await mqtt_handler.send_control_command(
                     room=message["room"],
                     appliance=message["appliance"],
                     state=message["state"]
                 )
+            
+            elif msg_type == "wheelchair_detection":
+                # Handle wheelchair detection from test simulator or camera-service
+                room = message.get("room", "livingroom")
+                detected = message.get("detected", False)
+                bbox = message.get("bbox")
+                frame_size = message.get("frame_size")
+                
+                logger.info(f"🦽 Wheelchair detection from client: room={room}, detected={detected}")
+                
+                # Broadcast to all clients
+                if mqtt_handler:
+                    await mqtt_handler._broadcast_ws({
+                        "type": "wheelchair_detection",
+                        "room": room,
+                        "device_id": message.get("device_id", "TEST"),
+                        "detected": detected,
+                        "confidence": message.get("confidence", 0.9),
+                        "bbox": bbox,
+                        "frame_size": frame_size,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                
+                # Also trigger database update callback
+                if detected and stream_handler.on_detection_callback:
+                    await stream_handler.on_detection_callback(room, {
+                        "detected": detected,
+                        "bbox": bbox,
+                        "frame_size": frame_size,
+                        "wheelchair_id": message.get("wheelchair_id")
+                    })
     except WebSocketDisconnect:
         if mqtt_handler:
             mqtt_handler.remove_websocket(websocket)
+
+
+
+@app.websocket("/ws/camera-service")
+async def websocket_camera_service_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for camera-service to connect and send detections."""
+    await websocket.accept()
+    # Convert FastAPI WebSocket to websockets.WebSocketServerProtocol-like interface
+    # We'll use a wrapper or adapt the handler
+    await stream_handler._handle_camera_service_connection_fastapi(websocket)
 
 
 # ==================== Emergency APIs ====================

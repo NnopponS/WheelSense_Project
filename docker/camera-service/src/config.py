@@ -15,7 +15,10 @@ class Settings(BaseSettings):
     MQTT_USER: Optional[str] = None
     MQTT_PASS: Optional[str] = None
     
-    # MQTT Topics
+    # WebSocket Backend URL (FastAPI endpoint)
+    WEBSOCKET_BACKEND_URL: str = "ws://backend:8000/ws/camera-service"
+    
+    # MQTT Topics (legacy - not used anymore, only for registration)
     MQTT_TOPIC_VIDEO: str = "WheelSenseMockup/video"
     MQTT_TOPIC_DETECTION: str = "WheelSenseMockup/detection"
     MQTT_TOPIC_CONTROL: str = "WheelSenseMockup/control"

@@ -1,3 +1,10 @@
+/*
+ * TsimCam Controller - Video Streaming Only
+ * 
+ * หน้าที่: ส่ง video stream ไปยัง Backend ผ่าน WebSocket
+ * หมายเหตุ: การควบคุมอุปกรณ์ไฟฟ้า (appliances) ถูกย้ายไปที่ ESP8266 nodemcuBase v1.0
+ */
+
 #include <WiFi.h>
 #include <WebSocketsClient.h>
 #include <PubSubClient.h>
@@ -25,6 +32,7 @@ const char* STATIC_WEBSOCKET_SERVER = "192.168.137.1"; // IP ของ host mach
 
 const int MQTT_PORT = 1883;
 const int WEBSOCKET_PORT = 8765;
+const int STATUS_INTERVAL_MS = 5000;  // ส่ง status ทุก 5 วินาที
 
 // ตัวแปรสำหรับเก็บ IP ที่ resolve แล้ว
 String mqttServerIP;
@@ -33,19 +41,17 @@ String websocketServerIP;
 #define DEVICE_ID "TSIM_001"
 #define ROOM_TYPE "livingroom"
 
-// ปรับให้เบาลงเพื่อดัน FPS ให้ขึ้น
-#define CAMERA_FRAME_SIZE FRAMESIZE_VGA   // 320x240 แทน VGA
-#define JPEG_QUALITY 68                    // เลขมาก = quality ต่ำลง, ไฟล์เล็กลง
-#define STREAM_FPS 10                      // ตั้งเป้าสูงนิดนึง ให้ได้จริงแถวๆ 10 FPS
-#define FRAME_BUFFER_COUNT 2               // ลด fb ให้ latency น้อยลง
-#define FRAME_QUEUE_SIZE 4                 // คิวเล็กๆ กันหน่วง
-#define FRAME_INTERVAL_MS (1000 / STREAM_FPS)
-
-#define MQTT_STATUS_INTERVAL_MS 5000
+// ปรับให้ได้ FPS ~25, drop น้อย, ภาพชัด
+#define CAMERA_FRAME_SIZE FRAMESIZE_QVGA   // 320x240 - สมดุลระหว่างคุณภาพและ FPS
+#define JPEG_QUALITY 30                    // คุณภาพดี (0-63, ต่ำ = quality สูง) - สมดุลระหว่างชัดและไฟล์เล็ก
+#define TARGET_FPS 25                      // ตั้งเป้า FPS 25
+#define FRAME_INTERVAL_MS (1000 / TARGET_FPS)  // 40ms per frame = 25 FPS
+#define FRAME_BUFFER_COUNT 4               // เพิ่ม buffer เพื่อลด drop
+#define FRAME_QUEUE_SIZE 12                // เพิ่มคิวให้ใหญ่ขึ้น
 
 // ปรับขนาด buffer ให้เหมาะกับ QVGA JPEG
-#define FRAME_POOL_SIZE 4
-#define MAX_FRAME_SIZE 60000               // QVGA JPEG ปกติไม่ควรเกิน 60 KB
+#define FRAME_POOL_SIZE 12                 // เพิ่ม pool size มากๆ เพื่อลด drop
+#define MAX_FRAME_SIZE 40000               // QVGA JPEG quality 30 ~25-35 KB
 
 /* ===== T-SIM Camera Pins ===== */
 #define PWDN_GPIO_NUM     -1
@@ -65,11 +71,13 @@ String websocketServerIP;
 #define HREF_GPIO_NUM     7
 #define PCLK_GPIO_NUM     13
 
-/* ===== Appliance Pins ===== */
-#define LED_LIGHT_PIN    21
-#define LED_AIRCON_PIN   46
-#define LED_FAN_PIN      47
-#define LED_TV_PIN       48
+/* ===== Appliance Pins (DEPRECATED - Use ESP8266 instead) ===== */
+// Note: Appliance control has been moved to ESP8266 nodemcuBase v1.0
+// These pins are kept for backward compatibility but should not be used
+// #define LED_LIGHT_PIN    21
+// #define LED_AIRCON_PIN   46
+// #define LED_FAN_PIN      47
+// #define LED_TV_PIN       48
 
 /* ===== FreeRTOS Task Configuration ===== */
 #define CAMERA_TASK_CORE 1
@@ -147,9 +155,12 @@ WiFiClient espClient;
 PubSubClient mqtt(espClient);
 WebSocketsClient webSocket;
 
-char MQTT_TOPIC_STATUS[64];
-char MQTT_TOPIC_CONTROL[64];
-char MQTT_TOPIC_DETECTION[64];
+// MQTT topics
+char MQTT_TOPIC_REGISTRATION[64];  // สำหรับส่ง IP registration
+
+// Flags
+bool mqttRegistered = false;  // บันทึกว่าได้ส่ง IP ผ่าน MQTT แล้วหรือยัง
+bool wsWasConnected = false;   // ตรวจสอบว่า WebSocket เคยเชื่อมต่อสำเร็จหรือไม่
 
 QueueHandle_t frameQueue = NULL;
 FramePool framePool;
@@ -169,17 +180,17 @@ unsigned long lastFramesSent = 0;
 
 bool motionDetected = false;
 
-struct {
-  bool light = false;
-  bool aircon = false;
-  bool fan = false;
-  bool tv = false;
-} appliances;
+// Note: Appliance control moved to ESP8266
+// TsimCam now only handles video streaming
 
 // Forward declarations
-void publishStatus();
+void sendStatus();
 void reconnectWebSocket();
 void resolveServerIPs();
+void handleWebSocketMessage(String message);
+void registerIPViaMQTT();
+void reconnectMQTT();
+void setAppliance(const char* name, bool state);
 
 /* ===== Camera Setup ===== */
 bool setupCamera() {
@@ -202,9 +213,9 @@ bool setupCamera() {
   config.pin_sccb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 20000000;
+  config.xclk_freq_hz = 20000000;         // 20MHz - ความเร็วสูงสุด
   config.pixel_format = PIXFORMAT_JPEG;
-  config.grab_mode = CAMERA_GRAB_LATEST;
+  config.grab_mode = CAMERA_GRAB_LATEST;  // ดึงเฟรมล่าสุดเสมอ - ไม่รอ
   
   config.frame_size = CAMERA_FRAME_SIZE;
   config.jpeg_quality = JPEG_QUALITY;
@@ -226,8 +237,8 @@ bool setupCamera() {
     s->set_quality(s, JPEG_QUALITY);
   }
   
-  Serial.printf("[Camera] QVGA 320x240, Quality: %d, Buffers: %d\n",
-                JPEG_QUALITY, FRAME_BUFFER_COUNT);
+  Serial.printf("[Camera] QVGA 320x240, Quality: %d (lower=better), Buffers: %d, Target FPS: %d\n",
+                JPEG_QUALITY, FRAME_BUFFER_COUNT, TARGET_FPS);
   return true;
 }
 
@@ -236,56 +247,157 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
   switch (type) {
     case WStype_DISCONNECTED:
       wsConnected = false;
+      Serial.println("[WebSocket] Disconnected");
+      
+      // ถ้า WebSocket หลุด ให้ส่ง IP ผ่าน MQTT อีกครั้ง (ถ้ายังไม่ได้ register)
+      if (wsWasConnected) {
+        mqttRegistered = false;  // Reset flag เพื่อให้ส่ง IP ใหม่
+        Serial.println("[MQTT] Will re-register IP after WebSocket disconnect");
+      }
       break;
       
     case WStype_CONNECTED: {
       wsConnected = true;
-      char welcomeMsg[256];
-      snprintf(welcomeMsg, sizeof(welcomeMsg),
-               "{\"type\":\"connected\",\"room\":\"%s\",\"device_id\":\"%s\",\"buffers\":%d,\"pool\":%d}",
-               ROOM_TYPE, DEVICE_ID, FRAME_BUFFER_COUNT, FRAME_POOL_SIZE);
+      wsWasConnected = true;  // บันทึกว่าเคยเชื่อมต่อสำเร็จแล้ว
+      Serial.printf("[WebSocket] Connected to %s:%d\n", websocketServerIP.c_str(), WEBSOCKET_PORT);
+      
+      // ส่ง welcome message พร้อม device info
+      StaticJsonDocument<256> welcomeDoc;
+      welcomeDoc["type"] = "connected";
+      welcomeDoc["device_id"] = DEVICE_ID;
+      welcomeDoc["room"] = ROOM_TYPE;
+      welcomeDoc["buffers"] = FRAME_BUFFER_COUNT;
+      welcomeDoc["pool"] = FRAME_POOL_SIZE;
+      
+      String welcomeMsg;
+      serializeJson(welcomeDoc, welcomeMsg);
       webSocket.sendTXT(welcomeMsg);
+      
+      // ส่ง status ครั้งแรก
+      sendStatus();
+      
+      // หลังจาก WebSocket เชื่อมต่อสำเร็จแล้ว ปิด MQTT (ไม่ต้องใช้แล้ว)
+      if (mqtt.connected()) {
+        mqtt.disconnect();
+        Serial.println("[MQTT] Disconnected - WebSocket is active");
+      }
       break;
     }
 
-    case WStype_TEXT:
+    case WStype_TEXT: {
+      // รับ control commands ผ่าน WebSocket
+      String message = String((char*)payload);
+      handleWebSocketMessage(message);
+      break;
+    }
+    
     case WStype_BIN:
+      // Binary data = video frames (ไม่ต้องทำอะไร)
+      break;
+      
     case WStype_ERROR:
+      Serial.printf("[WebSocket] Error: %s\n", payload);
+      break;
+      
     default:
       break;
   }
 }
 
+/* ===== Handle WebSocket Messages ===== */
+void handleWebSocketMessage(String message) {
+  StaticJsonDocument<512> doc;
+  DeserializationError error = deserializeJson(doc, message);
+  
+  if (error) {
+    Serial.printf("[WebSocket] JSON parse error: %s\n", error.c_str());
+    return;
+  }
+  
+  const char* msgType = doc["type"];
+  
+  if (msgType && strcmp(msgType, "control") == 0) {
+    // Control appliance command
+    const char* appliance = doc["appliance"];
+    bool state = doc["state"] | false;
+    
+    if (appliance) {
+      setAppliance(appliance, state);
+      Serial.printf("[WebSocket] Control: %s = %s\n", appliance, state ? "ON" : "OFF");
+      
+      // ส่ง confirmation กลับ
+      StaticJsonDocument<128> response;
+      response["type"] = "control_ack";
+      response["appliance"] = appliance;
+      response["state"] = state;
+      response["status"] = "ok";
+      
+      String responseMsg;
+      serializeJson(response, responseMsg);
+      webSocket.sendTXT(responseMsg);
+    }
+  } else if (msgType && strcmp(msgType, "detection") == 0) {
+    // Motion detection update
+    motionDetected = doc["motion_detected"] | false;
+    Serial.printf("[WebSocket] Detection: %s\n", motionDetected ? "DETECTED" : "NONE");
+  } else if (msgType && strcmp(msgType, "ping") == 0) {
+    // Ping/Pong for keepalive
+    StaticJsonDocument<64> pong;
+    pong["type"] = "pong";
+    String pongMsg;
+    serializeJson(pong, pongMsg);
+    webSocket.sendTXT(pongMsg);
+  }
+}
+
 /* ===== Camera Capture Task (Core 1) ===== */
+// Optimized: ควบคุม FPS ที่ 25, drop น้อย, ภาพชัด
 void cameraTask(void *parameter) {
   TickType_t lastWakeTime = xTaskGetTickCount();
   const TickType_t frameInterval = pdMS_TO_TICKS(FRAME_INTERVAL_MS);
   
   while (true) {
+    // ดึงเฟรมล่าสุดเสมอ (CAMERA_GRAB_LATEST จะ skip เฟรมเก่า)
     camera_fb_t *fb = esp_camera_fb_get();
     if (!fb) {
       vTaskDelay(1);
       continue;
     }
     
+    // ถ้า WebSocket เชื่อมต่ออยู่ ให้ส่งเฟรม
     if (wsConnected) {
-      FrameData* frame = framePool.allocate(fb->len);
-      
-      if (frame) {
-        memcpy(frame->data, fb->buf, fb->len);
-        frame->length = fb->len;
+      // ตรวจสอบขนาดก่อน allocate
+      if (fb->len <= MAX_FRAME_SIZE) {
+        FrameData* frame = framePool.allocate(fb->len);
         
-        if (xQueueSend(frameQueue, &frame, 0) != pdTRUE) {
-          framePool.free(frame);
+        if (frame) {
+          // Copy เฟรมไปยัง pool
+          memcpy(frame->data, fb->buf, fb->len);
+          frame->length = fb->len;
+          
+          // ส่งเข้า queue (non-blocking)
+          if (xQueueSend(frameQueue, &frame, 0) != pdTRUE) {
+            // Queue เต็ม - drop frame และ free pool
+            framePool.free(frame);
+            framesDropped++;
+          }
+          // ถ้าส่งสำเร็จ ไม่ต้องทำอะไร - frame จะถูก free ใน WebSocket task
+        } else {
+          // Pool เต็ม - skip เฟรมนี้ (ไม่ copy, ไม่ drop counter เพิ่ม)
+          // เพราะ WebSocket task ยังส่งไม่ทัน
+          poolExhausted++;
           framesDropped++;
         }
       } else {
-        poolExhausted++;
+        // เฟรมใหญ่เกินไป - drop
         framesDropped++;
       }
     }
     
+    // Return frame buffer กลับไปยัง camera driver ทันที
     esp_camera_fb_return(fb);
+    
+    // ควบคุม FPS ที่ 25 (40ms per frame)
     vTaskDelayUntil(&lastWakeTime, frameInterval);
   }
 }
@@ -325,6 +437,7 @@ void reconnectWebSocket() {
 }
 
 /* ===== WebSocket Sending Task (Core 0) ===== */
+// Optimized: ส่งเฟรมเร็วที่สุด, ลด drop, รองรับ FPS 25
 void webSocketTask(void *parameter) {
   while (true) {
     if (!wsConnected) {
@@ -335,18 +448,35 @@ void webSocketTask(void *parameter) {
     webSocket.loop();
 
     if (wsConnected) {
-      FrameData* frame = NULL;
+      // ดึงเฟรมจาก queue และส่งทันที (non-blocking)
+      // ส่งหลายเฟรมถ้ามีใน queue เพื่อลด drop และเพิ่ม FPS
+      int framesProcessed = 0;
+      const int MAX_FRAMES_PER_LOOP = 5;  // เพิ่มเป็น 5 เฟรมต่อ loop เพื่อลด drop
       
-      if (xQueueReceive(frameQueue, &frame, pdMS_TO_TICKS(5)) == pdTRUE) {
-        if (frame && frame->data && frame->length > 0) {
-          webSocket.sendBIN(frame->data, frame->length);
-          framesSent++;
-        }
-        if (frame) {
-          framePool.free(frame);
+      while (framesProcessed < MAX_FRAMES_PER_LOOP) {
+        FrameData* frame = NULL;
+        
+        if (xQueueReceive(frameQueue, &frame, 0) == pdTRUE) {
+          if (frame && frame->data && frame->length > 0) {
+            // ส่งเฟรมผ่าน WebSocket (binary)
+            webSocket.sendBIN(frame->data, frame->length);
+            framesSent++;
+            framesProcessed++;
+          }
+          // Free frame กลับไปยัง pool ทันทีหลังส่ง
+          if (frame) {
+            framePool.free(frame);
+          }
+        } else {
+          // ไม่มีเฟรมใน queue แล้ว
+          break;
         }
       }
+      
+      // Process WebSocket events อีกครั้งเพื่อให้ส่งข้อมูลจริงๆ
+      webSocket.loop();
     } else {
+      // ถ้าไม่เชื่อมต่อ ให้ clear queue
       FrameData* frame = NULL;
       while (xQueueReceive(frameQueue, &frame, 0) == pdTRUE) {
         if (frame) framePool.free(frame);
@@ -354,52 +484,67 @@ void webSocketTask(void *parameter) {
       vTaskDelay(pdMS_TO_TICKS(100));
     }
 
-    vTaskDelay(1);
+    // Delay เล็กน้อยเพื่อให้ CPU มีโอกาสทำงาน task อื่น
+    // ถ้ามีเฟรมใน queue ให้ delay น้อยลง
+    if (wsConnected && uxQueueMessagesWaiting(frameQueue) > 0) {
+      vTaskDelay(0);  // ไม่ delay ถ้ามีเฟรมรอ
+    } else {
+      vTaskDelay(1);
+    }
   }
 }
 
-/* ===== Appliances ===== */
+/* ===== Appliances (DEPRECATED) ===== */
+// Note: Appliance control has been moved to ESP8266 nodemcuBase v1.0
+// These functions are kept as stubs for backward compatibility
 void setupAppliances() {
-  pinMode(LED_LIGHT_PIN, OUTPUT);
-  pinMode(LED_AIRCON_PIN, OUTPUT);
-  pinMode(LED_FAN_PIN, OUTPUT);
-  pinMode(LED_TV_PIN, OUTPUT);
+  // No-op: Appliances now controlled by ESP8266
+  Serial.println("[Appliances] Moved to ESP8266 controller");
 }
 
 void setAppliance(const char* name, bool state) {
-  if (strcmp(name, "light") == 0) { 
-    appliances.light = state; 
-    digitalWrite(LED_LIGHT_PIN, state); 
-  }
-  else if (strcmp(name, "aircon") == 0) { 
-    appliances.aircon = state; 
-    digitalWrite(LED_AIRCON_PIN, state); 
-  }
-  else if (strcmp(name, "fan") == 0) { 
-    appliances.fan = state; 
-    digitalWrite(LED_FAN_PIN, state); 
-  }
-  else if (strcmp(name, "tv") == 0) { 
-    appliances.tv = state; 
-    digitalWrite(LED_TV_PIN, state); 
-  }
+  // No-op: Forward to ESP8266 if needed
+  Serial.printf("[Appliances] Control '%s' -> ESP8266 (not handled here)\n", name);
 }
 
-/* ===== MQTT ===== */
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  StaticJsonDocument<512> doc;
-  if (deserializeJson(doc, payload, length)) return;
+/* ===== MQTT IP Registration ===== */
+void registerIPViaMQTT() {
+  if (mqttRegistered || !mqtt.connected()) return;
   
-  if (strstr(topic, "/control")) {
-    const char* app = doc["appliance"];
-    if (app) setAppliance(app, doc["state"] | false);
-  } else if (strstr(topic, "/detection")) {
-    motionDetected = doc["motion_detected"] | false;
+  StaticJsonDocument<512> doc;
+  doc["type"] = "device_registration";
+  doc["device_id"] = DEVICE_ID;
+  doc["room"] = ROOM_TYPE;
+  doc["ip_address"] = WiFi.localIP().toString();
+  doc["websocket_port"] = WEBSOCKET_PORT;
+  doc["timestamp"] = millis() / 1000;
+  
+  String regMsg;
+  serializeJson(doc, regMsg);
+  
+  if (mqtt.publish(MQTT_TOPIC_REGISTRATION, regMsg.c_str())) {
+    mqttRegistered = true;
+    Serial.printf("[MQTT] IP registered: %s (device: %s, room: %s)\n", 
+                  WiFi.localIP().toString().c_str(), DEVICE_ID, ROOM_TYPE);
+  } else {
+    Serial.println("[MQTT] Failed to publish IP registration");
   }
 }
 
 void reconnectMQTT() {
-  if (mqtt.connected()) return;
+  // ถ้า WebSocket เชื่อมต่ออยู่แล้ว ไม่ต้องใช้ MQTT
+  if (wsConnected) return;
+  
+  // ถ้าเคย register แล้วและ WebSocket ยังไม่หลุด ไม่ต้อง reconnect
+  if (mqttRegistered && wsWasConnected) return;
+  
+  if (mqtt.connected()) {
+    // ถ้าเชื่อมต่ออยู่แล้ว แต่ยังไม่ได้ register ให้ register
+    if (!mqttRegistered) {
+      registerIPViaMQTT();
+    }
+    return;
+  }
   
   if (mqttServerIP.length() == 0) {
     resolveServerIPs();
@@ -407,21 +552,26 @@ void reconnectMQTT() {
   
   char id[32];
   snprintf(id, sizeof(id), "%s_%04X", DEVICE_ID, random(0xFFFF));
+  
   if (mqtt.connect(id)) {
-    mqtt.subscribe(MQTT_TOPIC_CONTROL);
-    mqtt.subscribe(MQTT_TOPIC_DETECTION);
-    publishStatus();
+    Serial.printf("[MQTT] Connected to %s:%d\n", mqttServerIP.c_str(), MQTT_PORT);
+    // ส่ง IP registration ทันที
+    registerIPViaMQTT();
   } else {
     Serial.printf("[MQTT] Failed to connect to %s:%d\n", mqttServerIP.c_str(), MQTT_PORT);
   }
 }
 
-void publishStatus() {
+/* ===== Status Reporting via WebSocket ===== */
+void sendStatus() {
+  if (!wsConnected) return;
+  
   StaticJsonDocument<1024> doc;
+  doc["type"] = "status";
+  doc["device_type"] = "camera";  // Mark as camera-only device
   doc["device_id"] = DEVICE_ID;
   doc["room"] = ROOM_TYPE;
   doc["ip_address"] = WiFi.localIP().toString();
-  doc["ws_url"] = "ws://" + WiFi.localIP().toString() + ":81";
   doc["rssi"] = WiFi.RSSI();
   doc["heap"] = ESP.getFreeHeap();
   doc["frames_sent"] = framesSent;
@@ -433,9 +583,13 @@ void publishStatus() {
   doc["frame_buffers"] = FRAME_BUFFER_COUNT;
   doc["frame_pool_size"] = FRAME_POOL_SIZE;
   
-  char buf[1024];
-  serializeJson(doc, buf);
-  mqtt.publish(MQTT_TOPIC_STATUS, buf);
+  // Note: Appliance control moved to ESP8266
+  // This camera device only streams video
+  doc["note"] = "appliances_on_esp8266";
+  
+  String statusMsg;
+  serializeJson(doc, statusMsg);
+  webSocket.sendTXT(statusMsg);
 }
 
 /* ===== Setup ===== */
@@ -452,7 +606,7 @@ void setup() {
   Serial.println("\n========================================");
   Serial.println("  WheelSense Camera - Multitasking");
   Serial.println("========================================");
-  Serial.printf("  Target FPS: %d, Quality: %d, QVGA 320x240\n", STREAM_FPS, JPEG_QUALITY);
+  Serial.printf("  Target FPS: %d, Quality: %d, QVGA 320x240\n", TARGET_FPS, JPEG_QUALITY);
   Serial.println("========================================\n");
   
   setupAppliances();
@@ -509,53 +663,67 @@ void setup() {
     WS_TASK_CORE
   );
   
-  // เริ่ม WebSocket ครั้งแรก
-  reconnectWebSocket();
-  
-  snprintf(MQTT_TOPIC_STATUS, 64, "WheelSense/%s/status", ROOM_TYPE);
-  snprintf(MQTT_TOPIC_CONTROL, 64, "WheelSense/%s/control", ROOM_TYPE);
-  snprintf(MQTT_TOPIC_DETECTION, 64, "WheelSense/%s/detection", ROOM_TYPE);
+  // Setup MQTT สำหรับ IP registration
+  snprintf(MQTT_TOPIC_REGISTRATION, 64, "WheelSense/%s/registration", ROOM_TYPE);
   mqtt.setServer(mqttServerIP.c_str(), MQTT_PORT);
-  mqtt.setCallback(mqttCallback);
+  
+  // เชื่อมต่อ MQTT ครั้งแรกเพื่อส่ง IP
+  reconnectMQTT();
+  
+  // เริ่ม WebSocket
+  reconnectWebSocket();
   
   startTime = millis();
   lastFpsTime = startTime;
   lastFramesSent = framesSent;
   
-  Serial.println("[System] READY - Tasks started\n");
+  Serial.println("[System] READY - WebSocket primary, MQTT for IP registration only\n");
 }
 
 /* ===== Main Loop (Very Light) ===== */
 void loop() {
   unsigned long now = millis();
   
-  // ไม่เรียก webSocket.loop() ที่นี่แล้ว ให้ WS อยู่ใน webSocketTask อย่างเดียว
-
-  if (!mqtt.connected()) {
-    static unsigned long lastTry = 0;
-    if (now - lastTry > 5000) {
-      lastTry = now;
+  // จัดการ MQTT เฉพาะตอนที่ WebSocket ยังไม่เชื่อมต่อ
+  // หรือตอนที่ WebSocket หลุดแล้ว (เพื่อส่ง IP ใหม่)
+  if (!wsConnected) {
+    static unsigned long lastMQTTTry = 0;
+    if (now - lastMQTTTry > 5000) {  // ลองทุก 5 วินาที
+      lastMQTTTry = now;
       reconnectMQTT();
+      
+      // ถ้า MQTT เชื่อมต่ออยู่ ให้ maintain connection
+      if (mqtt.connected()) {
+        mqtt.loop();
+      }
     }
   } else {
-    mqtt.loop();
+    // ถ้า WebSocket เชื่อมต่ออยู่แล้ว และ MQTT ยังเชื่อมต่ออยู่ ให้ปิด MQTT
+    if (mqtt.connected() && mqttRegistered) {
+      mqtt.disconnect();
+      Serial.println("[MQTT] Disconnected - WebSocket is active");
+    }
   }
   
-  if (now - lastStatusMs > MQTT_STATUS_INTERVAL_MS) {
+  // ส่ง status ผ่าน WebSocket เป็นระยะๆ
+  if (now - lastStatusMs > STATUS_INTERVAL_MS) {
     lastStatusMs = now;
-    if (mqtt.connected()) {
-      publishStatus();
+    if (wsConnected) {
+      sendStatus();
     }
     
+    // Calculate FPS
     unsigned long dt = now - lastFpsTime;
     unsigned long dFrames = framesSent - lastFramesSent;
     float fps = (dt > 0) ? (1000.0f * dFrames / dt) : 0.0f;
     lastFpsTime = now;
     lastFramesSent = framesSent;
     
-    Serial.printf("[Stats] Sent: %lu, Dropped: %lu, PoolEx: %lu, FPS: %.1f, WS: %s, Heap: %lu\n", 
+    Serial.printf("[Stats] Sent: %lu, Dropped: %lu, PoolEx: %lu, FPS: %.1f, WS: %s, MQTT: %s, Heap: %lu\n", 
                   framesSent, framesDropped, poolExhausted, fps, 
-                  wsConnected ? "YES" : "NO", ESP.getFreeHeap());
+                  wsConnected ? "YES" : "NO",
+                  mqtt.connected() ? "YES" : "NO",
+                  ESP.getFreeHeap());
   }
   
   delay(10);

@@ -13,19 +13,16 @@ COPY requirements.txt .
 # Upgrade pip first for better reliability
 RUN pip install --upgrade pip
 
+# Install all packages from requirements.txt
 # Install large packages separately with increased timeout
 RUN pip install --no-cache-dir --default-timeout=600 --retries=10 \
     opencv-python-headless>=4.8.0 \
     numpy>=1.24.0 \
     Pillow>=10.0.0
 
-# Install remaining packages
+# Install remaining packages from requirements.txt
 RUN pip install --no-cache-dir --default-timeout=300 --retries=5 \
-    paho-mqtt>=1.6.1 \
-    pydantic>=2.5.0 \
-    pydantic-settings>=2.1.0 \
-    python-dotenv>=1.0.0 \
-    structlog>=24.1.0
+    -r requirements.txt
 
 # Copy source code
 COPY src/ ./src/

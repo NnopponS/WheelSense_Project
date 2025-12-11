@@ -150,12 +150,17 @@ class MQTTCameraClient:
             logger.error(f"Error handling video message: {e}", exc_info=True)
     
     def publish_detection(self, detection: dict, device_id: str = None):
-        """Publish detection result to MQTT."""
+        """Publish detection result to MQTT (room-based topic)."""
         if not self.client or not self.is_connected:
             return
         
+        # Extract room from device_id or use default
+        # Device ID format: TSIM_001 -> room: livingroom (default)
+        room = "livingroom"  # Default room, can be extracted from device_id if needed
+        
         detection_msg = {
             "device_id": device_id or settings.DEVICE_ID,
+            "room": room,
             "timestamp": datetime.now().isoformat(),
             "detected": detection.get("detected", False),
             "confidence": detection.get("confidence", 0.0),
@@ -165,8 +170,10 @@ class MQTTCameraClient:
         
         try:
             payload = json.dumps(detection_msg)
-            self.client.publish(settings.MQTT_TOPIC_DETECTION, payload)
-            logger.debug(f"Published detection: {detection_msg}")
+            # Publish to room-based topic: WheelSense/{room}/detection
+            topic = f"WheelSense/{room}/detection"
+            self.client.publish(topic, payload)
+            logger.debug(f"Published detection to {topic}: detected={detection_msg['detected']}, confidence={detection_msg['confidence']:.2f}")
         except Exception as e:
             logger.error(f"Failed to publish detection: {e}")
     
