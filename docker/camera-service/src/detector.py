@@ -1,165 +1,277 @@
 """
-Wheelchair Detection Module
-ใช้ OpenCV สำหรับตรวจจับ wheelchair ในวิดีโอ
+Wheelchair Detection Module - Background Subtraction Based
+ใช้ Background Subtraction (MOG2) เพื่อแยก object จาก background
+และ detect เฉพาะเมื่อ object มีการเปลี่ยนตำแหน่ง
 """
 
 import cv2
 import numpy as np
 import logging
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, List
 
 logger = logging.getLogger(__name__)
 
 
 class WheelchairDetector:
-    """Wheelchair detection using computer vision."""
+    """Wheelchair detection using background subtraction.
+    
+    Logic: 
+    1. ใช้ MOG2 Background Subtractor เพื่อแยก foreground objects จาก background
+    2. Filter noise ด้วย morphological operations
+    3. Track object position และ detect เฉพาะเมื่อ object เปลี่ยนตำแหน่ง
+    """
     
     def __init__(self, confidence_threshold: float = 0.5):
         self.confidence_threshold = confidence_threshold
-        self.detector = None
-        self._init_detector()
-    
-    def _init_detector(self):
-        """Initialize the detector."""
-        # ใช้ OpenCV Cascade Classifier หรือ HOG detector
-        # สำหรับการทดสอบ ใช้การตรวจจับแบบง่ายๆ ด้วย contour detection
         
-        # สร้าง HOG descriptor สำหรับ person detection (wheelchair อาจมีลักษณะคล้าย)
-        try:
-            self.hog = cv2.HOGDescriptor()
-            self.hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-            logger.info("HOG detector initialized")
-        except Exception as e:
-            logger.warning(f"Failed to initialize HOG detector: {e}")
-            self.hog = None
+        # Background Subtractor (MOG2 - Mixture of Gaussians)
+        # history=500: จำนวน frames ที่ใช้สร้าง background model
+        # varThreshold=50: threshold สำหรับแยก foreground (สูงขึ้น = ไม่ sensitive ต่อ noise)
+        # detectShadows=False: ไม่ต้อง detect เงา
+        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
+            history=300,
+            varThreshold=25,  # Lower = more sensitive to changes
+            detectShadows=False
+        )
         
-        # สำหรับ wheelchair detection ที่เฉพาะเจาะจงมากขึ้น
-        # สามารถใช้ YOLO model หรือ custom trained model ได้
-        logger.info("Wheelchair detector initialized")
+        # Morphological kernel สำหรับลด noise
+        self.kernel_noise = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        self.kernel_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20))
+        
+        # Object tracking settings
+        self.min_object_area = 500  # Minimum area in pixels (lowered for sensitivity)
+        self.max_object_area_percent = 70  # Maximum % of frame (filter out too large objects)
+        
+        # Debug settings
+        self.debug_interval = 30  # Log debug info every N frames
+        
+        # Position tracking
+        self.last_object_center: Optional[Tuple[int, int]] = None
+        self.position_change_threshold = 30  # Pixels - minimum distance to consider as "moved"
+        
+        # State management
+        self.stable_object_count = 0  # Counter for stable object detection
+        self.no_object_count = 0
+        self.detection_state = False
+        self.current_room_has_wheelchair = False
+        
+        # Frame counter for background learning
+        self.frame_count = 0
+        self.learning_frames = 30  # Frames needed to learn background
+        
+        logger.info("Background Subtraction wheelchair detector initialized")
+        logger.info(f"  Min object area: {self.min_object_area} px")
+        logger.info(f"  Position change threshold: {self.position_change_threshold} px")
+        logger.info(f"  Background learning frames: {self.learning_frames}")
     
     def detect(self, frame: np.ndarray) -> Dict:
         """
-        Detect wheelchair in frame.
+        Detect objects using background subtraction.
+        Only triggers when a significant object is detected and has moved.
         
         Returns:
             dict with keys:
-                - detected: bool
-                - confidence: float
-                - bbox: tuple (x, y, w, h) or None
-                - method: str
+                - detected: bool (True if wheelchair detected in this room)
+                - confidence: float (based on object size and stability)
+                - bbox: tuple (x, y, w, h) of object or None
+                - method: str ("background_subtraction")
+                - object_area: float (area of detected object)
+                - position_changed: bool (whether object moved significantly)
         """
         if frame is None or frame.size == 0:
-            return {
-                "detected": False,
-                "confidence": 0.0,
-                "bbox": None,
-                "method": "none"
-            }
+            return self._create_result(False, 0.0, None, 0.0, False)
         
-        # Method 1: ใช้ HOG detector สำหรับตรวจจับ person/wheelchair
-        if self.hog is not None:
-            try:
-                # Convert to grayscale
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                
-                # Detect objects
-                boxes, weights = self.hog.detectMultiScale(
-                    gray,
-                    winStride=(8, 8),
-                    padding=(32, 32),
-                    scale=1.05,
-                    hitThreshold=0.5
-                )
-                
-                if len(boxes) > 0:
-                    # หา box ที่มี confidence สูงสุด
-                    max_idx = np.argmax(weights)
-                    x, y, w, h = boxes[max_idx]
-                    confidence = float(weights[max_idx])
-                    
-                    if confidence >= self.confidence_threshold:
-                        return {
-                            "detected": True,
-                            "confidence": confidence,
-                            "bbox": (int(x), int(y), int(w), int(h)),
-                            "method": "hog"
-                        }
-            except Exception as e:
-                logger.error(f"HOG detection error: {e}")
+        self.frame_count += 1
+        frame_height, frame_width = frame.shape[:2]
+        frame_area = frame_height * frame_width
         
-        # Method 2: ใช้ contour detection สำหรับตรวจจับวัตถุขนาดใหญ่ (wheelchair)
-        try:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        # Apply background subtraction
+        # learningRate: -1 = auto, smaller = slower learning (more stable background)
+        learning_rate = 0.01 if self.frame_count > self.learning_frames else 0.1
+        fg_mask = self.bg_subtractor.apply(frame, learningRate=learning_rate)
+        
+        # Still learning background
+        if self.frame_count < self.learning_frames:
+            logger.debug(f"Learning background... ({self.frame_count}/{self.learning_frames})")
+            return self._create_result(False, 0.0, None, 0.0, False)
+        
+        # Apply morphological operations to reduce noise
+        # 1. Opening: remove small noise (erode then dilate)
+        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, self.kernel_noise)
+        
+        # 2. Closing: fill holes in objects (dilate then erode)
+        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, self.kernel_close)
+        
+        # 3. Additional threshold to remove gray areas
+        _, fg_mask = cv2.threshold(fg_mask, 200, 255, cv2.THRESH_BINARY)
+        
+        # Find contours of foreground objects
+        contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Calculate foreground coverage for debugging
+        fg_pixels = cv2.countNonZero(fg_mask)
+        fg_percent = (fg_pixels / frame_area) * 100
+        
+        # Debug log every N frames
+        if self.frame_count % self.debug_interval == 0:
+            logger.info(f"📊 Frame {self.frame_count}: FG={fg_percent:.1f}%, Contours={len(contours)}")
+        
+        # Filter and find significant objects
+        valid_objects: List[Tuple[np.ndarray, float, Tuple[int, int, int, int]]] = []
+        
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            area_percent = (area / frame_area) * 100
             
-            # Adaptive threshold
-            thresh = cv2.adaptiveThreshold(
-                blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                cv2.THRESH_BINARY_INV, 11, 2
+            # Filter by area
+            if area < self.min_object_area:
+                continue  # Too small, probably noise
+            
+            if area_percent > self.max_object_area_percent:
+                continue  # Too large, probably lighting change or camera movement
+            
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            # Filter by aspect ratio (wheelchair-like objects are roughly square-ish)
+            aspect_ratio = w / h if h > 0 else 0
+            if aspect_ratio < 0.3 or aspect_ratio > 3.0:
+                continue  # Too narrow or too wide
+            
+            valid_objects.append((contour, area, (x, y, w, h)))
+        
+        # No valid objects detected
+        if not valid_objects:
+            self.no_object_count += 1
+            self.stable_object_count = 0
+            
+            # After many frames without detection, reset state
+            if self.no_object_count >= 10:
+                self.detection_state = False
+                self.last_object_center = None
+            
+            return self._create_result(
+                self.detection_state, 
+                0.0 if not self.detection_state else 0.5, 
+                None, 0.0, False
             )
-            
-            # Find contours
-            contours, _ = cv2.findContours(
-                thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
-            
-            # Filter contours by size (wheelchair should be relatively large)
-            h, w = frame.shape[:2]
-            min_area = (w * h) * 0.05  # อย่างน้อย 5% ของภาพ
-            max_area = (w * h) * 0.8   # ไม่เกิน 80% ของภาพ
-            
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if min_area <= area <= max_area:
-                    x, y, w, h = cv2.boundingRect(contour)
-                    aspect_ratio = w / h if h > 0 else 0
-                    
-                    # Wheelchair มักมี aspect ratio ประมาณ 1.0-1.5
-                    if 0.8 <= aspect_ratio <= 2.0:
-                        # คำนวณ confidence จากขนาดและ aspect ratio
-                        confidence = min(0.7, area / max_area)
-                        
-                        if confidence >= self.confidence_threshold:
-                            return {
-                                "detected": True,
-                                "confidence": confidence,
-                                "bbox": (int(x), int(y), int(w), int(h)),
-                                "method": "contour"
-                            }
-        except Exception as e:
-            logger.error(f"Contour detection error: {e}")
         
-        # No detection
+        # Get the largest valid object
+        largest_object = max(valid_objects, key=lambda x: x[1])
+        contour, area, bbox = largest_object
+        x, y, w, h = bbox
+        
+        # Calculate object center
+        current_center = (x + w // 2, y + h // 2)
+        
+        # Check if position changed significantly
+        position_changed = False
+        if self.last_object_center is not None:
+            distance = np.sqrt(
+                (current_center[0] - self.last_object_center[0]) ** 2 +
+                (current_center[1] - self.last_object_center[1]) ** 2
+            )
+            position_changed = distance >= self.position_change_threshold
+            
+            if position_changed:
+                logger.info(f"🚀 Object moved! Distance: {distance:.1f}px, New position: {current_center}")
+        else:
+            # First time seeing an object
+            position_changed = True
+            logger.info(f"🆕 New object detected at position: {current_center}")
+        
+        # Update tracking
+        self.last_object_center = current_center
+        self.no_object_count = 0
+        self.stable_object_count += 1
+        
+        # Calculate confidence
+        area_percent = (area / frame_area) * 100
+        confidence = min(1.0, area_percent / 20.0)  # Max confidence at 20% of frame
+        
+        # Update detection state
+        # Immediately confirm when we see an object (even if not moved)
+        if self.stable_object_count >= 1:
+            if not self.detection_state or position_changed:
+                self.detection_state = True
+                self.current_room_has_wheelchair = True
+                logger.info(f"✅ Wheelchair confirmed! Area: {area_percent:.1f}%, Confidence: {confidence:.2f}, Room will be updated")
+        
+        return self._create_result(
+            self.detection_state,
+            confidence if self.detection_state else 0.0,
+            bbox,
+            area_percent,
+            position_changed
+        )
+    
+    def _create_result(self, detected: bool, confidence: float, bbox: Optional[Tuple], 
+                       object_area: float, position_changed: bool) -> Dict:
+        """Create a detection result dictionary."""
         return {
-            "detected": False,
-            "confidence": 0.0,
-            "bbox": None,
-            "method": "none"
+            "detected": detected,
+            "confidence": round(confidence, 2),
+            "bbox": bbox,
+            "method": "background_subtraction",
+            "object_area": round(object_area, 2),
+            "position_changed": position_changed
         }
     
     def draw_detection(self, frame: np.ndarray, detection: Dict) -> np.ndarray:
         """Draw detection result on frame."""
-        if not detection.get("detected", False):
-            return frame
-        
         bbox = detection.get("bbox")
-        if bbox is None:
-            return frame
+        object_area = detection.get("object_area", 0.0)
+        detected = detection.get("detected", False)
         
-        x, y, w, h = bbox
-        confidence = detection.get("confidence", 0.0)
+        if bbox is not None:
+            x, y, w, h = bbox
+            color = (0, 255, 0) if detected else (0, 255, 255)  # Green if detected, yellow otherwise
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+            
+            # Draw center point
+            center_x, center_y = x + w // 2, y + h // 2
+            cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)
         
-        # Draw bounding box
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        # Draw status
+        status_color = (0, 255, 0) if detected else (0, 0, 255)
+        status_text = "WHEELCHAIR IN ROOM" if detected else "NO WHEELCHAIR"
+        cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, status_color, 2)
         
-        # Draw label
-        label = f"Wheelchair {confidence:.2f}"
-        cv2.putText(
-            frame, label, (x, y - 10),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2
-        )
+        # Draw object area
+        if object_area > 0:
+            cv2.putText(frame, f"Object: {object_area:.1f}%", (10, 60), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        
+        # Draw learning status
+        if self.frame_count < self.learning_frames:
+            cv2.putText(frame, f"Learning BG: {self.frame_count}/{self.learning_frames}", 
+                       (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 165, 0), 2)
         
         return frame
+    
+    def reset(self):
+        """Reset detector state and background model."""
+        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
+            history=500,
+            varThreshold=50,
+            detectShadows=False
+        )
+        self.last_object_center = None
+        self.stable_object_count = 0
+        self.no_object_count = 0
+        self.detection_state = False
+        self.current_room_has_wheelchair = False
+        self.frame_count = 0
+        logger.info("Detector reset - background model cleared")
+    
+    def get_background_mask(self, frame: np.ndarray) -> np.ndarray:
+        """Get the current foreground mask for debugging."""
+        if frame is None:
+            return np.zeros((100, 100), dtype=np.uint8)
+        
+        fg_mask = self.bg_subtractor.apply(frame, learningRate=0)
+        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, self.kernel_noise)
+        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, self.kernel_close)
+        return fg_mask
 
 
 

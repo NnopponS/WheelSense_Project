@@ -29,25 +29,41 @@ class CameraService:
     """Main camera service."""
     
     def __init__(self):
-        self.detector = WheelchairDetector(
-            confidence_threshold=settings.DETECTION_CONFIDENCE_THRESHOLD
-        )
+        # Use separate detector for each room to avoid state mixing
+        self.detectors: dict = {}  # room -> WheelchairDetector
         self.ws_client = WebSocketCameraClient(detector_callback=self._on_frame_received)
         self.running = False
-        self.last_detection_publish = 0
+        self.last_detection_publish: dict = {}  # room -> timestamp
+    
+    def _get_detector(self, room: str) -> WheelchairDetector:
+        """Get or create detector for a room."""
+        if room not in self.detectors:
+            self.detectors[room] = WheelchairDetector(
+                confidence_threshold=settings.DETECTION_CONFIDENCE_THRESHOLD
+            )
+            logger.info(f"📹 Created new detector for room: {room}")
+        return self.detectors[room]
     
     def _on_frame_received(self, frame: np.ndarray, meta: dict):
         """Callback when frame is received."""
         if not self.running:
             return
         
-        # Check if we should run detection
+        # Get room from metadata
+        room = meta.get("room", "livingroom")
+        device_id = meta.get("device_id", settings.DEVICE_ID)
+        
+        # Check if we should run detection for this room
         now = time.time()
-        if now - self.last_detection_publish < settings.DETECTION_INTERVAL_SEC:
+        last_publish = self.last_detection_publish.get(room, 0)
+        if now - last_publish < settings.DETECTION_INTERVAL_SEC:
             return
         
+        # Get detector for this room
+        detector = self._get_detector(room)
+        
         # Run detection
-        detection = self.detector.detect(frame)
+        detection = detector.detect(frame)
         
         # Add frame size to detection for position calculation
         if frame is not None and frame.size > 0:
@@ -58,23 +74,21 @@ class CameraService:
         self.ws_client.current_detection = detection
         
         # Send detection result via WebSocket
-        device_id = meta.get("device_id", settings.DEVICE_ID)
-        room = meta.get("room", "livingroom")
         asyncio.create_task(self.ws_client.send_detection(detection, device_id, room))
         
-        self.last_detection_publish = now
+        self.last_detection_publish[room] = now
         
         # Log detection
         if detection.get("detected", False):
             bbox = detection.get("bbox")
             frame_size = detection.get("frame_size", {})
             logger.info(
-                f"🦽 Wheelchair detected! Confidence: {detection.get('confidence', 0):.2f}, "
+                f"🦽 Wheelchair detected in {room}! Confidence: {detection.get('confidence', 0):.2f}, "
                 f"Method: {detection.get('method', 'unknown')}, "
                 f"Bbox: {bbox}, Frame size: {frame_size}"
             )
         else:
-            logger.debug("No wheelchair detected")
+            logger.debug(f"No wheelchair detected in {room}")
     
     def start(self):
         """Start the camera service."""

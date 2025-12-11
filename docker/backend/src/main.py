@@ -61,27 +61,40 @@ async def lifespan(app: FastAPI):
             return
         
         try:
-            # Find wheelchair for this room
-            wheelchairs = await db.db.wheelchairs.find({"room": room}).to_list(length=10)
+            # Find first wheelchair in the system (we only have one)
+            # Don't filter by room - the wheelchair moves between rooms
+            wheelchairs = await db.db.wheelchairs.find({}).to_list(length=1)
             if not wheelchairs:
-                logger.debug(f"No wheelchair found for room {room}")
+                logger.warning(f"No wheelchair found in database")
                 return
             
-            # Update position for first wheelchair in room
+            # Get the wheelchair
             wheelchair = wheelchairs[0]
-            wheelchair_id = wheelchair.get("id", wheelchair.get("_id"))
+            wheelchair_id = wheelchair.get("id", str(wheelchair.get("_id")))
+            
+            logger.info(f"🦽 Processing detection for wheelchair {wheelchair_id} in room: {room}")
             
             # Get current positions
             map_config = await db.get_map_config()
             positions = map_config.get("wheelchairPositions", {}) if map_config else {}
             
-            # Calculate new position from bbox if available
+            # Get room data to calculate position
+            room_data = await db.get_room(room)
+            if not room_data:
+                logger.warning(f"Room not found: {room}")
+                return
+            
+            # Calculate new position based on bbox or use room center
             bbox = detection.get("bbox")
             frame_size = detection.get("frame_size", {})
             
+            room_x = room_data.get("x", 50)
+            room_y = room_data.get("y", 50)
+            room_width = room_data.get("width", 20)
+            room_height = room_data.get("height", 20)
+            
             if bbox and len(bbox) == 4 and frame_size:
                 # bbox is (x, y, w, h) in pixels
-                # frame_size is {"width": w, "height": h}
                 x, y, w, h = bbox
                 frame_width = frame_size.get("width", 640)
                 frame_height = frame_size.get("height", 480)
@@ -94,39 +107,31 @@ async def lifespan(app: FastAPI):
                 video_x_percent = (bbox_center_x / frame_width) * 100
                 video_y_percent = (bbox_center_y / frame_height) * 100
                 
-                # Get room data to map video position to map position
-                room_data = await db.get_room(room)
-                if room_data:
-                    # Map video percentage to room position on map
-                    # Assume video covers the entire room area
-                    # Map video coordinates to room coordinates
-                    room_x = room_data.get("x", 50)
-                    room_y = room_data.get("y", 50)
-                    room_width = room_data.get("width", 20)
-                    room_height = room_data.get("height", 20)
-                    
-                    # Convert video percentage to map percentage
-                    # Video (0-100%) -> Room (room_x to room_x + room_width)
-                    new_x = room_x + (video_x_percent / 100) * room_width
-                    new_y = room_y + (video_y_percent / 100) * room_height
-                    
-                    # Clamp to room bounds
-                    new_x = max(room_x, min(room_x + room_width, new_x))
-                    new_y = max(room_y, min(room_y + room_height, new_y))
-                    
-                    positions[str(wheelchair_id)] = {"x": new_x, "y": new_y}
-                    await db.save_wheelchair_positions(positions)
-                    logger.info(f"📍 Updated wheelchair {wheelchair_id} position in {room} from bbox: ({new_x:.1f}%, {new_y:.1f}%) [bbox center: ({bbox_center_x:.0f}, {bbox_center_y:.0f})]")
-            elif bbox and len(bbox) == 4:
-                # Fallback: use center of room if no frame_size
-                room_data = await db.get_room(room)
-                if room_data:
-                    new_x = room_data.get("x", 50) + room_data.get("width", 20) / 2
-                    new_y = room_data.get("y", 50) + room_data.get("height", 20) / 2
-                    
-                    positions[str(wheelchair_id)] = {"x": new_x, "y": new_y}
-                    await db.save_wheelchair_positions(positions)
-                    logger.info(f"📍 Updated wheelchair {wheelchair_id} position in {room} (center): ({new_x:.1f}%, {new_y:.1f}%)")
+                # Map video coordinates to room position on map
+                new_x = room_x + (video_x_percent / 100) * room_width
+                new_y = room_y + (video_y_percent / 100) * room_height
+                
+                # Clamp to room bounds
+                new_x = max(room_x, min(room_x + room_width, new_x))
+                new_y = max(room_y, min(room_y + room_height, new_y))
+                
+                positions[str(wheelchair_id)] = {"x": new_x, "y": new_y}
+                await db.save_wheelchair_positions(positions)
+                logger.info(f"📍 Updated wheelchair {wheelchair_id} to {room}: ({new_x:.1f}%, {new_y:.1f}%) [from bbox]")
+            else:
+                # No bbox - use center of room
+                new_x = room_x + room_width / 2
+                new_y = room_y + room_height / 2
+                
+                positions[str(wheelchair_id)] = {"x": new_x, "y": new_y}
+                await db.save_wheelchair_positions(positions)
+                logger.info(f"📍 Updated wheelchair {wheelchair_id} to {room}: ({new_x:.1f}%, {new_y:.1f}%) [center of room]")
+            
+            # Also update the wheelchair document with current room
+            await db.db.wheelchairs.update_one(
+                {"_id": wheelchair["_id"]},
+                {"$set": {"currentRoom": room, "lastUpdated": datetime.now()}}
+            )
             
         except Exception as e:
             logger.error(f"Error updating wheelchair position: {e}", exc_info=True)
@@ -281,17 +286,20 @@ async def control_appliance(control: ApplianceControl):
     if not success:
         raise HTTPException(status_code=500, detail="Failed to send command")
     
-    # Log activity
+    # Log activity (don't let logging failure break the control command)
     if db:
-        await db.log_activity(
-            room_id=control.room,
-            event_type="appliance_on" if control.state else "appliance_off",
-            details={
-                "appliance": control.appliance,
-                "state": control.state,
-                "value": control.value
-            }
-        )
+        try:
+            await db.log_activity(
+                room_id=control.room,
+                event_type="appliance_on" if control.state else "appliance_off",
+                details={
+                    "appliance": control.appliance,
+                    "state": control.state,
+                    "value": control.value
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to log activity for appliance control: {e}")
     
     return {
         "success": True,

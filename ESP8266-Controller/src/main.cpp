@@ -17,8 +17,13 @@
 #include <ArduinoJson.h>
 
 // ===== WiFi Configuration =====
-const char* WIFI_SSID = "KNIGHT";
-const char* WIFI_PASSWORD = "192837abcd";
+#ifndef WIFI_SSID
+#define WIFI_SSID "KNIGHT"
+#endif
+
+#ifndef WIFI_PASSWORD
+#define WIFI_PASSWORD "192837abcd"
+#endif
 
 // ===== Network Configuration =====
 #define USE_STATIC_IP false
@@ -541,7 +546,7 @@ void reconnectMQTT() {
     }
     
     char id[32];
-    snprintf(id, sizeof(id), "%s_%04X", DEVICE_ID, random(0xFFFF));
+    snprintf(id, sizeof(id), "%s_%04lX", DEVICE_ID, (unsigned long)random(0x10000));
     
     if (mqtt.connect(id)) {
         Serial.printf("[MQTT] Connected to %s:%d\n", mqttServerIP.c_str(), MQTT_PORT);

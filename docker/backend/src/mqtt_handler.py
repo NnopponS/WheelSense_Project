@@ -492,21 +492,19 @@ class MQTTHandler:
         state: bool,
         value: Optional[int] = None
     ) -> bool:
-        """Send control command to a device via WebSocket only (MQTT no longer used for control)."""
+        """Send control command to ESP8266 via MQTT and optionally to camera via WebSocket."""
         from .websocket_handler import stream_handler
         
-        # หา device_id จาก room
-        device_id = None
-        for dev_id, dev_room in stream_handler.device_rooms.items():
-            if dev_room == room:
-                device_id = dev_id
-                break
+        success = False
         
-        if device_id and device_id in stream_handler.camera_connections:
-            # ส่งผ่าน WebSocket
+        # 1. Send via MQTT to ESP8266 Appliance Controller
+        # ESP8266 subscribes to WheelSense/+/control (wildcard)
+        if self.client and self.is_connected:
             try:
+                control_topic = f"WheelSense/{room}/control"
                 command = {
                     "type": "control",
+                    "room": room,
                     "appliance": appliance,
                     "state": state,
                     "timestamp": datetime.now().isoformat()
@@ -514,16 +512,49 @@ class MQTTHandler:
                 if value is not None:
                     command["value"] = value
                 
+                message = json.dumps(command)
+                result = self.client.publish(control_topic, message)
+                
+                if result.rc == 0:
+                    logger.info(f"✅ Sent MQTT control to {control_topic}: {appliance}={state}")
+                    success = True
+                else:
+                    logger.error(f"❌ Failed to publish MQTT control: rc={result.rc}")
+            except Exception as e:
+                logger.error(f"MQTT control failed: {e}")
+        else:
+            logger.warning(f"MQTT not connected - cannot send control command via MQTT")
+        
+        # 2. Also try WebSocket to camera device (for camera-based control if applicable)
+        device_id = None
+        for dev_id, dev_room in stream_handler.device_rooms.items():
+            if dev_room == room:
+                device_id = dev_id
+                break
+        
+        if device_id and device_id in stream_handler.camera_connections:
+            try:
+                ws_command = {
+                    "type": "control",
+                    "room": room,
+                    "appliance": appliance,
+                    "state": state,
+                    "timestamp": datetime.now().isoformat()
+                }
+                if value is not None:
+                    ws_command["value"] = value
+                
                 websocket = stream_handler.camera_connections[device_id]
-                await websocket.send(json.dumps(command))
+                await websocket.send(json.dumps(ws_command))
                 logger.info(f"✅ Sent control via WebSocket to {device_id} ({room}): {appliance}={state}")
-                return True
+                success = True
             except Exception as e:
                 logger.error(f"WebSocket control failed: {e}")
-                return False
-        else:
-            logger.warning(f"No WebSocket connection found for room {room} - cannot send control command")
-            return False
+        
+        if not success:
+            logger.warning(f"No connection available for room {room} - control command may not have been delivered")
+        
+        return success
     
     async def get_video_stream(self, room: str) -> AsyncGenerator[bytes, None]:
         """Get video stream generator for a room."""
