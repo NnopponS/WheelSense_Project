@@ -12,18 +12,31 @@
 
 const char* WIFI_SSID = "KNIGHT";
 const char* WIFI_PASSWORD = "192837abcd";
-const char* MQTT_SERVER = "192.168.100.246";
+
+// ===== Network Configuration =====
+// วิธีที่ 1: ใช้ Static IP (แนะนำ - fix ค้างไว้)
+// ตั้งค่า IP ของ host machine ที่รัน Docker
+#define USE_STATIC_IP false
+const char* STATIC_MQTT_SERVER = "192.168.137.1";      // IP ของ host machine ที่รัน Docker
+const char* STATIC_WEBSOCKET_SERVER = "192.168.137.1"; // IP ของ host machine ที่รัน Docker
+
+// วิธีที่ 2: ใช้ Gateway IP อัตโนมัติ (ใช้ IP ของ router/gateway)
+// #define USE_STATIC_IP false
+
 const int MQTT_PORT = 1883;
-const char* WEBSOCKET_SERVER = "192.168.100.246";
 const int WEBSOCKET_PORT = 8765;
+
+// ตัวแปรสำหรับเก็บ IP ที่ resolve แล้ว
+String mqttServerIP;
+String websocketServerIP;
 
 #define DEVICE_ID "TSIM_001"
 #define ROOM_TYPE "livingroom"
 
 // ปรับให้เบาลงเพื่อดัน FPS ให้ขึ้น
-#define CAMERA_FRAME_SIZE FRAMESIZE_QVGA   // 320x240 แทน VGA
-#define JPEG_QUALITY 28                    // เลขมาก = quality ต่ำลง, ไฟล์เล็กลง
-#define STREAM_FPS 12                      // ตั้งเป้าสูงนิดนึง ให้ได้จริงแถวๆ 10 FPS
+#define CAMERA_FRAME_SIZE FRAMESIZE_VGA   // 320x240 แทน VGA
+#define JPEG_QUALITY 68                    // เลขมาก = quality ต่ำลง, ไฟล์เล็กลง
+#define STREAM_FPS 10                      // ตั้งเป้าสูงนิดนึง ให้ได้จริงแถวๆ 10 FPS
 #define FRAME_BUFFER_COUNT 2               // ลด fb ให้ latency น้อยลง
 #define FRAME_QUEUE_SIZE 4                 // คิวเล็กๆ กันหน่วง
 #define FRAME_INTERVAL_MS (1000 / STREAM_FPS)
@@ -166,6 +179,7 @@ struct {
 // Forward declarations
 void publishStatus();
 void reconnectWebSocket();
+void resolveServerIPs();
 
 /* ===== Camera Setup ===== */
 bool setupCamera() {
@@ -276,6 +290,24 @@ void cameraTask(void *parameter) {
   }
 }
 
+/* ===== Resolve Server IPs ===== */
+void resolveServerIPs() {
+  if (USE_STATIC_IP) {
+    // ใช้ Static IP ที่ fix ค้างไว้
+    mqttServerIP = String(STATIC_MQTT_SERVER);
+    websocketServerIP = String(STATIC_WEBSOCKET_SERVER);
+    Serial.printf("[Network] Using Static IP - MQTT: %s, WebSocket: %s\n", 
+                  mqttServerIP.c_str(), websocketServerIP.c_str());
+  } else {
+    // ใช้ Gateway IP อัตโนมัติ (IP ของ router/host machine)
+    IPAddress gateway = WiFi.gatewayIP();
+    mqttServerIP = gateway.toString();
+    websocketServerIP = gateway.toString();
+    Serial.printf("[Network] Using Gateway IP - MQTT: %s, WebSocket: %s\n", 
+                  mqttServerIP.c_str(), websocketServerIP.c_str());
+  }
+}
+
 /* ===== Reconnect WebSocket (ใช้ใน WS task เท่านั้น) ===== */
 void reconnectWebSocket() {
   if (wsConnected) return;
@@ -284,7 +316,11 @@ void reconnectWebSocket() {
   if (now - lastReconnectAttempt < 5000) return;
   lastReconnectAttempt = now;
   
-  webSocket.begin(WEBSOCKET_SERVER, WEBSOCKET_PORT, "/");
+  if (websocketServerIP.length() == 0) {
+    resolveServerIPs();
+  }
+  
+  webSocket.begin(websocketServerIP.c_str(), WEBSOCKET_PORT, "/");
   webSocket.onEvent(webSocketEvent);
 }
 
@@ -365,12 +401,18 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 void reconnectMQTT() {
   if (mqtt.connected()) return;
   
+  if (mqttServerIP.length() == 0) {
+    resolveServerIPs();
+  }
+  
   char id[32];
   snprintf(id, sizeof(id), "%s_%04X", DEVICE_ID, random(0xFFFF));
   if (mqtt.connect(id)) {
     mqtt.subscribe(MQTT_TOPIC_CONTROL);
     mqtt.subscribe(MQTT_TOPIC_DETECTION);
     publishStatus();
+  } else {
+    Serial.printf("[MQTT] Failed to connect to %s:%d\n", mqttServerIP.c_str(), MQTT_PORT);
   }
 }
 
@@ -422,8 +464,13 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  Serial.printf("\n[WiFi] IP: %s, RSSI: %d dBm\n", 
-                WiFi.localIP().toString().c_str(), WiFi.RSSI());
+  Serial.printf("\n[WiFi] IP: %s, Gateway: %s, RSSI: %d dBm\n", 
+                WiFi.localIP().toString().c_str(), 
+                WiFi.gatewayIP().toString().c_str(),
+                WiFi.RSSI());
+  
+  // Resolve server IPs หลังจาก WiFi เชื่อมต่อแล้ว
+  resolveServerIPs();
   
   if (!setupCamera()) {
     Serial.println("[Camera] FAILED!");
@@ -468,7 +515,7 @@ void setup() {
   snprintf(MQTT_TOPIC_STATUS, 64, "WheelSense/%s/status", ROOM_TYPE);
   snprintf(MQTT_TOPIC_CONTROL, 64, "WheelSense/%s/control", ROOM_TYPE);
   snprintf(MQTT_TOPIC_DETECTION, 64, "WheelSense/%s/detection", ROOM_TYPE);
-  mqtt.setServer(MQTT_SERVER, MQTT_PORT);
+  mqtt.setServer(mqttServerIP.c_str(), MQTT_PORT);
   mqtt.setCallback(mqttCallback);
   
   startTime = millis();
