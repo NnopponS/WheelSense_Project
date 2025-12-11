@@ -1,75 +1,97 @@
 # ESP8266 Home Appliance Controller
 
-## nodemcuBase ver1.0
+## nodemcuBase ver2.0 - Central Controller
 
-ระบบควบคุมอุปกรณ์ไฟฟ้าในบ้านสำหรับ WheelSense ทำงานร่วมกับ ESP32 TsimCam
+ระบบควบคุมอุปกรณ์ไฟฟ้าในบ้าน **ทั้ง 4 ห้อง** จากบอร์ดเดียว สำหรับ WheelSense
+
+## 🆕 Ver 2.0 - Central Controller
+
+เวอร์ชัน 2.0 ปรับปรุงให้ใช้ ESP8266 **ตัวเดียว** ควบคุมทุกห้อง:
+
+| Feature | Ver 1.0 | Ver 2.0 |
+|---------|---------|---------|
+| จำนวนบอร์ด | 1 บอร์ด = 1 ห้อง | 1 บอร์ด = 4 ห้อง |
+| MQTT Topic | `WheelSense/<room>/control` | `WheelSense/+/control` (wildcard) |
+| Device ID | `APPLIANCE_001` | `APPLIANCE_CENTRAL` |
 
 ## สถาปัตยกรรม
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      WheelSense System                         │
+│                      WheelSense System                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ┌─────────────────┐       ┌─────────────────────────────┐     │
-│  │  ESP32 TsimCam  │       │   ESP8266 Appliance Ctrl    │     │
-│  │  (Video Only)   │       │   (Control Appliances)      │     │
-│  └────────┬────────┘       └─────────────┬───────────────┘     │
-│           │                              │                      │
-│           │ WebSocket                    │ WebSocket            │
-│           │ (Video Stream)               │ (Control Commands)   │
-│           │                              │                      │
-│           └──────────────┬───────────────┘                      │
-│                          │                                      │
-│               ┌──────────▼──────────┐                          │
-│               │      Backend        │                          │
-│               │  (websocket_handler)│                          │
-│               └──────────┬──────────┘                          │
-│                          │                                      │
-│               ┌──────────▼──────────┐                          │
-│               │     Dashboard       │                          │
-│               │   (Admin + User)    │                          │
-│               └─────────────────────┘                          │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │         ESP8266 Central Appliance Controller             │   │
+│  │  ┌──────────┬──────────┬──────────┬──────────┐          │   │
+│  │  │ Bedroom  │ Bathroom │ Kitchen  │ Living   │          │   │
+│  │  │ D1(L)    │ D0(L)    │ D5(L)    │ D6(L)    │          │   │
+│  │  │ D2(AC)   │          │          │ D7(F)    │          │   │
+│  │  │          │          │          │ D8(T)    │          │   │
+│  │  └──────────┴──────────┴──────────┴──────────┘          │   │
+│  └────────────────────────┬─────────────────────────────────┘   │
+│                           │ MQTT (WheelSense/+/control)         │
+│                           │ WebSocket                           │
+│               ┌───────────▼───────────┐                         │
+│               │       Backend         │                         │
+│               │  (websocket_handler)  │                         │
+│               └───────────┬───────────┘                         │
+│                           │                                     │
+│               ┌───────────▼───────────┐                         │
+│               │      Dashboard        │                         │
+│               │    (Admin + User)     │                         │
+│               └───────────────────────┘                         │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## คุณสมบัติ
 
-### อุปกรณ์ที่ควบคุมได้
-- **ไฟ (Light)** - เปิด/ปิด + ปรับความสว่าง (0-100%)
-- **แอร์ (Aircon)** - เปิด/ปิด + ปรับอุณหภูมิ (16-30°C)
-- **พัดลม (Fan)** - เปิด/ปิด + ปรับความเร็ว (0-100%)
-- **ทีวี (TV)** - เปิด/ปิด + ปรับเสียง (0-100%)
+### ห้องที่ควบคุม (4 ห้อง)
+
+| ห้อง | อุปกรณ์ | GPIO Pins |
+|------|---------|-----------|
+| **bedroom** (ห้องนอน) | ไฟ, แอร์, Alarm(SW) | D1, D2 |
+| **bathroom** (ห้องน้ำ) | ไฟ | D0 |
+| **kitchen** (ห้องครัว) | ไฟ, Alarm(SW) | D5 |
+| **livingroom** (ห้องนั่งเล่น) | ไฟ, พัดลม, ทีวี | D6, D7, D8 |
+
+> SW = Software-only (ไม่มี GPIO - ส่ง notification)
 
 ### การเชื่อมต่อ
 - **WebSocket** - เชื่อมต่อกับ Backend สำหรับรับคำสั่งและส่ง status
-- **MQTT** - สำรองสำหรับ registration และ fallback
+- **MQTT Wildcard** - Subscribe `WheelSense/+/control` เพื่อรับคำสั่งทุกห้อง
 
 ## Hardware Setup
 
-### Pin ที่ใช้ (NodeMCU ESP8266)
+### Pin Configuration (NodeMCU ESP8266)
 
-| Pin | GPIO | อุปกรณ์ | หมายเหตุ |
-|-----|------|---------|----------|
-| D1 | GPIO5 | ไฟห้อง | Relay หรือ LED |
-| D2 | GPIO4 | แอร์ | Relay |
-| D5 | GPIO14 | พัดลม | Relay หรือ PWM |
-| D6 | GPIO12 | ทีวี | Relay หรือ IR |
-| D4 | GPIO2 | Status LED | Built-in LED (Active LOW) |
+| Pin | GPIO | ห้อง | อุปกรณ์ |
+|-----|------|------|---------|
+| D0 | GPIO16 | bathroom | ไฟ |
+| D1 | GPIO5 | bedroom | ไฟ |
+| D2 | GPIO4 | bedroom | แอร์ |
+| D4 | GPIO2 | - | Status LED (Built-in, Active LOW) |
+| D5 | GPIO14 | kitchen | ไฟ |
+| D6 | GPIO12 | livingroom | ไฟ |
+| D7 | GPIO13 | livingroom | พัดลม |
+| D8 | GPIO15 | livingroom | ทีวี |
 
 ### การต่อวงจร
 
 ```
-NodeMCU ESP8266          Relay Module (4-channel)
-┌─────────────┐         ┌─────────────────────┐
-│     D1 ──────────────▶ IN1 (Light)         │
-│     D2 ──────────────▶ IN2 (Aircon)        │
-│     D5 ──────────────▶ IN3 (Fan)           │
-│     D6 ──────────────▶ IN4 (TV)            │
-│    GND ──────────────▶ GND                 │
-│    VIN ──────────────▶ VCC (5V)            │
-└─────────────┘         └─────────────────────┘
+NodeMCU ESP8266          Relay Module (7-channel recommended)
+┌─────────────┐         ┌─────────────────────────────────┐
+│     D0 ──────────────▶ IN1 (Bathroom Light)            │
+│     D1 ──────────────▶ IN2 (Bedroom Light)             │
+│     D2 ──────────────▶ IN3 (Bedroom Aircon)            │
+│     D5 ──────────────▶ IN4 (Kitchen Light)             │
+│     D6 ──────────────▶ IN5 (Livingroom Light)          │
+│     D7 ──────────────▶ IN6 (Livingroom Fan)            │
+│     D8 ──────────────▶ IN7 (Livingroom TV)             │
+│    GND ──────────────▶ GND                             │
+│    VIN ──────────────▶ VCC (5V)                        │
+└─────────────┘         └─────────────────────────────────┘
 ```
 
 ## Configuration
@@ -85,16 +107,9 @@ const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 const char* STATIC_MQTT_SERVER = "192.168.1.100";
 const char* STATIC_WEBSOCKET_SERVER = "192.168.1.100";
 
-// Device configuration
-#define DEVICE_ID "APPLIANCE_001"
-#define ROOM_TYPE "livingroom"  // เปลี่ยนตามห้อง
+// Device configuration - บอร์ดเดียวควบคุมทุกห้อง
+#define DEVICE_ID "APPLIANCE_CENTRAL"
 ```
-
-### ห้องที่รองรับ
-- `livingroom` - ห้องนั่งเล่น
-- `bedroom` - ห้องนอน
-- `kitchen` - ห้องครัว
-- `bathroom` - ห้องน้ำ
 
 ## การติดตั้ง
 
@@ -132,20 +147,21 @@ pio device monitor
 
 ## WebSocket Protocol
 
-### เชื่อมต่อ
+### เชื่อมต่อ (Central Controller)
 ```json
 {
     "type": "connected",
-    "device_type": "appliance_controller",
-    "device_id": "APPLIANCE_001",
-    "room": "livingroom"
+    "device_type": "appliance_controller_central",
+    "device_id": "APPLIANCE_CENTRAL",
+    "rooms": ["bedroom", "bathroom", "kitchen", "livingroom"]
 }
 ```
 
-### รับคำสั่ง Control
+### รับคำสั่ง Control (ต้องระบุ room)
 ```json
 {
     "type": "control",
+    "room": "bedroom",
     "appliance": "light",
     "state": true
 }
@@ -155,6 +171,7 @@ pio device monitor
 ```json
 {
     "type": "control",
+    "room": "livingroom",
     "appliance": "aircon",
     "state": true,
     "value": 25
@@ -165,26 +182,27 @@ pio device monitor
 ```json
 {
     "type": "control_ack",
-    "device_id": "APPLIANCE_001",
-    "room": "livingroom",
+    "device_id": "APPLIANCE_CENTRAL",
+    "room": "bedroom",
     "appliance": "light",
     "state": true,
     "status": "ok"
 }
 ```
 
-### ส่ง Status
+### ส่ง Room Status (เมื่อมีการเปลี่ยนแปลง)
 ```json
 {
-    "type": "status",
-    "device_type": "appliance_controller",
-    "device_id": "APPLIANCE_001",
-    "room": "livingroom",
+    "type": "room_status",
+    "device_type": "appliance_controller_central",
+    "device_id": "APPLIANCE_CENTRAL",
+    "room": "bedroom",
     "appliances": {
         "light": true,
         "aircon": false,
         "fan": false,
-        "tv": true
+        "tv": false,
+        "alarm": false
     },
     "values": {
         "brightness": 100,
@@ -195,14 +213,41 @@ pio device monitor
 }
 ```
 
+### ส่ง Central Status (ทุก 5 วินาที)
+```json
+{
+    "type": "central_status",
+    "device_type": "appliance_controller_central",
+    "device_id": "APPLIANCE_CENTRAL",
+    "num_rooms": 4,
+    "rooms": [
+        {
+            "name": "bedroom",
+            "appliances": { "light": true, "aircon": false, ... },
+            "values": { "brightness": 100, "temperature": 25, ... }
+        },
+        ...
+    ]
+}
+```
+
+## MQTT Topics
+
+| Topic | Direction | Description |
+|-------|-----------|-------------|
+| `WheelSense/+/control` | Subscribe | รับคำสั่งควบคุมทุกห้อง (wildcard) |
+| `WheelSense/<room>/status` | Publish | ส่ง status แต่ละห้อง |
+| `WheelSense/central/status` | Publish | ส่ง status รวมทุกห้อง |
+| `WheelSense/central/registration` | Publish | ลงทะเบียนอุปกรณ์ |
+
 ## การใช้งานร่วมกับ TsimCam
 
-ESP8266 Appliance Controller ทำงานแยกจาก TsimCam ESP32:
+ESP8266 Central Appliance Controller ทำงานแยกจาก TsimCam ESP32:
 
 | Device | หน้าที่ |
 |--------|---------|
-| **ESP32 TsimCam** | ส่ง Video Stream สำหรับ wheelchair detection |
-| **ESP8266 Appliance** | ควบคุมอุปกรณ์ไฟฟ้าในแต่ละห้อง |
+| **ESP32 TsimCam** (x4) | ส่ง Video Stream สำหรับ wheelchair detection (1 ต่อห้อง) |
+| **ESP8266 Central** (x1) | ควบคุมอุปกรณ์ไฟฟ้าทั้ง 4 ห้อง |
 
 ทั้งสองอุปกรณ์เชื่อมต่อกับ Backend ผ่าน WebSocket พร้อมกัน
 
