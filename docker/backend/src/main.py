@@ -561,11 +561,9 @@ async def update_all_rooms(rooms_data: dict):
     
     for room in rooms:
         try:
-            # Ensure required fields for MongoDB validation
-            room_update = {
-                **room,
-                "updatedAt": datetime.now()
-            }
+            # Create a copy and remove _id to prevent MongoDB error
+            room_update = {k: v for k, v in room.items() if k != "_id"}
+            room_update["updatedAt"] = datetime.now()
             
             # Add default values if missing (for MongoDB validation)
             if "roomType" not in room_update:
@@ -586,12 +584,11 @@ async def update_all_rooms(rooms_data: dict):
             if "name" not in room_update:
                 room_update["name"] = room.get("nameEn", "Room")
             
-            # Use bypassDocumentValidation to skip schema validation if needed
+            # Update room in database
             result = await db.db.rooms.update_one(
                 {"id": room.get("id")},
                 {"$set": room_update},
-                upsert=True,
-                bypass_document_validation=False
+                upsert=True
             )
             
             if result.modified_count > 0 or result.upserted_id:
@@ -599,15 +596,10 @@ async def update_all_rooms(rooms_data: dict):
                 
         except Exception as e:
             logger.error(f"Failed to update room {room.get('id')}: {e}", exc_info=True)
-            # Try with bypass validation as fallback
+            # Try with minimal fields as fallback
             try:
-                room_update = {
-                    **room,
-                    "updatedAt": datetime.now()
-                }
-                # Remove validation-required fields and try again
-                room_update.pop("deviceId", None)
-                room_update.pop("roomType", None)
+                room_update = {k: v for k, v in room.items() if k not in ["_id", "deviceId", "roomType"]}
+                room_update["updatedAt"] = datetime.now()
                 
                 result = await db.db.rooms.update_one(
                     {"id": room.get("id")},
@@ -617,7 +609,7 @@ async def update_all_rooms(rooms_data: dict):
                 if result.modified_count > 0 or result.upserted_id:
                     updated_count += 1
             except Exception as e2:
-                logger.error(f"Failed to update room {room.get('id')} even with bypass: {e2}")
+                logger.error(f"Failed to update room {room.get('id')} even with fallback: {e2}")
     
     return {"status": "updated", "count": updated_count}
 
