@@ -1,0 +1,36 @@
+import React from 'react';
+import { useApp } from '../context/AppContext';
+import { AlertTriangle, X, Phone, CheckCircle } from 'lucide-react';
+
+export function EmergencyBanner() {
+    const { emergencies, resolveEmergency, rooms } = useApp();
+
+    const activeEmergency = emergencies.find(e => !e.resolved);
+    if (!activeEmergency) return null;
+
+    const room = rooms.find(r => r.id === activeEmergency.room);
+
+    return (
+        <div className="emergency-banner" style={{ margin: '1rem 1.5rem 0' }}>
+            <AlertTriangle size={32} />
+            <div className="content">
+                <h4>🚨 เหตุฉุกเฉิน: {activeEmergency.patient}</h4>
+                <p>{activeEmergency.message} • {room?.name}</p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                    onClick={() => window.open('tel:1669')}
+                >
+                    <Phone size={16} /> โทร 1669
+                </button>
+                <button
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--success-500)' }}
+                    onClick={() => resolveEmergency(activeEmergency.id)}
+                >
+                    <CheckCircle size={16} /> จัดการแล้ว
+                </button>
+            </div>
+        </div>
+    );
+}
