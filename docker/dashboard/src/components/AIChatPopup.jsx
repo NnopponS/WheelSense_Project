@@ -135,7 +135,13 @@ export function AIChatPopup() {
                     'get_user_routines', 'add_routine', 'analyze_behavior', 'get_doctor_notes']
             );
 
-            const responseText = response.response || 'ขออภัย ไม่สามารถประมวลผลได้';
+            let responseText = response.response || 'ขออภัย ไม่สามารถประมวลผลได้';
+            
+            // Check if response contains error message (LLM client returns errors as strings)
+            if (responseText.includes('Error:') || responseText.includes('error:')) {
+                // Treat as error and use fallback
+                throw new Error(responseText);
+            }
 
             const assistantMessage = {
                 id: Date.now() + 1,
@@ -150,9 +156,22 @@ export function AIChatPopup() {
                 speakText(responseText);
             }
         } catch (error) {
+            console.error('Chat API error:', error);
+            
+            // Extract error message
+            const errorMessage = error.message || 'Unknown error';
+            const lowerErrorMessage = errorMessage.toLowerCase();
+            
+            // Check for various error types
+            const is404 = lowerErrorMessage.includes('404') || lowerErrorMessage.includes('not found') || lowerErrorMessage.includes('ไม่พบ');
+            const is503 = lowerErrorMessage.includes('503') || lowerErrorMessage.includes('service unavailable') || lowerErrorMessage.includes('ไม่สามารถเชื่อมต่อ');
+            const isConnectionError = is404 || is503 || lowerErrorMessage.includes('network') || lowerErrorMessage.includes('fetch') || lowerErrorMessage.includes('ollama');
+            
             // Fallback mock responses
             const mockResponses = {
-                'สถานะ': `📊 สถานะปัจจุบัน:\n• ผู้ป่วย: ${patients.length} คน\n• ห้องที่มีคน: ${rooms.filter(r => r.occupied).map(r => r.name).join(', ')}`,
+                'hello': 'สวัสดีค่ะ! ยินดีที่ได้รู้จักค่ะ 😊\nฉันสามารถช่วยคุณได้หลายอย่าง เช่น:\n• ดูสถานะผู้ป่วย\n• ควบคุมเครื่องใช้ไฟฟ้า\n• ดูตำแหน่งปัจจุบัน\n• ขอความช่วยเหลือ\nลองถามได้เลยค่ะ!',
+                'hi': 'สวัสดีค่ะ! ยินดีที่ได้รู้จักค่ะ 😊',
+                'สถานะ': `📊 สถานะปัจจุบัน:\n• ผู้ป่วย: ${patients.length} คน\n• ห้องที่มีคน: ${rooms.filter(r => r.occupied).map(r => r.name).join(', ') || 'ไม่มี'}`,
                 'เปิดไฟ': '💡 เปิดไฟให้แล้วค่ะ',
                 'ปิดไฟ': '💡 ปิดไฟให้แล้วค่ะ',
                 'แอร์': '❄️ ตั้งแอร์ 25°C ให้แล้วค่ะ',
@@ -165,8 +184,24 @@ export function AIChatPopup() {
             };
 
             let responseContent = 'เข้าใจค่ะ ฉันจะช่วยเหลือคุณ';
-            for (const [key, value] of Object.entries(mockResponses)) {
-                if (messageText.includes(key)) { responseContent = value; break; }
+            
+            // If it's a connection error, show a helpful message first
+            if (isConnectionError) {
+                // Use the error message from server if it's in Thai, otherwise use default
+                if (errorMessage.includes('ไม่สามารถ') || errorMessage.includes('กรุณา')) {
+                    responseContent = `⚠️ ${errorMessage}\n\nในระหว่างนี้ฉันสามารถตอบคำถามพื้นฐานได้ค่ะ`;
+                } else {
+                    responseContent = '⚠️ ขณะนี้ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ AI ได้ค่ะ\nกรุณาตรวจสอบการเชื่อมต่อหรือลองใหม่อีกครั้ง\n\nในระหว่างนี้ฉันสามารถตอบคำถามพื้นฐานได้ค่ะ';
+                }
+            } else {
+                // Check for specific keywords in user message (case-insensitive)
+                const lowerMessage = messageText.toLowerCase();
+                for (const [key, value] of Object.entries(mockResponses)) {
+                    if (lowerMessage.includes(key.toLowerCase())) { 
+                        responseContent = value; 
+                        break; 
+                    }
+                }
             }
 
             setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: responseContent }]);

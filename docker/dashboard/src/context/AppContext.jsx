@@ -175,7 +175,8 @@ export function AppProvider({ children }) {
         fetchData();
     }, [fetchData]);
 
-    // WebSocket connection for real-time updates (detection, status, etc.)
+    // WebSocket connection for real-time updates (wheelchair detection, device registration, etc.)
+    // Note: Appliance control uses MQTT via API endpoint /appliances/control
     useEffect(() => {
         let ws = null;
 
@@ -574,6 +575,33 @@ export function AppProvider({ children }) {
             roomKey = roomData.roomType || roomData.nameEn?.toLowerCase() || room;
         }
         
+        // Try multiple room key options
+        let roomAppliances = appliances[roomKey] || appliances[room] || [];
+        
+        // If not found by roomKey, try to find by roomType mapping
+        if (roomAppliances.length === 0) {
+            const roomMapping = {
+                'bedroom': ['ห้องนอน', 'bed room', 'bedroom'],
+                'bathroom': ['ห้องน้ำ', 'bathroom'],
+                'livingroom': ['ห้องนั่งเล่น', 'living room', 'livingroom'],
+                'kitchen': ['ห้องครัว', 'kitchen']
+            };
+            
+            for (const [key, names] of Object.entries(roomMapping)) {
+                if (names.some(n => room.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(room.toLowerCase()))) {
+                    roomAppliances = appliances[key] || [];
+                    roomKey = key;
+                    break;
+                }
+            }
+        }
+        
+        const appliance = roomAppliances.find(a => a.id === applianceId);
+        if (!appliance) {
+            console.warn(`[setApplianceValue] Appliance ${applianceId} not found in room ${room} (key: ${roomKey})`);
+            return;
+        }
+        
         setAppliances(prev => ({
             ...prev,
             [roomKey]: (prev[roomKey] || []).map(app =>
@@ -582,9 +610,17 @@ export function AppProvider({ children }) {
         }));
 
         // Send control command to ESP8266 via MQTT
+        // Map value keys to ESP8266 format:
+        // - brightness -> appliance: "light", value name: "brightness"
+        // - temperature -> appliance: "aircon", value name: "temperature"
+        // - volume -> appliance: "tv", value name: "volume"
+        // - speed -> appliance: "fan", value name: "speed"
         try {
-            console.log(`[setApplianceValue] Sending MQTT: room=${roomKey}, ${key}=${value}`);
-            await api.controlAppliance(roomKey, key, true, value);
+            // ESP8266 expects: appliance type and value name separately
+            // For now, send the value with the appliance type
+            // The backend will forward it correctly
+            console.log(`[setApplianceValue] Sending MQTT: room=${roomKey}, appliance=${appliance.type}, ${key}=${value}`);
+            await api.controlAppliance(roomKey, appliance.type, true, value);
         } catch (err) {
             console.error('Failed to set appliance value via MQTT:', err);
         }

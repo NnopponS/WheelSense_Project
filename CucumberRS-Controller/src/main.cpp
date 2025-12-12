@@ -1,6 +1,6 @@
 /*
- * ESP8266 Home Appliance Controller
- * nodemcuBase ver2.0 - Central Controller
+ * ESP32-S2 Home Appliance Controller
+ * CucumberRS-Controller - Central Controller
  *
  * ควบคุมอุปกรณ์ไฟฟ้าทั้งบ้าน 4 ห้อง จากบอร์ดเดียว
  * รับคำสั่งจาก Backend ผ่าน MQTT (Wildcard) เท่านั้น
@@ -8,10 +8,10 @@
  * Rooms: bedroom, bathroom, kitchen, livingroom
  *
  * Note: TsimCam ESP32 ทำหน้าที่ส่ง Video เท่านั้น
- *       ESP8266 นี้ทำหน้าที่ควบคุมอุปกรณ์ไฟฟ้าทั้งหมด
+ *       ESP32-S2 นี้ทำหน้าที่ควบคุมอุปกรณ์ไฟฟ้าทั้งหมด
  */
  
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <Wire.h>
@@ -43,11 +43,11 @@ const int STATUS_INTERVAL_MS = 5000;
  #endif
   
  #ifndef OLED_SDA_PIN
- #define OLED_SDA_PIN D2   // GPIO4 - I2C SDA for OLED
+ #define OLED_SDA_PIN 11   // GPIO11 - I2C SDA for OLED (ESP32-S2-Saola-1)
  #endif
   
  #ifndef OLED_SCL_PIN
- #define OLED_SCL_PIN D1   // GPIO5 - I2C SCL for OLED
+ #define OLED_SCL_PIN 12   // GPIO12 - I2C SCL for OLED (ESP32-S2-Saola-1)
  #endif
   
  #ifndef OLED_RESET_PIN
@@ -67,29 +67,25 @@ const int STATUS_INTERVAL_MS = 5000;
  #define ROOM_KITCHEN    2
  #define ROOM_LIVINGROOM 3
   
- // ===== GPIO Pin Configuration for nodemcuBase ver2.0 =====
- // NodeMCU ESP8266 GPIO mapping:
- // D0 = GPIO16, D1 = GPIO5, D2 = GPIO4, D3 = GPIO0
- // D4 = GPIO2, D5 = GPIO14, D6 = GPIO12, D7 = GPIO13, D8 = GPIO15
+ // ===== GPIO Pin Configuration for ESP32-S2-Saola-1 =====
+ // ESP32-S2 GPIO mapping:
  //
- // จัด Pin ตามห้อง (ใช้ LED แสดงสถานะแทน - ในงานจริงต่อ MUX หรือ I2C Expander)
- //
- // OLED Display: D1 = SCL (GPIO5), D2 = SDA (GPIO4)
- // ห้องนอน (bedroom): D3 = light, D4 = aircon (alarm ใช้ software)
- // ห้องน้ำ (bathroom): D0 = light
- // ห้องครัว (kitchen): D5 = light (alarm ใช้ software)  
- // ห้องนั่งเล่น (livingroom): D6 = light, D7 = fan, D8 = tv, (aircon ใช้ร่วมกับ bedroom)
+ // OLED Display: GPIO11 = SDA, GPIO12 = SCL
+ // ห้องนอน (bedroom): GPIO1 = light, GPIO2 = AC, GPIO3 = alarm
+ // ห้องน้ำ (bathroom): GPIO4 = light
+ // ห้องครัว (kitchen): GPIO5 = light, GPIO6 = alarm
+ // ห้องนั่งเล่น (livingroom): GPIO7 = light, GPIO8 = TV, GPIO9 = fan, GPIO10 = AC
   
- #define PIN_BEDROOM_LIGHT     D3  // GPIO0
- #define PIN_BEDROOM_AIRCON    D4  // GPIO2
- #define PIN_BATHROOM_LIGHT    D0  // GPIO16
- #define PIN_KITCHEN_LIGHT     D5  // GPIO14
- #define PIN_LIVINGROOM_LIGHT  D6  // GPIO12
- #define PIN_LIVINGROOM_FAN    D7  // GPIO13
- #define PIN_LIVINGROOM_TV     D8  // GPIO15
-  
- // LED_STATUS_PIN - Not used (conflicts with appliances, use built-in LED on D4 if needed)
- // #define LED_STATUS_PIN        D4  // GPIO2 - Built-in LED (Active LOW) - conflicts with aircon
+ #define PIN_BEDROOM_LIGHT     1   // GPIO1
+ #define PIN_BEDROOM_AIRCON    2   // GPIO2
+ #define PIN_BEDROOM_ALARM     3   // GPIO3
+ #define PIN_BATHROOM_LIGHT    4   // GPIO4
+ #define PIN_KITCHEN_LIGHT     5   // GPIO5
+ #define PIN_KITCHEN_ALARM     6   // GPIO6
+ #define PIN_LIVINGROOM_LIGHT  7   // GPIO7
+ #define PIN_LIVINGROOM_TV     8   // GPIO8
+ #define PIN_LIVINGROOM_FAN    9   // GPIO9
+ #define PIN_LIVINGROOM_AC    10   // GPIO10
   
  // ===== Display runtime state =====
  Adafruit_SSD1306 statusDisplay(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, OLED_RESET_PIN);
@@ -169,22 +165,27 @@ void reconnectMQTT();
      // Initialize all GPIO pins
      pinMode(PIN_BEDROOM_LIGHT, OUTPUT);
      pinMode(PIN_BEDROOM_AIRCON, OUTPUT);
+     pinMode(PIN_BEDROOM_ALARM, OUTPUT);
      pinMode(PIN_BATHROOM_LIGHT, OUTPUT);
      pinMode(PIN_KITCHEN_LIGHT, OUTPUT);
+     pinMode(PIN_KITCHEN_ALARM, OUTPUT);
      pinMode(PIN_LIVINGROOM_LIGHT, OUTPUT);
-     pinMode(PIN_LIVINGROOM_FAN, OUTPUT);
      pinMode(PIN_LIVINGROOM_TV, OUTPUT);
-     // LED_STATUS_PIN not used to avoid conflicts
-    
+     pinMode(PIN_LIVINGROOM_FAN, OUTPUT);
+     pinMode(PIN_LIVINGROOM_AC, OUTPUT);
+     
      // Turn off all appliances
      digitalWrite(PIN_BEDROOM_LIGHT, LOW);
      digitalWrite(PIN_BEDROOM_AIRCON, LOW);
+     digitalWrite(PIN_BEDROOM_ALARM, LOW);
      digitalWrite(PIN_BATHROOM_LIGHT, LOW);
      digitalWrite(PIN_KITCHEN_LIGHT, LOW);
+     digitalWrite(PIN_KITCHEN_ALARM, LOW);
      digitalWrite(PIN_LIVINGROOM_LIGHT, LOW);
-     digitalWrite(PIN_LIVINGROOM_FAN, LOW);
      digitalWrite(PIN_LIVINGROOM_TV, LOW);
-    
+     digitalWrite(PIN_LIVINGROOM_FAN, LOW);
+     digitalWrite(PIN_LIVINGROOM_AC, LOW);
+     
      // Initialize room states
      for (int i = 0; i < NUM_ROOMS; i++) {
          roomStates[i].roomName = ROOMS[i];
@@ -194,14 +195,14 @@ void reconnectMQTT();
          roomStates[i].tv = false;
          roomStates[i].alarm = false;
      }
-    
+     
      Serial.println("[Appliances] All pins initialized for 4 rooms");
      Serial.println("[Appliances] Room GPIO mapping:");
-     Serial.println("  - bedroom:    D3=light, D4=aircon");
-     Serial.println("  - bathroom:   D0=light");
-     Serial.println("  - kitchen:    D5=light");
-     Serial.println("  - livingroom: D6=light, D7=fan, D8=tv");
-     Serial.println("  - OLED:       D1=SCL, D2=SDA");
+     Serial.println("  - bedroom:    GPIO1=light, GPIO2=AC, GPIO3=alarm");
+     Serial.println("  - bathroom:   GPIO4=light");
+     Serial.println("  - kitchen:    GPIO5=light, GPIO6=alarm");
+     Serial.println("  - livingroom: GPIO7=light, GPIO8=TV, GPIO9=fan, GPIO10=AC");
+     Serial.println("  - OLED:       GPIO11=SDA, GPIO12=SCL");
  }
   
  // ===== Display helpers =====
@@ -317,15 +318,12 @@ void reconnectMQTT();
  void initDisplay() {
      Serial.println("[Display] Initializing I2C...");
     
-     // Initialize I2C with custom pins for ESP8266
+     // Initialize I2C with custom pins for ESP32-S2
      Wire.begin(OLED_SDA_PIN, OLED_SCL_PIN);
      Wire.setClock(100000);  // Set I2C clock to 100kHz (standard speed)
      delay(100);  // Give I2C time to stabilize
-     Serial.printf("[Display] I2C initialized on SDA=D%d (GPIO%d), SCL=D%d (GPIO%d)\n",
-                   OLED_SDA_PIN == D2 ? 2 : 0,
-                   OLED_SDA_PIN == D2 ? 4 : 0,
-                   OLED_SCL_PIN == D1 ? 1 : 0,
-                   OLED_SCL_PIN == D1 ? 5 : 0);
+     Serial.printf("[Display] I2C initialized on SDA=GPIO%d, SCL=GPIO%d\n",
+                   OLED_SDA_PIN, OLED_SCL_PIN);
     
      Serial.println("[Display] Initializing OLED...");
      bool oledFound = false;
@@ -352,8 +350,8 @@ void reconnectMQTT();
          Serial.println("\n[Display] ❌ SSD1306 allocation failed!");
          Serial.println("\n[Display] Troubleshooting:");
          Serial.println("  1. Check I2C wiring:");
-         Serial.printf("     SDA -> D%d (GPIO%d)\n", OLED_SDA_PIN == D2 ? 2 : 0, OLED_SDA_PIN == D2 ? 4 : 0);
-         Serial.printf("     SCL -> D%d (GPIO%d)\n", OLED_SCL_PIN == D1 ? 1 : 0, OLED_SCL_PIN == D1 ? 5 : 0);
+         Serial.printf("     SDA -> GPIO%d\n", OLED_SDA_PIN);
+         Serial.printf("     SCL -> GPIO%d\n", OLED_SCL_PIN);
          Serial.println("  2. Verify power:");
          Serial.println("     VCC -> 3.3V (NOT 5V!)");
          Serial.println("     GND -> GND");
@@ -385,43 +383,44 @@ void reconnectMQTT();
  // ===== Update GPIO for specific room/appliance =====
  void updateGPIO(int roomIndex, const char* appliance) {
      RoomAppliances& room = roomStates[roomIndex];
-    
+     
      switch (roomIndex) {
          case ROOM_BEDROOM:
              if (strcmp(appliance, "light") == 0) {
-                 digitalWrite(PIN_BEDROOM_LIGHT, room.light);
+                 digitalWrite(PIN_BEDROOM_LIGHT, room.light ? HIGH : LOW);
              } else if (strcmp(appliance, "aircon") == 0) {
-                 digitalWrite(PIN_BEDROOM_AIRCON, room.aircon);
+                 digitalWrite(PIN_BEDROOM_AIRCON, room.aircon ? HIGH : LOW);
+             } else if (strcmp(appliance, "alarm") == 0) {
+                 digitalWrite(PIN_BEDROOM_ALARM, room.alarm ? HIGH : LOW);
              }
-             // alarm = software only (no GPIO)
              break;
-            
+             
          case ROOM_BATHROOM:
              if (strcmp(appliance, "light") == 0) {
-                 digitalWrite(PIN_BATHROOM_LIGHT, room.light);
+                 digitalWrite(PIN_BATHROOM_LIGHT, room.light ? HIGH : LOW);
              }
              break;
-            
+             
          case ROOM_KITCHEN:
              if (strcmp(appliance, "light") == 0) {
-                 digitalWrite(PIN_KITCHEN_LIGHT, room.light);
+                 digitalWrite(PIN_KITCHEN_LIGHT, room.light ? HIGH : LOW);
+             } else if (strcmp(appliance, "alarm") == 0) {
+                 digitalWrite(PIN_KITCHEN_ALARM, room.alarm ? HIGH : LOW);
              }
-             // alarm = software only
              break;
-            
+             
          case ROOM_LIVINGROOM:
              if (strcmp(appliance, "light") == 0) {
-                 digitalWrite(PIN_LIVINGROOM_LIGHT, room.light);
+                 digitalWrite(PIN_LIVINGROOM_LIGHT, room.light ? HIGH : LOW);
              } else if (strcmp(appliance, "fan") == 0) {
-                 digitalWrite(PIN_LIVINGROOM_FAN, room.fan);
+                 digitalWrite(PIN_LIVINGROOM_FAN, room.fan ? HIGH : LOW);
              } else if (strcmp(appliance, "tv") == 0) {
-                 digitalWrite(PIN_LIVINGROOM_TV, room.tv);
+                 digitalWrite(PIN_LIVINGROOM_TV, room.tv ? HIGH : LOW);
+             } else if (strcmp(appliance, "aircon") == 0) {
+                 digitalWrite(PIN_LIVINGROOM_AC, room.aircon ? HIGH : LOW);
              }
-             // aircon shares with bedroom pin (or add MUX)
              break;
      }
-    
-     // Status LED not used to avoid conflicts with appliances
  }
   
  // ===== Set Appliance State for specific room =====
@@ -448,7 +447,6 @@ void reconnectMQTT();
      }
      else if (strcmp(appliance, "alarm") == 0) {
          room.alarm = state;
-         // Alarm is software-only (would trigger buzzer or notification)
          if (state) {
              Serial.printf("[ALARM] %s room ALARM TRIGGERED!\n", room.roomName);
          }
@@ -735,14 +733,14 @@ void reconnectMQTT();
   
  // ===== Setup =====
  void setup() {
-     // Initialize serial communication - wait longer for ESP8266
-     Serial.begin(9600);
+     // Initialize serial communication
+     Serial.begin(115200);
      delay(1000);  // Give serial time to initialize
      Serial.flush();  // Clear any pending output
     
      Serial.println("\n========================================");
      Serial.println("  WheelSense Appliance Controller");
-     Serial.println("  ESP8266 nodemcuBase ver2.0 CENTRAL");
+     Serial.println("  ESP32-S2-Saola-1 CucumberRS CENTRAL");
      Serial.println("========================================");
      Serial.printf("  Device: %s\n", DEVICE_ID);
      Serial.printf("  Controlling %d rooms:\n", NUM_ROOMS);

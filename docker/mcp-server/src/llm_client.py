@@ -54,17 +54,27 @@ class OllamaClient:
                 
                 if response.status_code == 200:
                     result = response.json()
-                    return result.get("message", {}).get("content", "")
+                    content = result.get("message", {}).get("content", "")
+                    if not content:
+                        raise Exception("Ollama returned empty response")
+                    return content
                 else:
-                    logger.error(f"Ollama chat error: {response.status_code}")
-                    return f"Error: {response.status_code}"
+                    error_text = response.text if hasattr(response, 'text') else ""
+                    logger.error(f"Ollama chat error: {response.status_code} - {error_text}")
+                    raise Exception(f"Ollama service returned error {response.status_code}. Please check if Ollama is running.")
                     
         except httpx.TimeoutException:
             logger.error("Ollama request timed out")
-            return "ขออภัย คำขอใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง"
+            raise Exception("Ollama request timed out. The AI service is taking too long to respond.")
+        except httpx.ConnectError:
+            logger.error("Cannot connect to Ollama service")
+            raise Exception("Cannot connect to Ollama service. Please ensure Ollama is running and accessible.")
         except Exception as e:
             logger.error(f"Ollama chat failed: {e}")
-            return f"Error: {str(e)}"
+            # Re-raise if it's already our custom exception, otherwise wrap it
+            if "Ollama" in str(e) or "timed out" in str(e).lower():
+                raise
+            raise Exception(f"Failed to communicate with Ollama: {str(e)}")
     
     async def generate(
         self,

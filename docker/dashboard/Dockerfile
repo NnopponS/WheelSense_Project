@@ -3,13 +3,16 @@ FROM node:20-alpine as builder
 
 WORKDIR /app
 
+# Ensure devDependencies are installed (NODE_ENV not set to production)
+ENV NODE_ENV=development
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies (including devDependencies needed for build)
 RUN npm install
 
-# Copy source code
+# Copy source code (node_modules excluded via .dockerignore)
 COPY . .
 
 # Build arguments for environment

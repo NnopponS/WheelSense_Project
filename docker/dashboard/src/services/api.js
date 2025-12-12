@@ -15,11 +15,17 @@ const getApiBase = () => {
 
 const getMcpBase = () => {
     const envUrl = import.meta.env.VITE_MCP_URL;
-    if (envUrl && !envUrl.startsWith('http')) {
-        // Relative path - use as is
+    if (envUrl) {
+        // If environment variable is set, use it
+        if (!envUrl.startsWith('http')) {
+            // Relative path - use as is
+            return envUrl;
+        }
         return envUrl;
     }
-    return envUrl || 'http://localhost:8080';
+    // Default: use /mcp for nginx proxy (production)
+    // For local dev with Vite proxy, it will use /mcp which vite.config.js proxies to localhost:8080
+    return '/mcp';
 };
 
 const getMqttWsUrl = () => {
@@ -68,9 +74,11 @@ async function fetchAPI(endpoint, options = {}) {
 async function fetchMCP(endpoint, options = {}) {
     try {
         const baseUrl = getMcpBase();
+        // Ensure endpoint starts with / if baseUrl is relative
+        const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
         const url = baseUrl.startsWith('http')
-            ? `${baseUrl}${endpoint}`
-            : `${baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+            ? `${baseUrl}${normalizedEndpoint}`
+            : `${baseUrl}${normalizedEndpoint}`;
 
         const response = await fetch(url, {
             headers: {
@@ -81,7 +89,18 @@ async function fetchMCP(endpoint, options = {}) {
         });
 
         if (!response.ok) {
-            throw new Error(`MCP Error: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            let errorMessage = `MCP Error: ${response.status} ${response.statusText}`;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.detail || errorJson.message || errorMessage;
+            } catch {
+                // If not JSON, use the text or default message
+                if (errorText) {
+                    errorMessage = errorText.length > 200 ? errorMessage : errorText;
+                }
+            }
+            throw new Error(errorMessage);
         }
 
         return await response.json();
@@ -233,6 +252,14 @@ export async function getAllAppliances() {
     return appliancesByRoom;
 }
 
+/**
+ * Control appliance via MQTT
+ * Sends command to backend API which forwards to ESP8266 via MQTT topic: WheelSense/{room}/control
+ * @param {string} room - Room name (bedroom, bathroom, kitchen, livingroom)
+ * @param {string} appliance - Appliance type (light, aircon, fan, tv, alarm)
+ * @param {boolean} state - ON/OFF state
+ * @param {number|null} value - Optional value for sliders (brightness, temperature, volume, speed)
+ */
 export async function controlAppliance(room, appliance, state, value = null) {
     return fetchAPI('/appliances/control', {
         method: 'POST',

@@ -283,12 +283,20 @@ async def chat(request: ChatRequest):
         messages.append({"role": msg.role, "content": msg.content})
     
     # Get LLM response
-    response = await llm_client.chat(messages)
+    try:
+        response = await llm_client.chat(messages)
+    except Exception as e:
+        logger.error(f"LLM chat failed: {e}")
+        # Return user-friendly error message
+        raise HTTPException(
+            status_code=503,
+            detail=f"ไม่สามารถเชื่อมต่อกับระบบ AI ได้: {str(e)}"
+        )
     
     # Check if response contains tool calls
     # (Simple pattern matching for demo - production would use structured output)
     tool_results = []
-    if available_tools and "เปิด" in response or "ปิด" in response:
+    if available_tools and ("เปิด" in response or "ปิด" in response):
         # Parse simple commands
         tool_results = await process_simple_commands(response)
     
