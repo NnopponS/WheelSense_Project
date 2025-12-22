@@ -1,6 +1,6 @@
 # WheelSense MockUp - Docker Compose Configuration
-# ระบบบ้านอัจฉริยะสำหรับผู้ใช้รถเข็น
-# รวม Backend, MCP Server, Ollama Local LLM, Dashboard
+# Smart home system for wheelchair users
+# Includes Backend, MCP Server, Ollama Local LLM, Dashboard
 
 services:
   # ==================== MQTT Broker (Local) ====================
@@ -9,10 +9,10 @@ services:
     container_name: wheelsense-mosquitto
     restart: unless-stopped
     ports:
-      - "1883:1883"    # MQTT - สำหรับ TsimCam devices
-      - "9001:9001"    # WebSocket - สำหรับ Dashboard
+      - "1883:1883"    # MQTT - for TsimCam devices
+      - "9001:9001"    # WebSocket - for Dashboard
     volumes:
-      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ../services/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     networks:
@@ -38,7 +38,7 @@ services:
       MONGO_INITDB_DATABASE: wheelsense
     volumes:
       - mongodb_data:/data/db
-      - ./mongodb/init:/docker-entrypoint-initdb.d:ro
+      - ../services/mongodb/init:/docker-entrypoint-initdb.d:ro
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.11
@@ -68,7 +68,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    # สำหรับเครื่องที่ไม่มี GPU ให้ใช้ docker-compose.cpu.yml
+    # For machines without GPU, use docker-compose.cpu.yml
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
       interval: 30s
@@ -76,16 +76,22 @@ services:
       retries: 5
       start_period: 60s
 
-  # ==================== Backend API ====================
-  backend:
+  # ==================== Backend API (now part of MCP Server) ====================
+  # Backend functionality has been merged into mcp-server
+  # MCP Server now handles both MCP protocol and REST API endpoints
+
+  # ==================== MCP Server (Main Server) ====================
+  # Handles both MCP Protocol and Backend REST API
+  mcp-server:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: wheelsense-backend
+      context: .
+      dockerfile: ./mcp-server/Dockerfile
+    container_name: wheelsense-mcp
     restart: unless-stopped
     ports:
-      - "8000:8000"
-      - "8765:8765"  # WebSocket server for ESP32 camera connections
+      - "8000:8000"    # Backend REST API
+      - "8080:8080"    # MCP Protocol
+      - "8765:8765"    # WebSocket server for ESP32 camera connections
     environment:
       - MONGO_URI=mongodb://admin:wheelsense123@mongodb:27017/wheelsense?authSource=admin
       - MQTT_BROKER=mosquitto
@@ -94,13 +100,16 @@ services:
       - OLLAMA_MODEL=llama3.2
       - ENVIRONMENT=production
       - DEBUG=false
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
       mongodb:
         condition: service_healthy
       mosquitto:
         condition: service_healthy
+      ollama:
+        condition: service_started
     volumes:
-      - ./backend/src:/app/src:ro
+      - ./mcp-server/src:/app/src:ro
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.20
@@ -111,42 +120,10 @@ services:
       retries: 3
       start_period: 30s
 
-  # ==================== MCP Server (Local LLM Interface) ====================
-  mcp-server:
-    build:
-      context: ./mcp-server
-      dockerfile: Dockerfile
-    container_name: wheelsense-mcp
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      - MONGO_URI=mongodb://admin:wheelsense123@mongodb:27017/wheelsense?authSource=admin
-      - MQTT_BROKER=mosquitto
-      - MQTT_PORT=1883
-      - OLLAMA_HOST=http://ollama:11434
-      - OLLAMA_MODEL=llama3.2
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      mosquitto:
-        condition: service_healthy
-      ollama:
-        condition: service_started
-    networks:
-      wheelsense-network:
-        ipv4_address: 172.28.0.21
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
   # ==================== Camera Service (Wheelchair Detection) ====================
   camera-service:
     build:
-      context: ./camera-service
+      context: ../services/camera-service
       dockerfile: Dockerfile
     container_name: wheelsense-camera-service
     restart: unless-stopped
@@ -170,7 +147,7 @@ services:
   # ==================== Dashboard (Frontend) ====================
   dashboard:
     build:
-      context: ./dashboard
+      context: ../services/dashboard
       dockerfile: Dockerfile
       args:
         - VITE_API_URL=/api
@@ -198,11 +175,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ../services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../services/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - dashboard
-      - backend
       - mcp-server
     networks:
       wheelsense-network:

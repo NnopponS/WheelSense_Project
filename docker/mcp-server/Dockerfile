@@ -11,11 +11,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements.txt .
+COPY mcp-server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy LLM service (shared module)
+COPY llm/ ./llm/
+
 # Copy application code
-COPY src/ ./src/
+COPY mcp-server/src/ ./src/
 
 # Environment variables
 ENV PYTHONPATH=/app

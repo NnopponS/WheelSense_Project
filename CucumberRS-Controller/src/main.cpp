@@ -17,6 +17,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <driver/gpio.h>
   
  // ===== WiFi Configuration =====
  #ifndef WIFI_SSID
@@ -74,7 +75,7 @@ const int STATUS_INTERVAL_MS = 5000;
  // ห้องนอน (bedroom): GPIO1 = light, GPIO2 = AC, GPIO3 = alarm
  // ห้องน้ำ (bathroom): GPIO4 = light
  // ห้องครัว (kitchen): GPIO5 = light, GPIO6 = alarm
- // ห้องนั่งเล่น (livingroom): GPIO7 = light, GPIO8 = TV, GPIO9 = fan, GPIO10 = AC
+ // ห้องนั่งเล่น (livingroom): GPIO7 = light, GPIO8 = TV, GPIO9 = fan, GPIO13 = AC
   
  #define PIN_BEDROOM_LIGHT     1   // GPIO1
  #define PIN_BEDROOM_AIRCON    2   // GPIO2
@@ -85,7 +86,7 @@ const int STATUS_INTERVAL_MS = 5000;
  #define PIN_LIVINGROOM_LIGHT  7   // GPIO7
  #define PIN_LIVINGROOM_TV     8   // GPIO8
  #define PIN_LIVINGROOM_FAN    9   // GPIO9
- #define PIN_LIVINGROOM_AC    10   // GPIO10
+ #define PIN_LIVINGROOM_AC    13   // GPIO13
   
  // ===== Display runtime state =====
  Adafruit_SSD1306 statusDisplay(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, OLED_RESET_PIN);
@@ -173,7 +174,9 @@ void reconnectMQTT();
      pinMode(PIN_LIVINGROOM_TV, OUTPUT);
      pinMode(PIN_LIVINGROOM_FAN, OUTPUT);
      pinMode(PIN_LIVINGROOM_AC, OUTPUT);
-     
+     // Ensure GPIO13 is not in strapping mode (ESP32-S2 specific)
+     gpio_hold_dis((gpio_num_t)PIN_LIVINGROOM_AC);
+    
      // Turn off all appliances
      digitalWrite(PIN_BEDROOM_LIGHT, LOW);
      digitalWrite(PIN_BEDROOM_AIRCON, LOW);
@@ -185,6 +188,9 @@ void reconnectMQTT();
      digitalWrite(PIN_LIVINGROOM_TV, LOW);
      digitalWrite(PIN_LIVINGROOM_FAN, LOW);
      digitalWrite(PIN_LIVINGROOM_AC, LOW);
+     
+     // Verify GPIO13 (Living room AC) is properly initialized
+     Serial.printf("[GPIO] Living room AC pin (GPIO%d) initialized as OUTPUT\n", PIN_LIVINGROOM_AC);
      
      // Initialize room states
      for (int i = 0; i < NUM_ROOMS; i++) {
@@ -201,7 +207,7 @@ void reconnectMQTT();
      Serial.println("  - bedroom:    GPIO1=light, GPIO2=AC, GPIO3=alarm");
      Serial.println("  - bathroom:   GPIO4=light");
      Serial.println("  - kitchen:    GPIO5=light, GPIO6=alarm");
-     Serial.println("  - livingroom: GPIO7=light, GPIO8=TV, GPIO9=fan, GPIO10=AC");
+     Serial.println("  - livingroom: GPIO7=light, GPIO8=TV, GPIO9=fan, GPIO13=AC");
      Serial.println("  - OLED:       GPIO11=SDA, GPIO12=SCL");
  }
   
@@ -388,7 +394,7 @@ void reconnectMQTT();
          case ROOM_BEDROOM:
              if (strcmp(appliance, "light") == 0) {
                  digitalWrite(PIN_BEDROOM_LIGHT, room.light ? HIGH : LOW);
-             } else if (strcmp(appliance, "aircon") == 0) {
+             } else if (strcmp(appliance, "AC") == 0) {
                  digitalWrite(PIN_BEDROOM_AIRCON, room.aircon ? HIGH : LOW);
              } else if (strcmp(appliance, "alarm") == 0) {
                  digitalWrite(PIN_BEDROOM_ALARM, room.alarm ? HIGH : LOW);
@@ -412,12 +418,16 @@ void reconnectMQTT();
          case ROOM_LIVINGROOM:
              if (strcmp(appliance, "light") == 0) {
                  digitalWrite(PIN_LIVINGROOM_LIGHT, room.light ? HIGH : LOW);
+                 Serial.printf("[GPIO] Living room light -> GPIO%d = %s\n", PIN_LIVINGROOM_LIGHT, room.light ? "HIGH" : "LOW");
              } else if (strcmp(appliance, "fan") == 0) {
                  digitalWrite(PIN_LIVINGROOM_FAN, room.fan ? HIGH : LOW);
+                 Serial.printf("[GPIO] Living room fan -> GPIO%d = %s\n", PIN_LIVINGROOM_FAN, room.fan ? "HIGH" : "LOW");
              } else if (strcmp(appliance, "tv") == 0) {
                  digitalWrite(PIN_LIVINGROOM_TV, room.tv ? HIGH : LOW);
-             } else if (strcmp(appliance, "aircon") == 0) {
+                 Serial.printf("[GPIO] Living room TV -> GPIO%d = %s\n", PIN_LIVINGROOM_TV, room.tv ? "HIGH" : "LOW");
+             } else if (strcmp(appliance, "AC") == 0) {
                  digitalWrite(PIN_LIVINGROOM_AC, room.aircon ? HIGH : LOW);
+                 Serial.printf("[GPIO] Living room AC -> GPIO%d = %s\n", PIN_LIVINGROOM_AC, room.aircon ? "HIGH" : "LOW");
              }
              break;
      }
@@ -436,7 +446,7 @@ void reconnectMQTT();
      if (strcmp(appliance, "light") == 0) {
          room.light = state;
      }
-     else if (strcmp(appliance, "aircon") == 0) {
+     else if (strcmp(appliance, "AC") == 0) {
          room.aircon = state;
      }
      else if (strcmp(appliance, "fan") == 0) {
@@ -534,7 +544,7 @@ void reconnectMQTT();
             const char* valueName = appliance; // Default to appliance name
             if (strcmp(appliance, "light") == 0) {
                 valueName = "brightness";
-            } else if (strcmp(appliance, "aircon") == 0) {
+            } else if (strcmp(appliance, "AC") == 0) {
                 valueName = "temperature";
             } else if (strcmp(appliance, "tv") == 0) {
                 valueName = "volume";
@@ -554,7 +564,18 @@ void reconnectMQTT();
         Serial.println();
         
         // Display log on OLED
-        String mqttLog = String("MQTT ") + roomStr.substring(0, 3) + "/" + String(appliance).substring(0, 4);
+        // Map appliance to display name (AC instead of aircon) - case insensitive
+        String applianceDisplay = String(appliance);
+        // Check all possible variations (case insensitive) - only AC and aircon
+        if (strcasecmp(appliance, "AC") == 0 || 
+            strcasecmp(appliance, "aircon") == 0) {
+            applianceDisplay = "AC";
+        }
+        // Limit to 4 chars for display
+        if (applianceDisplay.length() > 4) {
+            applianceDisplay = applianceDisplay.substring(0, 4);
+        }
+        String mqttLog = String("MQTT ") + roomStr.substring(0, 3) + "/" + applianceDisplay;
         if (hasState) {
             mqttLog += state ? ":ON" : ":OFF";
         } else if (hasValue) {
@@ -664,7 +685,7 @@ void reconnectMQTT();
      // Appliance states for this room
      JsonObject appliancesObj = doc.createNestedObject("appliances");
      appliancesObj["light"] = room.light;
-     appliancesObj["aircon"] = room.aircon;
+     appliancesObj["AC"] = room.aircon;
      appliancesObj["fan"] = room.fan;
      appliancesObj["tv"] = room.tv;
      appliancesObj["alarm"] = room.alarm;
@@ -710,7 +731,7 @@ void reconnectMQTT();
         
          JsonObject appliancesObj = roomObj.createNestedObject("appliances");
          appliancesObj["light"] = room.light;
-         appliancesObj["aircon"] = room.aircon;
+         appliancesObj["AC"] = room.aircon;
          appliancesObj["fan"] = room.fan;
          appliancesObj["tv"] = room.tv;
          appliancesObj["alarm"] = room.alarm;

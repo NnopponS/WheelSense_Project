@@ -10,8 +10,8 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Backend API URL for database operations
-BACKEND_URL = "http://backend:8000"
+# Backend API URL for database operations (now same server)
+BACKEND_URL = "http://localhost:8000"
 
 
 class ToolRegistry:
@@ -32,27 +32,27 @@ class ToolRegistry:
         
         self.register_tool(
             name="control_appliance",
-            description="ควบคุมเครื่องใช้ไฟฟ้าในห้อง เช่น เปิด/ปิดไฟ แอร์ พัดลม ทีวี",
+            description="Control appliances in room, e.g. turn on/off lights, AC, fans, TV",
             input_schema={
                 "type": "object",
                 "properties": {
                     "room": {
                         "type": "string",
-                        "description": "ห้องที่ต้องการควบคุม (bedroom, bathroom, kitchen, livingroom)",
+                        "description": "Room to control (bedroom, bathroom, kitchen, livingroom)",
                         "enum": ["bedroom", "bathroom", "kitchen", "livingroom"]
                     },
                     "appliance": {
                         "type": "string",
-                        "description": "เครื่องใช้ไฟฟ้าที่ต้องการควบคุม (light, aircon, fan, tv, alarm)",
-                        "enum": ["light", "aircon", "fan", "tv", "alarm"]
+                        "description": "Appliance to control (light, AC, fan, tv, alarm)",
+                        "enum": ["light", "AC", "fan", "tv", "alarm"]
                     },
                     "state": {
                         "type": "boolean",
-                        "description": "สถานะที่ต้องการ (true=เปิด, false=ปิด)"
+                        "description": "Desired state (true=on, false=off)"
                     },
                     "value": {
                         "type": "integer",
-                        "description": "ค่าเพิ่มเติม เช่น อุณหภูมิแอร์ ความเร็วพัดลม"
+                        "description": "Additional value, e.g. AC temperature, fan speed"
                     }
                 },
                 "required": ["room", "appliance", "state"]
@@ -62,13 +62,13 @@ class ToolRegistry:
         
         self.register_tool(
             name="get_room_status",
-            description="ดูสถานะของห้อง รวมถึงเครื่องใช้ไฟฟ้าและการตรวจจับผู้ใช้",
+            description="View room status including appliances and user detection",
             input_schema={
                 "type": "object",
                 "properties": {
                     "room": {
                         "type": "string",
-                        "description": "ห้องที่ต้องการดูสถานะ",
+                        "description": "Room to view status",
                         "enum": ["bedroom", "bathroom", "kitchen", "livingroom"]
                     }
                 },
@@ -79,7 +79,7 @@ class ToolRegistry:
         
         self.register_tool(
             name="get_user_location",
-            description="ดูตำแหน่งปัจจุบันของผู้ใช้",
+            description="View user's current location",
             input_schema={
                 "type": "object",
                 "properties": {}
@@ -89,13 +89,13 @@ class ToolRegistry:
         
         self.register_tool(
             name="turn_off_all",
-            description="ปิดเครื่องใช้ไฟฟ้าทั้งหมดในห้องหรือทั้งบ้าน",
+            description="Turn off all appliances in room or entire house",
             input_schema={
                 "type": "object",
                 "properties": {
                     "room": {
                         "type": "string",
-                        "description": "ห้องที่ต้องการปิด (ถ้าไม่ระบุจะปิดทั้งบ้าน)",
+                        "description": "Room to turn off (if not specified, turns off entire house)",
                         "enum": ["bedroom", "bathroom", "kitchen", "livingroom"]
                     }
                 }
@@ -105,22 +105,22 @@ class ToolRegistry:
         
         self.register_tool(
             name="send_emergency",
-            description="ส่งการแจ้งเตือนฉุกเฉิน",
+            description="Send emergency alert",
             input_schema={
                 "type": "object",
                 "properties": {
                     "event_type": {
                         "type": "string",
-                        "description": "ประเภทเหตุฉุกเฉิน",
+                        "description": "Emergency type",
                         "enum": ["fall", "fire", "sos", "unusual_behavior"]
                     },
                     "room": {
                         "type": "string",
-                        "description": "ห้องที่เกิดเหตุ"
+                        "description": "Room where incident occurred"
                     },
                     "message": {
                         "type": "string",
-                        "description": "รายละเอียดเพิ่มเติม"
+                        "description": "Additional details"
                     }
                 },
                 "required": ["event_type"]
@@ -130,13 +130,13 @@ class ToolRegistry:
         
         self.register_tool(
             name="set_scene",
-            description="ตั้งค่าฉาก/โหมดการใช้งาน เช่น โหมดนอน โหมดดูทีวี",
+            description="Set scene/mode, e.g. sleep mode, movie mode",
             input_schema={
                 "type": "object",
                 "properties": {
                     "scene": {
                         "type": "string",
-                        "description": "ฉากที่ต้องการตั้งค่า",
+                        "description": "Scene to set",
                         "enum": ["sleep", "wake_up", "movie", "away", "home"]
                     }
                 },
@@ -149,17 +149,17 @@ class ToolRegistry:
         
         self.register_tool(
             name="get_user_routines",
-            description="ดูตารางกิจกรรมประจำวันของผู้ใช้",
+            description="View user's daily activity schedule",
             input_schema={
                 "type": "object",
                 "properties": {
                     "user_id": {
                         "type": "string",
-                        "description": "รหัสผู้ใช้ (ถ้าไม่ระบุจะใช้ผู้ใช้ปัจจุบัน)"
+                        "description": "User ID (if not specified, uses current user)"
                     },
                     "date": {
                         "type": "string",
-                        "description": "วันที่ (YYYY-MM-DD) ถ้าไม่ระบุจะเป็นวันนี้"
+                        "description": "Date (YYYY-MM-DD), if not specified uses today"
                     }
                 }
             },
@@ -168,25 +168,25 @@ class ToolRegistry:
         
         self.register_tool(
             name="add_routine",
-            description="เพิ่มกิจกรรมใหม่ในตารางประจำวัน",
+            description="Add new activity to daily schedule",
             input_schema={
                 "type": "object",
                 "properties": {
                     "time": {
                         "type": "string",
-                        "description": "เวลา (HH:MM)"
+                        "description": "Time (HH:MM)"
                     },
                     "title": {
                         "type": "string",
-                        "description": "ชื่อกิจกรรม"
+                        "description": "Activity name"
                     },
                     "description": {
                         "type": "string",
-                        "description": "รายละเอียด"
+                        "description": "Description"
                     },
                     "user_id": {
                         "type": "string",
-                        "description": "รหัสผู้ใช้"
+                        "description": "User ID"
                     }
                 },
                 "required": ["time", "title"]
@@ -196,29 +196,29 @@ class ToolRegistry:
         
         self.register_tool(
             name="update_routine",
-            description="แก้ไขกิจกรรมในตารางประจำวัน",
+            description="Update activity in daily schedule",
             input_schema={
                 "type": "object",
                 "properties": {
                     "routine_id": {
                         "type": "string",
-                        "description": "รหัสกิจกรรม"
+                        "description": "Activity ID"
                     },
                     "time": {
                         "type": "string",
-                        "description": "เวลาใหม่ (HH:MM)"
+                        "description": "New time (HH:MM)"
                     },
                     "title": {
                         "type": "string",
-                        "description": "ชื่อกิจกรรมใหม่"
+                        "description": "New activity name"
                     },
                     "description": {
                         "type": "string",
-                        "description": "รายละเอียดใหม่"
+                        "description": "New description"
                     },
                     "completed": {
                         "type": "boolean",
-                        "description": "สถานะเสร็จสิ้น"
+                        "description": "Completion status"
                     }
                 },
                 "required": ["routine_id"]
@@ -228,13 +228,13 @@ class ToolRegistry:
         
         self.register_tool(
             name="delete_routine",
-            description="ลบกิจกรรมออกจากตารางประจำวัน",
+            description="Delete activity from daily schedule",
             input_schema={
                 "type": "object",
                 "properties": {
                     "routine_id": {
                         "type": "string",
-                        "description": "รหัสกิจกรรมที่ต้องการลบ"
+                        "description": "Activity ID to delete"
                     }
                 },
                 "required": ["routine_id"]
@@ -246,17 +246,17 @@ class ToolRegistry:
         
         self.register_tool(
             name="analyze_behavior",
-            description="วิเคราะห์พฤติกรรมของผู้ใช้จาก Timeline และแนะนำการปรับปรุง",
+            description="Analyze user behavior from Timeline and suggest improvements",
             input_schema={
                 "type": "object",
                 "properties": {
                     "user_id": {
                         "type": "string",
-                        "description": "รหัสผู้ใช้"
+                        "description": "User ID"
                     },
                     "period": {
                         "type": "string",
-                        "description": "ช่วงเวลา (today, week, month)",
+                        "description": "Time period (today, week, month)",
                         "enum": ["today", "week", "month"]
                     }
                 },
@@ -267,17 +267,17 @@ class ToolRegistry:
         
         self.register_tool(
             name="get_activity_timeline",
-            description="ดูประวัติกิจกรรมและเหตุการณ์ของผู้ใช้",
+            description="View user's activity and event history",
             input_schema={
                 "type": "object",
                 "properties": {
                     "user_id": {
                         "type": "string",
-                        "description": "รหัสผู้ใช้"
+                        "description": "User ID"
                     },
                     "limit": {
                         "type": "integer",
-                        "description": "จำนวนรายการสูงสุด"
+                        "description": "Maximum number of items"
                     }
                 }
             },
@@ -288,13 +288,13 @@ class ToolRegistry:
         
         self.register_tool(
             name="get_doctor_notes",
-            description="ดูบันทึกและคำแนะนำจากแพทย์",
+            description="View doctor's notes and recommendations",
             input_schema={
                 "type": "object",
                 "properties": {
                     "user_id": {
                         "type": "string",
-                        "description": "รหัสผู้ป่วย"
+                        "description": "Patient ID"
                     }
                 },
                 "required": ["user_id"]
@@ -304,17 +304,17 @@ class ToolRegistry:
         
         self.register_tool(
             name="apply_doctor_recommendations",
-            description="ปรับตาราง Timeline ตามคำแนะนำของแพทย์",
+            description="Update Timeline schedule according to doctor's recommendations",
             input_schema={
                 "type": "object",
                 "properties": {
                     "user_id": {
                         "type": "string",
-                        "description": "รหัสผู้ป่วย"
+                        "description": "Patient ID"
                     },
                     "note_id": {
                         "type": "string",
-                        "description": "รหัสบันทึกของแพทย์"
+                        "description": "Doctor note ID"
                     }
                 },
                 "required": ["user_id"]
@@ -326,13 +326,13 @@ class ToolRegistry:
         
         self.register_tool(
             name="get_user_info",
-            description="ดูข้อมูลผู้ใช้ รวมถึงสุขภาพ รถเข็น และห้องปัจจุบัน",
+            description="View user information including health, wheelchair, and current room",
             input_schema={
                 "type": "object",
                 "properties": {
                     "user_id": {
                         "type": "string",
-                        "description": "รหัสผู้ใช้"
+                        "description": "User ID"
                     }
                 }
             },
@@ -392,16 +392,16 @@ class ToolRegistry:
         
         # Validate room has the appliance
         room_appliances = {
-            "bedroom": ["light", "alarm", "aircon"],
+            "bedroom": ["light", "alarm", "AC"],
             "bathroom": ["light"],
             "kitchen": ["light", "alarm"],
-            "livingroom": ["light", "fan", "tv", "aircon"]
+            "livingroom": ["light", "fan", "tv", "AC"]
         }
         
         if appliance not in room_appliances.get(room, []):
             return {
                 "success": False,
-                "error": f"{self._get_room_th(room)}ไม่มี{self._get_appliance_th(appliance)}"
+                "error": f"{self._get_room_en(room)} has no {self._get_appliance_en(appliance)}"
             }
         
         # Send MQTT command
@@ -417,10 +417,10 @@ class ToolRegistry:
         except Exception as e:
             logger.warning(f"Backend update failed: {e}")
         
-        action = "เปิด" if state else "ปิด"
+        action = "Turned on" if state else "Turned off"
         return {
             "success": success,
-            "message": f"{action}{self._get_appliance_th(appliance)}ใน{self._get_room_th(room)}แล้ว" if success else "ไม่สามารถส่งคำสั่งได้",
+            "message": f"{action} {self._get_appliance_en(appliance)} in {self._get_room_en(room)}" if success else "Unable to send command",
             "room": room,
             "appliance": appliance,
             "state": state
@@ -433,7 +433,7 @@ class ToolRegistry:
         
         return {
             "room": room,
-            "room_name_th": self._get_room_th(room),
+            "room_name_en": self._get_room_en(room),
             "status": status,
             "timestamp": datetime.now().isoformat()
         }
@@ -443,8 +443,8 @@ class ToolRegistry:
         location = self.mqtt_client.get_user_location()
         return {
             **location,
-            "user_name": "สมชาย ใจดี",
-            "room_th": self._get_room_th(location.get("room", "unknown"))
+            "user_name": "Somchai Jaidee",
+            "room_en": self._get_room_en(location.get("room", "unknown"))
         }
     
     async def _handle_turn_off_all(self, args: Dict) -> Dict:
@@ -454,10 +454,10 @@ class ToolRegistry:
         rooms_to_control = [room] if room else ["bedroom", "bathroom", "kitchen", "livingroom"]
         
         room_appliances = {
-            "bedroom": ["light", "alarm", "aircon"],
+            "bedroom": ["light", "alarm", "AC"],
             "bathroom": ["light"],
             "kitchen": ["light", "alarm"],
-            "livingroom": ["light", "fan", "tv", "aircon"]
+            "livingroom": ["light", "fan", "tv", "AC"]
         }
         
         results = []
@@ -468,7 +468,7 @@ class ToolRegistry:
         
         return {
             "success": True,
-            "message": f"ปิดเครื่องใช้ไฟฟ้าทั้งหมด{f'ใน{self._get_room_th(room)}' if room else ''}แล้ว",
+            "message": f"Turned off all appliances{f' in {self._get_room_en(room)}' if room else ''}",
             "details": results
         }
     
@@ -493,7 +493,7 @@ class ToolRegistry:
         
         return {
             "success": True,
-            "message": f"ส่งการแจ้งเตือนฉุกเฉิน ({event_type}) แล้ว",
+            "message": f"Emergency alert ({event_type}) sent",
             "event_type": event_type,
             "room": room
         }
@@ -506,46 +506,46 @@ class ToolRegistry:
             "sleep": {
                 "actions": [
                     {"room": "bedroom", "appliance": "light", "state": False},
-                    {"room": "bedroom", "appliance": "aircon", "state": True},
+                    {"room": "bedroom", "appliance": "AC", "state": True},
                     {"room": "livingroom", "appliance": "light", "state": False},
                     {"room": "livingroom", "appliance": "tv", "state": False}
                 ],
-                "message": "ตั้งค่าโหมดนอนหลับแล้ว"
+                "message": "Sleep mode activated"
             },
             "wake_up": {
                 "actions": [
                     {"room": "bedroom", "appliance": "light", "state": True},
-                    {"room": "bedroom", "appliance": "aircon", "state": False},
+                    {"room": "bedroom", "appliance": "AC", "state": False},
                     {"room": "kitchen", "appliance": "light", "state": True}
                 ],
-                "message": "ตั้งค่าโหมดตื่นนอนแล้ว"
+                "message": "Wake up mode activated"
             },
             "movie": {
                 "actions": [
                     {"room": "livingroom", "appliance": "light", "state": False},
                     {"room": "livingroom", "appliance": "tv", "state": True},
-                    {"room": "livingroom", "appliance": "aircon", "state": True}
+                    {"room": "livingroom", "appliance": "AC", "state": True}
                 ],
-                "message": "ตั้งค่าโหมดดูหนังแล้ว"
+                "message": "Movie mode activated"
             },
             "away": {
                 "actions": [
                     {"room": "bedroom", "appliance": "light", "state": False},
-                    {"room": "bedroom", "appliance": "aircon", "state": False},
+                    {"room": "bedroom", "appliance": "AC", "state": False},
                     {"room": "bathroom", "appliance": "light", "state": False},
                     {"room": "kitchen", "appliance": "light", "state": False},
                     {"room": "livingroom", "appliance": "light", "state": False},
                     {"room": "livingroom", "appliance": "tv", "state": False},
-                    {"room": "livingroom", "appliance": "aircon", "state": False}
+                    {"room": "livingroom", "appliance": "AC", "state": False}
                 ],
-                "message": "ตั้งค่าโหมดออกจากบ้านแล้ว - ปิดเครื่องใช้ไฟฟ้าทั้งหมด"
+                "message": "Away mode activated - all appliances turned off"
             },
             "home": {
                 "actions": [
                     {"room": "livingroom", "appliance": "light", "state": True},
-                    {"room": "livingroom", "appliance": "aircon", "state": True}
+                    {"room": "livingroom", "appliance": "AC", "state": True}
                 ],
-                "message": "ตั้งค่าโหมดกลับบ้านแล้ว"
+                "message": "Home mode activated"
             }
         }
         
@@ -562,7 +562,7 @@ class ToolRegistry:
         return {
             "success": True,
             "scene": scene,
-            "message": config.get("message", f"ตั้งค่าฉาก {scene} แล้ว"),
+            "message": config.get("message", f"Scene {scene} activated"),
             "actions_performed": len(actions)
         }
     
@@ -581,7 +581,7 @@ class ToolRegistry:
                     "success": True,
                     "user_id": user_id,
                     "routines": data.get("activities", []),
-                    "message": f"พบ {len(data.get('activities', []))} กิจกรรม"
+                    "message": f"Found {len(data.get('activities', []))} activities"
                 }
         except Exception as e:
             logger.error(f"Get routines failed: {e}")
@@ -609,7 +609,7 @@ class ToolRegistry:
         return {
             "success": True,
             "routine": routine,
-            "message": f"เพิ่มกิจกรรม '{title}' เวลา {time} แล้ว"
+            "message": f"Added activity '{title}' at {time}"
         }
     
     async def _handle_update_routine(self, args: Dict) -> Dict:
@@ -623,7 +623,7 @@ class ToolRegistry:
             "success": True,
             "routine_id": routine_id,
             "updates": updates,
-            "message": f"อัปเดตกิจกรรม {routine_id} แล้ว"
+            "message": f"Updated activity {routine_id}"
         }
     
     async def _handle_delete_routine(self, args: Dict) -> Dict:
@@ -635,7 +635,7 @@ class ToolRegistry:
         return {
             "success": True,
             "routine_id": routine_id,
-            "message": f"ลบกิจกรรม {routine_id} แล้ว"
+            "message": f"Deleted activity {routine_id}"
         }
     
     # ==================== Behavior Analysis Handlers ====================
@@ -660,7 +660,7 @@ class ToolRegistry:
                     "patterns": data.get("patterns", []),
                     "anomalies": data.get("anomalies", []),
                     "recommendations": data.get("recommendations", []),
-                    "message": "วิเคราะห์พฤติกรรมเสร็จสิ้น"
+                    "message": "Behavior analysis completed"
                 }
         except Exception as e:
             # Return mock analysis if backend fails
@@ -669,16 +669,16 @@ class ToolRegistry:
                 "user_id": user_id,
                 "period": period,
                 "patterns": [
-                    {"pattern": "ตื่นนอนตรงเวลา", "frequency": "ทุกวัน", "status": "normal"},
-                    {"pattern": "ทานยาสม่ำเสมอ", "frequency": "ทุกวัน", "status": "normal"},
-                    {"pattern": "เคลื่อนไหวปานกลาง", "frequency": "ทุกวัน", "status": "normal"}
+                    {"pattern": "Wake up on time", "frequency": "Daily", "status": "normal"},
+                    {"pattern": "Take medication regularly", "frequency": "Daily", "status": "normal"},
+                    {"pattern": "Moderate movement", "frequency": "Daily", "status": "normal"}
                 ],
                 "anomalies": [],
                 "recommendations": [
-                    "ควรเพิ่มการออกกำลังกายอีกเล็กน้อย",
-                    "ควรทานน้ำให้มากขึ้น"
+                    "Should increase exercise slightly",
+                    "Should drink more water"
                 ],
-                "message": "วิเคราะห์พฤติกรรมเสร็จสิ้น"
+                "message": "Behavior analysis completed"
             }
     
     async def _handle_get_timeline(self, args: Dict) -> Dict:
@@ -713,16 +713,16 @@ class ToolRegistry:
             "notes": [
                 {
                     "id": "DN001",
-                    "doctor": "นพ.วิชัย สุขใจ",
+                    "doctor": "Dr. Wichai Sukjai",
                     "date": "2024-12-01",
-                    "notes": "ผู้ป่วยมีสุขภาพดี ควรออกกำลังกายเบาๆ ทุกวัน",
+                    "notes": "Patient is healthy, should do light exercise daily",
                     "medications": [
-                        {"name": "ยาความดัน", "dose": "1 เม็ด", "frequency": "วันละ 1 ครั้ง หลังอาหารเช้า"}
+                        {"name": "Blood Pressure Medication", "dose": "1 tablet", "frequency": "Once daily after breakfast"}
                     ],
                     "next_appointment": "2025-01-15"
                 }
             ],
-            "message": "ดึงบันทึกแพทย์สำเร็จ"
+            "message": "Retrieved doctor notes successfully"
         }
     
     async def _handle_apply_doctor_recommendations(self, args: Dict) -> Dict:
@@ -734,8 +734,8 @@ class ToolRegistry:
         # For demo, we'll add medication reminders
         
         new_routines = [
-            {"time": "08:00", "title": "ทานยาความดัน", "description": "1 เม็ด หลังอาหารเช้า"},
-            {"time": "10:00", "title": "ออกกำลังกายเบาๆ", "description": "เดินรอบบ้าน 15 นาที"}
+            {"time": "08:00", "title": "Take Blood Pressure Medication", "description": "1 tablet after breakfast"},
+            {"time": "10:00", "title": "Light Exercise", "description": "Walk around house 15 minutes"}
         ]
         
         return {
@@ -743,7 +743,7 @@ class ToolRegistry:
             "user_id": user_id,
             "note_id": note_id,
             "added_routines": new_routines,
-            "message": f"ปรับตารางตามคำแนะนำของแพทย์แล้ว เพิ่ม {len(new_routines)} กิจกรรม"
+            "message": f"Updated schedule per doctor recommendations, added {len(new_routines)} activities"
         }
     
     async def _handle_get_user_info(self, args: Dict) -> Dict:
@@ -763,7 +763,7 @@ class ToolRegistry:
             return {
                 "success": True,
                 "id": "P001",
-                "name": "สมชาย ใจดี",
+                "name": "Somchai Jaidee",
                 "age": 65,
                 "room": "bedroom",
                 "wheelchair": "WC001",
@@ -774,24 +774,24 @@ class ToolRegistry:
     # ==================== Helpers ====================
     
     @staticmethod
-    def _get_room_th(room: str) -> str:
-        """Get Thai room name."""
+    def _get_room_en(room: str) -> str:
+        """Get English room name."""
         names = {
-            "bedroom": "ห้องนอน",
-            "bathroom": "ห้องน้ำ",
-            "kitchen": "ห้องครัว",
-            "livingroom": "ห้องนั่งเล่น"
+            "bedroom": "Bedroom",
+            "bathroom": "Bathroom",
+            "kitchen": "Kitchen",
+            "livingroom": "Living Room"
         }
         return names.get(room, room)
     
     @staticmethod
-    def _get_appliance_th(appliance: str) -> str:
-        """Get Thai appliance name."""
+    def _get_appliance_en(appliance: str) -> str:
+        """Get English appliance name."""
         names = {
-            "light": "ไฟ",
-            "aircon": "แอร์",
-            "fan": "พัดลม",
-            "tv": "ทีวี",
-            "alarm": "สัญญาณเตือน"
+            "light": "Light",
+            "AC": "AC",
+            "fan": "Fan",
+            "tv": "TV",
+            "alarm": "Alarm"
         }
         return names.get(appliance, appliance)

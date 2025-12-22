@@ -1,0 +1,11 @@
+# WheelSense MCP Client Requirements
+
+# HTTP Client
+httpx>=0.26.0
+
+# Async
+asyncio
+
+# Logging
+logging
+

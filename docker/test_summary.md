@@ -1,17 +1,17 @@
-# สรุปผลการทดสอบ WheelSense System
+# WheelSense System Test Summary
 
-## สถานะ Containers
-✅ **ทั้งหมดทำงานปกติ:**
+## Container Status
+✅ **All services running normally:**
 - ✅ Backend (port 8000) - Healthy
 - ✅ MCP Server (port 8080) - Healthy  
 - ✅ MongoDB (port 27017) - Healthy
 - ✅ Mosquitto MQTT (port 1883, 9001) - Healthy
 - ✅ Dashboard (port 3000) - Running
 - ✅ Nginx (port 80) - Running
-- ⚠️ Ollama (port 11434) - Unhealthy (ไม่มีโมเดล)
+- ⚠️ Ollama (port 11434) - Unhealthy (no model available)
 
-## API Endpoints ที่ทดสอบ
-✅ **ทั้งหมดทำงานได้:**
+## Tested API Endpoints
+✅ **All endpoints working:**
 - ✅ MCP Health (Direct): `http://localhost:8080/health`
 - ✅ MCP Health (via Nginx): `http://localhost/mcp/health`
 - ✅ Backend Health (Direct): `http://localhost:8000/health`
@@ -20,30 +20,30 @@
 - ✅ Chat API (via Nginx): `http://localhost/mcp/chat`
 - ✅ Ollama Tags: `http://localhost:11434/api/tags`
 
-## ปัญหาที่พบและแก้ไข
+## Issues Found and Fixed
 
-### 1. ✅ แก้ไขแล้ว: Error Handling
-- **ปัญหา:** API ส่ง "Error: 404" กลับมาเป็น response string แทน HTTP error
-- **แก้ไข:** 
-  - LLM client ตอนนี้ throw exception แทนการส่ง error string
-  - MCP server จับ exception และส่ง HTTP 503 พร้อมข้อความภาษาไทย
-  - Frontend จับ error และแสดงข้อความที่เหมาะสม
+### 1. ✅ Fixed: Error Handling
+- **Issue:** API returned "Error: 404" as response string instead of HTTP error
+- **Fix:** 
+  - LLM client now throws exception instead of returning error string
+  - MCP server catches exception and returns HTTP 503 with appropriate message
+  - Frontend catches error and displays appropriate message
 
-### 2. ⚠️ ยังต้องแก้: Ollama Model ไม่มี
-- **ปัญหา:** Ollama ไม่มีโมเดล `llama3.2` ทำให้ chat API ส่ง 503
-- **สาเหตุ:** Network connection กับ Ollama registry ไม่ได้
-- **วิธีแก้:**
+### 2. ⚠️ Still needs fixing: Ollama Model Missing
+- **Issue:** Ollama doesn't have `llama3.2` model, causing chat API to return 503
+- **Cause:** Network connection to Ollama registry unavailable
+- **Solution:**
   ```bash
-  # เมื่อ network พร้อมแล้ว
+  # When network is available
   docker exec wheelsense-ollama ollama pull llama3.2
   
-  # หรือใช้โมเดลที่เล็กกว่า
+  # Or use a smaller model
   docker exec wheelsense-ollama ollama pull llama3.2:1b
   ```
 
-## ผลการทดสอบ Chat API
+## Chat API Test Results
 
-### ก่อนแก้ไข:
+### Before fix:
 ```json
 {
   "response": "Error: 404",
@@ -51,26 +51,25 @@
   "timestamp": "..."
 }
 ```
-Status: 200 (ผิดพลาด - ควรเป็น error)
+Status: 200 (incorrect - should be error)
 
-### หลังแก้ไข:
+### After fix:
 ```json
 {
-  "detail": "ไม่สามารถเชื่อมต่อกับระบบ AI ได้: Ollama service returned error 404. Please check if Ollama is running."
+  "detail": "Unable to connect to AI system: Ollama service returned error 404. Please check if Ollama is running."
 }
 ```
-Status: 503 (ถูกต้อง - HTTP error code)
+Status: 503 (correct - HTTP error code)
 
 ## Frontend Error Handling
-✅ Frontend ตอนนี้จะ:
-1. จับ HTTP 503 error
-2. แสดงข้อความภาษาไทยที่เข้าใจง่าย
-3. แสดง fallback responses สำหรับคำถามพื้นฐาน
-4. ไม่แสดง "Error: 404" ใน UI
+✅ Frontend now:
+1. Catches HTTP 503 error
+2. Displays user-friendly error message
+3. Shows fallback responses for basic queries
+4. Does not display "Error: 404" in UI
 
-## สรุป
-- ✅ ระบบทำงานปกติทั้งหมด
-- ✅ Error handling ถูกต้องแล้ว
-- ⚠️ ต้องดาวน์โหลด Ollama model เมื่อ network พร้อม
-- ✅ Frontend จะแสดงข้อความที่เหมาะสมเมื่อ AI ไม่พร้อมใช้งาน
-
+## Summary
+- ✅ All systems running normally
+- ✅ Error handling is correct
+- ⚠️ Need to download Ollama model when network is available
+- ✅ Frontend displays appropriate messages when AI is unavailable

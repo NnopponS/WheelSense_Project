@@ -1,5 +1,5 @@
 """
-WheelSense MCP Server - Configuration
+WheelSense Backend - Configuration
 """
 
 from pydantic_settings import BaseSettings
@@ -18,14 +18,18 @@ class Settings(BaseSettings):
     MQTT_USER: Optional[str] = None
     MQTT_PASS: Optional[str] = None
     
-    # Local LLM
+    # AI Services
+    GEMINI_API_KEY: Optional[str] = None
     OLLAMA_HOST: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.2"
     
-    # Server
-    SERVER_HOST: str = "0.0.0.0"
-    SERVER_PORT: int = 8080
+    # Application
+    ENVIRONMENT: str = "development"
+    DEBUG: bool = True
     
+    # Emergency
+    EMERGENCY_NOTIFICATION_URL: Optional[str] = None
+
     model_config = {
         "env_file": ".env",
         "case_sensitive": True
@@ -33,4 +37,11 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+
+
+
+
+
 

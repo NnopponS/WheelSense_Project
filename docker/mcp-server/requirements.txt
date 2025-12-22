@@ -1,8 +1,9 @@
-# WheelSense MCP Server Requirements
+# WheelSense MCP Server Requirements (Main Server)
 
 # Web Framework
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
 
 # Database
 motor>=3.3.0
@@ -14,15 +15,35 @@ paho-mqtt>=1.6.1
 # LLM
 httpx>=0.26.0
 
+# AI/ML
+google-generativeai>=0.3.0
+
+# Translation (Transformer-based)
+transformers>=4.35.0
+torch>=2.0.0
+sentencepiece>=0.1.99
+
+# Image Processing
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# WebSocket
+websockets>=12.0
+
 # MCP Protocol
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
 
 # Async
 aiofiles>=23.2.0
+aiocache>=0.12.0
 
 # JSON Schema
 jsonschema>=4.20.0
+
+# Utilities
+python-dotenv>=1.0.0
 
 # Logging
 structlog>=24.1.0

@@ -203,7 +203,7 @@ class MQTTClient:
         
         return {
             "current_room": current_room,
-            "room_name_th": self._get_room_th(current_room) if current_room else None,
+            "room_name": self._get_room_en(current_room) if current_room else None,
             "timestamp": datetime.now().isoformat(),
             "all_rooms": {
                 room: self.room_status.get(room, {}).get("user_detected", False)
@@ -212,13 +212,13 @@ class MQTTClient:
         }
     
     @staticmethod
-    def _get_room_th(room: str) -> str:
-        """Get Thai room name."""
+    def _get_room_en(room: str) -> str:
+        """Get English room name."""
         names = {
-            "bedroom": "ห้องนอน",
-            "bathroom": "ห้องน้ำ",
-            "kitchen": "ห้องครัว",
-            "livingroom": "ห้องนั่งเล่น"
+            "bedroom": "Bedroom",
+            "bathroom": "Bathroom",
+            "kitchen": "Kitchen",
+            "livingroom": "Living Room"
         }
         return names.get(room, room)
 

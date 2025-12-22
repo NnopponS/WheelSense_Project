@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -226,25 +226,25 @@
         <div class="status-bar">
             <div class="status-indicator">
                 <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">ยังไม่เชื่อมต่อ</span>
+                <span id="statusText">Not Connected</span>
             </div>
             <div>
-                <button class="btn btn-primary" onclick="connect()">เชื่อมต่อ</button>
-                <button class="btn btn-danger" onclick="disconnect()">ยกเลิก</button>
+                <button class="btn btn-primary" onclick="connect()">Connect</button>
+                <button class="btn btn-danger" onclick="disconnect()">Disconnect</button>
             </div>
         </div>
 
         <div class="card">
-            <h2>📍 ตำแหน่งปัจจุบัน</h2>
+            <h2>📍 Current Location</h2>
             <div class="current-position">
-                <span class="position-label">Wheelchair อยู่ที่:</span>
+                <span class="position-label">Wheelchair Location:</span>
                 <span class="position-value" id="currentRoom">-</span>
             </div>
         </div>
 
         <div class="card">
-            <h2>🔄 จำลองการตรวจจับ Wheelchair</h2>
-            <p style="color: #a0aec0; margin-bottom: 1rem;">คลิกเลือกห้องที่ต้องการจำลองการตรวจจับ wheelchair</p>
+            <h2>🔄 Simulate Wheelchair Detection</h2>
+            <p style="color: #a0aec0; margin-bottom: 1rem;">Click to select the room to simulate wheelchair detection</p>
 
             <div class="form-group">
                 <label>Wheelchair ID:</label>
@@ -257,22 +257,22 @@
             <div class="room-buttons">
                 <button class="room-btn" onclick="simulateDetection('livingroom')">
                     <span class="emoji">🛋️</span>
-                    <span>ห้องนั่งเล่น</span>
+                    <span>Living Room</span>
                     <span style="font-size: 0.8rem; color: #a0aec0">livingroom</span>
                 </button>
                 <button class="room-btn" onclick="simulateDetection('bedroom')">
                     <span class="emoji">🛏️</span>
-                    <span>ห้องนอน</span>
+                    <span>Bedroom</span>
                     <span style="font-size: 0.8rem; color: #a0aec0">bedroom</span>
                 </button>
                 <button class="room-btn" onclick="simulateDetection('kitchen')">
                     <span class="emoji">🍳</span>
-                    <span>ห้องครัว</span>
+                    <span>Kitchen</span>
                     <span style="font-size: 0.8rem; color: #a0aec0">kitchen</span>
                 </button>
                 <button class="room-btn" onclick="simulateDetection('bathroom')">
                     <span class="emoji">🚿</span>
-                    <span>ห้องน้ำ</span>
+                    <span>Bathroom</span>
                     <span style="font-size: 0.8rem; color: #a0aec0">bathroom</span>
                 </button>
             </div>
@@ -281,7 +281,7 @@
         <div class="card">
             <h2>📝 Log</h2>
             <div class="log-container" id="logContainer">
-                <div class="log-entry">เริ่มต้นระบบ...</div>
+                <div class="log-entry">System starting...</div>
             </div>
         </div>
     </div>
@@ -294,7 +294,7 @@
             const container = document.getElementById('logContainer');
             const entry = document.createElement('div');
             entry.className = `log-entry ${type}`;
-            const time = new Date().toLocaleTimeString('th-TH');
+            const time = new Date().toLocaleTimeString('en-US');
             entry.innerHTML = `<span class="time">[${time}]</span> ${message}`;
             container.appendChild(entry);
             container.scrollTop = container.scrollHeight;
@@ -305,10 +305,10 @@
             const text = document.getElementById('statusText');
             if (connected) {
                 dot.classList.add('connected');
-                text.textContent = 'เชื่อมต่อแล้ว';
+                text.textContent = 'Connected';
             } else {
                 dot.classList.remove('connected');
-                text.textContent = 'ยังไม่เชื่อมต่อ';
+                text.textContent = 'Not Connected';
             }
         }
 
@@ -316,10 +316,10 @@
             currentRoom = room;
             const roomEl = document.getElementById('currentRoom');
             const roomNames = {
-                'livingroom': '🛋️ ห้องนั่งเล่น',
-                'bedroom': '🛏️ ห้องนอน',
-                'kitchen': '🍳 ห้องครัว',
-                'bathroom': '🚿 ห้องน้ำ'
+                'livingroom': '🛋️ Living Room',
+                'bedroom': '🛏️ Bedroom',
+                'kitchen': '🍳 Kitchen',
+                'bathroom': '🚿 Bathroom'
             };
             roomEl.textContent = roomNames[room] || room;
 
@@ -338,24 +338,24 @@
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//localhost:8000/ws`;
 
-            log(`กำลังเชื่อมต่อ... ${wsUrl}`);
+            log(`Connecting... ${wsUrl}`);
 
             try {
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = () => {
-                    log('✅ เชื่อมต่อ WebSocket สำเร็จ!', 'sent');
+                    log('✅ WebSocket connected successfully!', 'sent');
                     updateStatus(true);
                 };
 
                 ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        log(`📥 ได้รับ: ${data.type}`, 'received');
+                        log(`📥 Received: ${data.type}`, 'received');
 
                         if (data.type === 'wheelchair_detection') {
                             updateCurrentRoom(data.room);
-                            log(`🦽 Detection: wheelchair ใน ${data.room} (detected: ${data.detected})`, 'received');
+                            log(`🦽 Detection: wheelchair in ${data.room} (detected: ${data.detected})`, 'received');
                         }
                     } catch (e) {
                         // Binary data or non-JSON
@@ -368,12 +368,12 @@
                 };
 
                 ws.onclose = () => {
-                    log('🔌 การเชื่อมต่อถูกปิด', 'error');
+                    log('🔌 Connection closed', 'error');
                     updateStatus(false);
                 };
 
             } catch (e) {
-                log(`❌ ไม่สามารถเชื่อมต่อได้: ${e.message}`, 'error');
+                log(`❌ Unable to connect: ${e.message}`, 'error');
             }
         }
 
@@ -383,12 +383,12 @@
                 ws = null;
             }
             updateStatus(false);
-            log('🔌 ยกเลิกการเชื่อมต่อ');
+            log('🔌 Disconnected');
         }
 
         function simulateDetection(room) {
             if (!ws || ws.readyState !== WebSocket.OPEN) {
-                log('❌ ยังไม่ได้เชื่อมต่อ WebSocket', 'error');
+                log('❌ WebSocket not connected', 'error');
                 return;
             }
 
@@ -413,7 +413,7 @@
             };
 
             ws.send(JSON.stringify(detection));
-            log(`📤 ส่ง Detection: ${wheelchairId} ไป ${room}`, 'sent');
+            log(`📤 Sent Detection: ${wheelchairId} to ${room}`, 'sent');
 
             // Update UI
             updateCurrentRoom(room);
@@ -427,7 +427,7 @@
 
         // Auto-connect on load
         window.onload = () => {
-            log('🚀 พร้อมใช้งาน - กดปุ่ม "เชื่อมต่อ" เพื่อเริ่มต้น');
+            log('🚀 Ready - Click "Connect" button to start');
         };
     </script>
 </body>
