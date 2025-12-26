@@ -14,10 +14,11 @@ from typing import Optional
 
 import websockets
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 from pydantic import BaseModel
+import httpx
 
 from .config import settings
 from .database import Database
@@ -71,6 +72,10 @@ async def lifespan(app: FastAPI):
     await db.connect()
     logger.info("✅ Database connected")
     
+    # Set database reference in stream_handler
+    from .websocket_handler import stream_handler
+    stream_handler.db = db
+    
     # Fix AV to AC in database (if any exists)
     try:
         result = await db.db.appliances.update_many(
@@ -90,7 +95,7 @@ async def lifespan(app: FastAPI):
     
     # Set callback for wheelchair detection to update database
     async def on_wheelchair_detection(room: str, detection: dict):
-        """Callback when wheelchair is detected - update position in database."""
+        """Callback when wheelchair is detected - update position in database and save timeline."""
         if not detection.get("detected", False):
             return
         
@@ -105,8 +110,9 @@ async def lifespan(app: FastAPI):
             # Get the wheelchair
             wheelchair = wheelchairs[0]
             wheelchair_id = wheelchair.get("id", str(wheelchair.get("_id")))
+            previous_room = wheelchair.get("currentRoom")  # Track previous room for timeline
             
-            logger.info(f"🦽 Processing detection for wheelchair {wheelchair_id} in room: {room}")
+            logger.info(f"🦽 Processing detection for wheelchair {wheelchair_id} in room: {room} (was: {previous_room})")
             
             # Get current positions
             map_config = await db.get_map_config()
@@ -161,11 +167,39 @@ async def lifespan(app: FastAPI):
                 await db.save_wheelchair_positions(positions)
                 logger.info(f"📍 Updated wheelchair {wheelchair_id} to {room}: ({new_x:.1f}%, {new_y:.1f}%) [center of room]")
             
-            # Also update the wheelchair document with current room
+            # Update the wheelchair document with current room
             await db.db.wheelchairs.update_one(
                 {"_id": wheelchair["_id"]},
                 {"$set": {"currentRoom": room, "lastUpdated": datetime.now()}}
             )
+            
+            # ===== TIMELINE: Save location change event if room changed =====
+            if previous_room != room:
+                # Get user/patient info linked to this wheelchair
+                patient = await db.db.patients.find_one({"wheelchairId": wheelchair_id})
+                user_id = patient.get("id", "P001") if patient else "P001"
+                user_name = patient.get("name", "User") if patient else "User"
+                
+                # Save timeline event
+                confidence = detection.get("confidence", 0.0)
+                timeline_event = await db.save_location_event(
+                    user_id=user_id,
+                    wheelchair_id=wheelchair_id,
+                    from_room=previous_room,
+                    to_room=room,
+                    user_name=user_name,
+                    detection_confidence=confidence,
+                    bbox=bbox
+                )
+                
+                logger.info(f"📋 Timeline: {user_name} moved from {previous_room} to {room}")
+                
+                # Broadcast timeline event to all connected clients
+                if mqtt_handler:
+                    await mqtt_handler._broadcast_ws({
+                        "type": "timeline_event",
+                        "event": timeline_event
+                    })
             
         except Exception as e:
             logger.error(f"Error updating wheelchair position: {e}", exc_info=True)
@@ -177,6 +211,7 @@ async def lifespan(app: FastAPI):
     # Set detection callback and mqtt_handler reference in websocket handler
     stream_handler.on_detection_callback = on_wheelchair_detection
     stream_handler.mqtt_handler = mqtt_handler
+    stream_handler.db = db
     logger.info("✅ WebSocket handler configured for detection")
     
     # Initialize AI service
@@ -229,6 +264,68 @@ async def lifespan(app: FastAPI):
     
     # Start camera WebSocket server in background
     camera_ws_task = asyncio.create_task(camera_ws_server())
+    
+    # ===== UDP Discovery Server for ESP32 Auto-Discovery =====
+    import socket
+    import os
+    
+    def get_host_ip():
+        """Get the host's IP address. Favors HOST_IP env var if set."""
+        # First check environment variable (passed from docker-compose)
+        env_ip = os.getenv("HOST_IP")
+        if env_ip and env_ip != "127.0.0.1":
+            return env_ip
+            
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except:
+            return "127.0.0.1"
+    
+    async def udp_discovery_server():
+        """UDP Server that responds to WheelSense discovery broadcasts."""
+        discovery_port = 5555
+        host_ip = get_host_ip()
+        
+        # Create UDP socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("0.0.0.0", discovery_port))
+        sock.setblocking(False)
+        
+        logger.info(f"✅ UDP Discovery server started on port {discovery_port} (Announcing IP: {host_ip})")
+        
+        loop = asyncio.get_event_loop()
+        
+        while True:
+            try:
+                # Non-blocking receive
+                data, addr = await loop.run_in_executor(None, lambda: sock.recvfrom(1024))
+                message = data.decode().strip()
+                
+                if message == "WHEELSENSE_DISCOVER":
+                    # Send response with server info
+                    response = json.dumps({
+                        "type": "WHEELSENSE_SERVER",
+                        "ip": host_ip,
+                        "websocket_port": camera_ws_port,
+                        "mqtt_port": 1883,
+                        "http_port": 8000
+                    })
+                    sock.sendto(response.encode(), addr)
+                    logger.info(f"📡 Discovery: Sent server info to {addr[0]}")
+                    
+            except BlockingIOError:
+                await asyncio.sleep(0.1)
+            except Exception as e:
+                logger.error(f"UDP Discovery error: {e}")
+                await asyncio.sleep(1)
+    
+    # Start UDP discovery server
+    discovery_task = asyncio.create_task(udp_discovery_server())
     
     yield
     
@@ -295,6 +392,20 @@ async def health_check():
             "ai": ai_service is not None
         }
     }
+
+
+@app.get("/nodes/live-status")
+async def get_nodes_live_status():
+    """Get real-time online/offline status of all connected camera nodes."""
+    if stream_handler:
+        devices = stream_handler.get_all_device_status()
+        return {
+            "nodes": devices,
+            "total": len(devices),
+            "online_count": sum(1 for d in devices if d.get("online", False)),
+            "timestamp": datetime.now().isoformat()
+        }
+    return {"nodes": [], "total": 0, "online_count": 0, "timestamp": datetime.now().isoformat()}
 
 
 # ==================== Translation API ====================
@@ -517,57 +628,79 @@ async def websocket_endpoint(websocket: WebSocket):
     """WebSocket for real-time updates (status, events, etc.)."""
     await websocket.accept()
     
-    if mqtt_handler:
-        mqtt_handler.add_websocket(websocket)
+    # Get mqtt_handler from app state if available, otherwise fallback to global
+    handler = getattr(app.state, "mqtt_handler", mqtt_handler)
+    
+    if handler:
+        logger.info(f"Adding websocket to MQTT handler id={id(handler)}")
+        handler.add_websocket(websocket)
+        logger.info(f"Current websocket count: {len(handler.websockets)}")
+    else:
+        logger.error("MQTT handler is None in websocket_endpoint!")
     
     try:
         while True:
             data = await websocket.receive_text()
             # Handle incoming WebSocket messages if needed
-            message = json.loads(data)
-            msg_type = message.get("type", "")
-            
-            if msg_type == "control":
-                # Handle control commands via WebSocket
-                await mqtt_handler.send_control_command(
-                    room=message["room"],
-                    appliance=message["appliance"],
-                    state=message["state"]
-                )
-            
-            elif msg_type == "wheelchair_detection":
-                # Handle wheelchair detection from test simulator or camera-service
-                room = message.get("room", "livingroom")
-                detected = message.get("detected", False)
-                bbox = message.get("bbox")
-                frame_size = message.get("frame_size")
+            try:
+                message = json.loads(data)
+                msg_type = message.get("type", "")
                 
-                logger.info(f"🦽 Wheelchair detection from client: room={room}, detected={detected}")
+                if msg_type == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
                 
-                # Broadcast to all clients
-                if mqtt_handler:
-                    await mqtt_handler._broadcast_ws({
-                        "type": "wheelchair_detection",
-                        "room": room,
-                        "device_id": message.get("device_id", "TEST"),
-                        "detected": detected,
-                        "confidence": message.get("confidence", 0.9),
-                        "bbox": bbox,
-                        "frame_size": frame_size,
-                        "timestamp": datetime.now().isoformat()
-                    })
+                elif msg_type == "control":
+                    if handler:
+                        # Handle control commands via WebSocket
+                        await handler.send_control_command(
+                            room=message["room"],
+                            appliance=message["appliance"],
+                            state=message["state"]
+                        )
                 
-                # Also trigger database update callback
-                if detected and stream_handler.on_detection_callback:
-                    await stream_handler.on_detection_callback(room, {
-                        "detected": detected,
-                        "bbox": bbox,
-                        "frame_size": frame_size,
-                        "wheelchair_id": message.get("wheelchair_id")
-                    })
+                elif msg_type == "wheelchair_detection":
+                    # Handle wheelchair detection from test simulator or camera-service
+                    room = message.get("room", "livingroom")
+                    detected = message.get("detected", False)
+                    bbox = message.get("bbox")
+                    frame_size = message.get("frame_size")
+                    
+                    logger.info(f"🦽 Wheelchair detection from client: room={room}, detected={detected}")
+                    
+                    # Broadcast to all clients
+                    if handler:
+                        await handler._broadcast_ws({
+                            "type": "wheelchair_detection",
+                            "room": room,
+                            "device_id": message.get("device_id", "TEST"),
+                            "detected": detected,
+                            "confidence": message.get("confidence", 0.9),
+                            "bbox": bbox,
+                            "frame_size": frame_size,
+                            "timestamp": datetime.now().isoformat()
+                        })
+                    
+                    # Also trigger database update callback
+                    if detected and stream_handler.on_detection_callback:
+                        await stream_handler.on_detection_callback(room, {
+                            "detected": detected,
+                            "bbox": bbox,
+                            "frame_size": frame_size,
+                            "wheelchair_id": message.get("wheelchair_id")
+                        })
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON received on WebSocket: {data}")
+            except Exception as e:
+                logger.error(f"Error processing WebSocket message: {e}", exc_info=True)
+
     except WebSocketDisconnect:
-        if mqtt_handler:
-            mqtt_handler.remove_websocket(websocket)
+        logger.info("WebSocket disconnected")
+        if handler:
+            handler.remove_websocket(websocket)
+    except Exception as e:
+        logger.error(f"WebSocket endpoint error: {e}", exc_info=True)
+        if handler:
+            handler.remove_websocket(websocket)
 
 
 
@@ -684,6 +817,96 @@ async def get_activities(
         limit=limit
     )
     return {"activities": activities}
+
+
+# ==================== Timeline API ====================
+
+class TimelineQuery(BaseModel):
+    user_id: Optional[str] = None
+    room_id: Optional[str] = None
+    event_type: Optional[str] = None
+    date: Optional[str] = None
+    limit: int = 100
+
+
+@app.get("/timeline")
+async def get_timeline(
+    user_id: Optional[str] = None,
+    room_id: Optional[str] = None,
+    event_type: Optional[str] = None,
+    limit: int = 100
+):
+    """Get timeline events with optional filters."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    events = await db.get_timeline(
+        user_id=user_id,
+        room_id=room_id,
+        event_type=event_type,
+        limit=limit
+    )
+    return {"timeline": events, "count": len(events)}
+
+
+@app.get("/timeline/history")
+async def get_timeline_history(date: str, user_id: Optional[str] = None):
+    """Get timeline events for a specific date (historical analysis)."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    events = await db.get_timeline_by_date(date, user_id)
+    return {
+        "date": date,
+        "timeline": events,
+        "count": len(events)
+    }
+
+
+@app.get("/timeline/summary/{user_id}")
+async def get_timeline_summary(user_id: str, date: Optional[str] = None):
+    """Get summary of user's timeline for analysis."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    summary = await db.get_timeline_summary(user_id, date)
+    return summary
+
+
+class LocationEventRequest(BaseModel):
+    user_id: str
+    wheelchair_id: str
+    from_room: Optional[str] = None
+    to_room: str
+    user_name: Optional[str] = None
+    detection_confidence: float = 0.0
+    bbox: Optional[List] = None
+
+
+@app.post("/timeline/location")
+async def save_location_event(event: LocationEventRequest):
+    """Save a location change event to timeline."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    saved_event = await db.save_location_event(
+        user_id=event.user_id,
+        wheelchair_id=event.wheelchair_id,
+        from_room=event.from_room,
+        to_room=event.to_room,
+        user_name=event.user_name,
+        detection_confidence=event.detection_confidence,
+        bbox=event.bbox
+    )
+    
+    # Broadcast to WebSocket clients
+    if mqtt_handler:
+        await mqtt_handler._broadcast_ws({
+            "type": "timeline_event",
+            "event": saved_event
+        })
+    
+    return {"status": "saved", "event": saved_event}
 
 
 # ==================== User Management ====================
@@ -943,6 +1166,132 @@ async def get_devices():
     
     devices = await db.db.devices.find().to_list(length=1000)
     return {"devices": [Database._serialize_doc(d) for d in devices]}
+
+
+@app.delete("/map/devices/{device_id}")
+async def delete_device(device_id: str):
+    """Delete a device."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    # Try multiple ways to identify the device
+    query = {"$or": [{"id": device_id}, {"deviceId": device_id}]}
+    result = await db.db.devices.delete_one(query)
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Device not found")
+    
+    return {"status": "deleted"}
+
+
+@app.post("/nodes/{device_id}/config-mode")
+async def trigger_config_mode(device_id: str, request: Request):
+    """Trigger config mode on ESP32 device via HTTP."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    # Find device to get IP address
+    device = await db.db.devices.find_one({"$or": [{"id": device_id}, {"deviceId": device_id}]})
+    
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    
+    # Try to get IP from device document or device_status
+    device_ip = device.get("ip") or device.get("ip_address")
+    
+    if not device_ip:
+        # Try to get from websocket handler device_status
+        status = stream_handler.device_status.get(device_id, {})
+        device_ip = status.get("ip", "")
+    
+    if not device_ip:
+        raise HTTPException(status_code=400, detail="Device IP address not available. Device may not be connected.")
+    
+    # Send HTTP POST request to device's /config endpoint
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            url = f"http://{device_ip}/config"
+            response = await client.post(url)
+            if response.status_code == 200:
+                return {
+                    "status": "success",
+                    "device_id": device_id,
+                    "ip": device_ip,
+                    "message": "Config mode triggered. Connect to WiFi: WheelSense-" + device_id
+                }
+            else:
+                logger.warning(f"Config mode request returned status {response.status_code}")
+                return {
+                    "status": "sent",
+                    "device_id": device_id,
+                    "ip": device_ip,
+                    "message": "Request sent (device may reset immediately)"
+                }
+    except httpx.TimeoutException:
+        # Timeout is expected if device resets quickly
+        return {
+            "status": "sent",
+            "device_id": device_id,
+            "ip": device_ip,
+            "message": "Request sent (device may have reset)"
+        }
+    except Exception as e:
+        logger.error(f"Failed to trigger config mode: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to trigger config mode: {str(e)}")
+
+
+@app.post("/nodes/{device_id}/rotate")
+async def rotate_camera(device_id: str, request: Request, degrees: Optional[int] = Query(90, description="Rotation step in degrees")):
+    """Rotate camera view. Stores rotation state in database (server-side rotation).
+    
+    Rotation is applied on the server side when processing frames, so ESP32 device
+    doesn't need to be in config mode.
+    
+    Args:
+        device_id: Device ID
+        degrees: Rotation angle (0, 90, 180, or 270)
+    """
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    # Find device
+    device = await db.db.devices.find_one({"$or": [{"id": device_id}, {"deviceId": device_id}]})
+    
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    
+    # Normalize degrees to 0, 90, 180, or 270
+    rotate_deg = degrees if degrees is not None else 90
+    rotate_deg = rotate_deg % 360
+    if rotate_deg not in [0, 90, 180, 270]:
+        # Round to nearest valid value
+        rotate_deg = round(rotate_deg / 90) * 90 % 360
+    
+    # Update rotation in database
+    try:
+        result = await db.db.devices.update_one(
+            {"$or": [{"id": device_id}, {"deviceId": device_id}]},
+            {"$set": {"rotation": rotate_deg}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Device not found")
+        
+        logger.info(f"Updated rotation for device {device_id}: {rotate_deg}°")
+        
+        # Update rotation cache in stream_handler
+        if stream_handler and device_id:
+            stream_handler.device_rotations[device_id] = rotate_deg
+        
+        return {
+            "status": "success",
+            "device_id": device_id,
+            "rotation": rotate_deg,
+            "message": f"Camera rotation set to {rotate_deg}°. Rotation will be applied on server side."
+        }
+    except Exception as e:
+        logger.error(f"Failed to update rotation: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update rotation: {str(e)}")
 
 
 @app.post("/map/devices")
@@ -1466,7 +1815,7 @@ Respond in English, concise and clear.
     # Convert messages
     messages = [{"role": "system", "content": system_message}]
     for msg in request.messages:
-        messages.append({"role": msg.role, "content": msg.content})
+        messages.append({"role": msg["role"], "content": msg["content"]})
     
     # Get LLM response
     try:

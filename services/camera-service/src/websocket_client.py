@@ -44,6 +44,9 @@ class WebSocketCameraClient:
         # Room mapping (device_id -> room)
         self.device_rooms: dict = {}
         
+        # Device rotation cache (device_id -> rotation_degrees)
+        self.device_rotations: dict = {}
+        
         # Latest metadata for current frame (device_id, room)
         self.current_metadata: Optional[dict] = None
         
@@ -151,11 +154,19 @@ class WebSocketCameraClient:
                 room = "livingroom"
                 logger.warning("Received video frame without metadata")
             
+            # Get rotation from metadata
+            rotation = metadata.get("rotation", 0) if metadata else 0
+            
             meta = {
                 "device_id": device_id,
                 "room": room,
+                "rotation": rotation,
                 "timestamp": metadata.get("timestamp", datetime.now().isoformat()) if metadata else datetime.now().isoformat()
             }
+            
+            # Store rotation in device_rotations for future frames
+            if device_id and device_id != "UNKNOWN":
+                self.device_rotations[device_id] = rotation
             
             # Put frame in queue
             try:

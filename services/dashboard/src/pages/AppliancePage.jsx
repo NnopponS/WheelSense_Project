@@ -9,12 +9,13 @@ import {
 export function ApplianceControlPage() {
     const { rooms, appliances, toggleAppliance, setApplianceValue, role, currentUser, language } = useApp();
     const { t } = useTranslation(language);
-    const [selectedRoom, setSelectedRoom] = useState(role === 'user' ? currentUser.room : 'bedroom');
+    const [selectedRoom, setSelectedRoom] = useState(role === 'user' ? currentUser?.room : 'bedroom');
 
     const roomAppliances = appliances[selectedRoom] || [];
 
     // User mode: only show their room
-    const availableRooms = role === 'user' ? [rooms.find(r => r.id === currentUser.room)] : rooms;
+    const safeRooms = rooms || [];
+    const availableRooms = role === 'user' ? [safeRooms.find(r => r.id === currentUser?.room)].filter(Boolean) : safeRooms;
 
     const getApplianceIcon = (type) => {
         switch (type) {

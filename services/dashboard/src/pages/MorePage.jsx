@@ -41,21 +41,21 @@ export function MorePage() {
             </div>
 
             {/* User Profile Card (User mode only) */}
-            {role === 'user' && (
+            {role === 'user' && currentUser && (
                 <div className="profile-card" style={{ marginBottom: '1.5rem' }}>
                     <div className="profile-header">
-                        <div className="profile-avatar">{currentUser.avatar}</div>
-                        <h3>{currentUser.name}</h3>
-                        <p>{currentUser.wheelchairId} • Age {currentUser.age} years</p>
+                        <div className="profile-avatar">{currentUser?.avatar || '👤'}</div>
+                        <h3>{currentUser?.name || 'Unknown User'}</h3>
+                        <p>{currentUser?.wheelchairId || 'N/A'} • Age {currentUser?.age || '--'} years</p>
                     </div>
                     <div className="profile-body">
                         <div className="profile-stat">
                             <div className="profile-stat-item">
-                                <h4>{currentUser.healthScore}</h4>
+                                <h4>{currentUser?.healthScore || '--'}</h4>
                                 <p>Health Score</p>
                             </div>
                             <div className="profile-stat-item">
-                                <h4>{currentUser.todaySteps}</h4>
+                                <h4>{currentUser?.todaySteps || 0}</h4>
                                 <p>Steps Today</p>
                             </div>
                             <div className="profile-stat-item">

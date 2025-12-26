@@ -8,6 +8,7 @@ export function TopBar() {
         sidebarOpen, setSidebarOpen,
         selectedBuilding, setSelectedBuilding,
         selectedFloor, setSelectedFloor,
+        buildings, floors,
         notifications, markNotificationRead,
         markAllNotificationsRead, showNotifications, setShowNotifications,
         theme, toggleTheme, role,
@@ -21,17 +22,6 @@ export function TopBar() {
     const [showSearchResults, setShowSearchResults] = useState(false);
 
     const unreadCount = notifications.filter(n => !n.read).length;
-
-    const buildings = [
-        { id: 'building-1', name: 'Building A' },
-        { id: 'building-2', name: 'Building B' },
-    ];
-
-    const floors = [
-        { id: 'floor-1', name: 'Floor 1' },
-        { id: 'floor-2', name: 'Floor 2' },
-        { id: 'floor-3', name: 'Floor 3' },
-    ];
 
     // Search handler
     const handleSearch = (query) => {
@@ -48,7 +38,7 @@ export function TopBar() {
         // Search patients
         patients.forEach(p => {
             if (p.name.toLowerCase().includes(lowerQuery) || p.id.toLowerCase().includes(lowerQuery)) {
-                results.push({ type: 'patient', id: p.id, name: p.name, subtitle: `Wheelchair: ${p.wheelchairId}`, icon: '👤' });
+                results.push({ type: 'patient', id: p.id, name: p.name, subtitle: `${t('Wheelchair')}: ${p.wheelchairId}`, icon: '👤' });
             }
         });
 
@@ -91,11 +81,11 @@ export function TopBar() {
     const formatTime = (date) => {
         const diff = Date.now() - new Date(date).getTime();
         const mins = Math.floor(diff / 60000);
-        if (mins < 1) return 'Just now';
-        if (mins < 60) return `${mins} minutes ago`;
+        if (mins < 1) return t('Just now');
+        if (mins < 60) return `${mins} ${t('minutes ago')}`;
         const hours = Math.floor(mins / 60);
-        if (hours < 24) return `${hours} hours ago`;
-        return new Date(date).toLocaleDateString('en-US');
+        if (hours < 24) return `${hours} ${t('hours ago')}`;
+        return new Date(date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US');
     };
 
     const getNotificationIcon = (type) => {
@@ -128,11 +118,13 @@ export function TopBar() {
 
             {role === 'admin' && (
                 <div className="global-filters">
-                    <select className="filter-select" value={selectedBuilding} onChange={(e) => setSelectedBuilding(e.target.value)}>
-                        {buildings.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    <select className="filter-select" value={selectedBuilding || ''} onChange={(e) => setSelectedBuilding(e.target.value)}>
+                        {(!buildings || buildings.length === 0) && <option value="">Loading...</option>}
+                        {(buildings || []).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
-                    <select className="filter-select" value={selectedFloor} onChange={(e) => setSelectedFloor(e.target.value)}>
-                        {floors.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                    <select className="filter-select" value={selectedFloor || ''} onChange={(e) => setSelectedFloor(e.target.value)}>
+                        {(!floors || floors.length === 0) && <option value="">Loading...</option>}
+                        {(floors || []).map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
                 </div>
             )}

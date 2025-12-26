@@ -1,0 +1,59 @@
+.detection-viewer {
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: #333;
+  color: white;
+}
+
+.viewer-header h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.room-label {
+  font-size: 0.85rem;
+  color: #aaa;
+  background: #555;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.video-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #000;
+}
+
+.detection-status {
+  padding: 10px 15px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detection-status.detected {
+  background: #d4edda;
+  color: #155724;
+}
+
+.detection-status.not-detected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.confidence {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+

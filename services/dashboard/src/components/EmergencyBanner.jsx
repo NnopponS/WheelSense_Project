@@ -7,10 +7,12 @@ export function EmergencyBanner() {
     const { emergencies, resolveEmergency, rooms, language } = useApp();
     const { t } = useTranslation(language);
 
-    const activeEmergency = emergencies.find(e => !e.resolved);
+    const safeEmergencies = emergencies || [];
+    const safeRooms = rooms || [];
+    const activeEmergency = safeEmergencies.find(e => !e.resolved);
     if (!activeEmergency) return null;
 
-    const room = rooms.find(r => r.id === activeEmergency.room);
+    const room = safeRooms.find(r => r.id === activeEmergency.room);
 
     return (
         <div className="emergency-banner" style={{ margin: '1rem 1.5rem 0' }}>

@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
+import { pageToPath } from '../App';
 import {
     Activity, Map, Users, Cpu, Clock, Settings, Bot,
     Monitor, AlertTriangle, Home, MoreHorizontal, X, Accessibility,
@@ -10,7 +12,9 @@ import {
 export function Sidebar() {
     const { role, setRole, currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, notifications, currentUser, language } = useApp();
     const { t } = useTranslation(language);
-    
+    const navigate = useNavigate();
+    const location = useLocation();
+
     // Debug: Log when language changes
     React.useEffect(() => {
         console.log('[Sidebar] Language changed to:', language);
@@ -77,6 +81,28 @@ export function Sidebar() {
 
     const navItems = role === 'admin' ? adminNav : userNav;
 
+    // Navigate to a page using React Router
+    const navigateTo = (pageId) => {
+        const path = pageToPath[pageId];
+        if (path) {
+            navigate(path);
+        }
+        setCurrentPage(pageId);
+        setSidebarOpen(false);
+    };
+
+    // Handle role switch
+    const handleRoleSwitch = (newRole) => {
+        setRole(newRole);
+        if (newRole === 'admin') {
+            navigate('/Admin/Monitoring');
+            setCurrentPage('monitoring');
+        } else {
+            navigate('/User/Home');
+            setCurrentPage('user-home');
+        }
+    };
+
     return (
         <>
             {sidebarOpen && (
@@ -97,11 +123,11 @@ export function Sidebar() {
                 </div>
 
                 <div className="role-switcher">
-                    <button className={`role-btn ${role === 'admin' ? 'active' : ''}`} onClick={() => { setRole('admin'); setCurrentPage('monitoring'); }}>
-                        Admin
+                    <button className={`role-btn ${role === 'admin' ? 'active' : ''}`} onClick={() => handleRoleSwitch('admin')}>
+                        {t('Admin')}
                     </button>
-                    <button className={`role-btn ${role === 'user' ? 'active' : ''}`} onClick={() => { setRole('user'); setCurrentPage('user-home'); }}>
-                        User
+                    <button className={`role-btn ${role === 'user' ? 'active' : ''}`} onClick={() => handleRoleSwitch('user')}>
+                        {t('User')}
                     </button>
                 </div>
 
@@ -118,11 +144,11 @@ export function Sidebar() {
                                     background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     color: 'var(--primary-600)', fontWeight: 600
                                 }}>
-                                    {currentUser.avatar}
+                                    {currentUser?.avatar || '👤'}
                                 </div>
                                 <div>
-                                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{currentUser.name}</div>
-                                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{currentUser.wheelchairId}</div>
+                                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{currentUser?.name || 'User'}</div>
+                                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>{currentUser?.wheelchairId || ''}</div>
                                 </div>
                             </div>
                         </div>
@@ -137,7 +163,7 @@ export function Sidebar() {
                                 <button
                                     key={item.id}
                                     className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
-                                    onClick={() => { setCurrentPage(item.id); setSidebarOpen(false); }}
+                                    onClick={() => navigateTo(item.id)}
                                     title={t(item.label)}
                                 >
                                     <item.icon />
@@ -156,6 +182,7 @@ export function Sidebar() {
 export function BottomNav() {
     const { currentPage, setCurrentPage, role, notifications, language } = useApp();
     const { t } = useTranslation(language);
+    const navigate = useNavigate();
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const adminItems = [
@@ -174,13 +201,22 @@ export function BottomNav() {
 
     const items = role === 'admin' ? adminItems : userItems;
 
+    // Navigate to a page using React Router
+    const navigateTo = (pageId) => {
+        const path = pageToPath[pageId];
+        if (path) {
+            navigate(path);
+        }
+        setCurrentPage(pageId);
+    };
+
     return (
         <nav className="bottom-nav">
             {items.map(item => (
                 <button
                     key={item.id}
                     className={`bottom-nav-item ${currentPage === item.id ? 'active' : ''}`}
-                    onClick={() => setCurrentPage(item.id)}
+                    onClick={() => navigateTo(item.id)}
                 >
                     <item.icon />
                     <span>{t(item.label)}</span>

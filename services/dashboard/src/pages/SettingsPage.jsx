@@ -115,11 +115,11 @@ export function SettingsPage() {
                             <div className="card-body">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
                                     <div className="user-avatar" style={{ width: 80, height: 80, fontSize: '2rem' }}>
-                                        {currentUser.avatar}
+                                        {currentUser?.avatar || '👤'}
                                     </div>
                                     <div>
-                                        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{currentUser.name}</h3>
-                                        <p style={{ color: 'var(--text-secondary)' }}>Wheelchair: {currentUser.wheelchairId}</p>
+                                        <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{currentUser?.name || 'Unknown User'}</h3>
+                                        <p style={{ color: 'var(--text-secondary)' }}>Wheelchair: {currentUser?.wheelchairId || 'N/A'}</p>
                                         <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.5rem' }}>
                                             Change Profile Picture
                                         </button>
@@ -129,11 +129,11 @@ export function SettingsPage() {
                                 <div className="form-row">
                                     <div className="form-group">
                                         <label className="form-label">Full Name</label>
-                                        <input type="text" className="form-input" defaultValue={currentUser.name} />
+                                        <input type="text" className="form-input" defaultValue={currentUser?.name || ''} />
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Age</label>
-                                        <input type="number" className="form-input" defaultValue={currentUser.age} />
+                                        <input type="number" className="form-input" defaultValue={currentUser?.age || ''} />
                                     </div>
                                 </div>
 

@@ -5,7 +5,7 @@ import { X, Accessibility, MapPin, Clock, Activity, Lightbulb, Thermometer, Tv, 
 import { getStreamUrlInfo } from '../services/api';
 
 export function Drawer() {
-    const { drawerOpen, drawerContent, closeDrawer, rooms, appliances, toggleAppliance, patients, wheelchairs, language } = useApp();
+    const { drawerOpen, drawerContent, closeDrawer, rooms, appliances, toggleAppliance, patients, wheelchairs, language, detectionState } = useApp();
     const { t } = useTranslation(language);
     const [videoSrc, setVideoSrc] = useState('');
     const [streamMode, setStreamMode] = useState('loading'); // 'loading', 'websocket', 'offline'
@@ -183,7 +183,7 @@ export function Drawer() {
                                 <div className="card-header"><span className="card-title"><MapPin size={16} /> {t('Current Location')}</span></div>
                                 <div className="card-body">
                                     <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--primary-400)' }}>
-                                        {(rooms.find(r => r.id === data.room)?.nameEn || rooms.find(r => r.id === data.room)?.name) || t('Unknown Location')}
+                                        {((rooms || []).find(r => r.id === data.room)?.nameEn || (rooms || []).find(r => r.id === data.room)?.name) || t('Unknown Location')}
                                     </div>
                                     <div style={{ fontSize: '0.8rem', color: 'var(--dark-text-muted)', marginTop: '0.25rem' }}>
                                         {t('Here since')} {data.lastSeen ? new Date(data.lastSeen).toLocaleTimeString('en-US') : '-'}
@@ -226,6 +226,30 @@ export function Drawer() {
                                             ● WebSocket
                                         </span>
                                     )}
+                                    {(() => {
+                                        // Get detection state for this room
+                                        const roomDetection = detectionState?.[data.id] || 
+                                                              detectionState?.[data.roomType] ||
+                                                              detectionState?.[data.nameEn?.toLowerCase()] ||
+                                                              detectionState?.[data.name?.toLowerCase()];
+                                        const isDetected = roomDetection?.detected || false;
+                                        const detectionConfidence = roomDetection?.confidence || 0;
+                                        
+                                        if (isDetected) {
+                                            return (
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--success-500)', marginLeft: '0.5rem', fontWeight: 'bold' }}>
+                                                    🦽 Wheelchair Detected ({(detectionConfidence * 100).toFixed(0)}%)
+                                                </span>
+                                            );
+                                        } else if (detectionConfidence > 0) {
+                                            return (
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
+                                                    No Wheelchair ({(detectionConfidence * 100).toFixed(0)}%)
+                                                </span>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
                                 <div className="video-stream" style={{ aspectRatio: '16/10', position: 'relative', background: 'linear-gradient(135deg, var(--dark-bg), var(--dark-surface))' }}>
                                     {videoSrc && (
@@ -446,10 +470,37 @@ export function Drawer() {
                                     <label className="form-label">Wheelchair</label>
                                     <select className="form-input" defaultValue={data.wheelchairId}>
                                         <option value="">-- {t('Not Specified')} --</option>
-                                        {wheelchairs.map(wc => (
+                                        {(wheelchairs || []).map(wc => (
                                             <option key={wc.id} value={wc.id}>{wc.name}</option>
                                         ))}
                                     </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">{t('Doctor Orders')} / {t('Medical Instructions')}</label>
+                                    <textarea 
+                                        className="form-input" 
+                                        rows="3" 
+                                        defaultValue={data.doctorOrders || ''}
+                                        placeholder={t('Enter doctor orders or medical instructions...')}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">{t('Accidents')} / {t('Incidents')}</label>
+                                    <textarea 
+                                        className="form-input" 
+                                        rows="2" 
+                                        defaultValue={data.accidents || ''}
+                                        placeholder={t('Enter accident or incident history...')}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">{t('Physical Therapy Requirements')}</label>
+                                    <textarea 
+                                        className="form-input" 
+                                        rows="3" 
+                                        defaultValue={data.physicalTherapy || ''}
+                                        placeholder={t('Enter physical therapy requirements and schedule...')}
+                                    />
                                 </div>
                             </form>
                         </div>

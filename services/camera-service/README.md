@@ -39,10 +39,12 @@ pip install -r requirements.txt
 python -m src.main
 ```
 
-## Detection Methods
+## Detection Method
 
-1. **HOG Detector** - Uses HOG descriptor for detecting person/wheelchair
-2. **Contour Detection** - Uses contour detection for detecting large objects
+**Teachable Machine** - Uses Google Teachable Machine Keras model for wheelchair detection
+- Image classification model (Wheelchair vs NoWheelChair)
+- 224x224 input image size
+- TensorFlow/Keras inference
 
 ## MQTT Topics
 
@@ -68,6 +70,6 @@ python -m src.main
 
 ## Notes
 
-- Uses public MQTT broker (`broker.emqx.io`) for testing
-- Can be changed to local MQTT broker by modifying `MQTT_BROKER` environment variable
-- For more accurate detection, can use YOLO model by modifying `USE_YOLO` in config
+- Uses Teachable Machine model for wheelchair detection
+- Model should be placed in `/app/models/tm-my-image-model/` (or `tm-my-image-model/` for local development)
+- See `models/README.md` for model setup instructions

@@ -1,47 +1,53 @@
 """
-Translation Service using Transformer Models
-Uses Helsinki-NLP/opus-mt-en-th for English to Thai translation
+Translation Service using deep-translator (Google Translate)
+Uses deep-translator for English to Thai translation with fallback options
 """
 
 import logging
 from typing import Optional, Dict
-from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
-# Global model cache
-_translation_model: Optional[object] = None
-_translation_tokenizer: Optional[object] = None
+# Global translator instance
+_translator = None
+_translator_load_attempted: bool = False
 
 
-def load_translation_model():
-    """Load the translation model (lazy loading)."""
-    global _translation_model, _translation_tokenizer
+def load_translator():
+    """Load the Google Translate translator (lazy loading)."""
+    global _translator, _translator_load_attempted
     
-    if _translation_model is not None:
-        return _translation_model, _translation_tokenizer
+    # Return cached translator if available
+    if _translator is not None:
+        return _translator
+    
+    # If already attempted and failed, don't try again
+    if _translator_load_attempted:
+        return None
+    
+    _translator_load_attempted = True
     
     try:
-        from transformers import MarianMTModel, MarianTokenizer
+        from deep_translator import GoogleTranslator
         
-        model_name = "Helsinki-NLP/opus-mt-en-th"
-        logger.info(f"Loading translation model: {model_name}")
+        logger.info("Initializing deep-translator (Google Translate)...")
+        _translator = GoogleTranslator(source='en', target='th')
         
-        _translation_tokenizer = MarianTokenizer.from_pretrained(model_name)
-        _translation_model = MarianMTModel.from_pretrained(model_name)
+        # Test the translator with a simple phrase
+        test_result = _translator.translate("hello")
+        logger.info(f"✅ Translator initialized successfully (test: hello -> {test_result})")
         
-        logger.info("✅ Translation model loaded successfully")
-        return _translation_model, _translation_tokenizer
+        return _translator
         
     except Exception as e:
-        logger.error(f"Failed to load translation model: {e}")
-        logger.warning("Translation will fallback to original text")
-        return None, None
+        logger.error(f"Failed to initialize translator: {e}")
+        logger.warning("Translation will fallback to original text (will not retry)")
+        return None
 
 
 def translate_text(text: str, source_lang: str = "en", target_lang: str = "th") -> str:
     """
-    Translate text using transformer model.
+    Translate text using Google Translate via deep-translator.
     
     Args:
         text: Text to translate
@@ -51,33 +57,26 @@ def translate_text(text: str, source_lang: str = "en", target_lang: str = "th") 
     Returns:
         Translated text, or original text if translation fails
     """
+    # If empty text, return as-is
+    if not text or not text.strip():
+        return text
+    
     # If same language, return as-is
     if source_lang == target_lang:
         return text
     
-    # Only support EN->TH for now
-    if source_lang != "en" or target_lang != "th":
-        logger.warning(f"Unsupported language pair: {source_lang}->{target_lang}")
-        return text
-    
-    # Load model if not already loaded
-    model, tokenizer = load_translation_model()
-    
-    if model is None or tokenizer is None:
-        logger.warning("Translation model not available, returning original text")
-        return text
-    
     try:
-        # Tokenize input
-        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+        from deep_translator import GoogleTranslator
         
-        # Translate
-        translated = model.generate(**inputs, max_length=512, num_beams=4, early_stopping=True)
+        # Create a new translator instance for the specific language pair
+        # (the cached instance might have different src/target)
+        translator = GoogleTranslator(source=source_lang, target=target_lang)
+        result = translator.translate(text)
         
-        # Decode output
-        translated_text = tokenizer.decode(translated[0], skip_special_tokens=True)
-        
-        return translated_text
+        if result:
+            return result
+        else:
+            return text
         
     except Exception as e:
         logger.error(f"Translation error: {e}")
@@ -128,8 +127,8 @@ def translate_with_cache(text: str, source_lang: str = "en", target_lang: str = 
     # Translate
     translated = translate_text(text, source_lang, target_lang)
     
-    # Cache result
-    cache_translation(text, translated, source_lang, target_lang)
+    # Cache result (only if translation was successful - i.e., text changed)
+    if translated != text:
+        cache_translation(text, translated, source_lang, target_lang)
     
     return translated
-

@@ -134,7 +134,8 @@ db.wheelchairs.drop();
 db.wheelchairs.insertMany([
   {
     id: "WC001",
-    name: "Wheelchair A1",
+    name: "รถเข็นของสมชาย",
+    nameEn: "Somchai's Wheelchair",
     patientId: "P001",
     patientName: "Somchai Jaidee",
     battery: 85,
@@ -491,7 +492,7 @@ db.settings.insertOne({
   mqttBroker: "mosquitto",
   mqttPort: 1883,
   ollamaHost: "http://ollama:11434",
-  ollamaModel: "llama3.2",
+  ollamaModel: "deepseek-r1:latest",
   detectionConfidence: 0.5,
   alertCooldown: 300,
   createdAt: new Date()

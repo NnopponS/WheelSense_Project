@@ -14,17 +14,24 @@ export function MapPage() {
         role,
         wheelchairs, setWheelchairs,
         wheelchairPositions, setWheelchairPositions,
+        detectionState,
         openDrawer,
         toggleAppliance,
-        language
+        language,
+        buildings, setBuildings,
+        floors, setFloors,
     } = useApp();
     const { t } = useTranslation(language);
 
     const [editMode, setEditMode] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [showAddRoom, setShowAddRoom] = useState(false);
+    const [showAddBuilding, setShowAddBuilding] = useState(false);
+    const [showAddFloor, setShowAddFloor] = useState(false);
     const [showAddAppliance, setShowAddAppliance] = useState(false);
     const [newRoom, setNewRoom] = useState({ name: '', nameEn: '', x: 10, y: 10, width: 20, height: 20, temperature: 25, humidity: 60 });
+    const [newBuilding, setNewBuilding] = useState({ name: '', nameEn: '' });
+    const [newFloor, setNewFloor] = useState({ name: '', buildingId: '' });
     const [newAppliance, setNewAppliance] = useState({ name: '', type: 'light' });
     const [editingRoom, setEditingRoom] = useState(null);
 
@@ -39,19 +46,14 @@ export function MapPage() {
     const [resizeHandle, setResizeHandle] = useState(null); // 'nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'
     const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
-    // Building and floor options - now with state management
-    const [buildings, setBuildings] = useState([
-        { id: 'building-1', name: 'Building A' },
-        { id: 'building-2', name: 'Building B' },
-    ]);
-    const [floors, setFloors] = useState([
-        { id: 'floor-1', name: 'Floor 1' },
-        { id: 'floor-2', name: 'Floor 2' },
-        { id: 'floor-3', name: 'Floor 3' },
-    ]);
+    // Defensive checks: ensure arrays are defined
+    const safeRooms = rooms || [];
+    const safeBuildings = buildings || [];
+    const safeFloors = floors || [];
+    const safeWheelchairs = wheelchairs || [];
 
-    const selectedBuildingName = buildings.find(b => b.id === selectedBuilding)?.nameEn || buildings.find(b => b.id === selectedBuilding)?.name || 'Building A';
-    const selectedFloorName = floors.find(f => f.id === selectedFloor)?.name || 'Floor 1';
+    const selectedBuildingName = safeBuildings.find(b => b.id === selectedBuilding)?.nameEn || safeBuildings.find(b => b.id === selectedBuilding)?.name || 'Building A';
+    const selectedFloorName = safeFloors.find(f => f.id === selectedFloor)?.name || 'Floor 1';
 
     // Load map config and rooms from API
     useEffect(() => {
@@ -164,14 +166,14 @@ export function MapPage() {
 
     // Delete building
     const handleDeleteBuilding = async (buildingId) => {
-        if (buildings.length <= 1) {
+        if (safeBuildings.length <= 1) {
             alert('Cannot delete building. Must have at least 1 building.');
             return;
         }
         if (confirm('Do you want to delete this building? This action cannot be undone.')) {
-            setBuildings(prev => prev.filter(b => b.id !== buildingId));
+            setBuildings(prev => (prev || []).filter(b => b.id !== buildingId));
             if (selectedBuilding === buildingId) {
-                const remaining = buildings.filter(b => b.id !== buildingId);
+                const remaining = safeBuildings.filter(b => b.id !== buildingId);
                 if (remaining.length > 0) {
                     setSelectedBuilding(remaining[0].id);
                 }
@@ -188,14 +190,14 @@ export function MapPage() {
 
     // Delete floor
     const handleDeleteFloor = async (floorId) => {
-        if (floors.length <= 1) {
+        if (safeFloors.length <= 1) {
             alert('Cannot delete floor. Must have at least 1 floor.');
             return;
         }
         if (confirm('Do you want to delete this floor? This action cannot be undone.')) {
-            setFloors(prev => prev.filter(f => f.id !== floorId));
+            setFloors(prev => (prev || []).filter(f => f.id !== floorId));
             if (selectedFloor === floorId) {
-                const remaining = floors.filter(f => f.id !== floorId);
+                const remaining = safeFloors.filter(f => f.id !== floorId);
                 if (remaining.length > 0) {
                     setSelectedFloor(remaining[0].id);
                 }
@@ -215,7 +217,7 @@ export function MapPage() {
         if (!editMode) return;
         e.preventDefault();
         e.stopPropagation();
-        const room = rooms.find(r => r.id === roomId);
+        const room = safeRooms.find(r => r.id === roomId);
         if (!room) return;
 
         setDraggingRoom(roomId);
@@ -235,7 +237,7 @@ export function MapPage() {
         const y = ((e.clientY - rect.top) / rect.height) * 100;
 
         if (resizingRoom) {
-            const room = rooms.find(r => r.id === resizingRoom);
+            const room = safeRooms.find(r => r.id === resizingRoom);
             if (!room) return;
 
             const deltaX = x - resizeStart.x;
@@ -305,7 +307,7 @@ export function MapPage() {
         if (!editMode) return;
         e.preventDefault();
         e.stopPropagation();
-        const room = rooms.find(r => r.id === roomId);
+        const room = safeRooms.find(r => r.id === roomId);
         if (!room) return;
 
         setResizingRoom(roomId);
@@ -324,9 +326,9 @@ export function MapPage() {
         e.preventDefault();
         e.stopPropagation();
         const storedPos = wheelchairPositions[wheelchairId];
-        const wc = wheelchairs.find(w => w.id === wheelchairId);
+        const wc = safeWheelchairs.find(w => w.id === wheelchairId);
         if (wc && wc.room) {
-            const room = rooms.find(r => r.id === wc.room);
+            const room = safeRooms.find(r => r.id === wc.room);
             if (room) {
                 const currentX = storedPos ? storedPos.x : (room.x + room.width / 2);
                 const currentY = storedPos ? storedPos.y : (room.y + room.height / 2);
@@ -352,13 +354,67 @@ export function MapPage() {
         }
     }, [draggingRoom, draggingMarker, resizingRoom, dragStart, resizeStart, resizeHandle]);
 
+    const handleAddBuilding = async () => {
+        if (!newBuilding.name && !newBuilding.nameEn) {
+            alert('Please enter building name');
+            return;
+        }
+        try {
+            const buildingId = `building-${Date.now()}`;
+            const building = {
+                id: buildingId,
+                name: newBuilding.name || newBuilding.nameEn,
+                nameEn: newBuilding.nameEn || newBuilding.name,
+            };
+            setBuildings(prev => [...(prev || []), building]);
+            setSelectedBuilding(buildingId);
+            setNewBuilding({ name: '', nameEn: '' });
+            setShowAddBuilding(false);
+            // Save to API
+            await api.createBuilding(building);
+            saveMapConfig();
+        } catch (err) {
+            console.error('Failed to create building:', err);
+            alert('Failed to create building: ' + err.message);
+        }
+    };
+
+    const handleAddFloor = async () => {
+        if (!newFloor.name) {
+            alert('Please enter floor name');
+            return;
+        }
+        if (!newFloor.buildingId && safeBuildings.length > 0) {
+            alert('Please select a building');
+            return;
+        }
+        try {
+            const floorId = `floor-${Date.now()}`;
+            const floor = {
+                id: floorId,
+                name: newFloor.name,
+                buildingId: newFloor.buildingId || (safeBuildings.length > 0 ? safeBuildings[0].id : ''),
+            };
+            setFloors(prev => [...(prev || []), floor]);
+            setSelectedFloor(floorId);
+            setNewFloor({ name: '', buildingId: selectedBuilding || '' });
+            setShowAddFloor(false);
+            // Save to API
+            await api.createFloor(floor);
+            saveMapConfig();
+        } catch (err) {
+            console.error('Failed to create floor:', err);
+            alert('Failed to create floor: ' + err.message);
+        }
+    };
+
     const handleAddRoom = () => {
         if (!newRoom.name) {
             alert('Please enter room name');
             return;
         }
         const roomId = `room-${Date.now()}`;
-        setRooms(prev => [...prev, {
+        setRooms(prev => [...(prev || []), {
             id: roomId,
             ...newRoom,
             occupied: false
@@ -371,7 +427,7 @@ export function MapPage() {
 
     const handleDeleteRoom = async (roomId) => {
         if (confirm('Do you want to delete this room?')) {
-            setRooms(prev => prev.filter(r => r.id !== roomId));
+            setRooms(prev => (prev || []).filter(r => r.id !== roomId));
             // Also remove appliances for this room
             setAppliances(prev => {
                 const newAppliances = { ...prev };
@@ -390,7 +446,8 @@ export function MapPage() {
 
     const handleUpdateRoom = (roomId, updates) => {
         setRooms(prev => {
-            const updated = prev.map(r => r.id === roomId ? { ...r, ...updates } : r);
+            const safePrev = prev || [];
+            const updated = safePrev.map(r => r.id === roomId ? { ...r, ...updates } : r);
             // Trigger save (will be debounced by saveRooms)
             return updated;
         });
@@ -451,7 +508,7 @@ export function MapPage() {
         if (appliances[roomId]?.length > 0) return appliances[roomId];
 
         // Find room data
-        const room = rooms.find(r => r.id === roomId);
+        const room = safeRooms.find(r => r.id === roomId);
         if (room) {
             // Try by roomType
             const roomType = room.roomType?.toLowerCase();
@@ -533,16 +590,17 @@ export function MapPage() {
                 <div className="card-body" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span>{t('Building')}:</span>
-                        {editMode ? (
+                        {editMode && selectedBuilding ? (
                             // Edit Mode: Show input for building name
                             <input
                                 type="text"
                                 className="form-input"
                                 style={{ width: '150px' }}
-                                value={buildings.find(b => b.id === selectedBuilding)?.nameEn || buildings.find(b => b.id === selectedBuilding)?.name || ''}
+                                value={safeBuildings.find(b => b.id === selectedBuilding)?.nameEn || safeBuildings.find(b => b.id === selectedBuilding)?.name || ''}
                                 onChange={(e) => {
-                                    setBuildings(prev => prev.map(b =>
-                                        b.id === selectedBuilding ? { ...b, name: e.target.value, nameEn: e.target.value } : b
+                                    const value = e.target.value;
+                                    setBuildings(prev => (prev || []).map(b =>
+                                        b.id === selectedBuilding ? { ...b, name: value, nameEn: value } : b
                                     ));
                                 }}
                                 placeholder={t('Building Name')}
@@ -553,7 +611,7 @@ export function MapPage() {
                                 value={selectedBuilding}
                                 onChange={(e) => setSelectedBuilding(e.target.value)}
                             >
-                                {buildings.map(b => <option key={b.id} value={b.id}>{b.nameEn || b.name}</option>)}
+                                {safeBuildings.map(b => <option key={b.id} value={b.id}>{b.nameEn || b.name}</option>)}
                             </select>
                         )}
                         {editMode && (
@@ -568,16 +626,17 @@ export function MapPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span>{t('Floor')}:</span>
-                        {editMode ? (
+                        {editMode && selectedFloor ? (
                             // Edit Mode: Show input for floor name
                             <input
                                 type="text"
                                 className="form-input"
                                 style={{ width: '120px' }}
-                                value={floors.find(f => f.id === selectedFloor)?.name || ''}
+                                value={safeFloors.find(f => f.id === selectedFloor)?.name || ''}
                                 onChange={(e) => {
-                                    setFloors(prev => prev.map(f =>
-                                        f.id === selectedFloor ? { ...f, name: e.target.value } : f
+                                    const value = e.target.value;
+                                    setFloors(prev => (prev || []).map(f =>
+                                        f.id === selectedFloor ? { ...f, name: value } : f
                                     ));
                                 }}
                                 placeholder={t('Floor Name')}
@@ -588,7 +647,7 @@ export function MapPage() {
                                 value={selectedFloor}
                                 onChange={(e) => setSelectedFloor(e.target.value)}
                             >
-                                {floors.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                                {safeFloors.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                             </select>
                         )}
                         {editMode && (
@@ -601,11 +660,22 @@ export function MapPage() {
                             </button>
                         )}
                     </div>
-                    {editMode && (
-                        <button className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={() => setShowAddRoom(true)}>
-                            <Plus size={16} /> {t('Add Room')}
-                        </button>
-                    )}
+                        {editMode && (
+                            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+                                <button className="btn btn-secondary btn-sm" onClick={() => setShowAddBuilding(true)}>
+                                    <Plus size={14} /> {t('Add Building')}
+                                </button>
+                                <button className="btn btn-secondary btn-sm" onClick={() => {
+                                    setNewFloor({ name: '', buildingId: selectedBuilding || '' });
+                                    setShowAddFloor(true);
+                                }}>
+                                    <Plus size={14} /> {t('Add Floor')}
+                                </button>
+                                <button className="btn btn-primary" onClick={() => setShowAddRoom(true)}>
+                                    <Plus size={16} /> {t('Add Room')}
+                                </button>
+                            </div>
+                        )}
                 </div>
             </div>
 
@@ -622,18 +692,28 @@ export function MapPage() {
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                     >
-                        {rooms.map(room => (
+                        {safeRooms.map(room => {
+                            // Get detection state for this room (try multiple matching strategies)
+                            const roomDetection = detectionState?.[room.id] || 
+                                                  detectionState?.[room.roomType] ||
+                                                  detectionState?.[room.nameEn?.toLowerCase()] ||
+                                                  detectionState?.[room.name?.toLowerCase()];
+                            const isDetected = roomDetection?.detected || false;
+                            const detectionConfidence = roomDetection?.confidence || 0;
+                            
+                            return (
                             <div
                                 key={room.id}
-                                className={`room ${room.occupied ? 'occupied' : ''} ${selectedRoom === room.id ? 'selected' : ''}`}
+                                className={`room ${room.occupied ? 'occupied' : ''} ${selectedRoom === room.id ? 'selected' : ''} ${isDetected ? 'wheelchair-detected' : ''}`}
                                 style={{
                                     left: `${room.x}%`,
                                     top: `${room.y}%`,
                                     width: `${room.width}%`,
                                     height: `${room.height}%`,
                                     cursor: editMode ? 'move' : 'pointer',
-                                    outline: selectedRoom === room.id ? '3px solid var(--primary-500)' : 'none',
-                                    userSelect: 'none'
+                                    outline: selectedRoom === room.id ? '3px solid var(--primary-500)' : (isDetected ? '3px solid var(--success-500)' : 'none'),
+                                    userSelect: 'none',
+                                    border: isDetected ? '3px solid var(--success-500)' : (selectedRoom === room.id ? 'none' : '1px solid rgba(255,255,255,0.1)')
                                 }}
                                 onClick={() => {
                                     if (!editMode) {
@@ -645,7 +725,19 @@ export function MapPage() {
                                 }}
                                 onMouseDown={(e) => editMode && handleRoomMouseDown(e, room.id)}
                             >
-                                <span className="room-label">{room.nameEn || room.name}</span>
+                                <span className="room-label">
+                                    {room.nameEn || room.name}
+                                    {isDetected && (
+                                        <span style={{ 
+                                            marginLeft: '0.5rem', 
+                                            fontSize: '0.8em', 
+                                            color: 'var(--success-500)',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            🦽 {(detectionConfidence * 100).toFixed(0)}%
+                                        </span>
+                                    )}
+                                </span>
                                 <span className="room-status">{room.occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}</span>
                                 {editMode && selectedRoom === room.id && (
                                     <>
@@ -788,20 +880,21 @@ export function MapPage() {
                                     </>
                                 )}
                             </div>
-                        ))}
+                            );
+                        })}
 
                         {/* Wheelchair markers */}
-                        {wheelchairs.filter(w => w.room).map(wc => {
+                        {safeWheelchairs.filter(w => w.room).map(wc => {
                             // Find room using flexible matching (by id, roomType, or nameEn)
-                            let room = rooms.find(r => r.id === wc.room);
+                            let room = safeRooms.find(r => r.id === wc.room);
                             if (!room) {
-                                room = rooms.find(r => r.roomType?.toLowerCase() === wc.room?.toLowerCase());
+                                room = safeRooms.find(r => r.roomType?.toLowerCase() === wc.room?.toLowerCase());
                             }
                             if (!room) {
-                                room = rooms.find(r => r.nameEn?.toLowerCase() === wc.room?.toLowerCase());
+                                room = safeRooms.find(r => r.nameEn?.toLowerCase() === wc.room?.toLowerCase());
                             }
                             if (!room) {
-                                room = rooms.find(r => r.name?.toLowerCase().includes(wc.room?.toLowerCase() || ''));
+                                room = safeRooms.find(r => r.name?.toLowerCase().includes(wc.room?.toLowerCase() || ''));
                             }
                             if (!room) return null;
                             // Calculate position - use stored position if available, otherwise center of room
@@ -828,8 +921,8 @@ export function MapPage() {
                         })}
 
                         {/* Node markers */}
-                        {devices.filter(d => d.type === 'node' && d.room).map(node => {
-                            const room = rooms.find(r => r.id === node.room);
+                        {(devices || []).filter(d => d.type === 'node' && d.room).map(node => {
+                            const room = safeRooms.find(r => r.id === node.room);
                             if (!room) return null;
                             return (
                                 <div
@@ -866,7 +959,7 @@ export function MapPage() {
                             // Room Details View
                             <>
                                 {(() => {
-                                    const room = rooms.find(r => r.id === selectedRoom);
+                                    const room = safeRooms.find(r => r.id === selectedRoom);
                                     if (!room) return null;
                                     return (
                                         <>
@@ -974,7 +1067,7 @@ export function MapPage() {
                                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t('No Appliances')}</p>
                                                 ) : (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                        {roomAppliances.map(app => {
+                                                        {(roomAppliances || []).map(app => {
                                                             const Icon = getApplianceIcon(app.type);
                                                             return (
                                                                 <div key={app.id} style={{
@@ -1026,7 +1119,16 @@ export function MapPage() {
                             </>
                         ) : (
                             // Room List View
-                            rooms.map(room => (
+                            safeRooms.map(room => {
+                                // Get detection state for this room (try multiple matching strategies)
+                                const roomDetection = detectionState?.[room.id] || 
+                                                      detectionState?.[room.roomType] ||
+                                                      detectionState?.[room.nameEn?.toLowerCase()] ||
+                                                      detectionState?.[room.name?.toLowerCase()];
+                                const isDetected = roomDetection?.detected === true;
+                                const detectionConfidence = roomDetection?.confidence || 0;
+
+                                return (
                                 <div
                                     key={room.id}
                                     className="list-item"
@@ -1034,20 +1136,48 @@ export function MapPage() {
                                     style={{ cursor: 'pointer' }}
                                 >
                                     <div className="list-item-avatar" style={{
-                                        background: room.occupied
+                                        background: isDetected 
                                             ? 'linear-gradient(135deg, var(--success-500), var(--success-600))'
+                                            : room.occupied
+                                            ? 'linear-gradient(135deg, var(--primary-500), var(--primary-600))'
                                             : 'var(--gray-600)'
                                     }}>
-                                        🏠
+                                        {isDetected ? '🦽' : '🏠'}
                                     </div>
                                     <div className="list-item-content">
-                                        <div className="list-item-title">{room.nameEn || room.name}</div>
+                                        <div className="list-item-title">
+                                            {room.nameEn || room.name}
+                                            {isDetected && (
+                                                <span style={{ 
+                                                    marginLeft: '0.5rem', 
+                                                    fontSize: '0.85em', 
+                                                    color: 'var(--success-500)',
+                                                    fontWeight: 'normal'
+                                                }}>
+                                                    ({(detectionConfidence * 100).toFixed(0)}%)
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="list-item-subtitle">
-                                            {room.nameEn || room.name} • {(appliances[room.id] || []).length} {t('Devices')}
+                                            {(() => {
+                                                // Find wheelchair in this room
+                                                const wc = safeWheelchairs.find(w => {
+                                                    if (w.room === room.id) return true;
+                                                    // Try matching by roomType or nameEn
+                                                    const roomLower = room.roomType?.toLowerCase() || room.nameEn?.toLowerCase() || '';
+                                                    return w.room?.toLowerCase() === roomLower;
+                                                });
+                                                
+                                                if (wc && wc.patientName) {
+                                                    return `${wc.name} - ${wc.patientName}`;
+                                                }
+                                                return `${room.nameEn || room.name} • ${(appliances[room.id] || []).length} ${t('Devices')}${isDetected ? ` • ${t('Wheelchair Detected')}` : ''}`;
+                                            })()}
                                         </div>
                                     </div>
                                 </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
@@ -1072,8 +1202,91 @@ export function MapPage() {
                         <div style={{ width: 20, height: 20, background: 'var(--gray-600)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>📡</div>
                         <span style={{ fontSize: '0.85rem' }}>Node Offline</span>
                     </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: 20, height: 20, border: '3px solid var(--success-500)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>🦽</div>
+                        <span style={{ fontSize: '0.85rem' }}>{t('Wheelchair Detected')}</span>
+                    </div>
                 </div>
             </div>
+
+            {/* Add Building Modal */}
+            {showAddBuilding && (
+                <div className="modal-overlay" onClick={() => setShowAddBuilding(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>{t('Add New Building')}</h3>
+                            <button className="btn btn-icon" onClick={() => setShowAddBuilding(false)}><X size={20} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label className="form-label">{t('Building Name')} (Thai)</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={newBuilding.name}
+                                    onChange={(e) => setNewBuilding(prev => ({ ...prev, name: e.target.value }))}
+                                    placeholder={t('e.g. Building A')}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">{t('Building Name')} (English)</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={newBuilding.nameEn}
+                                    onChange={(e) => setNewBuilding(prev => ({ ...prev, nameEn: e.target.value }))}
+                                    placeholder="e.g. Building A"
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowAddBuilding(false)}>{t('Cancel')}</button>
+                            <button className="btn btn-primary" onClick={handleAddBuilding}><Save size={16} /> {t('Add Building')}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Floor Modal */}
+            {showAddFloor && (
+                <div className="modal-overlay" onClick={() => setShowAddFloor(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>{t('Add New Floor')}</h3>
+                            <button className="btn btn-icon" onClick={() => setShowAddFloor(false)}><X size={20} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label className="form-label">{t('Floor Name')}</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={newFloor.name}
+                                    onChange={(e) => setNewFloor(prev => ({ ...prev, name: e.target.value }))}
+                                    placeholder={t('e.g. Floor 1')}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">{t('Building')}</label>
+                                <select
+                                    className="form-input"
+                                    value={newFloor.buildingId || selectedBuilding || ''}
+                                    onChange={(e) => setNewFloor(prev => ({ ...prev, buildingId: e.target.value }))}
+                                >
+                                    <option value="">-- {t('Select Building')} --</option>
+                                    {safeBuildings.map(b => (
+                                        <option key={b.id} value={b.id}>{b.nameEn || b.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowAddFloor(false)}>{t('Cancel')}</button>
+                            <button className="btn btn-primary" onClick={handleAddFloor}><Save size={16} /> {t('Add Floor')}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Add Room Modal */}
             {showAddRoom && (

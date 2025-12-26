@@ -60,6 +60,7 @@ class Database:
         })
         return self._serialize_doc(room) if room else None
     
+
     async def update_room_status(self, device_id: str, status: Dict):
         """Update room status from device."""
         await self.db.rooms.update_one(
@@ -71,6 +72,38 @@ class Database:
                     "lastStatus": status
                 }
             }
+        )
+
+    async def update_device_status(self, device_id: str, status: Dict):
+        """Update or create device status."""
+        
+        # Prepare fields to update
+        update_fields = {
+            "lastSeen": datetime.now(),
+            "status": status,
+            "updatedAt": datetime.now()
+        }
+        
+        # If static info is present, update it too
+        if "device_type" in status:
+            update_fields["type"] = status["device_type"]
+        if "room" in status:
+            update_fields["room"] = status["room"]
+        if "ip" in status:
+            update_fields["ip"] = status["ip"]
+            
+        # Try to find by deviceId first
+        await self.db.devices.update_one(
+            {"deviceId": device_id},
+            {
+                "$set": update_fields,
+                "$setOnInsert": {
+                     "createdAt": datetime.now(),
+                     "name": device_id,
+                     "id": f"D{int(datetime.now().timestamp())}"
+                }
+            },
+            upsert=True
         )
     
     # ==================== Appliance Operations ====================
@@ -120,15 +153,38 @@ class Database:
         """Log an activity event."""
         room = await self.get_room(room_id)
         
+        # Convert roomId to ObjectId if we have the room object
+        room_object_id = None
+        if room and "_id" in room:
+            try:
+                room_object_id = ObjectId(room["_id"]) if isinstance(room["_id"], str) else room["_id"]
+            except:
+                room_object_id = ObjectId()  # Generate new ObjectId as fallback
+        else:
+            room_object_id = ObjectId()  # Generate new ObjectId for unknown room
+        
+        # Convert userId to ObjectId - use a fixed "SYSTEM" ObjectId for system actions
+        if user_id and ObjectId.is_valid(user_id):
+            user_object_id = ObjectId(user_id)
+        elif user_id:
+            # Try to find user by string ID
+            user = await self.db.patients.find_one({"id": user_id})
+            if user and "_id" in user:
+                user_object_id = user["_id"]
+            else:
+                # Use a fixed ObjectId for SYSTEM (24-char hex: 000000000000000053595354)
+                user_object_id = ObjectId("000000000000000053595354")
+        else:
+            # Use a fixed ObjectId for SYSTEM
+            user_object_id = ObjectId("000000000000000053595354")
+        
         activity = {
-            "roomId": ObjectId(room["_id"]) if room else None,
+            "roomId": room_object_id,
             "eventType": event_type,
             "timestamp": datetime.now(),
-            "details": details or {}
+            "details": details or {},
+            "userId": user_object_id
         }
-        
-        if user_id:
-            activity["userId"] = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
         
         await self.db.activityLogs.insert_one(activity)
     
@@ -296,6 +352,134 @@ class Database:
         """Get wheelchair positions."""
         config = await self.get_map_config()
         return config.get("wheelchairPositions", {}) if config else {}
+    
+    # ==================== Timeline / Location History Operations ====================
+    
+    async def save_location_event(
+        self,
+        user_id: str,
+        wheelchair_id: str,
+        from_room: Optional[str],
+        to_room: str,
+        user_name: Optional[str] = None,
+        detection_confidence: float = 0.0,
+        bbox: Optional[List] = None
+    ) -> Dict:
+        """Save a location change event to timeline collection."""
+        event = {
+            "type": "location_change",
+            "userId": user_id,
+            "userName": user_name or user_id,
+            "wheelchairId": wheelchair_id,
+            "fromRoom": from_room,
+            "toRoom": to_room,
+            "timestamp": datetime.now(),
+            "metadata": {
+                "detectionConfidence": detection_confidence,
+                "bbox": bbox
+            }
+        }
+        
+        # Calculate duration in previous room if we have history
+        if from_room:
+            last_event = await self.db.timeline.find_one(
+                {"userId": user_id, "toRoom": from_room},
+                sort=[("timestamp", -1)]
+            )
+            if last_event:
+                duration = (datetime.now() - last_event["timestamp"]).total_seconds()
+                event["durationInPreviousRoom"] = int(duration)
+        
+        result = await self.db.timeline.insert_one(event)
+        event["_id"] = result.inserted_id
+        
+        logger.info(f"Saved location event: {user_name or user_id} moved from {from_room} to {to_room}")
+        
+        return self._serialize_doc(event)
+    
+    async def get_timeline(
+        self,
+        user_id: Optional[str] = None,
+        room_id: Optional[str] = None,
+        event_type: Optional[str] = None,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        limit: int = 100
+    ) -> List[Dict]:
+        """Get timeline events with optional filters."""
+        query = {}
+        
+        if user_id:
+            query["userId"] = user_id
+        
+        if room_id:
+            query["$or"] = [{"fromRoom": room_id}, {"toRoom": room_id}]
+        
+        if event_type:
+            query["type"] = event_type
+        
+        if start_date or end_date:
+            query["timestamp"] = {}
+            if start_date:
+                query["timestamp"]["$gte"] = start_date
+            if end_date:
+                query["timestamp"]["$lte"] = end_date
+        
+        events = await self.db.timeline.find(query).sort(
+            "timestamp", -1
+        ).limit(limit).to_list(length=limit)
+        
+        return [self._serialize_doc(e) for e in events]
+    
+    async def get_timeline_by_date(self, date_str: str, user_id: Optional[str] = None) -> List[Dict]:
+        """Get all timeline events for a specific date."""
+        try:
+            date = datetime.fromisoformat(date_str)
+        except ValueError:
+            # Try parsing as YYYY-MM-DD
+            date = datetime.strptime(date_str, "%Y-%m-%d")
+        
+        start_of_day = datetime(date.year, date.month, date.day, 0, 0, 0)
+        end_of_day = datetime(date.year, date.month, date.day, 23, 59, 59)
+        
+        return await self.get_timeline(
+            user_id=user_id,
+            start_date=start_of_day,
+            end_date=end_of_day,
+            limit=1000
+        )
+    
+    async def get_timeline_summary(self, user_id: str, date_str: Optional[str] = None) -> Dict:
+        """Get summary of timeline for analysis."""
+        if date_str:
+            events = await self.get_timeline_by_date(date_str, user_id)
+        else:
+            events = await self.get_timeline(user_id=user_id, limit=500)
+        
+        # Calculate room time distribution
+        room_times = {}
+        for i, event in enumerate(events):
+            to_room = event.get("toRoom")
+            duration = event.get("durationInPreviousRoom", 0)
+            from_room = event.get("fromRoom")
+            
+            if from_room and duration > 0:
+                room_times[from_room] = room_times.get(from_room, 0) + duration
+        
+        # Count transitions per room
+        room_visits = {}
+        for event in events:
+            to_room = event.get("toRoom")
+            if to_room:
+                room_visits[to_room] = room_visits.get(to_room, 0) + 1
+        
+        return {
+            "totalEvents": len(events),
+            "roomTimeDistribution": room_times,
+            "roomVisitCounts": room_visits,
+            "firstEvent": events[-1] if events else None,
+            "lastEvent": events[0] if events else None
+        }
     
     # ==================== User Operations ====================
     

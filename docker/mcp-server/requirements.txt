@@ -12,21 +12,8 @@ pymongo>=4.6.0
 # MQTT
 paho-mqtt>=1.6.1
 
-# LLM
+# LLM HTTP client (talks to Ollama over HTTP)
 httpx>=0.26.0
-
-# AI/ML
-google-generativeai>=0.3.0
-
-# Translation (Transformer-based)
-transformers>=4.35.0
-torch>=2.0.0
-sentencepiece>=0.1.99
-
-# Image Processing
-opencv-python-headless>=4.8.0
-numpy>=1.24.0
-Pillow>=10.0.0
 
 # WebSocket
 websockets>=12.0
@@ -48,3 +35,9 @@ python-dotenv>=1.0.0
 # Logging
 structlog>=24.1.0
 
+# Translation (deep-translator for Google Translate)
+deep-translator>=1.11.0
+
+# Image processing for rotation
+opencv-python-headless>=4.8.0
+numpy>=1.24.0

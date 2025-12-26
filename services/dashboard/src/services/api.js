@@ -45,68 +45,125 @@ const MQTT_WS_URL = getMqttWsUrl();
 
 // ==================== Generic Fetch Helpers ====================
 
-async function fetchAPI(endpoint, options = {}) {
-    try {
-        const baseUrl = getApiBase();
-        const url = baseUrl.startsWith('http')
-            ? `${baseUrl}${endpoint}`
-            : `${baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+async function fetchAPI(endpoint, options = {}, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const baseUrl = getApiBase();
+            const url = baseUrl.startsWith('http')
+                ? `${baseUrl}${endpoint}`
+                : `${baseUrl}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
 
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        });
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers,
+                },
+                ...options,
+            });
 
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            if (!response.ok) {
+                // If 503 and not last attempt, retry with exponential backoff
+                if (response.status === 503 && attempt < retries) {
+                    const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff: 1s, 2s, 4s (max 5s)
+                    console.warn(`API request failed (503 Service Unavailable) [${endpoint}], retrying in ${delay}ms... (attempt ${attempt}/${retries})`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                
+                // For 503 on last attempt, provide a more helpful error message
+                if (response.status === 503) {
+                    throw new Error(`Service temporarily unavailable. The backend may be initializing. Please wait a moment and try again.`);
+                }
+                
+                throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            // If this is the last attempt, throw the error
+            if (attempt === retries) {
+                console.error(`API Error [${endpoint}]:`, error);
+                throw error;
+            }
+            
+            // Retry on network errors (not 503, which is handled above)
+            if (error.message && !error.message.includes('API Error:')) {
+                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+                console.warn(`API request failed (network error) [${endpoint}], retrying in ${delay}ms... (attempt ${attempt}/${retries})`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                // For API errors that aren't 503, don't retry
+                throw error;
+            }
         }
-
-        return await response.json();
-    } catch (error) {
-        console.error(`API Error [${endpoint}]:`, error);
-        throw error;
     }
 }
 
-async function fetchMCP(endpoint, options = {}) {
-    try {
-        const baseUrl = getMcpBase();
-        // Ensure endpoint starts with / if baseUrl is relative
-        const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-        const url = baseUrl.startsWith('http')
-            ? `${baseUrl}${normalizedEndpoint}`
-            : `${baseUrl}${normalizedEndpoint}`;
+async function fetchMCP(endpoint, options = {}, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const baseUrl = getMcpBase();
+            // Ensure endpoint starts with / if baseUrl is relative
+            const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+            const url = baseUrl.startsWith('http')
+                ? `${baseUrl}${normalizedEndpoint}`
+                : `${baseUrl}${normalizedEndpoint}`;
 
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        });
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers,
+                },
+                ...options,
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            let errorMessage = `MCP Error: ${response.status} ${response.statusText}`;
-            try {
-                const errorJson = JSON.parse(errorText);
-                errorMessage = errorJson.detail || errorJson.message || errorMessage;
-            } catch {
-                // If not JSON, use the text or default message
-                if (errorText) {
-                    errorMessage = errorText.length > 200 ? errorMessage : errorText;
+            if (!response.ok) {
+                // If 503 and not last attempt, retry with exponential backoff
+                if (response.status === 503 && attempt < retries) {
+                    const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+                    console.warn(`MCP request failed (503 Service Unavailable) [${endpoint}], retrying in ${delay}ms... (attempt ${attempt}/${retries})`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
                 }
+                
+                const errorText = await response.text();
+                let errorMessage = `MCP Error: ${response.status} ${response.statusText}`;
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.detail || errorJson.message || errorMessage;
+                } catch {
+                    // If not JSON, use the text or default message
+                    if (errorText) {
+                        errorMessage = errorText.length > 200 ? errorMessage : errorText;
+                    }
+                }
+                
+                // For 503 on last attempt, provide a more helpful error message
+                if (response.status === 503) {
+                    errorMessage = `Service temporarily unavailable. The MCP server may be initializing. Please wait a moment and try again.`;
+                }
+                
+                throw new Error(errorMessage);
             }
-            throw new Error(errorMessage);
-        }
 
-        return await response.json();
-    } catch (error) {
-        console.error(`MCP Error [${endpoint}]:`, error);
-        throw error;
+            return await response.json();
+        } catch (error) {
+            // If this is the last attempt, throw the error
+            if (attempt === retries) {
+                console.error(`MCP Error [${endpoint}]:`, error);
+                throw error;
+            }
+            
+            // Retry on network errors (not 503, which is handled above)
+            if (error.message && !error.message.includes('MCP Error:')) {
+                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+                console.warn(`MCP request failed (network error) [${endpoint}], retrying in ${delay}ms... (attempt ${attempt}/${retries})`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                // For MCP errors that aren't 503, don't retry
+                throw error;
+            }
+        }
     }
 }
 
@@ -205,19 +262,23 @@ export async function deletePatient(patientId) {
 // ==================== Wheelchairs ====================
 
 export async function getWheelchairs() {
-    const data = await fetchAPI('/map/devices');
-    const devices = data.devices || [];
-    // For now, return from patients as wheelchairs are linked
-    const patients = await getPatients();
-    return patients.map(p => ({
-        id: p.wheelchairId,
-        name: `Wheelchair ${p.wheelchairId}`,
-        patientId: p.id,
-        patientName: p.name,
-        battery: p.battery || 85,
-        status: 'active',
-        room: p.room,
-    }));
+    // Fetch wheelchairs directly from database
+    const data = await fetchAPI('/wheelchairs');
+    return data.wheelchairs || [];
+}
+
+export async function createWheelchair(wheelchair) {
+    return fetchAPI('/wheelchairs', {
+        method: 'POST',
+        body: JSON.stringify(wheelchair),
+    });
+}
+
+export async function updateWheelchair(wheelchairId, updates) {
+    return fetchAPI(`/wheelchairs/${wheelchairId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+    });
 }
 
 // ==================== Devices ====================
@@ -225,6 +286,11 @@ export async function getWheelchairs() {
 export async function getDevices() {
     const data = await fetchAPI('/map/devices');
     return data.devices || [];
+}
+
+export async function getNodesLiveStatus() {
+    const data = await fetchAPI('/nodes/live-status');
+    return data.nodes || [];
 }
 
 export async function createDevice(device) {
@@ -241,6 +307,19 @@ export async function updateDevice(deviceId, updates) {
     });
 }
 
+export async function triggerConfigMode(deviceId) {
+    return fetchAPI(`/nodes/${deviceId}/config-mode`, {
+        method: 'POST',
+    });
+}
+
+export async function rotateCamera(deviceId, degrees = 90) {
+    const params = new URLSearchParams({ degrees: degrees.toString() });
+    return fetchAPI(`/nodes/${deviceId}/rotate?${params}`, {
+        method: 'POST',
+    });
+}
+
 // ==================== Appliances ====================
 
 export async function getAppliances(roomId) {
@@ -248,18 +327,23 @@ export async function getAppliances(roomId) {
     return data.appliances || [];
 }
 
+export async function getAllAppliancesFlat() {
+    // Get all appliances from database (flat list)
+    const data = await fetchAPI('/appliances');
+    return data.appliances || [];
+}
+
 export async function getAllAppliances() {
-    // Get appliances for all rooms
-    const rooms = await getRooms();
+    // Get all appliances and group by room
+    const allAppliances = await getAllAppliancesFlat();
     const appliancesByRoom = {};
 
-    for (const room of rooms) {
-        try {
-            const appliances = await getAppliances(room.id);
-            appliancesByRoom[room.id] = appliances;
-        } catch (e) {
-            appliancesByRoom[room.id] = [];
+    for (const appliance of allAppliances) {
+        const roomKey = appliance.room || appliance.roomId || 'unknown';
+        if (!appliancesByRoom[roomKey]) {
+            appliancesByRoom[roomKey] = [];
         }
+        appliancesByRoom[roomKey].push(appliance);
     }
 
     return appliancesByRoom;
@@ -327,6 +411,50 @@ export async function getActivityLogs(options = {}) {
 export async function getLocationHistory(limit = 100) {
     const data = await fetchAPI(`/location/history?limit=${limit}`);
     return data.history || [];
+}
+
+// ==================== Timeline API ====================
+
+export async function getTimeline(options = {}) {
+    const params = new URLSearchParams();
+    if (options.userId) params.append('user_id', options.userId);
+    if (options.roomId) params.append('room_id', options.roomId);
+    if (options.eventType) params.append('event_type', options.eventType);
+    if (options.limit) params.append('limit', options.limit || 100);
+
+    const data = await fetchAPI(`/timeline?${params.toString()}`);
+    // API returns { timeline: [...], count: N } or just array
+    const timeline = Array.isArray(data) ? data : (data.timeline || data.events || []);
+    console.log('[API] getTimeline returned:', timeline.length, 'events');
+    return timeline;
+}
+
+export async function getTimelineHistory(date, userId = null) {
+    const params = new URLSearchParams({ date });
+    if (userId) params.append('user_id', userId);
+
+    const data = await fetchAPI(`/timeline/history?${params.toString()}`);
+    // API returns { timeline: [...], count: N, date: "..." } or just array
+    const timeline = Array.isArray(data) ? data : (data.timeline || data.events || []);
+    console.log('[API] getTimelineHistory returned:', timeline.length, 'events for date', date);
+    return {
+        timeline: Array.isArray(timeline) ? timeline : [],
+        count: timeline.length,
+        date: data.date || date
+    };
+}
+
+export async function getTimelineSummary(userId, date = null) {
+    const params = date ? `?date=${date}` : '';
+    const data = await fetchAPI(`/timeline/summary/${userId}${params}`);
+    return data;
+}
+
+export async function saveLocationEvent(event) {
+    return fetchAPI('/timeline/location', {
+        method: 'POST',
+        body: JSON.stringify(event),
+    });
 }
 
 // ==================== Location (Camera Detection) ====================
@@ -756,17 +884,23 @@ export default {
     getRoom,
     createRoom,
     updateRoom,
+    updateAllRooms,
+    deleteRoom,
     getPatients,
     getPatient,
     createPatient,
     updatePatient,
     deletePatient,
     getWheelchairs,
+    createWheelchair,
+    updateWheelchair,
     getDevices,
+    getNodesLiveStatus,
     createDevice,
     updateDevice,
     getAppliances,
     getAllAppliances,
+    getAllAppliancesFlat,
     controlAppliance,
     getRoutines,
     createRoutine,
@@ -781,6 +915,25 @@ export default {
     getNotifications,
     getBuildings,
     getFloors,
+    createBuilding,
+    deleteBuilding,
+    createFloor,
+    deleteFloor,
+
+    // Map Config
+    getMapConfig,
+    saveMapConfig,
+    getWheelchairPositions,
+    saveWheelchairPositions,
+
+    // Timeline
+    getTimeline,
+    getTimelineHistory,
+    getTimelineSummary,
+    saveLocationEvent,
+
+    // Translation
+    translateText,
 
     // AI/MCP
     chat,
@@ -791,6 +944,8 @@ export default {
 
     // Streaming
     getStreamUrl,
+    getVideoStreamUrl,
+    getStreamUrlInfo,
     createWebSocket,
     createMQTTConnection,
 

@@ -16,7 +16,8 @@ class Settings(BaseSettings):
     MQTT_PASS: Optional[str] = None
     
     # WebSocket Backend URL (FastAPI endpoint)
-    WEBSOCKET_BACKEND_URL: str = "ws://backend:8000/ws/camera-service"
+    # Backend functionality is now provided by mcp-server
+    WEBSOCKET_BACKEND_URL: str = "ws://mcp-server:8000/ws/camera-service"
     
     # MQTT Topics (legacy - not used anymore, only for registration)
     MQTT_TOPIC_VIDEO: str = "WheelSenseMockup/video"
@@ -28,7 +29,7 @@ class Settings(BaseSettings):
     DEVICE_ID: str = "TSIM_001"
     
     # Detection
-    DETECTION_CONFIDENCE_THRESHOLD: float = 0.5
+    DETECTION_CONFIDENCE_THRESHOLD: float = 0.4
     DETECTION_INTERVAL_SEC: float = 1.0
     
     model_config = {

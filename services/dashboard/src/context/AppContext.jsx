@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import * as api from '../services/api';
+import api from '../services/api';
 
 const AppContext = createContext(null);
 
@@ -43,93 +43,69 @@ export function AppProvider({ children }) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Current user (for user mode)
-    const [currentUser, setCurrentUser] = useState({
-        id: 'P001',
-        name: 'John Doe',
-        avatar: '👴',
-        age: 65,
-        wheelchairId: 'WC001',
-        room: 'bedroom',
-        condition: 'Normal',
-        healthScore: 87,
-        todaySteps: 1247,
-        lastActivity: new Date(),
-    });
+    // Current user (for user mode) - Loaded from Database
+    const [currentUser, setCurrentUser] = useState(null);
 
-    // Notifications
-    const [notifications, setNotifications] = useState([
-        { id: 1, type: 'info', title: 'System Ready', message: 'Welcome to WheelSense', time: new Date(), read: false },
-    ]);
+    // Notifications - Loaded from Database and real-time updates
+    const [notifications, setNotifications] = useState([]);
+    
+    // Load notifications from API on startup
+    useEffect(() => {
+        const loadNotifications = async () => {
+            try {
+                const apiNotifications = await api.getNotifications();
+                // Merge with existing notifications, avoiding duplicates
+                setNotifications(prev => {
+                    const existingIds = new Set(prev.map(n => n.id));
+                    const newNotifications = apiNotifications.filter(n => !existingIds.has(n.id));
+                    // Limit to 50 most recent
+                    return [...prev, ...newNotifications].sort((a, b) => 
+                        new Date(b.time) - new Date(a.time)
+                    ).slice(0, 50);
+                });
+            } catch (error) {
+                console.error('[AppContext] Failed to load notifications:', error);
+            }
+        };
+        
+        loadNotifications();
+        // Refresh notifications every 30 seconds
+        const interval = setInterval(loadNotifications, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
-    // Wheelchairs
-    const [wheelchairs, setWheelchairs] = useState([
-        { id: 'WC001', name: 'Wheelchair A1', patientId: 'P001', patientName: 'John Doe', room: 'bedroom', status: 'active', battery: 85, lastSeen: new Date(), speed: 0 },
-    ]);
+    // Wheelchairs - Loaded from Database
+    const [wheelchairs, setWheelchairs] = useState([]);
 
     // Wheelchair positions on map - stored as percentage (x, y) relative to map canvas
     const [wheelchairPositions, setWheelchairPositions] = useState({});
+    
+    // Detection state per room - stores latest detection results
+    // Structure: { [roomId]: { detected: bool, confidence: float, timestamp: string, device_id: string } }
+    const [detectionState, setDetectionState] = useState({});
 
-    // Patients
-    const [patients, setPatients] = useState([
-        { id: 'P001', name: 'John Doe', age: 65, condition: 'Normal', wheelchairId: 'WC001', room: 'bedroom', avatar: '👴', phone: '081-234-5678', emergencyContact: '02-123-4567', notes: 'Blood pressure medication once daily', healthScore: 87, status: 'normal' },
-    ]);
+    // Patients - Loaded from Database
+    const [patients, setPatients] = useState([]);
 
-    // Devices - Loaded from Database (no hardcoded data)
+    // Devices - Loaded from Database
     const [devices, setDevices] = useState([]);
 
-    // Rooms - Loaded from Database (no hardcoded data)
-    // Data structure: { id, name, nameEn, sizeLabel, x, y, width, height, occupied, temperature, humidity }
+    // Buildings & Floors - Loaded from Database
+    const [buildings, setBuildings] = useState([]);
+    const [floors, setFloors] = useState([]);
+
+    // Rooms - Loaded from Database
     const [rooms, setRooms] = useState([]);
 
-    // Appliances - Default appliances per room based on WheelSense requirements
+    // Appliances - Loaded from Database (grouped by room)
     // Structure: { [roomType]: [{ id, name, type, state, ... }] }
-    // Bedroom: Light, Alarm, AC
-    // Bathroom: Light
-    // Living Room: Light, TV, AC, FAN
-    // Kitchen: Light, Alarm
-    const [appliances, setAppliances] = useState({
-        bedroom: [
-            { id: 'bedroom-light', name: 'Light', type: 'light', state: false, brightness: 100 },
-            { id: 'bedroom-alarm', name: 'Alarm', type: 'alarm', state: false },
-            { id: 'bedroom-AC', name: 'AC', type: 'AC', state: false, temperature: 25 }
-        ],
-        bathroom: [
-            { id: 'bathroom-light', name: 'Light', type: 'light', state: false, brightness: 100 }
-        ],
-        livingroom: [
-            { id: 'livingroom-light', name: 'Light', type: 'light', state: false, brightness: 100 },
-            { id: 'livingroom-tv', name: 'TV', type: 'tv', state: false, volume: 50 },
-            { id: 'livingroom-AC', name: 'AC', type: 'AC', state: false },
-            { id: 'livingroom-fan', name: 'Fan', type: 'fan', state: false, speed: 50 }
-        ],
-        kitchen: [
-            { id: 'kitchen-light', name: 'Light', type: 'light', state: false, brightness: 100 },
-            { id: 'kitchen-alarm', name: 'Alarm', type: 'alarm', state: false }
-        ]
-    });
+    const [appliances, setAppliances] = useState({});
 
-    // Timeline/Activities
-    const [timeline, setTimeline] = useState([
-        { id: 1, type: 'enter', room: 'bedroom', patientId: 'P001', patient: 'John', time: new Date(Date.now() - 120 * 60000), message: 'Entered bedroom' },
-        { id: 2, type: 'appliance', room: 'bedroom', patientId: null, patient: null, time: new Date(Date.now() - 90 * 60000), message: 'Bedroom light turned on' },
-        { id: 3, type: 'routine', room: 'bedroom', patientId: 'P001', patient: 'John', time: new Date(Date.now() - 60 * 60000), message: 'Wake up - Completed' },
-        { id: 4, type: 'exit', room: 'bedroom', patientId: 'P001', patient: 'John', time: new Date(Date.now() - 30 * 60000), message: 'Exited bedroom' },
-        { id: 5, type: 'enter', room: 'kitchen', patientId: 'P001', patient: 'John', time: new Date(Date.now() - 25 * 60000), message: 'Entered kitchen' },
-    ]);
+    // Timeline/Activities - Loaded from Database
+    const [timeline, setTimeline] = useState([]);
 
-    // Routines
-    const [routines, setRoutines] = useState([
-        { id: 'R001', time: '07:00', title: 'Wake Up', description: 'Wake up and wash face', patientId: 'P001', completed: true },
-        { id: 'R002', time: '07:30', title: 'Breakfast', description: 'Have breakfast in kitchen', patientId: 'P001', completed: true },
-        { id: 'R003', time: '08:00', title: 'Take Medicine', description: 'Blood pressure medication 1 tablet', patientId: 'P001', completed: false },
-        { id: 'R004', time: '10:00', title: 'Physical Therapy', description: 'Light exercise in living room for 30 minutes', patientId: 'P001', completed: false },
-        { id: 'R005', time: '12:00', title: 'Lunch', description: 'Have lunch in kitchen', patientId: 'P001', completed: false },
-        { id: 'R006', time: '14:00', title: 'Rest', description: 'Nap in bedroom', patientId: 'P001', completed: false },
-        { id: 'R007', time: '18:00', title: 'Dinner', description: 'Have dinner in kitchen', patientId: 'P001', completed: false },
-        { id: 'R008', time: '20:00', title: 'Evening Medicine', description: 'Take evening medication', patientId: 'P001', completed: false },
-        { id: 'R009', time: '21:00', title: 'Bedtime', description: 'Rest and sleep', patientId: 'P001', completed: false },
-    ]);
+    // Routines - Loaded from Database
+    const [routines, setRoutines] = useState([]);
 
     // Emergency alerts
     const [emergencies, setEmergencies] = useState([]);
@@ -146,45 +122,139 @@ export function AppProvider({ children }) {
         anomalies: [],
     });
 
-    // Fetch data from API - Auto-loads rooms and map data on startup
-    const fetchData = useCallback(async () => {
+    // Fetch data from API - Auto-loads all data from database on startup
+    // Retries automatically if API returns 503 (backend initializing)
+    const fetchData = useCallback(async (retryCount = 0) => {
+        const MAX_RETRIES = 5;
+        const RETRY_DELAY = 3000; // 3 seconds
+
         setIsLoading(true);
         setError(null);
 
         try {
-            // Always try to fetch rooms and map data on startup
-            const [roomsData, patientsData, devicesData, mapConfig] = await Promise.all([
-                api.getRooms().catch(() => []),
+            // Fetch all data from database
+            const [roomsData, patientsData, devicesData, mapConfig, buildingsData, floorsData, wheelchairsData, appliancesData] = await Promise.all([
+                api.getRooms().catch((err) => {
+                    // If 503 and haven't exceeded retries, return null to trigger retry
+                    if (err.message?.includes('503') || err.message?.includes('Service temporarily unavailable')) {
+                        if (retryCount < MAX_RETRIES) {
+                            console.log(`[AppContext] API returned 503 for rooms, will retry (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                            return null; // Signal to retry
+                        }
+                    }
+                    return [];
+                }),
                 api.getPatients().catch(() => []),
                 api.getDevices().catch(() => []),
                 api.getMapConfig().catch(() => null),
+                api.getBuildings().catch(() => []),
+                api.getFloors().catch(() => []),
+                api.getWheelchairs().catch((err) => {
+                    // If 503 and haven't exceeded retries, return null to trigger retry
+                    if (err.message?.includes('503') || err.message?.includes('Service temporarily unavailable')) {
+                        if (retryCount < MAX_RETRIES) {
+                            console.log(`[AppContext] API returned 503 for wheelchairs, will retry (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                            return null; // Signal to retry
+                        }
+                    }
+                    return [];
+                }),
+                api.getAllAppliances().catch(() => ({})),
             ]);
+
+            // Check if critical data (rooms/wheelchairs) failed with 503 and need retry
+            const needsRetry = (roomsData === null || wheelchairsData === null) && retryCount < MAX_RETRIES;
+            
+            if (needsRetry) {
+                console.log(`[AppContext] Critical data unavailable (503), retrying in ${RETRY_DELAY}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                setIsLoading(false);
+                setTimeout(() => {
+                    fetchData(retryCount + 1);
+                }, RETRY_DELAY);
+                return;
+            }
 
             // Update rooms if API returns data
             if (roomsData && roomsData.length > 0) {
                 console.log('[AppContext] Auto-loaded rooms from API:', roomsData.length);
                 setRooms(roomsData);
+            } else if (roomsData === null) {
+                console.warn('[AppContext] Failed to load rooms after retries, using empty array');
             }
 
             // Update patients if API returns data
             if (patientsData && patientsData.length > 0) {
+                console.log('[AppContext] Auto-loaded patients from API:', patientsData.length);
                 setPatients(patientsData);
-                // Update current user if found
-                const user = patientsData.find(p => p.id === 'P001');
-                if (user) setCurrentUser(user);
+                // Set first patient as current user (for user mode)
+                setCurrentUser(patientsData[0]);
+            }
+
+            // Update wheelchairs if API returns data
+            if (wheelchairsData && wheelchairsData.length > 0) {
+                console.log('[AppContext] Auto-loaded wheelchairs from API:', wheelchairsData.length);
+                setWheelchairs(wheelchairsData);
+            } else if (wheelchairsData === null) {
+                console.warn('[AppContext] Failed to load wheelchairs after retries, using empty array');
+            }
+
+            // Update appliances if API returns data
+            if (appliancesData && Object.keys(appliancesData).length > 0) {
+                console.log('[AppContext] Auto-loaded appliances from API:', Object.keys(appliancesData).length, 'rooms');
+                setAppliances(appliancesData);
             }
 
             // Update devices if API returns data
             if (devicesData && devicesData.length > 0) setDevices(devicesData);
 
-            // Update wheelchair positions from map config
-            if (mapConfig && mapConfig.wheelchairPositions) {
-                setWheelchairPositions(mapConfig.wheelchairPositions);
+            // Update buildings/floors - primary source is dedicated collections
+            if (buildingsData && buildingsData.length > 0) {
+                console.log('[AppContext] Auto-loaded buildings from API:', buildingsData.length, buildingsData);
+                setBuildings(buildingsData);
+                // Update selectedBuilding if current selection is not in the list
+                if (!buildingsData.find(b => b.id === selectedBuilding) && buildingsData[0]) {
+                    console.log('[AppContext] Setting selectedBuilding to:', buildingsData[0].id);
+                    setSelectedBuilding(buildingsData[0].id);
+                }
+            }
+            if (floorsData && floorsData.length > 0) {
+                console.log('[AppContext] Auto-loaded floors from API:', floorsData.length, floorsData);
+                setFloors(floorsData);
+                // Update selectedFloor if current selection is not in the list
+                if (!floorsData.find(f => f.id === selectedFloor) && floorsData[0]) {
+                    console.log('[AppContext] Setting selectedFloor to:', floorsData[0].id);
+                    setSelectedFloor(floorsData[0].id);
+                }
+            }
+
+            // Update wheelchair positions (and fallback buildings/floors) from map config
+            if (mapConfig) {
+                if (mapConfig.wheelchairPositions) {
+                    setWheelchairPositions(mapConfig.wheelchairPositions);
+                }
+
+                // Only use map config buildings/floors as fallback if collections are empty
+                if ((!buildingsData || buildingsData.length === 0) && Array.isArray(mapConfig.buildings) && mapConfig.buildings.length > 0) {
+                    setBuildings(mapConfig.buildings);
+                }
+                if ((!floorsData || floorsData.length === 0) && Array.isArray(mapConfig.floors) && mapConfig.floors.length > 0) {
+                    setFloors(mapConfig.floors);
+                }
             }
 
         } catch (err) {
             console.error('Failed to fetch data:', err);
             setError(err.message);
+            
+            // Retry on 503 errors
+            if ((err.message?.includes('503') || err.message?.includes('Service temporarily unavailable')) && retryCount < MAX_RETRIES) {
+                console.log(`[AppContext] API error (503), retrying in ${RETRY_DELAY}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                setIsLoading(false);
+                setTimeout(() => {
+                    fetchData(retryCount + 1);
+                }, RETRY_DELAY);
+                return;
+            }
         } finally {
             setIsLoading(false);
         }
@@ -195,6 +265,20 @@ export function AppProvider({ children }) {
         console.log('[AppContext] Initializing - auto-loading rooms and map data');
         fetchData();
     }, [fetchData]);
+
+    // Periodic refresh: If rooms or wheelchairs are empty, retry every 10 seconds
+    // This helps when backend is initializing and returns 503
+    useEffect(() => {
+        // Only set up refresh if critical data is missing
+        if (rooms.length === 0 || wheelchairs.length === 0) {
+            const refreshInterval = setInterval(() => {
+                console.log('[AppContext] Critical data missing (rooms:', rooms.length, ', wheelchairs:', wheelchairs.length, '), refreshing...');
+                fetchData();
+            }, 10000); // Check every 10 seconds
+            
+            return () => clearInterval(refreshInterval);
+        }
+    }, [fetchData, rooms.length, wheelchairs.length]);
 
     // WebSocket connection for real-time updates (wheelchair detection, device registration, etc.)
     // Note: Appliance control uses MQTT via API endpoint /appliances/control
@@ -222,11 +306,22 @@ export function AppProvider({ children }) {
 
                         // Handle wheelchair detection - update position on map
                         if (message.type === 'wheelchair_detection') {
-                            const { room, detected, bbox, frame_size } = message;
+                            const { room, detected, bbox, frame_size, confidence, device_id, timestamp } = message;
+                            
+                            // Update detection state for this room
+                            setDetectionState(prev => ({
+                                ...prev,
+                                [room]: {
+                                    detected: detected || false,
+                                    confidence: confidence || 0.0,
+                                    timestamp: timestamp || new Date().toISOString(),
+                                    device_id: device_id || 'unknown'
+                                }
+                            }));
 
                             console.log(`[AppContext] 🔍 Received detection: room="${room}", detected=${detected}, bbox=${bbox ? 'yes' : 'no'}, frame_size=${frame_size ? 'yes' : 'no'}`);
-                            console.log(`[AppContext] Available rooms:`, rooms.map(r => ({ id: r.id, name: r.name, nameEn: r.nameEn, roomType: r.roomType })));
-                            console.log(`[AppContext] Available wheelchairs:`, wheelchairs.map(w => ({ id: w.id, room: w.room })));
+                            console.log(`[AppContext] Available rooms:`, (rooms || []).map(r => ({ id: r.id, name: r.name, nameEn: r.nameEn, roomType: r.roomType })));
+                            console.log(`[AppContext] Available wheelchairs:`, (wheelchairs || []).map(w => ({ id: w.id, room: w.room })));
 
                             if (detected && bbox && Array.isArray(bbox) && bbox.length === 4) {
                                 // Find wheelchair - try multiple matching strategies
@@ -341,20 +436,24 @@ export function AppProvider({ children }) {
                                             wheelchair.room?.toLowerCase() !== roomData.nameEn?.toLowerCase();
 
                                         if (isChangingRoom) {
-                                            // CHANGING ROOM: Always place wheelchair at center of new room
-                                            console.log(`[AppContext] 📍 Moving wheelchair ${wheelchair.id} from ${wheelchair.room} to ${roomData.id} (placing at center)`);
+                                            // CHANGING ROOM: Use existing marker position if available, otherwise center of new room
+                                            const existingPos = wheelchairPositions[wheelchair.id];
+                                            const newX = existingPos ? existingPos.x : centerX;
+                                            const newY = existingPos ? existingPos.y : centerY;
+                                            
+                                            console.log(`[AppContext] 🦽 Moving wheelchair ${wheelchair.id} from ${wheelchair.room} to ${roomData.id} (using marker position: ${newX.toFixed(1)}%, ${newY.toFixed(1)}%)`);
 
                                             setWheelchairPositions(prev => {
                                                 const updated = {
                                                     ...prev,
-                                                    [wheelchair.id]: { x: centerX, y: centerY }
+                                                    [wheelchair.id]: { x: newX, y: newY }
                                                 };
 
                                                 api.saveWheelchairPositions(updated).catch(err => {
                                                     console.error('Failed to save wheelchair position:', err);
                                                 });
 
-                                                console.log(`[AppContext] 🦽 Wheelchair ${wheelchair.id} placed at center of ${roomData.name || room}: (${centerX.toFixed(1)}%, ${centerY.toFixed(1)}%)`);
+                                                console.log(`[AppContext] 🦽 Wheelchair ${wheelchair.id} placed at ${roomData.name || room}: (${newX.toFixed(1)}%, ${newY.toFixed(1)}%)`);
 
                                                 return updated;
                                             });
@@ -366,68 +465,121 @@ export function AppProvider({ children }) {
                                                     : w
                                             ));
 
+                                            // Update patient(s) who use this wheelchair
+                                            setPatients(prev => prev.map(p => {
+                                                if (p.wheelchairId === wheelchair.id) {
+                                                    console.log(`[AppContext] 📍 Updating patient ${p.id} room from ${p.room} to ${roomData.id}`);
+                                                    // Save to API
+                                                    api.updatePatient(p.id, { room: roomData.id }).catch(err => {
+                                                        console.error('Failed to save patient room:', err);
+                                                    });
+                                                    return { ...p, room: roomData.id };
+                                                }
+                                                return p;
+                                            }));
+
                                             // Also update currentUser.room if this is their wheelchair
-                                            if (wheelchair.id === currentUser.wheelchairId) {
+                                            if (currentUser && wheelchair.id === currentUser.wheelchairId) {
+                                                console.log(`[AppContext] 📍 Updating currentUser room from ${currentUser.room} to ${roomData.id}`);
                                                 setCurrentUser(prev => ({ ...prev, room: roomData.id }));
                                             }
-                                        } else if (frame_size && bbox) {
-                                            // SAME ROOM with valid bbox: Use bbox for precise position
-                                            const [x, y, w, h] = bbox;
-                                            const frameWidth = frame_size.width || 640;
-                                            const frameHeight = frame_size.height || 480;
-
-                                            // Calculate center of bbox in pixel coordinates
-                                            const bboxCenterX = x + w / 2;
-                                            const bboxCenterY = y + h / 2;
-
-                                            // Convert to percentage of video frame (0-100%)
-                                            const videoXPercent = (bboxCenterX / frameWidth) * 100;
-                                            const videoYPercent = (bboxCenterY / frameHeight) * 100;
-
-                                            // Map video percentage to room position on map
-                                            const roomX = roomData.x || 50;
-                                            const roomY = roomData.y || 50;
-                                            const roomWidth = roomData.width || 20;
-                                            const roomHeight = roomData.height || 20;
-
-                                            // Convert video percentage to map percentage
-                                            const newX = roomX + (videoXPercent / 100) * roomWidth;
-                                            const newY = roomY + (videoYPercent / 100) * roomHeight;
-
-                                            // Clamp to room bounds
-                                            const clampedX = Math.max(roomX, Math.min(roomX + roomWidth, newX));
-                                            const clampedY = Math.max(roomY, Math.min(roomY + roomHeight, newY));
-
-                                            setWheelchairPositions(prev => {
-                                                const updated = {
-                                                    ...prev,
-                                                    [wheelchair.id]: { x: clampedX, y: clampedY }
-                                                };
-
-                                                api.saveWheelchairPositions(updated).catch(err => {
-                                                    console.error('Failed to save wheelchair position:', err);
-                                                });
-
-                                                console.log(`[AppContext] 🦽 Updated wheelchair ${wheelchair.id} position in ${roomData.name || room} from bbox: (${clampedX.toFixed(1)}%, ${clampedY.toFixed(1)}%)`);
-
-                                                return updated;
-                                            });
                                         } else {
-                                            // SAME ROOM without bbox: Use center of room
-                                            setWheelchairPositions(prev => {
-                                                const updated = {
-                                                    ...prev,
-                                                    [wheelchair.id]: { x: centerX, y: centerY }
-                                                };
+                                            // SAME ROOM: Update position but also ensure patient.room is correct
+                                            // Check if wheelchair.room needs to be updated to match detected room
+                                            const needsRoomUpdate = wheelchair.room !== roomData.id &&
+                                                wheelchair.room?.toLowerCase() !== roomData.id?.toLowerCase() &&
+                                                wheelchair.room?.toLowerCase() !== roomData.roomType?.toLowerCase() &&
+                                                wheelchair.room?.toLowerCase() !== roomData.nameEn?.toLowerCase();
 
-                                                api.saveWheelchairPositions(updated).catch(err => {
-                                                    console.error('Failed to save wheelchair position:', err);
+                                            if (needsRoomUpdate) {
+                                                console.log(`[AppContext] 📍 Updating wheelchair ${wheelchair.id} room from ${wheelchair.room} to ${roomData.id} (same room detection)`);
+                                                
+                                                // Update wheelchair.room
+                                                setWheelchairs(prev => prev.map(w =>
+                                                    w.id === wheelchair.id
+                                                        ? { ...w, room: roomData.id }
+                                                        : w
+                                                ));
+
+                                                // Update patient(s) who use this wheelchair
+                                                setPatients(prev => prev.map(p => {
+                                                    if (p.wheelchairId === wheelchair.id) {
+                                                        console.log(`[AppContext] 📍 Updating patient ${p.id} room from ${p.room} to ${roomData.id}`);
+                                                        // Save to API
+                                                        api.updatePatient(p.id, { room: roomData.id }).catch(err => {
+                                                            console.error('Failed to save patient room:', err);
+                                                        });
+                                                        return { ...p, room: roomData.id };
+                                                    }
+                                                    return p;
+                                                }));
+
+                                                // Also update currentUser.room if this is their wheelchair
+                                                if (currentUser && wheelchair.id === currentUser.wheelchairId) {
+                                                    console.log(`[AppContext] 📍 Updating currentUser room from ${currentUser.room} to ${roomData.id}`);
+                                                    setCurrentUser(prev => ({ ...prev, room: roomData.id }));
+                                                }
+                                            }
+
+                                            // Use existing marker position if available, don't override with bbox calculation
+                                            const existingPos = wheelchairPositions[wheelchair.id];
+                                            
+                                            if (existingPos) {
+                                                // Keep existing marker position - don't update from bbox
+                                                console.log(`[AppContext] 🦽 Keeping wheelchair ${wheelchair.id} at existing marker position: (${existingPos.x.toFixed(1)}%, ${existingPos.y.toFixed(1)}%)`);
+                                            } else {
+                                                // No existing position: calculate from bbox or use center
+                                                let newX, newY;
+                                                
+                                                if (frame_size && bbox) {
+                                                    // SAME ROOM with valid bbox: Use bbox for precise position
+                                                    const [x, y, w, h] = bbox;
+                                                    const frameWidth = frame_size.width || 640;
+                                                    const frameHeight = frame_size.height || 480;
+
+                                                    // Calculate center of bbox in pixel coordinates
+                                                    const bboxCenterX = x + w / 2;
+                                                    const bboxCenterY = y + h / 2;
+
+                                                    // Convert to percentage of video frame (0-100%)
+                                                    const videoXPercent = (bboxCenterX / frameWidth) * 100;
+                                                    const videoYPercent = (bboxCenterY / frameHeight) * 100;
+
+                                                    // Map video percentage to room position on map
+                                                    const roomX = roomData.x || 50;
+                                                    const roomY = roomData.y || 50;
+                                                    const roomWidth = roomData.width || 20;
+                                                    const roomHeight = roomData.height || 20;
+
+                                                    // Convert video percentage to map percentage
+                                                    newX = roomX + (videoXPercent / 100) * roomWidth;
+                                                    newY = roomY + (videoYPercent / 100) * roomHeight;
+
+                                                    // Clamp to room bounds
+                                                    newX = Math.max(roomX, Math.min(roomX + roomWidth, newX));
+                                                    newY = Math.max(roomY, Math.min(roomY + roomHeight, newY));
+                                                    
+                                                    console.log(`[AppContext] 🦽 Calculated wheelchair ${wheelchair.id} position from bbox: (${newX.toFixed(1)}%, ${newY.toFixed(1)}%)`);
+                                                } else {
+                                                    // SAME ROOM without bbox: Use center of room
+                                                    newX = centerX;
+                                                    newY = centerY;
+                                                    console.log(`[AppContext] 🦽 Using center position for wheelchair ${wheelchair.id}: (${newX.toFixed(1)}%, ${newY.toFixed(1)}%)`);
+                                                }
+                                                
+                                                setWheelchairPositions(prev => {
+                                                    const updated = {
+                                                        ...prev,
+                                                        [wheelchair.id]: { x: newX, y: newY }
+                                                    };
+
+                                                    api.saveWheelchairPositions(updated).catch(err => {
+                                                        console.error('Failed to save wheelchair position:', err);
+                                                    });
+
+                                                    return updated;
                                                 });
-
-                                                console.log(`[AppContext] 🦽 Updated wheelchair ${wheelchair.id} position in ${roomData.name || room} (center): (${centerX.toFixed(1)}%, ${centerY.toFixed(1)}%)`);
-
-                                                return updated;
-                                            });
+                                            }
                                         }
                                     } else {
                                         console.warn(`[AppContext] Room not found for detection: ${room}, wheelchair: ${wheelchair?.id}`);
@@ -439,13 +591,37 @@ export function AppProvider({ children }) {
                         }
 
                         // Handle device registration
+                        // Only show notification once when device first registers (to prevent spam)
                         if (message.type === 'device_registered') {
                             console.log('[AppContext] Device registered:', message);
-                            addNotification({
-                                type: 'info',
-                                title: 'Device Connected',
-                                message: `Device ${message.device_id} connected in ${message.room}`
-                            });
+                            
+                            // Check if this device was already registered (to prevent duplicate notifications)
+                            const deviceId = message.device_id;
+                            const existingDevice = devices.find(d => 
+                                (d.id === deviceId || d.deviceId === deviceId)
+                            );
+                            
+                            // Only notify if this is a new device registration
+                            if (!existingDevice) {
+                                const roomName = rooms.find(r => 
+                                    r.id === message.room || 
+                                    r.roomType === message.room ||
+                                    r.nameEn?.toLowerCase() === message.room?.toLowerCase()
+                                )?.nameEn || 
+                                rooms.find(r => 
+                                    r.id === message.room || 
+                                    r.roomType === message.room ||
+                                    r.nameEn?.toLowerCase() === message.room?.toLowerCase()
+                                )?.name || 
+                                message.room || 
+                                'Unknown Room';
+                                
+                                addNotification({
+                                    type: 'success',
+                                    title: 'Device Registered',
+                                    message: `${deviceId} has been registered - Room: ${roomName}`
+                                });
+                            }
                         }
 
                         // Handle status updates
@@ -512,17 +688,48 @@ export function AppProvider({ children }) {
     };
 
     const openModal = (content) => {
+        console.log('[AppContext] openModal called with content:', content);
+        console.log('[AppContext] Content type:', typeof content);
+        if (content && typeof content === 'object' && content.$$typeof) {
+            console.log('[AppContext] Content is React element');
+        }
+        if (!content) {
+            console.warn('[AppContext] openModal called with null/undefined content');
+            return;
+        }
         setModalContent(content);
         setModalOpen(true);
+        console.log('[AppContext] Modal state updated: modalOpen = true');
     };
 
     const closeModal = () => {
+        console.log('[AppContext] closeModal called');
         setModalOpen(false);
-        setTimeout(() => setModalContent(null), 300);
+        setTimeout(() => {
+            setModalContent(null);
+            console.log('[AppContext] Modal content cleared');
+        }, 300);
     };
 
     const addNotification = (notification) => {
-        setNotifications(prev => [{ id: Date.now(), time: new Date(), read: false, ...notification }, ...prev]);
+        setNotifications(prev => {
+            // Prevent duplicates - check if notification with same title and message already exists
+            const isDuplicate = prev.some(n => 
+                n.title === notification.title && 
+                n.message === notification.message &&
+                Math.abs(new Date(n.time).getTime() - new Date(notification.time || Date.now()).getTime()) < 5000 // Within 5 seconds
+            );
+            
+            if (isDuplicate) {
+                console.log('[AppContext] Duplicate notification prevented:', notification.title);
+                return prev;
+            }
+            
+            // Limit to last 50 notifications to prevent memory issues
+            const newNotification = { id: Date.now(), time: new Date(), read: false, ...notification };
+            const updated = [newNotification, ...prev].slice(0, 50);
+            return updated;
+        });
     };
 
     const markNotificationRead = (id) => {
@@ -541,10 +748,10 @@ export function AppProvider({ children }) {
             // Use roomType or nameEn as the key for appliances
             roomKey = roomData.roomType || roomData.nameEn?.toLowerCase() || room;
         }
-        
+
         // Try multiple room key options
         let roomAppliances = appliances[roomKey] || appliances[room] || [];
-        
+
         // If not found by roomKey, try to find by roomType mapping
         if (roomAppliances.length === 0) {
             const roomMapping = {
@@ -553,7 +760,7 @@ export function AppProvider({ children }) {
                 'livingroom': ['living room', 'livingroom', 'Living Room'],
                 'kitchen': ['kitchen', 'Kitchen']
             };
-            
+
             for (const [key, names] of Object.entries(roomMapping)) {
                 if (names.some(n => room.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(room.toLowerCase()))) {
                     roomAppliances = appliances[key] || [];
@@ -562,7 +769,7 @@ export function AppProvider({ children }) {
                 }
             }
         }
-        
+
         const appliance = roomAppliances.find(a => a.id === applianceId);
         if (!appliance) {
             console.warn(`[toggleAppliance] Appliance ${applianceId} not found in room ${room} (key: ${roomKey})`);
@@ -595,10 +802,10 @@ export function AppProvider({ children }) {
         if (roomData) {
             roomKey = roomData.roomType || roomData.nameEn?.toLowerCase() || room;
         }
-        
+
         // Try multiple room key options
         let roomAppliances = appliances[roomKey] || appliances[room] || [];
-        
+
         // If not found by roomKey, try to find by roomType mapping
         if (roomAppliances.length === 0) {
             const roomMapping = {
@@ -607,7 +814,7 @@ export function AppProvider({ children }) {
                 'livingroom': ['living room', 'livingroom', 'Living Room'],
                 'kitchen': ['kitchen', 'Kitchen']
             };
-            
+
             for (const [key, names] of Object.entries(roomMapping)) {
                 if (names.some(n => room.toLowerCase().includes(n.toLowerCase()) || n.toLowerCase().includes(room.toLowerCase()))) {
                     roomAppliances = appliances[key] || [];
@@ -616,13 +823,13 @@ export function AppProvider({ children }) {
                 }
             }
         }
-        
+
         const appliance = roomAppliances.find(a => a.id === applianceId);
         if (!appliance) {
             console.warn(`[setApplianceValue] Appliance ${applianceId} not found in room ${room} (key: ${roomKey})`);
             return;
         }
-        
+
         setAppliances(prev => ({
             ...prev,
             [roomKey]: (prev[roomKey] || []).map(app =>
@@ -710,6 +917,8 @@ export function AppProvider({ children }) {
         currentUser, setCurrentUser,
         selectedBuilding, setSelectedBuilding,
         selectedFloor, setSelectedFloor,
+        buildings, setBuildings,
+        floors, setFloors,
         currentPage, setCurrentPage,
         sidebarOpen, setSidebarOpen,
         drawerOpen, drawerContent, openDrawer, closeDrawer,
@@ -720,6 +929,7 @@ export function AppProvider({ children }) {
         notifications, addNotification, markNotificationRead, markAllNotificationsRead,
         wheelchairs, setWheelchairs,
         wheelchairPositions, setWheelchairPositions,
+        detectionState,
         patients, setPatients,
         devices, setDevices,
         rooms, setRooms,

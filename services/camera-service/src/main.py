@@ -34,6 +34,8 @@ class CameraService:
         self.ws_client = WebSocketCameraClient(detector_callback=self._on_frame_received)
         self.running = False
         self.last_detection_publish: dict = {}  # room -> timestamp
+        # Device rotation states (device_id -> degrees: 0, 90, 180, 270)
+        self.device_rotations: dict = {}  # device_id -> rotation_degrees
     
     def _get_detector(self, room: str) -> WheelchairDetector:
         """Get or create detector for a room."""
@@ -45,13 +47,46 @@ class CameraService:
         return self.detectors[room]
     
     def _on_frame_received(self, frame: np.ndarray, meta: dict):
-        """Callback when frame is received."""
+        """Callback when frame is received.
+        
+        Receives ORIGINAL unrotated frames from websocket_handler.
+        Applies rotation before detection based on metadata.
+        """
         if not self.running:
+            return
+        
+        # Validate frame
+        if frame is None or frame.size == 0:
+            logger.warning("⚠️ Received empty or invalid frame, skipping")
             return
         
         # Get room from metadata
         room = meta.get("room", "livingroom")
         device_id = meta.get("device_id", settings.DEVICE_ID)
+        
+        # Apply rotation if set for this device
+        # Rotation is applied on server side BEFORE detection
+        rotation = meta.get("rotation") or self.device_rotations.get(device_id, 0)
+        if rotation and rotation != 0:
+            try:
+                # Apply rotation using OpenCV
+                if rotation == 90:
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+                    logger.debug(f"🔄 Rotated frame 90° clockwise for {device_id} ({room})")
+                elif rotation == 180:
+                    frame = cv2.rotate(frame, cv2.ROTATE_180)
+                    logger.debug(f"🔄 Rotated frame 180° for {device_id} ({room})")
+                elif rotation == 270:
+                    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    logger.debug(f"🔄 Rotated frame 270° for {device_id} ({room})")
+                
+                # Validate rotated frame
+                if frame is None or frame.size == 0:
+                    logger.warning(f"⚠️ Frame became invalid after rotation for {device_id}, skipping")
+                    return
+            except Exception as e:
+                logger.error(f"❌ Failed to rotate frame for {device_id}: {e}")
+                return
         
         # Check if we should run detection for this room
         now = time.time()
@@ -62,7 +97,7 @@ class CameraService:
         # Get detector for this room
         detector = self._get_detector(room)
         
-        # Run detection
+        # Run detection on rotated frame
         detection = detector.detect(frame)
         
         # Add frame size to detection for position calculation

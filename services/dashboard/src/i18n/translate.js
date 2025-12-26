@@ -104,6 +104,7 @@ export function clearCache() {
 export async function preloadTranslator() {
     // Pre-translate some common UI strings
     const commonStrings = [
+        // General UI
         'Loading...',
         'Save',
         'Cancel',
@@ -113,6 +114,102 @@ export async function preloadTranslator() {
         'Search',
         'Settings',
         'Close',
+        'Filter',
+        'All',
+        'View Details',
+        'Refresh',
+
+        // Navigation
+        'Admin Panel',
+        'User Portal',
+        'Admin',
+        'User',
+        'Main',
+        'Management',
+        'Tracking',
+        'Tools',
+        'Health',
+        'Control',
+        'More',
+        'Live Monitoring',
+        'Map & Zones',
+        'Wheelchairs & Patients',
+        'Devices & Nodes',
+        'Timeline & Alerts',
+        'Routines',
+        'Analytics',
+        'Appliance Control',
+        'AI Assistant',
+        'Home',
+        'My Location',
+        'My Schedule',
+        'Appliances',
+        'Camera',
+        'Alerts',
+
+        // Rooms
+        'Bedroom',
+        'Bathroom',
+        'Kitchen',
+        'Living Room',
+
+        // Timeline
+        'Timeline & Location History',
+        'Track user movements and events',
+        'Live',
+        'Historical Analysis',
+        'Location',
+        'Enter',
+        'Exit',
+        'Appliance',
+        'Select Date',
+        'Daily Summary',
+        'Total Events',
+        'Time in',
+        'No Events Found',
+        'No events match the selected criteria',
+        'Events',
+        'Moved from',
+        'Detected at',
+        'in previous room',
+
+        // Status
+        'Connected',
+        'Disconnected',
+        'Online',
+        'Offline',
+        'Active',
+        'Inactive',
+
+        // Time
+        'Just now',
+        'ago',
+        'minutes ago',
+        'hours ago',
+        'Last Seen',
+
+        // Devices
+        'Nodes',
+        'Gateways',
+        'Video Streams',
+        'Devices Online',
+        'Devices Offline',
+        'Add Node',
+        'No devices connected. Connect a TsimCam-Controller to see devices here.',
+
+        // Notifications
+        'Notifications',
+        'Mark All Read',
+        'No Notifications',
+        'Device Registered',
+        'Device Updated',
+        'Device Deleted',
+        'Config Mode Activated',
+        'has been registered',
+        'has been updated',
+        'has been deleted from the system',
+        'Config mode command sent to',
+        'Device will enter configuration mode',
     ];
 
     try {

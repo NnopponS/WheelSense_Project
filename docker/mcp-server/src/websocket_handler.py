@@ -11,6 +11,8 @@ import logging
 from datetime import datetime
 from typing import Dict, Set, Optional
 from collections import defaultdict
+import cv2
+import numpy as np
 
 import websockets
 from fastapi import WebSocket, WebSocketDisconnect
@@ -46,11 +48,54 @@ class WebSocketStreamHandler:
         # Frame counter for throttling camera-service forwarding
         self.frame_counters: Dict[str, int] = defaultdict(int)
         
+        # Device rotation cache (device_id -> rotation_degrees: 0, 90, 180, 270)
+        self.device_rotations: Dict[str, int] = {}
+        
         # MQTT handler reference (set from main.py)
         self.mqtt_handler: Optional[object] = None
         
-        # MQTT handler reference (for broadcasting to /ws clients)
-        self.mqtt_handler: Optional[object] = None
+        # Database reference (set from main.py)
+        self.db: Optional[object] = None
+        
+        # Database reference (set from main.py)
+        self.db: Optional[object] = None
+        
+        # Device status tracking for Dashboard
+        # device_id -> {type, room, ip, rssi, frames_sent, uptime, last_seen, online}
+        self.device_status: Dict[str, dict] = {}
+        
+    def get_all_device_status(self) -> list:
+        """Get status of all connected devices for Dashboard."""
+        now = datetime.now()
+        devices = []
+        
+        for device_id, status in self.device_status.items():
+            # Check if device is still connected
+            last_seen = status.get("last_seen", now)
+            if isinstance(last_seen, str):
+                try:
+                    last_seen = datetime.fromisoformat(last_seen)
+                except:
+                    last_seen = now
+            
+            # Device is online if seen within last 30 seconds
+            time_diff = (now - last_seen).total_seconds()
+            online = time_diff < 30
+            
+            devices.append({
+                "device_id": device_id,
+                "type": status.get("type", "camera"),
+                "room": status.get("room", "unknown"),
+                "ip": status.get("ip", ""),
+                "rssi": status.get("rssi", 0),
+                "frames_sent": status.get("frames_sent", 0),
+                "uptime": status.get("uptime", 0),
+                "online": online,
+                "last_seen": last_seen.isoformat() if hasattr(last_seen, 'isoformat') else str(last_seen)
+            })
+        
+        return devices
+        
         
     async def handle_camera_connection(self, websocket: websockets.WebSocketServerProtocol, path: str):
         """Handle incoming WebSocket connection from ESP32 camera, ESP8266 appliance controller, or camera-service."""
@@ -169,8 +214,22 @@ class WebSocketStreamHandler:
                                 msg_type = data.get("type", "")
                                 
                                 if msg_type == "status":
-                                    # Update device status
-                                    logger.debug(f"Status from {device_id}: {data}")
+                                    # Update device status for Dashboard tracking
+                                    self.device_status[device_id] = {
+                                        "type": data.get("device_type", "camera"),
+                                        "room": data.get("room", room),
+                                        "ip": data.get("ip_address", ""),
+                                        "rssi": data.get("rssi", 0),
+                                        "frames_sent": data.get("frames_sent", 0),
+                                        "uptime": data.get("uptime_seconds", 0),
+                                        "last_seen": datetime.now(),
+                                        "target_fps": data.get("target_fps", 30)
+                                    }
+                                    logger.debug(f"Status from {device_id}: online, fps={data.get('target_fps', 30)}")
+                                    
+                                    # Persist status to database
+                                    if self.db:
+                                        asyncio.create_task(self.db.update_device_status(device_id, self.device_status[device_id]))
                                 elif msg_type == "frame_info":
                                     # Frame metadata
                                     logger.debug(f"Frame info from {device_id}: {data}")
@@ -205,11 +264,15 @@ class WebSocketStreamHandler:
                         try:
                             frame = await asyncio.wait_for(frame_queue.get(), timeout=1.0)
                             if room:
-                                # Store latest frame
-                                self.latest_frames[room] = frame
+                                # Apply rotation if set for this device (before storing and broadcasting)
+                                rotated_frame = await self._apply_rotation_if_needed(frame, device_id)
+                                
+                                # Store latest frame (rotated)
+                                self.latest_frames[room] = rotated_frame
                                 # Broadcast to all dashboard clients (non-blocking)
-                                asyncio.create_task(self._broadcast_to_dashboard(room, frame))
-                                # Forward to camera-service via WebSocket (throttled)
+                                asyncio.create_task(self._broadcast_to_dashboard(room, rotated_frame))
+                                # Forward to camera-service via WebSocket (throttled) - use original frame
+                                # Rotation will be applied in camera-service using metadata
                                 asyncio.create_task(self._forward_to_camera_service(room, frame, device_id))
                         except asyncio.TimeoutError:
                             continue
@@ -238,6 +301,69 @@ class WebSocketStreamHandler:
                     # Clear latest frame if no cameras for this room
                     if not any(r == room for r in self.device_rooms.values()):
                         self.latest_frames.pop(room, None)
+    
+    async def _apply_rotation_if_needed(self, frame_bytes: bytes, device_id: str) -> bytes:
+        """Apply rotation to frame if device has rotation set.
+        
+        This is used for dashboard preview frames only.
+        Camera-service receives original unrotated frames.
+        """
+        try:
+            # Validate JPEG frame first
+            if len(frame_bytes) < 2 or frame_bytes[0:2] != b'\xff\xd8':
+                logger.warning(f"⚠️ Invalid JPEG frame for device {device_id} (missing JPEG header)")
+                return frame_bytes
+            
+            if len(frame_bytes) < 100:  # Too small
+                logger.warning(f"⚠️ Frame too small for device {device_id} ({len(frame_bytes)} bytes)")
+                return frame_bytes
+            
+            # Get rotation from cache
+            rotation = self.device_rotations.get(device_id, 0)
+            
+            # If not in cache, try to load from database
+            if not rotation and self.db:
+                try:
+                    device_doc = await self.db.db.devices.find_one({
+                        "$or": [{"id": device_id}, {"deviceId": device_id}]
+                    })
+                    if device_doc:
+                        rotation = device_doc.get("rotation", 0)
+                        self.device_rotations[device_id] = rotation
+                        if rotation:
+                            logger.info(f"Loaded rotation {rotation}° for device {device_id} from database")
+                except Exception as e:
+                    logger.debug(f"Could not get rotation for device {device_id}: {e}")
+            
+            if not rotation or rotation == 0:
+                return frame_bytes
+            
+            # Decode JPEG with error handling
+            frame_array = np.frombuffer(frame_bytes, dtype=np.uint8)
+            frame = cv2.imdecode(frame_array, cv2.IMREAD_COLOR)
+            
+            if frame is None:
+                logger.warning(f"⚠️ Failed to decode JPEG for device {device_id} (corrupt frame)")
+                return frame_bytes
+            
+            # Apply rotation
+            if rotation == 90:
+                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+            elif rotation == 180:
+                frame = cv2.rotate(frame, cv2.ROTATE_180)
+            elif rotation == 270:
+                frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            
+            # Encode back to JPEG
+            success, encoded = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+            if not success:
+                logger.warning(f"⚠️ Failed to encode rotated frame for device {device_id}")
+                return frame_bytes
+            
+            return encoded.tobytes()
+        except Exception as e:
+            logger.warning(f"⚠️ Error applying rotation to frame for device {device_id}: {e}")
+            return frame_bytes
     
     async def _broadcast_to_dashboard(self, room: str, frame: bytes):
         """Broadcast frame to all dashboard clients for a room."""
@@ -391,28 +517,34 @@ class WebSocketStreamHandler:
             confidence = detection.get("confidence", 0.0)
             bbox = detection.get("bbox")
             frame_size = detection.get("frame_size")
+            device_id = detection.get("device_id", "UNKNOWN")
             
-            logger.info(f"🦽 Detection from camera-service ({room}): detected={detected}, confidence={confidence:.2f}")
+            logger.info(f"🦽 Detection from camera-service ({room}): detected={detected}, confidence={confidence:.2f}, device_id={device_id}")
             
             # Create detection message
             detection_message = {
                 "type": "wheelchair_detection",
                 "room": room,
-                "device_id": detection.get("device_id", "UNKNOWN"),
+                "device_id": device_id,
                 "detected": detected,
                 "confidence": confidence,
                 "bbox": bbox,
                 "frame_size": frame_size,
+                "method": detection.get("method", "teachable_machine"),
                 "timestamp": detection.get("timestamp", datetime.now().isoformat())
             }
             
             # Broadcast to dashboard clients via WebSocket (both /ws and /ws/stream endpoints)
             await self._broadcast_detection_to_dashboard(detection_message)
+            logger.info(f"📤 Broadcasted detection to dashboard clients (video stream)")
             
             # Also broadcast via mqtt_handler websockets (for /ws endpoint clients)
             if self.mqtt_handler and hasattr(self.mqtt_handler, '_broadcast_ws'):
+                logger.info(f"Broadcasting via MQTT handler id={id(self.mqtt_handler)}")
                 await self.mqtt_handler._broadcast_ws(detection_message)
-                logger.debug(f"📤 Broadcasted detection to /ws clients via mqtt_handler")
+                logger.info(f"📤 Broadcasted detection to /ws clients via mqtt_handler (count: {len(self.mqtt_handler.websockets) if hasattr(self.mqtt_handler, 'websockets') else 0})")
+            else:
+                logger.warning(f"⚠️ mqtt_handler not available or missing _broadcast_ws method (handler={self.mqtt_handler})")
             
             # Call callback if set (for updating database)
             # This will be set from main.py
@@ -440,7 +572,11 @@ class WebSocketStreamHandler:
         # This will be handled by the /ws endpoint in main.py
     
     async def _forward_to_camera_service(self, room: str, frame: bytes, device_id: str = None):
-        """Forward video frame to camera-service via WebSocket."""
+        """Forward video frame to camera-service via WebSocket.
+        
+        IMPORTANT: Send ORIGINAL unrotated frames to camera-service.
+        Camera-service will apply rotation before detection using the rotation metadata.
+        """
         if not self.camera_service_connection:
             logger.debug(f"⚠️ Camera-service not connected, skipping frame forwarding for {room}")
             return
@@ -448,6 +584,20 @@ class WebSocketStreamHandler:
         # Throttle: only send every 5th frame (for ~25 FPS, this gives ~5 FPS to detection)
         self.frame_counters[room] += 1
         if self.frame_counters[room] % 5 != 0:
+            return
+        
+        # Validate JPEG frame before forwarding
+        try:
+            # Quick validation: check JPEG header
+            if len(frame) < 2 or frame[0:2] != b'\xff\xd8':
+                logger.warning(f"⚠️ Invalid JPEG frame for {room} (missing JPEG header), skipping")
+                return
+            # Check for JPEG end marker (optional but helps catch incomplete frames)
+            if len(frame) < 100:  # Too small to be a valid frame
+                logger.warning(f"⚠️ Frame too small for {room} ({len(frame)} bytes), skipping")
+                return
+        except Exception as e:
+            logger.warning(f"⚠️ Frame validation failed for {room}: {e}")
             return
         
         logger.debug(f"📤 Forwarding frame {self.frame_counters[room]} to camera-service ({room})")
@@ -462,7 +612,20 @@ class WebSocketStreamHandler:
                         device_id = dev_id
                         break
             
-            # Always send metadata before frame so camera-service knows device_id and room
+            # Get rotation from cache or database
+            rotation = self.device_rotations.get(device_id, 0)
+            if not rotation and self.db:
+                try:
+                    device_doc = await self.db.db.devices.find_one({
+                        "$or": [{"id": device_id}, {"deviceId": device_id}]
+                    })
+                    if device_doc:
+                        rotation = device_doc.get("rotation", 0)
+                        self.device_rotations[device_id] = rotation
+                except Exception as e:
+                    logger.debug(f"Could not get rotation for device {device_id}: {e}")
+            
+            # Always send metadata before frame so camera-service knows device_id, room, and rotation
             # Check if it's FastAPI WebSocket or websockets library WebSocket
             if hasattr(self.camera_service_connection, 'send_text'):
                 # FastAPI WebSocket
@@ -470,6 +633,7 @@ class WebSocketStreamHandler:
                     "type": "video_frame",
                     "device_id": device_id or "UNKNOWN",
                     "room": room,
+                    "rotation": rotation,
                     "timestamp": datetime.now().isoformat()
                 }))
                 await self.camera_service_connection.send_bytes(frame)
@@ -479,10 +643,11 @@ class WebSocketStreamHandler:
                     "type": "video_frame",
                     "device_id": device_id or "UNKNOWN",
                     "room": room,
+                    "rotation": rotation,
                     "timestamp": datetime.now().isoformat()
                 }))
                 await self.camera_service_connection.send(frame)
-            logger.info(f"📤 Forwarded video frame to camera-service ({room}, device: {device_id}): {len(frame)} bytes")
+            logger.info(f"📤 Forwarded ORIGINAL frame to camera-service ({room}, device: {device_id}, rotation: {rotation}°): {len(frame)} bytes")
             
         except Exception as e:
             logger.error(f"Error forwarding frame to camera-service: {e}", exc_info=True)

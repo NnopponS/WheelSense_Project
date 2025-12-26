@@ -20,6 +20,9 @@ COPY llm/ ./llm/
 # Copy application code
 COPY mcp-server/src/ ./src/
 
+# Copy migrations
+COPY mcp-server/migrations/ ./migrations/
+
 # Environment variables
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1

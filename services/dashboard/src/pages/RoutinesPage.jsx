@@ -60,7 +60,7 @@ export function RoutinesPage() {
     const handleAiGenerate = async () => {
         setAiGenerating(true);
         setTimeout(() => {
-            const targetPatient = role === 'user' ? currentUser?.id : (selectedPatient !== 'all' ? selectedPatient : 'P001');
+            const targetPatient = role === 'user' ? currentUser?.id : (selectedPatient !== 'all' ? selectedPatient : patients[0]?.id);
             const newRoutines = [
                 { time: '09:00', title: 'Physical Therapy', description: 'Light exercise in living room', patientId: targetPatient, completed: false },
                 { time: '15:00', title: 'Take Medicine', description: 'Daily medication', patientId: targetPatient, completed: false },

@@ -568,9 +568,20 @@ class ToolRegistry:
     
     # ==================== Routine/Timeline Handlers ====================
     
+    async def _get_default_user_id(self) -> str:
+        """Get default user_id by fetching first patient from database."""
+        if self.db:
+            try:
+                patient = await self.db.db.patients.find_one({})
+                if patient:
+                    return patient.get("id", str(patient.get("_id")))
+            except Exception as e:
+                logger.warning(f"Failed to get default user_id: {e}")
+        return None  # Return None instead of hardcoded P001
+    
     async def _handle_get_routines(self, args: Dict) -> Dict:
         """Get user's daily routines."""
-        user_id = args.get("user_id", "P001")
+        user_id = args.get("user_id") or await self._get_default_user_id()
         
         try:
             async with httpx.AsyncClient() as client:
@@ -592,7 +603,7 @@ class ToolRegistry:
         time = args.get("time")
         title = args.get("title")
         description = args.get("description", "")
-        user_id = args.get("user_id", "P001")
+        user_id = args.get("user_id") or await self._get_default_user_id()
         
         routine = {
             "id": f"R{datetime.now().timestamp()}",
@@ -642,7 +653,7 @@ class ToolRegistry:
     
     async def _handle_analyze_behavior(self, args: Dict) -> Dict:
         """Analyze user behavior from timeline."""
-        user_id = args.get("user_id", "P001")
+        user_id = args.get("user_id") or await self._get_default_user_id()
         period = args.get("period", "today")
         
         try:
@@ -683,7 +694,7 @@ class ToolRegistry:
     
     async def _handle_get_timeline(self, args: Dict) -> Dict:
         """Get activity timeline."""
-        user_id = args.get("user_id", "P001")
+        user_id = args.get("user_id") or await self._get_default_user_id()
         limit = args.get("limit", 20)
         
         try:
@@ -704,7 +715,7 @@ class ToolRegistry:
     
     async def _handle_get_doctor_notes(self, args: Dict) -> Dict:
         """Get doctor's notes for a patient."""
-        user_id = args.get("user_id", "P001")
+        user_id = args.get("user_id") or await self._get_default_user_id()
         
         # Mock response - in production would fetch from database
         return {
@@ -727,7 +738,7 @@ class ToolRegistry:
     
     async def _handle_apply_doctor_recommendations(self, args: Dict) -> Dict:
         """Apply doctor's recommendations to user's timeline."""
-        user_id = args.get("user_id", "P001")
+        user_id = args.get("user_id") or await self._get_default_user_id()
         note_id = args.get("note_id")
         
         # This would parse doctor's notes and create/update routines accordingly
@@ -748,7 +759,7 @@ class ToolRegistry:
     
     async def _handle_get_user_info(self, args: Dict) -> Dict:
         """Get user information."""
-        user_id = args.get("user_id", "P001")
+        user_id = args.get("user_id") or await self._get_default_user_id()
         
         try:
             async with httpx.AsyncClient() as client:
@@ -759,16 +770,11 @@ class ToolRegistry:
                     **data
                 }
         except Exception:
-            # Mock response
+            # Return error instead of mock data
             return {
-                "success": True,
-                "id": "P001",
-                "name": "Somchai Jaidee",
-                "age": 65,
-                "room": "bedroom",
-                "wheelchair": "WC001",
-                "health_score": 87,
-                "status": "normal"
+                "success": False,
+                "error": f"User {user_id} not found",
+                "message": "Please specify a valid user_id"
             }
     
     # ==================== Helpers ====================

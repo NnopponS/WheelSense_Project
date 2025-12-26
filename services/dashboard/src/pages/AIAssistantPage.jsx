@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { Bot, Send, Sparkles, Lightbulb, Thermometer, Tv, Fan, Power, AlertTriangle } from 'lucide-react';
-import { mcp } from '../services/api';
+import * as api from '../services/api';
 
 export function AIAssistantPage() {
     const { rooms, appliances, toggleAppliance, patients, language } = useApp();
@@ -23,47 +23,79 @@ export function AIAssistantPage() {
     }, [messages]);
 
     const handleSend = async () => {
-        if (!input.trim() || isLoading) return;
+        const messageText = input;
+        if (!messageText.trim() || isLoading) return;
 
-        const userMessage = { id: Date.now(), role: 'user', content: input };
+        const userMessage = { id: Date.now(), role: 'user', content: messageText };
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
 
         try {
-            // Call MCP server chat endpoint
-            const response = await mcp.chat([
-                { role: 'user', content: input }
-            ], ['control_appliance', 'get_room_status', 'get_user_location', 'set_scene', 'send_emergency']);
+            // Use shared AI chat API (same backend as floating AI assistant)
+            const response = await api.chat(
+                [{ role: 'user', content: messageText }],
+                [
+                    'control_appliance',
+                    'get_room_status',
+                    'get_user_location',
+                    'set_scene',
+                    'send_emergency',
+                    'get_user_routines',
+                    'add_routine',
+                    'analyze_behavior',
+                    'get_doctor_notes'
+                ]
+            );
+
+            let responseText = response.response || 'Sorry, unable to process your request';
+
+            // If backend returns an error message string, treat it as error and use fallback
+            if (responseText.includes('Error:') || responseText.toLowerCase().includes('error:')) {
+                throw new Error(responseText);
+            }
 
             const assistantMessage = {
                 id: Date.now() + 1,
                 role: 'assistant',
-                content: response.response || 'Sorry, I couldn\'t process your request',
+                content: responseText,
                 toolResults: response.tool_results || []
             };
             setMessages(prev => [...prev, assistantMessage]);
         } catch (error) {
             console.error('Chat error:', error);
-            // Fallback to mock response
-            const mockResponses = {
-                'status': `📊 Current System Status:\n\n• Patients in system: ${patients.length}\n• Occupied rooms: ${rooms.filter(r => r.occupied).map(r => r.name).join(', ')}\n• Active appliances: ${Object.values(appliances).flat().filter(a => a.state).length} devices`,
-                'turn on light': '💡 Turned on bedroom light',
-                'turn off light': '💡 Turned off bedroom light',
-                'AC': '❄️ Turned on AC, set temperature to 25°C',
-                'patient': `👥 Patient List:\n${patients.map(p => `• ${p.name} - ${p.condition}`).join('\n')}`,
-            };
 
-            let responseContent = 'I understand your question, but I cannot connect to the AI server right now. Please try again later.';
+            // Extract error message
+            const errorMessage = error.message || 'Unknown error';
+            const lowerErrorMessage = errorMessage.toLowerCase();
 
-            for (const [key, value] of Object.entries(mockResponses)) {
-                if (input.toLowerCase().includes(key.toLowerCase())) {
-                    responseContent = value;
-                    break;
-                }
+            // Detect connection-related errors
+            const is404 = lowerErrorMessage.includes('404') || lowerErrorMessage.includes('not found');
+            const is503 = lowerErrorMessage.includes('503') || lowerErrorMessage.includes('service unavailable');
+            const isConnectionError =
+                is404 ||
+                is503 ||
+                lowerErrorMessage.includes('network') ||
+                lowerErrorMessage.includes('fetch') ||
+                lowerErrorMessage.includes('ollama');
+
+            // Pure error message – no hardcoded AI logic or mock answers
+            let responseContent;
+            if (isConnectionError) {
+                responseContent =
+                    `⚠️ Unable to connect to AI server.\n` +
+                    `Details: ${errorMessage}\n` +
+                    `Please check the backend service or your network and try again.`;
+            } else {
+                responseContent =
+                    `⚠️ AI error: ${errorMessage}\n` +
+                    `Please try again or contact the system administrator.`;
             }
 
-            setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: responseContent }]);
+            setMessages(prev => [
+                ...prev,
+                { id: Date.now() + 1, role: 'assistant', content: responseContent }
+            ]);
         } finally {
             setIsLoading(false);
         }

@@ -1,289 +1,305 @@
 """
-Wheelchair Detection Module - Background Subtraction Based
-Uses Background Subtraction (MOG2) to separate objects from background
-and detects only when object changes position
+Wheelchair Detection Module - Teachable Machine Based
+Uses Google Teachable Machine Keras model to detect wheelchairs in video frames
 """
 
 import cv2
 import numpy as np
 import logging
-from typing import Optional, Tuple, Dict, List
+import os
+import json
+from typing import Optional, Tuple, Dict
 
 logger = logging.getLogger(__name__)
 
+# Try to import TensorFlow
+try:
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress TF warnings
+    import tensorflow as tf
+    TF_AVAILABLE = True
+except ImportError:
+    TF_AVAILABLE = False
+    logger.warning("TensorFlow not installed. Please install with: pip install tensorflow")
+
 
 class WheelchairDetector:
-    """Wheelchair detection using background subtraction.
+    """Wheelchair detection using Teachable Machine.
     
-    Logic: 
-    1. Use MOG2 Background Subtractor to separate foreground objects from background
-    2. Filter noise with morphological operations
-    3. Track object position and detect only when object changes position
+    Uses Teachable Machine Keras model to classify images:
+    - 'Wheelchair' class: wheelchair detected
+    - 'NoWheelChair' class: no wheelchair
+    
+    Logic:
+    1. Preprocess frame to 224x224, normalize to [-1, 1]
+    2. Run TensorFlow inference
+    3. Check if 'Wheelchair' class has highest confidence above threshold
     """
     
-    def __init__(self, confidence_threshold: float = 0.5):
+    # Model paths
+    MODEL_PATH = '/app/models/tm-my-image-model'
+    FALLBACK_MODEL_PATH = 'tm-my-image-model'  # For local development
+    
+    def __init__(self, confidence_threshold: float = 0.5, model_path: str = None):
         self.confidence_threshold = confidence_threshold
+        self.model = None
+        self.labels = []
+        self.image_size = 224
+        self.loaded = False
         
-        # Background Subtractor (MOG2 - Mixture of Gaussians)
-        # history=500: number of frames used to build background model
-        # varThreshold=50: threshold for separating foreground (higher = less sensitive to noise)
-        # detectShadows=False: don't detect shadows
-        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
-            history=300,
-            varThreshold=25,  # Lower = more sensitive to changes
-            detectShadows=False
-        )
-        
-        # Morphological kernel for noise reduction
-        self.kernel_noise = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        self.kernel_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20))
-        
-        # Object tracking settings
-        self.min_object_area = 500  # Minimum area in pixels (lowered for sensitivity)
-        self.max_object_area_percent = 70  # Maximum % of frame (filter out too large objects)
-        
-        # Debug settings
-        self.debug_interval = 30  # Log debug info every N frames
+        # Load model
+        if TF_AVAILABLE:
+            self._load_model(model_path)
+        else:
+            logger.error("❌ TensorFlow not available - detection disabled")
         
         # Position tracking
-        self.last_object_center: Optional[Tuple[int, int]] = None
-        self.position_change_threshold = 30  # Pixels - minimum distance to consider as "moved"
-        
-        # State management
-        self.stable_object_count = 0  # Counter for stable object detection
-        self.no_object_count = 0
+        self.last_detection_result = None
+        self.stable_detection_count = 0
+        self.no_detection_count = 0
         self.detection_state = False
         self.current_room_has_wheelchair = False
         
-        # Frame counter for background learning
+        # Frame counter
         self.frame_count = 0
-        self.learning_frames = 30  # Frames needed to learn background
+        self.debug_interval = 30  # Log debug info every N frames
         
-        logger.info("Background Subtraction wheelchair detector initialized")
-        logger.info(f"  Min object area: {self.min_object_area} px")
-        logger.info(f"  Position change threshold: {self.position_change_threshold} px")
-        logger.info(f"  Background learning frames: {self.learning_frames}")
+        logger.info("Teachable Machine Wheelchair Detector initialized")
+        logger.info(f"  Confidence threshold: {self.confidence_threshold}")
+        logger.info(f"  Model available: {self.loaded}")
+        if self.loaded:
+            logger.info(f"  Labels: {self.labels}")
+            logger.info(f"  Image size: {self.image_size}x{self.image_size}")
+    
+    def _load_model(self, model_path: str = None):
+        """Load Teachable Machine Keras model."""
+        # Determine model path
+        paths_to_try = []
+        if model_path:
+            paths_to_try.append(model_path)
+        paths_to_try.extend([self.MODEL_PATH, self.FALLBACK_MODEL_PATH])
+        
+        model_dir = None
+        for path in paths_to_try:
+            if os.path.isdir(path):
+                keras_path = os.path.join(path, "keras_model.h5")
+                if os.path.exists(keras_path):
+                    model_dir = path
+                    break
+        
+        if not model_dir:
+            logger.error(f"❌ No valid model directory found. Tried: {paths_to_try}")
+            return
+        
+        try:
+            # Load labels
+            labels_path = os.path.join(model_dir, "labels.txt")
+            metadata_path = os.path.join(model_dir, "metadata.json")
+            
+            if os.path.exists(metadata_path):
+                with open(metadata_path) as f:
+                    metadata = json.load(f)
+                    self.labels = metadata.get("labels", [])
+                    self.image_size = metadata.get("imageSize", 224)
+            
+            if os.path.exists(labels_path) and not self.labels:
+                with open(labels_path) as f:
+                    # Parse labels.txt format: "0 Wheelchair" or just "Wheelchair"
+                    for line in f:
+                        parts = line.strip().split(' ', 1)
+                        if len(parts) == 2:
+                            self.labels.append(parts[1])
+                        else:
+                            self.labels.append(parts[0])
+            
+            # Load Keras model
+            keras_path = os.path.join(model_dir, "keras_model.h5")
+            logger.info(f"📥 Loading Teachable Machine model: {keras_path}")
+            
+            self.model = tf.keras.models.load_model(keras_path, compile=False)
+            self.loaded = True
+            logger.info(f"✅ Model loaded successfully!")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load model: {e}")
+            self.model = None
+            self.loaded = False
     
     def detect(self, frame: np.ndarray) -> Dict:
         """
-        Detect objects using background subtraction.
-        Only triggers when a significant object is detected and has moved.
+        Detect wheelchair using Teachable Machine.
         
         Returns:
             dict with keys:
-                - detected: bool (True if wheelchair detected in this room)
-                - confidence: float (based on object size and stability)
-                - bbox: tuple (x, y, w, h) of object or None
-                - method: str ("background_subtraction")
-                - object_area: float (area of detected object)
-                - position_changed: bool (whether object moved significantly)
+                - detected: bool (True if wheelchair detected)
+                - confidence: float (detection confidence)
+                - bbox: tuple (x, y, w, h) - full frame bbox when detected
+                - method: str ("teachable_machine")
+                - class_name: str (detected class name)
+                - position_changed: bool (whether detection state changed)
+                - all_probs: dict (all class probabilities)
         """
         if frame is None or frame.size == 0:
-            return self._create_result(False, 0.0, None, 0.0, False)
+            return self._create_result(False, 0.0, None, None, False, {})
         
         self.frame_count += 1
-        frame_height, frame_width = frame.shape[:2]
-        frame_area = frame_height * frame_width
         
-        # Apply background subtraction
-        # learningRate: -1 = auto, smaller = slower learning (more stable background)
-        learning_rate = 0.01 if self.frame_count > self.learning_frames else 0.1
-        fg_mask = self.bg_subtractor.apply(frame, learningRate=learning_rate)
+        # If model not available, return no detection
+        if not self.loaded or self.model is None:
+            if self.frame_count % self.debug_interval == 0:
+                logger.warning("Teachable Machine model not available, detection disabled")
+            return self._create_result(False, 0.0, None, None, False, {})
         
-        # Still learning background
-        if self.frame_count < self.learning_frames:
-            logger.debug(f"Learning background... ({self.frame_count}/{self.learning_frames})")
-            return self._create_result(False, 0.0, None, 0.0, False)
-        
-        # Apply morphological operations to reduce noise
-        # 1. Opening: remove small noise (erode then dilate)
-        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, self.kernel_noise)
-        
-        # 2. Closing: fill holes in objects (dilate then erode)
-        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, self.kernel_close)
-        
-        # 3. Additional threshold to remove gray areas
-        _, fg_mask = cv2.threshold(fg_mask, 200, 255, cv2.THRESH_BINARY)
-        
-        # Find contours of foreground objects
-        contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        # Calculate foreground coverage for debugging
-        fg_pixels = cv2.countNonZero(fg_mask)
-        fg_percent = (fg_pixels / frame_area) * 100
-        
-        # Debug log every N frames
-        if self.frame_count % self.debug_interval == 0:
-            logger.info(f"📊 Frame {self.frame_count}: FG={fg_percent:.1f}%, Contours={len(contours)}")
-        
-        # Filter and find significant objects
-        valid_objects: List[Tuple[np.ndarray, float, Tuple[int, int, int, int]]] = []
-        
-        for contour in contours:
-            area = cv2.contourArea(contour)
-            area_percent = (area / frame_area) * 100
+        try:
+            # Preprocess image for Teachable Machine
+            img = cv2.resize(frame, (self.image_size, self.image_size))
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = img.astype(np.float32) / 255.0
+            img = (img - 0.5) / 0.5  # Normalize to [-1, 1]
+            img = np.expand_dims(img, axis=0)
             
-            # Filter by area
-            if area < self.min_object_area:
-                continue  # Too small, probably noise
+            # Run inference
+            predictions = self.model.predict(img, verbose=0)[0]
             
-            if area_percent > self.max_object_area_percent:
-                continue  # Too large, probably lighting change or camera movement
+            # Get results
+            all_probs = {}
+            for i, label in enumerate(self.labels):
+                all_probs[label] = float(predictions[i])
             
-            x, y, w, h = cv2.boundingRect(contour)
+            best_idx = np.argmax(predictions)
+            best_label = self.labels[best_idx] if self.labels else str(best_idx)
+            best_conf = float(predictions[best_idx])
             
-            # Filter by aspect ratio (wheelchair-like objects are roughly square-ish)
-            aspect_ratio = w / h if h > 0 else 0
-            if aspect_ratio < 0.3 or aspect_ratio > 3.0:
-                continue  # Too narrow or too wide
+            # Check for wheelchair detection
+            # Look for "Wheelchair" in label name (case insensitive)
+            # But NOT "NoWheelChair"
+            is_wheelchair = (
+                "wheelchair" in best_label.lower() and 
+                "no" not in best_label.lower() and
+                best_conf >= self.confidence_threshold
+            )
             
-            valid_objects.append((contour, area, (x, y, w, h)))
-        
-        # No valid objects detected
-        if not valid_objects:
-            self.no_object_count += 1
-            self.stable_object_count = 0
+            # State tracking
+            prev_state = self.detection_state
             
-            # After many frames without detection, reset state
-            if self.no_object_count >= 10:
-                self.detection_state = False
-                self.last_object_center = None
+            if is_wheelchair:
+                self.stable_detection_count += 1
+                self.no_detection_count = 0
+                
+                if self.stable_detection_count >= 2:
+                    self.detection_state = True
+                    self.current_room_has_wheelchair = True
+            else:
+                self.no_detection_count += 1
+                self.stable_detection_count = 0
+                
+                if self.no_detection_count >= 5:
+                    self.detection_state = False
+                    self.current_room_has_wheelchair = False
+            
+            # Determine if state changed
+            state_changed = self.detection_state != prev_state
+            
+            # Teachable Machine is image classification, not object detection
+            # It cannot provide accurate bounding box coordinates
+            # So we return None for bbox - the UI should not draw bbox for classification models
+            bbox = None
+            
+            # Log periodic status
+            if self.frame_count % self.debug_interval == 0:
+                logger.debug(f"📊 Frame {self.frame_count}: {best_label} ({best_conf:.2f}), "
+                           f"detected={self.detection_state}")
+            
+            # Log state changes
+            if state_changed:
+                if self.detection_state:
+                    logger.info(f"✅ Wheelchair DETECTED! {best_label} ({best_conf:.2f})")
+                else:
+                    logger.info(f"❌ Wheelchair LOST. Now: {best_label} ({best_conf:.2f})")
             
             return self._create_result(
-                self.detection_state, 
-                0.0 if not self.detection_state else 0.5, 
-                None, 0.0, False
+                self.detection_state,
+                best_conf,
+                bbox,
+                best_label,
+                state_changed,
+                all_probs
             )
-        
-        # Get the largest valid object
-        largest_object = max(valid_objects, key=lambda x: x[1])
-        contour, area, bbox = largest_object
-        x, y, w, h = bbox
-        
-        # Calculate object center
-        current_center = (x + w // 2, y + h // 2)
-        
-        # Check if position changed significantly
-        position_changed = False
-        if self.last_object_center is not None:
-            distance = np.sqrt(
-                (current_center[0] - self.last_object_center[0]) ** 2 +
-                (current_center[1] - self.last_object_center[1]) ** 2
-            )
-            position_changed = distance >= self.position_change_threshold
             
-            if position_changed:
-                logger.info(f"🚀 Object moved! Distance: {distance:.1f}px, New position: {current_center}")
-        else:
-            # First time seeing an object
-            position_changed = True
-            logger.info(f"🆕 New object detected at position: {current_center}")
-        
-        # Update tracking
-        self.last_object_center = current_center
-        self.no_object_count = 0
-        self.stable_object_count += 1
-        
-        # Calculate confidence
-        area_percent = (area / frame_area) * 100
-        confidence = min(1.0, area_percent / 20.0)  # Max confidence at 20% of frame
-        
-        # Update detection state
-        # Immediately confirm when we see an object (even if not moved)
-        if self.stable_object_count >= 1:
-            if not self.detection_state or position_changed:
-                self.detection_state = True
-                self.current_room_has_wheelchair = True
-                logger.info(f"✅ Wheelchair confirmed! Area: {area_percent:.1f}%, Confidence: {confidence:.2f}, Room will be updated")
-        
-        return self._create_result(
-            self.detection_state,
-            confidence if self.detection_state else 0.0,
-            bbox,
-            area_percent,
-            position_changed
-        )
+        except Exception as e:
+            logger.error(f"Detection error: {e}")
+            return self._create_result(False, 0.0, None, None, False, {})
     
-    def _create_result(self, detected: bool, confidence: float, bbox: Optional[Tuple], 
-                       object_area: float, position_changed: bool) -> Dict:
+    def _create_result(self, detected: bool, confidence: float, bbox: Optional[Tuple],
+                       class_name: Optional[str], position_changed: bool, 
+                       all_probs: Dict) -> Dict:
         """Create a detection result dictionary."""
         return {
             "detected": detected,
-            "confidence": round(confidence, 2),
+            "confidence": round(confidence, 3),
             "bbox": bbox,
-            "method": "background_subtraction",
-            "object_area": round(object_area, 2),
-            "position_changed": position_changed
+            "method": "teachable_machine",
+            "class_name": class_name,
+            "position_changed": position_changed,
+            "all_probs": all_probs
         }
     
     def draw_detection(self, frame: np.ndarray, detection: Dict) -> np.ndarray:
         """Draw detection result on frame."""
-        bbox = detection.get("bbox")
-        object_area = detection.get("object_area", 0.0)
-        detected = detection.get("detected", False)
+        output = frame.copy()
         
-        if bbox is not None:
-            x, y, w, h = bbox
-            color = (0, 255, 0) if detected else (0, 255, 255)  # Green if detected, yellow otherwise
-            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-            
-            # Draw center point
-            center_x, center_y = x + w // 2, y + h // 2
-            cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)
+        detected = detection.get("detected", False)
+        confidence = detection.get("confidence", 0.0)
+        class_name = detection.get("class_name", "unknown")
+        all_probs = detection.get("all_probs", {})
         
         # Draw status
-        status_color = (0, 255, 0) if detected else (0, 0, 255)
-        status_text = "WHEELCHAIR IN ROOM" if detected else "NO WHEELCHAIR"
-        cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, status_color, 2)
+        if detected:
+            color = (0, 255, 0)  # Green
+            text = f"WHEELCHAIR ({confidence:.0%})"
+        else:
+            color = (0, 0, 255)  # Red
+            text = f"{class_name} ({confidence:.0%})"
         
-        # Draw object area
-        if object_area > 0:
-            cv2.putText(frame, f"Object: {object_area:.1f}%", (10, 60), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(output, text, (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2)
         
-        # Draw learning status
-        if self.frame_count < self.learning_frames:
-            cv2.putText(frame, f"Learning BG: {self.frame_count}/{self.learning_frames}", 
-                       (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 165, 0), 2)
+        # Draw probability bars
+        y = 80
+        for label, prob in all_probs.items():
+            bar_len = int(prob * 200)
+            bar_color = (0, 255, 0) if "wheelchair" in label.lower() and "no" not in label.lower() else (100, 100, 255)
+            cv2.rectangle(output, (10, y-15), (10+bar_len, y+5), bar_color, -1)
+            cv2.putText(output, f"{label}: {prob:.0%}", (15, y), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            y += 30
         
-        return frame
+        # Draw method
+        cv2.putText(output, "Method: Teachable Machine", (10, y + 10), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        
+        return output
     
     def reset(self):
-        """Reset detector state and background model."""
-        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
-            history=500,
-            varThreshold=50,
-            detectShadows=False
-        )
-        self.last_object_center = None
-        self.stable_object_count = 0
-        self.no_object_count = 0
+        """Reset detector state."""
+        self.stable_detection_count = 0
+        self.no_detection_count = 0
         self.detection_state = False
         self.current_room_has_wheelchair = False
         self.frame_count = 0
-        logger.info("Detector reset - background model cleared")
+        self.last_detection_result = None
+        logger.info("Detector reset")
     
     def get_background_mask(self, frame: np.ndarray) -> np.ndarray:
-        """Get the current foreground mask for debugging."""
+        """Get a detection visualization mask (for compatibility)."""
         if frame is None:
             return np.zeros((100, 100), dtype=np.uint8)
         
-        fg_mask = self.bg_subtractor.apply(frame, learningRate=0)
-        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, self.kernel_noise)
-        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, self.kernel_close)
-        return fg_mask
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        # Run detection and create a mask
+        detection = self.detect(frame)
+        mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+        
+        bbox = detection.get("bbox")
+        if bbox is not None:
+            x, y, w, h = bbox
+            mask[y:y+h, x:x+w] = 255
+        
+        return mask
