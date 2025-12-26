@@ -430,10 +430,24 @@ export function AppProvider({ children }) {
                                         const centerY = (roomData.y || 50) + (roomData.height || 20) / 2;
 
                                         // Check if wheelchair is moving to a DIFFERENT room
+                                        // Normalize both values for comparison
+                                        const wcRoomLower = wheelchair.room?.toLowerCase().trim() || '';
+                                        const roomIdLower = roomData.id?.toLowerCase() || '';
+                                        const roomTypeLower = roomData.roomType?.toLowerCase() || '';
+                                        const roomNameEnLower = roomData.nameEn?.toLowerCase() || '';
+                                        const roomNameLower = roomData.name?.toLowerCase() || '';
+                                        
                                         const isChangingRoom = wheelchair.room !== roomData.id &&
-                                            wheelchair.room?.toLowerCase() !== roomData.id?.toLowerCase() &&
-                                            wheelchair.room?.toLowerCase() !== roomData.roomType?.toLowerCase() &&
-                                            wheelchair.room?.toLowerCase() !== roomData.nameEn?.toLowerCase();
+                                            wcRoomLower !== roomIdLower &&
+                                            wcRoomLower !== roomTypeLower &&
+                                            wcRoomLower !== roomNameEnLower &&
+                                            wcRoomLower !== roomNameLower &&
+                                            // Also check if wheelchair.room is a room name that doesn't match current room
+                                            !(wcRoomLower && (
+                                                (roomTypeLower && wcRoomLower.includes(roomTypeLower)) ||
+                                                (roomNameEnLower && wcRoomLower.includes(roomNameEnLower)) ||
+                                                (roomNameLower && wcRoomLower.includes(roomNameLower))
+                                            ));
 
                                         if (isChangingRoom) {
                                             // CHANGING ROOM: Use existing marker position if available, otherwise center of new room
@@ -464,6 +478,11 @@ export function AppProvider({ children }) {
                                                     ? { ...w, room: roomData.id }
                                                     : w
                                             ));
+                                            
+                                            // Save wheelchair.room to API
+                                            api.updateWheelchair(wheelchair.id, { room: roomData.id }).catch(err => {
+                                                console.error('Failed to save wheelchair room:', err);
+                                            });
 
                                             // Update patient(s) who use this wheelchair
                                             setPatients(prev => prev.map(p => {
@@ -486,10 +505,24 @@ export function AppProvider({ children }) {
                                         } else {
                                             // SAME ROOM: Update position but also ensure patient.room is correct
                                             // Check if wheelchair.room needs to be updated to match detected room
+                                            // Normalize both values for comparison
+                                            const wcRoomLowerSame = wheelchair.room?.toLowerCase().trim() || '';
+                                            const roomIdLowerSame = roomData.id?.toLowerCase() || '';
+                                            const roomTypeLowerSame = roomData.roomType?.toLowerCase() || '';
+                                            const roomNameEnLowerSame = roomData.nameEn?.toLowerCase() || '';
+                                            const roomNameLowerSame = roomData.name?.toLowerCase() || '';
+                                            
                                             const needsRoomUpdate = wheelchair.room !== roomData.id &&
-                                                wheelchair.room?.toLowerCase() !== roomData.id?.toLowerCase() &&
-                                                wheelchair.room?.toLowerCase() !== roomData.roomType?.toLowerCase() &&
-                                                wheelchair.room?.toLowerCase() !== roomData.nameEn?.toLowerCase();
+                                                wcRoomLowerSame !== roomIdLowerSame &&
+                                                wcRoomLowerSame !== roomTypeLowerSame &&
+                                                wcRoomLowerSame !== roomNameEnLowerSame &&
+                                                wcRoomLowerSame !== roomNameLowerSame &&
+                                                // Also check if wheelchair.room is a room name that doesn't match current room
+                                                !(wcRoomLowerSame && (
+                                                    (roomTypeLowerSame && wcRoomLowerSame.includes(roomTypeLowerSame)) ||
+                                                    (roomNameEnLowerSame && wcRoomLowerSame.includes(roomNameEnLowerSame)) ||
+                                                    (roomNameLowerSame && wcRoomLowerSame.includes(roomNameLowerSame))
+                                                ));
 
                                             if (needsRoomUpdate) {
                                                 console.log(`[AppContext] 📍 Updating wheelchair ${wheelchair.id} room from ${wheelchair.room} to ${roomData.id} (same room detection)`);
@@ -500,6 +533,11 @@ export function AppProvider({ children }) {
                                                         ? { ...w, room: roomData.id }
                                                         : w
                                                 ));
+                                                
+                                                // Save wheelchair.room to API
+                                                api.updateWheelchair(wheelchair.id, { room: roomData.id }).catch(err => {
+                                                    console.error('Failed to save wheelchair room:', err);
+                                                });
 
                                                 // Update patient(s) who use this wheelchair
                                                 setPatients(prev => prev.map(p => {

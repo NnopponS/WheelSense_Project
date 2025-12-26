@@ -46,7 +46,7 @@ DEFAULT_WHEELCHAIR = {
     "name": "Wheelchair A1",
     "patientId": None,  # Will be linked to patient
     "patientName": None,
-    "room": "kitchen",  # Default to where patient is
+    "room": "bedroom",  # Default to where patient is
     "status": "active",
     "battery": 85,
     "speed": 0,
@@ -93,7 +93,7 @@ async def run_migration():
         if patient:
             DEFAULT_WHEELCHAIR["patientId"] = patient.get("id")
             DEFAULT_WHEELCHAIR["patientName"] = patient.get("name")
-            DEFAULT_WHEELCHAIR["room"] = patient.get("room", "kitchen")
+            DEFAULT_WHEELCHAIR["room"] = patient.get("room", "bedroom")
             logger.info(f"🔗 Linking wheelchair to patient: {patient.get('name')}")
         
         # Add default wheelchair (only if not exists)
@@ -111,7 +111,7 @@ async def run_migration():
                     {"$set": {
                         "patientId": patient.get("id"),
                         "patientName": patient.get("name"),
-                        "room": patient.get("room", existing_wc.get("room", "kitchen")),
+                        "room": patient.get("room", existing_wc.get("room", "bedroom")),
                         "updatedAt": datetime.utcnow()
                     }}
                 )

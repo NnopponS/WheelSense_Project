@@ -93,6 +93,7 @@ export function UserLocationPage() {
                                     left: `${markerX}%`,
                                     top: `${markerY}%`
                                 }}
+                                title={`${myWheelchair.name} - ${currentUser?.name || t('User')} • ${myRoom?.nameEn || myRoom?.name || t('Unknown Location')}`}
                             >
                                 <span style={{ fontSize: '1rem' }}>📍</span>
                             </div>

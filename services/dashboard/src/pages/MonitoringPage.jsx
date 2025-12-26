@@ -149,10 +149,50 @@ export function MonitoringPage() {
                                     <div className="list-item-subtitle">
                                         {wc.patientName || t('No User')} • {(() => {
                                             if (!wc.room) return t('Unknown Location');
-                                            const r = safeRooms.find(r => r.id === wc.room) ||
-                                                safeRooms.find(r => r.roomType?.toLowerCase() === wc.room.toLowerCase()) ||
-                                                safeRooms.find(r => r.nameEn?.toLowerCase() === wc.room.toLowerCase());
-                                            return r ? (r.nameEn || r.name) : wc.room;
+                                            
+                                            // Normalize room value for matching
+                                            const roomLower = wc.room?.toLowerCase().trim() || '';
+                                            
+                                            // Try multiple matching strategies
+                                            let r = safeRooms.find(r => r.id === wc.room) ||
+                                                safeRooms.find(r => r.roomType?.toLowerCase() === roomLower) ||
+                                                safeRooms.find(r => r.nameEn?.toLowerCase() === roomLower) ||
+                                                safeRooms.find(r => r.name?.toLowerCase() === roomLower);
+                                            
+                                            // If still not found, try flexible matching with common room name variations
+                                            if (!r) {
+                                                // Map database room values to room types
+                                                const roomTypeMap = {
+                                                    'kitchen': 'kitchen',
+                                                    'kitch': 'kitchen',
+                                                    'bedroom': 'bedroom',
+                                                    'bed room': 'bedroom',
+                                                    'bathroom': 'bathroom',
+                                                    'bath room': 'bathroom',
+                                                    'livingroom': 'livingroom',
+                                                    'living room': 'livingroom'
+                                                };
+                                                
+                                                const mappedRoomType = roomTypeMap[roomLower] || roomLower;
+                                                
+                                                // Try to find room by roomType or nameEn containing the mapped value
+                                                r = safeRooms.find(r => {
+                                                    const rType = r.roomType?.toLowerCase() || '';
+                                                    const rNameEn = r.nameEn?.toLowerCase() || '';
+                                                    const rName = r.name?.toLowerCase() || '';
+                                                    
+                                                    return rType === mappedRoomType ||
+                                                           rNameEn.includes(mappedRoomType) ||
+                                                           rName.includes(mappedRoomType) ||
+                                                           (mappedRoomType === 'kitchen' && (rNameEn.includes('kitchen') || rName.includes('ครัว'))) ||
+                                                           (mappedRoomType === 'bedroom' && (rNameEn.includes('bed') || rName.includes('นอน'))) ||
+                                                           (mappedRoomType === 'bathroom' && (rNameEn.includes('bath') || rName.includes('น้ำ'))) ||
+                                                           (mappedRoomType === 'livingroom' && (rNameEn.includes('living') || rName.includes('นั่ง')));
+                                                });
+                                            }
+                                            
+                                            // Return room name if found, otherwise show unknown (don't show raw "KITCHEN")
+                                            return r ? (r.nameEn || r.name) : t('Unknown Location');
                                         })()}
                                     </div>
                                 </div>

@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
@@ -11,10 +12,12 @@ import {
     CheckCircle, AlertTriangle, Lightbulb, Thermometer,
     Tv, Fan, Wind, Power
 } from 'lucide-react';
+import { pageToPath } from '../../App';
 
 export function UserHomePage() {
-    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, language } = useApp();
+    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, language, setCurrentPage } = useApp();
     const { t } = useTranslation(language);
+    const navigate = useNavigate();
 
     // Early return if currentUser is not available
     if (!currentUser) {
@@ -85,11 +88,8 @@ export function UserHomePage() {
 
             {/* Section 1: Quick Stats + Next Routine (side by side) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                {/* Quick Stats (compact) */}
+                {/* Quick Stats (compact) - Header removed */}
                 <div className="card">
-                    <div className="card-header" style={{ padding: '0.75rem 1rem' }}>
-                        <span className="card-title"><Activity size={18} /> {t('Today Status')}</span>
-                    </div>
                     <div className="card-body" style={{ padding: '0.75rem 1rem' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
                             <div style={{ textAlign: 'center', padding: '0.5rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
@@ -142,15 +142,11 @@ export function UserHomePage() {
                 </div>
             </div>
 
-            {/* Section 2: Large Map (full width) */}
+            {/* Section 2: Large Map (full width) - Header removed, enlarged */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>
-                <div className="card-header">
-                    <span className="card-title"><MapPin size={18} /> {t('Current Location')}</span>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--primary-500)', fontWeight: 500 }}>📍 {myRoom?.name}</span>
-                </div>
                 <div className="card-body" style={{ padding: 0 }}>
-                    <div className="map-container" style={{ minHeight: '300px', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}>
-                        <div className="map-canvas" style={{ minHeight: '300px' }}>
+                    <div className="map-container" style={{ minHeight: '500px', borderRadius: 'var(--radius-lg)' }}>
+                        <div className="map-canvas" style={{ minHeight: '500px' }}>
                             {rooms.map(room => (
                                 <div
                                     key={room.id}
@@ -192,30 +188,12 @@ export function UserHomePage() {
                                             left: `${markerX}%`,
                                             top: `${markerY}%`
                                         }}
+                                        title={`${myWheelchair.name} - ${currentUser?.name || t('User')} • ${myRoom?.nameEn || myRoom?.name || t('Unknown Location')}`}
                                     >
                                         <span style={{ fontSize: '1.25rem' }}>📍</span>
                                     </div>
                                 );
                             })()}
-                        </div>
-                    </div>
-                    {/* Room Info Bar */}
-                    <div style={{
-                        display: 'flex', justifyContent: 'space-around', padding: '0.75rem',
-                        background: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-color)',
-                        borderRadius: '0 0 var(--radius-lg) var(--radius-lg)'
-                    }}>
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--info-500)' }}>{myRoom?.temperature}°C</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('Temperature')}</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--info-500)' }}>{myRoom?.humidity}%</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{t('Humidity')}</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--success-500)' }}>{myWheelchair?.name}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Wheelchair</div>
                         </div>
                     </div>
                 </div>
@@ -348,28 +326,79 @@ export function UserHomePage() {
                 </div>
             </div>
 
-            {/* Section 4: Quick Menu */}
-            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>🎯 {t('Quick Menu')}</h3>
-            <div className="action-cards">
-                <div className="action-card">
-                    <div className="icon"><Heart /></div>
-                    <h4>{t('Health')}</h4>
-                    <p>{t('View Health Status')}</p>
+            {/* Section 4: Quick Menu - Smaller and functional */}
+            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem' }}>🎯 {t('Quick Menu')}</h3>
+            <div className="action-cards" style={{ gap: '0.75rem' }}>
+                <div 
+                    className="action-card" 
+                    style={{ padding: '0.75rem', cursor: 'pointer' }}
+                    onClick={() => {
+                        const path = pageToPath['user-health'];
+                        if (path) {
+                            navigate(path);
+                            setCurrentPage('user-health');
+                        }
+                    }}
+                >
+                    <div className="icon" style={{ width: '32px', height: '32px', fontSize: '16px' }}><Heart size={16} /></div>
+                    <h4 style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Health')}</h4>
+                    <p style={{ fontSize: '0.7rem', margin: 0 }}>{t('View Health Status')}</p>
                 </div>
-                <div className="action-card">
-                    <div className="icon"><Calendar /></div>
-                    <h4>{t('Today Schedule')}</h4>
-                    <p>{todayRoutines.length} {t('Activities')}</p>
+                <div 
+                    className="action-card" 
+                    style={{ padding: '0.75rem', cursor: 'pointer' }}
+                    onClick={() => {
+                        const path = pageToPath['user-routines'];
+                        if (path) {
+                            navigate(path);
+                            setCurrentPage('user-routines');
+                        }
+                    }}
+                >
+                    <div className="icon" style={{ width: '32px', height: '32px', fontSize: '16px' }}><Calendar size={16} /></div>
+                    <h4 style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Today Schedule')}</h4>
+                    <p style={{ fontSize: '0.7rem', margin: 0 }}>{todayRoutines.length} {t('Activities')}</p>
                 </div>
-                <div className="action-card">
-                    <div className="icon"><MapPin /></div>
-                    <h4>{t('Location')}</h4>
-                    <p>{myRoom?.name}</p>
+                <div 
+                    className="action-card" 
+                    style={{ padding: '0.75rem', cursor: 'pointer' }}
+                    onClick={() => {
+                        const path = pageToPath['user-location'];
+                        if (path) {
+                            navigate(path);
+                            setCurrentPage('user-location');
+                        }
+                    }}
+                >
+                    <div className="icon" style={{ width: '32px', height: '32px', fontSize: '16px' }}><MapPin size={16} /></div>
+                    <h4 style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Location')}</h4>
+                    <p style={{ fontSize: '0.7rem', margin: 0 }}>{myRoom?.nameEn || myRoom?.name || t('Unknown')}</p>
                 </div>
-                <div className="action-card" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'var(--danger-500)' }}>
-                    <div className="icon" style={{ background: 'linear-gradient(135deg, var(--danger-500), var(--danger-600))' }}><AlertTriangle /></div>
-                    <h4 style={{ color: 'var(--danger-500)' }}>{t('Emergency')}</h4>
-                    <p>{t('Report Emergency')}</p>
+                <div 
+                    className="action-card" 
+                    style={{ 
+                        background: 'rgba(239, 68, 68, 0.1)', 
+                        borderColor: 'var(--danger-500)',
+                        padding: '0.75rem',
+                        cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                        // Emergency action - could open emergency modal or navigate to alerts
+                        const path = pageToPath['user-alerts'];
+                        if (path) {
+                            navigate(path);
+                            setCurrentPage('user-alerts');
+                        }
+                    }}
+                >
+                    <div className="icon" style={{ 
+                        background: 'linear-gradient(135deg, var(--danger-500), var(--danger-600))',
+                        width: '32px', 
+                        height: '32px', 
+                        fontSize: '16px'
+                    }}><AlertTriangle size={16} /></div>
+                    <h4 style={{ color: 'var(--danger-500)', fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Emergency')}</h4>
+                    <p style={{ fontSize: '0.7rem', margin: 0 }}>{t('Report Emergency')}</p>
                 </div>
             </div>
         </div>

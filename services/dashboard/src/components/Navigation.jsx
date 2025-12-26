@@ -55,7 +55,6 @@ export function Sidebar() {
         {
             section: 'Main', items: [
                 { id: 'user-home', label: 'Home', icon: Home },
-                { id: 'user-location', label: 'My Location', icon: Map },
             ]
         },
         {

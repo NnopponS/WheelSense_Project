@@ -194,7 +194,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "3000:80"  # Also listen on port 3000 for backward compatibility
+      - "3000:80" # Also listen on port 3000 for backward compatibility
     volumes:
       - ../services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ../services/nginx/ssl:/etc/nginx/ssl:ro
