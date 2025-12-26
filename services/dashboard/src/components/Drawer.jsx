@@ -39,38 +39,38 @@ export function Drawer() {
 
     const connectWebSocket = (roomId) => {
         disconnectWebSocket();
-        
+
         // Get WebSocket URL from API
         const getWsUrl = async () => {
             try {
                 const streamInfo = await getStreamUrlInfo(roomId);
-                
+
                 // Use relative WebSocket URL that works with nginx proxy
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const host = window.location.host; // This will be the nginx proxy host
                 const wsUrl = streamInfo.ws_url || `${protocol}//${host}/api/ws/stream/${roomId}`;
-                
+
                 // Ensure protocol is correct
                 const wsUrlFinal = wsUrl.replace(/^https?:/, protocol).replace(/^ws?:/, protocol);
-                
+
                 console.log(`[Video] Connecting to WebSocket: ${wsUrlFinal}`);
                 setStreamMode('loading');
-                
+
                 const ws = new WebSocket(wsUrlFinal);
                 ws.binaryType = 'arraybuffer';
-                
+
                 ws.onopen = () => {
                     console.log(`[Video] WebSocket connected for room: ${roomId}`);
                     setStreamMode('websocket');
                 };
-                
+
                 ws.onmessage = (event) => {
                     if (event.data instanceof ArrayBuffer) {
                         // Binary JPEG frame
                         const blob = new Blob([event.data], { type: 'image/jpeg' });
                         const url = URL.createObjectURL(blob);
                         setVideoSrc(url);
-                        
+
                         // Revoke old URL to prevent memory leak
                         if (videoSrc && videoSrc.startsWith('blob:')) {
                             URL.revokeObjectURL(videoSrc);
@@ -87,25 +87,25 @@ export function Drawer() {
                         }
                     }
                 };
-                
+
                 ws.onerror = (error) => {
                     console.error('[Video] WebSocket error:', error);
                     setStreamMode('offline');
                 };
-                
+
                 ws.onclose = () => {
                     console.log('[Video] WebSocket disconnected');
                     setStreamMode('offline');
                     setVideoSrc('');
                 };
-                
+
                 wsRef.current = ws;
             } catch (error) {
                 console.error('[Video] Failed to connect WebSocket:', error);
                 setStreamMode('offline');
             }
         };
-        
+
         getWsUrl();
     };
 
@@ -228,23 +228,28 @@ export function Drawer() {
                                     )}
                                     {(() => {
                                         // Get detection state for this room
-                                        const roomDetection = detectionState?.[data.id] || 
-                                                              detectionState?.[data.roomType] ||
-                                                              detectionState?.[data.nameEn?.toLowerCase()] ||
-                                                              detectionState?.[data.name?.toLowerCase()];
-                                        const isDetected = roomDetection?.detected || false;
+                                        const roomDetection = detectionState?.[data.id] ||
+                                            detectionState?.[data.roomType] ||
+                                            detectionState?.[data.nameEn?.toLowerCase()] ||
+                                            detectionState?.[data.name?.toLowerCase()];
+
+                                        // Confidence threshold: 80% (0.8)
+                                        const CONFIDENCE_THRESHOLD = 0.8;
+
                                         const detectionConfidence = roomDetection?.confidence || 0;
-                                        
+                                        // Apply confidence threshold - only show detected if confidence >= threshold
+                                        const isDetected = roomDetection?.detected && detectionConfidence >= CONFIDENCE_THRESHOLD;
+
                                         if (isDetected) {
                                             return (
                                                 <span style={{ fontSize: '0.75rem', color: 'var(--success-500)', marginLeft: '0.5rem', fontWeight: 'bold' }}>
-                                                    🦽 Wheelchair Detected ({(detectionConfidence * 100).toFixed(0)}%)
+                                                    🦽 Wheelchair Detected ({(detectionConfidence * 100).toFixed(0)}%, Threshold: {(CONFIDENCE_THRESHOLD * 100).toFixed(0)}%)
                                                 </span>
                                             );
                                         } else if (detectionConfidence > 0) {
                                             return (
                                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
-                                                    No Wheelchair ({(detectionConfidence * 100).toFixed(0)}%)
+                                                    No Wheelchair ({(detectionConfidence * 100).toFixed(0)}% &lt; {(CONFIDENCE_THRESHOLD * 100).toFixed(0)}%)
                                                 </span>
                                             );
                                         }
@@ -351,19 +356,19 @@ export function Drawer() {
                                                 'livingroom': ['living room', 'livingroom', 'Living Room'],
                                                 'kitchen': ['kitchen', 'Kitchen']
                                             };
-                                            
+
                                             let roomAppliances = appliances[data.id] || [];
-                                            
+
                                             // Try by roomType
                                             if (roomAppliances.length === 0 && data.roomType) {
                                                 roomAppliances = appliances[data.roomType.toLowerCase()] || [];
                                             }
-                                            
+
                                             // Try by nameEn
                                             if (roomAppliances.length === 0 && data.nameEn) {
                                                 roomAppliances = appliances[data.nameEn.toLowerCase()] || [];
                                             }
-                                            
+
                                             // Try by name mapping
                                             if (roomAppliances.length === 0) {
                                                 for (const [key, names] of Object.entries(roomMapping)) {
@@ -375,13 +380,13 @@ export function Drawer() {
                                                     }
                                                 }
                                             }
-                                            
+
                                             return roomAppliances.map(app => {
                                                 const Icon = app.type === 'light' ? Lightbulb :
                                                     app.type === 'AC' ? Thermometer :
                                                         app.type === 'tv' ? Tv :
                                                             app.type === 'fan' ? Fan : Power;
-                                                
+
                                                 // Get room key for toggleAppliance
                                                 let roomKey = data.roomType?.toLowerCase() || data.nameEn?.toLowerCase() || data.id;
                                                 for (const [key, names] of Object.entries(roomMapping)) {
@@ -392,7 +397,7 @@ export function Drawer() {
                                                         break;
                                                     }
                                                 }
-                                                
+
                                                 return (
                                                     <div
                                                         key={app.id}
@@ -415,17 +420,17 @@ export function Drawer() {
                                             'livingroom': ['living room', 'livingroom', 'Living Room'],
                                             'kitchen': ['kitchen', 'Kitchen']
                                         };
-                                        
+
                                         let roomAppliances = appliances[data.id] || [];
-                                        
+
                                         if (roomAppliances.length === 0 && data.roomType) {
                                             roomAppliances = appliances[data.roomType.toLowerCase()] || [];
                                         }
-                                        
+
                                         if (roomAppliances.length === 0 && data.nameEn) {
                                             roomAppliances = appliances[data.nameEn.toLowerCase()] || [];
                                         }
-                                        
+
                                         if (roomAppliances.length === 0) {
                                             for (const [key, names] of Object.entries(roomMapping)) {
                                                 const roomName = (data.name || '').toLowerCase();
@@ -436,7 +441,7 @@ export function Drawer() {
                                                 }
                                             }
                                         }
-                                        
+
                                         return roomAppliances.length === 0 ? (
                                             <p style={{ color: 'var(--dark-text-muted)', textAlign: 'center' }}>{t('No Appliances in This Room')}</p>
                                         ) : null;
@@ -477,27 +482,27 @@ export function Drawer() {
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">{t('Doctor Orders')} / {t('Medical Instructions')}</label>
-                                    <textarea 
-                                        className="form-input" 
-                                        rows="3" 
+                                    <textarea
+                                        className="form-input"
+                                        rows="3"
                                         defaultValue={data.doctorOrders || ''}
                                         placeholder={t('Enter doctor orders or medical instructions...')}
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">{t('Accidents')} / {t('Incidents')}</label>
-                                    <textarea 
-                                        className="form-input" 
-                                        rows="2" 
+                                    <textarea
+                                        className="form-input"
+                                        rows="2"
                                         defaultValue={data.accidents || ''}
                                         placeholder={t('Enter accident or incident history...')}
                                     />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">{t('Physical Therapy Requirements')}</label>
-                                    <textarea 
-                                        className="form-input" 
-                                        rows="3" 
+                                    <textarea
+                                        className="form-input"
+                                        rows="3"
                                         defaultValue={data.physicalTherapy || ''}
                                         placeholder={t('Enter physical therapy requirements and schedule...')}
                                     />

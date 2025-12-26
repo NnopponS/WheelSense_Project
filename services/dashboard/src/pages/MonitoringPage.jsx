@@ -8,12 +8,17 @@ export function MonitoringPage() {
 
     // Compute real-time occupancy from detectionState and wheelchair positions
     const isRoomOccupied = (room) => {
+        // Confidence threshold: 80% (0.8)
+        const CONFIDENCE_THRESHOLD = 0.8;
+        
         // Check detection state first (real-time camera detection)
         const detection = detectionState[room.id] ||
             detectionState[room.roomType?.toLowerCase()] ||
             detectionState[room.nameEn?.toLowerCase()];
         if (detection) {
-            return detection.detected;
+            // Apply confidence threshold - only consider detected if confidence >= threshold
+            const confidence = detection.confidence || 0.0;
+            return detection.detected && confidence >= CONFIDENCE_THRESHOLD;
         }
         // Fallback: check if any wheelchair is in this room
         return wheelchairs.some(w =>

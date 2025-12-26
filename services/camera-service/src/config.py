@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     DEVICE_ID: str = "TSIM_001"
     
     # Detection
-    DETECTION_CONFIDENCE_THRESHOLD: float = 0.4
+    DETECTION_CONFIDENCE_THRESHOLD: float = 0.8  # 80% confidence threshold
     DETECTION_INTERVAL_SEC: float = 1.0
     
     model_config = {

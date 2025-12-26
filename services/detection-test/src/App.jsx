@@ -8,7 +8,7 @@ function App() {
   const [devices, setDevices] = useState([])
   const [detectionResults, setDetectionResults] = useState({})
   const [ws, setWs] = useState(null)
-  const [confidenceThreshold, setConfidenceThreshold] = useState(0.5) // Default 50%
+  const [confidenceThreshold, setConfidenceThreshold] = useState(0.8) // Default 80%
 
   // Use ref for devices to access in WebSocket callback without triggering reconnection
   const devicesRef = React.useRef(devices)
