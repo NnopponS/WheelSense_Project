@@ -668,6 +668,75 @@ export function AppProvider({ children }) {
                             console.log('[AppContext] Status update:', message);
                         }
 
+                        // Handle wheelchair updates from backend
+                        if (message.type === 'wheelchair_updated') {
+                            const updatedWheelchair = message.wheelchair;
+                            const newPosition = message.position; // Position from backend
+                            const newRoomId = message.room_id; // Room ID from backend
+                            console.log('[AppContext] Received wheelchair update:', updatedWheelchair, 'position:', newPosition, 'room:', newRoomId);
+                            
+                            // Find current wheelchair to check if room changed
+                            const currentWheelchair = wheelchairs.find(w => w.id === updatedWheelchair.id);
+                            const roomChanged = currentWheelchair && currentWheelchair.room !== updatedWheelchair.room;
+                            
+                            // Update wheelchair in local state
+                            setWheelchairs(prev => prev.map(w =>
+                                w.id === updatedWheelchair.id
+                                    ? { ...w, ...updatedWheelchair }
+                                    : w
+                            ));
+                            
+                            // Update position when wheelchair moves to new room
+                            if (updatedWheelchair.room || newRoomId) {
+                                const targetRoomId = newRoomId || updatedWheelchair.room;
+                                
+                                // Find room data to get position
+                                const roomData = rooms.find(r => 
+                                    r.id === targetRoomId ||
+                                    r.roomType?.toLowerCase() === targetRoomId?.toLowerCase() ||
+                                    r.nameEn?.toLowerCase() === targetRoomId?.toLowerCase()
+                                );
+                                
+                                if (roomData) {
+                                    setWheelchairPositions(prev => {
+                                        // If backend sent position, use it
+                                        if (newPosition && newPosition.x !== undefined && newPosition.y !== undefined) {
+                                            console.log(`[AppContext] 🦽 Updating wheelchair ${updatedWheelchair.id} position from backend: (${newPosition.x}, ${newPosition.y})`);
+                                            return {
+                                                ...prev,
+                                                [updatedWheelchair.id]: { x: newPosition.x, y: newPosition.y }
+                                            };
+                                        }
+                                        
+                                        // If room changed, update position to center of new room
+                                        if (roomChanged) {
+                                            const centerX = (roomData.x || 50) + (roomData.width || 20) / 2;
+                                            const centerY = (roomData.y || 50) + (roomData.height || 20) / 2;
+                                            console.log(`[AppContext] 🦽 Room changed, updating wheelchair ${updatedWheelchair.id} position to center of ${roomData.nameEn || roomData.name}: (${centerX}, ${centerY})`);
+                                            return {
+                                                ...prev,
+                                                [updatedWheelchair.id]: { x: centerX, y: centerY }
+                                            };
+                                        }
+                                        
+                                        // If no position exists, set to center of room
+                                        if (!prev[updatedWheelchair.id]) {
+                                            const centerX = (roomData.x || 50) + (roomData.width || 20) / 2;
+                                            const centerY = (roomData.y || 50) + (roomData.height || 20) / 2;
+                                            console.log(`[AppContext] 🦽 Setting wheelchair ${updatedWheelchair.id} position to center of ${roomData.nameEn || roomData.name}: (${centerX}, ${centerY})`);
+                                            return {
+                                                ...prev,
+                                                [updatedWheelchair.id]: { x: centerX, y: centerY }
+                                            };
+                                        }
+                                        
+                                        // Keep existing position if room didn't change and position exists
+                                        return prev;
+                                    });
+                                }
+                            }
+                        }
+
                     } catch (e) {
                         console.error('[AppContext] WebSocket message parse error:', e);
                     }

@@ -167,11 +167,35 @@ async def lifespan(app: FastAPI):
                 await db.save_wheelchair_positions(positions)
                 logger.info(f"📍 Updated wheelchair {wheelchair_id} to {room}: ({new_x:.1f}%, {new_y:.1f}%) [center of room]")
             
-            # Update the wheelchair document with current room
+            # Update the wheelchair document with current room and status
+            # Set status to "online" when wheelchair is detected in a room
+            # Use room_data.id (room ID from database) instead of room type string
+            room_id = room_data.get("id") or room_data.get("_id") or room
             await db.db.wheelchairs.update_one(
                 {"_id": wheelchair["_id"]},
-                {"$set": {"currentRoom": room, "lastUpdated": datetime.now()}}
+                {"$set": {
+                    "currentRoom": room,  # Keep room type for backward compatibility
+                    "room": room_id,  # Use room ID from database for frontend matching
+                    "status": "online",  # Set status to online when detected
+                    "lastUpdated": datetime.now()
+                }}
             )
+            
+            # Broadcast wheelchair update to all connected clients so frontend can refresh
+            if mqtt_handler:
+                # Get updated wheelchair data
+                updated_wheelchair = await db.db.wheelchairs.find_one({"_id": wheelchair["_id"]})
+                if updated_wheelchair:
+                    wheelchair_dict = Database._serialize_doc(updated_wheelchair)
+                    # Include position in the update message
+                    current_position = positions.get(str(wheelchair_id), {})
+                    await mqtt_handler._broadcast_ws({
+                        "type": "wheelchair_updated",
+                        "wheelchair": wheelchair_dict,
+                        "position": current_position,  # Include position so frontend can update marker
+                        "room_id": room_id  # Include room_id for reference
+                    })
+                    logger.info(f"📡 Broadcasted wheelchair update: {wheelchair_id} -> room: {room_id}, position: {current_position}")
             
             # ===== TIMELINE: Save location change event if room changed =====
             if previous_room != room:
