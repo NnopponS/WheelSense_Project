@@ -78,6 +78,39 @@ async def get_all_appliances(request: Request):
     return {"appliances": [Database._serialize_doc(a) for a in appliances]}
 
 
+class CreateAppliance(BaseModel):
+    room: str
+    type: str
+    name: Optional[str] = None
+    state: bool = False
+    value: Optional[int] = None
+
+
+@router.post("/appliances/create")
+async def create_appliance(appliance: CreateAppliance, request: Request):
+    """Create a new appliance."""
+    db = get_db(request)
+    
+    # Generate unique ID
+    import uuid
+    appliance_id = f"appliance-{appliance.room}-{appliance.type}-{str(uuid.uuid4())[:8]}"
+    
+    appliance_doc = {
+        "id": appliance_id,
+        "room": appliance.room,
+        "type": appliance.type,
+        "name": appliance.name or appliance.type.upper(),
+        "state": appliance.state,
+        "value": appliance.value,
+        "createdAt": datetime.utcnow()
+    }
+    
+    await db.db.appliances.insert_one(appliance_doc)
+    logger.info(f"Created new appliance: {appliance_id} for room {appliance.room}")
+    
+    return {"status": "created", "appliance": Database._serialize_doc(appliance_doc)}
+
+
 @router.put("/appliances/{appliance_id}")
 async def update_appliance(appliance_id: str, updates: dict, request: Request):
     """Update an appliance state."""

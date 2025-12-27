@@ -944,6 +944,77 @@ export function stopSpeaking() {
     }
 }
 
+// ==================== WiFi Management (ESP32 Direct) ====================
+
+/**
+ * Get WiFi status from ESP32 device directly
+ * @param {string} deviceIp - IP address of the ESP32 device
+ */
+export async function getWifiStatus(deviceIp) {
+    try {
+        const response = await fetch(`http://${deviceIp}/wifi/status`, {
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) throw new Error('Failed to get WiFi status');
+        return await response.json();
+    } catch (error) {
+        console.error('WiFi status error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Scan available WiFi networks from ESP32 device
+ * @param {string} deviceIp - IP address of the ESP32 device
+ */
+export async function getWifiNetworks(deviceIp) {
+    try {
+        const response = await fetch(`http://${deviceIp}/wifi/networks`, {
+            signal: AbortSignal.timeout(15000),
+        });
+        if (!response.ok) throw new Error('Failed to scan WiFi networks');
+        return await response.json();
+    } catch (error) {
+        console.error('WiFi scan error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Reset WiFi settings on ESP32 device (triggers config portal)
+ * @param {string} deviceIp - IP address of the ESP32 device
+ */
+export async function resetWifi(deviceIp) {
+    try {
+        const response = await fetch(`http://${deviceIp}/wifi/reset`, {
+            method: 'POST',
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) throw new Error('Failed to reset WiFi');
+        return await response.json();
+    } catch (error) {
+        console.error('WiFi reset error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get device status directly from ESP32 device
+ * @param {string} deviceIp - IP address of the ESP32 device
+ */
+export async function getDeviceDirectStatus(deviceIp) {
+    try {
+        const response = await fetch(`http://${deviceIp}/device/status`, {
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!response.ok) throw new Error('Failed to get device status');
+        return await response.json();
+    } catch (error) {
+        console.error('Device status error:', error);
+        throw error;
+    }
+}
+
 // ==================== MCP Object ====================
 
 export const mcp = {
@@ -1047,4 +1118,10 @@ export default {
     startSpeechRecognition,
     speak,
     stopSpeaking,
+
+    // WiFi Management (ESP32 Direct)
+    getWifiStatus,
+    getWifiNetworks,
+    resetWifi,
+    getDeviceDirectStatus,
 };

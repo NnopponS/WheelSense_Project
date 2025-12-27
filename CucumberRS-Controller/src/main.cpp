@@ -12,6 +12,8 @@
  */
  
 #include <WiFi.h>
+#include <WiFiManager.h>
+#include <WebServer.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <Wire.h>
@@ -19,13 +21,13 @@
 #include <Adafruit_SSD1306.h>
 #include <driver/gpio.h>
   
- // ===== WiFi Configuration =====
- #ifndef WIFI_SSID
- #define WIFI_SSID "WittyNotebook"
+ // ===== WiFi Manager Configuration =====
+ #ifndef WIFI_AP_NAME
+ #define WIFI_AP_NAME "WheelSense-Setup"
  #endif
   
- #ifndef WIFI_PASSWORD
- #define WIFI_PASSWORD "eornnrbs"
+ #ifndef WIFI_AP_PASSWORD
+ #define WIFI_AP_PASSWORD "wheelsense123"
  #endif
   
 // ===== Network Configuration =====
@@ -69,24 +71,32 @@ const int STATUS_INTERVAL_MS = 5000;
  #define ROOM_LIVINGROOM 3
   
  // ===== GPIO Pin Configuration for ESP32-S2-Saola-1 =====
- // ESP32-S2 GPIO mapping:
+ // ESP32-S2 GPIO mapping (Updated 2024-12-27):
  //
  // OLED Display: GPIO11 = SDA, GPIO12 = SCL
- // ห้องนอน (bedroom): GPIO1 = light, GPIO2 = AC, GPIO3 = alarm
- // ห้องน้ำ (bathroom): GPIO4 = light
- // ห้องครัว (kitchen): GPIO5 = light, GPIO6 = alarm
- // ห้องนั่งเล่น (livingroom): GPIO7 = light, GPIO8 = TV, GPIO9 = fan, GPIO13 = AC
+ // ห้องครัว (kitchen): GPIO5 = light, GPIO7 = alarm
+ // ห้องนั่งเล่น (livingroom): GPIO3 = AC, GPIO1 = TV, GPIO21 = light, GPIO20 = fan
+ // ห้องนอน (bedroom): GPIO18 = TV, GPIO26 = light, GPIO33 = AC, GPIO37 = alarm
+ // ห้องน้ำ (bathroom): GPIO36 = light
   
- #define PIN_BEDROOM_LIGHT     1   // GPIO1
- #define PIN_BEDROOM_AIRCON    2   // GPIO2
- #define PIN_BEDROOM_ALARM     3   // GPIO3
- #define PIN_BATHROOM_LIGHT    4   // GPIO4
+ // Kitchen: Alarm GPIO7, Light GPIO5
  #define PIN_KITCHEN_LIGHT     5   // GPIO5
- #define PIN_KITCHEN_ALARM     6   // GPIO6
- #define PIN_LIVINGROOM_LIGHT  7   // GPIO7
- #define PIN_LIVINGROOM_TV     8   // GPIO8
- #define PIN_LIVINGROOM_FAN    9   // GPIO9
- #define PIN_LIVINGROOM_AC    13   // GPIO13
+ #define PIN_KITCHEN_ALARM     7   // GPIO7
+ 
+ // Living Room: AC GPIO3, TV GPIO1, Light GPIO21, FAN GPIO20
+ #define PIN_LIVINGROOM_AC     4   // GPIO4 - Safe (was GPIO3 - USB D+)
+ #define PIN_LIVINGROOM_TV     6   // GPIO6 - Safe (was GPIO1 - USB D-)
+ #define PIN_LIVINGROOM_LIGHT 21   // GPIO21 (changed from 46 - input only)
+ #define PIN_LIVINGROOM_FAN    8   // GPIO8 - Safe (was GPIO20)
+ 
+ // Bedroom: TV GPIO18, Light GPIO26, AC GPIO33, Alarm GPIO37
+ #define PIN_BEDROOM_TV       18   // GPIO18
+ #define PIN_BEDROOM_LIGHT    17   // GPIO17 - Safe (was GPIO26 - SPI flash)
+ #define PIN_BEDROOM_AIRCON   16   // GPIO16 - Safe (was GPIO33 - PSRAM)
+ #define PIN_BEDROOM_ALARM    15   // GPIO15 - Safe (was GPIO37 - may conflict)
+ 
+ // Bathroom: Light GPIO36
+ #define PIN_BATHROOM_LIGHT   14   // GPIO14 - Safe (was GPIO36 - INPUT ONLY!)
   
  // ===== Display runtime state =====
  Adafruit_SSD1306 statusDisplay(DISPLAY_WIDTH, DISPLAY_HEIGHT, &Wire, OLED_RESET_PIN);
@@ -104,6 +114,11 @@ String mqttServerIP;
 // ===== WiFi and MQTT Clients =====
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
+
+// ===== WiFi Manager and Web Server =====
+WiFiManager wifiManager;
+WebServer webServer(80);
+bool wifiManagerConfigMode = false;
   
  // MQTT topics - ใช้ wildcard สำหรับรับทุกห้อง
  const char* MQTT_TOPIC_CONTROL_WILDCARD = "WheelSense/+/control";
@@ -164,33 +179,44 @@ void reconnectMQTT();
  // ===== Setup Appliance Pins =====
  void setupAppliances() {
      // Initialize all GPIO pins
+     // Kitchen
+     pinMode(PIN_KITCHEN_LIGHT, OUTPUT);
+     pinMode(PIN_KITCHEN_ALARM, OUTPUT);
+     
+     // Living Room
+     pinMode(PIN_LIVINGROOM_AC, OUTPUT);
+     pinMode(PIN_LIVINGROOM_TV, OUTPUT);
+     pinMode(PIN_LIVINGROOM_LIGHT, OUTPUT);
+     pinMode(PIN_LIVINGROOM_FAN, OUTPUT);
+     
+     // Bedroom
+     pinMode(PIN_BEDROOM_TV, OUTPUT);
      pinMode(PIN_BEDROOM_LIGHT, OUTPUT);
      pinMode(PIN_BEDROOM_AIRCON, OUTPUT);
      pinMode(PIN_BEDROOM_ALARM, OUTPUT);
+     
+     // Bathroom
      pinMode(PIN_BATHROOM_LIGHT, OUTPUT);
-     pinMode(PIN_KITCHEN_LIGHT, OUTPUT);
-     pinMode(PIN_KITCHEN_ALARM, OUTPUT);
-     pinMode(PIN_LIVINGROOM_LIGHT, OUTPUT);
-     pinMode(PIN_LIVINGROOM_TV, OUTPUT);
-     pinMode(PIN_LIVINGROOM_FAN, OUTPUT);
-     pinMode(PIN_LIVINGROOM_AC, OUTPUT);
-     // Ensure GPIO13 is not in strapping mode (ESP32-S2 specific)
-     gpio_hold_dis((gpio_num_t)PIN_LIVINGROOM_AC);
     
      // Turn off all appliances
+     // Kitchen
+     digitalWrite(PIN_KITCHEN_LIGHT, LOW);
+     digitalWrite(PIN_KITCHEN_ALARM, LOW);
+     
+     // Living Room
+     digitalWrite(PIN_LIVINGROOM_AC, LOW);
+     digitalWrite(PIN_LIVINGROOM_TV, LOW);
+     digitalWrite(PIN_LIVINGROOM_LIGHT, LOW);
+     digitalWrite(PIN_LIVINGROOM_FAN, LOW);
+     
+     // Bedroom
+     digitalWrite(PIN_BEDROOM_TV, LOW);
      digitalWrite(PIN_BEDROOM_LIGHT, LOW);
      digitalWrite(PIN_BEDROOM_AIRCON, LOW);
      digitalWrite(PIN_BEDROOM_ALARM, LOW);
-     digitalWrite(PIN_BATHROOM_LIGHT, LOW);
-     digitalWrite(PIN_KITCHEN_LIGHT, LOW);
-     digitalWrite(PIN_KITCHEN_ALARM, LOW);
-     digitalWrite(PIN_LIVINGROOM_LIGHT, LOW);
-     digitalWrite(PIN_LIVINGROOM_TV, LOW);
-     digitalWrite(PIN_LIVINGROOM_FAN, LOW);
-     digitalWrite(PIN_LIVINGROOM_AC, LOW);
      
-     // Verify GPIO13 (Living room AC) is properly initialized
-     Serial.printf("[GPIO] Living room AC pin (GPIO%d) initialized as OUTPUT\n", PIN_LIVINGROOM_AC);
+     // Bathroom
+     digitalWrite(PIN_BATHROOM_LIGHT, LOW);
      
      // Initialize room states
      for (int i = 0; i < NUM_ROOMS; i++) {
@@ -203,11 +229,11 @@ void reconnectMQTT();
      }
      
      Serial.println("[Appliances] All pins initialized for 4 rooms");
-     Serial.println("[Appliances] Room GPIO mapping:");
-     Serial.println("  - bedroom:    GPIO1=light, GPIO2=AC, GPIO3=alarm");
-     Serial.println("  - bathroom:   GPIO4=light");
-     Serial.println("  - kitchen:    GPIO5=light, GPIO6=alarm");
-     Serial.println("  - livingroom: GPIO7=light, GPIO8=TV, GPIO9=fan, GPIO13=AC");
+     Serial.println("[Appliances] Room GPIO mapping (Updated):");
+     Serial.println("  - kitchen:    GPIO5=light, GPIO7=alarm");
+     Serial.println("  - livingroom: GPIO3=AC, GPIO1=TV, GPIO21=light, GPIO20=fan");
+     Serial.println("  - bedroom:    GPIO18=TV, GPIO26=light, GPIO33=AC, GPIO37=alarm");
+     Serial.println("  - bathroom:   GPIO36=light");
      Serial.println("  - OLED:       GPIO11=SDA, GPIO12=SCL");
  }
   
@@ -392,30 +418,43 @@ void reconnectMQTT();
      
      switch (roomIndex) {
          case ROOM_BEDROOM:
+             // Bedroom: TV GPIO18, Light GPIO26, AC GPIO34, Alarm GPIO38
              if (strcmp(appliance, "light") == 0) {
                  digitalWrite(PIN_BEDROOM_LIGHT, room.light ? HIGH : LOW);
+                 Serial.printf("[GPIO] Bedroom light -> GPIO%d = %s\n", PIN_BEDROOM_LIGHT, room.light ? "HIGH" : "LOW");
              } else if (strcmp(appliance, "AC") == 0) {
                  digitalWrite(PIN_BEDROOM_AIRCON, room.aircon ? HIGH : LOW);
+                 Serial.printf("[GPIO] Bedroom AC -> GPIO%d = %s\n", PIN_BEDROOM_AIRCON, room.aircon ? "HIGH" : "LOW");
              } else if (strcmp(appliance, "alarm") == 0) {
                  digitalWrite(PIN_BEDROOM_ALARM, room.alarm ? HIGH : LOW);
+                 Serial.printf("[GPIO] Bedroom alarm -> GPIO%d = %s\n", PIN_BEDROOM_ALARM, room.alarm ? "HIGH" : "LOW");
+             } else if (strcmp(appliance, "tv") == 0) {
+                 digitalWrite(PIN_BEDROOM_TV, room.tv ? HIGH : LOW);
+                 Serial.printf("[GPIO] Bedroom TV -> GPIO%d = %s\n", PIN_BEDROOM_TV, room.tv ? "HIGH" : "LOW");
              }
              break;
              
          case ROOM_BATHROOM:
+             // Bathroom: Light GPIO40
              if (strcmp(appliance, "light") == 0) {
                  digitalWrite(PIN_BATHROOM_LIGHT, room.light ? HIGH : LOW);
+                 Serial.printf("[GPIO] Bathroom light -> GPIO%d = %s\n", PIN_BATHROOM_LIGHT, room.light ? "HIGH" : "LOW");
              }
              break;
              
          case ROOM_KITCHEN:
+             // Kitchen: Light GPIO5, Alarm GPIO7
              if (strcmp(appliance, "light") == 0) {
                  digitalWrite(PIN_KITCHEN_LIGHT, room.light ? HIGH : LOW);
+                 Serial.printf("[GPIO] Kitchen light -> GPIO%d = %s\n", PIN_KITCHEN_LIGHT, room.light ? "HIGH" : "LOW");
              } else if (strcmp(appliance, "alarm") == 0) {
                  digitalWrite(PIN_KITCHEN_ALARM, room.alarm ? HIGH : LOW);
+                 Serial.printf("[GPIO] Kitchen alarm -> GPIO%d = %s\n", PIN_KITCHEN_ALARM, room.alarm ? "HIGH" : "LOW");
              }
              break;
              
          case ROOM_LIVINGROOM:
+             // Living Room: AC GPIO3, TV GPIO1, Light GPIO46, FAN GPIO20
              if (strcmp(appliance, "light") == 0) {
                  digitalWrite(PIN_LIVINGROOM_LIGHT, room.light ? HIGH : LOW);
                  Serial.printf("[GPIO] Living room light -> GPIO%d = %s\n", PIN_LIVINGROOM_LIGHT, room.light ? "HIGH" : "LOW");
@@ -774,21 +813,112 @@ void reconnectMQTT();
      initDisplay();
      pushDisplayLog("GPIO ready");
     
-     // Connect to WiFi
-     WiFi.mode(WIFI_STA);
-     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-     Serial.printf("[WiFi] Connecting to %s", WIFI_SSID);
-     while (WiFi.status() != WL_CONNECTED) {
-         delay(500);
-         Serial.print(".");
+     // ===== WiFi Manager Setup =====
+     Serial.println("[WiFi] Setting up WiFi Manager...");
+     pushDisplayLog("WiFi Setup...");
+     
+     // Set WiFi Manager callbacks
+     wifiManager.setConfigPortalBlocking(true);
+     wifiManager.setConfigPortalTimeout(180);  // 3 minutes timeout
+     
+     // Try to connect, if fails start config portal
+     if (!wifiManager.autoConnect(WIFI_AP_NAME, WIFI_AP_PASSWORD)) {
+         Serial.println("[WiFi] Failed to connect and hit timeout");
+         pushDisplayLog("WiFi Failed!");
+         delay(3000);
+         ESP.restart();
      }
-     Serial.printf("\n[WiFi] IP: %s, Gateway: %s, RSSI: %d dBm\n",
+     
+     Serial.printf("\n[WiFi] Connected! IP: %s, Gateway: %s, RSSI: %d dBm\n",
                    WiFi.localIP().toString().c_str(),
                    WiFi.gatewayIP().toString().c_str(),
                    WiFi.RSSI());
      pushDisplayLog(String("WiFi ") + WiFi.localIP().toString());
      markDisplayDirty();
      refreshDisplay(true);
+    
+     // ===== Setup HTTP API Endpoints for Dashboard =====
+     
+     // WiFi status endpoint
+     webServer.on("/wifi/status", HTTP_GET, []() {
+         StaticJsonDocument<256> doc;
+         doc["connected"] = WiFi.status() == WL_CONNECTED;
+         doc["ssid"] = WiFi.SSID();
+         doc["ip"] = WiFi.localIP().toString();
+         doc["gateway"] = WiFi.gatewayIP().toString();
+         doc["rssi"] = WiFi.RSSI();
+         doc["mac"] = WiFi.macAddress();
+         
+         String response;
+         serializeJson(doc, response);
+         webServer.sendHeader("Access-Control-Allow-Origin", "*");
+         webServer.send(200, "application/json", response);
+     });
+     
+     // WiFi networks scan endpoint
+     webServer.on("/wifi/networks", HTTP_GET, []() {
+         int n = WiFi.scanNetworks();
+         StaticJsonDocument<1024> doc;
+         JsonArray networks = doc.createNestedArray("networks");
+         
+         for (int i = 0; i < n && i < 10; i++) {
+             JsonObject network = networks.createNestedObject();
+             network["ssid"] = WiFi.SSID(i);
+             network["rssi"] = WiFi.RSSI(i);
+             network["encryption"] = WiFi.encryptionType(i) != WIFI_AUTH_OPEN;
+         }
+         
+         String response;
+         serializeJson(doc, response);
+         WiFi.scanDelete();
+         webServer.sendHeader("Access-Control-Allow-Origin", "*");
+         webServer.send(200, "application/json", response);
+     });
+     
+     // WiFi reset endpoint (trigger config portal)
+     webServer.on("/wifi/reset", HTTP_POST, []() {
+         webServer.sendHeader("Access-Control-Allow-Origin", "*");
+         webServer.send(200, "application/json", "{\"status\":\"resetting\"}");
+         delay(1000);
+         wifiManager.resetSettings();
+         ESP.restart();
+     });
+     
+     // Device status endpoint
+     webServer.on("/device/status", HTTP_GET, []() {
+         StaticJsonDocument<2048> doc;
+         doc["device_id"] = DEVICE_ID;
+         doc["type"] = "appliance_controller_central";
+         doc["ip"] = WiFi.localIP().toString();
+         doc["rssi"] = WiFi.RSSI();
+         doc["heap"] = ESP.getFreeHeap();
+         doc["mqtt_connected"] = mqtt.connected();
+         doc["uptime_seconds"] = millis() / 1000;
+         doc["num_rooms"] = NUM_ROOMS;
+         
+         JsonArray roomsArr = doc.createNestedArray("rooms");
+         for (int i = 0; i < NUM_ROOMS; i++) {
+             RoomAppliances& room = roomStates[i];
+             JsonObject roomObj = roomsArr.createNestedObject();
+             roomObj["name"] = room.roomName;
+             
+             JsonObject appliances = roomObj.createNestedObject("appliances");
+             appliances["light"] = room.light;
+             appliances["AC"] = room.aircon;
+             appliances["fan"] = room.fan;
+             appliances["tv"] = room.tv;
+             appliances["alarm"] = room.alarm;
+         }
+         
+         String response;
+         serializeJson(doc, response);
+         webServer.sendHeader("Access-Control-Allow-Origin", "*");
+         webServer.send(200, "application/json", response);
+     });
+     
+     webServer.begin();
+     Serial.println("[WebServer] HTTP API server started on port 80");
+     pushDisplayLog("HTTP API ready");
     
      // Resolve server IPs
      resolveServerIPs();
@@ -806,7 +936,7 @@ void reconnectMQTT();
     
     Serial.println("[System] READY - Central controller active");
     Serial.printf("[System] MQTT wildcard: %s\n", MQTT_TOPIC_CONTROL_WILDCARD);
-    Serial.println("[System] Using MQTT only\n");
+    Serial.println("[System] WiFi Manager + HTTP API enabled\n");
 }
   
  // ===== Main Loop =====
@@ -823,6 +953,9 @@ void reconnectMQTT();
      if (mqtt.connected()) {
          mqtt.loop();
      }
+    
+     // Handle HTTP requests
+     webServer.handleClient();
     
      // Send status periodically
      if (now - lastStatusMs > STATUS_INTERVAL_MS) {
