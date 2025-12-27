@@ -231,22 +231,54 @@ function TrainModel() {
     }
 
     const downloadImagesFallback = () => {
-        const allImages = {
-            Wheelchair: images.Wheelchair,
-            NoWheelChair: images.NoWheelChair
+        const timestamp = new Date().toISOString().split('T')[0]
+        let downloadCount = 0
+
+        // Download each image as JPEG
+        const downloadImage = (imageData, className, index) => {
+            return new Promise((resolve) => {
+                // Convert data URL to blob
+                fetch(imageData)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `${className}_${timestamp}_${String(index + 1).padStart(4, '0')}.jpg`
+                        document.body.appendChild(a)
+                        a.click()
+                        document.body.removeChild(a)
+                        URL.revokeObjectURL(url)
+                        downloadCount++
+                        resolve()
+                    })
+                    .catch(err => {
+                        console.error(`Failed to download image ${className}_${index}:`, err)
+                        resolve()
+                    })
+            })
         }
 
-        const json = JSON.stringify(allImages, null, 2)
-        const blob = new Blob([json], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `training-data-${new Date().toISOString().split('T')[0]}.json`
-        a.click()
-        URL.revokeObjectURL(url)
+        // Download all images sequentially to avoid browser blocking multiple downloads
+        const downloadAll = async () => {
+            for (const [className, imageList] of Object.entries(images)) {
+                if (imageList.length === 0) continue
+                
+                for (let i = 0; i < imageList.length; i++) {
+                    await downloadImage(imageList[i], className, i)
+                    // Small delay between downloads to avoid browser blocking
+                    await new Promise(resolve => setTimeout(resolve, 100))
+                }
+            }
 
-        // Also download images as ZIP would be better, but for now just JSON
-        alert('Downloaded training data as JSON. For folder selection, please use Chrome or Edge browser.')
+            if (downloadCount > 0) {
+                alert(`Downloaded ${downloadCount} images as JPEG files. For folder selection, please use Chrome or Edge browser.`)
+            } else {
+                alert('No images to download.')
+            }
+        }
+
+        downloadAll()
     }
 
     const exportToTeachableMachine = () => {
@@ -337,9 +369,9 @@ Current training data:
                         onClick={downloadImages}
                         className="btn btn-secondary"
                         disabled={images.Wheelchair.length === 0 && images.NoWheelChair.length === 0}
-                        title={('showDirectoryPicker' in window) ? 'Save images to folder (Chrome/Edge only)' : 'Download as JSON (use Chrome/Edge for folder selection)'}
+                        title={('showDirectoryPicker' in window) ? 'Save images to folder (Chrome/Edge only)' : 'Download images as JPEG files (use Chrome/Edge for folder selection)'}
                     >
-                        💾 {('showDirectoryPicker' in window) ? 'Save to Folder' : 'Download Training Data'}
+                        💾 {('showDirectoryPicker' in window) ? 'Save to Folder' : 'Download as JPEG'}
                     </button>
                     <button
                         onClick={exportToTeachableMachine}
