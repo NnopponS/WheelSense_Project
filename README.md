@@ -56,7 +56,7 @@
               ┌────────────┴────────────┐
               ▼                         ▼
        ┌─────────────┐          ┌─────────────┐
-       │  ESP32-CAM  │          │   ESP8266   │
+       │  ESP32-CAM  │          │   ESP32-S2   │
        │  (Camera)   │          │ (Controller)│
        └─────────────┘          └─────────────┘
 ```
@@ -176,7 +176,7 @@ WheelSenseMockUp/
 │   └── nginx/
 │       └── nginx.conf              # Reverse proxy
 │
-├── CucumberRS-Controller/      # ESP8266 Appliance Controller
+├── CucumberRS-Controller/      # ESP32-S2 Appliance Controller
 │   └── src/main.cpp                # Firmware
 │
 ├── TsimCam-Controller/         # ESP32-CAM Camera
@@ -300,19 +300,44 @@ POST /chat
 
 **Upload:** PlatformIO → Upload
 
-### CucumberRS-Controller (ESP8266)
-**ควบคุมเครื่องใช้ไฟฟ้าผ่าน MQTT**
+### CucumberRS-Controller (ESP32-S2-Saola-1)
+**Central Controller - ควบคุมเครื่องใช้ไฟฟ้า 4 ห้องผ่าน MQTT**
 
 ```cpp
-// GPIO Mapping
-#define LIGHT_PIN D1
-#define AC_PIN D2
-#define FAN_PIN D3
+// GPIO Mapping (ESP32-S2 Safe Pins)
+// Kitchen
+#define PIN_KITCHEN_LIGHT     5   // GPIO5
+#define PIN_KITCHEN_ALARM     7   // GPIO7
+
+// Living Room  
+#define PIN_LIVINGROOM_AC     4   // GPIO4
+#define PIN_LIVINGROOM_TV     6   // GPIO6
+#define PIN_LIVINGROOM_LIGHT 21   // GPIO21
+#define PIN_LIVINGROOM_FAN    8   // GPIO8
+
+// Bedroom
+#define PIN_BEDROOM_TV       18   // GPIO18
+#define PIN_BEDROOM_LIGHT    17   // GPIO17
+#define PIN_BEDROOM_AIRCON   16   // GPIO16
+#define PIN_BEDROOM_ALARM    15   // GPIO15
+
+// Bathroom
+#define PIN_BATHROOM_LIGHT   14   // GPIO14
+
+// OLED Display (I2C)
+#define OLED_SDA_PIN         11   // GPIO11
+#define OLED_SCL_PIN         12   // GPIO12
 
 // MQTT Topics
-"WheelSense/bedroom/control"
-"WheelSense/bedroom/status"
+"WheelSense/{room}/control"   // Control commands
+"WheelSense/{room}/status"    // Status updates
+"WheelSense/central/status"   // Central controller status
 ```
+
+⚠️ **ESP32-S2 GPIO Notes:**
+- GPIO1, GPIO3: Reserved for USB (DO NOT USE)
+- GPIO26-32: Reserved for SPI Flash
+- GPIO36-39: Input-only pins (CANNOT use for output)
 
 ---
 
