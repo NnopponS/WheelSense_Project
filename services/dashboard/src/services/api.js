@@ -69,12 +69,12 @@ async function fetchAPI(endpoint, options = {}, retries = 3) {
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
-                
+
                 // For 503 on last attempt, provide a more helpful error message
                 if (response.status === 503) {
                     throw new Error(`Service temporarily unavailable. The backend may be initializing. Please wait a moment and try again.`);
                 }
-                
+
                 throw new Error(`API Error: ${response.status} ${response.statusText}`);
             }
 
@@ -85,7 +85,7 @@ async function fetchAPI(endpoint, options = {}, retries = 3) {
                 console.error(`API Error [${endpoint}]:`, error);
                 throw error;
             }
-            
+
             // Retry on network errors (not 503, which is handled above)
             if (error.message && !error.message.includes('API Error:')) {
                 const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
@@ -125,7 +125,7 @@ async function fetchMCP(endpoint, options = {}, retries = 3) {
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
-                
+
                 const errorText = await response.text();
                 let errorMessage = `MCP Error: ${response.status} ${response.statusText}`;
                 try {
@@ -137,12 +137,12 @@ async function fetchMCP(endpoint, options = {}, retries = 3) {
                         errorMessage = errorText.length > 200 ? errorMessage : errorText;
                     }
                 }
-                
+
                 // For 503 on last attempt, provide a more helpful error message
                 if (response.status === 503) {
                     errorMessage = `Service temporarily unavailable. The MCP server may be initializing. Please wait a moment and try again.`;
                 }
-                
+
                 throw new Error(errorMessage);
             }
 
@@ -153,7 +153,7 @@ async function fetchMCP(endpoint, options = {}, retries = 3) {
                 console.error(`MCP Error [${endpoint}]:`, error);
                 throw error;
             }
-            
+
             // Retry on network errors (not 503, which is handled above)
             if (error.message && !error.message.includes('MCP Error:')) {
                 const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
@@ -549,6 +549,86 @@ export async function getAIRecommendations(userId) {
     return data.recommendations || [];
 }
 
+// ==================== Gemini AI APIs ====================
+
+export async function chatWithGemini(messages, systemPrompt = null, context = null) {
+    return fetchAPI('/ai/gemini/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+            messages,
+            system_prompt: systemPrompt,
+            context,
+        }),
+    });
+}
+
+export async function getGeminiRoutineSuggestions(patientId = null) {
+    const params = patientId ? `?patient_id=${encodeURIComponent(patientId)}` : '';
+    return fetchAPI(`/ai/gemini/suggest-routines${params}`, {
+        method: 'POST',
+    });
+}
+
+export async function getGeminiAnalysis(patientId = null, question = null) {
+    const params = new URLSearchParams();
+    if (patientId) params.append('patient_id', patientId);
+    if (question) params.append('question', question);
+    return fetchAPI(`/ai/gemini/analyze?${params.toString()}`, {
+        method: 'POST',
+    });
+}
+
+// ==================== Data Management APIs ====================
+
+export async function exportPatientsCSV() {
+    const response = await fetch('/api/data/export/patients');
+    if (!response.ok) throw new Error('Export failed');
+    const blob = await response.blob();
+    return blob;
+}
+
+export async function exportTimelineCSV(days = 30) {
+    const response = await fetch(`/api/data/export/timeline?days=${days}`);
+    if (!response.ok) throw new Error('Export failed');
+    const blob = await response.blob();
+    return blob;
+}
+
+export async function exportAIReport(patientId = null) {
+    const params = patientId ? `?patient_id=${encodeURIComponent(patientId)}` : '';
+    return fetchAPI(`/data/export/ai-report${params}`);
+}
+
+export async function exportBackupJSON() {
+    const response = await fetch('/api/data/export/backup');
+    if (!response.ok) throw new Error('Backup failed');
+    const blob = await response.blob();
+    return blob;
+}
+
+export async function importData(collection, data, replaceExisting = false) {
+    return fetchAPI('/data/import', {
+        method: 'POST',
+        body: JSON.stringify({
+            collection,
+            data,
+            replace_existing: replaceExisting,
+        }),
+    });
+}
+
+export async function clearTimelineData(daysAgo = 30) {
+    return fetchAPI(`/data/timeline?days_ago=${daysAgo}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function resetAllDefaults() {
+    return fetchAPI('/data/reset-defaults', {
+        method: 'POST',
+    });
+}
+
 // ==================== Notifications ====================
 
 export async function getNotifications() {
@@ -941,6 +1021,20 @@ export default {
     callMCPTool,
     analyzeBehavior,
     getAIRecommendations,
+
+    // Gemini AI
+    chatWithGemini,
+    getGeminiRoutineSuggestions,
+    getGeminiAnalysis,
+
+    // Data Management
+    exportPatientsCSV,
+    exportTimelineCSV,
+    exportAIReport,
+    exportBackupJSON,
+    importData,
+    clearTimelineData,
+    resetAllDefaults,
 
     // Streaming
     getStreamUrl,

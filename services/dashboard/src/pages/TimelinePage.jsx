@@ -80,15 +80,15 @@ export function TimelinePage() {
 
     const filteredTimeline = combinedTimeline.filter(item => {
         if (!item) return false;
-        
+
         const itemType = item.type || (item.fromRoom ? 'location_change' : 'enter');
-        
+
         // Filter by type
         if (filter !== 'all') {
             if (filter === 'location' && itemType !== 'location_change') return false;
             if (filter !== 'location' && itemType !== filter) return false;
         }
-        
+
         // Filter by selected date in live mode (only if date is explicitly selected and not today)
         if (viewMode === 'live' && selectedDate) {
             const today = new Date();
@@ -101,7 +101,7 @@ export function TimelinePage() {
                 if (!isSameDay(itemTime, selectedDate)) return false;
             }
         }
-        
+
         return true;
     }).sort((a, b) => {
         const timeA = new Date(a.time || a.timestamp || 0);

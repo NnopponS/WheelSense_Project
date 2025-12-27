@@ -31,7 +31,11 @@ export function UserHomePage() {
         );
     }
 
-    const myWheelchair = wheelchairs.find(w => w.id === currentUser?.wheelchairId);
+    // Find wheelchair: Try by wheelchairId matches, OR by patientId matches
+    const myWheelchair = wheelchairs.find(w =>
+        (currentUser?.wheelchairId && w.id === currentUser.wheelchairId) ||
+        (currentUser?.id && w.patientId === currentUser.id)
+    );
 
     // Find room using flexible matching (by id, roomType, or nameEn)
     let myRoom = rooms.find(r => r.id === currentUser?.room);
@@ -150,7 +154,7 @@ export function UserHomePage() {
                             {rooms.map(room => (
                                 <div
                                     key={room.id}
-                                    className={`room ${room.id === currentUser?.room ? 'occupied' : ''}`}
+                                    className={`room ${room.occupied ? 'occupied' : ''}`}
                                     style={{
                                         left: `${room.x}%`,
                                         top: `${room.y}%`,
@@ -161,36 +165,68 @@ export function UserHomePage() {
                                     onClick={() => openDrawer({ type: 'room', data: room })}
                                 >
                                     <span className="room-label">{room.nameEn || room.name}</span>
-                                    {room.sizeLabel && (
-                                        <span style={{
-                                            position: 'absolute',
-                                            bottom: '5px',
-                                            left: '50%',
-                                            transform: 'translateX(-50%)',
-                                            fontSize: '0.65rem',
-                                            color: 'var(--text-muted)',
-                                            fontWeight: 500
-                                        }}>
-                                            {room.sizeLabel}
-                                        </span>
-                                    )}
+                                    <span className="room-status" style={{
+                                        display: 'block',
+                                        marginTop: '4px',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 'normal',
+                                        color: room.occupied ? 'var(--success-500)' : 'var(--text-muted)'
+                                    }}>
+                                        {room.occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}
+                                    </span>
                                 </div>
                             ))}
 
-                            {myRoom && myWheelchair && (() => {
-                                const storedPos = wheelchairPositions[myWheelchair.id];
-                                const markerX = storedPos ? storedPos.x : (myRoom.x + myRoom.width / 2);
-                                const markerY = storedPos ? storedPos.y : (myRoom.y + myRoom.height / 2);
+                            {(() => {
+                                // Try to get position from real-time data first
+                                const storedPos = myWheelchair ? wheelchairPositions[myWheelchair.id] : null;
+
+                                let markerX, markerY;
+
+                                if (storedPos) {
+                                    markerX = storedPos.x;
+                                    markerY = storedPos.y;
+                                } else if (myRoom) {
+                                    // Fallback to room center
+                                    markerX = myRoom.x + myRoom.width / 2;
+                                    markerY = myRoom.y + myRoom.height / 2;
+                                } else {
+                                    // No position available
+                                    return null;
+                                }
+
+                                if (!myWheelchair) return null;
+
                                 return (
                                     <div
                                         className="wheelchair-marker"
                                         style={{
                                             left: `${markerX}%`,
-                                            top: `${markerY}%`
+                                            top: `${markerY}%`,
+                                            // Inline styles to ensure appearance matches request exactly
+                                            position: 'absolute',
+                                            width: '36px',
+                                            height: '36px',
+                                            background: 'linear-gradient(135deg, var(--primary-500), var(--primary-700))',
+                                            borderRadius: '50%',
+                                            border: '3px solid white',
+                                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            zIndex: 20,
+                                            transform: 'translate(-50%, -50%)',
+                                            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
                                         }}
-                                        title={`${myWheelchair.name} - ${currentUser?.name || t('User')} • ${myRoom?.nameEn || myRoom?.name || t('Unknown Location')}`}
+                                        title={`${myWheelchair.name} - ${currentUser?.name || t('User')}`}
                                     >
-                                        <span style={{ fontSize: '1.25rem' }}>📍</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-accessibility" style={{ color: 'white' }}>
+                                            <circle cx="16" cy="4" r="1"></circle>
+                                            <path d="m18 19 1-7-6 1"></path>
+                                            <path d="m5 8 3-3 5.5 3-2.36 3.5"></path>
+                                            <path d="M4.24 14.5a5 5 0 0 0 6.88 6"></path>
+                                            <path d="M13.76 17.5a5 5 0 0 0-6.88-6"></path>
+                                        </svg>
                                     </div>
                                 );
                             })()}
@@ -200,7 +236,7 @@ export function UserHomePage() {
             </div>
 
             {/* Section 2: Appliance Control */}
-            <div className="card" style={{ marginBottom: '1.5rem' }}>
+            <div id="appliance-control" className="card" style={{ marginBottom: '1.5rem' }}>
                 <div className="card-header">
                     <span className="card-title"><Zap size={18} /> {t('Appliance Control')} - {myRoom?.name}</span>
                 </div>
@@ -329,8 +365,8 @@ export function UserHomePage() {
             {/* Section 4: Quick Menu - Smaller and functional */}
             <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem' }}>🎯 {t('Quick Menu')}</h3>
             <div className="action-cards" style={{ gap: '0.75rem' }}>
-                <div 
-                    className="action-card" 
+                <div
+                    className="action-card"
                     style={{ padding: '0.75rem', cursor: 'pointer' }}
                     onClick={() => {
                         const path = pageToPath['user-health'];
@@ -344,8 +380,8 @@ export function UserHomePage() {
                     <h4 style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Health')}</h4>
                     <p style={{ fontSize: '0.7rem', margin: 0 }}>{t('View Health Status')}</p>
                 </div>
-                <div 
-                    className="action-card" 
+                <div
+                    className="action-card"
                     style={{ padding: '0.75rem', cursor: 'pointer' }}
                     onClick={() => {
                         const path = pageToPath['user-routines'];
@@ -359,25 +395,25 @@ export function UserHomePage() {
                     <h4 style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Today Schedule')}</h4>
                     <p style={{ fontSize: '0.7rem', margin: 0 }}>{todayRoutines.length} {t('Activities')}</p>
                 </div>
-                <div 
-                    className="action-card" 
+                <div
+                    className="action-card"
                     style={{ padding: '0.75rem', cursor: 'pointer' }}
                     onClick={() => {
-                        const path = pageToPath['user-location'];
+                        const path = pageToPath['user-appliances'];
                         if (path) {
                             navigate(path);
-                            setCurrentPage('user-location');
+                            setCurrentPage('user-appliances');
                         }
                     }}
                 >
-                    <div className="icon" style={{ width: '32px', height: '32px', fontSize: '16px' }}><MapPin size={16} /></div>
-                    <h4 style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Location')}</h4>
-                    <p style={{ fontSize: '0.7rem', margin: 0 }}>{myRoom?.nameEn || myRoom?.name || t('Unknown')}</p>
+                    <div className="icon" style={{ width: '32px', height: '32px', fontSize: '16px' }}><Zap size={16} /></div>
+                    <h4 style={{ fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Appliances')}</h4>
+                    <p style={{ fontSize: '0.7rem', margin: 0 }}>{myAppliances.length} {t('Devices')}</p>
                 </div>
-                <div 
-                    className="action-card" 
-                    style={{ 
-                        background: 'rgba(239, 68, 68, 0.1)', 
+                <div
+                    className="action-card"
+                    style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
                         borderColor: 'var(--danger-500)',
                         padding: '0.75rem',
                         cursor: 'pointer'
@@ -391,10 +427,10 @@ export function UserHomePage() {
                         }
                     }}
                 >
-                    <div className="icon" style={{ 
+                    <div className="icon" style={{
                         background: 'linear-gradient(135deg, var(--danger-500), var(--danger-600))',
-                        width: '32px', 
-                        height: '32px', 
+                        width: '32px',
+                        height: '32px',
                         fontSize: '16px'
                     }}><AlertTriangle size={16} /></div>
                     <h4 style={{ color: 'var(--danger-500)', fontSize: '0.85rem', margin: '0.25rem 0' }}>{t('Emergency')}</h4>

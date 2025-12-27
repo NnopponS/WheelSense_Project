@@ -283,6 +283,58 @@ export function AppProvider({ children }) {
         }
     }, [fetchData, rooms.length, wheelchairs.length]);
 
+    // Periodically fetch live node status to keep device status updated across the app
+    useEffect(() => {
+        const updateDeviceStatus = async () => {
+            try {
+                const liveNodes = await api.getNodesLiveStatus();
+                if (!liveNodes || !Array.isArray(liveNodes)) return;
+
+                setDevices(prevDevices => {
+                    let hasChanges = false;
+                    const updated = prevDevices.map(device => {
+                        // Match by multiple ID strategies
+                        const liveNode = liveNodes.find(n =>
+                            n.id === device.id ||
+                            n.deviceId === device.id ||
+                            n.id === device.deviceId ||
+                            n.device_id === device.id
+                        );
+
+                        if (liveNode) {
+                            const newStatus = liveNode.online ? 'online' : 'offline';
+                            const newLastSeen = liveNode.last_seen || liveNode.lastSeen || device.lastSeen;
+                            const newIp = liveNode.ip || device.ip;
+
+                            // Only update if changed prevents unnecessary re-renders
+                            if (device.status !== newStatus || device.lastSeen !== newLastSeen || device.ip !== newIp) {
+                                hasChanges = true;
+                                return {
+                                    ...device,
+                                    status: newStatus,
+                                    lastSeen: newLastSeen,
+                                    ip: newIp
+                                };
+                            }
+                        }
+                        return device;
+                    });
+
+                    return hasChanges ? updated : prevDevices;
+                });
+            } catch (err) {
+                // Silent error to avoid console spam
+            }
+        };
+
+        // Initial update
+        updateDeviceStatus();
+
+        // Check every 5 seconds
+        const interval = setInterval(updateDeviceStatus, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
     // WebSocket connection for real-time updates (wheelchair detection, device registration, etc.)
     // Note: Appliance control uses MQTT via API endpoint /appliances/control
     useEffect(() => {

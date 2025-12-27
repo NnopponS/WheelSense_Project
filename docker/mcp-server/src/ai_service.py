@@ -1,6 +1,7 @@
 """
 WheelSense Backend - AI Service
-Gemini AI integration for behavior analysis
+Gemini AI integration for behavior analysis, chat, and routine suggestions
+Uses Gemini Flash for fast, intelligent responses
 """
 
 import json
@@ -11,6 +12,9 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 logger = logging.getLogger(__name__)
+
+# Gemini Flash API configuration
+GEMINI_FLASH_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
 
 
 class AIService:
@@ -255,3 +259,219 @@ Respond in English, concisely and clearly."""
                 })
         
         return recommendations
+
+    async def chat_with_gemini(
+        self,
+        messages: List[Dict],
+        system_prompt: Optional[str] = None,
+        context: Optional[Dict] = None
+    ) -> str:
+        """
+        Chat with Gemini Flash API for intelligent responses.
+        Used for Analytics insights and Routine suggestions.
+        """
+        if not self.gemini_api_key:
+            return "Gemini API key not configured. Please set GEMINI_API_KEY environment variable."
+        
+        # Build prompt with context if provided
+        full_prompt = ""
+        
+        if system_prompt:
+            full_prompt += f"System: {system_prompt}\n\n"
+        
+        if context:
+            full_prompt += f"Context Information:\n{json.dumps(context, ensure_ascii=False, indent=2)}\n\n"
+        
+        # Build conversation history
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            full_prompt += f"{role.capitalize()}: {content}\n"
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{GEMINI_FLASH_URL}?key={self.gemini_api_key}",
+                    json={
+                        "contents": [{
+                            "parts": [{"text": full_prompt}]
+                        }],
+                        "generationConfig": {
+                            "temperature": 0.7,
+                            "topK": 40,
+                            "topP": 0.95,
+                            "maxOutputTokens": 2048,
+                        },
+                        "safetySettings": [
+                            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+                        ]
+                    },
+                    timeout=60.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    candidates = result.get("candidates", [])
+                    if candidates:
+                        content = candidates[0].get("content", {})
+                        parts = content.get("parts", [])
+                        if parts:
+                            return parts[0].get("text", "No response generated")
+                
+                logger.error(f"Gemini Flash API error: {response.status_code} - {response.text}")
+                return f"Gemini API error: {response.status_code}"
+                
+        except Exception as e:
+            logger.error(f"Gemini Flash API call failed: {e}")
+            return f"Failed to connect to Gemini: {str(e)}"
+
+    async def suggest_routines(
+        self,
+        user_patterns: Dict,
+        existing_routines: List[Dict],
+        user_preferences: Optional[Dict] = None
+    ) -> List[Dict]:
+        """
+        Use Gemini Flash to suggest new routines based on user patterns.
+        For the Routines page.
+        """
+        if not self.gemini_api_key:
+            return []
+        
+        prompt = f"""You are a smart home assistant for wheelchair users. Based on the user's behavior patterns, suggest personalized routines.
+
+User Behavior Patterns:
+- Room usage times: {json.dumps(user_patterns.get('room_time', {}), ensure_ascii=False)}
+- Peak activity hours: {json.dumps(user_patterns.get('peak_hours', {}), ensure_ascii=False)}
+- Appliance usage: {json.dumps(user_patterns.get('appliance_usage', {}), ensure_ascii=False)}
+
+Existing Routines:
+{json.dumps(existing_routines, ensure_ascii=False, indent=2)}
+
+User Preferences:
+{json.dumps(user_preferences or {}, ensure_ascii=False, indent=2)}
+
+Suggest 3-5 new routines that would improve the user's quality of life. For each routine, provide:
+1. name: Short descriptive name
+2. description: What the routine does
+3. trigger: When it should activate (time, condition, or event)
+4. actions: List of actions (room, appliance, state)
+5. priority: high, medium, or low
+
+Respond in JSON format only, as an array of routine objects."""
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{GEMINI_FLASH_URL}?key={self.gemini_api_key}",
+                    json={
+                        "contents": [{
+                            "parts": [{"text": prompt}]
+                        }],
+                        "generationConfig": {
+                            "temperature": 0.8,
+                            "maxOutputTokens": 2048,
+                        }
+                    },
+                    timeout=60.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    candidates = result.get("candidates", [])
+                    if candidates:
+                        content = candidates[0].get("content", {})
+                        parts = content.get("parts", [])
+                        if parts:
+                            text = parts[0].get("text", "")
+                            # Try to parse JSON from response
+                            try:
+                                # Clean up response if it has markdown code blocks
+                                if "```json" in text:
+                                    text = text.split("```json")[1].split("```")[0]
+                                elif "```" in text:
+                                    text = text.split("```")[1].split("```")[0]
+                                return json.loads(text.strip())
+                            except json.JSONDecodeError:
+                                logger.warning(f"Could not parse routine suggestions: {text}")
+                                return []
+                
+                return []
+                
+        except Exception as e:
+            logger.error(f"Routine suggestion failed: {e}")
+            return []
+
+    async def analyze_analytics_data(
+        self,
+        timeline_data: List[Dict],
+        patient_data: Dict,
+        question: Optional[str] = None
+    ) -> Dict:
+        """
+        Use Gemini Flash to provide analytics insights.
+        For the Analytics page.
+        """
+        if not self.gemini_api_key:
+            return {"error": "Gemini API key not configured"}
+        
+        context = f"""You are analyzing data for a wheelchair user monitoring system.
+
+Patient Information:
+- Name: {patient_data.get('name', 'Unknown')}
+- Age: {patient_data.get('age', 'Unknown')}
+- Wheelchair ID: {patient_data.get('wheelchairId', 'Unknown')}
+
+Recent Timeline Events (last 50):
+{json.dumps(timeline_data[:50] if timeline_data else [], ensure_ascii=False, indent=2)}
+
+"""
+        
+        if question:
+            prompt = context + f"User Question: {question}\n\nProvide a helpful, concise answer."
+        else:
+            prompt = context + """Provide a comprehensive analysis including:
+1. Daily activity summary
+2. Movement patterns
+3. Potential health concerns
+4. Recommendations for caregivers
+
+Respond in a clear, structured format."""
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{GEMINI_FLASH_URL}?key={self.gemini_api_key}",
+                    json={
+                        "contents": [{
+                            "parts": [{"text": prompt}]
+                        }],
+                        "generationConfig": {
+                            "temperature": 0.5,
+                            "maxOutputTokens": 2048,
+                        }
+                    },
+                    timeout=60.0
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    candidates = result.get("candidates", [])
+                    if candidates:
+                        content = candidates[0].get("content", {})
+                        parts = content.get("parts", [])
+                        if parts:
+                            return {
+                                "analysis": parts[0].get("text", ""),
+                                "generated_at": datetime.now().isoformat(),
+                                "model": "gemini-2.0-flash-exp"
+                            }
+                
+                return {"error": f"Gemini API error: {response.status_code}"}
+                
+        except Exception as e:
+            logger.error(f"Analytics analysis failed: {e}")
+            return {"error": str(e)}

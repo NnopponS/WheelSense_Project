@@ -20,6 +20,7 @@ export function MapPage() {
         language,
         buildings, setBuildings,
         floors, setFloors,
+        currentUser,
     } = useApp();
     const { t } = useTranslation(language);
 
@@ -68,7 +69,7 @@ export function MapPage() {
                 } catch (err) {
                     console.warn('Failed to load buildings from API:', err);
                 }
-                
+
                 try {
                     const floorsData = await api.getFloors();
                     if (floorsData && floorsData.length > 0) {
@@ -77,7 +78,7 @@ export function MapPage() {
                 } catch (err) {
                     console.warn('Failed to load floors from API:', err);
                 }
-                
+
                 // Load map config (for wheelchair positions and as fallback for buildings/floors)
                 const config = await api.getMapConfig();
                 if (config) {
@@ -660,22 +661,22 @@ export function MapPage() {
                             </button>
                         )}
                     </div>
-                        {editMode && (
-                            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
-                                <button className="btn btn-secondary btn-sm" onClick={() => setShowAddBuilding(true)}>
-                                    <Plus size={14} /> {t('Add Building')}
-                                </button>
-                                <button className="btn btn-secondary btn-sm" onClick={() => {
-                                    setNewFloor({ name: '', buildingId: selectedBuilding || '' });
-                                    setShowAddFloor(true);
-                                }}>
-                                    <Plus size={14} /> {t('Add Floor')}
-                                </button>
-                                <button className="btn btn-primary" onClick={() => setShowAddRoom(true)}>
-                                    <Plus size={16} /> {t('Add Room')}
-                                </button>
-                            </div>
-                        )}
+                    {editMode && (
+                        <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => setShowAddBuilding(true)}>
+                                <Plus size={14} /> {t('Add Building')}
+                            </button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => {
+                                setNewFloor({ name: '', buildingId: selectedBuilding || '' });
+                                setShowAddFloor(true);
+                            }}>
+                                <Plus size={14} /> {t('Add Floor')}
+                            </button>
+                            <button className="btn btn-primary" onClick={() => setShowAddRoom(true)}>
+                                <Plus size={16} /> {t('Add Room')}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -694,231 +695,234 @@ export function MapPage() {
                     >
                         {safeRooms.map(room => {
                             // Get detection state for this room (try multiple matching strategies)
-                            const roomDetection = detectionState?.[room.id] || 
-                                                  detectionState?.[room.roomType] ||
-                                                  detectionState?.[room.nameEn?.toLowerCase()] ||
-                                                  detectionState?.[room.name?.toLowerCase()];
+                            const roomDetection = detectionState?.[room.id] ||
+                                detectionState?.[room.roomType] ||
+                                detectionState?.[room.nameEn?.toLowerCase()] ||
+                                detectionState?.[room.name?.toLowerCase()];
                             const isDetected = roomDetection?.detected || false;
                             const detectionConfidence = roomDetection?.confidence || 0;
-                            
+
                             return (
-                            <div
-                                key={room.id}
-                                className={`room ${room.occupied ? 'occupied' : ''} ${selectedRoom === room.id ? 'selected' : ''} ${isDetected ? 'wheelchair-detected' : ''}`}
-                                style={{
-                                    left: `${room.x}%`,
-                                    top: `${room.y}%`,
-                                    width: `${room.width}%`,
-                                    height: `${room.height}%`,
-                                    cursor: editMode ? 'move' : 'pointer',
-                                    outline: selectedRoom === room.id ? '3px solid var(--primary-500)' : (isDetected ? '3px solid var(--success-500)' : 'none'),
-                                    userSelect: 'none',
-                                    border: isDetected ? '3px solid var(--success-500)' : (selectedRoom === room.id ? 'none' : '1px solid rgba(255,255,255,0.1)')
-                                }}
-                                onClick={() => {
-                                    if (!editMode) {
-                                        // Both Admin and User can open drawer with video and appliance control
-                                        openDrawer({ type: 'room', data: room });
-                                        // Also select the room for the details panel
-                                        setSelectedRoom(room.id);
-                                    }
-                                }}
-                                onMouseDown={(e) => editMode && handleRoomMouseDown(e, room.id)}
-                            >
-                                <span className="room-label">
-                                    {room.nameEn || room.name}
-                                    {isDetected && (
-                                        <span style={{ 
-                                            marginLeft: '0.5rem', 
-                                            fontSize: '0.8em', 
-                                            color: 'var(--success-500)',
-                                            fontWeight: 'bold'
-                                        }}>
-                                            🦽 {(detectionConfidence * 100).toFixed(0)}%
-                                        </span>
+                                <div
+                                    key={room.id}
+                                    className={`room ${room.occupied ? 'occupied' : ''} ${selectedRoom === room.id ? 'selected' : ''} ${isDetected ? 'wheelchair-detected' : ''}`}
+                                    style={{
+                                        left: `${room.x}%`,
+                                        top: `${room.y}%`,
+                                        width: `${room.width}%`,
+                                        height: `${room.height}%`,
+                                        cursor: editMode ? 'move' : 'pointer',
+                                        outline: selectedRoom === room.id ? '3px solid var(--primary-500)' : (isDetected ? '3px solid var(--success-500)' : 'none'),
+                                        userSelect: 'none',
+                                        border: isDetected ? '3px solid var(--success-500)' : (selectedRoom === room.id ? 'none' : '1px solid rgba(255,255,255,0.1)')
+                                    }}
+                                    onClick={() => {
+                                        if (!editMode) {
+                                            // Both Admin and User can open drawer with video and appliance control
+                                            openDrawer({ type: 'room', data: room });
+                                            // Also select the room for the details panel
+                                            setSelectedRoom(room.id);
+                                        }
+                                    }}
+                                    onMouseDown={(e) => editMode && handleRoomMouseDown(e, room.id)}
+                                >
+                                    <span className="room-label">
+                                        {room.nameEn || room.name}
+                                        {isDetected && (
+                                            <span style={{
+                                                marginLeft: '0.5rem',
+                                                fontSize: '0.8em',
+                                                color: 'var(--success-500)',
+                                                fontWeight: 'bold'
+                                            }}>
+                                                🦽 {(detectionConfidence * 100).toFixed(0)}%
+                                            </span>
+                                        )}
+                                    </span>
+                                    <span className="room-status">{room.occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}</span>
+                                    {editMode && selectedRoom === room.id && (
+                                        <>
+                                            <div style={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 2 }}>
+                                                <button
+                                                    className="btn btn-danger btn-icon"
+                                                    style={{ padding: 2, minHeight: 20, minWidth: 20 }}
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room.id); }}
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </div>
+                                            {/* Resize handles */}
+                                            {/* Corners */}
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: -4,
+                                                    left: -4,
+                                                    width: 12,
+                                                    height: 12,
+                                                    background: 'var(--primary-500)',
+                                                    border: '2px solid white',
+                                                    borderRadius: '50%',
+                                                    cursor: 'nwse-resize',
+                                                    zIndex: 100
+                                                }}
+                                                onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'nw')}
+                                            />
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: -4,
+                                                    right: -4,
+                                                    width: 12,
+                                                    height: 12,
+                                                    background: 'var(--primary-500)',
+                                                    border: '2px solid white',
+                                                    borderRadius: '50%',
+                                                    cursor: 'nesw-resize',
+                                                    zIndex: 100
+                                                }}
+                                                onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'ne')}
+                                            />
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    bottom: -4,
+                                                    left: -4,
+                                                    width: 12,
+                                                    height: 12,
+                                                    background: 'var(--primary-500)',
+                                                    border: '2px solid white',
+                                                    borderRadius: '50%',
+                                                    cursor: 'nesw-resize',
+                                                    zIndex: 100
+                                                }}
+                                                onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'sw')}
+                                            />
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    bottom: -4,
+                                                    right: -4,
+                                                    width: 12,
+                                                    height: 12,
+                                                    background: 'var(--primary-500)',
+                                                    border: '2px solid white',
+                                                    borderRadius: '50%',
+                                                    cursor: 'nwse-resize',
+                                                    zIndex: 100
+                                                }}
+                                                onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'se')}
+                                            />
+                                            {/* Edges */}
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: -4,
+                                                    left: '50%',
+                                                    transform: 'translateX(-50%)',
+                                                    width: 12,
+                                                    height: 12,
+                                                    background: 'var(--primary-500)',
+                                                    border: '2px solid white',
+                                                    borderRadius: '50%',
+                                                    cursor: 'ns-resize',
+                                                    zIndex: 100
+                                                }}
+                                                onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'n')}
+                                            />
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    bottom: -4,
+                                                    left: '50%',
+                                                    transform: 'translateX(-50%)',
+                                                    width: 12,
+                                                    height: 12,
+                                                    background: 'var(--primary-500)',
+                                                    border: '2px solid white',
+                                                    borderRadius: '50%',
+                                                    cursor: 'ns-resize',
+                                                    zIndex: 100
+                                                }}
+                                                onMouseDown={(e) => handleResizeMouseDown(e, room.id, 's')}
+                                            />
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: -4,
+                                                    transform: 'translateY(-50%)',
+                                                    width: 12,
+                                                    height: 12,
+                                                    background: 'var(--primary-500)',
+                                                    border: '2px solid white',
+                                                    borderRadius: '50%',
+                                                    cursor: 'ew-resize',
+                                                    zIndex: 100
+                                                }}
+                                                onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'w')}
+                                            />
+                                            <div
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    right: -4,
+                                                    transform: 'translateY(-50%)',
+                                                    width: 12,
+                                                    height: 12,
+                                                    background: 'var(--primary-500)',
+                                                    border: '2px solid white',
+                                                    borderRadius: '50%',
+                                                    cursor: 'ew-resize',
+                                                    zIndex: 100
+                                                }}
+                                                onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'e')}
+                                            />
+                                        </>
                                     )}
-                                </span>
-                                <span className="room-status">{room.occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}</span>
-                                {editMode && selectedRoom === room.id && (
-                                    <>
-                                        <div style={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: 2 }}>
-                                            <button
-                                                className="btn btn-danger btn-icon"
-                                                style={{ padding: 2, minHeight: 20, minWidth: 20 }}
-                                                onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room.id); }}
-                                            >
-                                                <Trash2 size={12} />
-                                            </button>
-                                        </div>
-                                        {/* Resize handles */}
-                                        {/* Corners */}
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                top: -4,
-                                                left: -4,
-                                                width: 12,
-                                                height: 12,
-                                                background: 'var(--primary-500)',
-                                                border: '2px solid white',
-                                                borderRadius: '50%',
-                                                cursor: 'nwse-resize',
-                                                zIndex: 100
-                                            }}
-                                            onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'nw')}
-                                        />
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                top: -4,
-                                                right: -4,
-                                                width: 12,
-                                                height: 12,
-                                                background: 'var(--primary-500)',
-                                                border: '2px solid white',
-                                                borderRadius: '50%',
-                                                cursor: 'nesw-resize',
-                                                zIndex: 100
-                                            }}
-                                            onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'ne')}
-                                        />
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                bottom: -4,
-                                                left: -4,
-                                                width: 12,
-                                                height: 12,
-                                                background: 'var(--primary-500)',
-                                                border: '2px solid white',
-                                                borderRadius: '50%',
-                                                cursor: 'nesw-resize',
-                                                zIndex: 100
-                                            }}
-                                            onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'sw')}
-                                        />
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                bottom: -4,
-                                                right: -4,
-                                                width: 12,
-                                                height: 12,
-                                                background: 'var(--primary-500)',
-                                                border: '2px solid white',
-                                                borderRadius: '50%',
-                                                cursor: 'nwse-resize',
-                                                zIndex: 100
-                                            }}
-                                            onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'se')}
-                                        />
-                                        {/* Edges */}
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                top: -4,
-                                                left: '50%',
-                                                transform: 'translateX(-50%)',
-                                                width: 12,
-                                                height: 12,
-                                                background: 'var(--primary-500)',
-                                                border: '2px solid white',
-                                                borderRadius: '50%',
-                                                cursor: 'ns-resize',
-                                                zIndex: 100
-                                            }}
-                                            onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'n')}
-                                        />
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                bottom: -4,
-                                                left: '50%',
-                                                transform: 'translateX(-50%)',
-                                                width: 12,
-                                                height: 12,
-                                                background: 'var(--primary-500)',
-                                                border: '2px solid white',
-                                                borderRadius: '50%',
-                                                cursor: 'ns-resize',
-                                                zIndex: 100
-                                            }}
-                                            onMouseDown={(e) => handleResizeMouseDown(e, room.id, 's')}
-                                        />
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                top: '50%',
-                                                left: -4,
-                                                transform: 'translateY(-50%)',
-                                                width: 12,
-                                                height: 12,
-                                                background: 'var(--primary-500)',
-                                                border: '2px solid white',
-                                                borderRadius: '50%',
-                                                cursor: 'ew-resize',
-                                                zIndex: 100
-                                            }}
-                                            onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'w')}
-                                        />
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                top: '50%',
-                                                right: -4,
-                                                transform: 'translateY(-50%)',
-                                                width: 12,
-                                                height: 12,
-                                                background: 'var(--primary-500)',
-                                                border: '2px solid white',
-                                                borderRadius: '50%',
-                                                cursor: 'ew-resize',
-                                                zIndex: 100
-                                            }}
-                                            onMouseDown={(e) => handleResizeMouseDown(e, room.id, 'e')}
-                                        />
-                                    </>
-                                )}
-                            </div>
+                                </div>
                             );
                         })}
 
                         {/* Wheelchair markers */}
-                        {safeWheelchairs.filter(w => w.room).map(wc => {
-                            // Find room using flexible matching (by id, roomType, or nameEn)
-                            let room = safeRooms.find(r => r.id === wc.room);
-                            if (!room) {
-                                room = safeRooms.find(r => r.roomType?.toLowerCase() === wc.room?.toLowerCase());
-                            }
-                            if (!room) {
-                                room = safeRooms.find(r => r.nameEn?.toLowerCase() === wc.room?.toLowerCase());
-                            }
-                            if (!room) {
-                                room = safeRooms.find(r => r.name?.toLowerCase().includes(wc.room?.toLowerCase() || ''));
-                            }
-                            if (!room) return null;
-                            // Calculate position - use stored position if available, otherwise center of room
-                            const storedPos = wheelchairPositions[wc.id];
-                            const markerX = storedPos ? storedPos.x : (room.x + room.width / 2);
-                            const markerY = storedPos ? storedPos.y : (room.y + room.height / 2);
-                            return (
-                                <div
-                                    key={wc.id}
-                                    className="wheelchair-marker"
-                                    style={{
-                                        left: `${markerX}%`,
-                                        top: `${markerY}%`,
-                                        cursor: editMode ? 'move' : 'pointer',
-                                        zIndex: 20
-                                    }}
-                                    title={`${wc.name} - ${wc.patientName || t('No User')}`}
-                                    onMouseDown={(e) => editMode && handleMarkerMouseDown(e, wc.id)}
-                                    onClick={(e) => { if (!editMode) e.stopPropagation(); }}
-                                >
-                                    <Accessibility size={18} />
-                                </div>
-                            );
-                        })}
+                        {safeWheelchairs
+                            .filter(w => w.room)
+                            .filter(w => role !== 'user' || (currentUser?.wheelchairId && w.id === currentUser.wheelchairId))
+                            .map(wc => {
+                                // Find room using flexible matching (by id, roomType, or nameEn)
+                                let room = safeRooms.find(r => r.id === wc.room);
+                                if (!room) {
+                                    room = safeRooms.find(r => r.roomType?.toLowerCase() === wc.room?.toLowerCase());
+                                }
+                                if (!room) {
+                                    room = safeRooms.find(r => r.nameEn?.toLowerCase() === wc.room?.toLowerCase());
+                                }
+                                if (!room) {
+                                    room = safeRooms.find(r => r.name?.toLowerCase().includes(wc.room?.toLowerCase() || ''));
+                                }
+                                if (!room) return null;
+                                // Calculate position - use stored position if available, otherwise center of room
+                                const storedPos = wheelchairPositions[wc.id];
+                                const markerX = storedPos ? storedPos.x : (room.x + room.width / 2);
+                                const markerY = storedPos ? storedPos.y : (room.y + room.height / 2);
+                                return (
+                                    <div
+                                        key={wc.id}
+                                        className="wheelchair-marker"
+                                        style={{
+                                            left: `${markerX}%`,
+                                            top: `${markerY}%`,
+                                            cursor: editMode ? 'move' : 'pointer',
+                                            zIndex: 20
+                                        }}
+                                        title={`${wc.name} - ${wc.patientName || t('No User')}`}
+                                        onMouseDown={(e) => editMode && handleMarkerMouseDown(e, wc.id)}
+                                        onClick={(e) => { if (!editMode) e.stopPropagation(); }}
+                                    >
+                                        <Accessibility size={18} />
+                                    </div>
+                                );
+                            })}
 
                         {/* Node markers */}
                         {(devices || []).filter(d => d.type === 'node' && d.room).map(node => {
@@ -1121,61 +1125,61 @@ export function MapPage() {
                             // Room List View
                             safeRooms.map(room => {
                                 // Get detection state for this room (try multiple matching strategies)
-                                const roomDetection = detectionState?.[room.id] || 
-                                                      detectionState?.[room.roomType] ||
-                                                      detectionState?.[room.nameEn?.toLowerCase()] ||
-                                                      detectionState?.[room.name?.toLowerCase()];
+                                const roomDetection = detectionState?.[room.id] ||
+                                    detectionState?.[room.roomType] ||
+                                    detectionState?.[room.nameEn?.toLowerCase()] ||
+                                    detectionState?.[room.name?.toLowerCase()];
                                 const isDetected = roomDetection?.detected === true;
                                 const detectionConfidence = roomDetection?.confidence || 0;
 
                                 return (
-                                <div
-                                    key={room.id}
-                                    className="list-item"
-                                    onClick={() => setSelectedRoom(room.id)}
-                                    style={{ cursor: 'pointer' }}
-                                >
-                                    <div className="list-item-avatar" style={{
-                                        background: isDetected 
-                                            ? 'linear-gradient(135deg, var(--success-500), var(--success-600))'
-                                            : room.occupied
-                                            ? 'linear-gradient(135deg, var(--primary-500), var(--primary-600))'
-                                            : 'var(--gray-600)'
-                                    }}>
-                                        {isDetected ? '🦽' : '🏠'}
-                                    </div>
-                                    <div className="list-item-content">
-                                        <div className="list-item-title">
-                                            {room.nameEn || room.name}
-                                            {isDetected && (
-                                                <span style={{ 
-                                                    marginLeft: '0.5rem', 
-                                                    fontSize: '0.85em', 
-                                                    color: 'var(--success-500)',
-                                                    fontWeight: 'normal'
-                                                }}>
-                                                    ({(detectionConfidence * 100).toFixed(0)}%)
-                                                </span>
-                                            )}
+                                    <div
+                                        key={room.id}
+                                        className="list-item"
+                                        onClick={() => setSelectedRoom(room.id)}
+                                        style={{ cursor: 'pointer' }}
+                                    >
+                                        <div className="list-item-avatar" style={{
+                                            background: isDetected
+                                                ? 'linear-gradient(135deg, var(--success-500), var(--success-600))'
+                                                : room.occupied
+                                                    ? 'linear-gradient(135deg, var(--primary-500), var(--primary-600))'
+                                                    : 'var(--gray-600)'
+                                        }}>
+                                            {isDetected ? '🦽' : '🏠'}
                                         </div>
-                                        <div className="list-item-subtitle">
-                                            {(() => {
-                                                // Find wheelchair in this room
-                                                const wc = safeWheelchairs.find(w => {
-                                                    if (w.room === room.id) return true;
-                                                    // Try matching by roomType or nameEn
-                                                    const roomLower = room.roomType?.toLowerCase() || room.nameEn?.toLowerCase() || '';
-                                                    return w.room?.toLowerCase() === roomLower;
-                                                });
-                                                
-                                                if (wc && wc.patientName) {
-                                                    return `${wc.name} - ${wc.patientName}`;
-                                                }
-                                                return `${room.nameEn || room.name} • ${(appliances[room.id] || []).length} ${t('Devices')}${isDetected ? ` • ${t('Wheelchair Detected')}` : ''}`;
-                                            })()}
+                                        <div className="list-item-content">
+                                            <div className="list-item-title">
+                                                {room.nameEn || room.name}
+                                                {isDetected && (
+                                                    <span style={{
+                                                        marginLeft: '0.5rem',
+                                                        fontSize: '0.85em',
+                                                        color: 'var(--success-500)',
+                                                        fontWeight: 'normal'
+                                                    }}>
+                                                        ({(detectionConfidence * 100).toFixed(0)}%)
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="list-item-subtitle">
+                                                {(() => {
+                                                    // Find wheelchair in this room
+                                                    const wc = safeWheelchairs.find(w => {
+                                                        if (w.room === room.id) return true;
+                                                        // Try matching by roomType or nameEn
+                                                        const roomLower = room.roomType?.toLowerCase() || room.nameEn?.toLowerCase() || '';
+                                                        return w.room?.toLowerCase() === roomLower;
+                                                    });
+
+                                                    if (wc && wc.patientName) {
+                                                        return `${wc.name} - ${wc.patientName}`;
+                                                    }
+                                                    return `${room.nameEn || room.name} • ${(appliances[room.id] || []).length} ${t('Devices')}${isDetected ? ` • ${t('Wheelchair Detected')}` : ''}`;
+                                                })()}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
                                 );
                             })
                         )}

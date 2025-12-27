@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     
     # AI Services
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-2.0-flash-exp"  # Gemini Flash model
     OLLAMA_HOST: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "deepseek-r1:latest"
     

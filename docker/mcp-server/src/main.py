@@ -1749,6 +1749,428 @@ async def migrate_rooms_thai_to_english():
     }
 
 
+# ==================== Gemini AI Endpoints ====================
+
+class GeminiChatRequest(BaseModel):
+    messages: List[Dict[str, str]]
+    system_prompt: Optional[str] = None
+    context: Optional[Dict[str, Any]] = None
+
+@app.post("/ai/gemini/chat")
+async def gemini_chat(request: GeminiChatRequest):
+    """
+    Chat with Gemini Flash API for intelligent responses.
+    Used for Analytics insights, Routine suggestions, and general AI chat.
+    """
+    if not ai_service:
+        raise HTTPException(status_code=503, detail="AI service not available")
+    
+    if not ai_service.gemini_api_key:
+        raise HTTPException(status_code=503, detail="Gemini API key not configured. Set GEMINI_API_KEY environment variable.")
+    
+    response = await ai_service.chat_with_gemini(
+        messages=request.messages,
+        system_prompt=request.system_prompt,
+        context=request.context
+    )
+    
+    return {
+        "response": response,
+        "model": "gemini-2.0-flash-exp",
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.post("/ai/gemini/suggest-routines")
+async def suggest_routines(patient_id: Optional[str] = None):
+    """
+    Get AI-powered routine suggestions based on user behavior patterns.
+    For the Routines page.
+    """
+    if not ai_service or not db:
+        raise HTTPException(status_code=503, detail="AI service or database not available")
+    
+    if not ai_service.gemini_api_key:
+        raise HTTPException(status_code=503, detail="Gemini API key not configured")
+    
+    # Get user patterns from behavior analysis
+    patterns = {
+        "room_time": {},
+        "peak_hours": {},
+        "appliance_usage": {}
+    }
+    
+    if patient_id:
+        # Get recent activities for this patient
+        activities = await db.get_user_activities(user_id=patient_id, limit=100)
+        if activities:
+            patterns = ai_service._extract_patterns(activities)
+    
+    # Get existing routines
+    query = {"patientId": patient_id} if patient_id else {}
+    existing_routines = await db.db.routines.find(query).to_list(length=50)
+    existing_routines = [Database._serialize_doc(r) for r in existing_routines]
+    
+    # Get suggestions from Gemini
+    suggestions = await ai_service.suggest_routines(
+        user_patterns=patterns,
+        existing_routines=existing_routines
+    )
+    
+    return {
+        "suggestions": suggestions,
+        "model": "gemini-2.0-flash-exp",
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.post("/ai/gemini/analyze")
+async def gemini_analyze(
+    patient_id: Optional[str] = None,
+    question: Optional[str] = None
+):
+    """
+    Get AI-powered analytics insights from Gemini Flash.
+    For the Analytics page.
+    """
+    if not ai_service or not db:
+        raise HTTPException(status_code=503, detail="AI service or database not available")
+    
+    if not ai_service.gemini_api_key:
+        raise HTTPException(status_code=503, detail="Gemini API key not configured")
+    
+    # Get patient data
+    patient_data = {}
+    if patient_id:
+        patient = await db.db.patients.find_one({"id": patient_id})
+        if patient:
+            patient_data = Database._serialize_doc(patient)
+    
+    # Get recent timeline data
+    timeline_query = {"userId": patient_id} if patient_id else {}
+    timeline_data = await db.db.timeline.find(timeline_query).sort("timestamp", -1).to_list(length=100)
+    timeline_data = [Database._serialize_doc(t) for t in timeline_data]
+    
+    # Get Gemini analysis
+    analysis = await ai_service.analyze_analytics_data(
+        timeline_data=timeline_data,
+        patient_data=patient_data,
+        question=question
+    )
+    
+    return analysis
+
+
+# ==================== Data Management APIs ====================
+
+@app.get("/data/export/patients")
+async def export_patients_csv():
+    """Export all patient data as CSV."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    import io
+    import csv
+    
+    patients = await db.db.patients.find().to_list(length=1000)
+    
+    if not patients:
+        return Response(content="No data to export", media_type="text/plain")
+    
+    # Create CSV
+    output = io.StringIO()
+    fieldnames = ["id", "name", "age", "wheelchairId", "avatar", "status", "currentRoom", "phone", "email", "emergencyContact"]
+    writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction='ignore')
+    writer.writeheader()
+    
+    for patient in patients:
+        row = Database._serialize_doc(patient)
+        writer.writerow(row)
+    
+    content = output.getvalue()
+    
+    return Response(
+        content=content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=patients_export.csv"}
+    )
+
+
+@app.get("/data/export/timeline")
+async def export_timeline_csv(days: int = 30):
+    """Export timeline data as CSV."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    import io
+    import csv
+    from datetime import timedelta
+    
+    # Get timeline data from last N days
+    start_date = datetime.now() - timedelta(days=days)
+    timeline = await db.db.timeline.find({
+        "timestamp": {"$gte": start_date}
+    }).sort("timestamp", -1).to_list(length=10000)
+    
+    if not timeline:
+        return Response(content="No data to export", media_type="text/plain")
+    
+    # Create CSV
+    output = io.StringIO()
+    fieldnames = ["timestamp", "userId", "eventType", "fromRoom", "toRoom", "confidence", "message"]
+    writer = csv.DictWriter(output, fieldnames=fieldnames, extrasaction='ignore')
+    writer.writeheader()
+    
+    for event in timeline:
+        row = Database._serialize_doc(event)
+        if isinstance(row.get("timestamp"), datetime):
+            row["timestamp"] = row["timestamp"].isoformat()
+        writer.writerow(row)
+    
+    content = output.getvalue()
+    
+    return Response(
+        content=content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=timeline_export_{days}days.csv"}
+    )
+
+
+@app.get("/data/export/ai-report")
+async def export_ai_report_json(patient_id: Optional[str] = None):
+    """Export AI analysis report as JSON (could be converted to PDF on frontend)."""
+    if not ai_service or not db:
+        raise HTTPException(status_code=503, detail="AI service or database not available")
+    
+    # Get patient data
+    patient_data = {}
+    if patient_id:
+        patient = await db.db.patients.find_one({"id": patient_id})
+        if patient:
+            patient_data = Database._serialize_doc(patient)
+    else:
+        # Get first patient
+        patient = await db.db.patients.find_one({})
+        if patient:
+            patient_data = Database._serialize_doc(patient)
+            patient_id = patient_data.get("id")
+    
+    # Get recent activities
+    activities = await db.get_user_activities(user_id=patient_id, limit=200) if patient_id else []
+    
+    # Run behavior analysis
+    analysis = await ai_service.analyze_behavior(activities)
+    
+    # Get recommendations
+    recommendations = await ai_service.generate_recommendations(analysis)
+    
+    report = {
+        "report_type": "AI Behavior Analysis",
+        "generated_at": datetime.now().isoformat(),
+        "patient": patient_data,
+        "analysis": analysis,
+        "recommendations": recommendations
+    }
+    
+    return report
+
+
+@app.get("/data/export/backup")
+async def export_backup_json():
+    """Backup all data as JSON."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    # Export all collections
+    backup = {
+        "exported_at": datetime.now().isoformat(),
+        "version": "1.0.0",
+        "data": {}
+    }
+    
+    collections = ["patients", "wheelchairs", "rooms", "buildings", "floors", 
+                   "appliances", "devices", "routines", "timeline", "activities"]
+    
+    for collection_name in collections:
+        try:
+            collection = getattr(db.db, collection_name)
+            docs = await collection.find().to_list(length=10000)
+            backup["data"][collection_name] = [Database._serialize_doc(d) for d in docs]
+        except Exception as e:
+            logger.warning(f"Could not export collection {collection_name}: {e}")
+            backup["data"][collection_name] = []
+    
+    content = json.dumps(backup, ensure_ascii=False, indent=2, default=str)
+    
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=wheelsense_backup.json"}
+    )
+
+
+class ImportDataRequest(BaseModel):
+    collection: str
+    data: List[Dict[str, Any]]
+    replace_existing: bool = False
+
+@app.post("/data/import")
+async def import_data(request: ImportDataRequest):
+    """Import data from JSON."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    allowed_collections = ["patients", "wheelchairs", "rooms", "buildings", "floors",
+                          "appliances", "devices", "routines"]
+    
+    if request.collection not in allowed_collections:
+        raise HTTPException(status_code=400, detail=f"Collection not allowed. Allowed: {allowed_collections}")
+    
+    collection = getattr(db.db, request.collection)
+    
+    if request.replace_existing:
+        # Delete existing data
+        await collection.delete_many({})
+    
+    # Insert new data
+    if request.data:
+        # Remove _id fields to avoid conflicts
+        data_to_insert = [{k: v for k, v in doc.items() if k != "_id"} for doc in request.data]
+        result = await collection.insert_many(data_to_insert)
+        
+        return {
+            "status": "success",
+            "collection": request.collection,
+            "inserted_count": len(result.inserted_ids)
+        }
+    
+    return {"status": "success", "inserted_count": 0}
+
+
+@app.delete("/data/timeline")
+async def clear_timeline_data(days_ago: int = 30):
+    """Clear timeline data older than specified days."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    from datetime import timedelta
+    
+    cutoff_date = datetime.now() - timedelta(days=days_ago)
+    
+    # Delete old timeline entries
+    result = await db.db.timeline.delete_many({
+        "timestamp": {"$lt": cutoff_date}
+    })
+    
+    # Also clear old activities
+    activities_result = await db.db.activities.delete_many({
+        "timestamp": {"$lt": cutoff_date}
+    })
+    
+    return {
+        "status": "success",
+        "timeline_deleted": result.deleted_count,
+        "activities_deleted": activities_result.deleted_count,
+        "cutoff_date": cutoff_date.isoformat()
+    }
+
+
+@app.post("/data/reset-defaults")
+async def reset_all_defaults():
+    """Reset all settings to defaults and clear user data."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    # Clear timeline data
+    timeline_result = await db.db.timeline.delete_many({})
+    activities_result = await db.db.activities.delete_many({})
+    routines_result = await db.db.routines.delete_many({})
+    behavior_result = await db.db.behaviorAnalysis.delete_many({})
+    notes_result = await db.db.doctorNotes.delete_many({})
+    
+    # Reset appliance states to off
+    await db.db.appliances.update_many(
+        {},
+        {"$set": {"state": False, "value": 0}}
+    )
+    
+    # Reset wheelchair positions
+    await db.save_wheelchair_positions({})
+    
+    return {
+        "status": "success",
+        "message": "All data reset to defaults",
+        "cleared": {
+            "timeline": timeline_result.deleted_count,
+            "activities": activities_result.deleted_count,
+            "routines": routines_result.deleted_count,
+            "behaviorAnalysis": behavior_result.deleted_count,
+            "doctorNotes": notes_result.deleted_count
+        }
+    }
+
+
+# ==================== Settings/API Keys Management ====================
+
+class ApiKeysRequest(BaseModel):
+    gemini_api_key: Optional[str] = None
+    ollama_host: Optional[str] = None
+
+@app.post("/settings/api-keys")
+async def save_api_keys(request: ApiKeysRequest):
+    """Save API keys to database (for persistence across restarts)."""
+    global ai_service
+    
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    # Save to database
+    settings_doc = {
+        "type": "api_keys",
+        "gemini_api_key": request.gemini_api_key,
+        "ollama_host": request.ollama_host,
+        "updated_at": datetime.now()
+    }
+    
+    await db.db.settings.update_one(
+        {"type": "api_keys"},
+        {"$set": settings_doc},
+        upsert=True
+    )
+    
+    # Update AI service with new key if provided
+    if request.gemini_api_key and ai_service:
+        ai_service.gemini_api_key = request.gemini_api_key
+        logger.info("✅ Gemini API key updated")
+    
+    return {"status": "saved", "message": "API keys saved successfully"}
+
+
+@app.get("/settings/api-keys")
+async def get_api_keys():
+    """Get saved API keys (masked for security)."""
+    if not db:
+        raise HTTPException(status_code=503, detail="Database not available")
+    
+    settings_doc = await db.db.settings.find_one({"type": "api_keys"})
+    
+    if not settings_doc:
+        return {
+            "gemini_api_key_set": False,
+            "ollama_host": "http://localhost:11434"
+        }
+    
+    # Mask the API key for security
+    gemini_key = settings_doc.get("gemini_api_key", "")
+    gemini_masked = f"{gemini_key[:10]}...{gemini_key[-4:]}" if gemini_key and len(gemini_key) > 14 else ""
+    
+    return {
+        "gemini_api_key_set": bool(gemini_key),
+        "gemini_api_key_masked": gemini_masked,
+        "ollama_host": settings_doc.get("ollama_host", "http://localhost:11434")
+    }
+
+
 # ==================== MCP Protocol Endpoints ====================
 
 class MCPRequest(BaseModel):

@@ -9,13 +9,15 @@ import {
 export function ApplianceControlPage() {
     const { rooms, appliances, toggleAppliance, setApplianceValue, role, currentUser, language } = useApp();
     const { t } = useTranslation(language);
-    const [selectedRoom, setSelectedRoom] = useState(role === 'user' ? currentUser?.room : 'bedroom');
+    // Default to user's room if user mode, but allow changing to other rooms
+    const defaultRoom = role === 'user' ? (currentUser?.room || 'bedroom') : 'bedroom';
+    const [selectedRoom, setSelectedRoom] = useState(defaultRoom);
 
     const roomAppliances = appliances[selectedRoom] || [];
 
-    // User mode: only show their room
+    // Allow user to see and select all rooms
     const safeRooms = rooms || [];
-    const availableRooms = role === 'user' ? [safeRooms.find(r => r.id === currentUser?.room)].filter(Boolean) : safeRooms;
+    const availableRooms = safeRooms;
 
     const getApplianceIcon = (type) => {
         switch (type) {
@@ -53,23 +55,21 @@ export function ApplianceControlPage() {
         <div className="page-content">
             <div className="page-header">
                 <h2>⚡ {t('Appliance Control')}</h2>
-                <p>{role === 'user' ? t('Control appliances in your room') : t('Control appliances in all rooms')}</p>
+                <p>{t('Control appliances in all rooms')}</p>
             </div>
 
-            {/* Room Selector (Admin only sees all rooms) */}
-            {role === 'admin' && (
-                <div className="tabs" style={{ marginBottom: '1.5rem' }}>
-                    {rooms.map(room => (
-                        <button
-                            key={room.id}
-                            className={`tab ${selectedRoom === room.id ? 'active' : ''}`}
-                            onClick={() => setSelectedRoom(room.id)}
-                        >
-                            {room.nameEn || room.name}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {/* Room Selector - Show for all users */}
+            <div className="tabs" style={{ marginBottom: '1.5rem' }}>
+                {availableRooms.map(room => (
+                    <button
+                        key={room.id}
+                        className={`tab ${selectedRoom === room.id ? 'active' : ''}`}
+                        onClick={() => setSelectedRoom(room.id)}
+                    >
+                        {room.nameEn || room.name}
+                    </button>
+                ))}
+            </div>
 
             {/* Scene Presets */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>
