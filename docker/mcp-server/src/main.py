@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import threading
+import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional
@@ -294,25 +295,43 @@ async def lifespan(app: FastAPI):
     import os
     
     def get_host_ip():
-        """Get the host's IP address. Favors HOST_IP env var if set."""
-        # First check environment variable (passed from docker-compose)
-        env_ip = os.getenv("HOST_IP")
-        if env_ip and env_ip != "127.0.0.1":
-            return env_ip
-            
+        """Get the host's IP address dynamically. Auto-detects network IP.
+        
+        Priority:
+        1. HOST_IP env var (if set and valid) - for manual override
+        2. Auto-detect from network interface (preferred)
+        3. Fallback to 127.0.0.1
+        """
+        # Try auto-detection first (more reliable for dynamic IPs)
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
-            ip = s.getsockname()[0]
+            detected_ip = s.getsockname()[0]
             s.close()
-            return ip
-        except:
-            return "127.0.0.1"
+            
+            # Only use detected IP if it's not localhost
+            if detected_ip and detected_ip != "127.0.0.1":
+                logger.debug(f"Auto-detected host IP: {detected_ip}")
+                return detected_ip
+        except Exception as e:
+            logger.debug(f"Auto-detection failed: {e}")
+        
+        # Fallback to environment variable (for manual override if needed)
+        env_ip = os.getenv("HOST_IP")
+        if env_ip and env_ip != "127.0.0.1":
+            logger.debug(f"Using HOST_IP from environment: {env_ip}")
+            return env_ip
+            
+        # Last resort fallback
+        logger.warning("Could not detect host IP, using 127.0.0.1")
+        return "127.0.0.1"
     
     async def udp_discovery_server():
-        """UDP Server that responds to WheelSense discovery broadcasts."""
+        """UDP Server that responds to WheelSense discovery broadcasts.
+        
+        Dynamically detects and updates host IP periodically to handle IP changes.
+        """
         discovery_port = 5555
-        host_ip = get_host_ip()
         
         # Create UDP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -320,17 +339,37 @@ async def lifespan(app: FastAPI):
         sock.bind(("0.0.0.0", discovery_port))
         sock.setblocking(False)
         
+        # Get initial IP
+        host_ip = get_host_ip()
+        last_ip_check = time.time()
+        ip_check_interval = 30  # Check IP every 30 seconds
+        
         logger.info(f"✅ UDP Discovery server started on port {discovery_port} (Announcing IP: {host_ip})")
         
         loop = asyncio.get_event_loop()
         
         while True:
             try:
+                # Periodically refresh IP address (in case it changes)
+                current_time = time.time()
+                if current_time - last_ip_check > ip_check_interval:
+                    new_ip = get_host_ip()
+                    if new_ip != host_ip:
+                        logger.info(f"🔄 Host IP changed: {host_ip} -> {new_ip}")
+                        host_ip = new_ip
+                    last_ip_check = current_time
+                
                 # Non-blocking receive
                 data, addr = await loop.run_in_executor(None, lambda: sock.recvfrom(1024))
                 message = data.decode().strip()
                 
                 if message == "WHEELSENSE_DISCOVER":
+                    # Refresh IP before responding (to ensure latest IP)
+                    current_ip = get_host_ip()
+                    if current_ip != host_ip:
+                        logger.debug(f"IP updated during discovery: {host_ip} -> {current_ip}")
+                        host_ip = current_ip
+                    
                     # Send response with server info
                     response = json.dumps({
                         "type": "WHEELSENSE_SERVER",
@@ -340,7 +379,7 @@ async def lifespan(app: FastAPI):
                         "http_port": 8000
                     })
                     sock.sendto(response.encode(), addr)
-                    logger.info(f"📡 Discovery: Sent server info to {addr[0]}")
+                    logger.debug(f"📡 Discovery: Sent server info ({host_ip}) to {addr[0]}")
                     
             except BlockingIOError:
                 await asyncio.sleep(0.1)

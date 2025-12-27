@@ -102,8 +102,9 @@ services:
       - ENVIRONMENT=production
       - DEBUG=false
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      # Pass host IP for UDP discovery response
-      - HOST_IP=${HOST_IP:-192.168.1.100}
+      # Pass host IP for UDP discovery response (optional - auto-detected if not set)
+      # Set HOST_IP only if you need to override auto-detection
+      - HOST_IP=${HOST_IP:-}
     depends_on:
       mongodb:
         condition: service_healthy

@@ -8,6 +8,7 @@ import base64
 import json
 import logging
 import threading
+import time
 from datetime import datetime
 from queue import Queue
 from typing import Callable, Optional
@@ -53,6 +54,14 @@ class WebSocketCameraClient:
         # Event loop for async operations
         self.loop: Optional[asyncio.AbstractEventLoop] = None
         self.loop_thread: Optional[threading.Thread] = None
+        
+        # Auto-reconnect settings
+        self.reconnect_enabled = True
+        self.reconnect_interval = 5  # seconds
+        self.max_reconnect_attempts = None  # None = infinite
+        self.reconnect_attempts = 0
+        self.last_frame_time = 0
+        self.connection_timeout = 30  # seconds - if no frames received, reconnect
     
     def _run_event_loop(self):
         """Run asyncio event loop in a separate thread."""
@@ -62,6 +71,9 @@ class WebSocketCameraClient:
     
     def connect(self):
         """Connect to WebSocket server."""
+        self.running = True  # Enable running state for auto-reconnect
+        self.reconnect_enabled = True  # Enable auto-reconnect by default
+        
         # Start event loop in separate thread
         self.loop_thread = threading.Thread(target=self._run_event_loop, daemon=True)
         self.loop_thread.start()
@@ -71,11 +83,17 @@ class WebSocketCameraClient:
             threading.Event().wait(0.1)
         
         # Connect to WebSocket server
-        future = asyncio.run_coroutine_threadsafe(
-            self._connect_async(),
-            self.loop
-        )
-        future.result(timeout=10)
+        try:
+            future = asyncio.run_coroutine_threadsafe(
+                self._connect_async(),
+                self.loop
+            )
+            future.result(timeout=10)
+        except Exception as e:
+            logger.error(f"Initial connection failed: {e}")
+            # Auto-reconnect will handle retry
+            if self.reconnect_enabled:
+                logger.info("Auto-reconnect enabled, will retry automatically")
     
     async def _connect_async(self):
         """Async WebSocket connection."""
@@ -97,15 +115,25 @@ class WebSocketCameraClient:
             # Start receiving messages
             asyncio.create_task(self._receive_messages())
             
+            # Start health check task
+            asyncio.create_task(self._health_check())
+            
         except Exception as e:
             logger.error(f"Failed to connect to WebSocket: {e}")
             self.is_connected = False
+            if self.reconnect_enabled:
+                # Schedule reconnect if enabled
+                asyncio.create_task(self._schedule_reconnect())
             raise
     
     async def _receive_messages(self):
-        """Receive messages from WebSocket."""
+        """Receive messages from WebSocket with auto-reconnect."""
         try:
             async for message in self.websocket:
+                # Update last frame time for health check
+                self.last_frame_time = time.time()
+                self.reconnect_attempts = 0  # Reset on successful message
+                
                 if isinstance(message, bytes):
                     # Binary message = video frame (JPEG)
                     # Use current_metadata that was set from previous text message
@@ -117,19 +145,27 @@ class WebSocketCameraClient:
                         # Store metadata for next frame
                         if data.get("type") == "video_frame":
                             self.current_metadata = data
+                        elif data.get("type") == "registered":
+                            logger.info("✅ Camera-service registration confirmed")
                         await self._handle_text_message(data)
                     except json.JSONDecodeError:
                         logger.warning(f"Invalid JSON message: {message}")
         except websockets.exceptions.ConnectionClosed:
             logger.warning("WebSocket connection closed")
             self.is_connected = False
+            if self.reconnect_enabled:
+                await self._schedule_reconnect()
         except Exception as e:
             logger.error(f"Error receiving messages: {e}", exc_info=True)
             self.is_connected = False
+            if self.reconnect_enabled:
+                await self._schedule_reconnect()
     
     async def _handle_video_frame(self, frame_bytes: bytes, metadata: dict = None):
         """Handle incoming video frame."""
         try:
+            # Update last frame time for health check
+            self.last_frame_time = time.time()
             logger.debug(f"📥 Received video frame: {len(frame_bytes)} bytes, metadata: {metadata}")
             
             # Decode JPEG frame
@@ -262,9 +298,51 @@ class WebSocketCameraClient:
         except:
             return None
     
+    async def _schedule_reconnect(self):
+        """Schedule automatic reconnection."""
+        if not self.reconnect_enabled:
+            return
+        
+        if self.max_reconnect_attempts and self.reconnect_attempts >= self.max_reconnect_attempts:
+            logger.error(f"Max reconnect attempts ({self.max_reconnect_attempts}) reached. Stopping.")
+            return
+        
+        self.reconnect_attempts += 1
+        logger.info(f"🔄 Scheduling reconnect attempt {self.reconnect_attempts} in {self.reconnect_interval}s...")
+        
+        await asyncio.sleep(self.reconnect_interval)
+        
+        if self.running:
+            try:
+                logger.info("🔄 Attempting to reconnect WebSocket...")
+                await self._connect_async()
+                logger.info("✅ Reconnected successfully")
+            except Exception as e:
+                logger.error(f"❌ Reconnect failed: {e}")
+                # Schedule another reconnect
+                await self._schedule_reconnect()
+    
+    async def _health_check(self):
+        """Periodic health check - reconnect if no frames received."""
+        while self.running:
+            await asyncio.sleep(10)  # Check every 10 seconds
+            
+            if self.is_connected and self.last_frame_time > 0:
+                time_since_last_frame = time.time() - self.last_frame_time
+                if time_since_last_frame > self.connection_timeout:
+                    logger.warning(f"⚠️ No frames received for {time_since_last_frame:.1f}s. Reconnecting...")
+                    self.is_connected = False
+                    if self.websocket:
+                        try:
+                            await self.websocket.close()
+                        except:
+                            pass
+                    await self._schedule_reconnect()
+    
     def disconnect(self):
         """Disconnect from WebSocket server."""
         self.running = False
+        self.reconnect_enabled = False
         self.is_connected = False
         
         if self.loop:

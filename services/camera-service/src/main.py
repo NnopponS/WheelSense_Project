@@ -95,21 +95,42 @@ class CameraService:
             return
         
         # Get detector for this room
-        detector = self._get_detector(room)
+        try:
+            detector = self._get_detector(room)
+        except Exception as e:
+            logger.error(f"❌ Failed to get detector for {room}: {e}")
+            return
         
-        # Run detection on rotated frame
-        detection = detector.detect(frame)
+        # Run detection on rotated frame with error handling
+        try:
+            detection = detector.detect(frame)
+        except Exception as e:
+            logger.error(f"❌ Detection failed for {room}: {e}", exc_info=True)
+            # Return early but don't crash - continue processing next frame
+            return
+        
+        # Validate detection result
+        if not detection or not isinstance(detection, dict):
+            logger.warning(f"⚠️ Invalid detection result for {room}, skipping")
+            return
         
         # Add frame size to detection for position calculation
         if frame is not None and frame.size > 0:
-            h, w = frame.shape[:2]
-            detection["frame_size"] = {"width": int(w), "height": int(h)}
+            try:
+                h, w = frame.shape[:2]
+                detection["frame_size"] = {"width": int(w), "height": int(h)}
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to get frame size: {e}")
         
         # Update detection state
         self.ws_client.current_detection = detection
         
-        # Send detection result via WebSocket
-        asyncio.create_task(self.ws_client.send_detection(detection, device_id, room))
+        # Send detection result via WebSocket with error handling
+        try:
+            asyncio.create_task(self.ws_client.send_detection(detection, device_id, room))
+        except Exception as e:
+            logger.error(f"❌ Failed to send detection result: {e}")
+            # Don't return - continue processing
         
         self.last_detection_publish[room] = now
         
@@ -135,33 +156,58 @@ class CameraService:
         logger.info(f"Detection Interval: {settings.DETECTION_INTERVAL_SEC}s")
         logger.info("=" * 60)
         
-        # Connect to WebSocket
+        # Connect to WebSocket (with auto-reconnect enabled)
         try:
             self.ws_client.connect()
+            logger.info("✅ Initial WebSocket connection established")
         except Exception as e:
-            logger.error(f"Failed to connect to WebSocket: {e}")
-            sys.exit(1)
+            logger.warning(f"⚠️ Initial WebSocket connection failed: {e}")
+            logger.info("🔄 Auto-reconnect is enabled, will retry automatically...")
+            # Don't exit - let auto-reconnect handle it
+            # The service will continue running and auto-reconnect will attempt to connect
         
         self.running = True
         
-        # Main loop
+        # Main loop with health monitoring
         logger.info("Camera service started. Waiting for video frames from WebSocket...")
         
         frame_count = 0
+        last_health_log = time.time()
+        health_log_interval = 60  # Log health status every 60 seconds
+        last_frame_time = time.time()
+        no_frame_warning_time = 30  # Warn if no frames for 30 seconds
+        
         try:
             while self.running:
+                # Check WebSocket connection health
+                if not self.ws_client.is_connected:
+                    logger.warning("⚠️ WebSocket disconnected. Waiting for auto-reconnect...")
+                    time.sleep(2)
+                    continue
+                
                 # Process frames from queue
                 frame_data = self.ws_client.get_frame(timeout=1.0)
                 if frame_data:
                     frame, meta = frame_data
                     frame_count += 1
+                    last_frame_time = time.time()
+                    
                     if frame_count % 30 == 0:  # Log every 30 frames
                         logger.info(f"Processing video frames... (received {frame_count} frames so far)")
                     # Detection is handled in callback
                 else:
-                    # Log if no frames received for a while
-                    if frame_count == 0:
-                        logger.debug("Waiting for video frames from WebSocket...")
+                    # Check if no frames received for too long
+                    time_since_last_frame = time.time() - last_frame_time
+                    if time_since_last_frame > no_frame_warning_time and frame_count > 0:
+                        logger.warning(f"⚠️ No frames received for {time_since_last_frame:.1f}s. Connection may be unstable.")
+                        last_frame_time = time.time()  # Reset to avoid spam
+                
+                # Periodic health status log
+                current_time = time.time()
+                if current_time - last_health_log > health_log_interval:
+                    logger.info(f"📊 Health: Connected={self.ws_client.is_connected}, "
+                              f"Frames={frame_count}, Detectors={len(self.detectors)}")
+                    last_health_log = current_time
                 
                 # Small sleep to prevent CPU spinning
                 time.sleep(0.1)
