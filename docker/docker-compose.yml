@@ -103,7 +103,7 @@ services:
       - DEBUG=false
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       # Pass host IP for UDP discovery response
-      - HOST_IP=${HOST_IP:-192.168.1.168}
+      - HOST_IP=${HOST_IP:-192.168.1.100}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -137,7 +137,7 @@ services:
       - MQTT_TOPIC_DETECTION=WheelSenseMockup/detection
       - MQTT_TOPIC_CONTROL=WheelSenseMockup/control
       - MQTT_TOPIC_STATUS=WheelSenseMockup/status
-      - DEVICE_ID=TSIM_001
+      - DEVICE_ID=TSIM_004
       - DETECTION_CONFIDENCE_THRESHOLD=0.5
       - DETECTION_INTERVAL_SEC=1.0
     volumes:

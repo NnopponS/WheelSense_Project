@@ -67,46 +67,42 @@ function DetectionViewer({ device, detection, confidenceThreshold = 0.5 }) {
   const deviceId = device.id || device.deviceId
   const room = device.room || device.roomType || 'unknown'
 
-  // Use localStorage key for this specific device
-  const rotationStorageKey = `camera_rotation_${deviceId}`
-
-  // Load rotation from localStorage on mount, default to 0
-  const [rotationDegrees, setRotationDegrees] = useState(() => {
-    const saved = localStorage.getItem(rotationStorageKey)
-    return saved ? parseInt(saved, 10) : 0
-  })
-
-  // Save rotation to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem(rotationStorageKey, rotationDegrees.toString())
-    console.log(`[DetectionViewer] Saved rotation ${rotationDegrees}° for device ${deviceId}`)
-  }, [rotationDegrees, rotationStorageKey, deviceId])
+  // Load rotation from device prop (if available) or default to 0
+  const [rotationDegrees, setRotationDegrees] = useState(device.rotation || 0)
 
   const wsRef = useRef(null)
   const prevSrcRef = useRef('')
 
-  const handleRotate = async (degrees) => {
-    // Apply rotation immediately for instant UI feedback
-    setRotationDegrees((prev) => (prev + degrees) % 360)
-
+  const handleRotate = async (absoluteDegrees) => {
+    // Use absolute rotation values: 0, 90, 180, 270
+    setRotationDegrees(absoluteDegrees)
     setIsRotating(true)
-    try {
-      console.log(`[DetectionViewer] Attempting to rotate camera ${deviceId} by ${degrees}°`)
 
-      // Try to rotate on device in background (don't wait for it)
-      rotateCamera(deviceId, degrees)
-        .then((result) => {
-          console.log('[DetectionViewer] Camera rotation successful on device:', result)
-          // Rotation already applied to UI, no need to update state again
-        })
-        .catch((deviceError) => {
-          // If device rotation fails (e.g., not in config mode), that's okay
-          // We already applied visual rotation, so just log the error
-          console.warn('[DetectionViewer] Device rotation failed, using client-side rotation only:', deviceError)
-        })
+    try {
+      console.log(`[DetectionViewer] Setting server-side rotation for ${deviceId} to ${absoluteDegrees}°`)
+      await rotateCamera(deviceId, absoluteDegrees)
+      console.log('[DetectionViewer] Server-side rotation updated')
     } catch (error) {
       console.error('[DetectionViewer] Failed to rotate camera:', error)
-      // Rotation already applied to UI, so we're good
+      // Revert on failure - reload from device prop
+      setRotationDegrees(device.rotation || 0)
+    } finally {
+      setIsRotating(false)
+    }
+  }
+
+  const handleResetRotation = async () => {
+    const newRotation = 0
+    setRotationDegrees(newRotation)
+    setIsRotating(true)
+
+    try {
+      console.log(`[DetectionViewer] Resetting server-side rotation for ${deviceId} to 0°`)
+      await rotateCamera(deviceId, 0)
+      console.log('[DetectionViewer] Server-side rotation reset')
+    } catch (error) {
+      console.error('[DetectionViewer] Failed to reset rotation:', error)
+      setRotationDegrees(rotationDegrees)
     } finally {
       setIsRotating(false)
     }
@@ -153,6 +149,11 @@ function DetectionViewer({ device, detection, confidenceThreshold = 0.5 }) {
               const data = JSON.parse(event.data)
               if (data.type === 'ping') {
                 ws.send(JSON.stringify({ type: 'pong' }))
+              } else if (data.type === 'video_frame') {
+                // Update rotation from metadata if available to keep UI in sync
+                if (data.rotation !== undefined) {
+                  setRotationDegrees(data.rotation)
+                }
               }
             } catch (e) {
               // Ignore parse errors
@@ -206,7 +207,7 @@ function DetectionViewer({ device, detection, confidenceThreshold = 0.5 }) {
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // Draw image (rotation is handled by CSS transform on parent div)
+      // Draw image (NO CSS ROTATION - Server handles it)
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
       // Note: Teachable Machine is image classification, not object detection
@@ -216,7 +217,7 @@ function DetectionViewer({ device, detection, confidenceThreshold = 0.5 }) {
         const isDetected = detection.detected && (detection.confidence || 0) >= confidenceThreshold
         const confidence = (detection.confidence || 0) * 100
 
-        // Draw label at top-left corner (not rotated)
+        // Draw label at top-left corner
         ctx.fillStyle = isDetected ? '#28a745' : '#dc3545'
         ctx.font = 'bold 20px Arial'
         ctx.fillText(
@@ -245,7 +246,7 @@ function DetectionViewer({ device, detection, confidenceThreshold = 0.5 }) {
     if (img.complete && img.naturalWidth > 0) {
       drawFrame()
     }
-  }, [videoSrc, detection, rotationDegrees, confidenceThreshold])
+  }, [videoSrc, detection, confidenceThreshold])
 
   // Draw placeholder when no video
   useEffect(() => {
@@ -374,10 +375,7 @@ function DetectionViewer({ device, detection, confidenceThreshold = 0.5 }) {
               ↻ 270°
             </button>
             <button
-              onClick={() => {
-                setRotationDegrees(0)
-                localStorage.setItem(rotationStorageKey, '0')
-              }}
+              onClick={handleResetRotation}
               disabled={isRotating || rotationDegrees === 0}
               style={{
                 padding: '0.25rem 0.5rem',
@@ -419,13 +417,8 @@ function DetectionViewer({ device, detection, confidenceThreshold = 0.5 }) {
               src={videoSrc}
               alt={`Camera ${deviceId}`}
               style={{
-                transform: `rotate(${rotationDegrees}deg)`,
-                transition: 'transform 0.3s ease',
-                // For 90° or 270° rotation, swap width/height to fill container properly
-                width: (rotationDegrees % 180 === 90) ? 'auto' : '100%',
-                height: (rotationDegrees % 180 === 90) ? '480px' : 'auto',
-                maxWidth: (rotationDegrees % 180 === 90) ? 'none' : '100%',
-                maxHeight: (rotationDegrees % 180 === 90) ? 'none' : '480px',
+                width: '100%',
+                maxWidth: '100%',
                 objectFit: 'contain',
                 display: 'block'
               }}
@@ -437,12 +430,9 @@ function DetectionViewer({ device, detection, confidenceThreshold = 0.5 }) {
                 position: 'absolute',
                 top: '50%',
                 left: '50%',
-                transform: `translate(-50%, -50%) rotate(${rotationDegrees}deg)`,
-                transition: 'transform 0.3s ease',
-                width: (rotationDegrees % 180 === 90) ? 'auto' : '100%',
-                height: (rotationDegrees % 180 === 90) ? '480px' : 'auto',
-                maxWidth: (rotationDegrees % 180 === 90) ? 'none' : '100%',
-                maxHeight: (rotationDegrees % 180 === 90) ? 'none' : '480px',
+                transform: 'translate(-50%, -50%)',
+                width: '100%',
+                maxWidth: '100%',
                 pointerEvents: 'none'
               }}
             />

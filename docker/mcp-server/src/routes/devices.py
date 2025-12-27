@@ -149,7 +149,7 @@ async def trigger_config_mode(device_id: str, request: Request):
 
 
 @router.post("/nodes/{device_id}/rotate")
-async def rotate_camera(device_id: str, request: Request, degrees: Optional[int] = Query(90, description="Rotation step in degrees")):
+async def rotate_camera(device_id: str, request: Request, degrees: Optional[int] = Query(90, description="Rotation in degrees. If 0, 90, 180, or 270, treated as absolute value. Otherwise treated as incremental step.")):
     """Rotate camera view. 
     
     This endpoint:
@@ -159,7 +159,8 @@ async def rotate_camera(device_id: str, request: Request, degrees: Optional[int]
     
     Args:
         device_id: Device ID
-        degrees: Rotation step (default: 90, cycles: 0->90->180->270->0)
+        degrees: Rotation value. If 0, 90, 180, or 270, treated as absolute rotation.
+                 Otherwise treated as incremental step (for backward compatibility).
     """
     db = get_db(request)
     from ..websocket_handler import stream_handler
@@ -173,9 +174,16 @@ async def rotate_camera(device_id: str, request: Request, degrees: Optional[int]
     # Get current rotation from database or default to 0
     current_rotation = device.get("rotation", 0)
     
-    # Calculate new rotation (add degrees and wrap around 360)
+    # Determine if degrees is an absolute value (0, 90, 180, 270) or incremental step
     rotate_deg = degrees if degrees is not None else 90
-    new_rotation = (current_rotation + rotate_deg) % 360
+    absolute_rotations = [0, 90, 180, 270]
+    
+    if rotate_deg in absolute_rotations:
+        # Treat as absolute rotation value
+        new_rotation = rotate_deg
+    else:
+        # Treat as incremental step (backward compatibility)
+        new_rotation = (current_rotation + rotate_deg) % 360
     
     # Always save rotation to database and stream_handler (for server-side rotation)
     await db.db.devices.update_one(

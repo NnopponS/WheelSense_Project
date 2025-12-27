@@ -19,6 +19,21 @@ export function UserVideoPage() {
     const [isRotating, setIsRotating] = useState(false);
     const wsRef = useRef(null);
 
+    // Sync rotation state from device data when room/device changes
+    useEffect(() => {
+        if (selectedRoom) {
+            const roomDevices = devices.filter(d => d.room === selectedRoom);
+            if (roomDevices.length > 0) {
+                const device = roomDevices[0];
+                const deviceRotation = device.rotation || 0;
+                setRotationDegrees(deviceRotation);
+                console.log(`[UserVideoPage] Loaded rotation ${deviceRotation}° for device ${device.id || device.deviceId}`);
+            }
+        } else {
+            setRotationDegrees(0);
+        }
+    }, [selectedRoom, devices]);
+
     // Setup WebSocket video stream when room is selected
     useEffect(() => {
         if (!selectedRoom) {
@@ -106,29 +121,35 @@ export function UserVideoPage() {
         }
     };
 
-    const handleRotate = async (degrees) => {
-        // Apply rotation immediately for instant UI feedback
-        setRotationDegrees((prev) => (prev + degrees) % 360);
-        
+    const handleRotate = async (absoluteDegrees) => {
+        // Use absolute rotation values: 0, 90, 180, 270
         setIsRotating(true);
         try {
             // Find device for this room
             const roomDevices = devices.filter(d => d.room === selectedRoom);
             if (roomDevices.length > 0) {
                 const deviceId = roomDevices[0].id || roomDevices[0].deviceId;
-                console.log(`[UserVideoPage] Attempting to rotate camera ${deviceId} by ${degrees}°`);
+                console.log(`[UserVideoPage] Setting absolute rotation for camera ${deviceId} to ${absoluteDegrees}°`);
                 
-                // Try to rotate on device in background (don't wait for it)
-                api.rotateCamera(deviceId, degrees)
-                    .then((result) => {
-                        console.log('[UserVideoPage] Camera rotation successful on device:', result);
-                    })
-                    .catch((error) => {
-                        console.warn('[UserVideoPage] Device rotation failed, using client-side rotation only:', error);
-                    });
+                // Call API with absolute rotation value
+                const result = await api.rotateCamera(deviceId, absoluteDegrees);
+                console.log('[UserVideoPage] Camera rotation successful:', result);
+                
+                // Update local state from API response
+                if (result.rotation !== undefined) {
+                    setRotationDegrees(result.rotation);
+                } else {
+                    setRotationDegrees(absoluteDegrees);
+                }
             }
         } catch (error) {
             console.error('[UserVideoPage] Failed to rotate camera:', error);
+            // Revert on error - reload from device
+            const roomDevices = devices.filter(d => d.room === selectedRoom);
+            if (roomDevices.length > 0) {
+                const device = roomDevices[0];
+                setRotationDegrees(device.rotation || 0);
+            }
         } finally {
             setIsRotating(false);
         }
@@ -204,13 +225,59 @@ export function UserVideoPage() {
                                     ● WebSocket
                                 </span>
                             )}
+                            {rotationDegrees !== 0 && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginRight: '0.5rem' }}>
+                                    Rotated: {rotationDegrees}°
+                                </span>
+                            )}
                             <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => handleRotate(90)}
                                 disabled={isRotating}
+                                style={{
+                                    background: rotationDegrees === 90 ? 'var(--primary-500)' : undefined,
+                                    color: rotationDegrees === 90 ? 'white' : undefined
+                                }}
                                 title={t('Rotate 90°')}
                             >
-                                <RotateCw size={14} />
+                                ↻ 90°
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleRotate(180)}
+                                disabled={isRotating}
+                                style={{
+                                    background: rotationDegrees === 180 ? 'var(--primary-500)' : undefined,
+                                    color: rotationDegrees === 180 ? 'white' : undefined
+                                }}
+                                title={t('Rotate 180°')}
+                            >
+                                ↻ 180°
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleRotate(270)}
+                                disabled={isRotating}
+                                style={{
+                                    background: rotationDegrees === 270 ? 'var(--primary-500)' : undefined,
+                                    color: rotationDegrees === 270 ? 'white' : undefined
+                                }}
+                                title={t('Rotate 270°')}
+                            >
+                                ↻ 270°
+                            </button>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => handleRotate(0)}
+                                disabled={isRotating || rotationDegrees === 0}
+                                style={{
+                                    background: rotationDegrees === 0 ? 'var(--success-600)' : 'var(--bg-tertiary)',
+                                    color: rotationDegrees === 0 ? 'white' : 'var(--text-muted)',
+                                    opacity: rotationDegrees === 0 ? 0.6 : 1
+                                }}
+                                title={t('Reset Rotation')}
+                            >
+                                ↺ Reset
                             </button>
                             <button
                                 className="btn btn-secondary btn-sm"

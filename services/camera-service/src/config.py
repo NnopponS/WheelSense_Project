@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     MQTT_TOPIC_STATUS: str = "WheelSenseMockup/status"
     
     # Device
-    DEVICE_ID: str = "TSIM_001"
+    DEVICE_ID: str = "TSIM_004"
     
     # Detection
     DETECTION_CONFIDENCE_THRESHOLD: float = 0.8  # 80% confidence threshold

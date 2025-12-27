@@ -12,6 +12,7 @@
  */
  
 #include <WiFi.h>
+#include <WiFiUdp.h>
 #include <WiFiManager.h>
 #include <WebServer.h>
 #include <PubSubClient.h>
@@ -32,7 +33,8 @@
   
 // ===== Network Configuration =====
 #define USE_STATIC_IP false
-const char* STATIC_MQTT_SERVER = "192.168.137.1";
+// const char* STATIC_MQTT_SERVER = "192.168.1.100";
+const int UDP_DISCOVERY_PORT = 5555;
   
 const int MQTT_PORT = 1883;
 const int STATUS_INTERVAL_MS = 5000;
@@ -112,8 +114,10 @@ const int STATUS_INTERVAL_MS = 5000;
 String mqttServerIP;
   
 // ===== WiFi and MQTT Clients =====
+// ===== WiFi and MQTT Clients =====
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
+WiFiUDP udp;
 
 // ===== WiFi Manager and Web Server =====
 WiFiManager wifiManager;
@@ -628,15 +632,55 @@ void reconnectMQTT();
     }
  }
   
- // ===== Resolve Server IPs =====
+ // ===== Resolve Server IPs (Auto-Discovery) =====
  void resolveServerIPs() {
      if (USE_STATIC_IP) {
-         mqttServerIP = String(STATIC_MQTT_SERVER);
-         Serial.printf("[Network] Using Static IP - MQTT: %s\n", mqttServerIP.c_str());
-     } else {
-         IPAddress gateway = WiFi.gatewayIP();
-         mqttServerIP = gateway.toString();
-         Serial.printf("[Network] Using Gateway IP - MQTT: %s\n", mqttServerIP.c_str());
+        //  mqttServerIP = String(STATIC_MQTT_SERVER);
+         Serial.printf("[Network] Configured for static IP, but using Auto-Discovery override\n");
+     } 
+     
+     // UDP Auto-Discovery
+     Serial.println("[Discovery] Broadcasting to find server...");
+     pushDisplayLog("Finding Server...");
+     
+     // Send broadcast
+     udp.beginPacket(IPAddress(255, 255, 255, 255), UDP_DISCOVERY_PORT);
+     udp.print("WHEELSENSE_DISCOVER");
+     udp.endPacket();
+     
+     // Wait for response (up to 3 seconds)
+     unsigned long startWait = millis();
+     while (millis() - startWait < 3000) {
+         int packetSize = udp.parsePacket();
+         if (packetSize > 0) {
+             char buffer[256];
+             int len = udp.read(buffer, 255);
+             if (len > 0) {
+                 buffer[len] = 0;
+                 
+                 StaticJsonDocument<256> doc;
+                 DeserializationError error = deserializeJson(doc, buffer);
+                 if (!error && doc["type"] == "WHEELSENSE_SERVER") {
+                     String serverIP = doc["ip"].as<String>();
+                     mqttServerIP = serverIP;
+                     Serial.printf("[Discovery] Found server at: %s\n", mqttServerIP.c_str());
+                     pushDisplayLog("Found: " + mqttServerIP);
+                     return;
+                 }
+             }
+         }
+         delay(100);
+     }
+     
+     Serial.println("[Discovery] No server found via UDP");
+     pushDisplayLog("Server not found");
+     
+     // Fallback to configured static or gateway if auto-discovery fails
+     if (mqttServerIP.length() == 0) {
+          IPAddress gateway = WiFi.gatewayIP();
+          mqttServerIP = gateway.toString();
+          Serial.printf("[Network] Fallback to Gateway IP - MQTT: %s\n", mqttServerIP.c_str());
+          pushDisplayLog("Use Gateway IP");
      }
  }
   
