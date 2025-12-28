@@ -15,7 +15,32 @@ import {
 import { pageToPath } from '../../App';
 
 export function UserHomePage() {
-    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, language, setCurrentPage } = useApp();
+    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, language, setCurrentPage, detectionState } = useApp();
+
+    // Check if wheelchair is detected in room using detectionState (same logic as MonitoringPage)
+    const isWheelchairDetected = (room) => {
+        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+        const detection = detectionState[room.id] ||
+            detectionState[room.roomType?.toLowerCase()] ||
+            detectionState[normalizeRoomName(room.nameEn)] ||
+            detectionState[normalizeRoomName(room.name)];
+        return detection?.detected === true;
+    };
+
+    // Check if room is occupied (same logic as MonitoringPage)
+    const isRoomOccupied = (room) => {
+        if (isWheelchairDetected(room)) {
+            return true;
+        }
+        // Fallback: check if any wheelchair is in this room
+        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+        return wheelchairs.some(w =>
+            w.room === room.id ||
+            w.room === room.roomType?.toLowerCase() ||
+            w.room === normalizeRoomName(room.nameEn) ||
+            normalizeRoomName(w.room) === normalizeRoomName(room.nameEn)
+        );
+    };
     const { t } = useTranslation(language);
     const navigate = useNavigate();
 
@@ -151,31 +176,35 @@ export function UserHomePage() {
                 <div className="card-body" style={{ padding: 0 }}>
                     <div className="map-container" style={{ minHeight: '500px', borderRadius: 'var(--radius-lg)' }}>
                         <div className="map-canvas" style={{ minHeight: '500px' }}>
-                            {rooms.map(room => (
-                                <div
-                                    key={room.id}
-                                    className={`room ${room.occupied ? 'occupied' : ''}`}
-                                    style={{
-                                        left: `${room.x}%`,
-                                        top: `${room.y}%`,
-                                        width: `${room.width}%`,
-                                        height: `${room.height}%`,
-                                        cursor: 'pointer'
-                                    }}
-                                    onClick={() => openDrawer({ type: 'room', data: room })}
-                                >
-                                    <span className="room-label">{room.nameEn || room.name}</span>
-                                    <span className="room-status" style={{
-                                        display: 'block',
-                                        marginTop: '4px',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 'normal',
-                                        color: room.occupied ? 'var(--success-500)' : 'var(--text-muted)'
-                                    }}>
-                                        {room.occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}
-                                    </span>
-                                </div>
-                            ))}
+                            {rooms.map(room => {
+                                const detected = isWheelchairDetected(room);
+                                const occupied = isRoomOccupied(room);
+                                return (
+                                    <div
+                                        key={room.id}
+                                        className={`room ${occupied ? 'occupied' : ''} ${detected ? 'detected' : ''}`}
+                                        style={{
+                                            left: `${room.x}%`,
+                                            top: `${room.y}%`,
+                                            width: `${room.width}%`,
+                                            height: `${room.height}%`,
+                                            cursor: 'pointer'
+                                        }}
+                                        onClick={() => openDrawer({ type: 'room', data: room })}
+                                    >
+                                        <span className="room-label">{room.nameEn || room.name}</span>
+                                        <span className="room-status" style={{
+                                            display: 'block',
+                                            marginTop: '4px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 'normal',
+                                            color: occupied ? 'var(--success-500)' : 'var(--text-muted)'
+                                        }}>
+                                            {occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}
+                                        </span>
+                                    </div>
+                                );
+                            })}
 
                             {(() => {
                                 // Try to get position from real-time data first
