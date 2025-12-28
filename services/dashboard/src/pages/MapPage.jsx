@@ -454,12 +454,16 @@ export function MapPage() {
         });
     };
 
-    const handleAddAppliance = () => {
+    const handleAddAppliance = async () => {
         if (!newAppliance.name || !selectedRoom) {
             alert('Please enter appliance name');
             return;
         }
-        const appId = `app-${Date.now()}`;
+
+        // Get the room to find its roomType or nameEn
+        const room = safeRooms.find(r => r.id === selectedRoom);
+        const roomKey = room?.roomType?.toLowerCase() || room?.nameEn?.toLowerCase().replace(/\s+/g, '') || selectedRoom;
+
         const defaultValues = {
             light: { state: false, brightness: 100 },
             AC: { state: false, temperature: 25 },
@@ -469,23 +473,61 @@ export function MapPage() {
             alarm: { state: false },
             curtain: { state: false, position: 100 },
         };
-        setAppliances(prev => ({
-            ...prev,
-            [selectedRoom]: [
-                ...(prev[selectedRoom] || []),
-                { id: appId, ...newAppliance, ...defaultValues[newAppliance.type] }
-            ]
-        }));
-        setNewAppliance({ name: '', type: 'light' });
-        setShowAddAppliance(false);
-    };
 
-    const handleDeleteAppliance = (roomId, appId) => {
-        if (confirm('Do you want to delete this appliance?')) {
+        try {
+            // Create appliance via API
+            const result = await api.createAppliance({
+                room: roomKey,
+                type: newAppliance.type,
+                name: newAppliance.name,
+                ...defaultValues[newAppliance.type]
+            });
+
+            // Update local state with the returned appliance
+            const createdAppliance = result.appliance || {
+                id: `app-${Date.now()}`,
+                room: roomKey,
+                ...newAppliance,
+                ...defaultValues[newAppliance.type]
+            };
+
             setAppliances(prev => ({
                 ...prev,
-                [roomId]: prev[roomId].filter(a => a.id !== appId)
+                [roomKey]: [
+                    ...(prev[roomKey] || []),
+                    createdAppliance
+                ]
             }));
+
+            setNewAppliance({ name: '', type: 'light' });
+            setShowAddAppliance(false);
+            console.log('Appliance created:', createdAppliance);
+        } catch (err) {
+            console.error('Failed to create appliance:', err);
+            alert('Failed to create appliance: ' + err.message);
+        }
+    };
+
+    const handleDeleteAppliance = async (roomId, appId) => {
+        if (confirm('Do you want to delete this appliance?')) {
+            try {
+                // Delete from API
+                await api.deleteAppliance(appId);
+
+                // Update local state
+                setAppliances(prev => ({
+                    ...prev,
+                    [roomId]: (prev[roomId] || []).filter(a => a.id !== appId)
+                }));
+                console.log('Appliance deleted:', appId);
+            } catch (err) {
+                console.error('Failed to delete appliance:', err);
+                // Still update local state even if API fails
+                setAppliances(prev => ({
+                    ...prev,
+                    [roomId]: (prev[roomId] || []).filter(a => a.id !== appId)
+                }));
+            }
         }
     };
 

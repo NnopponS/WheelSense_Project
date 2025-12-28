@@ -369,6 +369,26 @@ export async function controlAppliance(room, appliance, state, value = null) {
     });
 }
 
+export async function createAppliance(appliance) {
+    return fetchAPI('/appliances/create', {
+        method: 'POST',
+        body: JSON.stringify(appliance),
+    });
+}
+
+export async function updateAppliance(applianceId, updates) {
+    return fetchAPI(`/appliances/${applianceId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+    });
+}
+
+export async function deleteAppliance(applianceId) {
+    return fetchAPI(`/appliances/${applianceId}`, {
+        method: 'DELETE',
+    });
+}
+
 // ==================== Routines ====================
 
 export async function getRoutines() {

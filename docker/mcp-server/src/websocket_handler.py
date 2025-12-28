@@ -8,6 +8,7 @@ import asyncio
 import base64
 import json
 import logging
+import time
 from datetime import datetime
 from typing import Dict, Set, Optional
 from collections import defaultdict
@@ -66,6 +67,18 @@ class WebSocketStreamHandler:
         
         # Frame counters for debugging (room -> frame_count)
         self.frame_counters: Dict[str, int] = defaultdict(int)
+        
+        # === Auto-detection processing (replaces detection-test page) ===
+        # Confidence threshold (80%)
+        self.detection_confidence_threshold: float = 0.80
+        # Throttle interval in seconds (2 seconds)
+        self.detection_throttle_seconds: float = 2.0
+        # Last notify time for throttling
+        self.last_detection_notify_time: float = 0.0
+        # Last detected room (for tracking room changes)
+        self.last_detected_room: Optional[str] = None
+        # All known rooms for sending false notifications
+        self.known_rooms: Set[str] = {"bedroom", "bathroom", "kitchen", "livingroom"}
         
     def get_all_device_status(self) -> list:
         """Get status of all connected devices for Dashboard."""
@@ -522,7 +535,14 @@ class WebSocketStreamHandler:
             self.camera_service_connection = None
     
     async def _handle_detection_from_service(self, detection: dict):
-        """Handle detection result from camera-service."""
+        """Handle detection result from camera-service.
+        
+        This now implements the same logic as detection-test page:
+        - Apply confidence threshold (80%)
+        - Throttle notifications to every 2 seconds
+        - Send detected=false for all other rooms when wheelchair is detected in a new room
+        - Call on_detection_callback to update wheelchair position
+        """
         try:
             room = detection.get("room", "livingroom")
             detected = detection.get("detected", False)
@@ -531,39 +551,73 @@ class WebSocketStreamHandler:
             frame_size = detection.get("frame_size")
             device_id = detection.get("device_id", "UNKNOWN")
             
-            logger.info(f"🦽 Detection from camera-service ({room}): detected={detected}, confidence={confidence:.2f}, device_id={device_id} (position update DISABLED - only detection-test can update)")
+            # Add this room to known rooms
+            self.known_rooms.add(room)
             
-            # Create detection message
-            detection_message = {
-                "type": "wheelchair_detection",
-                "room": room,
-                "device_id": device_id,
-                "detected": detected,
-                "confidence": confidence,
-                "bbox": bbox,
-                "frame_size": frame_size,
-                "method": detection.get("method", "teachable_machine"),
-                "timestamp": detection.get("timestamp", datetime.now().isoformat()),
-                "source": "camera-service"  # Mark source to prevent position update in frontend
-            }
+            # Apply confidence threshold (like detection-test page)
+            is_detected = detected and confidence >= self.detection_confidence_threshold
             
-            # Broadcast to dashboard clients via WebSocket (both /ws and /ws/stream endpoints)
-            await self._broadcast_detection_to_dashboard(detection_message)
-            logger.info(f"📤 Broadcasted detection to dashboard clients (video stream)")
+            # Check if we should process this detection (throttle + room change logic)
+            now = time.time()
+            time_since_last_notify = now - self.last_detection_notify_time
+            room_changed = self.last_detected_room != room
             
-            # Also broadcast via mqtt_handler websockets (for /ws endpoint clients)
-            if self.mqtt_handler and hasattr(self.mqtt_handler, '_broadcast_ws'):
-                logger.info(f"Broadcasting via MQTT handler id={id(self.mqtt_handler)}")
-                await self.mqtt_handler._broadcast_ws(detection_message)
-                logger.info(f"📤 Broadcasted detection to /ws clients via mqtt_handler (count: {len(self.mqtt_handler.websockets) if hasattr(self.mqtt_handler, 'websockets') else 0})")
-            else:
-                logger.warning(f"⚠️ mqtt_handler not available or missing _broadcast_ws method (handler={self.mqtt_handler})")
-            
-            # DISABLED: Do NOT update wheelchair position from camera-service
-            # Only detection-test page (localhost:3001) should update wheelchair position
-            # The callback was: await self.on_detection_callback(room, detection)
-            logger.debug(f"⚠️ Skipping position update callback for camera-service detection (only detection-test can update)")
+            # Only process if detected AND (room changed OR throttle interval passed)
+            if is_detected and (room_changed or time_since_last_notify >= self.detection_throttle_seconds):
+                logger.info(f"🦽 AUTO-PROCESSING detection: room={room}, confidence={confidence:.2f}, device={device_id} "
+                          f"({'room changed' if room_changed else 'throttle interval'})")
                 
+                # Send detected=false for ALL other rooms
+                for other_room in self.known_rooms:
+                    if other_room != room:
+                        false_message = {
+                            "type": "wheelchair_detection",
+                            "room": other_room,
+                            "detected": False,
+                            "confidence": 0,
+                            "bbox": None,
+                            "frame_size": frame_size,
+                            "timestamp": datetime.now().isoformat(),
+                            "source": "detection-test"  # Use detection-test source for dashboard to accept
+                        }
+                        await self._broadcast_detection_to_dashboard(false_message)
+                        if self.mqtt_handler and hasattr(self.mqtt_handler, '_broadcast_ws'):
+                            await self.mqtt_handler._broadcast_ws(false_message)
+                
+                # Send detected=true for the current room
+                detection_message = {
+                    "type": "wheelchair_detection",
+                    "room": room,
+                    "device_id": device_id,
+                    "detected": True,
+                    "confidence": confidence,
+                    "bbox": bbox,
+                    "frame_size": frame_size,
+                    "method": detection.get("method", "yolo"),
+                    "timestamp": datetime.now().isoformat(),
+                    "source": "detection-test"  # Use detection-test source for dashboard to accept
+                }
+                
+                await self._broadcast_detection_to_dashboard(detection_message)
+                if self.mqtt_handler and hasattr(self.mqtt_handler, '_broadcast_ws'):
+                    await self.mqtt_handler._broadcast_ws(detection_message)
+                
+                logger.info(f"📤 Broadcasted: {room}=true, {len(self.known_rooms) - 1} other rooms=false")
+                
+                # Call the callback to update wheelchair position in database
+                if hasattr(self, 'on_detection_callback') and self.on_detection_callback:
+                    await self.on_detection_callback(room, detection)
+                    logger.info(f"✅ Called on_detection_callback for room: {room}")
+                
+                # Update tracking variables
+                self.last_detected_room = room
+                self.last_detection_notify_time = now
+            else:
+                # Just log for debugging (no action taken)
+                if is_detected:
+                    remaining = self.detection_throttle_seconds - time_since_last_notify
+                    logger.debug(f"🔇 Throttled: {room} (wait {remaining:.1f}s more)")
+                    
         except Exception as e:
             logger.error(f"Error handling detection from service: {e}", exc_info=True)
     

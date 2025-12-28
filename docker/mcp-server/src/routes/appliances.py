@@ -152,3 +152,26 @@ async def fix_av_to_ac(request: Request):
         "modified_count": result.modified_count,
         "message": f"Updated {result.modified_count} appliances from AV to AC"
     }
+
+
+@router.delete("/appliances/{appliance_id}")
+async def delete_appliance(appliance_id: str, request: Request):
+    """Delete an appliance by ID."""
+    db = get_db(request)
+    
+    # Try to find by id field first
+    result = await db.db.appliances.delete_one({"id": appliance_id})
+    
+    if result.deleted_count == 0:
+        # Try by _id (ObjectId) if id field didn't match
+        from bson import ObjectId
+        try:
+            result = await db.db.appliances.delete_one({"_id": ObjectId(appliance_id)})
+        except:
+            pass
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Appliance not found")
+    
+    logger.info(f"Deleted appliance: {appliance_id}")
+    return {"status": "deleted", "appliance_id": appliance_id}
