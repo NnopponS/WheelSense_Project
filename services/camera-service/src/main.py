@@ -8,13 +8,14 @@ import logging
 import signal
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 import cv2
 import numpy as np
 
 from .config import settings
-from .detector import WheelchairDetector
+from .detector import create_detector
 from .websocket_client import WebSocketCameraClient
 
 # Setup logging
@@ -29,22 +30,31 @@ class CameraService:
     """Main camera service."""
     
     def __init__(self):
-        # Use separate detector for each room to avoid state mixing
-        self.detectors: dict = {}  # room -> WheelchairDetector
-        self.ws_client = WebSocketCameraClient(detector_callback=self._on_frame_received)
+        # Use SINGLE shared detector for all rooms to save GPU memory
+        # YOLO model is loaded only once instead of once per room
+        self.detector = None  # Single shared detector
+        self.ws_client = WebSocketCameraClient(detector_callback=None)  # No callback - we process in main loop
         self.running = False
         self.last_detection_publish: dict = {}  # room -> timestamp
         # Device rotation states (device_id -> degrees: 0, 90, 180, 270)
         self.device_rotations: dict = {}  # device_id -> rotation_degrees
+        # Room-specific detection state tracking
+        self.room_states: dict = {}  # room -> {stable_count, no_detection_count, state}
+        
+        # Thread pool for running detection in background
+        self.detection_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="detection")
     
-    def _get_detector(self, room: str) -> WheelchairDetector:
-        """Get or create detector for a room."""
-        if room not in self.detectors:
-            self.detectors[room] = WheelchairDetector(
-                confidence_threshold=settings.DETECTION_CONFIDENCE_THRESHOLD
+    def _get_detector(self):
+        """Get or create the shared detector (single instance for all rooms)."""
+        if self.detector is None:
+            self.detector = create_detector(
+                method=settings.DETECTION_METHOD,
+                confidence_threshold=settings.DETECTION_CONFIDENCE_THRESHOLD,
+                model_path=settings.YOLO_MODEL_PATH if settings.DETECTION_METHOD == "yolo" else None,
+                show_preview=settings.ENABLE_PREVIEW
             )
-            logger.info(f"📹 Created new detector for room: {room}")
-        return self.detectors[room]
+            logger.info(f"📹 Created shared {settings.DETECTION_METHOD} detector for all rooms")
+        return self.detector
     
     def _on_frame_received(self, frame: np.ndarray, meta: dict):
         """Callback when frame is received.
@@ -91,14 +101,24 @@ class CameraService:
         # Check if we should run detection for this room
         now = time.time()
         last_publish = self.last_detection_publish.get(room, 0)
-        if now - last_publish < settings.DETECTION_INTERVAL_SEC:
+        time_since_last = now - last_publish
+        should_detect = time_since_last >= settings.DETECTION_INTERVAL_SEC
+        
+        # Always accept frames to prevent WebSocket buffer overflow
+        # But only run detection at intervals to save CPU
+        if not should_detect:
+            # Skip detection but still consume the frame
+            logger.debug(f"⏭️ Skipping detection for {room} (last detection {time_since_last:.3f}s ago, interval: {settings.DETECTION_INTERVAL_SEC}s)")
             return
         
-        # Get detector for this room
+        # Log detection timing for diagnostics (debug level)
+        logger.debug(f"🔍 Running detection for {room} (interval: {time_since_last:.3f}s since last)")
+        
+        # Get shared detector (single instance for all rooms)
         try:
-            detector = self._get_detector(room)
+            detector = self._get_detector()
         except Exception as e:
-            logger.error(f"❌ Failed to get detector for {room}: {e}")
+            logger.error(f"❌ Failed to get detector: {e}")
             return
         
         # Run detection on rotated frame with error handling
@@ -125,12 +145,14 @@ class CameraService:
         # Update detection state
         self.ws_client.current_detection = detection
         
-        # Send detection result via WebSocket with error handling
+        # Update detection state
+        self.ws_client.current_detection = detection
+        
+        # Send detection result via WebSocket (thread-safe)
         try:
-            asyncio.create_task(self.ws_client.send_detection(detection, device_id, room))
+            self.ws_client.publish_detection(detection, device_id, room)
         except Exception as e:
-            logger.error(f"❌ Failed to send detection result: {e}")
-            # Don't return - continue processing
+             logger.error(f"❌ Failed to publish detection result: {e}")
         
         self.last_detection_publish[room] = now
         
@@ -146,14 +168,26 @@ class CameraService:
         else:
             logger.debug(f"No wheelchair detected in {room}")
     
+    def _process_detection_sync(self, frame: np.ndarray, meta: dict):
+        """Synchronous detection processing (runs in thread pool).
+        
+        This method runs in a background thread to avoid blocking frame reception.
+        """
+        try:
+            # Call the async detection method synchronously
+            self._on_frame_received(frame, meta)
+        except Exception as e:
+            logger.error(f"❌ Error in background detection: {e}", exc_info=True)
+    
     def start(self):
         """Start the camera service."""
-        logger.info("=" * 60)
+        logger.info("="  * 60)
         logger.info("WheelSense Camera Service")
         logger.info("=" * 60)
         logger.info(f"WebSocket Backend: {settings.WEBSOCKET_BACKEND_URL}")
         logger.info(f"Device ID: {settings.DEVICE_ID}")
         logger.info(f"Detection Interval: {settings.DETECTION_INTERVAL_SEC}s")
+        logger.info(f"Preview Mode: {'ENABLED' if settings.ENABLE_PREVIEW else 'DISABLED'}")
         logger.info("=" * 60)
         
         # Connect to WebSocket (with auto-reconnect enabled)
@@ -186,7 +220,7 @@ class CameraService:
                     continue
                 
                 # Process frames from queue
-                frame_data = self.ws_client.get_frame(timeout=1.0)
+                frame_data = self.ws_client.get_frame(timeout=0.1)  # Reduced timeout for faster loop
                 if frame_data:
                     frame, meta = frame_data
                     frame_count += 1
@@ -194,7 +228,10 @@ class CameraService:
                     
                     if frame_count % 30 == 0:  # Log every 30 frames
                         logger.info(f"Processing video frames... (received {frame_count} frames so far)")
-                    # Detection is handled in callback
+                    
+                    # Submit detection to thread pool (non-blocking)
+                    # This allows main loop to continue pulling frames while detection runs in background
+                    self.detection_executor.submit(self._process_detection_sync, frame.copy(), meta.copy())
                 else:
                     # Check if no frames received for too long
                     time_since_last_frame = time.time() - last_frame_time
@@ -206,11 +243,8 @@ class CameraService:
                 current_time = time.time()
                 if current_time - last_health_log > health_log_interval:
                     logger.info(f"📊 Health: Connected={self.ws_client.is_connected}, "
-                              f"Frames={frame_count}, Detectors={len(self.detectors)}")
+                              f"Frames={frame_count}, Detector={'loaded' if self.detector else 'not loaded'}")
                     last_health_log = current_time
-                
-                # Small sleep to prevent CPU spinning
-                time.sleep(0.1)
                 
         except KeyboardInterrupt:
             logger.info("Received interrupt signal")
@@ -221,6 +255,18 @@ class CameraService:
         """Stop the camera service."""
         logger.info("Stopping camera service...")
         self.running = False
+        
+        # Shutdown detection executor
+        logger.info("Shutting down detection executor...")
+        self.detection_executor.shutdown(wait=True, cancel_futures=True)
+        
+        # Cleanup detector resources (including preview window)
+        if self.detector:
+            try:
+                self.detector.cleanup()
+            except Exception as e:
+                logger.error(f"Error cleaning up detector: {e}")
+        
         self.ws_client.disconnect()
         logger.info("Camera service stopped")
 

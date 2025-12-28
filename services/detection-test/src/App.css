@@ -1,127 +1,351 @@
+/* YOLO Detection Test - Compact Grid */
+
+:root {
+  --primary: #00d26a;
+  --danger: #ff4757;
+  --warning: #ffa502;
+  --background: #0a0a0f;
+  --surface: #13131a;
+  --surface-light: #1e1e2a;
+  --text: #ffffff;
+  --text-muted: #8a8a9a;
+  --border: #2a2a3a;
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--background);
+  color: var(--text);
+  overflow-y: auto;
+}
+
 .app {
   min-height: 100vh;
-  padding: 20px;
-}
-
-.app-header {
-  text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.tab-switcher {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 1.5rem;
-}
-
-.tab-switcher button {
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: all 0.3s;
-}
-
-.tab-switcher button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.tab-switcher button.active {
-  background: white;
-  color: #667eea;
-  border-color: white;
-}
-
-.app-header h1 {
-  font-size: 2rem;
-  color: white;
-  margin-bottom: 10px;
-}
-
-.app-header p {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
-}
-
-.devices-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 20px;
-}
-
-.room-section {
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.room-title {
-  font-size: 1.5rem;
-  color: #333;
-  margin-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.status-badge {
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.status-badge.detected {
-  background: #d4edda;
-  color: #155724;
-}
-
-.status-badge.not-detected {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.devices-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
 }
 
-.detection-info {
-  margin-top: 15px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 5px;
+/* Header */
+.app-header {
+  background: var(--surface);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+.header-left h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.header-left p {
+  margin: 0.25rem 0 0 0;
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
-.detection-info div {
-  margin: 5px 0;
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* YOLO Status Indicator */
+.yolo-status {
+  display: flex;
+  align-items: center;
+}
+
+.yolo-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--surface-light);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.yolo-indicator.active {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+.global-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+input[type="range"] {
+  width: 120px;
+  accent-color: var(--primary);
+}
+
+/* Devices Container */
+.devices-container {
+  flex: 1;
+  padding: 1rem;
+}
+
+/* Grid Layout - Forced 4 Columns */
+.devices-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  width: 100%;
+}
+
+@media (max-width: 1400px) {
+  .devices-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1000px) {
+  .devices-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .devices-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Camera Viewer Card */
+.camera-viewer {
+  background: var(--surface);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Green border when wheelchair detected */
+.camera-viewer.detected {
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(0, 210, 106, 0.4);
+}
+
+/* Overlay Header */
+.camera-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+  pointer-events: none;
+  /* Let clicks pass through */
+}
+
+.camera-header>* {
+  pointer-events: auto;
+}
+
+.camera-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status.live {
+  background: var(--primary);
+  box-shadow: 0 0 5px var(--primary);
+}
+
+.status.connecting {
+  background: var(--warning);
+}
+
+.status.offline {
+  background: var(--danger);
+}
+
+.rotation-control {
+  display: flex;
+  align-items: center;
+}
+
+.rotate-btn {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.rotate-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.rotate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Video Container */
+.video-container {
+  width: 100%;
+  aspect-ratio: 4/3;
+  /* Default 4:3 aspect ratio */
+  background: #000;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* When rotated 90° or 270°, adjust aspect ratio to 3:4 */
+.video-container.rotated-90,
+.video-container.rotated-270 {
+  aspect-ratio: 3/4;
+  /* 3:4 aspect ratio when rotated */
+}
+
+.video-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Fill container completely, CSS handles scaling */
+  display: block;
+  transform-origin: center center;
+  /* Ensure canvas fills container without black bars */
+  image-rendering: auto;
+}
+
+.placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* Detection Status Card */
+.detection-card {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  min-width: 160px;
+  backdrop-filter: blur(8px);
+}
+
+.detection-card.detected {
+  background: linear-gradient(135deg, #00d26a 0%, #00af50 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.detection-card.not-detected {
+  background: linear-gradient(135deg, #ff4757 0%, #ee5a6f 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.detection-card-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.detection-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detection-card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.detection-card-confidence {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  font-weight: 500;
 }
 
 .no-devices {
   text-align: center;
-  padding: 40px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  color: var(--text-muted);
+  grid-column: 1 / -1;
 }
-
-.no-devices p {
-  font-size: 1.1rem;
-  color: #666;
-}
-

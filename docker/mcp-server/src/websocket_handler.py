@@ -45,11 +45,14 @@ class WebSocketStreamHandler:
         # Appliance room mapping (device_id -> room)
         self.appliance_rooms: Dict[str, str] = {}
         
-        # Frame counter for throttling camera-service forwarding
-        self.frame_counters: Dict[str, int] = defaultdict(int)
+        # Time-based throttling for camera-service forwarding (room -> last_forward_timestamp)
+        self.last_forward_time: Dict[str, float] = {}
         
         # Device rotation cache (device_id -> rotation_degrees: 0, 90, 180, 270)
         self.device_rotations: Dict[str, int] = {}
+        
+        # Connection activity tracking for cleanup (device_id -> last_activity_timestamp)
+        self.connection_last_activity: Dict[str, float] = {}
         
         # MQTT handler reference (set from main.py)
         self.mqtt_handler: Optional[object] = None
@@ -57,12 +60,12 @@ class WebSocketStreamHandler:
         # Database reference (set from main.py)
         self.db: Optional[object] = None
         
-        # Database reference (set from main.py)
-        self.db: Optional[object] = None
-        
         # Device status tracking for Dashboard
         # device_id -> {type, room, ip, rssi, frames_sent, uptime, last_seen, online}
         self.device_status: Dict[str, dict] = {}
+        
+        # Frame counters for debugging (room -> frame_count)
+        self.frame_counters: Dict[str, int] = defaultdict(int)
         
     def get_all_device_status(self) -> list:
         """Get status of all connected devices for Dashboard."""
@@ -91,6 +94,7 @@ class WebSocketStreamHandler:
                 "frames_sent": status.get("frames_sent", 0),
                 "uptime": status.get("uptime", 0),
                 "online": online,
+                "rotation": self.device_rotations.get(device_id, 0),
                 "last_seen": last_seen.isoformat() if hasattr(last_seen, 'isoformat') else str(last_seen)
             })
         
@@ -187,9 +191,10 @@ class WebSocketStreamHandler:
                 self.device_rooms[device_id] = room
                 logger.info(f"📹 Camera connected (timeout): {device_id} ({room})")
             
-            # Listen for video frames with frame dropping for low latency
-            # Use a queue with maxsize=1 to always keep only the latest frame
-            frame_queue = asyncio.Queue(maxsize=1)
+            # Listen for video frames with frame buffering
+            # Increased queue size from 1 to 10 to prevent ESP32 buffer overflow
+            # This allows server to absorb burst traffic without dropping frames
+            frame_queue = asyncio.Queue(maxsize=10)  # Buffer up to 10 frames (~0.6s at 15 FPS)
             
             async def frame_reader():
                 """Read frames from camera and put in queue (drop old frames)."""
@@ -264,15 +269,17 @@ class WebSocketStreamHandler:
                         try:
                             frame = await asyncio.wait_for(frame_queue.get(), timeout=1.0)
                             if room:
-                                # Apply rotation if set for this device (before storing and broadcasting)
-                                rotated_frame = await self._apply_rotation_if_needed(frame, device_id)
+                                # PERFORMANCE FIX: Removed all synchronous validation
+                                # Validation was blocking the async event loop causing FPS degradation
+                                # Dashboard and camera-service will handle invalid frames gracefully
                                 
-                                # Store latest frame (rotated)
-                                self.latest_frames[room] = rotated_frame
+                                # Store latest frame (original, unrotated)
+                                self.latest_frames[room] = frame
+                                
                                 # Broadcast to all dashboard clients (non-blocking)
-                                asyncio.create_task(self._broadcast_to_dashboard(room, rotated_frame))
-                                # Forward to camera-service via WebSocket (throttled) - use original frame
-                                # Rotation will be applied in camera-service using metadata
+                                asyncio.create_task(self._broadcast_to_dashboard(room, frame))
+                                
+                                # Forward to camera-service via WebSocket (throttled)
                                 asyncio.create_task(self._forward_to_camera_service(room, frame, device_id))
                         except asyncio.TimeoutError:
                             continue
@@ -305,8 +312,13 @@ class WebSocketStreamHandler:
     async def _apply_rotation_if_needed(self, frame_bytes: bytes, device_id: str) -> bytes:
         """Apply rotation to frame if device has rotation set.
         
-        This is used for dashboard preview frames only.
-        Camera-service receives original unrotated frames.
+        ⚠️ DEPRECATED: This method is no longer used in the main frame processing pipeline
+        due to severe performance issues. It was causing FPS to drop from 15 to 1-5 FPS
+        because the synchronous JPEG decode/rotate/encode operations blocked the async event loop.
+        
+        Kept for reference and potential future use with proper async handling (thread pool executor).
+        
+        Dashboard now shows original frames. Camera-service handles rotation before detection.
         """
         try:
             # Validate JPEG frame first
@@ -519,7 +531,7 @@ class WebSocketStreamHandler:
             frame_size = detection.get("frame_size")
             device_id = detection.get("device_id", "UNKNOWN")
             
-            logger.info(f"🦽 Detection from camera-service ({room}): detected={detected}, confidence={confidence:.2f}, device_id={device_id}")
+            logger.info(f"🦽 Detection from camera-service ({room}): detected={detected}, confidence={confidence:.2f}, device_id={device_id} (position update DISABLED - only detection-test can update)")
             
             # Create detection message
             detection_message = {
@@ -531,7 +543,8 @@ class WebSocketStreamHandler:
                 "bbox": bbox,
                 "frame_size": frame_size,
                 "method": detection.get("method", "teachable_machine"),
-                "timestamp": detection.get("timestamp", datetime.now().isoformat())
+                "timestamp": detection.get("timestamp", datetime.now().isoformat()),
+                "source": "camera-service"  # Mark source to prevent position update in frontend
             }
             
             # Broadcast to dashboard clients via WebSocket (both /ws and /ws/stream endpoints)
@@ -546,10 +559,10 @@ class WebSocketStreamHandler:
             else:
                 logger.warning(f"⚠️ mqtt_handler not available or missing _broadcast_ws method (handler={self.mqtt_handler})")
             
-            # Call callback if set (for updating database)
-            # This will be set from main.py
-            if hasattr(self, 'on_detection_callback') and self.on_detection_callback:
-                await self.on_detection_callback(room, detection)
+            # DISABLED: Do NOT update wheelchair position from camera-service
+            # Only detection-test page (localhost:3001) should update wheelchair position
+            # The callback was: await self.on_detection_callback(room, detection)
+            logger.debug(f"⚠️ Skipping position update callback for camera-service detection (only detection-test can update)")
                 
         except Exception as e:
             logger.error(f"Error handling detection from service: {e}", exc_info=True)
@@ -581,10 +594,15 @@ class WebSocketStreamHandler:
             logger.debug(f"⚠️ Camera-service not connected, skipping frame forwarding for {room}")
             return
         
-        # Throttle: only send every 5th frame (for ~25 FPS, this gives ~5 FPS to detection)
-        self.frame_counters[room] += 1
-        if self.frame_counters[room] % 5 != 0:
+        # Time-based throttling: Allow 20 FPS forwarding (2x the detection rate)
+        # Camera-service throttles at DETECTION_INTERVAL_SEC (0.1s = 10 FPS)
+        # This ensures camera-service always has fresh frames for detection
+        import time
+        now = time.time()
+        last_forward = self.last_forward_time.get(room, 0)
+        if now - last_forward < 0.05:  # 50ms = 20 FPS (2x detection rate for buffer)
             return
+        self.last_forward_time[room] = now
         
         # Validate JPEG frame before forwarding
         try:
@@ -600,7 +618,9 @@ class WebSocketStreamHandler:
             logger.warning(f"⚠️ Frame validation failed for {room}: {e}")
             return
         
-        logger.debug(f"📤 Forwarding frame {self.frame_counters[room]} to camera-service ({room})")
+        # Increment frame counter for this room
+        self.frame_counters[room] += 1
+        logger.debug(f"📤 Forwarding frame #{self.frame_counters[room]} to camera-service ({room})")
         
         try:
             # Send frame metadata first (required - device_id and room from ESP32)
@@ -740,6 +760,50 @@ class WebSocketStreamHandler:
     def get_connected_appliance_controllers(self) -> Dict[str, str]:
         """Get list of connected appliance controllers (device_id -> room)."""
         return self.appliance_rooms.copy()
+    
+    async def cleanup_stale_connections(self, timeout_seconds: int = 60):
+        """Remove stale connections that haven't sent data recently.
+        
+        Args:
+            timeout_seconds: Time in seconds after which a connection is considered stale
+        """
+        import time
+        now = time.time()
+        stale_cameras = []
+        stale_appliances = []
+        
+        # Find stale camera connections
+        for device_id in list(self.camera_connections.keys()):
+            last_activity = self.connection_last_activity.get(device_id, now)
+            if now - last_activity > timeout_seconds:
+                stale_cameras.append(device_id)
+        
+        # Find stale appliance connections
+        for device_id in list(self.appliance_connections.keys()):
+            last_activity = self.connection_last_activity.get(device_id, now)
+            if now - last_activity > timeout_seconds:
+                stale_appliances.append(device_id)
+        
+        # Cleanup stale cameras
+        for device_id in stale_cameras:
+            logger.info(f"🧹 Cleaning up stale camera connection: {device_id}")
+            self.camera_connections.pop(device_id, None)
+            room = self.device_rooms.pop(device_id, None)
+            self.connection_last_activity.pop(device_id, None)
+            
+            # Clear latest frame if no cameras for this room
+            if room and not any(r == room for r in self.device_rooms.values()):
+                self.latest_frames.pop(room, None)
+        
+        # Cleanup stale appliances
+        for device_id in stale_appliances:
+            logger.info(f"🧹 Cleaning up stale appliance connection: {device_id}")
+            self.appliance_connections.pop(device_id, None)
+            self.appliance_rooms.pop(device_id, None)
+            self.connection_last_activity.pop(device_id, None)
+        
+        if stale_cameras or stale_appliances:
+            logger.info(f"🧹 Cleaned up {len(stale_cameras)} camera(s) and {len(stale_appliances)} appliance(s)")
 
 
 # Global instance

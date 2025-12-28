@@ -29,8 +29,16 @@ class Settings(BaseSettings):
     DEVICE_ID: str = "TSIM_004"
     
     # Detection
-    DETECTION_CONFIDENCE_THRESHOLD: float = 0.8  # 80% confidence threshold
-    DETECTION_INTERVAL_SEC: float = 1.0
+    DETECTION_METHOD: str = "yolo"  # Only YOLO supported (GPU accelerated)
+    DETECTION_CONFIDENCE_THRESHOLD: float = 0.7  # Higher threshold as requested
+    DETECTION_INTERVAL_SEC: float = 0.1  # Allow up to 10 FPS detection
+    
+    # YOLO Model Path
+    YOLO_MODEL_PATH: str = "/app/models/yolov8-model/best.pt"
+    
+    # Preview Mode (for debugging - shows OpenCV window with detection visualization)
+    ENABLE_PREVIEW: bool = False  # Set to True to enable preview window
+    PREVIEW_WINDOW_NAME: str = "WheelSense YOLO Detection"
     
     model_config = {
         "env_file": ".env",

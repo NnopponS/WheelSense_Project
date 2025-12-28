@@ -49,8 +49,7 @@ export function AppProvider({ children }) {
     // Notifications - Loaded from Database and real-time updates
     const [notifications, setNotifications] = useState([]);
 
-    // Buffer for detection debouncing (1 second)
-    const detectionBuffer = useRef({});
+    // Removed all buffering logic - simplified to immediate updates
 
     // Load notifications from API on startup
     useEffect(() => {
@@ -335,10 +334,34 @@ export function AppProvider({ children }) {
         return () => clearInterval(interval);
     }, []);
 
+    // Refs to hold current state for WebSocket callbacks (prevents dependency issues)
+    const wheelchairsRef = useRef(wheelchairs);
+    const roomsRef = useRef(rooms);
+    const devicesRef = useRef(devices);
+    const currentUserRef = useRef(currentUser);
+
+    // Keep refs updated
+    useEffect(() => {
+        wheelchairsRef.current = wheelchairs;
+    }, [wheelchairs]);
+
+    useEffect(() => {
+        roomsRef.current = rooms;
+    }, [rooms]);
+
+    useEffect(() => {
+        devicesRef.current = devices;
+    }, [devices]);
+
+    useEffect(() => {
+        currentUserRef.current = currentUser;
+    }, [currentUser]);
+
     // WebSocket connection for real-time updates (wheelchair detection, device registration, etc.)
     // Note: Appliance control uses MQTT via API endpoint /appliances/control
     useEffect(() => {
         let ws = null;
+        let reconnectTimeout = null;
 
         const connectWebSocket = () => {
             try {
@@ -359,362 +382,61 @@ export function AppProvider({ children }) {
                         const message = JSON.parse(event.data);
                         console.log('[AppContext] WebSocket message:', message);
 
-                        // Handle wheelchair detection - update position on map
+                        // Use refs to access current state
+                        const currentWheelchairs = wheelchairsRef.current;
+                        const currentRooms = roomsRef.current;
+                        const currentDevices = devicesRef.current;
+                        const currentUserVal = currentUserRef.current;
+
+                        // Handle wheelchair detection - ONLY from detection-test page (localhost:3001)
+                        // Ignore direct detections from camera-service
                         if (message.type === 'wheelchair_detection') {
-                            const { room, detected, bbox, frame_size, confidence, device_id, timestamp } = message;
+                            const { room, detected, bbox, frame_size, confidence, device_id, timestamp, source } = message;
 
-                            // Confidence threshold: 80% (0.8)
-                            const CONFIDENCE_THRESHOLD = 0.8;
-
-                            // Apply confidence threshold - only consider detected if confidence >= threshold
-                            const confidenceValue = confidence || 0.0;
-                            const isDetected = detected && confidenceValue >= CONFIDENCE_THRESHOLD;
-
-                            // Debounce Logic: Must be detected for 1 second continuously to count
-                            let shouldUpdate = false;
-                            let confirmedDetected = false;
-
-                            if (isDetected) {
-                                if (!detectionBuffer.current[room]) {
-                                    detectionBuffer.current[room] = Date.now();
-                                }
-
-                                const duration = Date.now() - detectionBuffer.current[room];
-                                if (duration >= 1000) {
-                                    confirmedDetected = true;
-                                    shouldUpdate = true;
-                                } else {
-                                    // console.log(`[AppContext] Buffering ${room}: ${duration}ms`);
-                                }
-                            } else {
-                                // If signal lost, reset immediately
-                                if (detectionBuffer.current[room]) {
-                                    delete detectionBuffer.current[room];
-                                }
-                                confirmedDetected = false;
-                                shouldUpdate = true;
+                            // IMPORTANT: Only accept detection from detection-test page
+                            if (source !== 'detection-test') {
+                                console.log(`[AppContext] Ignoring detection from source: ${source || 'unknown'} (only accepting from detection-test)`);
+                                return;
                             }
 
-                            // Update detection state for this room only if confirmed or explicitly cleared
-                            if (shouldUpdate) {
-                                setDetectionState(prev => ({
-                                    ...prev,
-                                    [room]: {
-                                        detected: confirmedDetected,
-                                        confidence: confidenceValue,
+                            // STEP 1: Update room color immediately (green when detected=true)
+                            // When wheelchair is detected in a new room, clear all other rooms to detected=false
+                            // This ensures only ONE room shows green at a time
+                            setDetectionState(prev => {
+                                if (detected) {
+                                    // Clear all rooms and set only the current room as detected
+                                    const newState = {};
+                                    Object.keys(prev).forEach(key => {
+                                        newState[key] = {
+                                            ...prev[key],
+                                            detected: false
+                                        };
+                                    });
+                                    newState[room] = {
+                                        detected: true,
+                                        confidence: confidence || 0.0,
                                         timestamp: timestamp || new Date().toISOString(),
                                         device_id: device_id || 'unknown'
-                                    }
-                                }));
-                            }
-
-                            console.log(`[AppContext] 🔍 Detection Update: room="${room}", raw=${isDetected}, confirmed=${confirmedDetected}, buffer=${detectionBuffer.current[room] ? (Date.now() - detectionBuffer.current[room]) : 0}ms`);
-                            console.log(`[AppContext] Available rooms:`, (rooms || []).map(r => ({ id: r.id, name: r.name, nameEn: r.nameEn, roomType: r.roomType })));
-                            console.log(`[AppContext] Available wheelchairs:`, (wheelchairs || []).map(w => ({ id: w.id, room: w.room })));
-
-                            if (isDetected && bbox && Array.isArray(bbox) && bbox.length === 4) {
-                                // Find wheelchair - try multiple matching strategies
-                                // 1. Direct match
-                                let wheelchair = wheelchairs.find(w => w.room === room);
-
-                                // 2. Match by room ID (room-xxx format)
-                                if (!wheelchair) {
-                                    wheelchair = wheelchairs.find(w => w.room === room.replace('room-', '') || w.room === `room-${room}`);
-                                }
-
-                                // 3. Match by roomType or nameEn - find room first, then wheelchair
-                                if (!wheelchair) {
-                                    const roomData = rooms.find(r => {
-                                        const roomLower = room.toLowerCase();
-                                        return r.id === room ||
-                                            r.roomType?.toLowerCase() === roomLower ||
-                                            r.nameEn?.toLowerCase() === roomLower ||
-                                            r.name?.toLowerCase().includes(roomLower) ||
-                                            roomLower.includes(r.nameEn?.toLowerCase() || '') ||
-                                            roomLower.includes(r.name?.toLowerCase() || '');
-                                    });
-
-                                    if (roomData) {
-                                        console.log(`[AppContext] Found room data:`, roomData);
-                                        // Find wheelchair by matching room name/type
-                                        wheelchair = wheelchairs.find(w =>
-                                            w.room === roomData.id ||
-                                            w.room === roomData.roomType ||
-                                            w.room === roomData.nameEn?.toLowerCase() ||
-                                            w.room === roomData.name?.toLowerCase()
-                                        );
-                                    }
-                                }
-
-                                // 4. If still not found, use first wheelchair (fallback)
-                                if (!wheelchair && wheelchairs.length > 0) {
-                                    wheelchair = wheelchairs[0];
-                                    console.warn(`[AppContext] ⚠️ No wheelchair found for room "${room}", using first wheelchair: ${wheelchair.id}`);
-                                }
-
-                                if (wheelchair) {
-                                    console.log(`[AppContext] ✅ Found wheelchair: ${wheelchair.id} for room: ${wheelchair.room}`);
-
-                                    // Find room data - try multiple matching strategies with better matching
-                                    const roomLower = room.toLowerCase();
-                                    let roomData = rooms.find(r => r.id === room);
-
-                                    if (!roomData) {
-                                        roomData = rooms.find(r => r.roomType?.toLowerCase() === roomLower);
-                                    }
-
-                                    if (!roomData) {
-                                        roomData = rooms.find(r => r.nameEn?.toLowerCase() === roomLower);
-                                    }
-
-                                    // Match by partial name (e.g., "livingroom" matches "living room" or "Living Room")
-                                    if (!roomData) {
-                                        roomData = rooms.find(r => {
-                                            const rNameEn = r.nameEn?.toLowerCase() || '';
-                                            const rName = r.name?.toLowerCase() || '';
-                                            return rNameEn.includes(roomLower) ||
-                                                roomLower.includes(rNameEn) ||
-                                                rName.includes(roomLower) ||
-                                                roomLower.includes(rName);
-                                        });
-                                    }
-
-                                    // Special mapping for common room names
-                                    if (!roomData) {
-                                        const roomMapping = {
-                                            'livingroom': ['living room', 'livingroom', 'Living Room'],
-                                            'bedroom': ['bed room', 'bedroom', 'Bedroom'],
-                                            'kitchen': ['kitchen', 'Kitchen'],
-                                            'bathroom': ['bathroom', 'Bathroom']
-                                        };
-
-                                        const possibleNames = roomMapping[roomLower] || [];
-                                        roomData = rooms.find(r => {
-                                            const rNameEn = r.nameEn?.toLowerCase() || '';
-                                            const rName = r.name?.toLowerCase() || '';
-                                            return possibleNames.some(name =>
-                                                rNameEn.includes(name) ||
-                                                rName.includes(name) ||
-                                                name.includes(rNameEn) ||
-                                                name.includes(rName)
-                                            );
-                                        });
-                                    }
-
-                                    // If still not found, try to find by wheelchair's room
-                                    if (!roomData) {
-                                        roomData = rooms.find(r =>
-                                            r.id === wheelchair.room ||
-                                            r.roomType?.toLowerCase() === wheelchair.room?.toLowerCase() ||
-                                            r.nameEn?.toLowerCase() === wheelchair.room?.toLowerCase() ||
-                                            r.name?.toLowerCase() === wheelchair.room?.toLowerCase()
-                                        );
-                                    }
-
-                                    if (roomData) {
-                                        console.log(`[AppContext] ✅ Found room data:`, roomData);
-
-                                        // Calculate center position of the room
-                                        const centerX = (roomData.x || 50) + (roomData.width || 20) / 2;
-                                        const centerY = (roomData.y || 50) + (roomData.height || 20) / 2;
-
-                                        // Check if wheelchair is moving to a DIFFERENT room
-                                        // Normalize both values for comparison
-                                        const wcRoomLower = wheelchair.room?.toLowerCase().trim() || '';
-                                        const roomIdLower = roomData.id?.toLowerCase() || '';
-                                        const roomTypeLower = roomData.roomType?.toLowerCase() || '';
-                                        const roomNameEnLower = roomData.nameEn?.toLowerCase() || '';
-                                        const roomNameLower = roomData.name?.toLowerCase() || '';
-
-                                        const isChangingRoom = wheelchair.room !== roomData.id &&
-                                            wcRoomLower !== roomIdLower &&
-                                            wcRoomLower !== roomTypeLower &&
-                                            wcRoomLower !== roomNameEnLower &&
-                                            wcRoomLower !== roomNameLower &&
-                                            // Also check if wheelchair.room is a room name that doesn't match current room
-                                            !(wcRoomLower && (
-                                                (roomTypeLower && wcRoomLower.includes(roomTypeLower)) ||
-                                                (roomNameEnLower && wcRoomLower.includes(roomNameEnLower)) ||
-                                                (roomNameLower && wcRoomLower.includes(roomNameLower))
-                                            ));
-
-                                        if (isChangingRoom) {
-                                            // CHANGING ROOM: Use existing marker position if available, otherwise center of new room
-                                            const existingPos = wheelchairPositions[wheelchair.id];
-                                            const newX = existingPos ? existingPos.x : centerX;
-                                            const newY = existingPos ? existingPos.y : centerY;
-
-                                            console.log(`[AppContext] 🦽 Moving wheelchair ${wheelchair.id} from ${wheelchair.room} to ${roomData.id} (using marker position: ${newX.toFixed(1)}%, ${newY.toFixed(1)}%)`);
-
-                                            setWheelchairPositions(prev => {
-                                                const updated = {
-                                                    ...prev,
-                                                    [wheelchair.id]: { x: newX, y: newY }
-                                                };
-
-                                                api.saveWheelchairPositions(updated).catch(err => {
-                                                    console.error('Failed to save wheelchair position:', err);
-                                                });
-
-                                                console.log(`[AppContext] 🦽 Wheelchair ${wheelchair.id} placed at ${roomData.name || room}: (${newX.toFixed(1)}%, ${newY.toFixed(1)}%)`);
-
-                                                return updated;
-                                            });
-
-                                            // Update wheelchair.room
-                                            setWheelchairs(prev => prev.map(w =>
-                                                w.id === wheelchair.id
-                                                    ? { ...w, room: roomData.id }
-                                                    : w
-                                            ));
-
-                                            // Save wheelchair.room to API
-                                            api.updateWheelchair(wheelchair.id, { room: roomData.id }).catch(err => {
-                                                console.error('Failed to save wheelchair room:', err);
-                                            });
-
-                                            // Update patient(s) who use this wheelchair
-                                            setPatients(prev => prev.map(p => {
-                                                if (p.wheelchairId === wheelchair.id) {
-                                                    console.log(`[AppContext] 📍 Updating patient ${p.id} room from ${p.room} to ${roomData.id}`);
-                                                    // Save to API
-                                                    api.updatePatient(p.id, { room: roomData.id }).catch(err => {
-                                                        console.error('Failed to save patient room:', err);
-                                                    });
-                                                    return { ...p, room: roomData.id };
-                                                }
-                                                return p;
-                                            }));
-
-                                            // Also update currentUser.room if this is their wheelchair
-                                            if (currentUser && wheelchair.id === currentUser.wheelchairId) {
-                                                console.log(`[AppContext] 📍 Updating currentUser room from ${currentUser.room} to ${roomData.id}`);
-                                                setCurrentUser(prev => ({ ...prev, room: roomData.id }));
-                                            }
-                                        } else {
-                                            // SAME ROOM: Update position but also ensure patient.room is correct
-                                            // Check if wheelchair.room needs to be updated to match detected room
-                                            // Normalize both values for comparison
-                                            const wcRoomLowerSame = wheelchair.room?.toLowerCase().trim() || '';
-                                            const roomIdLowerSame = roomData.id?.toLowerCase() || '';
-                                            const roomTypeLowerSame = roomData.roomType?.toLowerCase() || '';
-                                            const roomNameEnLowerSame = roomData.nameEn?.toLowerCase() || '';
-                                            const roomNameLowerSame = roomData.name?.toLowerCase() || '';
-
-                                            const needsRoomUpdate = wheelchair.room !== roomData.id &&
-                                                wcRoomLowerSame !== roomIdLowerSame &&
-                                                wcRoomLowerSame !== roomTypeLowerSame &&
-                                                wcRoomLowerSame !== roomNameEnLowerSame &&
-                                                wcRoomLowerSame !== roomNameLowerSame &&
-                                                // Also check if wheelchair.room is a room name that doesn't match current room
-                                                !(wcRoomLowerSame && (
-                                                    (roomTypeLowerSame && wcRoomLowerSame.includes(roomTypeLowerSame)) ||
-                                                    (roomNameEnLowerSame && wcRoomLowerSame.includes(roomNameEnLowerSame)) ||
-                                                    (roomNameLowerSame && wcRoomLowerSame.includes(roomNameLowerSame))
-                                                ));
-
-                                            if (needsRoomUpdate) {
-                                                console.log(`[AppContext] 📍 Updating wheelchair ${wheelchair.id} room from ${wheelchair.room} to ${roomData.id} (same room detection)`);
-
-                                                // Update wheelchair.room
-                                                setWheelchairs(prev => prev.map(w =>
-                                                    w.id === wheelchair.id
-                                                        ? { ...w, room: roomData.id }
-                                                        : w
-                                                ));
-
-                                                // Save wheelchair.room to API
-                                                api.updateWheelchair(wheelchair.id, { room: roomData.id }).catch(err => {
-                                                    console.error('Failed to save wheelchair room:', err);
-                                                });
-
-                                                // Update patient(s) who use this wheelchair
-                                                setPatients(prev => prev.map(p => {
-                                                    if (p.wheelchairId === wheelchair.id) {
-                                                        console.log(`[AppContext] 📍 Updating patient ${p.id} room from ${p.room} to ${roomData.id}`);
-                                                        // Save to API
-                                                        api.updatePatient(p.id, { room: roomData.id }).catch(err => {
-                                                            console.error('Failed to save patient room:', err);
-                                                        });
-                                                        return { ...p, room: roomData.id };
-                                                    }
-                                                    return p;
-                                                }));
-
-                                                // Also update currentUser.room if this is their wheelchair
-                                                if (currentUser && wheelchair.id === currentUser.wheelchairId) {
-                                                    console.log(`[AppContext] 📍 Updating currentUser room from ${currentUser.room} to ${roomData.id}`);
-                                                    setCurrentUser(prev => ({ ...prev, room: roomData.id }));
-                                                }
-                                            }
-
-                                            // Use existing marker position if available, don't override with bbox calculation
-                                            const existingPos = wheelchairPositions[wheelchair.id];
-
-                                            if (existingPos) {
-                                                // Keep existing marker position - don't update from bbox
-                                                console.log(`[AppContext] 🦽 Keeping wheelchair ${wheelchair.id} at existing marker position: (${existingPos.x.toFixed(1)}%, ${existingPos.y.toFixed(1)}%)`);
-                                            } else {
-                                                // No existing position: calculate from bbox or use center
-                                                let newX, newY;
-
-                                                if (frame_size && bbox) {
-                                                    // SAME ROOM with valid bbox: Use bbox for precise position
-                                                    const [x, y, w, h] = bbox;
-                                                    const frameWidth = frame_size.width || 640;
-                                                    const frameHeight = frame_size.height || 480;
-
-                                                    // Calculate center of bbox in pixel coordinates
-                                                    const bboxCenterX = x + w / 2;
-                                                    const bboxCenterY = y + h / 2;
-
-                                                    // Convert to percentage of video frame (0-100%)
-                                                    const videoXPercent = (bboxCenterX / frameWidth) * 100;
-                                                    const videoYPercent = (bboxCenterY / frameHeight) * 100;
-
-                                                    // Map video percentage to room position on map
-                                                    const roomX = roomData.x || 50;
-                                                    const roomY = roomData.y || 50;
-                                                    const roomWidth = roomData.width || 20;
-                                                    const roomHeight = roomData.height || 20;
-
-                                                    // Convert video percentage to map percentage
-                                                    newX = roomX + (videoXPercent / 100) * roomWidth;
-                                                    newY = roomY + (videoYPercent / 100) * roomHeight;
-
-                                                    // Clamp to room bounds
-                                                    newX = Math.max(roomX, Math.min(roomX + roomWidth, newX));
-                                                    newY = Math.max(roomY, Math.min(roomY + roomHeight, newY));
-
-                                                    console.log(`[AppContext] 🦽 Calculated wheelchair ${wheelchair.id} position from bbox: (${newX.toFixed(1)}%, ${newY.toFixed(1)}%)`);
-                                                } else {
-                                                    // SAME ROOM without bbox: Use center of room
-                                                    newX = centerX;
-                                                    newY = centerY;
-                                                    console.log(`[AppContext] 🦽 Using center position for wheelchair ${wheelchair.id}: (${newX.toFixed(1)}%, ${newY.toFixed(1)}%)`);
-                                                }
-
-                                                setWheelchairPositions(prev => {
-                                                    const updated = {
-                                                        ...prev,
-                                                        [wheelchair.id]: { x: newX, y: newY }
-                                                    };
-
-                                                    api.saveWheelchairPositions(updated).catch(err => {
-                                                        console.error('Failed to save wheelchair position:', err);
-                                                    });
-
-                                                    return updated;
-                                                });
-                                            }
-                                        }
-                                    } else {
-                                        console.warn(`[AppContext] Room not found for detection: ${room}, wheelchair: ${wheelchair?.id}`);
-                                    }
+                                    };
+                                    console.log(`[AppContext] 🟢 Wheelchair moved to "${room}" - cleared detection from other rooms`);
+                                    return newState;
                                 } else {
-                                    console.warn(`[AppContext] No wheelchair available for detection in room: ${room}`);
+                                    // Just update the current room
+                                    return {
+                                        ...prev,
+                                        [room]: {
+                                            detected: false,
+                                            confidence: confidence || 0.0,
+                                            timestamp: timestamp || new Date().toISOString(),
+                                            device_id: device_id || 'unknown'
+                                        }
+                                    };
                                 }
-                            }
+                            });
+
+                            console.log(`[AppContext] 🟢 Room "${room}" detection from detection-test: detected=${detected}`);
+                            // Detection state is updated - room will show green icon when detected=true
+                            // No wheelchair position tracking needed in new simplified system
                         }
 
                         // Handle device registration
@@ -724,18 +446,18 @@ export function AppProvider({ children }) {
 
                             // Check if this device was already registered (to prevent duplicate notifications)
                             const deviceId = message.device_id;
-                            const existingDevice = devices.find(d =>
+                            const existingDevice = currentDevices.find(d =>
                                 (d.id === deviceId || d.deviceId === deviceId)
                             );
 
                             // Only notify if this is a new device registration
                             if (!existingDevice) {
-                                const roomName = rooms.find(r =>
+                                const roomName = currentRooms.find(r =>
                                     r.id === message.room ||
                                     r.roomType === message.room ||
                                     r.nameEn?.toLowerCase() === message.room?.toLowerCase()
                                 )?.nameEn ||
-                                    rooms.find(r =>
+                                    currentRooms.find(r =>
                                         r.id === message.room ||
                                         r.roomType === message.room ||
                                         r.nameEn?.toLowerCase() === message.room?.toLowerCase()
@@ -757,71 +479,41 @@ export function AppProvider({ children }) {
                             console.log('[AppContext] Status update:', message);
                         }
 
-                        // Handle wheelchair updates from backend
+                        // Handle wheelchair updates from backend - SIMPLIFIED: no debouncing
                         if (message.type === 'wheelchair_updated') {
                             const updatedWheelchair = message.wheelchair;
-                            const newPosition = message.position; // Position from backend
-                            const newRoomId = message.room_id; // Room ID from backend
-                            console.log('[AppContext] Received wheelchair update:', updatedWheelchair, 'position:', newPosition, 'room:', newRoomId);
-
-                            // Find current wheelchair to check if room changed
-                            const currentWheelchair = wheelchairs.find(w => w.id === updatedWheelchair.id);
-                            const roomChanged = currentWheelchair && currentWheelchair.room !== updatedWheelchair.room;
+                            const newPosition = message.position;
+                            const newRoomId = message.room_id;
 
                             // Update wheelchair in local state
                             setWheelchairs(prev => prev.map(w =>
-                                w.id === updatedWheelchair.id
-                                    ? { ...w, ...updatedWheelchair }
-                                    : w
+                                w.id === updatedWheelchair.id ? { ...w, ...updatedWheelchair } : w
                             ));
 
-                            // Update position when wheelchair moves to new room
+                            // Update position if provided
                             if (updatedWheelchair.room || newRoomId) {
                                 const targetRoomId = newRoomId || updatedWheelchair.room;
-
-                                // Find room data to get position
-                                const roomData = rooms.find(r =>
+                                const roomData = currentRooms.find(r =>
                                     r.id === targetRoomId ||
                                     r.roomType?.toLowerCase() === targetRoomId?.toLowerCase() ||
                                     r.nameEn?.toLowerCase() === targetRoomId?.toLowerCase()
                                 );
 
                                 if (roomData) {
-                                    setWheelchairPositions(prev => {
-                                        // If backend sent position, use it
-                                        if (newPosition && newPosition.x !== undefined && newPosition.y !== undefined) {
-                                            console.log(`[AppContext] 🦽 Updating wheelchair ${updatedWheelchair.id} position from backend: (${newPosition.x}, ${newPosition.y})`);
-                                            return {
-                                                ...prev,
-                                                [updatedWheelchair.id]: { x: newPosition.x, y: newPosition.y }
-                                            };
-                                        }
-
-                                        // If room changed, update position to center of new room
-                                        if (roomChanged) {
-                                            const centerX = (roomData.x || 50) + (roomData.width || 20) / 2;
-                                            const centerY = (roomData.y || 50) + (roomData.height || 20) / 2;
-                                            console.log(`[AppContext] 🦽 Room changed, updating wheelchair ${updatedWheelchair.id} position to center of ${roomData.nameEn || roomData.name}: (${centerX}, ${centerY})`);
-                                            return {
-                                                ...prev,
-                                                [updatedWheelchair.id]: { x: centerX, y: centerY }
-                                            };
-                                        }
-
-                                        // If no position exists, set to center of room
-                                        if (!prev[updatedWheelchair.id]) {
-                                            const centerX = (roomData.x || 50) + (roomData.width || 20) / 2;
-                                            const centerY = (roomData.y || 50) + (roomData.height || 20) / 2;
-                                            console.log(`[AppContext] 🦽 Setting wheelchair ${updatedWheelchair.id} position to center of ${roomData.nameEn || roomData.name}: (${centerX}, ${centerY})`);
-                                            return {
-                                                ...prev,
-                                                [updatedWheelchair.id]: { x: centerX, y: centerY }
-                                            };
-                                        }
-
-                                        // Keep existing position if room didn't change and position exists
-                                        return prev;
-                                    });
+                                    if (newPosition && newPosition.x !== undefined && newPosition.y !== undefined) {
+                                        setWheelchairPositions(prev => ({
+                                            ...prev,
+                                            [updatedWheelchair.id]: { x: newPosition.x, y: newPosition.y, room: roomData.id }
+                                        }));
+                                    } else {
+                                        // Use center of room if no position provided
+                                        const centerX = (roomData.x || 50) + (roomData.width || 20) / 2;
+                                        const centerY = (roomData.y || 50) + (roomData.height || 20) / 2;
+                                        setWheelchairPositions(prev => ({
+                                            ...prev,
+                                            [updatedWheelchair.id]: { x: centerX, y: centerY, room: roomData.id }
+                                        }));
+                                    }
                                 }
                             }
                         }
@@ -838,24 +530,27 @@ export function AppProvider({ children }) {
                 ws.onclose = () => {
                     console.log('[AppContext] WebSocket disconnected, reconnecting in 5s...');
                     // Reconnect after 5 seconds
-                    setTimeout(connectWebSocket, 5000);
+                    reconnectTimeout = setTimeout(connectWebSocket, 5000);
                 };
 
             } catch (error) {
                 console.error('[AppContext] Failed to connect WebSocket:', error);
                 // Retry after 5 seconds
-                setTimeout(connectWebSocket, 5000);
+                reconnectTimeout = setTimeout(connectWebSocket, 5000);
             }
         };
 
         connectWebSocket();
 
         return () => {
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
             if (ws) {
                 ws.close();
             }
         };
-    }, [wheelchairs, rooms]); // Don't include wheelchairPositions to prevent infinite loop
+    }, []); // Empty dependency array - WebSocket connects once and uses refs for current state
 
     // Theme effect
     useEffect(() => {

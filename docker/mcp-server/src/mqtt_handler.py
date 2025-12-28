@@ -358,7 +358,7 @@ class MQTTHandler:
             self.room_status[room]["detection_bbox"] = bbox
             self.room_status[room]["last_detection_time"] = datetime.now().isoformat()
             
-            logger.info(f"🦽 Wheelchair detection in {room}: detected={detected}, confidence={confidence:.2f}")
+            logger.info(f"🦽 Wheelchair detection from MQTT in {room}: detected={detected}, confidence={confidence:.2f} (position update DISABLED - only detection-test can update)")
             
             # Broadcast to WebSocket clients (dashboard only - not sent back to board)
             # Dashboard receives detection results and updates wheelchair position automatically
@@ -369,12 +369,14 @@ class MQTTHandler:
                 "detected": detected,
                 "confidence": confidence,
                 "bbox": bbox,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "source": "mqtt"  # Mark source to prevent position update in frontend
             })
             
-            # Call callback if set (for updating database)
-            if self.on_detection_callback:
-                await self.on_detection_callback(room, detection)
+            # DISABLED: Do NOT update wheelchair position from MQTT detection
+            # Only detection-test page (localhost:3001) should update wheelchair position
+            # The callback was: await self.on_detection_callback(room, detection)
+            logger.debug(f"⚠️ Skipping position update callback for MQTT detection (only detection-test can update)")
                 
         except Exception as e:
             logger.error(f"Error handling detection: {e}", exc_info=True)

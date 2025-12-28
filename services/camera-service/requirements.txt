@@ -16,19 +16,5 @@ python-dotenv>=1.0.0
 # Logging
 structlog>=24.1.0
 
-# TensorFlow for Teachable Machine detection
-# Use TensorFlow 2.15.0 for better compatibility with Teachable Machine models
-tensorflow>=2.15.0,<2.16.0
-
-
-
-
-
-
-
-
-
-
-
-
-
+# YOLOv8 for object detection (GPU accelerated via PyTorch CUDA)
+ultralytics>=8.0.0

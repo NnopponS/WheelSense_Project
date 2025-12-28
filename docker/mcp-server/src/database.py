@@ -50,7 +50,14 @@ class Database:
         return [self._serialize_doc(room) for room in rooms]
     
     async def get_room(self, room_id: str) -> Optional[Dict]:
-        """Get room by ID or device ID."""
+        """Get room by ID or device ID or roomType (with normalization)."""
+        # Normalize room_id: lowercase and remove spaces (e.g., "livingroom" matches "Living Room")
+        def normalize(name: str) -> str:
+            return name.lower().replace(" ", "") if name else ""
+        
+        normalized_room_id = normalize(room_id)
+        
+        # Try exact match first
         room = await self.db.rooms.find_one({
             "$or": [
                 {"_id": ObjectId(room_id) if ObjectId.is_valid(room_id) else None},
@@ -58,7 +65,24 @@ class Database:
                 {"roomType": room_id}
             ]
         })
-        return self._serialize_doc(room) if room else None
+        
+        if room:
+            return self._serialize_doc(room)
+        
+        # If not found, try case-insensitive match with normalization
+        # This helps match "livingroom" with "Living Room" or "living room"
+        all_rooms = await self.db.rooms.find().to_list(length=100)
+        for r in all_rooms:
+            room_type = r.get("roomType", "")
+            name_en = r.get("nameEn", "")
+            name = r.get("name", "")
+            
+            if (normalize(room_type) == normalized_room_id or
+                normalize(name_en) == normalized_room_id or
+                normalize(name) == normalized_room_id):
+                return self._serialize_doc(r)
+        
+        return None
     
 
     async def update_room_status(self, device_id: str, status: Dict):

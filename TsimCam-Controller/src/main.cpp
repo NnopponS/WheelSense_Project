@@ -47,14 +47,15 @@ const int WS_HEARTBEAT_INTERVAL = 15000;  // Send ping every 15 seconds
 const int CONFIG_PORTAL_TIMEOUT = 300000;  // 5 minutes
 
 // ===== Camera Configuration =====
-#define CAMERA_FRAME_SIZE FRAMESIZE_VGA
-#define JPEG_QUALITY 15
-#define TARGET_FPS 15
+// ===== Camera Configuration =====
+#define CAMERA_FRAME_SIZE FRAMESIZE_HVGA  // Reverted to HVGA (480x320) - VGA was unstable
+#define JPEG_QUALITY 20                   // Quality 20 (Best Stable)
+#define TARGET_FPS 12                     // 12 FPS (Stable 10++)
 #define FRAME_INTERVAL_MS (1000 / TARGET_FPS)
 #define FRAME_BUFFER_COUNT 4
 #define FRAME_QUEUE_SIZE 15
 #define FRAME_POOL_SIZE 15
-#define MAX_FRAME_SIZE 15000
+#define MAX_FRAME_SIZE 30000              // Reverted to 30KB (Sufficient for HVGA)
 
 /* ===== T-SIM Camera Pins ===== */
 #define PWDN_GPIO_NUM     -1
@@ -1007,8 +1008,10 @@ void webSocketTask(void *parameter) {
     webSocket.loop();
 
     if (wsConnected) {
+      // Send 1 frame per loop to keep heartbeat responsive
+      // Previous batch size of 5 was blocking loop() for too long
       int count = 0;
-      while (count < 5) {
+      while (count < 1) {
         FrameData* frame = NULL;
         if (xQueueReceive(frameQueue, &frame, 0) == pdTRUE) {
           if (frame && frame->data && frame->length > 0) {
@@ -1051,7 +1054,7 @@ void reconnectWebSocket() {
     webSocket.begin(discoveredServerIP.c_str(), WEBSOCKET_PORT, "/");
     webSocket.onEvent(webSocketEvent);
     webSocket.setReconnectInterval(3000);  // Auto-reconnect every 3s if disconnected
-    webSocket.enableHeartbeat(10000, 3000, 2);  // Ping every 10s, timeout 3s, 2 retries
+    webSocket.enableHeartbeat(30000, 10000, 2);  // Relaxed: Ping every 30s, timeout 10s, 2 retries
   }
 }
 

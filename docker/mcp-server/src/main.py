@@ -282,7 +282,10 @@ async def lifespan(app: FastAPI):
         async with websockets.serve(
             handler,
             "0.0.0.0",
-            camera_ws_port
+            camera_ws_port,
+            ping_interval=None,  # Disable server-side pings; let ESP32 client handle keepalive
+            max_size=None,       # Allow large frames
+            max_queue=16         # Limit queue to prevent memory growth
         ):
             logger.info(f"✅ WebSocket server started on port {camera_ws_port} for cameras")
             await asyncio.Future()  # Run forever
@@ -299,28 +302,51 @@ async def lifespan(app: FastAPI):
         
         Priority:
         1. HOST_IP env var (if set and valid) - for manual override
-        2. Auto-detect from network interface (preferred)
-        3. Fallback to 127.0.0.1
+        2. Try to get host gateway IP from Docker (host.docker.internal)
+        3. Auto-detect from network interface
+        4. Fallback to 127.0.0.1
         """
-        # Try auto-detection first (more reliable for dynamic IPs)
+        # Priority 1: Environment variable (for manual override)
+        env_ip = os.getenv("HOST_IP")
+        if env_ip and env_ip != "127.0.0.1":
+            logger.info(f"Using HOST_IP from environment: {env_ip}")
+            return env_ip
+        
+        # Priority 2: Try to resolve host gateway (Docker host IP)
+        try:
+            import subprocess
+            # Get default gateway IP (which is the host machine in Docker bridge network)
+            result = subprocess.run(
+                ["ip", "route", "show", "default"],
+                capture_output=True,
+                text=True,
+                timeout=2
+            )
+            if result.returncode == 0:
+                # Parse "default via 172.28.0.1 dev eth0"
+                parts = result.stdout.split()
+                if len(parts) >= 3 and parts[0] == "default" and parts[1] == "via":
+                    gateway_ip = parts[2]
+                    logger.info(f"Detected Docker host gateway: {gateway_ip}")
+                    return gateway_ip
+        except Exception as e:
+            logger.debug(f"Failed to get Docker gateway: {e}")
+        
+        # Priority 3: Auto-detection (may return Docker bridge IP)
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
             detected_ip = s.getsockname()[0]
             s.close()
             
-            # Only use detected IP if it's not localhost
-            if detected_ip and detected_ip != "127.0.0.1":
-                logger.debug(f"Auto-detected host IP: {detected_ip}")
+            # Filter out Docker bridge IPs (172.x.x.x)
+            if detected_ip and not detected_ip.startswith("172.") and detected_ip != "127.0.0.1":
+                logger.info(f"Auto-detected host IP: {detected_ip}")
                 return detected_ip
+            else:
+                logger.debug(f"Auto-detected IP is Docker internal ({detected_ip}), trying alternatives...")
         except Exception as e:
             logger.debug(f"Auto-detection failed: {e}")
-        
-        # Fallback to environment variable (for manual override if needed)
-        env_ip = os.getenv("HOST_IP")
-        if env_ip and env_ip != "127.0.0.1":
-            logger.debug(f"Using HOST_IP from environment: {env_ip}")
-            return env_ip
             
         # Last resort fallback
         logger.warning("Could not detect host IP, using 127.0.0.1")
@@ -390,17 +416,93 @@ async def lifespan(app: FastAPI):
     # Start UDP discovery server
     discovery_task = asyncio.create_task(udp_discovery_server())
     
+    # Start periodic connection cleanup task (every 60 seconds)
+    async def periodic_cleanup():
+        while True:
+            try:
+                await asyncio.sleep(60)  # Run every 60 seconds
+                await stream_handler.cleanup_stale_connections(timeout_seconds=60)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in periodic cleanup: {e}")
+    
+    cleanup_task = asyncio.create_task(periodic_cleanup())
+    
     yield
     
-    # Cleanup
-    logger.info("🛑 Shutting down...")
+    # ===== Graceful Shutdown =====
+    logger.info("🛑 Shutting down gracefully...")
+    
+    # Cancel background tasks
+    logger.info("Cancelling background tasks...")
     camera_ws_task.cancel()
+    discovery_task.cancel()
+    cleanup_task.cancel()
+    
+    # Wait for tasks to complete cancellation
+    try:
+        await asyncio.gather(camera_ws_task, discovery_task, cleanup_task, return_exceptions=True)
+    except Exception as e:
+        logger.debug(f"Task cancellation completed: {e}")
+    
+    # Close all active WebSocket connections
+    logger.info("Closing WebSocket connections...")
+    try:
+        # Close camera connections
+        for device_id, ws in list(stream_handler.camera_connections.items()):
+            try:
+                await ws.close()
+                logger.debug(f"Closed camera connection: {device_id}")
+            except Exception as e:
+                logger.debug(f"Error closing camera {device_id}: {e}")
+        
+        # Close appliance connections
+        for device_id, ws in list(stream_handler.appliance_connections.items()):
+            try:
+                await ws.close()
+                logger.debug(f"Closed appliance connection: {device_id}")
+            except Exception as e:
+                logger.debug(f"Error closing appliance {device_id}: {e}")
+        
+        # Close dashboard clients
+        for room, clients in list(stream_handler.dashboard_clients.items()):
+            for client in list(clients):
+                try:
+                    await client.close()
+                except Exception as e:
+                    logger.debug(f"Error closing dashboard client: {e}")
+        
+        logger.info("✅ WebSocket connections closed")
+    except Exception as e:
+        logger.error(f"Error closing WebSocket connections: {e}")
+    
+    # Disconnect MQTT
+    logger.info("Disconnecting MQTT...")
     if mqtt_handler:
-        await mqtt_handler.disconnect()
+        try:
+            await mqtt_handler.disconnect()
+            logger.info("✅ MQTT disconnected")
+        except Exception as e:
+            logger.error(f"Error disconnecting MQTT: {e}")
+    
     if mcp_mqtt_client:
-        await mcp_mqtt_client.disconnect()
+        try:
+            await mcp_mqtt_client.disconnect()
+            logger.info("✅ MCP MQTT disconnected")
+        except Exception as e:
+            logger.error(f"Error disconnecting MCP MQTT: {e}")
+    
+    # Disconnect database
+    logger.info("Disconnecting database...")
     if db:
-        await db.disconnect()
+        try:
+            await db.disconnect()
+            logger.info("✅ Database disconnected")
+        except Exception as e:
+            logger.error(f"Error disconnecting database: {e}")
+    
+    logger.info("✅ Shutdown complete")
 
 
 app = FastAPI(
@@ -551,6 +653,35 @@ async def get_room_status(room_id: str):
     
     status = mqtt_handler.get_room_status(room_id)
     return status
+
+
+@app.post("/nodes/{device_id}/rotate")
+async def rotate_camera(device_id: str, degrees: int = Query(...)):
+    """Rotate camera by updating its rotation setting."""
+    # Normalize degrees to 0, 90, 180, 270
+    degrees = degrees % 360
+    if degrees not in [0, 90, 180, 270]:
+        # Snap to nearest 90
+        degrees = round(degrees / 90) * 90 % 360
+    
+    # 1. Update in-memory cache in stream_handler
+    stream_handler.device_rotations[device_id] = degrees
+    
+    # 2. Update in database
+    if db:
+        try:
+            await db.db.devices.update_one(
+                {"id": device_id},
+                {"$set": {"rotation": degrees}},
+                upsert=True
+            )
+            logger.info(f"🔄 Updated rotation for {device_id} to {degrees}°")
+        except Exception as e:
+            logger.error(f"Failed to update rotation in DB: {e}")
+            raise HTTPException(status_code=500, detail="Failed to save rotation setting")
+    
+    return {"device_id": device_id, "rotation": degrees}
+
 
 
 # ==================== Appliance Control ====================
@@ -727,30 +858,36 @@ async def websocket_endpoint(websocket: WebSocket):
                     detected = message.get("detected", False)
                     bbox = message.get("bbox")
                     frame_size = message.get("frame_size")
+                    source = message.get("source")
                     
-                    logger.info(f"🦽 Wheelchair detection from client: room={room}, detected={detected}")
+                    logger.info(f"🦽 Wheelchair detection from client: room={room}, detected={detected}, source={source}")
                     
-                    # Broadcast to all clients
-                    if handler:
-                        await handler._broadcast_ws({
-                            "type": "wheelchair_detection",
-                            "room": room,
-                            "device_id": message.get("device_id", "TEST"),
-                            "detected": detected,
-                            "confidence": message.get("confidence", 0.9),
-                            "bbox": bbox,
-                            "frame_size": frame_size,
-                            "timestamp": datetime.now().isoformat()
-                        })
-                    
-                    # Also trigger database update callback
-                    if detected and stream_handler.on_detection_callback:
-                        await stream_handler.on_detection_callback(room, {
-                            "detected": detected,
-                            "bbox": bbox,
-                            "frame_size": frame_size,
-                            "wheelchair_id": message.get("wheelchair_id")
-                        })
+                    # ONLY accept detection from detection-test page for position updates
+                    if source == "detection-test":
+                        # Broadcast to all clients
+                        if handler:
+                            await handler._broadcast_ws({
+                                "type": "wheelchair_detection",
+                                "room": room,
+                                "device_id": message.get("device_id", "TEST"),
+                                "detected": detected,
+                                "confidence": message.get("confidence", 0.9),
+                                "bbox": bbox,
+                                "frame_size": frame_size,
+                                "timestamp": datetime.now().isoformat(),
+                                "source": "detection-test"
+                            })
+                        
+                        # Trigger database update callback ONLY from detection-test
+                        if detected and stream_handler.on_detection_callback:
+                            await stream_handler.on_detection_callback(room, {
+                                "detected": detected,
+                                "bbox": bbox,
+                                "frame_size": frame_size,
+                                "wheelchair_id": message.get("wheelchair_id")
+                            })
+                    else:
+                        logger.debug(f"Ignoring wheelchair_detection from source: {source} (only accepting from detection-test)")
             except json.JSONDecodeError:
                 logger.warning(f"Invalid JSON received on WebSocket: {data}")
             except Exception as e:
@@ -945,6 +1082,59 @@ class LocationEventRequest(BaseModel):
     detection_confidence: float = 0.0
     bbox: Optional[List] = None
 
+
+@app.post("/detection/notify")
+async def notify_detection(request: Request):
+    """Receive detection notification from detection test page and forward to dashboard."""
+    try:
+        data = await request.json()
+        room = data.get("room")
+        detected = data.get("detected", False)
+        confidence = data.get("confidence", 0.0)
+        bbox = data.get("bbox")
+        device_id = data.get("device_id")
+        timestamp = data.get("timestamp", datetime.now().isoformat())
+        
+        if not room:
+            raise HTTPException(status_code=400, detail="Room is required")
+        
+        logger.info(f"📢 Detection notification from test page: room={room}, detected={detected}, confidence={confidence}")
+        
+        # Forward to dashboard via WebSocket and MQTT
+        detection_data = {
+            "type": "wheelchair_detection",
+            "room": room,
+            "detected": detected,
+            "confidence": confidence,
+            "bbox": bbox,
+            "device_id": device_id,
+            "timestamp": timestamp,
+            "method": "yolo",
+            "source": "detection-test"
+        }
+        
+        # Broadcast via WebSocket to dashboard clients (video stream)
+        await stream_handler._broadcast_detection_to_dashboard(detection_data)
+        
+        # Also broadcast via MQTT handler WebSocket (main /ws endpoint)
+        if hasattr(stream_handler, 'mqtt_handler') and stream_handler.mqtt_handler:
+            await stream_handler.mqtt_handler._broadcast_ws(detection_data)
+            logger.info(f"📤 Broadcasted detection to /ws clients via mqtt_handler")
+        
+        # Also trigger detection callback if detected (to update database and positions)
+        if detected and stream_handler.on_detection_callback:
+            await stream_handler.on_detection_callback(room, {
+                "detected": detected,
+                "confidence": confidence,
+                "bbox": bbox,
+                "frame_size": {},
+                "device_id": device_id
+            })
+        
+        return {"status": "ok", "message": "Detection notification forwarded"}
+    except Exception as e:
+        logger.error(f"Error handling detection notification: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/timeline/location")
 async def save_location_event(event: LocationEventRequest):

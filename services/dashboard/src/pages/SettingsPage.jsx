@@ -262,17 +262,50 @@ export function SettingsPage() {
                 setApiTestStatus(prev => ({ ...prev, gemini: 'success', geminiMessage: 'API connection successful!' }));
             } else {
                 const error = await response.json();
+                const errorMessage = error.error?.message || `Error: ${response.status}`;
+                
+                // Check for quota/rate limit errors
+                const isQuotaError = response.status === 429 || response.status === 503 || 
+                    errorMessage.toLowerCase().includes('quota') || 
+                    errorMessage.toLowerCase().includes('rate limit') ||
+                    errorMessage.toLowerCase().includes('free tier');
+                
+                // Check if limit is 0 (quota completely exhausted)
+                const isLimitZero = /limit:\s*0/i.test(errorMessage);
+                
+                let displayMessage = errorMessage;
+                if (isQuotaError) {
+                    if (isLimitZero) {
+                        displayMessage = `Free tier quota exhausted (limit: 0). Your Gemini API free tier quota has been completely used. Please upgrade your plan at https://ai.google.dev/pricing or check your usage at https://ai.dev/usage?tab=rate-limit`;
+                    } else {
+                        // Extract retry time if available (check for seconds first, then milliseconds)
+                        const retryMatchSeconds = errorMessage.match(/Please retry in ([\d.]+)s/i);
+                        const retryMatchMs = errorMessage.match(/Please retry in ([\d.]+)ms/i);
+                        
+                        if (retryMatchSeconds) {
+                            const retrySeconds = Math.ceil(parseFloat(retryMatchSeconds[1]));
+                            displayMessage = `Quota exceeded. Please check your Gemini API quota and billing. Retry after ${retrySeconds} seconds. For more info: https://ai.google.dev/gemini-api/docs/rate-limits`;
+                        } else if (retryMatchMs) {
+                            const retryMs = parseFloat(retryMatchMs[1]);
+                            const retrySeconds = Math.ceil(retryMs / 1000);
+                            displayMessage = `Quota exceeded. Please check your Gemini API quota and billing. Retry after ${retrySeconds} seconds. For more info: https://ai.google.dev/gemini-api/docs/rate-limits`;
+                        } else {
+                            displayMessage = `Quota exceeded: ${errorMessage}. Please check your Gemini API quota and billing at https://ai.dev/usage?tab=rate-limit`;
+                        }
+                    }
+                }
+                
                 setApiTestStatus(prev => ({
                     ...prev,
                     gemini: 'error',
-                    geminiMessage: error.error?.message || `Error: ${response.status}`
+                    geminiMessage: displayMessage
                 }));
             }
         } catch (error) {
             setApiTestStatus(prev => ({
                 ...prev,
                 gemini: 'error',
-                geminiMessage: error.message
+                geminiMessage: `Network error: ${error.message}`
             }));
         }
     };

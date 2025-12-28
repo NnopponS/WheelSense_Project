@@ -204,6 +204,22 @@
     border-color: var(--success-500);
 }
 
+/* Green border when wheelchair detected by YOLO */
+.room.detected {
+    border: 3px solid var(--success-500);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.8);
+    }
+}
+
 .room.alert {
     background: rgba(239, 68, 68, 0.15);
     border-color: var(--danger-500);
@@ -231,6 +247,34 @@
 .room-status {
     font-size: 0.75rem;
     color: var(--text-secondary);
+}
+
+/* Wheelchair icon centered in room when detected */
+.room-wheelchair-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--success-500), var(--success-600));
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    margin-top: 0.5rem;
+    animation: wheelchair-bounce 2s ease-in-out infinite;
+}
+
+.room-wheelchair-icon svg {
+    color: white;
+}
+
+@keyframes wheelchair-bounce {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 .wheelchair-marker {

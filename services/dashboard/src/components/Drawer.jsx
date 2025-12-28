@@ -5,10 +5,11 @@ import { X, Accessibility, MapPin, Clock, Activity, Lightbulb, Thermometer, Tv, 
 import { getStreamUrlInfo } from '../services/api';
 
 export function Drawer() {
-    const { drawerOpen, drawerContent, closeDrawer, rooms, appliances, toggleAppliance, patients, wheelchairs, language, detectionState } = useApp();
+    const { drawerOpen, drawerContent, closeDrawer, rooms, appliances, toggleAppliance, patients, wheelchairs, language, detectionState, devices } = useApp();
     const { t } = useTranslation(language);
     const [videoSrc, setVideoSrc] = useState('');
     const [streamMode, setStreamMode] = useState('loading'); // 'loading', 'websocket', 'offline'
+    const [rotation, setRotation] = useState(0);
     const wsRef = useRef(null);
     const canvasRef = useRef(null);
 
@@ -17,6 +18,7 @@ export function Drawer() {
         if (!drawerContent) {
             setVideoSrc('');
             setStreamMode('loading');
+            setRotation(0);
             disconnectWebSocket();
             return;
         }
@@ -24,18 +26,48 @@ export function Drawer() {
         const { type, data } = drawerContent;
 
         if (type === 'room' && drawerOpen && data?.id) {
+            // Find device for this room to get rotation
+            const roomDevice = devices?.find(d => 
+                d.room === data.id || 
+                d.roomType === data.id ||
+                d.room === data.roomType ||
+                (d.room && data.nameEn && d.room.toLowerCase() === data.nameEn.toLowerCase()) ||
+                (d.room && data.name && d.room.toLowerCase() === data.name.toLowerCase())
+            );
+            const deviceRotation = roomDevice?.rotation || 0;
+            setRotation(deviceRotation);
+            console.log(`[Drawer] Loaded rotation ${deviceRotation}° for room ${data.id}`);
+            
             connectWebSocket(data.id);
         } else {
             // Clear video when drawer closes or not a room
             setVideoSrc('');
             setStreamMode('loading');
+            setRotation(0);
             disconnectWebSocket();
         }
 
         return () => {
             disconnectWebSocket();
         };
-    }, [drawerContent, drawerOpen]);
+    }, [drawerContent, drawerOpen, devices]);
+
+    // Sync rotation when devices change (e.g., when rotation is updated from another page)
+    useEffect(() => {
+        if (drawerContent?.type === 'room' && drawerContent?.data?.id && devices) {
+            const roomDevice = devices.find(d => 
+                d.room === drawerContent.data.id || 
+                d.roomType === drawerContent.data.id ||
+                d.room === drawerContent.data.roomType ||
+                (d.room && drawerContent.data.nameEn && d.room.toLowerCase() === drawerContent.data.nameEn.toLowerCase()) ||
+                (d.room && drawerContent.data.name && d.room.toLowerCase() === drawerContent.data.name.toLowerCase())
+            );
+            if (roomDevice?.rotation !== undefined && roomDevice.rotation !== rotation) {
+                setRotation(roomDevice.rotation);
+                console.log(`[Drawer] Synced rotation ${roomDevice.rotation}° for room ${drawerContent.data.id}`);
+            }
+        }
+    }, [devices, drawerContent, rotation]);
 
     const connectWebSocket = (roomId) => {
         disconnectWebSocket();
@@ -268,7 +300,14 @@ export function Drawer() {
                                                 objectFit: 'cover',
                                                 display: 'block',
                                                 position: 'relative',
-                                                zIndex: 2
+                                                zIndex: 2,
+                                                transform: rotation !== 0 
+                                                    ? rotation === 90 || rotation === 270
+                                                        ? `rotate(${rotation}deg) scale(1.333)` // Scale to fill container when rotated
+                                                        : `rotate(${rotation}deg)`
+                                                    : 'none',
+                                                transformOrigin: 'center center',
+                                                transition: 'transform 0.3s ease'
                                             }}
                                             onLoad={(e) => {
                                                 // Check if image is larger than placeholder (which is ~165 bytes / 1x1 pixel)

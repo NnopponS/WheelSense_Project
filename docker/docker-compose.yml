@@ -139,17 +139,32 @@ services:
       - MQTT_TOPIC_CONTROL=WheelSenseMockup/control
       - MQTT_TOPIC_STATUS=WheelSenseMockup/status
       - DEVICE_ID=TSIM_004
+      - DETECTION_METHOD=yolo
       - DETECTION_CONFIDENCE_THRESHOLD=0.5
-      - DETECTION_INTERVAL_SEC=1.0
+      - DETECTION_INTERVAL_SEC=0.1
+      # Preview Mode (set to true to enable OpenCV preview window for debugging)
+      - ENABLE_PREVIEW=false
+      # GPU settings
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
     volumes:
       # Mount models directory so we can update model files without rebuilding image
       - ../services/camera-service/models:/app/models:ro
+      # Mount source code for hot-reload without rebuild (just restart container)
+      - ../services/camera-service/src:/app/src:ro
     depends_on:
       mosquitto:
         condition: service_healthy
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.22
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
 
   # ==================== Dashboard (Frontend) ====================
   dashboard:

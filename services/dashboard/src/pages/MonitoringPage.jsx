@@ -8,26 +8,38 @@ export function MonitoringPage() {
     const { wheelchairs, patients, devices, rooms, openDrawer, timeline, wheelchairPositions, language, detectionState, deviceHeartbeats } = useApp();
     const [liveStatus, setLiveStatus] = useState({}); // Map of deviceId -> { online: boolean, ... }
 
-    // Compute real-time occupancy from detectionState and wheelchair positions
+    // Compute real-time occupancy from detectionState and wheelchair positions - SIMPLIFIED: no confidence threshold
     const isRoomOccupied = (room) => {
-        // Confidence threshold: 80% (0.8)
-        const CONFIDENCE_THRESHOLD = 0.8;
+        // Normalize room name: lowercase and remove spaces (e.g., "Living Room" -> "livingroom")
+        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
 
         // Check detection state first (real-time camera detection)
         const detection = detectionState[room.id] ||
             detectionState[room.roomType?.toLowerCase()] ||
-            detectionState[room.nameEn?.toLowerCase()];
-        if (detection) {
-            // Apply confidence threshold - only consider detected if confidence >= threshold
-            const confidence = detection.confidence || 0.0;
-            return detection.detected && confidence >= CONFIDENCE_THRESHOLD;
+            detectionState[normalizeRoomName(room.nameEn)] ||
+            detectionState[normalizeRoomName(room.name)];
+        if (detection?.detected === true) {
+            return true;
         }
         // Fallback: check if any wheelchair is in this room
         return wheelchairs.some(w =>
             w.room === room.id ||
             w.room === room.roomType?.toLowerCase() ||
-            w.room === room.nameEn?.toLowerCase()
+            w.room === normalizeRoomName(room.nameEn) ||
+            normalizeRoomName(w.room) === normalizeRoomName(room.nameEn)
         );
+    };
+
+    // Check if wheelchair is detected in room (for green border) - SIMPLIFIED: no confidence threshold
+    const isWheelchairDetected = (room) => {
+        // Normalize room name: lowercase and remove spaces (e.g., "Living Room" -> "livingroom")
+        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+
+        const detection = detectionState[room.id] ||
+            detectionState[room.roomType?.toLowerCase()] ||
+            detectionState[normalizeRoomName(room.nameEn)] ||
+            detectionState[normalizeRoomName(room.name)];
+        return detection?.detected === true;
     };
     const { t } = useTranslation(language);
 
@@ -82,7 +94,7 @@ export function MonitoringPage() {
 
             const live = liveStatus[id] || liveStatus[d.deviceId] || liveStatus[d.id];
             let actualStatus = d.status || 'offline';
-            
+
             if (live) {
                 actualStatus = live.online ? 'online' : 'offline';
             } else if (d.lastSeen) {
@@ -162,17 +174,20 @@ export function MonitoringPage() {
             <div className="content-grid">
                 <div className="map-container">
                     <div className="map-canvas">
-                        {safeRooms.map(room => (
-                            <div
-                                key={room.id}
-                                className={`room ${isRoomOccupied(room) ? 'occupied' : ''}`}
-                                style={{ left: `${room.x}%`, top: `${room.y}%`, width: `${room.width}%`, height: `${room.height}%` }}
-                                onClick={() => openDrawer({ type: 'room', data: room })}
-                            >
-                                <span className="room-label">{room.nameEn || room.name}</span>
-                                <span className="room-status">{isRoomOccupied(room) ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}</span>
-                            </div>
-                        ))}
+                        {safeRooms.map(room => {
+                            const detected = isWheelchairDetected(room);
+                            return (
+                                <div
+                                    key={room.id}
+                                    className={`room ${isRoomOccupied(room) ? 'occupied' : ''} ${detected ? 'detected' : ''}`}
+                                    style={{ left: `${room.x}%`, top: `${room.y}%`, width: `${room.width}%`, height: `${room.height}%` }}
+                                    onClick={() => openDrawer({ type: 'room', data: room })}
+                                >
+                                    <span className="room-label">{room.nameEn || room.name}</span>
+                                    <span className="room-status">{isRoomOccupied(room) ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}</span>
+                                </div>
+                            );
+                        })}
                         {safeWheelchairs.filter(w => w.room).map(wc => {
                             let room = safeRooms.find(r => r.id === wc.room);
 
@@ -188,10 +203,12 @@ export function MonitoringPage() {
                             }
 
                             if (!room) return null;
-                            // Use same positioning as MapPage - use stored position if available
-                            const storedPos = wheelchairPositions[wc.id];
-                            const markerX = storedPos ? storedPos.x : (room.x + room.width / 2);
-                            const markerY = storedPos ? storedPos.y : (room.y + room.height / 2);
+
+                            // Use position from wheelchairPositions (updated by YOLO detection)
+                            // Fallback to room center if no position available
+                            const position = wheelchairPositions[wc.id];
+                            const markerX = position?.x ?? (room.x + room.width / 2);
+                            const markerY = position?.y ?? (room.y + room.height / 2);
                             return (
                                 <div
                                     key={wc.id}

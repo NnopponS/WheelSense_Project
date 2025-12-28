@@ -1,2 +1,0 @@
-0 WheelChair
-1 NoWheelChair

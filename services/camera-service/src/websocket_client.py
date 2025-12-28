@@ -31,7 +31,8 @@ class WebSocketCameraClient:
         self.is_connected = False
         self.running = False
         
-        # Video frame queue
+        # Video frame queue - restored to 10 for better buffering
+        # Size=10: allows proper buffering without overwhelming the system
         self.video_queue: Queue = Queue(maxsize=10)
         
         # Detection state
@@ -204,23 +205,22 @@ class WebSocketCameraClient:
             if device_id and device_id != "UNKNOWN":
                 self.device_rotations[device_id] = rotation
             
-            # Put frame in queue
+            # Put frame in queue with aggressive dropping for low latency
+            # CRITICAL FIX: Don't call detector_callback here! It blocks frame reception.
+            # Main.py already processes frames from queue asynchronously.
             try:
                 self.video_queue.put_nowait((frame, meta))
             except:
-                # Remove old frame and add new one
+                # Queue full - drop oldest frame and add new one
                 try:
-                    self.video_queue.get_nowait()
+                    self.video_queue.get_nowait()  # Drop old
+                    self.video_queue.put_nowait((frame, meta))  # Add new
                 except:
-                    pass
-                try:
-                    self.video_queue.put_nowait((frame, meta))
-                except:
-                    pass
+                    pass  # If still fails, just skip this frame
             
-            # Call detector callback if set
-            if self.detector_callback:
-                self.detector_callback(frame, meta)
+            # NOTE: detector_callback removed - it was causing synchronous detection
+            # which blocked WebSocket frame reception and caused ESP32 buffer overflow
+
                 
         except Exception as e:
             logger.error(f"Error handling video frame: {e}", exc_info=True)
@@ -267,7 +267,7 @@ class WebSocketCameraClient:
         except Exception as e:
             logger.error(f"Failed to send detection: {e}", exc_info=True)
     
-    def publish_detection(self, detection: dict, device_id: str = None):
+    def publish_detection(self, detection: dict, device_id: str = None, room: str = None):
         """Publish detection result (wrapper for async method)."""
         if not self.loop or not self.is_connected:
             return
@@ -276,14 +276,25 @@ class WebSocketCameraClient:
         if not device_id and self.current_metadata:
             device_id = self.current_metadata.get("device_id")
         
-        # Extract room from device_rooms mapping (set from backend metadata)
-        if device_id and device_id in self.device_rooms:
-            room = self.device_rooms[device_id]
+        # Use room from parameter, or extract from device_rooms mapping, or use current_metadata
+        if not room:
+            # Try to get room from current_metadata first
+            if self.current_metadata:
+                room = self.current_metadata.get("room")
+            
+            # If still no room, try device_rooms mapping
+            if not room and device_id and device_id in self.device_rooms:
+                room = self.device_rooms[device_id]
+            
+            # Fallback to default room only if still not found
+            if not room:
+                device_id = device_id or "UNKNOWN"
+                room = "livingroom"
+                logger.warning(f"Device {device_id} not found in device_rooms and no room in metadata, using default room: {room}")
         else:
-            # Fallback
-            device_id = device_id or "UNKNOWN"
-            room = "livingroom"
-            logger.warning(f"Device {device_id} not found in device_rooms, using default room")
+            # Room is provided, use it (but ensure device_id is set)
+            device_id = device_id or (self.current_metadata.get("device_id") if self.current_metadata else "UNKNOWN")
+            logger.debug(f"Using provided room: {room} for device: {device_id}")
         
         # Run async method in event loop
         asyncio.run_coroutine_threadsafe(
