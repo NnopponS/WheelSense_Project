@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { Bot, Send, Sparkles, Lightbulb, Thermometer, Tv, Fan, Power, AlertTriangle } from 'lucide-react';
+import { Bot, Send, Maximize2, Minimize2 } from 'lucide-react';
 import * as api from '../services/api';
 
 export function AIAssistantPage() {
@@ -12,6 +12,7 @@ export function AIAssistantPage() {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -101,32 +102,62 @@ export function AIAssistantPage() {
         }
     };
 
-    const handleQuickAction = async (action) => {
-        setInput(action);
-        // Auto send after setting
-        setTimeout(() => document.querySelector('.chat-send-btn')?.click(), 100);
+    const toggleFullscreen = () => {
+        setIsFullscreen(!isFullscreen);
     };
 
-    const quickActions = [
-        { label: 'View All Status', action: 'Show all status' },
-        { label: 'Turn On Bedroom Light', action: 'Turn on bedroom light' },
-        { label: 'Turn Off All Appliances', action: 'Turn off all appliances' },
-        { label: 'Sleep Mode', action: 'Set sleep mode' },
-        { label: 'View All Patients', action: 'Show patient list' },
-    ];
-
     return (
-        <div className="page-content" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px - 3rem)', padding: 0 }}>
-            <div style={{ padding: '1.5rem 1.5rem 0' }}>
-                <div className="page-header">
-                    <h2>🤖 {t('AI Assistant')}</h2>
-                    <p>{t('Chat with AI to control smart home and get information')}</p>
+        <div
+            className="page-content"
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: isFullscreen ? '100vh' : 'calc(100vh - 64px - 3rem)',
+                padding: isFullscreen ? 0 : undefined,
+                position: isFullscreen ? 'fixed' : 'relative',
+                top: isFullscreen ? 0 : 'auto',
+                left: isFullscreen ? 0 : 'auto',
+                right: isFullscreen ? 0 : 'auto',
+                bottom: isFullscreen ? 0 : 'auto',
+                zIndex: isFullscreen ? 9999 : 'auto',
+                background: isFullscreen ? 'var(--bg-primary)' : undefined
+            }}
+        >
+            {!isFullscreen && (
+                <div style={{ padding: '1.5rem 1.5rem 0' }}>
+                    <div className="page-header">
+                        <h2>🤖 {t('AI Assistant')}</h2>
+                        <p>{t('Chat with AI to control smart home and get information')}</p>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            <div style={{ display: 'flex', flex: 1, gap: '1.5rem', padding: '0 1.5rem 1.5rem', overflow: 'hidden' }}>
-                {/* Chat Area */}
-                <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flex: 1, padding: isFullscreen ? '0' : '0 1.5rem 1.5rem', overflow: 'hidden' }}>
+                {/* Chat Area - Full Width */}
+                <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: isFullscreen ? 0 : undefined }}>
+                    {/* Header with Fullscreen Toggle */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.75rem 1rem',
+                        borderBottom: '1px solid var(--border-color)',
+                        background: 'var(--bg-secondary)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Bot size={20} />
+                            <span style={{ fontWeight: 600 }}>{t('AI Assistant')}</span>
+                        </div>
+                        <button
+                            className="btn btn-icon"
+                            onClick={toggleFullscreen}
+                            title={isFullscreen ? t('Exit Fullscreen') : t('Fullscreen')}
+                            style={{ padding: '0.5rem' }}
+                        >
+                            {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                        </button>
+                    </div>
+
                     <div className="chat-messages" style={{ flex: 1, overflowY: 'auto' }}>
                         {messages.map(msg => (
                             <div key={msg.id} className={`chat-message ${msg.role}`}>
@@ -171,48 +202,8 @@ export function AIAssistantPage() {
                         </button>
                     </div>
                 </div>
-
-                {/* Quick Actions Sidebar */}
-                <div style={{ width: '280px', flexShrink: 0 }}>
-                    <div className="card" style={{ marginBottom: '1rem' }}>
-                        <div className="card-header">
-                            <span className="card-title"><Sparkles size={18} /> {t('Quick Actions')}</span>
-                        </div>
-                        <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {quickActions.map((qa, i) => (
-                                <button
-                                    key={i}
-                                    className="btn btn-secondary"
-                                    style={{ justifyContent: 'flex-start' }}
-                                    onClick={() => handleQuickAction(qa.action)}
-                                >
-                                    {t(qa.label)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="card">
-                        <div className="card-header">
-                            <span className="card-title"><Power size={18} /> {t('Scene Control')}</span>
-                        </div>
-                        <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <button className="btn btn-primary" onClick={() => handleQuickAction('Set sleep mode')}>
-                                🌙 {t('Sleep Mode')}
-                            </button>
-                            <button className="btn btn-secondary" onClick={() => handleQuickAction('Set wake up mode')}>
-                                ☀️ {t('Wake Up Mode')}
-                            </button>
-                            <button className="btn btn-secondary" onClick={() => handleQuickAction('Set movie mode')}>
-                                🎬 {t('Movie Mode')}
-                            </button>
-                            <button className="btn btn-danger" onClick={() => handleQuickAction('Turn off all appliances')}>
-                                ⏻ {t('Turn Off All')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     );
 }
+

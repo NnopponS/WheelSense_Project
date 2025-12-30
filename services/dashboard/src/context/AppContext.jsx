@@ -43,6 +43,20 @@ export function AppProvider({ children }) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Custom time state - null means use real time, otherwise use custom HH:MM
+    const [customTime, setCustomTime] = useState(null);
+
+    // Get current time - returns customTime if set, otherwise real time
+    const getCurrentTime = useCallback(() => {
+        if (customTime) {
+            const [hours, minutes] = customTime.split(':');
+            const now = new Date();
+            now.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+            return now;
+        }
+        return new Date();
+    }, [customTime]);
+
     // Current user (for user mode) - Loaded from Database
     const [currentUser, setCurrentUser] = useState(null);
 
@@ -829,6 +843,7 @@ export function AppProvider({ children }) {
         routines, addRoutine, updateRoutine, deleteRoutine,
         emergencies, setEmergencies, resolveEmergency,
         aiAnalysis, setAiAnalysis,
+        customTime, setCustomTime, getCurrentTime,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

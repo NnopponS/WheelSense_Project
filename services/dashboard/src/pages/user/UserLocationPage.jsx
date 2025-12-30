@@ -83,9 +83,9 @@ export function UserLocationPage() {
                     ))}
                     {/* Only show user's own position */}
                     {myRoom && myWheelchair && (() => {
-                        const storedPos = wheelchairPositions[myWheelchair.id];
-                        const markerX = storedPos ? storedPos.x : (myRoom.x + myRoom.width / 2);
-                        const markerY = storedPos ? storedPos.y : (myRoom.y + myRoom.height / 2);
+                        // Always center wheelchair marker in the room
+                        const markerX = myRoom.x + myRoom.width / 2;
+                        const markerY = myRoom.y + myRoom.height / 2;
                         return (
                             <div
                                 className="wheelchair-marker"

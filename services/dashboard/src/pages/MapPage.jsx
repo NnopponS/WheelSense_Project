@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
 import * as api from '../services/api';
 import {
-    Map, Plus, Trash2, Save, X, Edit2,
+    Map, Plus, Trash2, Save, X, Edit2, Move, Maximize2,
     Lightbulb, Thermometer, Tv, Fan, Wind, Power, Bell, Zap,
-    Home, Building, Layers
+    Home, Building, Layers, ChevronRight, GripVertical
 } from 'lucide-react';
 
 // Appliance type icons
@@ -36,15 +36,24 @@ export function MapPage() {
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [editMode, setEditMode] = useState(false);
 
+    // Drag states
+    const [isDragging, setIsDragging] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [resizeHandle, setResizeHandle] = useState(null);
+    const mapCanvasRef = useRef(null);
+
     // Modal States
     const [showRoomModal, setShowRoomModal] = useState(false);
     const [showApplianceModal, setShowApplianceModal] = useState(false);
-    const [editingRoom, setEditingRoom] = useState(null);
-    const [editingAppliance, setEditingAppliance] = useState(null);
+    const [showBuildingModal, setShowBuildingModal] = useState(false);
+    const [showFloorModal, setShowFloorModal] = useState(false);
 
     // Form States
     const [roomForm, setRoomForm] = useState({ name: '', nameEn: '', x: 10, y: 10, width: 20, height: 20 });
     const [applianceForm, setApplianceForm] = useState({ name: '', type: 'light' });
+    const [buildingForm, setBuildingForm] = useState({ name: '', nameEn: '' });
+    const [floorForm, setFloorForm] = useState({ name: '' });
 
     // Safe arrays
     const safeRooms = rooms || [];
@@ -61,11 +70,17 @@ export function MapPage() {
         try {
             // Load buildings
             const buildingsData = await api.getBuildings();
-            if (buildingsData?.length > 0) setBuildings(buildingsData);
+            if (buildingsData?.length > 0) {
+                setBuildings(buildingsData);
+                if (!selectedBuilding) setSelectedBuilding(buildingsData[0].id);
+            }
 
             // Load floors
             const floorsData = await api.getFloors();
-            if (floorsData?.length > 0) setFloors(floorsData);
+            if (floorsData?.length > 0) {
+                setFloors(floorsData);
+                if (!selectedFloor) setSelectedFloor(floorsData[0].id);
+            }
 
             // Load rooms
             const roomsData = await api.getRooms();
@@ -104,9 +119,93 @@ export function MapPage() {
     const roomAppliances = getAppliancesForRoom(selectedRoom);
     const selectedRoomData = safeRooms.find(r => r.id === selectedRoom);
 
+    // ============ BUILDING OPERATIONS ============
+    const handleAddBuilding = async () => {
+        if (!buildingForm.name && !buildingForm.nameEn) {
+            alert(t('Please enter building name'));
+            return;
+        }
+
+        try {
+            const newBuilding = {
+                id: `building-${Date.now()}`,
+                name: buildingForm.name || buildingForm.nameEn,
+                nameEn: buildingForm.nameEn || buildingForm.name
+            };
+
+            await api.createBuilding(newBuilding);
+            setBuildings(prev => [...(prev || []), newBuilding]);
+            setShowBuildingModal(false);
+            setBuildingForm({ name: '', nameEn: '' });
+            alert(t('Building added successfully!'));
+        } catch (err) {
+            console.error('Failed to add building:', err);
+            alert(t('Failed to add building: ') + err.message);
+        }
+    };
+
+    const handleDeleteBuilding = async (buildingId) => {
+        if (!confirm(t('Delete this building? All floors and rooms inside will also be deleted.'))) return;
+
+        try {
+            await api.deleteBuilding(buildingId);
+            setBuildings(prev => (prev || []).filter(b => b.id !== buildingId));
+            if (selectedBuilding === buildingId) {
+                const remaining = safeBuildings.filter(b => b.id !== buildingId);
+                setSelectedBuilding(remaining[0]?.id || null);
+            }
+            alert(t('Building deleted!'));
+        } catch (err) {
+            console.error('Failed to delete building:', err);
+            alert(t('Failed to delete building'));
+        }
+    };
+
+    // ============ FLOOR OPERATIONS ============
+    const handleAddFloor = async () => {
+        if (!floorForm.name) {
+            alert(t('Please enter floor name'));
+            return;
+        }
+
+        try {
+            const newFloor = {
+                id: `floor-${Date.now()}`,
+                name: floorForm.name,
+                buildingId: selectedBuilding
+            };
+
+            await api.createFloor(newFloor);
+            setFloors(prev => [...(prev || []), newFloor]);
+            setShowFloorModal(false);
+            setFloorForm({ name: '' });
+            alert(t('Floor added successfully!'));
+        } catch (err) {
+            console.error('Failed to add floor:', err);
+            alert(t('Failed to add floor: ') + err.message);
+        }
+    };
+
+    const handleDeleteFloor = async (floorId) => {
+        if (!confirm(t('Delete this floor? All rooms inside will also be deleted.'))) return;
+
+        try {
+            await api.deleteFloor(floorId);
+            setFloors(prev => (prev || []).filter(f => f.id !== floorId));
+            if (selectedFloor === floorId) {
+                const remaining = safeFloors.filter(f => f.id !== floorId);
+                setSelectedFloor(remaining[0]?.id || null);
+            }
+            alert(t('Floor deleted!'));
+        } catch (err) {
+            console.error('Failed to delete floor:', err);
+            alert(t('Failed to delete floor'));
+        }
+    };
+
     // ============ ROOM OPERATIONS ============
     const handleAddRoom = async () => {
-        if (!roomForm.name) {
+        if (!roomForm.name && !roomForm.nameEn) {
             alert(t('Please enter room name'));
             return;
         }
@@ -115,6 +214,10 @@ export function MapPage() {
             const newRoom = {
                 id: `room-${Date.now()}`,
                 ...roomForm,
+                name: roomForm.name || roomForm.nameEn,
+                nameEn: roomForm.nameEn || roomForm.name,
+                floorId: selectedFloor,
+                buildingId: selectedBuilding,
                 temperature: 25,
                 humidity: 60,
                 occupied: false
@@ -145,10 +248,128 @@ export function MapPage() {
         }
     };
 
+    // ============ DRAG AND DROP ============
+    const handleMouseDown = (e, roomId, type = 'move') => {
+        if (!editMode) return;
+        e.preventDefault();
+        e.stopPropagation();
+
+        setSelectedRoom(roomId);
+
+        const rect = mapCanvasRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        setDragStart({ x, y });
+
+        if (type === 'move') {
+            setIsDragging(true);
+        } else {
+            setIsResizing(true);
+            setResizeHandle(type);
+        }
+    };
+
+    const handleMouseMove = useCallback((e) => {
+        if (!isDragging && !isResizing) return;
+        if (!mapCanvasRef.current) return;
+
+        const rect = mapCanvasRef.current.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        const dx = x - dragStart.x;
+        const dy = y - dragStart.y;
+
+        setRooms(prev => prev.map(room => {
+            if (room.id !== selectedRoom) return room;
+
+            if (isDragging) {
+                // Move room
+                const newX = Math.max(0, Math.min(100 - room.width, room.x + dx));
+                const newY = Math.max(0, Math.min(100 - room.height, room.y + dy));
+                return { ...room, x: newX, y: newY };
+            } else if (isResizing) {
+                // Resize room
+                let newRoom = { ...room };
+
+                switch (resizeHandle) {
+                    case 'se': // Southeast (bottom-right)
+                        newRoom.width = Math.max(5, Math.min(100 - room.x, room.width + dx));
+                        newRoom.height = Math.max(5, Math.min(100 - room.y, room.height + dy));
+                        break;
+                    case 'sw': // Southwest (bottom-left)
+                        const newWidthSW = Math.max(5, room.width - dx);
+                        if (room.x + dx >= 0 && newWidthSW >= 5) {
+                            newRoom.x = room.x + dx;
+                            newRoom.width = newWidthSW;
+                        }
+                        newRoom.height = Math.max(5, Math.min(100 - room.y, room.height + dy));
+                        break;
+                    case 'ne': // Northeast (top-right)
+                        newRoom.width = Math.max(5, Math.min(100 - room.x, room.width + dx));
+                        const newHeightNE = Math.max(5, room.height - dy);
+                        if (room.y + dy >= 0 && newHeightNE >= 5) {
+                            newRoom.y = room.y + dy;
+                            newRoom.height = newHeightNE;
+                        }
+                        break;
+                    case 'nw': // Northwest (top-left)
+                        const newWidthNW = Math.max(5, room.width - dx);
+                        if (room.x + dx >= 0 && newWidthNW >= 5) {
+                            newRoom.x = room.x + dx;
+                            newRoom.width = newWidthNW;
+                        }
+                        const newHeightNW = Math.max(5, room.height - dy);
+                        if (room.y + dy >= 0 && newHeightNW >= 5) {
+                            newRoom.y = room.y + dy;
+                            newRoom.height = newHeightNW;
+                        }
+                        break;
+                }
+                return newRoom;
+            }
+            return room;
+        }));
+
+        setDragStart({ x, y });
+    }, [isDragging, isResizing, dragStart, selectedRoom, resizeHandle]);
+
+    const handleMouseUp = useCallback(async () => {
+        if (isDragging || isResizing) {
+            // Save the updated room position to database
+            const room = safeRooms.find(r => r.id === selectedRoom);
+            if (room) {
+                try {
+                    await api.updateRoom(room.id, {
+                        x: room.x,
+                        y: room.y,
+                        width: room.width,
+                        height: room.height
+                    });
+                } catch (err) {
+                    console.error('Failed to save room position:', err);
+                }
+            }
+        }
+        setIsDragging(false);
+        setIsResizing(false);
+        setResizeHandle(null);
+    }, [isDragging, isResizing, selectedRoom, safeRooms]);
+
+    useEffect(() => {
+        if (isDragging || isResizing) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            return () => {
+                window.removeEventListener('mousemove', handleMouseMove);
+                window.removeEventListener('mouseup', handleMouseUp);
+            };
+        }
+    }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+
     // ============ APPLIANCE OPERATIONS ============
     const handleAddAppliance = async () => {
-        console.log('handleAddAppliance called', { applianceForm, selectedRoom });
-
         if (!applianceForm.name) {
             alert(t('Please enter appliance name'));
             return;
@@ -168,9 +389,7 @@ export function MapPage() {
                 name: applianceForm.name
             };
 
-            console.log('Creating appliance:', newAppliance);
             const result = await api.createAppliance(newAppliance);
-            console.log('API result:', result);
 
             // Update local state
             const createdAppliance = result.appliance || {
@@ -199,7 +418,6 @@ export function MapPage() {
         try {
             await api.deleteAppliance(appId);
 
-            // Update local state
             const room = safeRooms.find(r => r.id === selectedRoom);
             const roomKey = room?.roomType?.toLowerCase() || room?.nameEn?.toLowerCase().replace(/\s+/g, '') || selectedRoom;
 
@@ -250,14 +468,14 @@ export function MapPage() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h2>🗺️ {t('Map & Zones')}</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>{t('Manage rooms and appliances')}</p>
+                    <p style={{ color: 'var(--text-muted)' }}>{t('Manage buildings, floors, rooms and appliances')}</p>
                 </div>
                 {role === 'admin' && (
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                         {editMode ? (
                             <>
                                 <button className="btn btn-success" onClick={handleSaveAll}>
-                                    <Save size={16} /> {t('Save')}
+                                    <Save size={16} /> {t('Save All')}
                                 </button>
                                 <button className="btn btn-secondary" onClick={() => setEditMode(false)}>
                                     <X size={16} /> {t('Cancel')}
@@ -272,43 +490,128 @@ export function MapPage() {
                 )}
             </div>
 
-            {/* Building & Floor Selector */}
+            {/* Management Panel */}
             <div className="card" style={{ marginBottom: '1rem' }}>
-                <div className="card-body" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Building size={18} />
-                        <select
-                            className="filter-select"
-                            value={selectedBuilding || ''}
-                            onChange={(e) => setSelectedBuilding(e.target.value)}
-                        >
+                <div className="card-body" style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                    {/* Buildings */}
+                    <div style={{ minWidth: '200px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <Building size={16} />
+                            <span style={{ fontWeight: 600 }}>{t('Building')}</span>
+                            {editMode && (
+                                <button className="btn btn-icon btn-sm" onClick={() => setShowBuildingModal(true)} title={t('Add Building')}>
+                                    <Plus size={14} />
+                                </button>
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             {safeBuildings.map(b => (
-                                <option key={b.id} value={b.id}>{b.nameEn || b.name}</option>
+                                <div
+                                    key={b.id}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.5rem',
+                                        background: selectedBuilding === b.id ? 'var(--primary-500)' : 'var(--bg-tertiary)',
+                                        color: selectedBuilding === b.id ? 'white' : 'inherit',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => setSelectedBuilding(b.id)}
+                                >
+                                    <span style={{ flex: 1 }}>{b.nameEn || b.name}</span>
+                                    {editMode && selectedBuilding === b.id && (
+                                        <button
+                                            className="btn btn-icon btn-danger btn-sm"
+                                            style={{ padding: 2, minWidth: 20, minHeight: 20 }}
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteBuilding(b.id); }}
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    )}
+                                </div>
                             ))}
-                        </select>
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Layers size={18} />
-                        <select
-                            className="filter-select"
-                            value={selectedFloor || ''}
-                            onChange={(e) => setSelectedFloor(e.target.value)}
-                        >
-                            {safeFloors.map(f => (
-                                <option key={f.id} value={f.id}>{f.name}</option>
+
+                    <ChevronRight size={20} style={{ alignSelf: 'center', color: 'var(--text-muted)' }} />
+
+                    {/* Floors */}
+                    <div style={{ minWidth: '200px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <Layers size={16} />
+                            <span style={{ fontWeight: 600 }}>{t('Floor')}</span>
+                            {editMode && (
+                                <button className="btn btn-icon btn-sm" onClick={() => setShowFloorModal(true)} title={t('Add Floor')}>
+                                    <Plus size={14} />
+                                </button>
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            {safeFloors.filter(f => !selectedBuilding || f.buildingId === selectedBuilding).map(f => (
+                                <div
+                                    key={f.id}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.5rem',
+                                        background: selectedFloor === f.id ? 'var(--primary-500)' : 'var(--bg-tertiary)',
+                                        color: selectedFloor === f.id ? 'white' : 'inherit',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => setSelectedFloor(f.id)}
+                                >
+                                    <span style={{ flex: 1 }}>{f.name}</span>
+                                    {editMode && selectedFloor === f.id && (
+                                        <button
+                                            className="btn btn-icon btn-danger btn-sm"
+                                            style={{ padding: 2, minWidth: 20, minHeight: 20 }}
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteFloor(f.id); }}
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    )}
+                                </div>
                             ))}
-                        </select>
+                        </div>
                     </div>
+
+                    <ChevronRight size={20} style={{ alignSelf: 'center', color: 'var(--text-muted)' }} />
+
+                    {/* Add Room Button */}
                     {editMode && (
-                        <button className="btn btn-primary btn-sm" onClick={() => {
-                            setRoomForm({ name: '', nameEn: '', x: 10, y: 10, width: 20, height: 20 });
-                            setShowRoomModal(true);
-                        }}>
-                            <Plus size={14} /> {t('Add Room')}
-                        </button>
+                        <div style={{ alignSelf: 'center' }}>
+                            <button className="btn btn-primary" onClick={() => {
+                                setRoomForm({ name: '', nameEn: '', x: 10, y: 10, width: 20, height: 20 });
+                                setShowRoomModal(true);
+                            }}>
+                                <Plus size={16} /> {t('Add Room')}
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
+
+            {/* Edit Mode Instructions */}
+            {editMode && (
+                <div style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem 1rem',
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                }}>
+                    <Move size={18} style={{ color: 'var(--primary-500)' }} />
+                    <span style={{ fontSize: '0.9rem' }}>
+                        <strong>{t('Edit Mode')}:</strong> {t('Drag rooms to reposition. Drag corners to resize. Click room to view details.')}
+                    </span>
+                </div>
+            )}
 
             {/* Main Content: Map + Details */}
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
@@ -317,7 +620,16 @@ export function MapPage() {
                     <div className="card-header">
                         <span className="card-title"><Map size={18} /> {t('Floor Map')}</span>
                     </div>
-                    <div className="map-canvas" style={{ minHeight: '500px', position: 'relative' }}>
+                    <div
+                        ref={mapCanvasRef}
+                        className="map-canvas"
+                        style={{
+                            minHeight: '500px',
+                            position: 'relative',
+                            cursor: editMode ? (isDragging ? 'grabbing' : 'default') : 'pointer',
+                            userSelect: 'none'
+                        }}
+                    >
                         {safeRooms.map(room => (
                             <div
                                 key={room.id}
@@ -327,14 +639,62 @@ export function MapPage() {
                                     top: `${room.y}%`,
                                     width: `${room.width}%`,
                                     height: `${room.height}%`,
-                                    cursor: 'pointer',
+                                    cursor: editMode ? 'grab' : 'pointer',
                                     outline: selectedRoom === room.id ? '3px solid var(--primary-500)' : 'none',
-                                    transition: 'all 0.2s ease'
+                                    transition: isDragging || isResizing ? 'none' : 'all 0.2s ease'
                                 }}
-                                onClick={() => setSelectedRoom(room.id)}
+                                onClick={() => !isDragging && !isResizing && setSelectedRoom(room.id)}
+                                onMouseDown={(e) => handleMouseDown(e, room.id, 'move')}
                             >
                                 <span className="room-label">{room.nameEn || room.name}</span>
                                 <span className="room-status">{room.occupied ? '🟢' : '⚪'}</span>
+
+                                {/* Resize Handles - Only in edit mode */}
+                                {editMode && selectedRoom === room.id && (
+                                    <>
+                                        <div
+                                            style={{
+                                                position: 'absolute', top: -4, left: -4,
+                                                width: 10, height: 10,
+                                                background: 'var(--primary-500)',
+                                                borderRadius: '50%',
+                                                cursor: 'nw-resize'
+                                            }}
+                                            onMouseDown={(e) => handleMouseDown(e, room.id, 'nw')}
+                                        />
+                                        <div
+                                            style={{
+                                                position: 'absolute', top: -4, right: -4,
+                                                width: 10, height: 10,
+                                                background: 'var(--primary-500)',
+                                                borderRadius: '50%',
+                                                cursor: 'ne-resize'
+                                            }}
+                                            onMouseDown={(e) => handleMouseDown(e, room.id, 'ne')}
+                                        />
+                                        <div
+                                            style={{
+                                                position: 'absolute', bottom: -4, left: -4,
+                                                width: 10, height: 10,
+                                                background: 'var(--primary-500)',
+                                                borderRadius: '50%',
+                                                cursor: 'sw-resize'
+                                            }}
+                                            onMouseDown={(e) => handleMouseDown(e, room.id, 'sw')}
+                                        />
+                                        <div
+                                            style={{
+                                                position: 'absolute', bottom: -4, right: -4,
+                                                width: 10, height: 10,
+                                                background: 'var(--primary-500)',
+                                                borderRadius: '50%',
+                                                cursor: 'se-resize'
+                                            }}
+                                            onMouseDown={(e) => handleMouseDown(e, room.id, 'se')}
+                                        />
+                                    </>
+                                )}
+
                                 {editMode && selectedRoom === room.id && (
                                     <button
                                         className="btn btn-danger btn-icon"
@@ -364,6 +724,11 @@ export function MapPage() {
                                         <span>🌡️ {selectedRoomData.temperature || 25}°C</span>
                                         <span>💧 {selectedRoomData.humidity || 60}%</span>
                                     </div>
+                                    {editMode && (
+                                        <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            📍 X: {Math.round(selectedRoomData.x)}% | Y: {Math.round(selectedRoomData.y)}% | W: {Math.round(selectedRoomData.width)}% | H: {Math.round(selectedRoomData.height)}%
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Appliances Section */}
@@ -376,7 +741,6 @@ export function MapPage() {
                                             <button
                                                 className="btn btn-primary btn-sm"
                                                 onClick={() => {
-                                                    console.log('Opening appliance modal');
                                                     setApplianceForm({ name: '', type: 'light' });
                                                     setShowApplianceModal(true);
                                                 }}
@@ -449,6 +813,70 @@ export function MapPage() {
 
             {/* ============ MODALS ============ */}
 
+            {/* Add Building Modal */}
+            {showBuildingModal && (
+                <div className="modal-overlay" onClick={() => setShowBuildingModal(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
+                            <h3>{t('Add Building')}</h3>
+                            <button className="btn btn-icon" onClick={() => setShowBuildingModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label className="form-label">{t('Building Name')}</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Main Building"
+                                    value={buildingForm.nameEn}
+                                    onChange={(e) => setBuildingForm(prev => ({ ...prev, nameEn: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowBuildingModal(false)}>{t('Cancel')}</button>
+                            <button className="btn btn-primary" onClick={handleAddBuilding}>
+                                <Save size={16} /> {t('Add Building')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Floor Modal */}
+            {showFloorModal && (
+                <div className="modal-overlay" onClick={() => setShowFloorModal(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
+                            <h3>{t('Add Floor')}</h3>
+                            <button className="btn btn-icon" onClick={() => setShowFloorModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label className="form-label">{t('Floor Name')}</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Floor 1"
+                                    value={floorForm.name}
+                                    onChange={(e) => setFloorForm(prev => ({ ...prev, name: e.target.value }))}
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowFloorModal(false)}>{t('Cancel')}</button>
+                            <button className="btn btn-primary" onClick={handleAddFloor}>
+                                <Save size={16} /> {t('Add Floor')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Add Room Modal */}
             {showRoomModal && (
                 <div className="modal-overlay" onClick={() => setShowRoomModal(false)}>
@@ -461,23 +889,13 @@ export function MapPage() {
                         </div>
                         <div className="modal-body">
                             <div className="form-group">
-                                <label className="form-label">{t('Room Name (Thai)')}</label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    placeholder="ห้องนอน"
-                                    value={roomForm.name}
-                                    onChange={(e) => setRoomForm(prev => ({ ...prev, name: e.target.value }))}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">{t('Room Name (English)')}</label>
+                                <label className="form-label">{t('Room Name')}</label>
                                 <input
                                     type="text"
                                     className="form-input"
                                     placeholder="Bedroom"
                                     value={roomForm.nameEn}
-                                    onChange={(e) => setRoomForm(prev => ({ ...prev, nameEn: e.target.value }))}
+                                    onChange={(e) => setRoomForm(prev => ({ ...prev, nameEn: e.target.value, name: e.target.value }))}
                                 />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -492,12 +910,12 @@ export function MapPage() {
                                         onChange={(e) => setRoomForm(prev => ({ ...prev, y: parseInt(e.target.value) || 0 }))} />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Width (%)</label>
+                                    <label className="form-label">{t('Width')} (%)</label>
                                     <input type="number" className="form-input" value={roomForm.width}
                                         onChange={(e) => setRoomForm(prev => ({ ...prev, width: parseInt(e.target.value) || 10 }))} />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Height (%)</label>
+                                    <label className="form-label">{t('Height')} (%)</label>
                                     <input type="number" className="form-input" value={roomForm.height}
                                         onChange={(e) => setRoomForm(prev => ({ ...prev, height: parseInt(e.target.value) || 10 }))} />
                                 </div>

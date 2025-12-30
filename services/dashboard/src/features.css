@@ -10,14 +10,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    visibility: hidden;
+    opacity: 1;
+    visibility: visible;
     transition: all var(--transition-base);
 }
 
-.modal-overlay.open {
-    opacity: 1;
-    visibility: visible;
+.modal-overlay.closing {
+    opacity: 0;
+    visibility: hidden;
 }
 
 .modal {
@@ -27,13 +27,13 @@
     max-width: 500px;
     max-height: 90vh;
     overflow: hidden;
-    transform: scale(0.9) translateY(20px);
+    transform: scale(1) translateY(0);
     transition: transform var(--transition-base);
     border: 1px solid var(--border-color);
 }
 
-.modal-overlay.open .modal {
-    transform: scale(1) translateY(0);
+.modal-overlay.closing .modal {
+    transform: scale(0.9) translateY(20px);
 }
 
 .modal-header {

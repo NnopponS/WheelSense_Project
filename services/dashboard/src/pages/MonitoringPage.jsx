@@ -204,11 +204,9 @@ export function MonitoringPage() {
 
                             if (!room) return null;
 
-                            // Use position from wheelchairPositions (updated by YOLO detection)
-                            // Fallback to room center if no position available
-                            const position = wheelchairPositions[wc.id];
-                            const markerX = position?.x ?? (room.x + room.width / 2);
-                            const markerY = position?.y ?? (room.y + room.height / 2);
+                            // Always center wheelchair marker in the room
+                            const markerX = room.x + room.width / 2;
+                            const markerY = room.y + room.height / 2;
                             return (
                                 <div
                                     key={wc.id}

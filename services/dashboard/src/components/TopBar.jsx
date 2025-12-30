@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { Search, Bell, Menu, Sun, Moon, X, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Search, Bell, Menu, Sun, Moon, X, AlertTriangle, Info, CheckCircle, Clock, Edit2, Check } from 'lucide-react';
 
 export function TopBar() {
     const {
@@ -13,13 +13,34 @@ export function TopBar() {
         markAllNotificationsRead, showNotifications, setShowNotifications,
         theme, toggleTheme, role,
         patients, wheelchairs, rooms, setCurrentPage, openDrawer,
-        language, setLanguage
+        language, setLanguage,
+        customTime, setCustomTime, getCurrentTime
     } = useApp();
     const { t } = useTranslation(language);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
+    const [editingTime, setEditingTime] = useState(false);
+    const [tempTime, setTempTime] = useState('');
+    const [displayTime, setDisplayTime] = useState('');
+
+    // Update display time every second when using real time
+    useEffect(() => {
+        const updateDisplayTime = () => {
+            const now = getCurrentTime();
+            setDisplayTime(now.toLocaleTimeString(language === 'th' ? 'th-TH' : 'en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            }));
+        };
+
+        updateDisplayTime();
+        const interval = setInterval(updateDisplayTime, 1000);
+        return () => clearInterval(interval);
+    }, [customTime, language, getCurrentTime]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -200,6 +221,100 @@ export function TopBar() {
             )}
 
             <div className="top-bar-actions">
+                {/* Timestamp Display/Editor */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '1rem' }}>
+                    {editingTime ? (
+                        <>
+                            <input
+                                type="text"
+                                value={tempTime}
+                                onChange={(e) => {
+                                    // Allow only valid HH:MM format
+                                    const val = e.target.value.replace(/[^0-9:]/g, '');
+                                    if (val.length <= 5) setTempTime(val);
+                                }}
+                                placeholder="HH:MM"
+                                maxLength={5}
+                                style={{
+                                    padding: '0.25rem 0.5rem',
+                                    background: 'var(--bg-tertiary)',
+                                    border: '1px solid var(--primary-500)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.875rem',
+                                    width: '70px',
+                                    textAlign: 'center'
+                                }}
+                            />
+                            <button
+                                onClick={() => {
+                                    if (tempTime) {
+                                        setCustomTime(tempTime);
+                                    }
+                                    setEditingTime(false);
+                                }}
+                                style={{
+                                    padding: '0.25rem 0.5rem',
+                                    background: 'var(--success-500)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                                title={t('Apply')}
+                            >
+                                <Check size={14} />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setCustomTime(null);
+                                    setEditingTime(false);
+                                }}
+                                style={{
+                                    padding: '0.25rem 0.5rem',
+                                    background: 'var(--bg-tertiary)',
+                                    color: 'var(--text-primary)',
+                                    border: '1px solid var(--border-color)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.75rem'
+                                }}
+                                title={t('Use Real Time')}
+                            >
+                                {t('Real')}
+                            </button>
+                        </>
+                    ) : (
+                        <div
+                            onClick={() => {
+                                setTempTime(customTime || '');
+                                setEditingTime(true);
+                            }}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.375rem 0.75rem',
+                                background: customTime ? 'var(--warning-500)' : 'var(--bg-tertiary)',
+                                color: customTime ? 'white' : 'var(--text-primary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 'var(--radius-sm)',
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                fontWeight: 500,
+                                transition: 'all 0.2s'
+                            }}
+                            title={customTime ? t('Custom Time (click to edit)') : t('Click to customize time')}
+                        >
+                            <Clock size={14} />
+                            <span>{displayTime}</span>
+                            {customTime && <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>({t('Custom')})</span>}
+                        </div>
+                    )}
+                </div>
+
                 {/* Language Toggle */}
                 <div className="language-toggle" style={{ display: 'flex', gap: '0.25rem', marginRight: '0.5rem' }}>
                     <button

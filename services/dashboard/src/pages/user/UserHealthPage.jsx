@@ -5,14 +5,18 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../hooks/useTranslation';
-import { Heart, Activity, TrendingUp } from 'lucide-react';
+import { Heart, User, Sparkles } from 'lucide-react';
 
 export function UserHealthPage() {
     const { currentUser, aiAnalysis, language } = useApp();
     const { t } = useTranslation(language);
 
-    const circumference = 2 * Math.PI * 45;
-    const progress = (currentUser.healthScore / 100) * circumference;
+    // User medical conditions (no emoji)
+    const userConditions = [
+        { title: 'Mild Diabetes (Type 2)', description: 'Requires blood sugar monitoring' },
+        { title: 'Allergic to Dust Mites', description: 'Avoid dusty environments' },
+        { title: 'Uses Wheelchair for Mobility', description: 'Primary mode of transportation' }
+    ];
 
     return (
         <div className="page-content">
@@ -21,10 +25,13 @@ export function UserHealthPage() {
                 <p>{t('Track health status and activities')}</p>
             </div>
 
-            {/* Health Score */}
-            <div className={`health-card ${currentUser.healthScore < 50 ? 'danger' : currentUser.healthScore < 80 ? 'warning' : ''}`} style={{ marginBottom: '1.5rem' }}>
+            {/* Health Score - Simple display, no popup */}
+            <div
+                className={`health-card ${currentUser.healthScore < 50 ? 'danger' : currentUser.healthScore < 80 ? 'warning' : ''}`}
+                style={{ marginBottom: '1.5rem' }}
+            >
                 <div>
-                    <h3>{t('Today Health Score')}: {currentUser.healthScore}</h3>
+                    <h3>{t('Health Score')}: {currentUser.healthScore}</h3>
                     <p>{currentUser.healthScore >= 80 ? t('Very Good Health!') : currentUser.healthScore >= 50 ? t('Fair Health') : t('Caution Required')}</p>
                 </div>
                 <div className="icon">
@@ -32,39 +39,40 @@ export function UserHealthPage() {
                 </div>
             </div>
 
-            {/* Activity Ring */}
+            {/* User Condition - Simple list only */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>
                 <div className="card-header">
-                    <span className="card-title"><Activity size={18} /> {t('Activities Today')}</span>
+                    <span className="card-title"><User size={18} /> {t('User Condition')}</span>
                 </div>
-                <div className="card-body" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '2rem' }}>
-                    <div className="activity-ring">
-                        <svg viewBox="0 0 100 100">
-                            <circle className="bg" cx="50" cy="50" r="45" />
-                            <circle
-                                className="progress"
-                                cx="50" cy="50" r="45"
-                                strokeDasharray={circumference}
-                                strokeDashoffset={circumference - progress}
-                            />
-                        </svg>
-                        <div className="center">
-                            <h4>{currentUser.healthScore}%</h4>
-                            <p>{t('Health')}</p>
-                        </div>
-                    </div>
-                    <div style={{ textAlign: 'left' }}>
-                        <div style={{ marginBottom: '1rem' }}>
-                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{t('Steps')}</div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary-500)' }}>{currentUser.todaySteps}</div>
-                        </div>
-                        <div style={{ marginBottom: '1rem' }}>
-                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{t('Goal')}</div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>2,000</div>
-                        </div>
-                        <div className="progress-bar" style={{ width: 120 }}>
-                            <div className="progress-bar-fill" style={{ width: `${(currentUser.todaySteps / 2000) * 100}%` }}></div>
-                        </div>
+                <div className="card-body">
+                    {/* Medical Conditions List - No status summary, no emoji */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {userConditions.map((cond, index) => (
+                            <div
+                                key={index}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '1rem',
+                                    padding: '0.75rem 1rem',
+                                    background: 'var(--bg-secondary)',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border-color)'
+                                }}
+                            >
+                                <div style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    background: 'var(--primary-500)',
+                                    flexShrink: 0
+                                }} />
+                                <div>
+                                    <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{t(cond.title)}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t(cond.description)}</div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -72,7 +80,7 @@ export function UserHealthPage() {
             {/* AI Recommendations */}
             <div className="card">
                 <div className="card-header">
-                    <span className="card-title"><TrendingUp size={18} /> {t('AI Recommendations')}</span>
+                    <span className="card-title"><Sparkles size={18} /> {t('AI Recommendations')}</span>
                 </div>
                 <div className="card-body">
                     <p style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>{aiAnalysis.dailySummary}</p>

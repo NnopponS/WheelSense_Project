@@ -17,6 +17,7 @@ import { MorePage } from './pages/MorePage';
 import { ApplianceControlPage } from './pages/AppliancePage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { UserHomePage, UserHealthPage, UserLocationPage, UserAlertsPage, UserVideoPage } from './pages/UserPages';
+
 import { EmergencyBanner } from './components/EmergencyBanner';
 import { Modal } from './components/Modal';
 
@@ -30,6 +31,7 @@ const adminRoutes = [
     { path: '/Admin/Routines', element: <RoutinesPage />, pageId: 'routines' },
     { path: '/Admin/Analytics', element: <AnalyticsPage />, pageId: 'analytics' },
     { path: '/Admin/Appliances', element: <ApplianceControlPage />, pageId: 'appliances' },
+
     { path: '/Admin/AI', element: <AIAssistantPage />, pageId: 'ai' },
     { path: '/Admin/Settings', element: <SettingsPage />, pageId: 'settings' },
     { path: '/Admin/More', element: <MorePage />, pageId: 'more' },
@@ -60,6 +62,7 @@ export const pageToPath = {
     'routines': '/Admin/Routines',
     'analytics': '/Admin/Analytics',
     'appliances': '/Admin/Appliances',
+
     'ai': '/Admin/AI',
     'settings': '/Admin/Settings',
     'more': '/Admin/More',
@@ -115,10 +118,10 @@ function RouteSynchronizer() {
     useEffect(() => {
         const expectedPath = pageToPath[currentPage];
         if (!expectedPath) return;
-        
+
         const currentPath = location.pathname.toLowerCase().replace(/\/$/, '');
         const expectedPathLower = expectedPath.toLowerCase();
-        
+
         // Only navigate if paths don't match
         if (currentPath !== expectedPathLower) {
             console.log('[Router] Context changed, navigating to:', expectedPath);

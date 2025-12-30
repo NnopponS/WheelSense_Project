@@ -232,6 +232,111 @@ export const thaiTranslations = {
     'Patients in System': 'ผู้ป่วยในระบบ',
     'Wheelchairs Online': 'รถเข็นออนไลน์',
     'Alerts Today': 'การแจ้งเตือนวันนี้',
+
+    // TopBar Timestamp
+    'Apply': 'ใช้',
+    'Real': 'เวลาจริง',
+    'Custom': 'กำหนดเอง',
+    'Custom Time (click to edit)': 'เวลาที่กำหนด (คลิกเพื่อแก้ไข)',
+    'Click to customize time': 'คลิกเพื่อกำหนดเวลา',
+    'Use Real Time': 'ใช้เวลาจริง',
+
+    // Schedule / Routines page
+    'Activity Schedule': 'ตารางกิจกรรม',
+    'No activities scheduled yet': 'ยังไม่มีกิจกรรมที่กำหนด',
+    'Add a new activity to get started': 'เพิ่มกิจกรรมใหม่เพื่อเริ่มต้น',
+    'Add Activity': 'เพิ่มกิจกรรม',
+    'Add New Activity': 'เพิ่มกิจกรรมใหม่',
+    'Your daily activities': 'กิจกรรมประจำวันของคุณ',
+    'Manage patient daily activity schedules': 'จัดการตารางกิจกรรมประจำวันของผู้ป่วย',
+    'Do you want to delete this routine?': 'คุณต้องการลบกิจกรรมนี้หรือไม่?',
+    'Please enter time and activity name': 'กรุณาใส่เวลาและชื่อกิจกรรม',
+    'Time': 'เวลา',
+    'Activity': 'กิจกรรม',
+    'Activity Name': 'ชื่อกิจกรรม',
+    'Select Room (Optional)': 'เลือกห้อง (ไม่บังคับ)',
+    'Select Patient': 'เลือกผู้ป่วย',
+    'e.g. Wake up, Breakfast, Work': 'เช่น ตื่นนอน, อาหารเช้า, ทำงาน',
+
+    // Device actions
+    'Add Device': 'เพิ่มอุปกรณ์',
+    'Select Device': 'เลือกอุปกรณ์',
+    'No actions. Click + Add Device to add.': 'ไม่มีการดำเนินการ คลิก + เพิ่มอุปกรณ์ เพื่อเพิ่ม',
+    'Select a room first': 'เลือกห้องก่อน',
+    'Turn on': 'เปิด',
+    'Turn off': 'ปิด',
+
+    // Device types
+    'Light': 'ไฟ',
+    'AC': 'แอร์',
+    'TV': 'ทีวี',
+    'Fan': 'พัดลม',
+    'Alarm': 'นาฬิกาปลุก',
+
+    // Room names  
+    'Living room': 'ห้องนั่งเล่น',
+
+    // Health page - User conditions
+    'User Condition': 'อาการของผู้ใช้',
+    'Mild diabetes (Type 2) - requires blood sugar monitoring': 'เบาหวานระดับเล็กน้อย (Type 2) - ต้องเฝ้าระวังระดับน้ำตาลในเลือด',
+    'Allergic to dust mites': 'แพ้ไรฝุ่น',
+    'Uses a wheelchair for mobility': 'ใช้รถเข็นในการเดินทาง',
+    'Mild Diabetes (Type 2)': 'เบาหวานระดับเล็กน้อย (Type 2)',
+    'Requires blood sugar monitoring': 'ต้องเฝ้าระวังระดับน้ำตาลในเลือด',
+    'Allergic to Dust Mites': 'แพ้ไรฝุ่น',
+    'Avoid dusty environments': 'หลีกเลี่ยงสภาพแวดล้อมที่มีฝุ่น',
+    'Uses Wheelchair for Mobility': 'ใช้รถเข็นในการเดินทาง',
+    'Primary mode of transportation': 'เป็นพาหนะหลักในการเดินทาง',
+
+    // Schedule activities
+    'Wake up': 'ตื่นนอน',
+    'Morning exercise': 'ออกกำลังกายตอนเช้า',
+    'Breakfast': 'อาหารเช้า',
+    'Work': 'ทำงาน',
+    'Lunch': 'อาหารกลางวัน',
+    'Continue Working': 'ทำงานต่อ',
+    'Dinner': 'อาหารเย็น',
+    'Relaxation time': 'เวลาพักผ่อน',
+    'Prepare for bed': 'เตรียมตัวนอน',
+    'Sleep': 'นอน',
+
+    // Action text (Turn on/off devices)
+    'Turn on Alarm': 'เปิดนาฬิกาปลุก',
+    'Turn on Light': 'เปิดไฟ',
+    'Turn off Light': 'ปิดไฟ',
+    'Turn on AC': 'เปิด AC',
+    'Turn off AC': 'ปิด AC',
+    'Turn on TV': 'เปิด TV',
+    'Turn off TV': 'ปิด TV',
+    'Turn on Fan': 'เปิดพัดลม',
+    'Turn off Fan': 'ปิดพัดลม',
+    'Turn on Alarm, Turn on Light': 'เปิดนาฬิกาปลุก, เปิดไฟ',
+    'Turn on Light, Turn on AC': 'เปิดไฟ, เปิด AC',
+    'Turn on AC, Turn on Light': 'เปิด AC, เปิดไฟ',
+
+    // General UI
+    'HH:MM': 'ชม:นาที',
+
+    // Gyro Sensor Visualization
+    'Gyro Sensor': 'เซ็นเซอร์ไจโร',
+    'Gyro Sensor Visualization': 'แสดงผลเซ็นเซอร์ไจโร',
+    'Real-time gyroscope and accelerometer data from wheelchair sensor': 'ข้อมูลไจโรสโคปและ Accelerometer แบบเรียลไทม์จากเซ็นเซอร์รถเข็น',
+    'Movement Status': 'สถานะการเคลื่อนไหว',
+    'Current movement state': 'สถานะการเคลื่อนไหวปัจจุบัน',
+    'Navigation': 'การนำทาง',
+    'Distance': 'ระยะทาง',
+    'Heading': 'ทิศทาง',
+    'Gyroscope Data': 'ข้อมูลไจโรสโคป',
+    'Accelerometer Data': 'ข้อมูล Accelerometer',
+    'Waiting for BLE Bridge...': 'รอการเชื่อมต่อ BLE Bridge...',
+    'Stationary': 'หยุดนิ่ง',
+    'Forward': 'ไปข้างหน้า',
+    'Backward': 'ถอยหลัง',
+    'Straight': 'หน้าตรง',
+    'Turn Left': 'หันซ้าย',
+    'Turn Right': 'หันขวา',
+    'Fall Detected': 'ล้ม',
+    'Unknown': 'ไม่ทราบ',
 };
 
 /**
@@ -248,7 +353,53 @@ export function getTranslation(text, language = 'en') {
 
     // Look up in Thai dictionary
     if (language === 'th') {
-        return thaiTranslations[text] || text;
+        // First try exact match
+        if (thaiTranslations[text]) {
+            return thaiTranslations[text];
+        }
+
+        // Smart pattern-based translation for dynamic text
+        let translated = text;
+
+        // Pattern replacements for action strings
+        const patterns = [
+            // Turn on/off patterns
+            [/Turn on bedroom /gi, 'เปิด'],
+            [/Turn off bedroom /gi, 'ปิด'],
+            [/Turn on living room /gi, 'เปิด'],
+            [/Turn off living room /gi, 'ปิด'],
+            [/Turn on kitchen /gi, 'เปิด'],
+            [/Turn off kitchen /gi, 'ปิด'],
+            [/Turn on bathroom /gi, 'เปิด'],
+            [/Turn off bathroom /gi, 'ปิด'],
+            [/Turn on /gi, 'เปิด'],
+            [/Turn off /gi, 'ปิด'],
+            [/ and /gi, ' และ '],
+
+            // Device names
+            [/Alarm/gi, 'นาฬิกาปลุก'],
+            [/Light/gi, 'ไฟ'],
+            [/Fan/gi, 'พัดลม'],
+            // Keep AC and TV as-is (loanwords)
+
+            // Rooms
+            [/Bedroom/gi, 'ห้องนอน'],
+            [/Living room/gi, 'ห้องนั่งเล่น'],
+            [/Kitchen/gi, 'ห้องครัว'],
+            [/Bathroom/gi, 'ห้องน้ำ'],
+        ];
+
+        // Apply all pattern replacements
+        for (const [pattern, replacement] of patterns) {
+            translated = translated.replace(pattern, replacement);
+        }
+
+        // If translation changed, return it
+        if (translated !== text) {
+            return translated;
+        }
+
+        return text;
     }
 
     return text;
