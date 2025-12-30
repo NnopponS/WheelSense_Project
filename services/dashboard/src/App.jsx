@@ -16,6 +16,7 @@ import { MapPage } from './pages/MapPage';
 import { MorePage } from './pages/MorePage';
 import { ApplianceControlPage } from './pages/AppliancePage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { SensorMonitoringPage } from './pages/SensorMonitoringPage';
 import { UserHomePage, UserHealthPage, UserLocationPage, UserAlertsPage, UserVideoPage } from './pages/UserPages';
 
 import { EmergencyBanner } from './components/EmergencyBanner';
@@ -31,6 +32,7 @@ const adminRoutes = [
     { path: '/Admin/Routines', element: <RoutinesPage />, pageId: 'routines' },
     { path: '/Admin/Analytics', element: <AnalyticsPage />, pageId: 'analytics' },
     { path: '/Admin/Appliances', element: <ApplianceControlPage />, pageId: 'appliances' },
+    { path: '/Admin/Sensors', element: <SensorMonitoringPage />, pageId: 'sensors' },
 
     { path: '/Admin/AI', element: <AIAssistantPage />, pageId: 'ai' },
     { path: '/Admin/Settings', element: <SettingsPage />, pageId: 'settings' },
@@ -62,6 +64,7 @@ export const pageToPath = {
     'routines': '/Admin/Routines',
     'analytics': '/Admin/Analytics',
     'appliances': '/Admin/Appliances',
+    'sensors': '/Admin/Sensors',
 
     'ai': '/Admin/AI',
     'settings': '/Admin/Settings',

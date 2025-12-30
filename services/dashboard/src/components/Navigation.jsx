@@ -6,7 +6,7 @@ import { pageToPath } from '../App';
 import {
     Activity, Map, Users, Cpu, Clock, Settings, Bot,
     Monitor, AlertTriangle, Home, MoreHorizontal, X, Accessibility,
-    Calendar, Heart, Zap, Video
+    Calendar, Heart, Zap, Video, Gauge
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -45,6 +45,7 @@ export function Sidebar() {
         {
             section: 'Tools', items: [
                 { id: 'appliances', label: 'Appliance Control', icon: Zap },
+                { id: 'sensors', label: 'Sensor Monitoring', icon: Gauge },
                 { id: 'ai', label: 'AI Assistant', icon: Bot },
                 { id: 'settings', label: 'Settings', icon: Settings },
             ]
