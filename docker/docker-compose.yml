@@ -12,7 +12,7 @@ services:
       - "1883:1883" # MQTT - for TsimCam devices
       - "9001:9001" # WebSocket - for Dashboard
     volumes:
-      - ../services/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./services/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     networks:
@@ -38,7 +38,7 @@ services:
       MONGO_INITDB_DATABASE: wheelsense
     volumes:
       - mongodb_data:/data/db
-      - ../services/mongodb/init:/docker-entrypoint-initdb.d:ro
+      - ./services/mongodb/init:/docker-entrypoint-initdb.d:ro
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.11
@@ -77,20 +77,19 @@ services:
       start_period: 60s
 
   # ==================== Backend API (now part of MCP Server) ====================
-  # Backend functionality has been merged into mcp-server
-  # MCP Server now handles both MCP protocol and REST API endpoints
+  # Backend functionality is now in backend service
+  # Backend handles REST API endpoints
 
-  # ==================== MCP Server (Main Server) ====================
-  # Handles both MCP Protocol and Backend REST API
-  mcp-server:
+  # ==================== Backend (Main Server) ====================
+  # Handles REST API endpoints
+  backend:
     build:
       context: .
-      dockerfile: ./mcp-server/Dockerfile
-    container_name: wheelsense-mcp
+      dockerfile: ./backend/Dockerfile
+    container_name: wheelsense-backend
     restart: unless-stopped
     ports:
       - "8000:8000" # Backend REST API
-      - "8080:8080" # MCP Protocol
       - "8765:8765" # WebSocket for ESP32 cameras
       - "5555:5555/udp" # UDP Discovery for auto-discovery
     environment:
@@ -98,13 +97,14 @@ services:
       - MQTT_BROKER=mosquitto
       - MQTT_PORT=1883
       - OLLAMA_HOST=http://ollama:11434
-      - OLLAMA_MODEL=deepseek-r1:latest
+      - OLLAMA_MODEL=qwen2.5:7b
       - ENVIRONMENT=production
       - DEBUG=false
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       # Pass host IP for UDP discovery response (optional - auto-detected if not set)
       # Set HOST_IP only if you need to override auto-detection
       - HOST_IP=${HOST_IP:-}
+    command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       mongodb:
         condition: service_healthy
@@ -113,7 +113,7 @@ services:
       ollama:
         condition: service_started
     volumes:
-      - ./mcp-server/src:/app/src:ro
+      - ./backend/src:/app/src
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.20
@@ -127,7 +127,7 @@ services:
   # ==================== Camera Service (Wheelchair Detection) ====================
   camera-service:
     build:
-      context: ../services/camera-service
+      context: ./services/camera-service
       dockerfile: Dockerfile
     container_name: wheelsense-camera-service
     restart: unless-stopped
@@ -149,9 +149,9 @@ services:
       - CUDA_VISIBLE_DEVICES=0
     volumes:
       # Mount models directory so we can update model files without rebuilding image
-      - ../services/camera-service/models:/app/models:ro
+      - ./services/camera-service/models:/app/models:ro
       # Mount source code for hot-reload without rebuild (just restart container)
-      - ../services/camera-service/src:/app/src:ro
+      - ./services/camera-service/src:/app/src:ro
     depends_on:
       mosquitto:
         condition: service_healthy
@@ -169,7 +169,7 @@ services:
   # ==================== Dashboard (Frontend) ====================
   dashboard:
     build:
-      context: ../services/dashboard
+      context: ./services/dashboard
       dockerfile: Dockerfile
       args:
         - VITE_API_URL=/api
@@ -181,7 +181,7 @@ services:
     # ports:
     #   - "3000:80"
     depends_on:
-      mcp-server:
+      backend:
         condition: service_healthy
     networks:
       wheelsense-network:
@@ -190,14 +190,14 @@ services:
   # ==================== Detection Test Page ====================
   detection-test:
     build:
-      context: ../services/detection-test
+      context: ./services/detection-test
       dockerfile: Dockerfile
     container_name: wheelsense-detection-test
     restart: unless-stopped
     ports:
       - "3001:80"
     depends_on:
-      - mcp-server
+      - backend
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.31
@@ -212,11 +212,11 @@ services:
       - "443:443"
       - "3000:80" # Also listen on port 3000 for backward compatibility
     volumes:
-      - ../services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ../services/nginx/ssl:/etc/nginx/ssl:ro
+      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./services/nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - dashboard
-      - mcp-server
+      - backend
       - detection-test
     networks:
       wheelsense-network:

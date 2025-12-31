@@ -1,4 +1,0 @@
-"""
-RAG retrieval module.
-"""
-
