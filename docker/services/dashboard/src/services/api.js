@@ -307,6 +307,19 @@ export async function updateDevice(deviceId, updates) {
     });
 }
 
+export async function deleteDevice(deviceId) {
+    return fetchAPI(`/map/devices/${deviceId}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function deleteDevicesBulk(deviceIds) {
+    return fetchAPI('/map/devices/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ device_ids: deviceIds }),
+    });
+}
+
 export async function triggerConfigMode(deviceId) {
     return fetchAPI(`/nodes/${deviceId}/config-mode`, {
         method: 'POST',
@@ -1069,6 +1082,8 @@ export default {
     getNodesLiveStatus,
     createDevice,
     updateDevice,
+    deleteDevice,
+    deleteDevicesBulk,
     getAppliances,
     getAllAppliances,
     getAllAppliancesFlat,

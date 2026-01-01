@@ -5,13 +5,31 @@ import * as api from '../services/api';
 import { Cpu, Plus, Edit2, Wifi, WifiOff, Video, Settings, Trash2, Wrench, Trash, RotateCw } from 'lucide-react';
 import { getVideoStreamUrl, getStreamUrlInfo } from '../services/api';
 
-// WebSocket Video Stream Component
+// WebSocket Video Stream Component with Rotation Controls
 function VideoStreamPlayer({ room, onClose, language }) {
     const { t } = useTranslation(language);
     const [videoSrc, setVideoSrc] = useState('');
     const [streamMode, setStreamMode] = useState('loading'); // 'loading', 'websocket', 'offline'
+    const [rotation, setRotation] = useState(0);
+    const [isRotating, setIsRotating] = useState(false);
     const wsRef = useRef(null);
     const prevSrcRef = useRef('');
+
+    // Find device for this room to get its ID
+    const { devices } = useApp();
+    const device = devices.find(d =>
+        d.room === room.id ||
+        d.roomType?.toLowerCase() === room.id?.toLowerCase() ||
+        d.room === room.roomType
+    );
+    const deviceId = device?.id || device?.deviceId || room.id;
+
+    // Load initial rotation from device
+    useEffect(() => {
+        if (device?.rotation !== undefined) {
+            setRotation(device.rotation);
+        }
+    }, [device?.rotation]);
 
     const connectWebSocket = useCallback(async () => {
         if (!room?.id) return;
@@ -56,6 +74,10 @@ function VideoStreamPlayer({ room, onClose, language }) {
                         if (data.type === 'ping') {
                             ws.send(JSON.stringify({ type: 'pong' }));
                         }
+                        // Sync rotation from server
+                        if (data.rotation !== undefined) {
+                            setRotation(data.rotation);
+                        }
                     } catch (e) {
                         // Ignore parse errors
                     }
@@ -93,20 +115,55 @@ function VideoStreamPlayer({ room, onClose, language }) {
         };
     }, [connectWebSocket]);
 
+    // Handle rotation click
+    const handleRotate = async () => {
+        setIsRotating(true);
+        try {
+            const newRotation = (rotation + 90) % 360;
+            const response = await api.rotateCamera(deviceId, newRotation);
+            if (response?.rotation !== undefined) {
+                setRotation(response.rotation);
+            } else {
+                setRotation(newRotation);
+            }
+            console.log(`[VideoPlayer] Rotated ${room.id} to ${newRotation}°`);
+        } catch (error) {
+            console.error('[VideoPlayer] Rotation failed:', error);
+        } finally {
+            setIsRotating(false);
+        }
+    };
 
     return (
         <div className="card">
-            <div className="card-header">
-                <span className="card-title"><Video size={16} /> {room.nameEn || room.name}</span>
-                <span style={{
-                    fontSize: '0.75rem',
-                    color: streamMode === 'websocket' ? 'var(--success)' : 'var(--text-muted)',
-                    marginLeft: '0.5rem'
-                }}>
-                    {streamMode === 'websocket' && `● ${t('WebSocket')}`}
-                    {streamMode === 'loading' && `⏳ ${t('Connecting...')}`}
-                    {streamMode === 'offline' && `○ ${t('No Signal')}`}
-                </span>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="card-title"><Video size={16} /> {room.nameEn || room.name}</span>
+                    <span style={{
+                        fontSize: '0.75rem',
+                        color: streamMode === 'websocket' ? 'var(--success)' : 'var(--text-muted)',
+                    }}>
+                        {streamMode === 'websocket' && `● ${t('WebSocket')}`}
+                        {streamMode === 'loading' && `⏳ ${t('Connecting...')}`}
+                        {streamMode === 'offline' && `○ ${t('No Signal')}`}
+                    </span>
+                </div>
+                {/* Rotation Controls */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {rotation}°
+                    </span>
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-icon"
+                        onClick={handleRotate}
+                        disabled={isRotating || streamMode !== 'websocket'}
+                        title={t('Rotate Camera') + ' (+90°)'}
+                        style={{ padding: '0.4rem', borderRadius: 'var(--radius)' }}
+                    >
+                        <RotateCw size={16} className={isRotating ? 'rotating' : ''} />
+                    </button>
+                </div>
             </div>
             <div className="video-stream" style={{
                 aspectRatio: '16/10',
@@ -151,6 +208,7 @@ function VideoStreamPlayer({ room, onClose, language }) {
         </div>
     );
 }
+
 
 function DeviceEditForm({ device, onSave, onCancel, rooms, t }) {
     const [name, setName] = useState(device.name || '');
@@ -324,7 +382,7 @@ export function DevicesPage() {
     // (and any future node-type devices) always appear in the Nodes tab.
     const nodes = uniqueDevices.filter(d => d.id && d.type !== 'gateway');
     const gatewaysFromDevices = uniqueDevices.filter(d => d.id && d.type === 'gateway');
-    
+
     // Add hardcoded online gateway
     const hardcodedGateway = {
         id: 'GW-01',
@@ -334,7 +392,7 @@ export function DevicesPage() {
         type: 'gateway',
         lastSeen: new Date().toISOString()
     };
-    
+
     // Merge hardcoded gateway with devices from API
     const gateways = [hardcodedGateway, ...gatewaysFromDevices];
 

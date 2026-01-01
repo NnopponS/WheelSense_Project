@@ -1,6 +1,6 @@
 """
-WheelSense MCP Server - Unified Main Application
-Combines MCP Protocol and Backend REST API
+WheelSense Backend - Unified Main Application
+Backend REST API and WebSocket Server
 Smart Home System for Wheelchair Users
 """
 
@@ -26,7 +26,8 @@ from .core.database import Database
 from .core.mqtt_handler import MQTTHandler
 from .services.emergency import EmergencyService
 from .core.websocket_handler import stream_handler
-from .core.mqtt_client import MQTTClient
+from .init_data import initialize_data
+
 from .api.appliances import router as appliances_router
 
 import sys
@@ -41,26 +42,48 @@ logger = logging.getLogger(__name__)
 db: Optional[Database] = None
 mqtt_handler: Optional[MQTTHandler] = None
 emergency_service: Optional[EmergencyService] = None
-mcp_mqtt_client: Optional[MQTTClient] = None
+
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifecycle management."""
     # Startup
-    global db, mqtt_handler, emergency_service, mcp_mqtt_client
+    global db, mqtt_handler, emergency_service
     
     logger.info("🚀 Starting WheelSense Backend...")
     
     # Initialize database
-    db = Database(settings.MONGO_URI)
+    db = Database(settings.SQLITE_DB_PATH)
     await db.connect()
     app.state.db = db
     logger.info("✅ Database connected")
     
+    # Initialize data (rooms, devices, appliances based on CucumberRS-Controller)
+    try:
+        await initialize_data(db._db_connection)
+        logger.info("✅ Data initialization complete")
+    except Exception as e:
+        logger.warning(f"Data initialization warning: {e}")
+    
     # Set database reference in stream_handler
     from .core.websocket_handler import stream_handler
     stream_handler.db = db
+    
+    # Load device rotations from database to cache
+    try:
+        devices = await db.db.devices.find({}).to_list(length=1000)
+        rotations_loaded = 0
+        for device in devices:
+            device_id = device.get("id") or device.get("deviceId")
+            rotation = device.get("rotation", 0)
+            if device_id and rotation:
+                stream_handler.device_rotations[device_id] = rotation
+                rotations_loaded += 1
+        if rotations_loaded > 0:
+            logger.info(f"✅ Loaded {rotations_loaded} device rotations from database")
+    except Exception as e:
+        logger.warning(f"Failed to load device rotations: {e}")
     
     # Fix AV to AC in database (if any exists)
     try:
@@ -230,16 +253,7 @@ async def lifespan(app: FastAPI):
     emergency_service = EmergencyService(db, mqtt_handler)
     logger.info("✅ Emergency service initialized")
     
-    # Initialize MCP MQTT client for device control
-    try:
-        mcp_mqtt_client = MQTTClient(
-            broker=settings.MQTT_BROKER,
-            port=settings.MQTT_PORT
-        )
-        await mcp_mqtt_client.connect()
-        logger.info("✅ MCP MQTT connected")
-    except Exception as e:
-        logger.warning(f"Failed to initialize MCP MQTT client: {e}")
+
     
 
     # Start WebSocket server for camera connections
@@ -454,12 +468,7 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.error(f"Error disconnecting MQTT: {e}")
     
-    if mcp_mqtt_client:
-        try:
-            await mcp_mqtt_client.disconnect()
-            logger.info("✅ MCP MQTT disconnected")
-        except Exception as e:
-            logger.error(f"Error disconnecting MCP MQTT: {e}")
+
     
     # Disconnect database
     logger.info("Disconnecting database...")
@@ -619,36 +628,6 @@ async def get_room_status(room_id: str):
     
     status = mqtt_handler.get_room_status(room_id)
     return status
-
-
-@app.post("/nodes/{device_id}/rotate")
-async def rotate_camera(device_id: str, degrees: int = Query(...)):
-    """Rotate camera by updating its rotation setting."""
-    # Normalize degrees to 0, 90, 180, 270
-    degrees = degrees % 360
-    if degrees not in [0, 90, 180, 270]:
-        # Snap to nearest 90
-        degrees = round(degrees / 90) * 90 % 360
-    
-    # 1. Update in-memory cache in stream_handler
-    stream_handler.device_rotations[device_id] = degrees
-    
-    # 2. Update in database
-    if db:
-        try:
-            await db.db.devices.update_one(
-                {"id": device_id},
-                {"$set": {"rotation": degrees}},
-                upsert=True
-            )
-            logger.info(f"🔄 Updated rotation for {device_id} to {degrees}°")
-        except Exception as e:
-            logger.error(f"Failed to update rotation in DB: {e}")
-            raise HTTPException(status_code=500, detail="Failed to save rotation setting")
-    
-    return {"device_id": device_id, "rotation": degrees}
-
-
 
 
 
@@ -1413,24 +1392,15 @@ async def trigger_config_mode(device_id: str, request: Request):
 
 @app.post("/nodes/{device_id}/rotate")
 async def rotate_camera(device_id: str, request: Request, degrees: Optional[int] = Query(90, description="Rotation step in degrees")):
-    """Rotate camera view. Stores rotation state in database (server-side rotation).
+    """Rotate camera view. Stores rotation state in database and memory cache.
     
-    Rotation is applied on the server side when processing frames, so ESP32 device
-    doesn't need to be in config mode.
+    Rotation is saved to database for persistence across refreshes.
+    Rotation is also synced between detection-test (3001) and dashboard (3000).
     
     Args:
-        device_id: Device ID
+        device_id: Device ID (can be any ID - TSIM_001, D123456, etc.)
         degrees: Rotation angle (0, 90, 180, or 270)
     """
-    if not db:
-        raise HTTPException(status_code=503, detail="Database not available")
-    
-    # Find device
-    device = await db.db.devices.find_one({"$or": [{"id": device_id}, {"deviceId": device_id}]})
-    
-    if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
-    
     # Normalize degrees to 0, 90, 180, or 270
     rotate_deg = degrees if degrees is not None else 90
     rotate_deg = rotate_deg % 360
@@ -1438,31 +1408,50 @@ async def rotate_camera(device_id: str, request: Request, degrees: Optional[int]
         # Round to nearest valid value
         rotate_deg = round(rotate_deg / 90) * 90 % 360
     
-    # Update rotation in database
-    try:
-        result = await db.db.devices.update_one(
-            {"$or": [{"id": device_id}, {"deviceId": device_id}]},
-            {"$set": {"rotation": rotate_deg}}
-        )
-        
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Device not found")
-        
-        logger.info(f"Updated rotation for device {device_id}: {rotate_deg}°")
-        
-        # Update rotation cache in stream_handler
-        if stream_handler and device_id:
-            stream_handler.device_rotations[device_id] = rotate_deg
-        
-        return {
-            "status": "success",
-            "device_id": device_id,
-            "rotation": rotate_deg,
-            "message": f"Camera rotation set to {rotate_deg}°. Rotation will be applied on server side."
-        }
-    except Exception as e:
-        logger.error(f"Failed to update rotation: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to update rotation: {str(e)}")
+    # Update rotation cache in stream_handler (for immediate effect on video processing)
+    if stream_handler:
+        stream_handler.device_rotations[device_id] = rotate_deg
+        logger.info(f"Updated rotation in cache for device {device_id}: {rotate_deg}°")
+    
+    # Always save rotation to database using direct SQLite query
+    db_updated = False
+    if db and db._db_connection:
+        try:
+            now = datetime.now().isoformat()
+            
+            # Direct SQLite update - try by id first, then by deviceId
+            cursor = await db._db_connection.execute(
+                """UPDATE devices SET rotation = ?, updatedAt = ? 
+                   WHERE id = ? OR deviceId = ?""",
+                (rotate_deg, now, device_id, device_id)
+            )
+            await db._db_connection.commit()
+            
+            if cursor.rowcount > 0:
+                db_updated = True
+                logger.info(f"Updated rotation in SQLite for device {device_id}: {rotate_deg}°")
+            else:
+                # Device not found, create it
+                import uuid
+                _id = str(uuid.uuid4()).replace('-', '')[:24]
+                await db._db_connection.execute(
+                    """INSERT INTO devices (id, _id, deviceId, name, type, room, rotation, status, createdAt, updatedAt)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (device_id, _id, device_id, f"Camera {device_id}", "camera", "unknown", rotate_deg, "offline", now, now)
+                )
+                await db._db_connection.commit()
+                db_updated = True
+                logger.info(f"Created device {device_id} with rotation {rotate_deg}° in SQLite")
+        except Exception as e:
+            logger.warning(f"Failed to update rotation in database: {e}")
+    
+    return {
+        "status": "success",
+        "device_id": device_id,
+        "rotation": rotate_deg,
+        "db_updated": db_updated,
+        "message": f"Camera rotation set to {rotate_deg}°. Rotation will be applied on server side."
+    }
 
 
 @app.post("/map/devices")

@@ -37,10 +37,18 @@ export function MapPage() {
     const [editMode, setEditMode] = useState(false);
 
     // Drag states
-    const [isDragging, setIsDragging] = useState(false);
-    const [isResizing, setIsResizing] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    const [resizeHandle, setResizeHandle] = useState(null);
+    const [dragState, setDragState] = useState({
+        isDragging: false,
+        isResizing: false,
+        roomId: null,
+        resizeHandle: null,
+        startX: 0,
+        startY: 0,
+        startRoomX: 0,
+        startRoomY: 0,
+        startRoomWidth: 0,
+        startRoomHeight: 0
+    });
     const mapCanvasRef = useRef(null);
 
     // Modal States
@@ -55,8 +63,23 @@ export function MapPage() {
     const [buildingForm, setBuildingForm] = useState({ name: '', nameEn: '' });
     const [floorForm, setFloorForm] = useState({ name: '' });
 
-    // Safe arrays
-    const safeRooms = rooms || [];
+    // Helper to ensure room has valid coordinate values
+    const ensureRoomDefaults = (room, index) => {
+        const getNum = (val, defaultVal) => {
+            const num = Number(val);
+            return (!isNaN(num) && val !== null && val !== undefined && val !== '') ? num : defaultVal;
+        };
+        return {
+            ...room,
+            x: getNum(room.x, 10 + (index % 3) * 30),
+            y: getNum(room.y, 10 + Math.floor(index / 3) * 30),
+            width: getNum(room.width, 25),
+            height: getNum(room.height, 25)
+        };
+    };
+
+    // Safe arrays with defaults applied
+    const safeRooms = (rooms || []).map(ensureRoomDefaults);
     const safeBuildings = buildings || [];
     const safeFloors = floors || [];
 
@@ -82,9 +105,25 @@ export function MapPage() {
                 if (!selectedFloor) setSelectedFloor(floorsData[0].id);
             }
 
-            // Load rooms
+            // Load rooms - ensure all rooms have coordinate values
             const roomsData = await api.getRooms();
-            if (roomsData?.length > 0) setRooms(roomsData);
+            if (roomsData?.length > 0) {
+                // Add default coordinates if missing or invalid
+                const roomsWithDefaults = roomsData.map((room, index) => {
+                    const getNum = (val, defaultVal) => {
+                        const num = Number(val);
+                        return (!isNaN(num) && val !== null && val !== undefined && val !== '') ? num : defaultVal;
+                    };
+                    return {
+                        ...room,
+                        x: getNum(room.x, 10 + (index % 3) * 30),
+                        y: getNum(room.y, 10 + Math.floor(index / 3) * 30),
+                        width: getNum(room.width, 25),
+                        height: getNum(room.height, 25)
+                    };
+                });
+                setRooms(roomsWithDefaults);
+            }
 
             // Load appliances
             const appliancesData = await api.getAllAppliances();
@@ -205,7 +244,8 @@ export function MapPage() {
 
     // ============ ROOM OPERATIONS ============
     const handleAddRoom = async () => {
-        if (!roomForm.name && !roomForm.nameEn) {
+        const roomName = roomForm.nameEn || roomForm.name;
+        if (!roomName) {
             alert(t('Please enter room name'));
             return;
         }
@@ -213,9 +253,12 @@ export function MapPage() {
         try {
             const newRoom = {
                 id: `room-${Date.now()}`,
-                ...roomForm,
-                name: roomForm.name || roomForm.nameEn,
-                nameEn: roomForm.nameEn || roomForm.name,
+                name: roomName,
+                nameEn: roomName,
+                x: Number(roomForm.x) || 10,
+                y: Number(roomForm.y) || 10,
+                width: Number(roomForm.width) || 20,
+                height: Number(roomForm.height) || 20,
                 floorId: selectedFloor,
                 buildingId: selectedBuilding,
                 temperature: 25,
@@ -223,7 +266,12 @@ export function MapPage() {
                 occupied: false
             };
 
+            console.log('Creating room:', newRoom);
+
+            // Save to API
             await api.createRoom(newRoom);
+
+            // Update local state
             setRooms(prev => [...(prev || []), newRoom]);
             setShowRoomModal(false);
             setRoomForm({ name: '', nameEn: '', x: 10, y: 10, width: 20, height: 20 });
@@ -249,81 +297,111 @@ export function MapPage() {
     };
 
     // ============ DRAG AND DROP ============
-    const handleMouseDown = (e, roomId, type = 'move') => {
-        if (!editMode) return;
+    const getMousePositionPercent = (e) => {
+        if (!mapCanvasRef.current) return { x: 0, y: 0 };
+        const rect = mapCanvasRef.current.getBoundingClientRect();
+        return {
+            x: ((e.clientX - rect.left) / rect.width) * 100,
+            y: ((e.clientY - rect.top) / rect.height) * 100
+        };
+    };
+
+    const handleRoomMouseDown = (e, room, action = 'move') => {
+        if (!editMode) {
+            // In view mode, just select the room
+            setSelectedRoom(room.id);
+            return;
+        }
+
         e.preventDefault();
         e.stopPropagation();
 
-        setSelectedRoom(roomId);
+        const pos = getMousePositionPercent(e);
 
-        const rect = mapCanvasRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-        setDragStart({ x, y });
-
-        if (type === 'move') {
-            setIsDragging(true);
-        } else {
-            setIsResizing(true);
-            setResizeHandle(type);
-        }
+        setSelectedRoom(room.id);
+        setDragState({
+            isDragging: action === 'move',
+            isResizing: action !== 'move',
+            roomId: room.id,
+            resizeHandle: action !== 'move' ? action : null,
+            startX: pos.x,
+            startY: pos.y,
+            startRoomX: room.x,
+            startRoomY: room.y,
+            startRoomWidth: room.width,
+            startRoomHeight: room.height
+        });
     };
 
     const handleMouseMove = useCallback((e) => {
+        const { isDragging, isResizing, roomId, resizeHandle, startX, startY, startRoomX, startRoomY, startRoomWidth, startRoomHeight } = dragState;
+
         if (!isDragging && !isResizing) return;
-        if (!mapCanvasRef.current) return;
+        if (!mapCanvasRef.current || !roomId) return;
 
-        const rect = mapCanvasRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-        const dx = x - dragStart.x;
-        const dy = y - dragStart.y;
+        const pos = getMousePositionPercent(e);
+        const dx = pos.x - startX;
+        const dy = pos.y - startY;
 
         setRooms(prev => prev.map(room => {
-            if (room.id !== selectedRoom) return room;
+            if (room.id !== roomId) return room;
 
             if (isDragging) {
                 // Move room
-                const newX = Math.max(0, Math.min(100 - room.width, room.x + dx));
-                const newY = Math.max(0, Math.min(100 - room.height, room.y + dy));
+                let newX = startRoomX + dx;
+                let newY = startRoomY + dy;
+
+                // Constrain to canvas
+                newX = Math.max(0, Math.min(100 - room.width, newX));
+                newY = Math.max(0, Math.min(100 - room.height, newY));
+
                 return { ...room, x: newX, y: newY };
             } else if (isResizing) {
                 // Resize room
                 let newRoom = { ...room };
+                const minSize = 5;
 
                 switch (resizeHandle) {
                     case 'se': // Southeast (bottom-right)
-                        newRoom.width = Math.max(5, Math.min(100 - room.x, room.width + dx));
-                        newRoom.height = Math.max(5, Math.min(100 - room.y, room.height + dy));
+                        newRoom.width = Math.max(minSize, Math.min(100 - startRoomX, startRoomWidth + dx));
+                        newRoom.height = Math.max(minSize, Math.min(100 - startRoomY, startRoomHeight + dy));
                         break;
                     case 'sw': // Southwest (bottom-left)
-                        const newWidthSW = Math.max(5, room.width - dx);
-                        if (room.x + dx >= 0 && newWidthSW >= 5) {
-                            newRoom.x = room.x + dx;
-                            newRoom.width = newWidthSW;
+                        {
+                            const newWidth = startRoomWidth - dx;
+                            const newX = startRoomX + dx;
+                            if (newWidth >= minSize && newX >= 0) {
+                                newRoom.x = newX;
+                                newRoom.width = newWidth;
+                            }
+                            newRoom.height = Math.max(minSize, Math.min(100 - startRoomY, startRoomHeight + dy));
                         }
-                        newRoom.height = Math.max(5, Math.min(100 - room.y, room.height + dy));
                         break;
                     case 'ne': // Northeast (top-right)
-                        newRoom.width = Math.max(5, Math.min(100 - room.x, room.width + dx));
-                        const newHeightNE = Math.max(5, room.height - dy);
-                        if (room.y + dy >= 0 && newHeightNE >= 5) {
-                            newRoom.y = room.y + dy;
-                            newRoom.height = newHeightNE;
+                        newRoom.width = Math.max(minSize, Math.min(100 - startRoomX, startRoomWidth + dx));
+                        {
+                            const newHeight = startRoomHeight - dy;
+                            const newY = startRoomY + dy;
+                            if (newHeight >= minSize && newY >= 0) {
+                                newRoom.y = newY;
+                                newRoom.height = newHeight;
+                            }
                         }
                         break;
                     case 'nw': // Northwest (top-left)
-                        const newWidthNW = Math.max(5, room.width - dx);
-                        if (room.x + dx >= 0 && newWidthNW >= 5) {
-                            newRoom.x = room.x + dx;
-                            newRoom.width = newWidthNW;
-                        }
-                        const newHeightNW = Math.max(5, room.height - dy);
-                        if (room.y + dy >= 0 && newHeightNW >= 5) {
-                            newRoom.y = room.y + dy;
-                            newRoom.height = newHeightNW;
+                        {
+                            const newWidth = startRoomWidth - dx;
+                            const newX = startRoomX + dx;
+                            if (newWidth >= minSize && newX >= 0) {
+                                newRoom.x = newX;
+                                newRoom.width = newWidth;
+                            }
+                            const newHeight = startRoomHeight - dy;
+                            const newY = startRoomY + dy;
+                            if (newHeight >= minSize && newY >= 0) {
+                                newRoom.y = newY;
+                                newRoom.height = newHeight;
+                            }
                         }
                         break;
                 }
@@ -331,14 +409,14 @@ export function MapPage() {
             }
             return room;
         }));
-
-        setDragStart({ x, y });
-    }, [isDragging, isResizing, dragStart, selectedRoom, resizeHandle]);
+    }, [dragState]);
 
     const handleMouseUp = useCallback(async () => {
-        if (isDragging || isResizing) {
+        const { isDragging, isResizing, roomId } = dragState;
+
+        if ((isDragging || isResizing) && roomId) {
             // Save the updated room position to database
-            const room = safeRooms.find(r => r.id === selectedRoom);
+            const room = safeRooms.find(r => r.id === roomId);
             if (room) {
                 try {
                     await api.updateRoom(room.id, {
@@ -347,26 +425,42 @@ export function MapPage() {
                         width: room.width,
                         height: room.height
                     });
+                    console.log('Room position saved:', room.id);
                 } catch (err) {
                     console.error('Failed to save room position:', err);
                 }
             }
         }
-        setIsDragging(false);
-        setIsResizing(false);
-        setResizeHandle(null);
-    }, [isDragging, isResizing, selectedRoom, safeRooms]);
 
+        setDragState({
+            isDragging: false,
+            isResizing: false,
+            roomId: null,
+            resizeHandle: null,
+            startX: 0,
+            startY: 0,
+            startRoomX: 0,
+            startRoomY: 0,
+            startRoomWidth: 0,
+            startRoomHeight: 0
+        });
+    }, [dragState, safeRooms]);
+
+    // Add/remove global mouse listeners
     useEffect(() => {
-        if (isDragging || isResizing) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
+        if (dragState.isDragging || dragState.isResizing) {
+            const handleGlobalMouseMove = (e) => handleMouseMove(e);
+            const handleGlobalMouseUp = () => handleMouseUp();
+
+            window.addEventListener('mousemove', handleGlobalMouseMove);
+            window.addEventListener('mouseup', handleGlobalMouseUp);
+
             return () => {
-                window.removeEventListener('mousemove', handleMouseMove);
-                window.removeEventListener('mouseup', handleMouseUp);
+                window.removeEventListener('mousemove', handleGlobalMouseMove);
+                window.removeEventListener('mouseup', handleGlobalMouseUp);
             };
         }
-    }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+    }, [dragState.isDragging, dragState.isResizing, handleMouseMove, handleMouseUp]);
 
     // ============ APPLIANCE OPERATIONS ============
     const handleAddAppliance = async () => {
@@ -622,90 +716,179 @@ export function MapPage() {
                     </div>
                     <div
                         ref={mapCanvasRef}
-                        className="map-canvas"
                         style={{
-                            minHeight: '500px',
                             position: 'relative',
-                            cursor: editMode ? (isDragging ? 'grabbing' : 'default') : 'pointer',
-                            userSelect: 'none'
+                            minHeight: '500px',
+                            background: 'var(--bg-secondary)',
+                            borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
+                            cursor: editMode ? (dragState.isDragging ? 'grabbing' : 'default') : 'pointer',
+                            userSelect: 'none',
+                            overflow: 'hidden'
                         }}
                     >
-                        {safeRooms.map(room => (
+                        {/* Grid Pattern */}
+                        <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+                            backgroundSize: '10% 10%',
+                            pointerEvents: 'none'
+                        }} />
+
+                        {/* Rooms */}
+                        {safeRooms.filter(room =>
+                            (!selectedFloor || room.floorId === selectedFloor) &&
+                            (!selectedBuilding || room.buildingId === selectedBuilding)
+                        ).map(room => (
                             <div
                                 key={room.id}
-                                className={`room ${selectedRoom === room.id ? 'selected' : ''}`}
                                 style={{
+                                    position: 'absolute',
                                     left: `${room.x}%`,
                                     top: `${room.y}%`,
                                     width: `${room.width}%`,
                                     height: `${room.height}%`,
+                                    background: selectedRoom === room.id
+                                        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3))'
+                                        : 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))',
+                                    border: selectedRoom === room.id
+                                        ? '3px solid var(--primary-500)'
+                                        : '2px solid rgba(99, 102, 241, 0.4)',
+                                    borderRadius: 'var(--radius-md)',
                                     cursor: editMode ? 'grab' : 'pointer',
-                                    outline: selectedRoom === room.id ? '3px solid var(--primary-500)' : 'none',
-                                    transition: isDragging || isResizing ? 'none' : 'all 0.2s ease'
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: dragState.isDragging || dragState.isResizing ? 'none' : 'all 0.2s ease',
+                                    boxShadow: selectedRoom === room.id ? '0 0 20px rgba(99, 102, 241, 0.3)' : 'none'
                                 }}
-                                onClick={() => !isDragging && !isResizing && setSelectedRoom(room.id)}
-                                onMouseDown={(e) => handleMouseDown(e, room.id, 'move')}
+                                onMouseDown={(e) => handleRoomMouseDown(e, room, 'move')}
                             >
-                                <span className="room-label">{room.nameEn || room.name}</span>
-                                <span className="room-status">{room.occupied ? '🟢' : '⚪'}</span>
+                                {/* Room Label */}
+                                <span style={{
+                                    fontWeight: 600,
+                                    fontSize: '0.85rem',
+                                    color: 'var(--text-primary)',
+                                    textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                                    textAlign: 'center',
+                                    padding: '0.25rem'
+                                }}>
+                                    {room.nameEn || room.name}
+                                </span>
 
-                                {/* Resize Handles - Only in edit mode */}
+                                {/* Occupancy Indicator */}
+                                <span style={{ fontSize: '1rem' }}>
+                                    {room.occupied ? '🟢' : '⚪'}
+                                </span>
+
+                                {/* Resize Handles - Only in edit mode and when selected */}
                                 {editMode && selectedRoom === room.id && (
                                     <>
+                                        {/* NW Handle */}
                                         <div
                                             style={{
-                                                position: 'absolute', top: -4, left: -4,
-                                                width: 10, height: 10,
+                                                position: 'absolute', top: -6, left: -6,
+                                                width: 12, height: 12,
                                                 background: 'var(--primary-500)',
+                                                border: '2px solid white',
                                                 borderRadius: '50%',
-                                                cursor: 'nw-resize'
+                                                cursor: 'nw-resize',
+                                                zIndex: 10
                                             }}
-                                            onMouseDown={(e) => handleMouseDown(e, room.id, 'nw')}
+                                            onMouseDown={(e) => { e.stopPropagation(); handleRoomMouseDown(e, room, 'nw'); }}
                                         />
+                                        {/* NE Handle */}
                                         <div
                                             style={{
-                                                position: 'absolute', top: -4, right: -4,
-                                                width: 10, height: 10,
+                                                position: 'absolute', top: -6, right: -6,
+                                                width: 12, height: 12,
                                                 background: 'var(--primary-500)',
+                                                border: '2px solid white',
                                                 borderRadius: '50%',
-                                                cursor: 'ne-resize'
+                                                cursor: 'ne-resize',
+                                                zIndex: 10
                                             }}
-                                            onMouseDown={(e) => handleMouseDown(e, room.id, 'ne')}
+                                            onMouseDown={(e) => { e.stopPropagation(); handleRoomMouseDown(e, room, 'ne'); }}
                                         />
+                                        {/* SW Handle */}
                                         <div
                                             style={{
-                                                position: 'absolute', bottom: -4, left: -4,
-                                                width: 10, height: 10,
+                                                position: 'absolute', bottom: -6, left: -6,
+                                                width: 12, height: 12,
                                                 background: 'var(--primary-500)',
+                                                border: '2px solid white',
                                                 borderRadius: '50%',
-                                                cursor: 'sw-resize'
+                                                cursor: 'sw-resize',
+                                                zIndex: 10
                                             }}
-                                            onMouseDown={(e) => handleMouseDown(e, room.id, 'sw')}
+                                            onMouseDown={(e) => { e.stopPropagation(); handleRoomMouseDown(e, room, 'sw'); }}
                                         />
+                                        {/* SE Handle */}
                                         <div
                                             style={{
-                                                position: 'absolute', bottom: -4, right: -4,
-                                                width: 10, height: 10,
+                                                position: 'absolute', bottom: -6, right: -6,
+                                                width: 12, height: 12,
                                                 background: 'var(--primary-500)',
+                                                border: '2px solid white',
                                                 borderRadius: '50%',
-                                                cursor: 'se-resize'
+                                                cursor: 'se-resize',
+                                                zIndex: 10
                                             }}
-                                            onMouseDown={(e) => handleMouseDown(e, room.id, 'se')}
+                                            onMouseDown={(e) => { e.stopPropagation(); handleRoomMouseDown(e, room, 'se'); }}
                                         />
-                                    </>
-                                )}
 
-                                {editMode && selectedRoom === room.id && (
-                                    <button
-                                        className="btn btn-danger btn-icon"
-                                        style={{ position: 'absolute', top: 4, right: 4, padding: 2, minWidth: 24, minHeight: 24 }}
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room.id); }}
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
+                                        {/* Delete Button */}
+                                        <button
+                                            className="btn btn-danger btn-icon"
+                                            style={{
+                                                position: 'absolute',
+                                                top: 4,
+                                                right: 4,
+                                                padding: 4,
+                                                minWidth: 24,
+                                                minHeight: 24,
+                                                zIndex: 10
+                                            }}
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteRoom(room.id); }}
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </>
                                 )}
                             </div>
                         ))}
+
+                        {/* Empty State */}
+                        {safeRooms.filter(room =>
+                            (!selectedFloor || room.floorId === selectedFloor) &&
+                            (!selectedBuilding || room.buildingId === selectedBuilding)
+                        ).length === 0 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--text-muted)'
+                                }}>
+                                    <Map size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+                                    <p>{t('No rooms on this floor')}</p>
+                                    {editMode && (
+                                        <button
+                                            className="btn btn-primary"
+                                            style={{ marginTop: '1rem' }}
+                                            onClick={() => {
+                                                setRoomForm({ name: '', nameEn: '', x: 10, y: 10, width: 20, height: 20 });
+                                                setShowRoomModal(true);
+                                            }}
+                                        >
+                                            <Plus size={16} /> {t('Add Room')}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                     </div>
                 </div>
 
@@ -896,6 +1079,7 @@ export function MapPage() {
                                     placeholder="Bedroom"
                                     value={roomForm.nameEn}
                                     onChange={(e) => setRoomForm(prev => ({ ...prev, nameEn: e.target.value, name: e.target.value }))}
+                                    autoFocus
                                 />
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>

@@ -1,77 +1,453 @@
 """
-WheelSense Backend - Database Service
-MongoDB connection and operations
+WheelSense Backend - SQLite Database Service
+SQLite connection and operations (replacement for MongoDB)
 """
 
 import logging
+import json
+import aiosqlite
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from pathlib import Path
 
-from bson import ObjectId
-from motor.motor_asyncio import AsyncIOMotorClient
+from .mongodb_compat import MongoDBCompatibilityLayer
 
 logger = logging.getLogger(__name__)
 
 
 class Database:
-    """MongoDB database service."""
+    """SQLite database service."""
     
-    def __init__(self, uri: str):
-        self.uri = uri
-        self.client: Optional[AsyncIOMotorClient] = None
-        self.db = None
+    def __init__(self, db_path: str = "data/wheelsense.db"):
+        self.db_path = db_path
+        self._db_connection: Optional[aiosqlite.Connection] = None
         self.is_connected = False
+        self._compat_layer = None  # MongoDB compatibility layer
     
     async def connect(self):
-        """Connect to MongoDB."""
+        """Connect to SQLite database."""
         try:
-            self.client = AsyncIOMotorClient(self.uri)
-            self.db = self.client.wheelsense
-            # Test connection
-            await self.client.admin.command('ping')
+            # Ensure data directory exists
+            Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
+            
+            self._db_connection = await aiosqlite.connect(self.db_path)
+            self._db_connection.row_factory = aiosqlite.Row
+            
+            # Enable foreign keys
+            await self._db_connection.execute("PRAGMA foreign_keys = ON")
+            
+            # Create tables
+            await self._create_tables()
+            
+            # Initialize MongoDB compatibility layer
+            self._compat_layer = MongoDBCompatibilityLayer(self._db_connection, self)
+            
             self.is_connected = True
-            logger.info("Connected to MongoDB")
+            logger.info(f"Connected to SQLite database at {self.db_path}")
         except Exception as e:
-            logger.error(f"Failed to connect to MongoDB: {e}")
+            logger.error(f"Failed to connect to SQLite: {e}")
             raise
     
     async def disconnect(self):
-        """Disconnect from MongoDB."""
-        if self.client:
-            self.client.close()
+        """Disconnect from SQLite database."""
+        if self._db_connection:
+            await self._db_connection.close()
             self.is_connected = False
-            logger.info("Disconnected from MongoDB")
+            logger.info("Disconnected from SQLite")
+    
+    async def _create_tables(self):
+        """Create all necessary tables."""
+        
+        # Rooms table - includes x, y, width, height for map positioning
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS rooms (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                deviceId TEXT,
+                roomType TEXT,
+                name TEXT,
+                nameEn TEXT,
+                floorId TEXT,
+                buildingId TEXT,
+                x REAL DEFAULT 10,
+                y REAL DEFAULT 10,
+                width REAL DEFAULT 20,
+                height REAL DEFAULT 20,
+                temperature REAL DEFAULT 25,
+                humidity REAL DEFAULT 60,
+                isOccupied INTEGER DEFAULT 0,
+                lastDetection TEXT,
+                lastStatus TEXT,
+                position TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Appliances table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS appliances (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                roomId TEXT,
+                room TEXT,
+                type TEXT,
+                name TEXT,
+                state INTEGER DEFAULT 0,
+                isOn INTEGER DEFAULT 0,
+                value INTEGER,
+                brightness INTEGER,
+                temperature INTEGER,
+                volume INTEGER,
+                speed INTEGER,
+                ledPin INTEGER,
+                lastStateChange TEXT,
+                lastUpdated TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Devices table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS devices (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                deviceId TEXT UNIQUE,
+                name TEXT,
+                type TEXT,
+                room TEXT,
+                ip TEXT,
+                status TEXT,
+                rotation INTEGER DEFAULT 0,
+                lastSeen TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Activity Logs table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS activityLogs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                _id TEXT UNIQUE,
+                roomId TEXT,
+                userId TEXT,
+                eventType TEXT,
+                timestamp TEXT,
+                details TEXT
+            )
+        """)
+        
+        # Emergency Events table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS emergencyEvents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                _id TEXT UNIQUE,
+                roomId TEXT,
+                userId TEXT,
+                eventType TEXT,
+                severity TEXT,
+                message TEXT,
+                timestamp TEXT,
+                resolved INTEGER DEFAULT 0,
+                resolvedAt TEXT,
+                notifiedContacts TEXT
+            )
+        """)
+        
+        # Behavior Analysis table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS behaviorAnalysis (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                _id TEXT UNIQUE,
+                userId TEXT,
+                patientId TEXT,
+                date TEXT,
+                patterns TEXT,
+                anomalies TEXT,
+                geminiAnalysis TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Map Config table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS mapConfig (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                buildings TEXT,
+                floors TEXT,
+                wheelchairPositions TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Timeline table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS timeline (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                _id TEXT UNIQUE,
+                type TEXT,
+                userId TEXT,
+                userName TEXT,
+                wheelchairId TEXT,
+                fromRoom TEXT,
+                toRoom TEXT,
+                timestamp TEXT,
+                durationInPreviousRoom INTEGER,
+                metadata TEXT
+            )
+        """)
+        
+        # Users table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                email TEXT UNIQUE,
+                name TEXT,
+                role TEXT,
+                preferences TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Patients table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS patients (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                name TEXT,
+                age INTEGER,
+                condition TEXT,
+                room TEXT,
+                wheelchairId TEXT,
+                emergencyContact TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Wheelchairs table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS wheelchairs (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                name TEXT,
+                patientId TEXT,
+                patientName TEXT,
+                room TEXT,
+                status TEXT,
+                battery INTEGER,
+                speed INTEGER,
+                lastSeen TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Buildings table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS buildings (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                name TEXT,
+                nameEn TEXT,
+                floors TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Floors table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS floors (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                name TEXT,
+                nameEn TEXT,
+                buildingId TEXT,
+                level INTEGER,
+                rooms TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Corridors table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS corridors (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                name TEXT,
+                floorId TEXT,
+                points TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Mesh Routes table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS meshRoutes (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                nodeId TEXT,
+                neighbors TEXT,
+                position TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Routines table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS routines (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                patientId TEXT,
+                title TEXT,
+                description TEXT,
+                time TEXT,
+                completed INTEGER DEFAULT 0,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Doctor Notes table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS doctorNotes (
+                id TEXT PRIMARY KEY,
+                _id TEXT UNIQUE,
+                patientId TEXT,
+                doctorName TEXT,
+                note TEXT,
+                date TEXT,
+                createdAt TEXT,
+                updatedAt TEXT
+            )
+        """)
+        
+        # Create indexes
+        await self._create_indexes()
+        
+        await self._db_connection.commit()
+    
+    async def _create_indexes(self):
+        """Create indexes for better query performance."""
+        indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_rooms_deviceId ON rooms(deviceId)",
+            "CREATE INDEX IF NOT EXISTS idx_rooms_roomType ON rooms(roomType)",
+            "CREATE INDEX IF NOT EXISTS idx_appliances_room ON appliances(room)",
+            "CREATE INDEX IF NOT EXISTS idx_appliances_roomId ON appliances(roomId)",
+            "CREATE INDEX IF NOT EXISTS idx_devices_deviceId ON devices(deviceId)",
+            "CREATE INDEX IF NOT EXISTS idx_activityLogs_roomId ON activityLogs(roomId)",
+            "CREATE INDEX IF NOT EXISTS idx_activityLogs_userId ON activityLogs(userId)",
+            "CREATE INDEX IF NOT EXISTS idx_activityLogs_timestamp ON activityLogs(timestamp)",
+            "CREATE INDEX IF NOT EXISTS idx_emergencyEvents_resolved ON emergencyEvents(resolved)",
+            "CREATE INDEX IF NOT EXISTS idx_timeline_userId ON timeline(userId)",
+            "CREATE INDEX IF NOT EXISTS idx_timeline_timestamp ON timeline(timestamp)",
+            "CREATE INDEX IF NOT EXISTS idx_patients_wheelchairId ON patients(wheelchairId)",
+            "CREATE INDEX IF NOT EXISTS idx_routines_patientId ON routines(patientId)",
+            "CREATE INDEX IF NOT EXISTS idx_doctorNotes_patientId ON doctorNotes(patientId)",
+        ]
+        
+        for index_sql in indexes:
+            await self._db_connection.execute(index_sql)
+    
+    # ==================== Helper Methods ====================
+    
+    def _generate_id(self) -> str:
+        """Generate a unique ID similar to MongoDB ObjectId."""
+        import uuid
+        return str(uuid.uuid4()).replace('-', '')[:24]
+    
+    @staticmethod
+    def _serialize_doc(doc: Optional[Dict]) -> Optional[Dict]:
+        """Convert database row to JSON-serializable dict."""
+        if not doc:
+            return None
+        
+        result = dict(doc) if hasattr(doc, 'keys') else doc
+        
+        # Parse JSON fields
+        json_fields = ['lastStatus', 'details', 'notifiedContacts', 'patterns', 
+                      'anomalies', 'preferences', 'metadata', 'buildings', 'floors',
+                      'wheelchairPositions', 'neighbors', 'position', 'points', 'rooms']
+        
+        for field in json_fields:
+            if field in result and isinstance(result[field], str):
+                try:
+                    result[field] = json.loads(result[field])
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        
+        # Convert boolean fields
+        bool_fields = ['isOccupied', 'state', 'isOn', 'resolved', 'completed']
+        for field in bool_fields:
+            if field in result and result[field] is not None:
+                result[field] = bool(result[field])
+        
+        # Normalize names (same as MongoDB version)
+        if isinstance(result, dict):
+            if 'nameEn' in result and result.get('nameEn'):
+                if result.get('name') != result.get('nameEn'):
+                    result['name'] = result['nameEn']
+            
+            if 'name' in result and result.get('name') and any('\u0E00' <= char <= '\u0E7F' for char in result['name']):
+                if result.get('nameEn'):
+                    result['name'] = result['nameEn']
+            
+            if 'name' in result and result.get('name'):
+                floor_map = {
+                    'ชั้น 1': 'Floor 1',
+                    'ชั้น 2': 'Floor 2',
+                    'ชั้น 3': 'Floor 3'
+                }
+                if result['name'] in floor_map:
+                    result['name'] = floor_map[result['name']]
+            
+            if 'condition' in result:
+                condition_map = {
+                    'ปกติ': 'Normal',
+                    'ต้องระวัง': 'Caution',
+                    'ฉุกเฉิน': 'Emergency'
+                }
+                if result['condition'] in condition_map:
+                    result['condition'] = condition_map[result['condition']]
+        
+        return result
     
     # ==================== Room Operations ====================
     
     async def get_all_rooms(self) -> List[Dict]:
         """Get all rooms."""
-        rooms = await self.db.rooms.find().to_list(length=100)
-        return [self._serialize_doc(room) for room in rooms]
+        async with self._db_connection.execute("SELECT * FROM rooms") as cursor:
+            rows = await cursor.fetchall()
+            return [self._serialize_doc(row) for row in rows]
     
     async def get_room(self, room_id: str) -> Optional[Dict]:
         """Get room by ID or device ID or roomType (with normalization)."""
-        # Normalize room_id: lowercase and remove spaces (e.g., "livingroom" matches "Living Room")
         def normalize(name: str) -> str:
             return name.lower().replace(" ", "") if name else ""
         
         normalized_room_id = normalize(room_id)
         
         # Try exact match first
-        room = await self.db.rooms.find_one({
-            "$or": [
-                {"_id": ObjectId(room_id) if ObjectId.is_valid(room_id) else None},
-                {"deviceId": room_id},
-                {"roomType": room_id}
-            ]
-        })
+        async with self._db_connection.execute(
+            "SELECT * FROM rooms WHERE id = ? OR _id = ? OR deviceId = ? OR roomType = ?",
+            (room_id, room_id, room_id, room_id)
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return self._serialize_doc(row)
         
-        if room:
-            return self._serialize_doc(room)
-        
-        # If not found, try case-insensitive match with normalization
-        # This helps match "livingroom" with "Living Room" or "living room"
-        all_rooms = await self.db.rooms.find().to_list(length=100)
+        # Try normalized match
+        all_rooms = await self.get_all_rooms()
         for r in all_rooms:
             room_type = r.get("roomType", "")
             name_en = r.get("nameEn", "")
@@ -80,55 +456,82 @@ class Database:
             if (normalize(room_type) == normalized_room_id or
                 normalize(name_en) == normalized_room_id or
                 normalize(name) == normalized_room_id):
-                return self._serialize_doc(r)
+                return r
         
         return None
     
-
     async def update_room_status(self, device_id: str, status: Dict):
         """Update room status from device."""
-        await self.db.rooms.update_one(
-            {"deviceId": device_id},
-            {
-                "$set": {
-                    "isOccupied": status.get("user_detected", False),
-                    "lastDetection": datetime.now() if status.get("user_detected") else None,
-                    "lastStatus": status
-                }
-            }
+        await self._db_connection.execute(
+            """UPDATE rooms 
+               SET isOccupied = ?, lastDetection = ?, lastStatus = ?
+               WHERE deviceId = ?""",
+            (
+                1 if status.get("user_detected", False) else 0,
+                datetime.now().isoformat() if status.get("user_detected") else None,
+                json.dumps(status),
+                device_id
+            )
         )
-
+        await self._db_connection.commit()
+    
     async def update_device_status(self, device_id: str, status: Dict):
         """Update or create device status."""
+        now = datetime.now().isoformat()
         
-        # Prepare fields to update
-        update_fields = {
-            "lastSeen": datetime.now(),
-            "status": status,
-            "updatedAt": datetime.now()
-        }
+        # Convert any datetime objects in status to ISO strings
+        serialized_status = {}
+        for key, value in status.items():
+            if isinstance(value, datetime):
+                serialized_status[key] = value.isoformat()
+            else:
+                serialized_status[key] = value
         
-        # If static info is present, update it too
-        if "device_type" in status:
-            update_fields["type"] = status["device_type"]
-        if "room" in status:
-            update_fields["room"] = status["room"]
-        if "ip" in status:
-            update_fields["ip"] = status["ip"]
-            
-        # Try to find by deviceId first
-        await self.db.devices.update_one(
-            {"deviceId": device_id},
-            {
-                "$set": update_fields,
-                "$setOnInsert": {
-                     "createdAt": datetime.now(),
-                     "name": device_id,
-                     "id": f"D{int(datetime.now().timestamp())}"
-                }
-            },
-            upsert=True
-        )
+        # Check if device exists
+        async with self._db_connection.execute(
+            "SELECT id FROM devices WHERE deviceId = ?", (device_id,)
+        ) as cursor:
+            existing = await cursor.fetchone()
+        
+        if existing:
+            # Update existing device
+            await self._db_connection.execute(
+                """UPDATE devices 
+                   SET lastSeen = ?, status = ?, updatedAt = ?, type = ?, room = ?, ip = ?
+                   WHERE deviceId = ?""",
+                (
+                    now,
+                    json.dumps(serialized_status),
+                    now,
+                    serialized_status.get("device_type"),
+                    serialized_status.get("room"),
+                    serialized_status.get("ip"),
+                    device_id
+                )
+            )
+        else:
+            # Insert new device
+            new_id = f"D{int(datetime.now().timestamp())}"
+            _id = self._generate_id()
+            await self._db_connection.execute(
+                """INSERT INTO devices (id, _id, deviceId, name, type, room, ip, status, lastSeen, createdAt, updatedAt)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    new_id,
+                    _id,
+                    device_id,
+                    device_id,
+                    serialized_status.get("device_type"),
+                    serialized_status.get("room"),
+                    serialized_status.get("ip"),
+                    json.dumps(serialized_status),
+                    now,
+                    now,
+                    now
+                )
+            )
+        
+        await self._db_connection.commit()
     
     # ==================== Appliance Operations ====================
     
@@ -138,11 +541,14 @@ class Database:
         if not room:
             return []
         
-        appliances = await self.db.appliances.find({
-            "roomId": ObjectId(room["_id"]) if "_id" in room else None
-        }).to_list(length=100)
+        room_obj_id = room.get("_id")
         
-        return [self._serialize_doc(a) for a in appliances]
+        async with self._db_connection.execute(
+            "SELECT * FROM appliances WHERE roomId = ? OR room = ?",
+            (room_obj_id, room_id)
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [self._serialize_doc(row) for row in rows]
     
     async def update_appliance_state(
         self, room_id: str, appliance_type: str, state: bool
@@ -152,18 +558,15 @@ class Database:
         if not room:
             return
         
-        await self.db.appliances.update_one(
-            {
-                "roomId": ObjectId(room["_id"]),
-                "type": appliance_type
-            },
-            {
-                "$set": {
-                    "isOn": state,
-                    "lastStateChange": datetime.now()
-                }
-            }
+        room_obj_id = room.get("_id")
+        
+        await self._db_connection.execute(
+            """UPDATE appliances 
+               SET isOn = ?, state = ?, lastStateChange = ?
+               WHERE roomId = ? AND type = ?""",
+            (1 if state else 0, 1 if state else 0, datetime.now().isoformat(), room_obj_id, appliance_type)
         )
+        await self._db_connection.commit()
     
     # ==================== Activity Logging ====================
     
@@ -175,42 +578,29 @@ class Database:
         user_id: Optional[str] = None
     ):
         """Log an activity event."""
-        room = await self.get_room(room_id)
+        room = await self.get_room(room_id) if room_id else None
+        room_object_id = room.get("_id") if room else self._generate_id()
         
-        # Convert roomId to ObjectId if we have the room object
-        room_object_id = None
-        if room and "_id" in room:
-            try:
-                room_object_id = ObjectId(room["_id"]) if isinstance(room["_id"], str) else room["_id"]
-            except:
-                room_object_id = ObjectId()  # Generate new ObjectId as fallback
+        if not user_id:
+            user_object_id = "000000000000000053595354"  # SYSTEM
         else:
-            room_object_id = ObjectId()  # Generate new ObjectId for unknown room
+            user_object_id = user_id
         
-        # Convert userId to ObjectId - use a fixed "SYSTEM" ObjectId for system actions
-        if user_id and ObjectId.is_valid(user_id):
-            user_object_id = ObjectId(user_id)
-        elif user_id:
-            # Try to find user by string ID
-            user = await self.db.patients.find_one({"id": user_id})
-            if user and "_id" in user:
-                user_object_id = user["_id"]
-            else:
-                # Use a fixed ObjectId for SYSTEM (24-char hex: 000000000000000053595354)
-                user_object_id = ObjectId("000000000000000053595354")
-        else:
-            # Use a fixed ObjectId for SYSTEM
-            user_object_id = ObjectId("000000000000000053595354")
+        _id = self._generate_id()
         
-        activity = {
-            "roomId": room_object_id,
-            "eventType": event_type,
-            "timestamp": datetime.now(),
-            "details": details or {},
-            "userId": user_object_id
-        }
-        
-        await self.db.activityLogs.insert_one(activity)
+        await self._db_connection.execute(
+            """INSERT INTO activityLogs (id, _id, roomId, userId, eventType, timestamp, details)
+               VALUES (NULL, ?, ?, ?, ?, ?, ?)""",
+            (
+                _id,
+                room_object_id,
+                user_object_id,
+                event_type,
+                datetime.now().isoformat(),
+                json.dumps(details or {})
+            )
+        )
+        await self._db_connection.commit()
     
     async def get_activity_logs(
         self,
@@ -219,38 +609,45 @@ class Database:
         limit: int = 50
     ) -> List[Dict]:
         """Get activity logs with optional filters."""
-        query = {}
+        query = "SELECT * FROM activityLogs WHERE 1=1"
+        params = []
         
         if room_id:
             room = await self.get_room(room_id)
             if room:
-                query["roomId"] = ObjectId(room["_id"])
+                query += " AND roomId = ?"
+                params.append(room.get("_id"))
         
         if event_types:
-            query["eventType"] = {"$in": event_types}
+            placeholders = ",".join("?" * len(event_types))
+            query += f" AND eventType IN ({placeholders})"
+            params.extend(event_types)
         
-        logs = await self.db.activityLogs.find(query).sort(
-            "timestamp", -1
-        ).limit(limit).to_list(length=limit)
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
         
-        return [self._serialize_doc(log) for log in logs]
+        async with self._db_connection.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+            return [self._serialize_doc(row) for row in rows]
     
     async def get_user_activities(
         self, user_id: str, date: Optional[str] = None
     ) -> List[Dict]:
         """Get activities for a specific user."""
-        query = {"userId": ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id}
+        query = "SELECT * FROM activityLogs WHERE userId = ?"
+        params = [user_id]
         
         if date:
             start = datetime.fromisoformat(date)
             end = datetime(start.year, start.month, start.day, 23, 59, 59)
-            query["timestamp"] = {"$gte": start, "$lte": end}
+            query += " AND timestamp >= ? AND timestamp <= ?"
+            params.extend([start.isoformat(), end.isoformat()])
         
-        activities = await self.db.activityLogs.find(query).sort(
-            "timestamp", -1
-        ).to_list(length=1000)
+        query += " ORDER BY timestamp DESC LIMIT 1000"
         
-        return [self._serialize_doc(a) for a in activities]
+        async with self._db_connection.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+            return [self._serialize_doc(row) for row in rows]
     
     # ==================== Emergency Operations ====================
     
@@ -263,46 +660,53 @@ class Database:
         user_id: Optional[str] = None
     ) -> Dict:
         """Create an emergency event."""
-        room = await self.get_room(room_id)
+        room = await self.get_room(room_id) if room_id else None
+        room_obj_id = room.get("_id") if room else None
         
-        event = {
-            "roomId": ObjectId(room["_id"]) if room else None,
-            "eventType": event_type,
-            "severity": severity,
-            "message": message,
-            "timestamp": datetime.now(),
-            "resolved": False,
-            "notifiedContacts": []
-        }
+        _id = self._generate_id()
         
-        if user_id:
-            event["userId"] = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
+        await self._db_connection.execute(
+            """INSERT INTO emergencyEvents 
+               (id, _id, roomId, userId, eventType, severity, message, timestamp, resolved, notifiedContacts)
+               VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, 0, ?)""",
+            (
+                _id,
+                room_obj_id,
+                user_id,
+                event_type,
+                severity,
+                message,
+                datetime.now().isoformat(),
+                json.dumps([])
+            )
+        )
+        await self._db_connection.commit()
         
-        result = await self.db.emergencyEvents.insert_one(event)
-        event["_id"] = result.inserted_id
-        
-        return self._serialize_doc(event)
+        # Fetch the created event
+        async with self._db_connection.execute(
+            "SELECT * FROM emergencyEvents WHERE _id = ?", (_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            return self._serialize_doc(row)
     
     async def get_active_emergencies(self) -> List[Dict]:
         """Get all unresolved emergency events."""
-        events = await self.db.emergencyEvents.find({
-            "resolved": False
-        }).sort("timestamp", -1).to_list(length=100)
-        
-        return [self._serialize_doc(e) for e in events]
+        async with self._db_connection.execute(
+            "SELECT * FROM emergencyEvents WHERE resolved = 0 ORDER BY timestamp DESC"
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [self._serialize_doc(row) for row in rows]
     
     async def resolve_emergency(self, event_id: str) -> bool:
         """Resolve an emergency event."""
-        result = await self.db.emergencyEvents.update_one(
-            {"_id": ObjectId(event_id)},
-            {
-                "$set": {
-                    "resolved": True,
-                    "resolvedAt": datetime.now()
-                }
-            }
+        cursor = await self._db_connection.execute(
+            """UPDATE emergencyEvents 
+               SET resolved = 1, resolvedAt = ?
+               WHERE _id = ?""",
+            (datetime.now().isoformat(), event_id)
         )
-        return result.modified_count > 0
+        await self._db_connection.commit()
+        return cursor.rowcount > 0
     
     # ==================== Behavior Analysis ====================
     
@@ -315,62 +719,127 @@ class Database:
         gemini_analysis: str
     ):
         """Save behavior analysis results."""
-        await self.db.behaviorAnalysis.update_one(
-            {
-                "userId": ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id,
-                "date": datetime.fromisoformat(date)
-            },
-            {
-                "$set": {
-                    "patterns": patterns,
-                    "anomalies": anomalies,
-                    "geminiAnalysis": gemini_analysis,
-                    "updatedAt": datetime.now()
-                }
-            },
-            upsert=True
-        )
+        date_obj = datetime.fromisoformat(date)
+        
+        # Check if exists
+        async with self._db_connection.execute(
+            "SELECT id FROM behaviorAnalysis WHERE userId = ? AND date = ?",
+            (user_id, date_obj.isoformat())
+        ) as cursor:
+            existing = await cursor.fetchone()
+        
+        if existing:
+            await self._db_connection.execute(
+                """UPDATE behaviorAnalysis 
+                   SET patterns = ?, anomalies = ?, geminiAnalysis = ?, updatedAt = ?
+                   WHERE userId = ? AND date = ?""",
+                (
+                    json.dumps(patterns),
+                    json.dumps(anomalies),
+                    gemini_analysis,
+                    datetime.now().isoformat(),
+                    user_id,
+                    date_obj.isoformat()
+                )
+            )
+        else:
+            _id = self._generate_id()
+            await self._db_connection.execute(
+                """INSERT INTO behaviorAnalysis 
+                   (id, _id, userId, date, patterns, anomalies, geminiAnalysis, createdAt, updatedAt)
+                   VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    _id,
+                    user_id,
+                    date_obj.isoformat(),
+                    json.dumps(patterns),
+                    json.dumps(anomalies),
+                    gemini_analysis,
+                    datetime.now().isoformat(),
+                    datetime.now().isoformat()
+                )
+            )
+        
+        await self._db_connection.commit()
     
     async def get_latest_behavior_analysis(self, user_id: str) -> Optional[Dict]:
         """Get the latest behavior analysis for a user."""
-        analysis = await self.db.behaviorAnalysis.find_one(
-            {"userId": ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id},
-            sort=[("date", -1)]
-        )
-        return self._serialize_doc(analysis) if analysis else None
+        async with self._db_connection.execute(
+            "SELECT * FROM behaviorAnalysis WHERE userId = ? ORDER BY date DESC LIMIT 1",
+            (user_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            return self._serialize_doc(row) if row else None
     
     # ==================== Map Configuration Operations ====================
     
     async def save_map_config(self, config: Dict):
         """Save map configuration (buildings, floors, rooms, wheelchair positions)."""
-        await self.db.mapConfig.update_one(
-            {"_id": "main"},
-            {
-                "$set": {
-                    **config,
-                    "updatedAt": datetime.now()
-                }
-            },
-            upsert=True
-        )
+        # Check if exists
+        async with self._db_connection.execute(
+            "SELECT id FROM mapConfig WHERE id = 'main'"
+        ) as cursor:
+            existing = await cursor.fetchone()
+        
+        if existing:
+            await self._db_connection.execute(
+                """UPDATE mapConfig 
+                   SET buildings = ?, floors = ?, wheelchairPositions = ?, updatedAt = ?
+                   WHERE id = 'main'""",
+                (
+                    json.dumps(config.get("buildings", [])),
+                    json.dumps(config.get("floors", [])),
+                    json.dumps(config.get("wheelchairPositions", {})),
+                    datetime.now().isoformat()
+                )
+            )
+        else:
+            _id = self._generate_id()
+            await self._db_connection.execute(
+                """INSERT INTO mapConfig (id, _id, buildings, floors, wheelchairPositions, updatedAt)
+                   VALUES ('main', ?, ?, ?, ?, ?)""",
+                (
+                    _id,
+                    json.dumps(config.get("buildings", [])),
+                    json.dumps(config.get("floors", [])),
+                    json.dumps(config.get("wheelchairPositions", {})),
+                    datetime.now().isoformat()
+                )
+            )
+        
+        await self._db_connection.commit()
     
     async def get_map_config(self) -> Optional[Dict]:
         """Get map configuration."""
-        config = await self.db.mapConfig.find_one({"_id": "main"})
-        return self._serialize_doc(config) if config else None
+        async with self._db_connection.execute(
+            "SELECT * FROM mapConfig WHERE id = 'main'"
+        ) as cursor:
+            row = await cursor.fetchone()
+            return self._serialize_doc(row) if row else None
     
     async def save_wheelchair_positions(self, positions: Dict):
         """Save wheelchair positions."""
-        await self.db.mapConfig.update_one(
-            {"_id": "main"},
-            {
-                "$set": {
-                    "wheelchairPositions": positions,
-                    "updatedAt": datetime.now()
-                }
-            },
-            upsert=True
-        )
+        async with self._db_connection.execute(
+            "SELECT id FROM mapConfig WHERE id = 'main'"
+        ) as cursor:
+            existing = await cursor.fetchone()
+        
+        if existing:
+            await self._db_connection.execute(
+                """UPDATE mapConfig 
+                   SET wheelchairPositions = ?, updatedAt = ?
+                   WHERE id = 'main'""",
+                (json.dumps(positions), datetime.now().isoformat())
+            )
+        else:
+            _id = self._generate_id()
+            await self._db_connection.execute(
+                """INSERT INTO mapConfig (id, _id, wheelchairPositions, updatedAt)
+                   VALUES ('main', ?, ?, ?)""",
+                (_id, json.dumps(positions), datetime.now().isoformat())
+            )
+        
+        await self._db_connection.commit()
     
     async def get_wheelchair_positions(self) -> Dict:
         """Get wheelchair positions."""
@@ -390,36 +859,50 @@ class Database:
         bbox: Optional[List] = None
     ) -> Dict:
         """Save a location change event to timeline collection."""
-        event = {
-            "type": "location_change",
-            "userId": user_id,
-            "userName": user_name or user_id,
-            "wheelchairId": wheelchair_id,
-            "fromRoom": from_room,
-            "toRoom": to_room,
-            "timestamp": datetime.now(),
-            "metadata": {
-                "detectionConfidence": detection_confidence,
-                "bbox": bbox
-            }
-        }
+        now = datetime.now().isoformat()
         
         # Calculate duration in previous room if we have history
+        duration = None
         if from_room:
-            last_event = await self.db.timeline.find_one(
-                {"userId": user_id, "toRoom": from_room},
-                sort=[("timestamp", -1)]
-            )
-            if last_event:
-                duration = (datetime.now() - last_event["timestamp"]).total_seconds()
-                event["durationInPreviousRoom"] = int(duration)
+            async with self._db_connection.execute(
+                """SELECT timestamp FROM timeline 
+                   WHERE userId = ? AND toRoom = ? 
+                   ORDER BY timestamp DESC LIMIT 1""",
+                (user_id, from_room)
+            ) as cursor:
+                last_event = await cursor.fetchone()
+                if last_event:
+                    last_time = datetime.fromisoformat(last_event['timestamp'])
+                    duration = int((datetime.now() - last_time).total_seconds())
         
-        result = await self.db.timeline.insert_one(event)
-        event["_id"] = result.inserted_id
+        _id = self._generate_id()
+        
+        await self._db_connection.execute(
+            """INSERT INTO timeline 
+               (id, _id, type, userId, userName, wheelchairId, fromRoom, toRoom, timestamp, durationInPreviousRoom, metadata)
+               VALUES (NULL, ?, 'location_change', ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                _id,
+                user_id,
+                user_name or user_id,
+                wheelchair_id,
+                from_room,
+                to_room,
+                now,
+                duration,
+                json.dumps({"detectionConfidence": detection_confidence, "bbox": bbox})
+            )
+        )
+        await self._db_connection.commit()
         
         logger.info(f"Saved location event: {user_name or user_id} moved from {from_room} to {to_room}")
         
-        return self._serialize_doc(event)
+        # Fetch the created event
+        async with self._db_connection.execute(
+            "SELECT * FROM timeline WHERE _id = ?", (_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            return self._serialize_doc(row)
     
     async def get_timeline(
         self,
@@ -431,36 +914,41 @@ class Database:
         limit: int = 100
     ) -> List[Dict]:
         """Get timeline events with optional filters."""
-        query = {}
+        query = "SELECT * FROM timeline WHERE 1=1"
+        params = []
         
         if user_id:
-            query["userId"] = user_id
+            query += " AND userId = ?"
+            params.append(user_id)
         
         if room_id:
-            query["$or"] = [{"fromRoom": room_id}, {"toRoom": room_id}]
+            query += " AND (fromRoom = ? OR toRoom = ?)"
+            params.extend([room_id, room_id])
         
         if event_type:
-            query["type"] = event_type
+            query += " AND type = ?"
+            params.append(event_type)
         
-        if start_date or end_date:
-            query["timestamp"] = {}
-            if start_date:
-                query["timestamp"]["$gte"] = start_date
-            if end_date:
-                query["timestamp"]["$lte"] = end_date
+        if start_date:
+            query += " AND timestamp >= ?"
+            params.append(start_date.isoformat())
         
-        events = await self.db.timeline.find(query).sort(
-            "timestamp", -1
-        ).limit(limit).to_list(length=limit)
+        if end_date:
+            query += " AND timestamp <= ?"
+            params.append(end_date.isoformat())
         
-        return [self._serialize_doc(e) for e in events]
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+        
+        async with self._db_connection.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+            return [self._serialize_doc(row) for row in rows]
     
     async def get_timeline_by_date(self, date_str: str, user_id: Optional[str] = None) -> List[Dict]:
         """Get all timeline events for a specific date."""
         try:
             date = datetime.fromisoformat(date_str)
         except ValueError:
-            # Try parsing as YYYY-MM-DD
             date = datetime.strptime(date_str, "%Y-%m-%d")
         
         start_of_day = datetime(date.year, date.month, date.day, 0, 0, 0)
@@ -482,12 +970,11 @@ class Database:
         
         # Calculate room time distribution
         room_times = {}
-        for i, event in enumerate(events):
-            to_room = event.get("toRoom")
-            duration = event.get("durationInPreviousRoom", 0)
+        for event in events:
             from_room = event.get("fromRoom")
+            duration = event.get("durationInPreviousRoom", 0)
             
-            if from_room and duration > 0:
+            if from_room and duration and duration > 0:
                 room_times[from_room] = room_times.get(from_room, 0) + duration
         
         # Count transitions per room
@@ -509,77 +996,31 @@ class Database:
     
     async def get_user(self, user_id: str) -> Optional[Dict]:
         """Get user by ID."""
-        user = await self.db.users.find_one({
-            "$or": [
-                {"_id": ObjectId(user_id) if ObjectId.is_valid(user_id) else None},
-                {"email": user_id}
-            ]
-        })
-        return self._serialize_doc(user) if user else None
+        async with self._db_connection.execute(
+            "SELECT * FROM users WHERE id = ? OR _id = ? OR email = ?",
+            (user_id, user_id, user_id)
+        ) as cursor:
+            row = await cursor.fetchone()
+            return self._serialize_doc(row) if row else None
     
     async def update_user_preferences(self, user_id: str, preferences: Dict) -> bool:
         """Update user preferences."""
-        result = await self.db.users.update_one(
-            {"_id": ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id},
-            {
-                "$set": {
-                    "preferences": preferences,
-                    "updatedAt": datetime.now()
-                }
-            }
+        cursor = await self._db_connection.execute(
+            """UPDATE users 
+               SET preferences = ?, updatedAt = ?
+               WHERE id = ? OR _id = ?""",
+            (json.dumps(preferences), datetime.now().isoformat(), user_id, user_id)
         )
-        return result.modified_count > 0
+        await self._db_connection.commit()
+        return cursor.rowcount > 0
+        await self._db_connection.commit()
+        return cursor.rowcount > 0
     
-    # ==================== Helpers ====================
+    # ==================== MongoDB Compatibility Layer ====================
     
-    @staticmethod
-    def _serialize_doc(doc: Optional[Dict]) -> Optional[Dict]:
-        """Convert MongoDB document to JSON-serializable dict."""
-        if not doc:
-            return None
-        
-        result = {}
-        for key, value in doc.items():
-            if isinstance(value, ObjectId):
-                result[key] = str(value)
-            elif isinstance(value, datetime):
-                result[key] = value.isoformat()
-            else:
-                result[key] = value
-        
-        # Normalize names: if nameEn exists and is different from name, prefer nameEn
-        # This ensures English names are always used when available
-        if isinstance(result, dict):
-            # For rooms, buildings, patients, and other entities with nameEn field
-            if 'nameEn' in result and result.get('nameEn'):
-                # If nameEn exists and is not empty, use it as the primary name
-                if result.get('name') != result.get('nameEn'):
-                    result['name'] = result['nameEn']
-            
-            # Normalize building names (if name contains Thai, prefer nameEn)
-            if 'name' in result and result.get('name') and any('\u0E00' <= char <= '\u0E7F' for char in result['name']):
-                if result.get('nameEn'):
-                    result['name'] = result['nameEn']
-            
-            # Normalize floor names (convert Thai floor names)
-            if 'name' in result and result.get('name'):
-                floor_map = {
-                    'ชั้น 1': 'Floor 1',
-                    'ชั้น 2': 'Floor 2',
-                    'ชั้น 3': 'Floor 3'
-                }
-                if result['name'] in floor_map:
-                    result['name'] = floor_map[result['name']]
-            
-            # Normalize patient condition values
-            if 'condition' in result:
-                condition_map = {
-                    'ปกติ': 'Normal',
-                    'ต้องระวัง': 'Caution',
-                    'ฉุกเฉิน': 'Emergency'
-                }
-                if result['condition'] in condition_map:
-                    result['condition'] = condition_map[result['condition']]
-        
-        return result
-
+    @property
+    def db(self):
+        """Expose MongoDB-compatible interface via db.db.{collection}."""
+        if not self._compat_layer:
+            raise RuntimeError("Database not connected. Call connect() first.")
+        return self._compat_layer

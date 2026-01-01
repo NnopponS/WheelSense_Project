@@ -25,30 +25,6 @@ services:
       retries: 3
       start_period: 10s
 
-  # ==================== MongoDB ====================
-  mongodb:
-    image: mongo:7.0
-    container_name: wheelsense-mongodb
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: wheelsense123
-      MONGO_INITDB_DATABASE: wheelsense
-    volumes:
-      - mongodb_data:/data/db
-      - ./services/mongodb/init:/docker-entrypoint-initdb.d:ro
-    networks:
-      wheelsense-network:
-        ipv4_address: 172.28.0.11
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/wheelsense --quiet
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-
   # ==================== Ollama (Local LLM) ====================
   ollama:
     image: ollama/ollama:latest
@@ -93,7 +69,7 @@ services:
       - "8765:8765" # WebSocket for ESP32 cameras
       - "5555:5555/udp" # UDP Discovery for auto-discovery
     environment:
-      - MONGO_URI=mongodb://admin:wheelsense123@mongodb:27017/wheelsense?authSource=admin
+      - SQLITE_DB_PATH=/app/data/wheelsense.db
       - MQTT_BROKER=mosquitto
       - MQTT_PORT=1883
       - OLLAMA_HOST=http://ollama:11434
@@ -106,14 +82,13 @@ services:
       - HOST_IP=${HOST_IP:-}
     command: python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
-      mongodb:
-        condition: service_healthy
       mosquitto:
         condition: service_healthy
       ollama:
         condition: service_started
     volumes:
       - ./backend/src:/app/src
+      - sqlite_data:/app/data
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.20
@@ -173,7 +148,6 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_API_URL=/api
-        - VITE_MCP_URL=/mcp
         - VITE_MQTT_WS_URL=ws://localhost/mqtt
     container_name: wheelsense-dashboard
     restart: unless-stopped
@@ -230,7 +204,7 @@ networks:
         - subnet: 172.28.0.0/16
 
 volumes:
-  mongodb_data:
+  sqlite_data:
     driver: local
   mosquitto_data:
     driver: local

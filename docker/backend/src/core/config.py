@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Database
-    MONGO_URI: str = "mongodb://admin:wheelsense123@localhost:27017/wheelsense?authSource=admin"
+    SQLITE_DB_PATH: str = "data/wheelsense.db"
     
     # MQTT
     MQTT_BROKER: str = "localhost"

@@ -840,6 +840,32 @@ export function AppProvider({ children }) {
         setEmergencies(prev => prev.map(e => e.id === id ? { ...e, resolved: true } : e));
     };
 
+    // Delete device - removes from local state and calls API
+    const deleteDevice = async (deviceId) => {
+        try {
+            await api.deleteDevice(deviceId);
+            setDevices(prev => prev.filter(d => d.id !== deviceId && d.deviceId !== deviceId));
+        } catch (error) {
+            console.error('[AppContext] Failed to delete device:', error);
+            throw error;
+        }
+    };
+
+    // Update device - updates local state and calls API  
+    const updateDevice = async (deviceId, updates) => {
+        try {
+            await api.updateDevice(deviceId, updates);
+            setDevices(prev => prev.map(d =>
+                (d.id === deviceId || d.deviceId === deviceId)
+                    ? { ...d, ...updates }
+                    : d
+            ));
+        } catch (error) {
+            console.error('[AppContext] Failed to update device:', error);
+            throw error;
+        }
+    };
+
     const value = {
         language, setLanguage: setLanguageWithLog,
         theme, setTheme, toggleTheme,
@@ -861,7 +887,7 @@ export function AppProvider({ children }) {
         wheelchairPositions, setWheelchairPositions,
         detectionState,
         patients, setPatients,
-        devices, setDevices,
+        devices, setDevices, deleteDevice, updateDevice,
         rooms, setRooms,
         appliances, setAppliances, toggleAppliance, setApplianceValue,
         timeline, setTimeline,
