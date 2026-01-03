@@ -54,11 +54,15 @@ async def control_appliance(control: ApplianceControl, request: Request):
                 {"$set": update_doc}
             )
             logger.info(f"Persisted appliance state: {control.room}/{control.appliance} = {control.state} (updated {result.modified_count} docs)")
+            
+            # Also sync to device_states table
+            await db.sync_appliance_to_state(control.room, control.appliance, control.state)
         except Exception as e:
             logger.warning(f"Failed to persist appliance state: {e}")
             
     # Broadcast state change via WebSocket to sync all clients
     try:
+        # Broadcast appliance_update (existing event)
         await mqtt_handler._broadcast_ws({
             "type": "appliance_update",
             "room": control.room,
@@ -68,8 +72,18 @@ async def control_appliance(control: ApplianceControl, request: Request):
             "timestamp": datetime.utcnow().isoformat()
         })
         logger.info(f"Broadcasted appliance update: {control.room}/{control.appliance} = {control.state}")
+        
+        # Also broadcast device_state_update for MCP compatibility
+        await mqtt_handler._broadcast_ws({
+            "type": "device_state_update",
+            "room": control.room,
+            "device": control.appliance,
+            "state": control.state,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        logger.info(f"Broadcasted device_state_update: {control.room}/{control.appliance} = {control.state}")
     except Exception as e:
-        logger.warning(f"Failed to broadcast appliance update: {e}")
+        logger.warning(f"Failed to broadcast appliance/device state update: {e}")
     
     # Log activity
     if db:

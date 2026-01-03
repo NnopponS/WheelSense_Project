@@ -2,14 +2,54 @@
  * UserLocationPage - Location tracking page for users
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import { MapPin, Battery } from 'lucide-react';
 
 export function UserLocationPage() {
-    const { currentUser, rooms, wheelchairs, wheelchairPositions, language } = useApp();
+    const { currentUser, rooms, wheelchairs, wheelchairPositions, language, detectionState } = useApp();
     const { t } = useTranslation(language);
+    const [detectedRoom, setDetectedRoom] = useState(null);
+    const [detectionStatus, setDetectionStatus] = useState('⚪ Not Detected');
+
+    // Find current location from detectionState (YOLO-derived)
+    useEffect(() => {
+        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+        
+        // Find room where wheelchair is detected
+        const foundRoom = rooms.find(room => {
+            const detection = detectionState[room.id] ||
+                detectionState[room.roomType?.toLowerCase()] ||
+                detectionState[normalizeRoomName(room.nameEn)] ||
+                detectionState[normalizeRoomName(room.name)];
+            return detection?.detected === true;
+        });
+        
+        if (foundRoom) {
+            setDetectedRoom(foundRoom);
+            setDetectionStatus('🟢 Detected');
+        } else {
+            // Fallback to currentUser.room if no detection
+            if (currentUser?.room) {
+                let fallbackRoom = rooms.find(r => r.id === currentUser.room);
+                if (!fallbackRoom) {
+                    fallbackRoom = rooms.find(r => r.roomType?.toLowerCase() === currentUser.room?.toLowerCase());
+                }
+                if (!fallbackRoom) {
+                    fallbackRoom = rooms.find(r => r.nameEn?.toLowerCase() === currentUser.room?.toLowerCase());
+                }
+                if (!fallbackRoom) {
+                    fallbackRoom = rooms.find(r => r.name?.toLowerCase().includes(currentUser.room?.toLowerCase() || ''));
+                }
+                setDetectedRoom(fallbackRoom || null);
+                setDetectionStatus('⚪ Not Detected');
+            } else {
+                setDetectedRoom(null);
+                setDetectionStatus('⚪ Not Detected');
+            }
+        }
+    }, [detectionState, rooms, currentUser?.room]);
 
     // Early return if currentUser is not available
     if (!currentUser) {
@@ -24,18 +64,7 @@ export function UserLocationPage() {
     }
 
     const myWheelchair = wheelchairs.find(w => w.id === currentUser?.wheelchairId);
-
-    // Find room using flexible matching (by id, roomType, or nameEn)
-    let myRoom = rooms.find(r => r.id === currentUser?.room);
-    if (!myRoom && currentUser?.room) {
-        myRoom = rooms.find(r => r.roomType?.toLowerCase() === currentUser.room?.toLowerCase());
-    }
-    if (!myRoom && currentUser?.room) {
-        myRoom = rooms.find(r => r.nameEn?.toLowerCase() === currentUser.room?.toLowerCase());
-    }
-    if (!myRoom && currentUser?.room) {
-        myRoom = rooms.find(r => r.name?.toLowerCase().includes(currentUser.room?.toLowerCase() || ''));
-    }
+    const myRoom = detectedRoom;
 
     return (
         <div className="page-content">
@@ -54,8 +83,17 @@ export function UserLocationPage() {
                     }}>
                         <MapPin size={36} color="white" />
                     </div>
-                    <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{myRoom?.name || t('Unknown Location')}</h3>
-                    <p style={{ color: 'var(--text-secondary)' }}>{myRoom?.nameEn}</p>
+                    <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>
+                        📍 {t('Current Location')}: {myRoom?.name || t('Unknown Location')}
+                    </h3>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{myRoom?.nameEn || ''}</p>
+                    <p style={{ 
+                        fontSize: '0.9rem', 
+                        color: detectionStatus.includes('🟢') ? 'var(--success-500)' : 'var(--text-muted)',
+                        fontWeight: 500
+                    }}>
+                        {detectionStatus}
+                    </p>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '1rem' }}>
                         <div>
                             <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--info-500)' }}>{myRoom?.temperature}°C</div>

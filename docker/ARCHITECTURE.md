@@ -16,7 +16,7 @@ The main server that handles:
 - **MCP Protocol** - Model Context Protocol endpoints
 - **Backend REST API** - All REST API endpoints (rooms, patients, appliances, etc.)
 - **Tool Registry** - Smart home control tools
-- **Database Operations** - MongoDB integration
+- **Database Operations** - SQLite database integration
 - **MQTT Communication** - Device control via MQTT
 - **WebSocket** - Camera streaming and real-time updates
 - **LLM Integration** - Uses LLM service for AI interactions
@@ -58,7 +58,7 @@ Shared LLM service module that provides:
 
 ## Other Services
 
-Other services (dashboard, camera-service, mongodb, mosquitto, nginx) are located in the parent `services/` directory and referenced in `docker-compose.yml`.
+Other services (dashboard, camera-service, mosquitto, nginx) are located in the parent `services/` directory and referenced in `docker-compose.yml`.
 
 ## Architecture Flow
 
@@ -83,7 +83,7 @@ Other services (dashboard, camera-service, mongodb, mosquitto, nginx) are locate
        │
        ├──▶ MQTT Broker ──▶ Devices
        │
-       └──▶ MongoDB ──▶ Database
+       └──▶ SQLite ──▶ Database
 ```
 
 ## Ports
@@ -96,7 +96,7 @@ Other services (dashboard, camera-service, mongodb, mosquitto, nginx) are locate
 
 - **MCP Server** depends on:
   - LLM Service (for AI interactions)
-  - MongoDB (for data storage)
+  - SQLite Database (for data storage)
   - MQTT Broker (for device communication)
 
 - **MCP Client** depends on:

@@ -20,7 +20,7 @@ import { useTranslation } from '../hooks/useTranslation';
  */
 export function Text({ children, ...props }) {
     const { language } = useApp();
-    const { t } = useTranslation(language);
+    const { t } = useTranslation(language || 'en');
     
     if (typeof children !== 'string') {
         console.warn('[Text] Component expects a string child. Use t() hook for dynamic content.');

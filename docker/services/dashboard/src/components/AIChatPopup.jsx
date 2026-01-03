@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { Bot, Send, X, Minimize2, Maximize2, Mic, MicOff, Volume2, VolumeX, Check, Loader } from 'lucide-react';
+import { Bot, Send, X, Minimize2, Maximize2, Mic, MicOff, Volume2, VolumeX, Check, Loader, MessageSquarePlus } from 'lucide-react';
 import * as api from '../services/api';
 
 // Helper to detect if text is Thai
@@ -14,24 +14,63 @@ function isThaiText(text) {
 // API function to translate text using deep-translator (only for AI chat)
 async function translateForAI(text, fromLang, toLang) {
     try {
-        const response = await fetch('/api/translate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text, from_lang: fromLang, to_lang: toLang })
-        });
-        const data = await response.json();
-        return data.translated || text;
+        const result = await api.translateText(text, fromLang, toLang);
+        return result.translated || text;
     } catch (error) {
         console.error('[AIChatPopup] Translation failed:', error);
         return text;
     }
 }
 
+// Generate unique session ID
+function generateSessionId() {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 export function AIChatPopup() {
-    const { rooms, appliances, toggleAppliance, patients, role, currentUser, language } = useApp();
-    const { t } = useTranslation(language);
+    const { rooms, appliances, toggleAppliance, patients, role, currentUser, language, registerChatMessageCallback } = useApp();
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
+    
+    // Draggable position state
+    const [position, setPosition] = useState(() => {
+        // Load position from localStorage or use default
+        const stored = localStorage.getItem('wheelsense_ai_chat_position');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                return { x: parsed.x, y: parsed.y };
+            } catch (e) {
+                return null; // Default position
+            }
+        }
+        return null; // Default position (bottom: 24px, right: 24px)
+    });
+    
+    // Drag state
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartPos = useRef({ x: 0, y: 0 });
+    const elementStartPos = useRef({ x: 0, y: 0 });
+    
+    // Save position to localStorage when it changes
+    useEffect(() => {
+        if (position) {
+            localStorage.setItem('wheelsense_ai_chat_position', JSON.stringify(position));
+        }
+    }, [position]);
+
+    // Session management
+    const [sessionId, setSessionId] = useState(() => {
+        // Load session ID from localStorage or generate new one
+        const stored = localStorage.getItem('wheelsense_chat_session_id');
+        return stored || generateSessionId();
+    });
+    
+    // Save session ID to localStorage when it changes
+    useEffect(() => {
+        localStorage.setItem('wheelsense_chat_session_id', sessionId);
+    }, [sessionId]);
 
     // Welcome messages in both languages
     const welcomeEN = 'Hello! I am WheelSense AI 🤖\nType commands or questions!\nOr click the microphone button to chat 🎤';
@@ -70,6 +109,43 @@ export function AIChatPopup() {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Register callback to receive chat messages from WebSocket
+    useEffect(() => {
+        if (!registerChatMessageCallback) {
+            console.warn('%c⚠️ [AIChatPopup] registerChatMessageCallback not available', 'color: #ffa94d; font-weight: bold;');
+            return; // Guard if not available
+        }
+        
+        console.log('%c✅ [AIChatPopup] Registering chat message callback', 'color: #51cf66; font-weight: bold;');
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AIChatPopup.jsx:81', message: 'Registering callback', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
+        // #endregion
+        const cleanup = registerChatMessageCallback((message) => {
+            // Always add messages, even when chat is closed (they'll appear when user opens it)
+            console.log('%c📩 [AIChatPopup] Received message via callback', 'color: #339af0; font-size: 14px; font-weight: bold;', message);
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AIChatPopup.jsx:84', message: 'Callback invoked', data: message, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
+            // #endregion
+            setMessages(prev => {
+                // Check if message already exists (avoid duplicates based on content and timing)
+                const exists = prev.some(m => 
+                    m.role === message.role && 
+                    m.content === message.content &&
+                    Math.abs((m.id || 0) - (message.id || 0)) < 5000 // Same message within 5 seconds
+                );
+                if (exists) {
+                    console.log('%c⚠️ [AIChatPopup] Duplicate message detected, skipping', 'color: #ffa94d;');
+                    return prev;
+                }
+                console.log('%c✅ [AIChatPopup] Adding notification message to chat', 'color: #51cf66; font-weight: bold;', message.content);
+                return [...prev, message];
+            });
+        });
+        
+        console.log('%c✅ [AIChatPopup] Chat message callback registered successfully', 'color: #51cf66; font-weight: bold;');
+        return cleanup; // Cleanup on unmount
+    }, [registerChatMessageCallback]); // Remove isOpen, isMinimized from dependencies
 
     // Start voice recognition
     const startListening = () => {
@@ -284,11 +360,113 @@ export function AIChatPopup() {
 
     const quickActions = language === 'th' ? quickActionsTH : quickActionsEN;
 
+    // Drag handlers
+    const handleMouseDown = (e) => {
+        if (e.button !== 0) return; // Only left mouse button
+        e.preventDefault();
+        setIsDragging(true);
+        dragStartPos.current = { x: e.clientX, y: e.clientY };
+        elementStartPos.current = position || { x: window.innerWidth - 84, y: window.innerHeight - 84 };
+    };
+    
+    const handleTouchStart = (e) => {
+        const touch = e.touches[0];
+        setIsDragging(true);
+        dragStartPos.current = { x: touch.clientX, y: touch.clientY };
+        elementStartPos.current = position || { x: window.innerWidth - 84, y: window.innerHeight - 84 };
+    };
+    
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const deltaX = e.clientX - dragStartPos.current.x;
+        const deltaY = e.clientY - dragStartPos.current.y;
+        
+        let newX = elementStartPos.current.x + deltaX;
+        let newY = elementStartPos.current.y + deltaY;
+        
+        // Keep within viewport bounds
+        const maxX = window.innerWidth - 60;
+        const maxY = window.innerHeight - 60;
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+        
+        setPosition({ x: newX, y: newY });
+    };
+    
+    const handleTouchMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - dragStartPos.current.x;
+        const deltaY = touch.clientY - dragStartPos.current.y;
+        
+        let newX = elementStartPos.current.x + deltaX;
+        let newY = elementStartPos.current.y + deltaY;
+        
+        // Keep within viewport bounds
+        const maxX = window.innerWidth - 60;
+        const maxY = window.innerHeight - 60;
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+        
+        setPosition({ x: newX, y: newY });
+    };
+    
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+    
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+    };
+    
+    // Add global event listeners for dragging
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('touchmove', handleTouchMove, { passive: false });
+            document.addEventListener('touchend', handleTouchEnd);
+            return () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener('touchend', handleTouchEnd);
+            };
+        }
+    }, [isDragging]);
+    
+    // Calculate popup position (same as fab or use position)
+    // When position is set, popup appears at bottom-right of fab position
+    const popupStyle = position
+        ? {
+            position: 'fixed',
+            left: 'auto',
+            top: 'auto',
+            right: `${window.innerWidth - position.x - 60}px`,
+            bottom: `${window.innerHeight - position.y - 60}px`
+        }
+        : {};
+    
+    const fabStyle = position
+        ? {
+            position: 'fixed',
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            right: 'auto',
+            bottom: 'auto'
+        }
+        : {};
+
     if (!isOpen) {
         return (
             <button
                 className="ai-fab"
+                style={fabStyle}
                 onClick={() => setIsOpen(true)}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
                 title="AI Assistant"
             >
                 <Bot size={24} />
@@ -298,7 +476,10 @@ export function AIChatPopup() {
     }
 
     return (
-        <div className={`ai-popup ${isMinimized ? 'minimized' : ''}`}>
+        <div 
+            className={`ai-popup ${isMinimized ? 'minimized' : ''}`}
+            style={popupStyle}
+        >
             {/* Header */}
             <div className="ai-popup-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -321,6 +502,29 @@ export function AIChatPopup() {
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    {/* New Chat button */}
+                    <button
+                        onClick={async () => {
+                            if (confirm(language === 'th' ? 'เริ่มการสนทนาใหม่?' : 'Start a new chat?')) {
+                                try {
+                                    await api.clearChatContext(sessionId);
+                                    const newSessionId = generateSessionId();
+                                    setSessionId(newSessionId);
+                                    setMessages([{ id: 1, role: 'assistant', content: language === 'th' ? welcomeTH : welcomeEN }]);
+                                } catch (error) {
+                                    console.error('Failed to clear chat context:', error);
+                                    // Still clear locally even if API fails
+                                    const newSessionId = generateSessionId();
+                                    setSessionId(newSessionId);
+                                    setMessages([{ id: 1, role: 'assistant', content: language === 'th' ? welcomeTH : welcomeEN }]);
+                                }
+                            }
+                        }}
+                        title={language === 'th' ? 'เริ่มการสนทนาใหม่' : 'New Chat'}
+                        style={{ color: 'var(--text-muted)' }}
+                    >
+                        <MessageSquarePlus size={16} />
+                    </button>
                     {/* Voice toggle */}
                     <button
                         onClick={() => { if (isSpeaking) stopSpeaking(); setVoiceEnabled(!voiceEnabled); }}

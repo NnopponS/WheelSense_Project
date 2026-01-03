@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade pip first to avoid hash verification issues
+RUN pip install --upgrade pip
+
 # Copy requirements first for better caching
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

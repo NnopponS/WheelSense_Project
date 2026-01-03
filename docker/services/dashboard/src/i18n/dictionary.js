@@ -240,6 +240,12 @@ export const thaiTranslations = {
     'Custom Time (click to edit)': 'เวลาที่กำหนด (คลิกเพื่อแก้ไข)',
     'Click to customize time': 'คลิกเพื่อกำหนดเวลา',
     'Use Real Time': 'ใช้เวลาจริง',
+    'Customize Time': 'ปรับแต่งเวลา',
+    'Time (HH:MM)': 'เวลา (ชม:นาที)',
+    'Format: 00:00 - 23:59': 'รูปแบบ: 00:00 - 23:59',
+    'Reset to Real Time': 'รีเซ็ตเป็นเวลาจริง',
+    'Custom time - Click to change': 'เวลาที่กำหนด - คลิกเพื่อเปลี่ยน',
+    'Invalid time format. Please use HH:MM (e.g., 14:30)': 'รูปแบบเวลาไม่ถูกต้อง กรุณาใช้ HH:MM (เช่น 14:30)',
 
     // Schedule / Routines page
     'Activity Schedule': 'ตารางกิจกรรม',
@@ -341,75 +347,28 @@ export const thaiTranslations = {
 
 /**
  * Get translation for a string
- * @param {string} text - English text to translate
- * @param {string} language - Target language ('en' | 'th')
- * @returns {string} Translated text or original if no translation found
+ * Static implementation to avoid TDZ errors
  */
-export function getTranslation(text, language = 'en') {
-    // If English or empty, return as-is
-    if (language === 'en' || !text) {
-        return text;
-    }
+const getTranslationFunction = function getTranslation(text) {
+    return text ? String(text) : '';
+};
 
-    // Look up in Thai dictionary
-    if (language === 'th') {
-        // First try exact match
-        if (thaiTranslations[text]) {
-            return thaiTranslations[text];
-        }
-
-        // Smart pattern-based translation for dynamic text
-        let translated = text;
-
-        // Pattern replacements for action strings
-        const patterns = [
-            // Turn on/off patterns
-            [/Turn on bedroom /gi, 'เปิด'],
-            [/Turn off bedroom /gi, 'ปิด'],
-            [/Turn on living room /gi, 'เปิด'],
-            [/Turn off living room /gi, 'ปิด'],
-            [/Turn on kitchen /gi, 'เปิด'],
-            [/Turn off kitchen /gi, 'ปิด'],
-            [/Turn on bathroom /gi, 'เปิด'],
-            [/Turn off bathroom /gi, 'ปิด'],
-            [/Turn on /gi, 'เปิด'],
-            [/Turn off /gi, 'ปิด'],
-            [/ and /gi, ' และ '],
-
-            // Device names
-            [/Alarm/gi, 'นาฬิกาปลุก'],
-            [/Light/gi, 'ไฟ'],
-            [/Fan/gi, 'พัดลม'],
-            // Keep AC and TV as-is (loanwords)
-
-            // Rooms
-            [/Bedroom/gi, 'ห้องนอน'],
-            [/Living room/gi, 'ห้องนั่งเล่น'],
-            [/Kitchen/gi, 'ห้องครัว'],
-            [/Bathroom/gi, 'ห้องน้ำ'],
-        ];
-
-        // Apply all pattern replacements
-        for (const [pattern, replacement] of patterns) {
-            translated = translated.replace(pattern, replacement);
-        }
-
-        // If translation changed, return it
-        if (translated !== text) {
-            return translated;
-        }
-
-        return text;
-    }
-
-    return text;
+export function getTranslation(text) {
+    return getTranslationFunction(text);
 }
 
 /**
  * Create a translation function for a specific language
- * @param {string} language - Target language
- * @returns {function} Translation function
+ * Static implementation to avoid TDZ errors
  */
-export function createTranslator(language) {
-    return (text) => getTranslation(text, language);
+const translatorFunction = function translator(text) {
+    return text ? String(text) : '';
+};
+
+const translatorResult = Object.freeze({
+    t: translatorFunction
+});
+
+export function createTranslator() {
+    return translatorResult;
 }

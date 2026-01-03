@@ -8,7 +8,9 @@ import {
     exportBackupJSON,
     importData,
     clearTimelineData,
-    resetAllDefaults
+    resetAllDefaults,
+    getUserInfo,
+    updateUserInfo
 } from '../services/api';
 import {
     Settings, Users, Shield, Bell, Database, Palette, Globe,
@@ -54,6 +56,14 @@ export function SettingsPage() {
         ollamaHost: localStorage.getItem('ollama_host') || 'http://localhost:11434',
     });
 
+    // User info state (for user role)
+    const [userInfo, setUserInfo] = useState({
+        name_thai: '',
+        name_english: '',
+        condition: ''
+    });
+    const [userInfoLoading, setUserInfoLoading] = useState(false);
+
     // State for API testing
     const [apiTestStatus, setApiTestStatus] = useState({});
 
@@ -61,6 +71,47 @@ export function SettingsPage() {
     useEffect(() => {
         setSettings(prev => ({ ...prev, compactModeLocal: compactMode, language: language }));
     }, [compactMode, language]);
+
+    // Load user info for user role
+    useEffect(() => {
+        if (role === 'user') {
+            loadUserInfo();
+        }
+    }, [role]);
+
+    const loadUserInfo = async () => {
+        setUserInfoLoading(true);
+        try {
+            const info = await getUserInfo();
+            setUserInfo({
+                name_thai: info.name_thai || '',
+                name_english: info.name_english || '',
+                condition: info.condition || ''
+            });
+        } catch (error) {
+            console.error('Failed to load user info:', error);
+        } finally {
+            setUserInfoLoading(false);
+        }
+    };
+
+    const handleUserInfoChange = async (field, value) => {
+        const updated = { ...userInfo, [field]: value };
+        setUserInfo(updated);
+        
+        // Auto-save with debounce
+        clearTimeout(window.userInfoSaveTimeout);
+        window.userInfoSaveTimeout = setTimeout(async () => {
+            try {
+                await updateUserInfo({ [field]: value });
+                setSaved(true);
+                setTimeout(() => setSaved(false), 2000);
+            } catch (error) {
+                console.error('Failed to save user info:', error);
+                alert('Failed to save: ' + error.message);
+            }
+        }, 1000);
+    };
 
     const handleToggle = (key) => {
         if (key === 'compactModeLocal') {
@@ -413,9 +464,30 @@ export function SettingsPage() {
 
                                 <div className="form-row">
                                     <div className="form-group">
-                                        <label className="form-label">Full Name</label>
-                                        <input type="text" className="form-input" defaultValue={currentUser?.name || ''} />
+                                        <label className="form-label">Name (Thai) / ชื่อภาษาไทย</label>
+                                        <input 
+                                            type="text" 
+                                            className="form-input" 
+                                            value={userInfo.name_thai}
+                                            onChange={(e) => handleUserInfoChange('name_thai', e.target.value)}
+                                            placeholder="ชื่อภาษาไทย"
+                                            disabled={userInfoLoading}
+                                        />
                                     </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Name (English)</label>
+                                        <input 
+                                            type="text" 
+                                            className="form-input" 
+                                            value={userInfo.name_english}
+                                            onChange={(e) => handleUserInfoChange('name_english', e.target.value)}
+                                            placeholder="English Name"
+                                            disabled={userInfoLoading}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
                                     <div className="form-group">
                                         <label className="form-label">Age</label>
                                         <input type="number" className="form-input" defaultValue={currentUser?.age || ''} />

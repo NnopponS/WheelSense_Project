@@ -2,47 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
 import { TranslationLoadingIndicator } from '../components/TranslationLoadingIndicator';
-import { preloadPageStrings } from '../i18n/translate';
 import { Users, Plus, Edit2, Trash2, X, Accessibility, MapPin } from 'lucide-react';
 
 export function PatientsPage() {
     const { patients, setPatients, wheelchairs, setWheelchairs, openDrawer, role, rooms, language } = useApp();
-    const { t, hasPending } = useTranslation(language);
+    const { t } = useTranslation(language);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingPatient, setEditingPatient] = useState(null);
     const [activeTab, setActiveTab] = useState('patients');
 
-    // Warm-up: Preload page-specific strings when TH is selected
-    useEffect(() => {
-        if (language === 'th') {
-            const pageStrings = [
-                'Wheelchairs & Patients',
-                'Manage wheelchairs and patients',
-                'Patients',
-                'Wheelchairs',
-                'Patient List',
-                'Add Patient',
-                'Add Wheelchair',
-                'Wheelchair List',
-                'Name',
-                'Age',
-                'Status',
-                'Wheelchair',
-                'Current Room',
-                'Actions',
-                'User',
-                'Location',
-                'years old',
-                'Normal',
-                'Warning',
-                'Emergency',
-                'Offline',
-                'No User',
-                'Do you want to delete this patient?',
-            ];
-            preloadPageStrings(pageStrings, language);
-        }
-    }, [language]);
+    // DISABLED: Translation preload feature temporarily disabled to fix TDZ issues
+    // useEffect(() => {
+    //     if (language === 'th') {
+    //         const pageStrings = [
+    //             'Wheelchairs & Patients',
+    //             'Manage wheelchairs and patients',
+    //             'Patients',
+    //             'Wheelchairs',
+    //             'Patient List',
+    //             'Add Patient',
+    //             'Add Wheelchair',
+    //             'Wheelchair List',
+    //             'Name',
+    //             'Age',
+    //             'Status',
+    //             'Wheelchair',
+    //             'Current Room',
+    //             'Actions',
+    //             'User',
+    //             'Location',
+    //             'years old',
+    //             'Normal',
+    //             'Warning',
+    //             'Emergency',
+    //             'Offline',
+    //             'No User',
+    //             'Do you want to delete this patient?',
+    //         ];
+    //         preloadPageStrings(pageStrings, language);
+    //     }
+    // }, [language]);
 
     const handleDeletePatient = (id) => {
         if (confirm(t('Do you want to delete this patient?'))) {
@@ -58,7 +57,7 @@ export function PatientsPage() {
 
     return (
         <div className="page-content">
-            <TranslationLoadingIndicator isPending={hasPending && language === 'th'} />
+            <TranslationLoadingIndicator isPending={false} />
             <div className="page-header">
                 <h2>👥 {t('Wheelchairs & Patients')}</h2>
                 <p>{t('Manage wheelchairs and patients')}</p>

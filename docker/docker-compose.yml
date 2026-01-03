@@ -89,6 +89,7 @@ services:
     volumes:
       - ./backend/src:/app/src
       - sqlite_data:/app/data
+      - ./.cursor:/app/.cursor
     networks:
       wheelsense-network:
         ipv4_address: 172.28.0.20

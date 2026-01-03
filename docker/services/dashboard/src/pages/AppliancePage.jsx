@@ -60,15 +60,40 @@ export function ApplianceControlPage() {
 
             {/* Room Selector - Show for all users */}
             <div className="tabs" style={{ marginBottom: '1.5rem' }}>
-                {availableRooms.map(room => (
-                    <button
-                        key={room.id}
-                        className={`tab ${selectedRoom === room.id ? 'active' : ''}`}
-                        onClick={() => setSelectedRoom(room.id)}
-                    >
-                        {room.nameEn || room.name}
-                    </button>
-                ))}
+                {availableRooms.map(room => {
+                    const isUserHere = currentUser?.room &&
+                        (currentUser.room.toLowerCase() === room.id.toLowerCase() ||
+                            currentUser.room.toLowerCase() === room.roomType?.toLowerCase() ||
+                            currentUser.room.toLowerCase().replace(/\s+/g, '') === room.id.toLowerCase().replace(/\s+/g, ''));
+
+                    return (
+                        <button
+                            key={room.id}
+                            className={`tab ${selectedRoom === room.id ? 'active' : ''}`}
+                            onClick={() => setSelectedRoom(room.id)}
+                            style={{
+                                position: 'relative',
+                                ...(isUserHere ? {
+                                    borderColor: 'var(--success-500)',
+                                    boxShadow: '0 0 8px var(--success-500)'
+                                } : {})
+                            }}
+                        >
+                            {room.nameEn || room.name}
+                            {isUserHere && (
+                                <span style={{
+                                    position: 'absolute',
+                                    top: '2px',
+                                    right: '2px',
+                                    width: '8px',
+                                    height: '8px',
+                                    background: 'var(--success-500)',
+                                    borderRadius: '50%'
+                                }} title="You are here" />
+                            )}
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Scene Presets */}

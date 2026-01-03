@@ -15,7 +15,7 @@ The `docker/` folder contains **ONLY 3 folders**:
   - Handles Backend REST API (port 8000)
   - Handles WebSocket for cameras (port 8765)
 - **ollama** - LLM service (port 11434)
-- **mongodb** - Database (port 27017)
+- **sqlite** - Database (stored in Docker volume)
 - **mosquitto** - MQTT broker (ports 1883, 9001)
 - **dashboard** - Frontend (port 3000)
 - **camera-service** - Camera detection service

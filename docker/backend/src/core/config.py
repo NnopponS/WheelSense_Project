@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     
     # Emergency
     EMERGENCY_NOTIFICATION_URL: Optional[str] = None
+    
+    # RAG (Phase 4D)
+    RAG_EMBEDDINGS_DIR: str = "rag/embeddings"  # Relative to backend root
+    RAG_ENABLED: bool = True  # Feature flag to enable/disable RAG
 
     model_config = {
         "env_file": ".env",

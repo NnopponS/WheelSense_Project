@@ -25,10 +25,16 @@ from .core.config import settings
 from .core.database import Database
 from .core.mqtt_handler import MQTTHandler
 from .services.emergency import EmergencyService
+from .services.schedule_checker import ScheduleCheckerService
+from .services.house_check_service import HouseCheckService
 from .core.websocket_handler import stream_handler
 from .init_data import initialize_data
 
 from .api.appliances import router as appliances_router
+from .api.user_info import router as user_info_router
+from .api.schedule import router as schedule_router
+from .api.device_states import router as device_states_router
+from .api.chat import router as chat_router
 
 import sys
 import os
@@ -42,6 +48,10 @@ logger = logging.getLogger(__name__)
 db: Optional[Database] = None
 mqtt_handler: Optional[MQTTHandler] = None
 emergency_service: Optional[EmergencyService] = None
+schedule_checker: Optional[ScheduleCheckerService] = None
+house_check_service: Optional[HouseCheckService] = None
+llm_client: Optional[Any] = None  # LLMClient instance
+tool_registry: Optional[Any] = None  # ToolRegistry instance
 
 
 
@@ -49,7 +59,7 @@ emergency_service: Optional[EmergencyService] = None
 async def lifespan(app: FastAPI):
     """Application lifecycle management."""
     # Startup
-    global db, mqtt_handler, emergency_service
+    global db, mqtt_handler, emergency_service, schedule_checker, house_check_service, llm_client, tool_registry
     
     logger.info("🚀 Starting WheelSense Backend...")
     
@@ -228,6 +238,75 @@ async def lifespan(app: FastAPI):
                 
                 logger.info(f"📋 Timeline: {user_name} moved from {previous_room} to {room}")
                 
+                # Update user_info.current_location in SQLite
+                # Use room English name (e.g., "Bedroom", "Kitchen", "Living Room")
+                room_name_en = room_data.get("nameEn")
+                if not room_name_en:
+                    # Fallback: convert room type to proper name
+                    room_name_map = {
+                        "bedroom": "Bedroom",
+                        "bathroom": "Bathroom",
+                        "kitchen": "Kitchen",
+                        "livingroom": "Living Room"
+                    }
+                    room_name_en = room_name_map.get(room.lower(), room.capitalize())
+                
+                try:
+                    # Create broadcast callback for sync_location_to_user_info
+                    async def broadcast_user_info_update(message):
+                        if mqtt_handler:
+                            await mqtt_handler._broadcast_ws(message)
+                    
+                    await db.sync_location_to_user_info(room_name_en, broadcast_user_info_update)
+                    logger.info(f"✅ Updated user_info.current_location to: {room_name_en}")
+                except Exception as e:
+                    logger.error(f"Failed to sync location to user_info: {e}", exc_info=True)
+                    # Continue even if sync fails
+                
+                # Phase 4E: Run house check on location change
+                if house_check_service and previous_room != room:
+                    try:
+                        check_result = await house_check_service.run_house_check(previous_room, room)
+                        if check_result and check_result.get("notified"):
+                            # Store notification context for chat API
+                            app.state.recent_notification = {
+                                "devices": check_result.get("devices", []),
+                                "message": check_result.get("message", ""),
+                                "timestamp": datetime.now().isoformat(),
+                                "type": "house_check"
+                            }
+                            logger.info(f"House check completed: notification sent for {len(check_result.get('devices', []))} device(s)")
+                    except Exception as e:
+                        logger.error(f"Error running house check: {e}", exc_info=True)
+                        # Don't interrupt location update on house check error
+                
+                # Note: user_info_update is already broadcast by sync_location_to_user_info above
+                # This additional broadcast ensures frontend gets the update even if sync broadcast failed
+                if mqtt_handler:
+                    try:
+                        user_info = await db.get_user_info()
+                        # Handle nested name structure from get_user_info()
+                        name_obj = user_info.get("name", {})
+                        if isinstance(name_obj, dict):
+                            name_thai = name_obj.get("thai", "")
+                            name_english = name_obj.get("english", "")
+                        else:
+                            name_thai = user_info.get("name_thai", "")
+                            name_english = user_info.get("name_english", "")
+                        
+                        await mqtt_handler._broadcast_ws({
+                            "type": "user_info_update",
+                            "data": {
+                                "name_thai": name_thai,
+                                "name_english": name_english,
+                                "condition": user_info.get("condition", ""),
+                                "current_location": user_info.get("current_location", "")
+                            },
+                            "timestamp": datetime.now().isoformat()
+                        })
+                    except Exception as e:
+                        logger.warning(f"Failed to broadcast user_info_update after location change: {e}")
+                
                 # Broadcast timeline event to all connected clients
                 if mqtt_handler:
                     await mqtt_handler._broadcast_ws({
@@ -253,8 +332,68 @@ async def lifespan(app: FastAPI):
     emergency_service = EmergencyService(db, mqtt_handler)
     logger.info("✅ Emergency service initialized")
     
-
+    # Phase 4F: Initialize metrics collection
+    app.state.metrics = {
+        "chat_requests_total": 0,
+        "chat_errors_total": 0,
+        "llm_requests_total": 0,
+        "llm_errors_total": 0,
+        "tool_executions_total": 0,
+        "tool_errors_total": 0,
+        "schedule_checks_total": 0,
+        "schedule_errors_total": 0,
+        "house_checks_total": 0,
+        "house_check_errors_total": 0
+    }
+    logger.info("✅ Metrics collection initialized")
     
+    # Initialize schedule checker service (pass app reference for custom time support)
+    schedule_checker = ScheduleCheckerService(db, mqtt_handler, app=app)
+    await schedule_checker.start()
+    app.state.schedule_checker = schedule_checker
+    logger.info("✅ Schedule checker service started")
+    
+    # Initialize House Check Service
+    house_check_service = HouseCheckService(db, mqtt_handler)
+    app.state.house_check_service = house_check_service
+    logger.info("✅ House Check Service initialized")
+    
+    # Initialize LLM client
+    try:
+        from .services.llm_client import LLMClient
+        llm_client = LLMClient(
+            host=settings.OLLAMA_HOST,
+            model=settings.OLLAMA_MODEL
+        )
+        app.state.llm_client = llm_client
+        
+        # Validate connection (non-blocking, log warning if fails)
+        validation = await llm_client.validate_connection()
+        if validation["valid"]:
+            logger.info(f"✅ LLM client initialized: {settings.OLLAMA_MODEL} at {settings.OLLAMA_HOST}")
+        else:
+            logger.warning(f"⚠️ LLM client initialized but connection validation failed: {validation['message']}")
+    except Exception as e:
+        logger.error(f"Failed to initialize LLM client: {e}")
+        llm_client = None
+        app.state.llm_client = None
+    
+    # Initialize tool registry
+    try:
+        from .services.tool_registry import ToolRegistry
+        from .services.tool_handlers import register_all_tools
+        
+        tool_registry = ToolRegistry(db, mqtt_handler)
+        app.state.tool_registry = tool_registry
+        
+        # Register all tools
+        register_all_tools(tool_registry)
+        
+        logger.info(f"✅ Tool registry initialized with {len(tool_registry.get_tools())} tools")
+    except Exception as e:
+        logger.error(f"Failed to initialize tool registry: {e}", exc_info=True)
+        tool_registry = None
+        app.state.tool_registry = None
 
     # Start WebSocket server for camera connections
     camera_ws_port = 8765
@@ -416,6 +555,27 @@ async def lifespan(app: FastAPI):
     # ===== Graceful Shutdown =====
     logger.info("🛑 Shutting down gracefully...")
     
+    # Phase 4F: Graceful shutdown with timeout
+    shutdown_start = time.time()
+    max_shutdown_time = 10.0  # 10 seconds max
+    in_flight_timeout = 5.0  # 5 seconds for in-flight requests
+    
+    # Wait for in-flight requests (simplified - in production, track active requests)
+    try:
+        await asyncio.wait_for(asyncio.sleep(0.5), timeout=in_flight_timeout)
+    except asyncio.TimeoutError:
+        logger.warning("Shutdown: In-flight request timeout exceeded")
+    
+    # Stop schedule checker service
+    if schedule_checker:
+        await schedule_checker.stop()
+        logger.info("✅ Schedule checker service stopped")
+    
+    # Close LLM client
+    if llm_client:
+        await llm_client.close()
+        logger.info("✅ LLM client closed")
+    
     # Cancel background tasks
     logger.info("Cancelling background tasks...")
     camera_ws_task.cancel()
@@ -479,7 +639,14 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.error(f"Error disconnecting database: {e}")
     
-    logger.info("✅ Shutdown complete")
+    # Phase 4F: Check if shutdown exceeded max time
+    elapsed = time.time() - shutdown_start
+    if elapsed > max_shutdown_time:
+        logger.error(f"Shutdown timeout exceeded ({elapsed:.2f}s), forcing exit")
+        import sys
+        sys.exit(1)
+    
+    logger.info(f"✅ Shutdown complete (took {elapsed:.2f}s)")
 
 
 app = FastAPI(
@@ -490,6 +657,14 @@ app = FastAPI(
 )
 
 app.include_router(appliances_router)
+app.include_router(user_info_router)
+app.include_router(schedule_router)
+app.include_router(device_states_router)
+app.include_router(chat_router)
+
+# Phase 4F: Add health check router
+from .api.health import router as health_router
+app.include_router(health_router)
 
 # CORS middleware
 app.add_middleware(

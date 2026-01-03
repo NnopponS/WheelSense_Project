@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { Clock, Plus, Edit2, Trash2, Check, X, Save, Zap, Home, Power, PowerOff } from 'lucide-react';
+import { getScheduleItems, createScheduleItem, updateScheduleItem, deleteScheduleItem, resetSchedule } from '../services/api';
+import { Clock, Plus, Edit2, Trash2, Check, X, Save, Zap, Home, Power, PowerOff, RotateCcw } from 'lucide-react';
 
 // Default schedule items with actions and rooms
 const DEFAULT_SCHEDULE = [
@@ -52,9 +53,108 @@ export function RoutinesPage() {
     const [newRoutine, setNewRoutine] = useState({ time: '', title: '', actions: [], room: '', patientId: '' });
     const initializedRef = useRef(false);
 
-    // Initialize default schedule for current user if routines are empty (only once)
+    // Schedule items state (for user role)
+    const [scheduleItems, setScheduleItems] = useState([]);
+    const [loadingSchedule, setLoadingSchedule] = useState(false);
+
+    // Load schedule items for user role
     useEffect(() => {
-        if (!initializedRef.current && currentUser?.id) {
+        if (role === 'user') {
+            loadScheduleItems();
+        }
+    }, [role]);
+
+    const loadScheduleItems = async () => {
+        setLoadingSchedule(true);
+        try {
+            const response = await getScheduleItems();
+            setScheduleItems(response.schedule_items || []);
+        } catch (error) {
+            console.error('Failed to load schedule items:', error);
+        } finally {
+            setLoadingSchedule(false);
+        }
+    };
+
+    // Reset schedule to defaults
+    const handleResetSchedule = async () => {
+        if (!confirm(t('Reset schedule to defaults? This will clear all changes.'))) {
+            return;
+        }
+        try {
+            await resetSchedule();
+            await loadScheduleItems();
+        } catch (error) {
+            console.error('Failed to reset schedule:', error);
+            alert('Failed to reset schedule: ' + error.message);
+        }
+    };
+
+    // Convert schedule item to routine format for display
+    const scheduleItemToRoutine = (item, index) => {
+        // Parse action field (can be string or object with devices array)
+        let actions = [];
+        let room = item.location || '';
+
+        if (item.action) {
+            if (typeof item.action === 'string') {
+                // Legacy format: parse string
+                const actionStr = item.action;
+                if (actionStr.includes('Turn')) {
+                    const matches = actionStr.match(/Turn (on|off) (\w+)/gi);
+                    if (matches) {
+                        actions = matches.map(m => {
+                            const parts = m.match(/Turn (on|off) (\w+)/i);
+                            return { device: parts[2], state: parts[1] };
+                        });
+                    }
+                }
+            } else if (item.action.devices && Array.isArray(item.action.devices)) {
+                // MCP format: {"devices": [{"room": "...", "device": "...", "state": "ON"}]}
+                actions = item.action.devices.map(d => ({
+                    device: d.device,
+                    state: d.state.toLowerCase(),
+                    room: d.room
+                }));
+                if (actions.length > 0 && actions[0].room) {
+                    room = actions[0].room;
+                }
+            }
+        }
+
+        return {
+            id: `schedule-${index}`,
+            time: item.time,
+            title: item.activity,
+            actions: actions,
+            room: room,
+            patientId: currentUser?.id,
+            completed: false,
+            action: formatActions(actions),
+            description: actionsToDescription(actions, room),
+            scheduleItemId: index + 1 // 1-based ID for API
+        };
+    };
+
+    // Convert routine format to schedule item for API
+    const routineToScheduleItem = (routine) => {
+        const devices = routine.actions.map(a => ({
+            room: routine.room || '',
+            device: a.device,
+            state: a.state.toUpperCase()
+        }));
+
+        return {
+            time: routine.time,
+            activity: routine.title,
+            location: routine.room || null,
+            action: devices.length > 0 ? { devices } : null
+        };
+    };
+
+    // Initialize default schedule for current user if routines are empty (only once) - admin only
+    useEffect(() => {
+        if (role === 'admin' && !initializedRef.current && currentUser?.id) {
             const userRoutines = routines.filter(r => r.patientId === currentUser?.id);
             if (userRoutines.length === 0) {
                 initializedRef.current = true;
@@ -73,27 +173,49 @@ export function RoutinesPage() {
                 initializedRef.current = true;
             }
         }
-    }, [currentUser?.id]);
+    }, [currentUser?.id, role]);
 
-    // Filter routines based on role
-    const filteredRoutines = role === 'user'
-        ? routines.filter(r => r.patientId === currentUser?.id)
-        : selectedPatient === 'all'
-            ? routines
-            : routines.filter(r => r.patientId === selectedPatient);
+    // Get routines/schedule items based on role
+    const getDisplayRoutines = () => {
+        if (role === 'user') {
+            // Convert schedule items to routine format
+            return scheduleItems.map((item, index) => scheduleItemToRoutine(item, index));
+        } else {
+            // Admin: use routines
+            const filteredRoutines = selectedPatient === 'all'
+                ? routines
+                : routines.filter(r => r.patientId === selectedPatient);
 
-    // Remove duplicates by time+title combination
-    const uniqueRoutines = filteredRoutines.reduce((acc, routine) => {
-        const key = `${routine.time}-${routine.title}`;
-        if (!acc.find(r => `${r.time}-${r.title}` === key)) {
-            acc.push(routine);
+            // Remove duplicates by time+title combination
+            return filteredRoutines.reduce((acc, routine) => {
+                const key = `${routine.time}-${routine.title}`;
+                if (!acc.find(r => `${r.time}-${r.title}` === key)) {
+                    acc.push(routine);
+                }
+                return acc;
+            }, []);
         }
-        return acc;
-    }, []);
+    };
 
-    const handleDeleteRoutine = (id) => {
-        if (confirm(t('Do you want to delete this routine?'))) {
-            deleteRoutine(id);
+    const displayRoutines = getDisplayRoutines();
+
+    const handleDeleteRoutine = async (routine) => {
+        if (!confirm(t('Do you want to delete this routine?'))) {
+            return;
+        }
+
+        if (role === 'user' && routine.scheduleItemId) {
+            // Delete from schedule_items API
+            try {
+                await deleteScheduleItem(routine.scheduleItemId);
+                await loadScheduleItems();
+            } catch (error) {
+                console.error('Failed to delete schedule item:', error);
+                alert('Failed to delete: ' + error.message);
+            }
+        } else {
+            // Delete from routines (admin)
+            deleteRoutine(routine.id);
         }
     };
 
@@ -109,12 +231,32 @@ export function RoutinesPage() {
         });
     };
 
-    const handleEditSave = (id) => {
-        const action = formatActions(editForm.actions);
-        const description = actionsToDescription(editForm.actions, editForm.room);
-        updateRoutine(id, { ...editForm, action, description });
-        setEditingId(null);
-        setEditForm({ time: '', title: '', actions: [], room: '' });
+    const handleEditSave = async (routine) => {
+        if (role === 'user' && routine.scheduleItemId) {
+            // Update schedule item via API
+            try {
+                const scheduleItem = routineToScheduleItem({
+                    time: editForm.time,
+                    title: editForm.title,
+                    actions: editForm.actions,
+                    room: editForm.room
+                });
+                await updateScheduleItem(routine.scheduleItemId, scheduleItem);
+                await loadScheduleItems();
+                setEditingId(null);
+                setEditForm({ time: '', title: '', actions: [], room: '' });
+            } catch (error) {
+                console.error('Failed to update schedule item:', error);
+                alert('Failed to update: ' + error.message);
+            }
+        } else {
+            // Update routine (admin)
+            const action = formatActions(editForm.actions);
+            const description = actionsToDescription(editForm.actions, editForm.room);
+            updateRoutine(routine.id, { ...editForm, action, description });
+            setEditingId(null);
+            setEditForm({ time: '', title: '', actions: [], room: '' });
+        }
     };
 
     const handleEditCancel = () => {
@@ -122,17 +264,33 @@ export function RoutinesPage() {
         setEditForm({ time: '', title: '', actions: [], room: '' });
     };
 
-    const handleAddRoutine = () => {
+    const handleAddRoutine = async () => {
         if (!newRoutine.time || !newRoutine.title) {
             alert(t('Please enter time and activity name'));
             return;
         }
-        const patientId = role === 'user' ? currentUser?.id : (newRoutine.patientId || patients[0]?.id);
-        const action = formatActions(newRoutine.actions);
-        const description = actionsToDescription(newRoutine.actions, newRoutine.room);
-        addRoutine({ ...newRoutine, action, description, patientId, completed: false });
-        setNewRoutine({ time: '', title: '', actions: [], room: '', patientId: '' });
-        setShowAddModal(false);
+
+        if (role === 'user') {
+            // Add to schedule_items API
+            try {
+                const scheduleItem = routineToScheduleItem(newRoutine);
+                await createScheduleItem(scheduleItem);
+                await loadScheduleItems();
+                setNewRoutine({ time: '', title: '', actions: [], room: '', patientId: '' });
+                setShowAddModal(false);
+            } catch (error) {
+                console.error('Failed to create schedule item:', error);
+                alert('Failed to add: ' + error.message);
+            }
+        } else {
+            // Add to routines (admin)
+            const patientId = newRoutine.patientId || patients[0]?.id;
+            const action = formatActions(newRoutine.actions);
+            const description = actionsToDescription(newRoutine.actions, newRoutine.room);
+            addRoutine({ ...newRoutine, action, description, patientId, completed: false });
+            setNewRoutine({ time: '', title: '', actions: [], room: '', patientId: '' });
+            setShowAddModal(false);
+        }
     };
 
     // Get available devices for selected room
@@ -277,9 +435,14 @@ export function RoutinesPage() {
                     <h2>📅 {role === 'user' ? t('My Schedule') : t('Routines')}</h2>
                     <p>{role === 'user' ? t('Your daily activities') : t('Manage patient daily activity schedules')}</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
-                    <Plus size={16} /> {t('Add Activity')}
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={handleResetSchedule} style={{ marginRight: '0.5rem' }}>
+                        <RotateCcw size={14} /> {t('Reset Schedule')}
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+                        <Plus size={16} /> {t('Add Activity')}
+                    </button>
+                </div>
             </div>
 
             {/* Admin patient filter only */}
@@ -297,10 +460,12 @@ export function RoutinesPage() {
 
             <div className="card">
                 <div className="card-header">
-                    <span className="card-title"><Clock size={18} /> {t('Activity Schedule')} ({uniqueRoutines.length})</span>
+                    <span className="card-title"><Clock size={18} /> {t('Activity Schedule')} ({displayRoutines.length})</span>
                 </div>
                 <div className="card-body">
-                    {uniqueRoutines.length === 0 ? (
+                    {loadingSchedule ? (
+                        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
+                    ) : displayRoutines.length === 0 ? (
                         <div className="empty-state">
                             <Clock size={48} />
                             <h3>{t('No activities scheduled yet')}</h3>
@@ -308,7 +473,7 @@ export function RoutinesPage() {
                         </div>
                     ) : (
                         <div className="schedule-container">
-                            {uniqueRoutines.sort((a, b) => a.time.localeCompare(b.time)).map(routine => {
+                            {displayRoutines.sort((a, b) => a.time.localeCompare(b.time)).map(routine => {
                                 const patient = patients.find(p => p.id === routine.patientId);
                                 const isEditing = editingId === routine.id;
 
@@ -362,7 +527,7 @@ export function RoutinesPage() {
                                                     <button className="btn btn-secondary" onClick={handleEditCancel}>
                                                         <X size={16} /> {t('Cancel')}
                                                     </button>
-                                                    <button className="btn btn-success" onClick={() => handleEditSave(routine.id)}>
+                                                    <button className="btn btn-success" onClick={() => handleEditSave(routine)}>
                                                         <Check size={16} /> {t('Save')}
                                                     </button>
                                                 </div>
@@ -391,7 +556,7 @@ export function RoutinesPage() {
                                                     <button className="btn btn-secondary btn-icon" onClick={() => handleEditStart(routine)}>
                                                         <Edit2 size={16} />
                                                     </button>
-                                                    <button className="btn btn-danger btn-icon" onClick={() => handleDeleteRoutine(routine.id)}>
+                                                    <button className="btn btn-danger btn-icon" onClick={() => handleDeleteRoutine(routine)}>
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>

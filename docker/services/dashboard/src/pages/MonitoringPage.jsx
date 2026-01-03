@@ -8,25 +8,36 @@ export function MonitoringPage() {
     const { wheelchairs, patients, devices, rooms, openDrawer, timeline, wheelchairPositions, language, detectionState, deviceHeartbeats } = useApp();
     const [liveStatus, setLiveStatus] = useState({}); // Map of deviceId -> { online: boolean, ... }
 
-    // Compute real-time occupancy from detectionState and wheelchair positions - SIMPLIFIED: no confidence threshold
+    // Compute real-time occupancy from detectionState - use detectionState as primary source
     const isRoomOccupied = (room) => {
         // Normalize room name: lowercase and remove spaces (e.g., "Living Room" -> "livingroom")
         const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
 
         // Check detection state first (real-time camera detection)
+        const normalizedNameEn = normalizeRoomName(room.nameEn);
+        const normalizedName = normalizeRoomName(room.name);
         const detection = detectionState[room.id] ||
             detectionState[room.roomType?.toLowerCase()] ||
-            detectionState[normalizeRoomName(room.nameEn)] ||
-            detectionState[normalizeRoomName(room.name)];
-        if (detection?.detected === true) {
-            return true;
+            detectionState[normalizedNameEn] ||
+            detectionState[normalizedName];
+
+        // If detectionState has this room (even if false), use it as the source of truth
+        // Only fallback to wheelchair positions if detectionState doesn't have this room at all
+        const hasDetectionState = detectionState[room.id] !== undefined ||
+            detectionState[room.roomType?.toLowerCase()] !== undefined ||
+            detectionState[normalizedNameEn] !== undefined ||
+            detectionState[normalizedName] !== undefined;
+
+        if (hasDetectionState) {
+            return detection?.detected === true;
         }
-        // Fallback: check if any wheelchair is in this room
+
+        // Fallback: check if any wheelchair is in this room (only if no detectionState exists)
         return wheelchairs.some(w =>
             w.room === room.id ||
             w.room === room.roomType?.toLowerCase() ||
-            w.room === normalizeRoomName(room.nameEn) ||
-            normalizeRoomName(w.room) === normalizeRoomName(room.nameEn)
+            w.room === normalizedNameEn ||
+            normalizeRoomName(w.room) === normalizedNameEn
         );
     };
 
@@ -188,18 +199,37 @@ export function MonitoringPage() {
                                 </div>
                             );
                         })}
-                        {safeWheelchairs.filter(w => w.room).map(wc => {
-                            let room = safeRooms.find(r => r.id === wc.room);
+                        {/* Wheelchair markers - show in detected room if available, otherwise fallback to database room */}
+                        {safeWheelchairs.map(wc => {
+                            // Find the room where wheelchair is detected (from camera)
+                            const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
 
-                            // Fallback: search by name/type if ID match fails
+                            let detectedRoom = null;
+                            for (const room of safeRooms) {
+                                const detection = detectionState[room.id] ||
+                                    detectionState[room.roomType?.toLowerCase()] ||
+                                    detectionState[normalizeRoomName(room.nameEn)] ||
+                                    detectionState[normalizeRoomName(room.name)];
+                                if (detection?.detected === true) {
+                                    detectedRoom = room;
+                                    break;
+                                }
+                            }
+
+                            // Use detected room if available, otherwise fallback to database room
+                            let room = detectedRoom;
                             if (!room && wc.room) {
-                                const lowerRoom = wc.room.toLowerCase();
-                                room = safeRooms.find(r =>
-                                    (r.roomType && r.roomType.toLowerCase() === lowerRoom) ||
-                                    (r.nameEn && r.nameEn.toLowerCase() === lowerRoom) ||
-                                    (r.name && r.name.toLowerCase().includes(lowerRoom)) ||
-                                    r.id.toLowerCase().includes(lowerRoom)
-                                );
+                                room = safeRooms.find(r => r.id === wc.room);
+                                // Fallback: search by name/type if ID match fails
+                                if (!room) {
+                                    const lowerRoom = wc.room.toLowerCase();
+                                    room = safeRooms.find(r =>
+                                        (r.roomType && r.roomType.toLowerCase() === lowerRoom) ||
+                                        (r.nameEn && r.nameEn.toLowerCase() === lowerRoom) ||
+                                        (r.name && r.name.toLowerCase().includes(lowerRoom)) ||
+                                        r.id.toLowerCase().includes(lowerRoom)
+                                    );
+                                }
                             }
 
                             if (!room) return null;

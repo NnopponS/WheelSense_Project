@@ -257,8 +257,10 @@ class YOLODetector:
             if self.show_preview:
                 self._show_preview(frame, detections, self.detection_state, best_conf)
             
+            # Return is_detected (current frame result) instead of detection_state (persistent state)
+            # This prevents false positives across rooms when detector is shared
             return self._create_result(
-                self.detection_state,
+                is_detected,
                 best_conf,
                 best_bbox,
                 best_class,

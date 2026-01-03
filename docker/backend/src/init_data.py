@@ -8,6 +8,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 import aiosqlite
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -183,10 +184,99 @@ PATIENT = {
     "id": "P001",
     "name": "สมชาย ใจดี",
     "nameEn": "Somchai Jaidee",
-    "age": 65,
-    "condition": "Normal",
+    "age": 68,
+    "condition": "Mild diabetes (Type 2) - requires blood sugar monitoring\nAllergic to dust mites\nUses a wheelchair for mobility",
     "room": "bedroom",
     "wheelchairId": "WC001"
+}
+
+# Default schedule items
+SCHEDULE_ITEMS = [
+    {
+        "time": "07:00",
+        "activity": "Wake up",
+        "location": "Bedroom",
+        "action": {
+            "devices": [
+                {"room": "Bedroom", "device": "Alarm", "state": "ON"},
+                {"room": "Bedroom", "device": "Light", "state": "ON"}
+            ]
+        }
+    },
+    {
+        "time": "07:30",
+        "activity": "Morning exercise"
+    },
+    {
+        "time": "08:00",
+        "activity": "Breakfast",
+        "location": "Kitchen"
+    },
+    {
+        "time": "09:00",
+        "activity": "Work",
+        "location": "Living Room",
+        "action": {
+            "devices": [
+                {"room": "Living Room", "device": "Light", "state": "ON"},
+                {"room": "Living Room", "device": "AC", "state": "ON"}
+            ]
+        }
+    },
+    {
+        "time": "12:00",
+        "activity": "Lunch",
+        "location": "Kitchen"
+    },
+    {
+        "time": "13:00",
+        "activity": "Continue Working",
+        "location": "Living Room",
+        "action": {
+            "devices": [
+                {"room": "Living Room", "device": "Light", "state": "ON"},
+                {"room": "Living Room", "device": "AC", "state": "ON"}
+            ]
+        }
+    },
+    {
+        "time": "18:00",
+        "activity": "Dinner",
+        "location": "Kitchen"
+    },
+    {
+        "time": "20:00",
+        "activity": "Relaxation time"
+    },
+    {
+        "time": "22:00",
+        "activity": "Prepare for bed",
+        "location": "Bedroom",
+        "action": {
+            "devices": [
+                {"room": "Bedroom", "device": "AC", "state": "ON"},
+                {"room": "Bedroom", "device": "Light", "state": "ON"}
+            ]
+        }
+    },
+    {
+        "time": "23:00",
+        "activity": "Sleep",
+        "location": "Bedroom",
+        "action": {
+            "devices": [
+                {"room": "Bedroom", "device": "Light", "state": "OFF"}
+            ]
+        }
+    }
+]
+
+# Default user info
+USER_INFO = {
+    "name_thai": "สมชาย ใจดี",
+    "name_english": "Somchai Jaidee",
+    "condition": "Mild diabetes (Type 2) - requires blood sugar monitoring\nAllergic to dust mites\nUses a wheelchair for mobility",
+    "current_location": "Bedroom"
 }
 
 
@@ -389,6 +479,79 @@ async def init_patient(conn: aiosqlite.Connection):
         logger.warning(f"Patient init warning: {e}")
 
 
+async def init_user_info(conn: aiosqlite.Connection):
+    """Initialize user info with default data."""
+    now = datetime.now().isoformat()
+    
+    try:
+        # Check if user_info already exists
+        async with conn.execute("SELECT id FROM user_info LIMIT 1") as cursor:
+            existing = await cursor.fetchone()
+        
+        if existing:
+            # Update existing user info
+            await conn.execute("""
+                UPDATE user_info 
+                SET name_thai = ?, name_english = ?, condition = ?, current_location = ?, updated_at = ?
+                WHERE id = ?
+            """, (
+                USER_INFO["name_thai"],
+                USER_INFO["name_english"],
+                USER_INFO["condition"],
+                USER_INFO["current_location"],
+                now,
+                existing['id']
+            ))
+            logger.info(f"Updated user info: {USER_INFO['name_english']}")
+        else:
+            # Insert new user info
+            await conn.execute("""
+                INSERT INTO user_info (name_thai, name_english, condition, current_location, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                USER_INFO["name_thai"],
+                USER_INFO["name_english"],
+                USER_INFO["condition"],
+                USER_INFO["current_location"],
+                now,
+                now
+            ))
+            logger.info(f"Initialized user info: {USER_INFO['name_english']}")
+    except Exception as e:
+        logger.warning(f"User info init warning: {e}")
+
+
+async def init_schedule(conn: aiosqlite.Connection):
+    """Initialize schedule items."""
+    now = datetime.now().isoformat()
+    
+    try:
+        # Check if schedule already has items
+        async with conn.execute("SELECT COUNT(*) FROM schedule_items") as cursor:
+            row = await cursor.fetchone()
+            schedule_count = row[0] if row else 0
+        
+        # Only initialize if schedule is empty
+        if schedule_count == 0:
+            for item in SCHEDULE_ITEMS:
+                await conn.execute("""
+                    INSERT INTO schedule_items (time, activity, location, action, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    item["time"],
+                    item["activity"],
+                    item.get("location"),
+                    json.dumps(item.get("action")) if item.get("action") else None,
+                    now,
+                    now
+                ))
+            logger.info(f"Initialized {len(SCHEDULE_ITEMS)} schedule items")
+        else:
+            logger.info(f"Schedule already has {schedule_count} items. Skipping initialization.")
+    except Exception as e:
+        logger.warning(f"Schedule init warning: {e}")
+
+
 async def initialize_data(conn: aiosqlite.Connection, force: bool = False):
     """
     Initialize all required data in the database.
@@ -409,7 +572,11 @@ async def initialize_data(conn: aiosqlite.Connection, force: bool = False):
         rooms_count = row[0] if row else 0
     
     if rooms_count >= 4 and not force:
-        logger.info(f"Data already initialized ({rooms_count} rooms). Skipping.")
+        logger.info(f"Data already initialized ({rooms_count} rooms). Initializing user info and schedule only.")
+        # Still initialize user_info and schedule even if rooms exist
+        await init_user_info(conn)
+        await init_schedule(conn)
+        await conn.commit()
         return
     
     logger.info(f"Initializing data (current rooms: {rooms_count}, force: {force})...")
@@ -422,6 +589,8 @@ async def initialize_data(conn: aiosqlite.Connection, force: bool = False):
     await init_appliances(conn)
     await init_wheelchair(conn)
     await init_patient(conn)
+    await init_user_info(conn)
+    await init_schedule(conn)
     
     await conn.commit()
     

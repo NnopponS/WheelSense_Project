@@ -65,6 +65,9 @@ export function AppProvider({ children }) {
 
     // Removed all buffering logic - simplified to immediate updates
 
+    // Chat message callback ref for WebSocket notifications
+    const chatMessageCallbackRef = useRef(null);
+
     // Load notifications from API on startup
     useEffect(() => {
         const loadNotifications = async () => {
@@ -122,6 +125,15 @@ export function AppProvider({ children }) {
 
     // Routines - Loaded from Database
     const [routines, setRoutines] = useState([]);
+
+    // Device States - MCP device state management (room -> device -> state)
+    const [deviceStates, setDeviceStates] = useState({});
+
+    // User Info - MCP user information
+    const [userInfo, setUserInfo] = useState({ name_thai: '', name_english: '', condition: '', current_location: '' });
+
+    // Schedule Items - MCP schedule items (for user role)
+    const [scheduleItems, setScheduleItems] = useState([]);
 
     // Emergency alerts
     const [emergencies, setEmergencies] = useState([]);
@@ -395,6 +407,11 @@ export function AppProvider({ children }) {
                     try {
                         const message = JSON.parse(event.data);
                         console.log('[AppContext] WebSocket message:', message);
+                        // #region agent log
+                        if (message.type === 'schedule_notification') {
+                            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:409', message: 'WebSocket schedule_notification received', data: message, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D'})}).catch(()=>{});
+                        }
+                        // #endregion
 
                         // Use refs to access current state
                         const currentWheelchairs = wheelchairsRef.current;
@@ -416,6 +433,11 @@ export function AppProvider({ children }) {
                             // STEP 1: Update room color immediately (green when detected=true)
                             // When wheelchair is detected in a new room, clear all other rooms to detected=false
                             // This ensures only ONE room shows green at a time
+                            
+                            // Normalize room name (lowercase, no spaces) to match backend format
+                            const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+                            const normalizedRoom = normalizeRoomName(room);
+                            
                             setDetectionState(prev => {
                                 if (detected) {
                                     // Clear all rooms and set only the current room as detected
@@ -426,25 +448,26 @@ export function AppProvider({ children }) {
                                             detected: false
                                         };
                                     });
-                                    newState[room] = {
+                                    newState[normalizedRoom] = {
                                         detected: true,
                                         confidence: confidence || 0.0,
                                         timestamp: timestamp || new Date().toISOString(),
                                         device_id: device_id || 'unknown'
                                     };
-                                    console.log(`[AppContext] 🟢 Wheelchair moved to "${room}" - cleared detection from other rooms`);
+                                    console.log(`[AppContext] 🟢 Wheelchair moved to "${normalizedRoom}" - cleared detection from other rooms`);
                                     return newState;
                                 } else {
-                                    // Just update the current room
-                                    return {
-                                        ...prev,
-                                        [room]: {
-                                            detected: false,
-                                            confidence: confidence || 0.0,
-                                            timestamp: timestamp || new Date().toISOString(),
-                                            device_id: device_id || 'unknown'
-                                        }
+                                    // Update the current room to false
+                                    // Also ensure all other rooms are cleared when receiving false for a room
+                                    const newState = { ...prev };
+                                    newState[normalizedRoom] = {
+                                        detected: false,
+                                        confidence: confidence || 0.0,
+                                        timestamp: timestamp || new Date().toISOString(),
+                                        device_id: device_id || 'unknown'
                                     };
+                                    console.log(`[AppContext] 🔴 Room "${normalizedRoom}" cleared (detected=false)`);
+                                    return newState;
                                 }
                             });
 
@@ -566,6 +589,107 @@ export function AppProvider({ children }) {
                                     [roomKey]: updatedAppliances
                                 };
                             });
+                        }
+
+                        // Handle user_info_update
+                        if (message.type === 'user_info_update') {
+                            const { data } = message;
+                            console.log('[AppContext] 👤 User info update received:', data);
+                            setUserInfo(prev => ({ ...prev, ...data }));
+                        }
+
+                        // Handle device_state_update
+                        if (message.type === 'device_state_update') {
+                            const { room, device, state } = message;
+                            console.log(`[AppContext] 🔌 Device state update received: ${room}/${device} = ${state}`);
+                            setDeviceStates(prev => ({
+                                ...prev,
+                                [room]: {
+                                    ...prev[room],
+                                    [device]: state
+                                }
+                            }));
+                        }
+
+                        // Handle schedule_item_update
+                        if (message.type === 'schedule_item_update') {
+                            const { action, item, item_id } = message;
+                            console.log('[AppContext] 📅 Schedule item update received:', action, item);
+                            
+                            if (action === 'reset') {
+                                // Reload all schedule items from API
+                                const loadScheduleItems = async () => {
+                                    try {
+                                        const response = await api.getScheduleItems();
+                                        setScheduleItems(response.schedule_items || response || []);
+                                    } catch (err) {
+                                        console.error('[AppContext] Failed to reload schedule items:', err);
+                                    }
+                                };
+                                loadScheduleItems();
+                            } else {
+                                // Update local state based on action
+                                setScheduleItems(prev => {
+                                    if (action === 'created') {
+                                        return [...prev, { ...item, id: item_id }];
+                                    } else if (action === 'updated') {
+                                        return prev.map(si => si.id === item_id ? { ...si, ...item } : si);
+                                    } else if (action === 'deleted') {
+                                        return prev.filter(si => si.id !== item_id);
+                                    }
+                                    return prev;
+                                });
+                            }
+                        }
+
+                        // Handle schedule_notification
+                        if (message.type === 'schedule_notification') {
+                            // VERY VISIBLE LOG - Easy to spot in console
+                            console.log('%c🔔🔔🔔 SCHEDULE NOTIFICATION RECEIVED 🔔🔔🔔', 'color: #ff6b6b; font-size: 16px; font-weight: bold; background: #fff3cd; padding: 4px;');
+                            console.log('[AppContext] 🔔 Schedule notification received:', message);
+                            // #region agent log
+                            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:641', message: 'schedule_notification handler entered', data: message, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D'})}).catch(()=>{});
+                            // #endregion
+                            
+                            const { time, activity, location, action: scheduleAction, message: notificationMessage } = message;
+                            
+                            addNotification({
+                                type: 'info',
+                                title: `Schedule: ${activity}`,
+                                message: `Time: ${time}${location ? ` | Location: ${location}` : ''}`
+                            });
+                            
+                            // Also send to chat interface if callback is registered
+                            // #region agent log
+                            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:655', message: 'Checking callback ref', data: {callback_exists: !!chatMessageCallbackRef.current}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
+                            // #endregion
+                            if (chatMessageCallbackRef.current) {
+                                try {
+                                    const chatMessage = {
+                                        id: Date.now(),
+                                        role: 'assistant',
+                                        content: `🔔 ${notificationMessage || `It's time to: ${activity}`}`,
+                                        isNotification: true
+                                    };
+                                    console.log('%c✅ SENDING TO CHAT CALLBACK', 'color: #51cf66; font-size: 14px; font-weight: bold;');
+                                    console.log('[AppContext] Calling chat callback with message:', chatMessage);
+                                    // #region agent log
+                                    fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:665', message: 'Calling chat callback', data: chatMessage, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
+                                    // #endregion
+                                    chatMessageCallbackRef.current(chatMessage);
+                                    console.log('%c✅ SUCCESS: Sent schedule notification to chat interface', 'color: #51cf66; font-weight: bold;');
+                                } catch (error) {
+                                    console.error('%c❌ ERROR SENDING TO CHAT', 'color: #ff6b6b; font-size: 14px; font-weight: bold;', error);
+                                    // #region agent log
+                                    fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:668', message: 'Callback error', data: {error: String(error)}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
+                                    // #endregion
+                                }
+                            } else {
+                                console.warn('%c⚠️ CHAT CALLBACK NOT REGISTERED', 'color: #ffa94d; font-size: 14px; font-weight: bold;');
+                                // #region agent log
+                                fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:671', message: 'Callback not registered', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
+                                // #endregion
+                            }
                         }
 
                     } catch (e) {
@@ -866,6 +990,17 @@ export function AppProvider({ children }) {
         }
     };
 
+    // Function to register chat message callback
+    const registerChatMessageCallback = useCallback((callback) => {
+        console.log('[AppContext] Registering chat message callback');
+        chatMessageCallbackRef.current = callback;
+        // Return cleanup function
+        return () => {
+            console.log('[AppContext] Unregistering chat message callback');
+            chatMessageCallbackRef.current = null;
+        };
+    }, []);
+
     const value = {
         language, setLanguage: setLanguageWithLog,
         theme, setTheme, toggleTheme,
@@ -892,9 +1027,13 @@ export function AppProvider({ children }) {
         appliances, setAppliances, toggleAppliance, setApplianceValue,
         timeline, setTimeline,
         routines, addRoutine, updateRoutine, deleteRoutine,
+        deviceStates, setDeviceStates,
+        userInfo, setUserInfo,
+        scheduleItems, setScheduleItems,
         emergencies, setEmergencies, resolveEmergency,
         aiAnalysis, setAiAnalysis,
         customTime, setCustomTime, getCurrentTime,
+        registerChatMessageCallback,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -14,6 +14,7 @@ Smart Home System for wheelchair users with real-time tracking, appliance contro
 7. [Hardware (ESP32)](#-hardware-esp32)
 8. [Development](#-development)
 9. [Troubleshooting](#-troubleshooting)
+10. [Docker Performance Optimization](#-docker-performance-optimization)
 
 ---
 
@@ -441,6 +442,90 @@ docker exec -it wheelsense-backend bash
 | 1883 | MQTT | TCP |
 | 9001 | MQTT WebSocket | WS |
 | 11434 | Ollama | HTTP |
+
+---
+
+## ⚡ Docker Performance Optimization
+
+This section covers optimizing Docker performance for better resource allocation and GPU usage.
+
+### 1. Increase Docker Disk Space
+
+Docker Desktop disk space can be increased through Docker Desktop Settings:
+
+1. Open **Docker Desktop**
+2. Go to **Settings** (gear icon)
+3. Navigate to **Resources** → **Advanced**
+4. Adjust the **Disk image size** slider to your desired size (e.g., 100GB+)
+5. Click **Apply & Restart**
+
+### 2. Increase RAM for Docker (WSL2)
+
+To allocate more RAM to Docker Desktop running on WSL2, configure the `.wslconfig` file:
+
+**Location:** `C:\Users\<YourUsername>\.wslconfig`
+
+**Configuration:**
+```ini
+[wsl2]
+memory=16GB
+processors=10
+swap=2GB
+```
+
+**Settings:**
+- `memory=16GB` - Allocates 16GB RAM to WSL2/Docker (adjust based on your total system RAM)
+- `processors=10` - Allocates 10 CPU cores
+- `swap=2GB` - Sets swap space to 2GB
+
+**Important Notes:**
+- Leave at least 4-8GB RAM for Windows
+- For 24GB total RAM: 16GB for Docker is safe
+- For 16GB total RAM: Use 8GB for Docker instead
+
+**After creating/editing `.wslconfig`:**
+1. Restart Docker Desktop, OR
+2. Run in PowerShell (as Administrator):
+   ```powershell
+   wsl --shutdown
+   ```
+   Then restart Docker Desktop
+
+### 3. Enable GPU/VRAM Usage
+
+To enable GPU acceleration for Ollama and YOLO detection services:
+
+**Prerequisites:**
+- ✅ NVIDIA drivers installed
+- ✅ Docker Desktop using WSL2 backend
+- ✅ GPU support enabled in Docker Desktop Settings
+
+**Docker Desktop GPU Settings:**
+1. Open **Docker Desktop**
+2. Go to **Settings** → **Resources** → **WSL Integration**
+3. Ensure **Use the WSL 2 based engine** is enabled
+4. Go to **Settings** → **Resources** → **Advanced**
+5. Enable **Use GPU acceleration** (if available)
+
+**Verify GPU Works:**
+```powershell
+# Navigate to docker directory
+cd docker
+
+# Verify GPU in Ollama container
+docker compose exec ollama nvidia-smi
+
+# Expected output: NVIDIA GPU information
+```
+
+**Note:** The `docker-compose.yml` already includes GPU configuration for:
+- `ollama` service (LLM AI)
+- `camera-service` (YOLO detection)
+
+If GPU is not available, use the CPU-only configuration:
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d
+```
 
 ---
 

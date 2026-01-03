@@ -29,16 +29,32 @@ export function UserHomePage() {
 
     // Check if room is occupied (same logic as MonitoringPage)
     const isRoomOccupied = (room) => {
-        if (isWheelchairDetected(room)) {
-            return true;
-        }
-        // Fallback: check if any wheelchair is in this room
         const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+        const normalizedNameEn = normalizeRoomName(room.nameEn);
+        const normalizedName = normalizeRoomName(room.name);
+
+        // Check detection state first (real-time camera detection)
+        const detection = detectionState[room.id] ||
+            detectionState[room.roomType?.toLowerCase()] ||
+            detectionState[normalizedNameEn] ||
+            detectionState[normalizedName];
+
+        // If detectionState has this room (even if false), use it as the source of truth
+        const hasDetectionState = detectionState[room.id] !== undefined ||
+            detectionState[room.roomType?.toLowerCase()] !== undefined ||
+            detectionState[normalizedNameEn] !== undefined ||
+            detectionState[normalizedName] !== undefined;
+
+        if (hasDetectionState) {
+            return detection?.detected === true;
+        }
+
+        // Fallback: check if any wheelchair is in this room (only if no detectionState exists)
         return wheelchairs.some(w =>
             w.room === room.id ||
             w.room === room.roomType?.toLowerCase() ||
-            w.room === normalizeRoomName(room.nameEn) ||
-            normalizeRoomName(w.room) === normalizeRoomName(room.nameEn)
+            w.room === normalizedNameEn ||
+            normalizeRoomName(w.room) === normalizedNameEn
         );
     };
     const { t } = useTranslation(language);
@@ -153,6 +169,46 @@ export function UserHomePage() {
                 </div>
             </div>
 
+            {/* Current Location Card */}
+            {(() => {
+                const detectedRoom = rooms.find(room => isWheelchairDetected(room));
+                const currentRoom = detectedRoom || myRoom;
+                const isDetected = detectedRoom !== undefined;
+
+                return currentRoom ? (
+                    <div className="card" style={{ marginBottom: '1rem', background: 'var(--bg-secondary)' }}>
+                        <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{
+                                width: 48, height: 48, borderRadius: '50%',
+                                background: 'linear-gradient(135deg, var(--primary-500), var(--primary-700))',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                flexShrink: 0
+                            }}>
+                                <MapPin size={24} color="white" />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
+                                    {t('Current Location')}
+                                </div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    {currentRoom.name || currentRoom.nameEn || t('Unknown Location')}
+                                </div>
+                            </div>
+                            <div style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: 'var(--radius-md)',
+                                background: isDetected ? 'var(--success-500)' : 'var(--bg-secondary)',
+                                color: isDetected ? 'white' : 'var(--text-muted)',
+                                fontSize: '0.85rem',
+                                fontWeight: 500
+                            }}>
+                                {isDetected ? '🟢 Detected' : '⚪ Not Detected'}
+                            </div>
+                        </div>
+                    </div>
+                ) : null;
+            })()}
+
             {/* Large Map (full width) */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>
                 <div className="card-body" style={{ padding: 0 }}>
@@ -188,18 +244,36 @@ export function UserHomePage() {
                                 );
                             })}
 
-                            {wheelchairs.filter(w => w.room).map(wc => {
-                                let room = rooms.find(r => r.id === wc.room);
+                            {/* Wheelchair markers - show in detected room if available */}
+                            {wheelchairs.map(wc => {
+                                // Find the room where wheelchair is detected (from camera)
+                                const normalizeRoom = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
 
-                                // Fallback: search by name/type if ID match fails
+                                let detectedRoom = null;
+                                for (const r of rooms) {
+                                    const detection = detectionState[r.id] ||
+                                        detectionState[r.roomType?.toLowerCase()] ||
+                                        detectionState[normalizeRoom(r.nameEn)] ||
+                                        detectionState[normalizeRoom(r.name)];
+                                    if (detection?.detected === true) {
+                                        detectedRoom = r;
+                                        break;
+                                    }
+                                }
+
+                                // Use detected room if available, otherwise fallback to database room
+                                let room = detectedRoom;
                                 if (!room && wc.room) {
-                                    const lowerRoom = wc.room.toLowerCase();
-                                    room = rooms.find(r =>
-                                        (r.roomType && r.roomType.toLowerCase() === lowerRoom) ||
-                                        (r.nameEn && r.nameEn.toLowerCase() === lowerRoom) ||
-                                        (r.name && r.name.toLowerCase().includes(lowerRoom)) ||
-                                        r.id.toLowerCase().includes(lowerRoom)
-                                    );
+                                    room = rooms.find(r => r.id === wc.room);
+                                    if (!room) {
+                                        const lowerRoom = wc.room.toLowerCase();
+                                        room = rooms.find(r =>
+                                            (r.roomType && r.roomType.toLowerCase() === lowerRoom) ||
+                                            (r.nameEn && r.nameEn.toLowerCase() === lowerRoom) ||
+                                            (r.name && r.name.toLowerCase().includes(lowerRoom)) ||
+                                            r.id.toLowerCase().includes(lowerRoom)
+                                        );
+                                    }
                                 }
 
                                 if (!room) return null;
@@ -256,106 +330,118 @@ export function UserHomePage() {
             </div>
 
             {/* Appliance Control */}
-            <div id="appliance-control" className="card" style={{ marginBottom: '1.5rem' }}>
-                <div className="card-header">
-                    <span className="card-title"><Zap size={18} /> {t('Appliance Control')} - {myRoom?.name}</span>
-                </div>
-                <div className="card-body">
-                    {myAppliances.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>
-                            <Zap size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
-                            <p>{t('No Appliances in This Room')}</p>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                            {myAppliances.map(app => {
-                                const Icon = getApplianceIcon(app.type);
-                                const isSlider = isSliderType(app.type);
+            {(() => {
+                // Use detected room for appliance control
+                const detectedRoomForAppliances = rooms.find(room => isWheelchairDetected(room));
+                const currentRoomForAppliances = detectedRoomForAppliances || myRoom;
+                const appliancesForRoom = appliances[currentRoomForAppliances?.roomType?.toLowerCase()] ||
+                    appliances[currentRoomForAppliances?.id] ||
+                    appliances[currentRoomForAppliances?.nameEn?.toLowerCase()?.replace(/\s+/g, '')] || [];
 
-                                return (
-                                    <div key={app.id} className="room-panel-item">
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <div style={{
-                                                    width: 36, height: 36, borderRadius: 'var(--radius-md)',
-                                                    background: app.state ? 'linear-gradient(135deg, var(--primary-500), var(--primary-700))' : 'var(--bg-hover)',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                }}>
-                                                    <Icon size={18} color={app.state ? 'white' : 'var(--text-muted)'} />
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{app.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: app.state ? 'var(--success-500)' : 'var(--text-muted)' }}>
-                                                        {app.state ? (isSlider ? `${app.type === 'AC' ? app.temperature + '°C' : (app.brightness || app.volume || 50) + '%'}` : t('On')) : t('Off')}
+                return (
+                    <div id="appliance-control" className="card" style={{ marginBottom: '1.5rem' }}>
+                        <div className="card-header">
+                            <span className="card-title"><Zap size={18} /> {t('Appliance Control')} - {currentRoomForAppliances?.nameEn || currentRoomForAppliances?.name || t('Unknown')}</span>
+                        </div>
+                        <div className="card-body">
+                            {appliancesForRoom.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>
+                                    <Zap size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                                    <p>{t('No Appliances in This Room')}</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                                    {appliancesForRoom.map(app => {
+                                        const Icon = getApplianceIcon(app.type);
+                                        const isSlider = isSliderType(app.type);
+                                        const roomKey = currentRoomForAppliances?.roomType?.toLowerCase() || currentRoomForAppliances?.id;
+
+                                        return (
+                                            <div key={app.id} className="room-panel-item">
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <div style={{
+                                                            width: 36, height: 36, borderRadius: 'var(--radius-md)',
+                                                            background: app.state ? 'linear-gradient(135deg, var(--primary-500), var(--primary-700))' : 'var(--bg-hover)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        }}>
+                                                            <Icon size={18} color={app.state ? 'white' : 'var(--text-muted)'} />
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{app.name}</div>
+                                                            <div style={{ fontSize: '0.75rem', color: app.state ? 'var(--success-500)' : 'var(--text-muted)' }}>
+                                                                {app.state ? (isSlider ? `${app.type === 'AC' ? app.temperature + '°C' : (app.brightness || app.volume || 50) + '%'}` : t('On')) : t('Off')}
+                                                            </div>
+                                                        </div>
                                                     </div>
+                                                    <div
+                                                        className={`toggle-switch ${app.state ? 'active' : ''}`}
+                                                        onClick={() => roomKey && toggleAppliance(roomKey, app.id)}
+                                                    />
                                                 </div>
-                                            </div>
-                                            <div
-                                                className={`toggle-switch ${app.state ? 'active' : ''}`}
-                                                onClick={() => currentUser?.room && toggleAppliance(currentUser.room, app.id)}
-                                            />
-                                        </div>
 
-                                        {/* Slider for fan/aircon/tv when ON */}
-                                        {isSlider && app.state && (
-                                            <div style={{ marginTop: '0.5rem' }}>
-                                                {app.type === 'AC' && (
-                                                    <>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                                                            <span>{t('Temperature')}</span>
-                                                            <span style={{ color: 'var(--info-500)', fontWeight: 600 }}>{app.temperature}°C</span>
-                                                        </div>
-                                                        <input
-                                                            type="range"
-                                                            min="16"
-                                                            max="30"
-                                                            value={app.temperature || 25}
-                                                            onChange={(e) => currentUser?.room && setApplianceValue(currentUser.room, app.id, 'temperature', parseInt(e.target.value))}
-                                                            style={{ width: '100%' }}
-                                                        />
-                                                    </>
-                                                )}
-                                                {app.type === 'fan' && (
-                                                    <>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                                                            <span>{t('Speed')}</span>
-                                                            <span style={{ color: 'var(--primary-500)', fontWeight: 600 }}>{app.speed || 50}%</span>
-                                                        </div>
-                                                        <input
-                                                            type="range"
-                                                            min="0"
-                                                            max="100"
-                                                            value={app.speed || 50}
-                                                            onChange={(e) => currentUser?.room && setApplianceValue(currentUser.room, app.id, 'speed', parseInt(e.target.value))}
-                                                            style={{ width: '100%' }}
-                                                        />
-                                                    </>
-                                                )}
-                                                {app.type === 'tv' && (
-                                                    <>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                                                            <span>{t('Volume')}</span>
-                                                            <span style={{ color: 'var(--primary-500)', fontWeight: 600 }}>{app.volume || 50}%</span>
-                                                        </div>
-                                                        <input
-                                                            type="range"
-                                                            min="0"
-                                                            max="100"
-                                                            value={app.volume || 50}
-                                                            onChange={(e) => currentUser?.room && setApplianceValue(currentUser.room, app.id, 'volume', parseInt(e.target.value))}
-                                                            style={{ width: '100%' }}
-                                                        />
-                                                    </>
+                                                {/* Slider for fan/aircon/tv when ON */}
+                                                {isSlider && app.state && (
+                                                    <div style={{ marginTop: '0.5rem' }}>
+                                                        {app.type === 'AC' && (
+                                                            <>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                                                                    <span>{t('Temperature')}</span>
+                                                                    <span style={{ color: 'var(--info-500)', fontWeight: 600 }}>{app.temperature}°C</span>
+                                                                </div>
+                                                                <input
+                                                                    type="range"
+                                                                    min="16"
+                                                                    max="30"
+                                                                    value={app.temperature || 25}
+                                                                    onChange={(e) => roomKey && setApplianceValue(roomKey, app.id, 'temperature', parseInt(e.target.value))}
+                                                                    style={{ width: '100%' }}
+                                                                />
+                                                            </>
+                                                        )}
+                                                        {app.type === 'fan' && (
+                                                            <>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                                                                    <span>{t('Speed')}</span>
+                                                                    <span style={{ color: 'var(--primary-500)', fontWeight: 600 }}>{app.speed || 50}%</span>
+                                                                </div>
+                                                                <input
+                                                                    type="range"
+                                                                    min="0"
+                                                                    max="100"
+                                                                    value={app.speed || 50}
+                                                                    onChange={(e) => roomKey && setApplianceValue(roomKey, app.id, 'speed', parseInt(e.target.value))}
+                                                                    style={{ width: '100%' }}
+                                                                />
+                                                            </>
+                                                        )}
+                                                        {app.type === 'tv' && (
+                                                            <>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                                                                    <span>{t('Volume')}</span>
+                                                                    <span style={{ color: 'var(--primary-500)', fontWeight: 600 }}>{app.volume || 50}%</span>
+                                                                </div>
+                                                                <input
+                                                                    type="range"
+                                                                    min="0"
+                                                                    max="100"
+                                                                    value={app.volume || 50}
+                                                                    onChange={(e) => roomKey && setApplianceValue(roomKey, app.id, 'volume', parseInt(e.target.value))}
+                                                                    style={{ width: '100%' }}
+                                                                />
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            </div>
+                    </div>
+                );
+            })()}
 
             {/* Next Activity Card - At Bottom */}
             <div className="card">

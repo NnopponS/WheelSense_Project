@@ -25,6 +25,6 @@ The MCP server is the central component that:
 ## Dependencies
 
 - LLM Service (`../llm/`) - For LLM interactions
-- MongoDB - For data storage
+- SQLite - For data storage (stored in Docker volume)
 - MQTT Broker - For device communication
 

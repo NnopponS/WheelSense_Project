@@ -18,6 +18,8 @@ from .emergency import router as emergency_router
 from .doctor_notes import router as doctor_notes_router
 from .devices import router as devices_router
 from .video import router as video_router
+from .schedule import router as schedule_router
+from .chat import router as chat_router
 
 # List of all routers for easy registration
 all_routers = [
@@ -33,6 +35,8 @@ all_routers = [
     doctor_notes_router,
     devices_router,
     video_router,
+    schedule_router,
+    chat_router,
 ]
 
 def register_routes(app):

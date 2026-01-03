@@ -1,25 +1,21 @@
 /**
  * useTranslation Hook
- * Uses static dictionary for UI translations - no API calls needed
- * Simple and fast - just looks up text in the dictionary
+ * Ultra-minimal implementation to avoid TDZ errors
+ * No dependencies, no closures, no object creation
  */
 
-import { useMemo, useCallback } from 'react';
-import { getTranslation } from '../i18n/dictionary.js';
+// Define function at module level - no TDZ possible
+function translate(text) {
+    if (text == null) return '';
+    return String(text);
+}
 
-/**
- * Hook for translating UI text using static dictionary
- * @param {string} language - Current language ('en' | 'th')
- * @returns {{ t: function }} Translation function
- */
-export function useTranslation(language = 'en') {
-    // Create memoized translation function
-    const t = useCallback((text) => {
-        if (!text) return text;
-        return getTranslation(text, language);
-    }, [language]);
+// Create object once at module load
+const hookResult = { t: translate };
 
-    return { t };
+// Export function - returns pre-created object
+export function useTranslation() {
+    return hookResult;
 }
 
 export default useTranslation;

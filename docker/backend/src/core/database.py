@@ -15,6 +15,46 @@ from .mongodb_compat import MongoDBCompatibilityLayer
 logger = logging.getLogger(__name__)
 
 
+def normalize_room_name(room_name: str) -> str:
+    """
+    Normalize room name for consistent matching.
+    Converts to lowercase, replaces spaces with underscores, handles common variations.
+    
+    Examples:
+        "Living Room" -> "livingroom"
+        "living room" -> "livingroom"
+        "Bedroom" -> "bedroom"
+        "bed room" -> "bedroom"
+    
+    Args:
+        room_name: Room name string (may be in various formats)
+        
+    Returns:
+        Normalized room name (lowercase, no spaces)
+    """
+    if not room_name:
+        return ""
+    
+    # Convert to lowercase and strip whitespace
+    normalized = room_name.lower().strip()
+    
+    # Replace spaces and hyphens with nothing (for matching)
+    normalized = normalized.replace(" ", "").replace("-", "").replace("_", "")
+    
+    # Map common variations
+    room_mapping = {
+        "livingroom": "livingroom",
+        "living": "livingroom",
+        "bedroom": "bedroom",
+        "bed": "bedroom",
+        "bathroom": "bathroom",
+        "bath": "bathroom",
+        "kitchen": "kitchen"
+    }
+    
+    return room_mapping.get(normalized, normalized)
+
+
 class Database:
     """SQLite database service."""
     
@@ -30,11 +70,19 @@ class Database:
             # Ensure data directory exists
             Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
             
-            self._db_connection = await aiosqlite.connect(self.db_path)
+            # Phase 4F: Set timeout for database operations (5 seconds for busy timeout)
+            # SQLite busy timeout allows retries on locked database
+            self._db_connection = await aiosqlite.connect(
+                self.db_path,
+                timeout=5.0  # 5 second timeout for busy database
+            )
             self._db_connection.row_factory = aiosqlite.Row
             
             # Enable foreign keys
             await self._db_connection.execute("PRAGMA foreign_keys = ON")
+            
+            # Phase 4F: Set additional SQLite pragmas for better timeout handling
+            await self._db_connection.execute("PRAGMA busy_timeout = 5000")  # 5 seconds
             
             # Create tables
             await self._create_tables()
@@ -43,7 +91,7 @@ class Database:
             self._compat_layer = MongoDBCompatibilityLayer(self._db_connection, self)
             
             self.is_connected = True
-            logger.info(f"Connected to SQLite database at {self.db_path}")
+            logger.info(f"Connected to SQLite database at {self.db_path} (timeout: 5s)")
         except Exception as e:
             logger.error(f"Failed to connect to SQLite: {e}")
             raise
@@ -335,6 +383,12 @@ class Database:
         # Create indexes
         await self._create_indexes()
         
+        # Create MCP tables for LLM integration
+        await self._create_mcp_tables()
+        
+        # Initialize MCP defaults
+        await self._initialize_mcp_defaults()
+        
         await self._db_connection.commit()
     
     async def _create_indexes(self):
@@ -358,6 +412,196 @@ class Database:
         
         for index_sql in indexes:
             await self._db_connection.execute(index_sql)
+    
+    async def _create_mcp_tables(self):
+        """Create MCP-related tables for LLM integration."""
+        
+        # Device States table - lightweight state cache
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS device_states (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                room TEXT NOT NULL,
+                device TEXT NOT NULL,
+                state INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL,
+                UNIQUE(room, device)
+            )
+        """)
+        
+        # User Info table - single-user context for MCP
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS user_info (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name_thai TEXT DEFAULT "",
+                name_english TEXT DEFAULT "",
+                condition TEXT DEFAULT "",
+                current_location TEXT DEFAULT "Bedroom",
+                last_schedule_check_minute TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        
+        # Phase 4E: Add last_schedule_check_minute column if it doesn't exist (migration)
+        try:
+            await self._db_connection.execute("""
+                ALTER TABLE user_info ADD COLUMN last_schedule_check_minute TEXT
+            """)
+        except Exception:
+            # Column already exists, ignore
+            pass
+        
+        # Schedule Items table - base recurring schedule
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS schedule_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                time TEXT NOT NULL,
+                activity TEXT NOT NULL,
+                location TEXT,
+                action TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        
+        # One-Time Events table - date-specific events
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS one_time_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                time TEXT NOT NULL,
+                activity TEXT NOT NULL,
+                location TEXT,
+                action TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
+        
+        # Daily Schedule Clones table - daily modified schedules
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS daily_schedule_clones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL UNIQUE,
+                schedule_data TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        
+        # Notification Preferences table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS notification_preferences (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                room TEXT NOT NULL,
+                device TEXT NOT NULL,
+                do_not_notify INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                UNIQUE(room, device)
+            )
+        """)
+        
+        # Do Not Remind table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS do_not_remind (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL
+            )
+        """)
+        
+        # Chat History table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS chat_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                content_full TEXT,
+                is_notification INTEGER DEFAULT 0,
+                is_preference_update INTEGER DEFAULT 0,
+                tool_result TEXT,
+                session_id TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
+        
+        # Add session_id column if it doesn't exist (migration for existing databases)
+        try:
+            await self._db_connection.execute("""
+                ALTER TABLE chat_history ADD COLUMN session_id TEXT
+            """)
+        except Exception:
+            # Column already exists, ignore
+            pass
+        
+        # Conversation Summaries table
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS conversation_summaries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                summary_text TEXT NOT NULL,
+                key_events TEXT,
+                last_summarized_turn INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+        
+        # Create indexes for MCP tables
+        await self._create_mcp_indexes()
+    
+    async def _create_mcp_indexes(self):
+        """Create indexes for MCP tables."""
+        indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_device_states_room ON device_states(room)",
+            "CREATE INDEX IF NOT EXISTS idx_device_states_device ON device_states(device)",
+            "CREATE INDEX IF NOT EXISTS idx_device_states_room_device ON device_states(room, device)",
+            "CREATE INDEX IF NOT EXISTS idx_schedule_items_time ON schedule_items(time)",
+            "CREATE INDEX IF NOT EXISTS idx_one_time_events_date ON one_time_events(date)",
+            "CREATE INDEX IF NOT EXISTS idx_one_time_events_datetime ON one_time_events(date, time)",
+            "CREATE INDEX IF NOT EXISTS idx_daily_schedule_clones_date ON daily_schedule_clones(date)",
+            "CREATE INDEX IF NOT EXISTS idx_notification_preferences_room_device ON notification_preferences(room, device)",
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_created_at ON chat_history(created_at)",
+            "CREATE INDEX IF NOT EXISTS idx_chat_history_session_id ON chat_history(session_id)",
+        ]
+        
+        for index_sql in indexes:
+            await self._db_connection.execute(index_sql)
+    
+    async def _initialize_mcp_defaults(self):
+        """Initialize default data for MCP tables."""
+        now = datetime.now().isoformat()
+        
+        # Initialize user_info if it doesn't exist
+        async with self._db_connection.execute(
+            "SELECT id FROM user_info LIMIT 1"
+        ) as cursor:
+            existing = await cursor.fetchone()
+            if not existing:
+                await self._db_connection.execute("""
+                    INSERT INTO user_info (name_thai, name_english, condition, current_location, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, ("", "", "", "Bedroom", now, now))
+        
+        # Initialize device_states from existing appliances
+        async with self._db_connection.execute(
+            "SELECT room, type, state, isOn FROM appliances"
+        ) as cursor:
+            appliances = await cursor.fetchall()
+            for app in appliances:
+                room = app['room'] if app['room'] else ""
+                device = app['type'] if app['type'] else ""
+                # Use isOn if available, otherwise use state
+                # sqlite3.Row uses [] access, not .get()
+                # Handle None values from database
+                is_on = app['isOn']
+                app_state = app['state']
+                state = 1 if (is_on or app_state) else 0
+                
+                if room and device:
+                    # Insert or ignore if already exists
+                    await self._db_connection.execute("""
+                        INSERT OR IGNORE INTO device_states (room, device, state, updated_at)
+                        VALUES (?, ?, ?, ?)
+                    """, (room, device, state, now))
     
     # ==================== Helper Methods ====================
     
@@ -432,10 +676,7 @@ class Database:
     
     async def get_room(self, room_id: str) -> Optional[Dict]:
         """Get room by ID or device ID or roomType (with normalization)."""
-        def normalize(name: str) -> str:
-            return name.lower().replace(" ", "") if name else ""
-        
-        normalized_room_id = normalize(room_id)
+        normalized_room_id = normalize_room_name(room_id)
         
         # Try exact match first
         async with self._db_connection.execute(
@@ -453,9 +694,9 @@ class Database:
             name_en = r.get("nameEn", "")
             name = r.get("name", "")
             
-            if (normalize(room_type) == normalized_room_id or
-                normalize(name_en) == normalized_room_id or
-                normalize(name) == normalized_room_id):
+            if (normalize_room_name(room_type) == normalized_room_id or
+                normalize_room_name(name_en) == normalized_room_id or
+                normalize_room_name(name) == normalized_room_id):
                 return r
         
         return None
@@ -567,6 +808,9 @@ class Database:
             (1 if state else 0, 1 if state else 0, datetime.now().isoformat(), room_obj_id, appliance_type)
         )
         await self._db_connection.commit()
+        
+        # Sync to device_states table
+        await self.sync_appliance_to_state(room_id, appliance_type, state)
     
     # ==================== Activity Logging ====================
     
@@ -897,6 +1141,9 @@ class Database:
         
         logger.info(f"Saved location event: {user_name or user_id} moved from {from_room} to {to_room}")
         
+        # Sync location to user_info (broadcast will be handled by caller if needed)
+        await self.sync_location_to_user_info(to_room)
+        
         # Fetch the created event
         async with self._db_connection.execute(
             "SELECT * FROM timeline WHERE _id = ?", (_id,)
@@ -1013,8 +1260,720 @@ class Database:
         )
         await self._db_connection.commit()
         return cursor.rowcount > 0
+    
+    # ==================== State Synchronization Helpers ====================
+    
+    async def sync_appliance_to_state(self, room: str, device: str, state: bool):
+        """Sync appliance state to device_states table."""
+        now = datetime.now().isoformat()
+        try:
+            await self._db_connection.execute("BEGIN TRANSACTION")
+            await self._db_connection.execute("""
+                INSERT OR REPLACE INTO device_states (room, device, state, updated_at)
+                VALUES (?, ?, ?, ?)
+            """, (room, device, 1 if state else 0, now))
+            await self._db_connection.commit()
+        except Exception as e:
+            await self._db_connection.execute("ROLLBACK")
+            logger.error(f"Error syncing appliance to state: {e}")
+            raise
+    
+    async def sync_state_to_appliance(self, room: str, device: str, state: bool):
+        """Sync device_states to appliances table (optional, for consistency)."""
+        room_obj = await self.get_room(room)
+        if not room_obj:
+            return
+        
+        room_obj_id = room_obj.get("_id")
+        now = datetime.now().isoformat()
+        
+        try:
+            await self._db_connection.execute("BEGIN TRANSACTION")
+            await self._db_connection.execute("""
+                UPDATE appliances 
+                SET isOn = ?, state = ?, lastStateChange = ?, lastUpdated = ?
+                WHERE roomId = ? AND type = ?
+            """, (1 if state else 0, 1 if state else 0, now, now, room_obj_id, device))
+            await self._db_connection.commit()
+        except Exception as e:
+            await self._db_connection.execute("ROLLBACK")
+            logger.error(f"Error syncing state to appliance: {e}")
+            raise
+    
+    async def sync_location_to_user_info(self, location: str, broadcast_callback=None):
+        """Sync current location from timeline to user_info table."""
+        now = datetime.now().isoformat()
+        
+        try:
+            await self._db_connection.execute("BEGIN TRANSACTION")
+            
+            # Check if user_info exists
+            async with self._db_connection.execute(
+                "SELECT id FROM user_info LIMIT 1"
+            ) as cursor:
+                existing = await cursor.fetchone()
+                if existing:
+                    await self._db_connection.execute("""
+                        UPDATE user_info 
+                        SET current_location = ?, updated_at = ?
+                        WHERE id = ?
+                    """, (location, now, existing['id']))
+                else:
+                    # Create if doesn't exist
+                    await self._db_connection.execute("""
+                        INSERT INTO user_info (current_location, created_at, updated_at)
+                        VALUES (?, ?, ?)
+                    """, (location, now, now))
+            
+            await self._db_connection.commit()
+        except Exception as e:
+            await self._db_connection.execute("ROLLBACK")
+            logger.error(f"Error syncing location to user_info: {e}")
+            raise
+        
+        # Get updated user_info for broadcast
+        user_info = await self.get_user_info()
+        
+        # Broadcast user_info_update via callback if provided
+        if broadcast_callback:
+            try:
+                await broadcast_callback({
+                    "type": "user_info_update",
+                    "data": {
+                        "name_thai": user_info.get("name_thai", ""),
+                        "name_english": user_info.get("name_english", ""),
+                        "condition": user_info.get("condition", ""),
+                        "current_location": user_info.get("current_location", "")
+                    },
+                    "timestamp": now
+                })
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to broadcast user_info_update from sync_location_to_user_info: {e}")
+    
+    # ==================== MCP Device State Operations ====================
+    
+    async def get_device_state(self, room: str, device: str) -> bool:
+        """Get device state from device_states table."""
+        async with self._db_connection.execute(
+            "SELECT state FROM device_states WHERE room = ? AND device = ?",
+            (room, device)
+        ) as cursor:
+            row = await cursor.fetchone()
+            return bool(row['state']) if row else False
+    
+    async def set_device_state(self, room: str, device: str, state: bool) -> bool:
+        """Set device state in device_states table."""
+        now = datetime.now().isoformat()
+        await self._db_connection.execute("""
+            INSERT OR REPLACE INTO device_states (room, device, state, updated_at)
+            VALUES (?, ?, ?, ?)
+        """, (room, device, 1 if state else 0, now))
+        await self._db_connection.commit()
+        return True
+    
+    async def get_all_device_states(self) -> Dict[str, Dict[str, bool]]:
+        """Get all device states organized by room."""
+        async with self._db_connection.execute(
+            "SELECT room, device, state FROM device_states"
+        ) as cursor:
+            rows = await cursor.fetchall()
+            result = {}
+            for row in rows:
+                room = row['room']
+                device = row['device']
+                state = bool(row['state'])
+                if room not in result:
+                    result[room] = {}
+                result[room][device] = state
+            return result
+    
+    # ==================== MCP User Info Operations ====================
+    
+    async def get_user_info(self) -> Dict[str, Any]:
+        """Get user information from user_info table."""
+        async with self._db_connection.execute(
+            "SELECT * FROM user_info LIMIT 1"
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return {
+                    "name": {
+                        "thai": row['name_thai'] or "",
+                        "english": row['name_english'] or ""
+                    },
+                    "condition": row['condition'] or "",
+                    "current_location": row['current_location'] or "Bedroom"
+                }
+            return {
+                "name": {"thai": "", "english": ""},
+                "condition": "",
+                "current_location": "Bedroom"
+            }
+    
+    async def set_user_name(self, thai: str = "", english: str = "") -> None:
+        """Set user name in user_info table."""
+        now = datetime.now().isoformat()
+        async with self._db_connection.execute(
+            "SELECT id FROM user_info LIMIT 1"
+        ) as cursor:
+            existing = await cursor.fetchone()
+            if existing:
+                await self._db_connection.execute("""
+                    UPDATE user_info 
+                    SET name_thai = ?, name_english = ?, updated_at = ?
+                    WHERE id = ?
+                """, (thai, english, now, existing['id']))
+            else:
+                await self._db_connection.execute("""
+                    INSERT INTO user_info (name_thai, name_english, created_at, updated_at)
+                    VALUES (?, ?, ?, ?)
+                """, (thai, english, now, now))
+        await self._db_connection.commit()
+    
+    async def set_user_condition(self, condition: str) -> None:
+        """Set user condition in user_info table."""
+        now = datetime.now().isoformat()
+        async with self._db_connection.execute(
+            "SELECT id FROM user_info LIMIT 1"
+        ) as cursor:
+            existing = await cursor.fetchone()
+            if existing:
+                await self._db_connection.execute("""
+                    UPDATE user_info 
+                    SET condition = ?, updated_at = ?
+                    WHERE id = ?
+                """, (condition, now, existing['id']))
+            else:
+                await self._db_connection.execute("""
+                    INSERT INTO user_info (condition, created_at, updated_at)
+                    VALUES (?, ?, ?)
+                """, (condition, now, now))
+        await self._db_connection.commit()
+    
+    async def get_current_location(self) -> str:
+        """Get current location from user_info table."""
+        async with self._db_connection.execute(
+            "SELECT current_location FROM user_info LIMIT 1"
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row['current_location'] if row and row['current_location'] else "Bedroom"
+    
+    async def set_current_location(self, location: str) -> bool:
+        """Set current location in user_info table."""
+        return await self.sync_location_to_user_info(location)
+    
+    async def save_last_schedule_check_minute(self, minute_key: str) -> None:
+        """Save last schedule check minute to user_info table."""
+        now = datetime.now().isoformat()
+        async with self._db_connection.execute(
+            "SELECT id FROM user_info LIMIT 1"
+        ) as cursor:
+            existing = await cursor.fetchone()
+            if existing:
+                await self._db_connection.execute("""
+                    UPDATE user_info 
+                    SET last_schedule_check_minute = ?, updated_at = ?
+                    WHERE id = ?
+                """, (minute_key, now, existing['id']))
+            else:
+                await self._db_connection.execute("""
+                    INSERT INTO user_info (last_schedule_check_minute, created_at, updated_at)
+                    VALUES (?, ?, ?)
+                """, (minute_key, now, now))
+        await self._db_connection.commit()
+    
+    async def get_last_schedule_check_minute(self) -> Optional[str]:
+        """Get last schedule check minute from user_info table."""
+        async with self._db_connection.execute(
+            "SELECT last_schedule_check_minute FROM user_info LIMIT 1"
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row['last_schedule_check_minute'] if row and row['last_schedule_check_minute'] else None
+    
+    # ==================== MCP Schedule Operations ====================
+    
+    async def get_schedule_items(self) -> List[Dict[str, Any]]:
+        """Get all base schedule items."""
+        async with self._db_connection.execute(
+            "SELECT * FROM schedule_items ORDER BY time"
+        ) as cursor:
+            rows = await cursor.fetchall()
+            result = []
+            for row in rows:
+                item = {
+                    "time": row['time'],
+                    "activity": row['activity']
+                }
+                if row['location']:
+                    item["location"] = row['location']
+                if row['action']:
+                    try:
+                        item["action"] = json.loads(row['action'])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                result.append(item)
+            return result
+    
+    async def add_schedule_item(self, item: Dict[str, Any]) -> int:
+        """Add a schedule item."""
+        now = datetime.now().isoformat()
+        cursor = await self._db_connection.execute("""
+            INSERT INTO schedule_items (time, activity, location, action, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            item.get("time"),
+            item.get("activity"),
+            item.get("location"),
+            json.dumps(item.get("action")) if item.get("action") else None,
+            now,
+            now
+        ))
+        await self._db_connection.commit()
+        return cursor.lastrowid
+    
+    async def set_schedule_items(self, items: List[Dict[str, Any]]) -> None:
+        """Replace all schedule items."""
+        await self._db_connection.execute("DELETE FROM schedule_items")
+        for item in items:
+            await self.add_schedule_item(item)
+    
+    async def delete_schedule_item_by_time(self, time: str) -> bool:
+        """Delete schedule item by time."""
+        cursor = await self._db_connection.execute(
+            "DELETE FROM schedule_items WHERE time = ?", (time,)
+        )
         await self._db_connection.commit()
         return cursor.rowcount > 0
+    
+    async def get_one_time_events(self, date: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get one-time events, optionally filtered by date."""
+        if date:
+            query = "SELECT * FROM one_time_events WHERE date = ? ORDER BY time"
+            params = (date,)
+        else:
+            query = "SELECT * FROM one_time_events ORDER BY date, time"
+            params = ()
+        
+        async with self._db_connection.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+            result = []
+            for row in rows:
+                item = {
+                    "date": row['date'],
+                    "time": row['time'],
+                    "activity": row['activity']
+                }
+                if row['location']:
+                    item["location"] = row['location']
+                if row['action']:
+                    try:
+                        item["action"] = json.loads(row['action'])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                result.append(item)
+            return result
+    
+    async def add_one_time_event(self, event: Dict[str, Any]) -> int:
+        """Add a one-time event."""
+        now = datetime.now().isoformat()
+        cursor = await self._db_connection.execute("""
+            INSERT INTO one_time_events (date, time, activity, location, action, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            event.get("date"),
+            event.get("time"),
+            event.get("activity"),
+            event.get("location"),
+            json.dumps(event.get("action")) if event.get("action") else None,
+            now
+        ))
+        await self._db_connection.commit()
+        return cursor.lastrowid
+    
+    async def delete_one_time_events(self, date: str, time: Optional[str] = None) -> int:
+        """Delete one-time events."""
+        if time:
+            cursor = await self._db_connection.execute(
+                "DELETE FROM one_time_events WHERE date = ? AND time = ?", (date, time)
+            )
+        else:
+            cursor = await self._db_connection.execute(
+                "DELETE FROM one_time_events WHERE date = ?", (date,)
+            )
+        await self._db_connection.commit()
+        return cursor.rowcount
+    
+    async def delete_all_one_time_events(self) -> int:
+        """Delete all one-time events."""
+        cursor = await self._db_connection.execute("DELETE FROM one_time_events")
+        await self._db_connection.commit()
+        return cursor.rowcount
+    
+    async def cleanup_old_one_time_events(self, before_date: str) -> int:
+        """Delete one-time events before a specific date."""
+        cursor = await self._db_connection.execute(
+            "DELETE FROM one_time_events WHERE date < ?", (before_date,)
+        )
+        await self._db_connection.commit()
+        return cursor.rowcount
+    
+    async def get_daily_clone(self, date: str) -> Optional[List[Dict[str, Any]]]:
+        """Get daily schedule clone for a specific date."""
+        async with self._db_connection.execute(
+            "SELECT schedule_data FROM daily_schedule_clones WHERE date = ?", (date,)
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                try:
+                    return json.loads(row['schedule_data'])
+                except (json.JSONDecodeError, TypeError):
+                    return None
+            return None
+    
+    async def set_daily_clone(self, date: str, schedule_data: List[Dict[str, Any]]) -> None:
+        """Set daily schedule clone for a specific date."""
+        now = datetime.now().isoformat()
+        await self._db_connection.execute("""
+            INSERT OR REPLACE INTO daily_schedule_clones (date, schedule_data, created_at, updated_at)
+            VALUES (?, ?, ?, ?)
+        """, (date, json.dumps(schedule_data), now, now))
+        await self._db_connection.commit()
+    
+    async def delete_daily_clone(self, date: str) -> bool:
+        """Delete daily schedule clone."""
+        cursor = await self._db_connection.execute(
+            "DELETE FROM daily_schedule_clones WHERE date = ?", (date,)
+        )
+        await self._db_connection.commit()
+        return cursor.rowcount > 0
+    
+    async def check_schedule_notifications(self, current_time_str: str, date_str: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Check if current time matches any schedule items that should trigger notifications.
+        
+        Args:
+            current_time_str: Current time in HH:MM format (e.g., "08:00", "14:30")
+            date_str: Optional date in YYYY-MM-DD format. If None, uses today.
+            
+        Returns:
+            List of schedule items that should trigger notifications:
+            [
+                {
+                    "time": str,
+                    "activity": str,
+                    "type": "schedule" or "one_time_event",
+                    "action": dict (optional),
+                    "location": str (optional)
+                },
+                ...
+            ]
+        """
+        matching_items = []
+        
+        # Normalize time string
+        try:
+            time_parts = current_time_str.strip().split(":")
+            if len(time_parts) == 2:
+                hours = int(time_parts[0])
+                minutes = int(time_parts[1])
+                normalized_time = f"{hours:02d}:{minutes:02d}"
+            else:
+                return matching_items  # Invalid format
+        except (ValueError, IndexError):
+            return matching_items  # Invalid format
+        
+        # Get date (default to today)
+        if not date_str:
+            date_str = datetime.now().strftime("%Y-%m-%d")
+        
+        # Get daily clone for the date (create if doesn't exist)
+        daily_clone = await self.get_daily_clone(date_str)
+        if not daily_clone:
+            # Create daily clone from base schedule
+            base_schedule = await self.get_schedule_items()
+            base_schedule_copy = [item.copy() for item in base_schedule]
+            await self.set_daily_clone(date_str, base_schedule_copy)
+            daily_clone = base_schedule_copy
+        
+        # Check daily clone schedule items
+        for item in daily_clone:
+            schedule_time = item.get("time", "").strip()
+            try:
+                sched_parts = schedule_time.split(":")
+                if len(sched_parts) == 2:
+                    sched_hours = int(sched_parts[0])
+                    sched_minutes = int(sched_parts[1])
+                    normalized_sched_time = f"{sched_hours:02d}:{sched_minutes:02d}"
+                    
+                    if normalized_time == normalized_sched_time:
+                        matching_item = {
+                            "time": schedule_time,
+                            "activity": item.get("activity", ""),
+                            "type": "schedule"
+                        }
+                        if "action" in item:
+                            matching_item["action"] = item["action"]
+                        if "location" in item:
+                            matching_item["location"] = item["location"]
+                        matching_items.append(matching_item)
+            except (ValueError, IndexError):
+                continue
+        
+        # Check one-time events for the date and time
+        one_time_events = await self.get_one_time_events(date_str)
+        for event in one_time_events:
+            event_time = event.get("time", "").strip()
+            try:
+                event_parts = event_time.split(":")
+                if len(event_parts) == 2:
+                    event_hours = int(event_parts[0])
+                    event_minutes = int(event_parts[1])
+                    normalized_event_time = f"{event_hours:02d}:{event_minutes:02d}"
+                    
+                    if normalized_time == normalized_event_time:
+                        matching_item = {
+                            "time": event_time,
+                            "activity": event.get("activity", ""),
+                            "type": "one_time_event"
+                        }
+                        if "action" in event:
+                            matching_item["action"] = event["action"]
+                        if "location" in event:
+                            matching_item["location"] = event["location"]
+                        matching_items.append(matching_item)
+            except (ValueError, IndexError):
+                continue
+        
+        return matching_items
+    
+    # ==================== MCP Notification Operations ====================
+    
+    async def get_notification_preferences(self) -> List[str]:
+        """Get notification preferences as list of 'room device' strings."""
+        async with self._db_connection.execute(
+            "SELECT room, device FROM notification_preferences WHERE do_not_notify = 1"
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [f"{row['room']} {row['device']}" for row in rows]
+    
+    async def set_notification_preference(self, room: str, device: str, do_not_notify: bool) -> bool:
+        """Set notification preference."""
+        now = datetime.now().isoformat()
+        await self._db_connection.execute("""
+            INSERT OR REPLACE INTO notification_preferences (room, device, do_not_notify, created_at)
+            VALUES (?, ?, ?, ?)
+        """, (room, device, 1 if do_not_notify else 0, now))
+        await self._db_connection.commit()
+        return True
+    
+    async def clear_notification_preferences(self) -> None:
+        """Clear all notification preferences."""
+        await self._db_connection.execute("DELETE FROM notification_preferences")
+        await self._db_connection.commit()
+    
+    async def get_do_not_remind(self) -> List[str]:
+        """Get do not remind list."""
+        async with self._db_connection.execute(
+            "SELECT item FROM do_not_remind"
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [row['item'] for row in rows]
+    
+    async def add_to_do_not_remind(self, item: str) -> None:
+        """Add to do not remind list."""
+        now = datetime.now().isoformat()
+        await self._db_connection.execute("""
+            INSERT OR IGNORE INTO do_not_remind (item, created_at)
+            VALUES (?, ?)
+        """, (item, now))
+        await self._db_connection.commit()
+    
+    async def remove_from_do_not_remind(self, item: str) -> bool:
+        """Remove from do not remind list."""
+        cursor = await self._db_connection.execute(
+            "DELETE FROM do_not_remind WHERE item = ?", (item,)
+        )
+        await self._db_connection.commit()
+        return cursor.rowcount > 0
+    
+    async def clear_do_not_remind(self) -> None:
+        """Clear do not remind list."""
+        await self._db_connection.execute("DELETE FROM do_not_remind")
+        await self._db_connection.commit()
+    
+    # ==================== MCP Chat History Operations ====================
+    
+    async def save_chat_message(self, message: Dict[str, Any]) -> int:
+        """Save chat message to database."""
+        now = datetime.now().isoformat()
+        tool_result = message.get("tool_result") or message.get("tool_results")
+        session_id = message.get("session_id")
+        cursor = await self._db_connection.execute("""
+            INSERT INTO chat_history (role, content, content_full, is_notification, is_preference_update, tool_result, session_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            message.get("role"),
+            message.get("content", ""),
+            message.get("content_full"),
+            1 if message.get("is_notification", False) else 0,
+            1 if message.get("is_preference_update", False) else 0,
+            json.dumps(tool_result) if tool_result else None,
+            session_id,
+            now
+        ))
+        await self._db_connection.commit()
+        return cursor.lastrowid
+    
+    async def get_recent_chat_history(self, limit: int = 50, session_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get recent chat history, optionally filtered by session_id."""
+        if session_id:
+            query = "SELECT * FROM chat_history WHERE session_id = ? ORDER BY created_at DESC LIMIT ?"
+            params = (session_id, limit)
+        else:
+            query = "SELECT * FROM chat_history ORDER BY created_at DESC LIMIT ?"
+            params = (limit,)
+        
+        async with self._db_connection.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+            result = []
+            for row in reversed(rows):  # Chronological order
+                item = {
+                    "role": row['role'],
+                    "content": row['content'],
+                    "is_notification": bool(row['is_notification']),
+                    "is_preference_update": bool(row['is_preference_update'])
+                }
+                if row.get('session_id'):
+                    item["session_id"] = row['session_id']
+                if row['content_full']:
+                    item["content_full"] = row['content_full']
+                if row['tool_result']:
+                    try:
+                        item["tool_result"] = json.loads(row['tool_result'])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                result.append(item)
+            return result
+    
+    async def clear_chat_history_for_session(self, session_id: str) -> int:
+        """Clear chat history for a specific session."""
+        cursor = await self._db_connection.execute(
+            "DELETE FROM chat_history WHERE session_id = ?", (session_id,)
+        )
+        await self._db_connection.commit()
+        return cursor.rowcount
+    
+    async def clear_chat_history(self) -> int:
+        """Clear all chat history."""
+        cursor = await self._db_connection.execute("DELETE FROM chat_history")
+        await self._db_connection.commit()
+        return cursor.rowcount
+    
+    async def get_chat_history_count(self) -> int:
+        """Get total count of messages in chat_history."""
+        async with self._db_connection.execute(
+            "SELECT COUNT(*) as count FROM chat_history"
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row['count'] if row else 0
+    
+    async def get_turn_count(self) -> int:
+        """
+        Get current turn count.
+        Phase 4C: Uses message count as proxy for turn count.
+        Each user message + assistant response = 1 turn.
+        """
+        # For Phase 4C, we'll use message count / 2 as turn count
+        # (assuming roughly equal user/assistant messages)
+        count = await self.get_chat_history_count()
+        # More accurate: count user messages only
+        async with self._db_connection.execute(
+            "SELECT COUNT(*) as count FROM chat_history WHERE role = 'user'"
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row['count'] if row else 0
+    
+    # ==================== MCP Conversation Summary Operations ====================
+    
+    async def get_conversation_summary(self) -> Optional[Dict[str, Any]]:
+        """Get latest conversation summary."""
+        async with self._db_connection.execute(
+            "SELECT * FROM conversation_summaries ORDER BY updated_at DESC LIMIT 1"
+        ) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                key_events = []
+                if row['key_events']:
+                    try:
+                        key_events = json.loads(row['key_events'])
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                return {
+                    "last_summarized_turn": row['last_summarized_turn'],
+                    "summary_text": row['summary_text'],
+                    "key_events": key_events
+                }
+            return None
+    
+    async def save_conversation_summary(self, summary: Dict[str, Any]) -> None:
+        """Save conversation summary."""
+        now = datetime.now().isoformat()
+        key_events_json = json.dumps(summary.get("key_events", [])) if summary.get("key_events") else None
+        
+        async with self._db_connection.execute(
+            "SELECT id FROM conversation_summaries ORDER BY updated_at DESC LIMIT 1"
+        ) as cursor:
+            existing = await cursor.fetchone()
+            if existing:
+                await self._db_connection.execute("""
+                    UPDATE conversation_summaries 
+                    SET summary_text = ?, key_events = ?, last_summarized_turn = ?, updated_at = ?
+                    WHERE id = ?
+                """, (
+                    summary.get("summary_text", ""),
+                    key_events_json,
+                    summary.get("last_summarized_turn", 0),
+                    now,
+                    existing['id']
+                ))
+            else:
+                await self._db_connection.execute("""
+                    INSERT INTO conversation_summaries (summary_text, key_events, last_summarized_turn, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (
+                    summary.get("summary_text", ""),
+                    key_events_json,
+                    summary.get("last_summarized_turn", 0),
+                    now,
+                    now
+                ))
+        await self._db_connection.commit()
+    
+    # ==================== Schedule Reset Operations ====================
+    
+    async def reset_daily_schedule(self) -> Dict[str, Any]:
+        """Reset daily schedule to base schedule and clear all one-time events."""
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        # Clear all one-time events
+        deleted_count = await self.delete_all_one_time_events()
+        
+        # Delete existing clone for today
+        await self.delete_daily_clone(today)
+        
+        # Create fresh clone from base schedule
+        base_schedule = await self.get_schedule_items()
+        base_schedule_copy = [item.copy() for item in base_schedule]
+        await self.set_daily_clone(today, base_schedule_copy)
+        
+        return {
+            "one_time_events_cleared": deleted_count,
+            "clone_reset": True,
+            "date": today
+        }
     
     # ==================== MongoDB Compatibility Layer ====================
     

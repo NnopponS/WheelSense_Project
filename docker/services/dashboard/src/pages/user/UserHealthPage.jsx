@@ -2,21 +2,68 @@
  * UserHealthPage - Health tracking page for users
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../hooks/useTranslation';
-import { Heart, User, Sparkles } from 'lucide-react';
+import { getUserInfo, updateUserInfo } from '../../services/api';
+import { Heart, User, Sparkles, Edit2, Save, X } from 'lucide-react';
 
 export function UserHealthPage() {
     const { currentUser, aiAnalysis, language } = useApp();
     const { t } = useTranslation(language);
+    const [condition, setCondition] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
 
-    // User medical conditions (no emoji)
-    const userConditions = [
-        { title: 'Mild Diabetes (Type 2)', description: 'Requires blood sugar monitoring' },
-        { title: 'Allergic to Dust Mites', description: 'Avoid dusty environments' },
-        { title: 'Uses Wheelchair for Mobility', description: 'Primary mode of transportation' }
-    ];
+    useEffect(() => {
+        loadUserInfo();
+    }, []);
+
+    const loadUserInfo = async () => {
+        setLoading(true);
+        try {
+            const info = await getUserInfo();
+            setCondition(info.condition || '');
+        } catch (error) {
+            console.error('Failed to load user info:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            await updateUserInfo({ condition });
+            setIsEditing(false);
+        } catch (error) {
+            console.error('Failed to save condition:', error);
+            alert('Failed to save: ' + error.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        loadUserInfo();
+        setIsEditing(false);
+    };
+
+    // Parse condition text into list items (split by newlines or bullets)
+    const parseConditions = (text) => {
+        if (!text) return [];
+        return text
+            .split(/\n|•|-\s*/)
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => ({
+                title: line,
+                description: ''
+            }));
+    };
+
+    const userConditions = parseConditions(condition);
 
     return (
         <div className="page-content">
@@ -39,41 +86,85 @@ export function UserHealthPage() {
                 </div>
             </div>
 
-            {/* User Condition - Simple list only */}
+            {/* User Condition - Editable */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>
-                <div className="card-header">
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span className="card-title"><User size={18} /> {t('User Condition')}</span>
+                    {!isEditing ? (
+                        <button 
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setIsEditing(true)}
+                            disabled={loading}
+                        >
+                            <Edit2 size={14} /> {t('Edit')}
+                        </button>
+                    ) : (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button 
+                                className="btn btn-primary btn-sm"
+                                onClick={handleSave}
+                                disabled={saving}
+                            >
+                                <Save size={14} /> {saving ? t('Saving...') : t('Save')}
+                            </button>
+                            <button 
+                                className="btn btn-secondary btn-sm"
+                                onClick={handleCancel}
+                                disabled={saving}
+                            >
+                                <X size={14} /> {t('Cancel')}
+                            </button>
+                        </div>
+                    )}
                 </div>
                 <div className="card-body">
-                    {/* Medical Conditions List - No status summary, no emoji */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {userConditions.map((cond, index) => (
-                            <div
-                                key={index}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '1rem',
-                                    padding: '0.75rem 1rem',
-                                    background: 'var(--bg-secondary)',
-                                    borderRadius: 'var(--radius-md)',
-                                    border: '1px solid var(--border-color)'
-                                }}
-                            >
-                                <div style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    background: 'var(--primary-500)',
-                                    flexShrink: 0
-                                }} />
-                                <div>
-                                    <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{t(cond.title)}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t(cond.description)}</div>
+                    {loading ? (
+                        <div style={{ textAlign: 'center', padding: '2rem' }}>Loading...</div>
+                    ) : isEditing ? (
+                        <textarea
+                            className="form-input"
+                            value={condition}
+                            onChange={(e) => setCondition(e.target.value)}
+                            placeholder={t('Enter your medical conditions, one per line')}
+                            rows={6}
+                            style={{ width: '100%', fontFamily: 'inherit' }}
+                        />
+                    ) : userConditions.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {userConditions.map((cond, index) => (
+                                <div
+                                    key={index}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '1rem',
+                                        padding: '0.75rem 1rem',
+                                        background: 'var(--bg-secondary)',
+                                        borderRadius: 'var(--radius-md)',
+                                        border: '1px solid var(--border-color)'
+                                    }}
+                                >
+                                    <div style={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: '50%',
+                                        background: 'var(--primary-500)',
+                                        flexShrink: 0
+                                    }} />
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{cond.title}</div>
+                                        {cond.description && (
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{cond.description}</div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                            {t('No conditions recorded. Click Edit to add.')}
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,0 +1,80 @@
+name: WheelSense Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docker/backend/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'docker/backend/**'
+
+jobs:
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: docker/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run smoke tests
+        working-directory: docker/backend
+        run: |
+          pytest tests/smoke/ -v -m smoke --tb=short
+
+  full-tests:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: docker/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run integration tests
+        working-directory: docker/backend
+        run: |
+          pytest tests/integration/ -v -m integration --tb=short
+      
+      - name: Run E2E tests
+        working-directory: docker/backend
+        run: |
+          pytest tests/e2e/ -v -m e2e --tb=short
+      
+      - name: Run reliability tests
+        working-directory: docker/backend
+        run: |
+          pytest tests/reliability/ -v -m reliability --tb=short
+      
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-artifacts
+          path: docker/backend/test_artifacts/
+          if-no-files-found: ignore
+

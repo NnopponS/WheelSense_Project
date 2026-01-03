@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { Search, Bell, Menu, Sun, Moon, X, AlertTriangle, Info, CheckCircle, Clock, Edit2, Check } from 'lucide-react';
+import { resetSchedule, setCustomTime } from '../services/api';
+import { Search, Bell, Menu, Sun, Moon, X, AlertTriangle, Info, CheckCircle, Clock, Edit2, Check, RotateCcw } from 'lucide-react';
 
 export function TopBar() {
     const {
@@ -14,35 +15,105 @@ export function TopBar() {
         theme, toggleTheme, role,
         patients, wheelchairs, rooms, setCurrentPage, openDrawer,
         language, setLanguage,
-        customTime, setCustomTime, getCurrentTime
+        getCurrentTime,
+        customTime,
+        setCustomTime
     } = useApp();
     const { t } = useTranslation(language);
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [timeInput, setTimeInput] = useState('');
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
-    const [editingTime, setEditingTime] = useState(false);
-    const [tempTime, setTempTime] = useState('');
     const [displayTime, setDisplayTime] = useState('');
+    const customTimeSetAt = useRef(null); // Track when custom time was set
 
-    // Update display time every second when using real time
+    // Update display time every second (live clock)
     useEffect(() => {
         const updateDisplayTime = () => {
-            const now = getCurrentTime();
-            setDisplayTime(now.toLocaleTimeString(language === 'th' ? 'th-TH' : 'en-US', {
+            let timeToDisplay;
+            
+            if (customTime) {
+                // Use custom time - create a date with custom hours and minutes
+                const [hours, minutes] = customTime.split(':');
+                const now = new Date();
+                
+                // Calculate elapsed seconds since custom time was set
+                const elapsedSeconds = customTimeSetAt.current 
+                    ? Math.floor((Date.now() - customTimeSetAt.current) / 1000)
+                    : 0;
+                
+                now.setHours(parseInt(hours), parseInt(minutes), elapsedSeconds, 0);
+                timeToDisplay = now;
+            } else {
+                // Use real time
+                timeToDisplay = new Date();
+            }
+            
+            setDisplayTime(timeToDisplay.toLocaleTimeString(language === 'th' ? 'th-TH' : 'en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                hour12: false
+                hour12: false,
+                timeZone: 'Asia/Bangkok' // GMT+7
             }));
         };
 
         updateDisplayTime();
         const interval = setInterval(updateDisplayTime, 1000);
         return () => clearInterval(interval);
-    }, [customTime, language, getCurrentTime]);
+    }, [language, customTime]);
+
+    // Track when custom time is set
+    useEffect(() => {
+        if (customTime) {
+            customTimeSetAt.current = Date.now();
+        } else {
+            customTimeSetAt.current = null;
+        }
+    }, [customTime]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
+
+    // Handle custom time setting
+    const handleSetCustomTime = async () => {
+        // Validate HH:MM format
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (timeRegex.test(timeInput)) {
+            setCustomTime(timeInput);
+            // Sync custom time to backend for schedule checker
+            try {
+                await setCustomTime(timeInput, null);
+            } catch (error) {
+                console.error('[TopBar] Failed to sync custom time to backend:', error);
+                // Continue anyway - frontend custom time still works for display
+            }
+            setShowTimePicker(false);
+            setTimeInput('');
+        } else {
+            alert(t('Invalid time format. Please use HH:MM (e.g., 14:30)'));
+        }
+    };
+
+    const handleResetTime = async () => {
+        setCustomTime(null);
+        // Reset custom time in backend
+        try {
+            await setCustomTime(null, null);
+        } catch (error) {
+            console.error('[TopBar] Failed to reset custom time in backend:', error);
+            // Continue anyway
+        }
+        setShowTimePicker(false);
+        setTimeInput('');
+    };
+
+    const handleOpenTimePicker = () => {
+        setTimeInput(customTime || '');
+        setShowTimePicker(true);
+    };
 
     // Search handler
     const handleSearch = (query) => {
@@ -221,99 +292,222 @@ export function TopBar() {
             )}
 
             <div className="top-bar-actions">
-                {/* Timestamp Display/Editor */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '1rem' }}>
-                    {editingTime ? (
+                {/* Live Clock Display */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '1rem', position: 'relative' }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.375rem 0.75rem',
+                            background: 'var(--bg-tertiary)',
+                            color: 'var(--text-primary)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            transition: 'background 0.2s'
+                        }}
+                        title={customTime ? t('Custom time - Click to change') : t('Click to customize time')}
+                        onClick={handleOpenTimePicker}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                    >
+                        <Clock size={14} />
+                        <span>{displayTime}</span>
+                        <span style={{ fontSize: '0.65rem', opacity: 0.7, marginLeft: '0.25rem' }}>GMT+7</span>
+                        {customTime && (
+                            <span style={{ 
+                                fontSize: '0.65rem', 
+                                opacity: 0.7, 
+                                marginLeft: '0.25rem',
+                                color: 'var(--primary-500)'
+                            }}>
+                                ({t('Custom')})
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Time Picker Modal */}
+                    {showTimePicker && (
                         <>
-                            <input
-                                type="text"
-                                value={tempTime}
-                                onChange={(e) => {
-                                    // Allow only valid HH:MM format
-                                    const val = e.target.value.replace(/[^0-9:]/g, '');
-                                    if (val.length <= 5) setTempTime(val);
-                                }}
-                                placeholder="HH:MM"
-                                maxLength={5}
+                            <div
                                 style={{
-                                    padding: '0.25rem 0.5rem',
-                                    background: 'var(--bg-tertiary)',
-                                    border: '1px solid var(--primary-500)',
-                                    borderRadius: 'var(--radius-sm)',
-                                    color: 'var(--text-primary)',
-                                    fontSize: '0.875rem',
-                                    width: '70px',
-                                    textAlign: 'center'
-                                }}
-                            />
-                            <button
-                                onClick={() => {
-                                    if (tempTime) {
-                                        setCustomTime(tempTime);
-                                    }
-                                    setEditingTime(false);
-                                }}
-                                style={{
-                                    padding: '0.25rem 0.5rem',
-                                    background: 'var(--success-500)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 'var(--radius-sm)',
-                                    cursor: 'pointer',
+                                    position: 'fixed',
+                                    inset: 0,
+                                    background: 'rgba(0, 0, 0, 0.5)',
+                                    zIndex: 999,
                                     display: 'flex',
-                                    alignItems: 'center'
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
                                 }}
-                                title={t('Apply')}
-                            >
-                                <Check size={14} />
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setCustomTime(null);
-                                    setEditingTime(false);
-                                }}
+                                onClick={() => setShowTimePicker(false)}
+                            />
+                            <div
                                 style={{
-                                    padding: '0.25rem 0.5rem',
-                                    background: 'var(--bg-tertiary)',
-                                    color: 'var(--text-primary)',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: 'var(--radius-sm)',
-                                    cursor: 'pointer',
-                                    fontSize: '0.75rem'
+                                    position: 'fixed',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    background: 'var(--card-bg)',
+                                    borderRadius: 'var(--radius-lg)',
+                                    padding: '1.5rem',
+                                    zIndex: 1000,
+                                    minWidth: '300px',
+                                    boxShadow: 'var(--shadow-lg)'
                                 }}
-                                title={t('Use Real Time')}
+                                onClick={(e) => e.stopPropagation()}
                             >
-                                {t('Real')}
-                            </button>
+                                <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+                                    {t('Customize Time')}
+                                </h3>
+                                
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label style={{ 
+                                        display: 'block', 
+                                        marginBottom: '0.5rem', 
+                                        fontSize: '0.875rem',
+                                        color: 'var(--text-secondary)'
+                                    }}>
+                                        {t('Time (HH:MM)')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={timeInput}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9:]/g, '');
+                                            // Auto-format as user types
+                                            if (val.length <= 5) {
+                                                setTimeInput(val);
+                                            }
+                                        }}
+                                        placeholder="HH:MM"
+                                        maxLength={5}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.5rem',
+                                            fontSize: '1rem',
+                                            textAlign: 'center',
+                                            border: '1px solid var(--border-color)',
+                                            borderRadius: 'var(--radius-sm)',
+                                            background: 'var(--bg-primary)',
+                                            color: 'var(--text-primary)'
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleSetCustomTime();
+                                            }
+                                        }}
+                                        autoFocus
+                                    />
+                                    <div style={{ 
+                                        fontSize: '0.75rem', 
+                                        color: 'var(--text-muted)', 
+                                        marginTop: '0.25rem',
+                                        textAlign: 'center'
+                                    }}>
+                                        {t('Format: 00:00 - 23:59')}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setShowTimePicker(false)}
+                                    >
+                                        {t('Cancel')}
+                                    </button>
+                                    {customTime && (
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={handleResetTime}
+                                        >
+                                            {t('Reset to Real Time')}
+                                        </button>
+                                    )}
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={handleSetCustomTime}
+                                    >
+                                        {t('Apply')}
+                                    </button>
+                                </div>
+                            </div>
                         </>
-                    ) : (
-                        <div
-                            onClick={() => {
-                                setTempTime(customTime || '');
-                                setEditingTime(true);
-                            }}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.375rem 0.75rem',
-                                background: customTime ? 'var(--warning-500)' : 'var(--bg-tertiary)',
-                                color: customTime ? 'white' : 'var(--text-primary)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: 'var(--radius-sm)',
-                                cursor: 'pointer',
-                                fontSize: '0.875rem',
-                                fontWeight: 500,
-                                transition: 'all 0.2s'
-                            }}
-                            title={customTime ? t('Custom Time (click to edit)') : t('Click to customize time')}
-                        >
-                            <Clock size={14} />
-                            <span>{displayTime}</span>
-                            {customTime && <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>({t('Custom')})</span>}
-                        </div>
                     )}
                 </div>
+
+                {/* Reset Schedule Button (User role only) */}
+                {role === 'user' && (
+                    <>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setShowResetConfirm(true)}
+                            style={{ marginRight: '1rem' }}
+                        >
+                            <RotateCcw size={14} /> {t('Reset Schedule')}
+                        </button>
+                        {showResetConfirm && (
+                            <>
+                                <div
+                                    style={{
+                                        position: 'fixed',
+                                        inset: 0,
+                                        background: 'rgba(0, 0, 0, 0.5)',
+                                        zIndex: 999,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}
+                                    onClick={() => setShowResetConfirm(false)}
+                                />
+                                <div
+                                    style={{
+                                        position: 'fixed',
+                                        top: '50%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        background: 'var(--card-bg)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        padding: '1.5rem',
+                                        zIndex: 1000,
+                                        minWidth: '300px',
+                                        boxShadow: 'var(--shadow-lg)'
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>{t('Reset Schedule')}</h3>
+                                    <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+                                        {t('Reset daily schedule to base schedule and clear all one-time events?')}
+                                    </p>
+                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={() => setShowResetConfirm(false)}
+                                        >
+                                            {t('Cancel')}
+                                        </button>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={async () => {
+                                                try {
+                                                    const result = await resetSchedule();
+                                                    alert(t('Schedule reset! Cleared {count} one-time event(s).', { count: result.one_time_events_cleared || 0 }));
+                                                    setShowResetConfirm(false);
+                                                } catch (error) {
+                                                    console.error('Failed to reset schedule:', error);
+                                                    alert(t('Failed to reset schedule: ') + error.message);
+                                                }
+                                            }}
+                                        >
+                                            {t('Confirm')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </>
+                )}
 
                 {/* Language Toggle */}
                 <div className="language-toggle" style={{ display: 'flex', gap: '0.25rem', marginRight: '0.5rem' }}>

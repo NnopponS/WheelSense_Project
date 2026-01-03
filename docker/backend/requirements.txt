@@ -40,3 +40,13 @@ deep-translator>=1.11.0
 # Image processing for rotation
 opencv-python-headless>=4.8.0
 numpy>=1.24.0
+
+# RAG (Retrieval-Augmented Generation) - Phase 4D
+sentence-transformers>=2.2.0
+faiss-cpu>=1.7.4
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+httpx>=0.26.0  # Already included, but needed for test client

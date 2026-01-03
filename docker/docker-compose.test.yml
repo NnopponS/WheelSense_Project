@@ -1,0 +1,97 @@
+# WheelSense Test Environment - Docker Compose Configuration
+# Isolated test environment with different ports to avoid conflicts
+
+services:
+  # ==================== MQTT Broker (Test) ====================
+  mosquitto-test:
+    image: eclipse-mosquitto:2.0
+    container_name: wheelsense-mosquitto-test
+    restart: "no"
+    ports:
+      - "1884:1883"  # Different port to avoid conflicts
+      - "9002:9001"  # WebSocket port
+    volumes:
+      - ./services/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    networks:
+      wheelsense-test-network:
+        ipv4_address: 172.29.0.10
+    healthcheck:
+      test: [ "CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # ==================== Ollama (Test) ====================
+  ollama-test:
+    image: ollama/ollama:latest
+    container_name: wheelsense-ollama-test
+    restart: "no"
+    ports:
+      - "11435:11434"  # Different port
+    volumes:
+      - ollama_test_data:/root/.ollama
+    networks:
+      wheelsense-test-network:
+        ipv4_address: 172.29.0.12
+    # Note: For CPU-only machines, use docker-compose.cpu.yml variant
+    healthcheck:
+      test: [ "CMD", "ollama", "list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ==================== Backend (Test) ====================
+  backend-test:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: wheelsense-backend-test
+    restart: "no"
+    ports:
+      - "8001:8000"  # Different port
+      - "8766:8765"  # WebSocket port
+    environment:
+      - SQLITE_DB_PATH=/app/data/test.db
+      - MQTT_BROKER=mosquitto-test
+      - MQTT_PORT=1883
+      - OLLAMA_HOST=http://ollama-test:11434
+      - OLLAMA_MODEL=qwen2.5:7b
+      - ENVIRONMENT=test
+      - DEBUG=true
+      - RAG_ENABLED=false  # Disable RAG for faster tests (can be enabled per test)
+    depends_on:
+      mosquitto-test:
+        condition: service_healthy
+      ollama-test:
+        condition: service_started
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/tests:/app/tests
+      - test_db_data:/app/data
+    networks:
+      wheelsense-test-network:
+        ipv4_address: 172.29.0.20
+    # Default command runs tests, but can be overridden
+    command: pytest tests/ -v --tb=short
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 2
+      start_period: 20s
+
+networks:
+  wheelsense-test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+
+volumes:
+  test_db_data:
+    driver: local
+  ollama_test_data:
+    driver: local
+

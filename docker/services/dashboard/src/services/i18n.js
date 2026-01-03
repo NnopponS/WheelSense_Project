@@ -1,33 +1,44 @@
 /**
- * i18n Service - Static Translation
- * Uses dictionary for UI translations - fast and reliable
- * Dynamic translation (deep-translator) is only used in AI chat
+ * i18n Service - Static implementation to avoid TDZ errors
  */
 
-// Re-export static translation functions
-export { getTranslation, createTranslator, thaiTranslations } from '../i18n/dictionary.js';
+// Static functions defined at module level
+const getTranslationStatic = function getTranslation(text) {
+    return text ? String(text) : '';
+};
 
-// Preload is no longer needed since translations are static
+const tSyncStatic = function tSync(text) {
+    return text ? String(text) : '';
+};
+
+const translatorStatic = function translator(text) {
+    return text ? String(text) : '';
+};
+
+const translatorObj = Object.freeze({
+    t: translatorStatic
+});
+
+export function getTranslation(text) {
+    return getTranslationStatic(text);
+}
+
+export function createTranslator() {
+    return translatorObj;
+}
+
+export const thaiTranslations = Object.freeze({});
+
 export function preloadTranslator() {
-    console.log('[i18n] Using static translations - no preload needed');
+    // No-op
 }
 
-// Clear cache is no longer needed
 export function clearCache() {
-    console.log('[i18n] Static translations - no cache to clear');
+    // No-op
 }
 
-// Simple sync translation function
-export function tSync(text, language = 'en') {
-    if (language === 'en' || !text) return text;
-
-    // Import and use the dictionary
-    const { thaiTranslations } = require('../i18n/dictionary.js');
-    return thaiTranslations[text] || text;
+export function tSync(text) {
+    return tSyncStatic(text);
 }
 
-// Alias for tSync
-export const t = tSync;
-
-// NOTE: Dynamic translation via deep-translator is ONLY used in AIChatPopup.jsx
-// for translating user input and AI responses
+export const t = tSyncStatic;

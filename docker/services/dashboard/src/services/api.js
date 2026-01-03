@@ -518,14 +518,15 @@ export async function resolveEmergency(eventId) {
 
 // ==================== AI / MCP ====================
 
-export async function chat(messages, tools = null) {
-    return fetchMCP('/chat', {
+export async function chat(messages, tools = null, sessionId = null) {
+    return fetchAPI('/api/chat', {
         method: 'POST',
         body: JSON.stringify({
             messages: messages.map(m => ({
                 role: m.role,
                 content: m.content,
             })),
+            session_id: sessionId,
             tools: tools || [
                 'control_appliance',
                 'get_room_status',
@@ -535,6 +536,15 @@ export async function chat(messages, tools = null) {
                 'set_scene'
             ],
             stream: false,
+        }),
+    });
+}
+
+export async function clearChatContext(sessionId) {
+    return fetchAPI('/api/chat/clear-context', {
+        method: 'POST',
+        body: JSON.stringify({
+            session_id: sessionId
         }),
     });
 }
@@ -1048,6 +1058,127 @@ export async function getDeviceDirectStatus(deviceIp) {
     }
 }
 
+// ==================== User Info APIs ====================
+
+/**
+ * Get user information from user_info table
+ */
+export async function getUserInfo() {
+    return await fetchAPI('/api/user-info');
+}
+
+/**
+ * Update user information
+ * @param {Object} update - {name_thai?, name_english?, condition?, current_location?}
+ */
+export async function updateUserInfo(update) {
+    return await fetchAPI('/api/user-info', {
+        method: 'PUT',
+        body: JSON.stringify(update),
+    });
+}
+
+// ==================== Schedule APIs ====================
+
+/**
+ * Get all schedule items
+ */
+export async function getScheduleItems() {
+    return await fetchAPI('/api/schedule-items');
+}
+
+/**
+ * Create a new schedule item
+ * @param {Object} item - {time, activity, location?, action?}
+ */
+export async function createScheduleItem(item) {
+    return await fetchAPI('/api/schedule-items', {
+        method: 'POST',
+        body: JSON.stringify(item),
+    });
+}
+
+/**
+ * Update a schedule item
+ * @param {number} itemId - Schedule item ID (1-based)
+ * @param {Object} update - {time?, activity?, location?, action?}
+ */
+export async function updateScheduleItem(itemId, update) {
+    return await fetchAPI(`/api/schedule-items/${itemId}`, {
+        method: 'PUT',
+        body: JSON.stringify(update),
+    });
+}
+
+/**
+ * Delete a schedule item
+ * @param {number} itemId - Schedule item ID (1-based)
+ */
+export async function deleteScheduleItem(itemId) {
+    return await fetchAPI(`/api/schedule-items/${itemId}`, {
+        method: 'DELETE',
+    });
+}
+
+/**
+ * Reset daily schedule (clear one-time events, reset daily clone)
+ */
+export async function resetSchedule() {
+    return await fetchAPI('/api/schedule/reset', {
+        method: 'POST',
+    });
+}
+
+export async function setCustomTime(time, date = null) {
+    return await fetchAPI('/api/schedule/custom-time', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            time: time,
+            date: date
+        }),
+    });
+}
+
+export async function getCustomTime() {
+    return await fetchAPI('/api/schedule/custom-time', {
+        method: 'GET',
+    });
+}
+
+// ==================== Device States APIs ====================
+
+/**
+ * Get all device states organized by room
+ */
+export async function getAllDeviceStates() {
+    return await fetchAPI('/api/device-states');
+}
+
+/**
+ * Get device state for a specific room and device
+ * @param {string} room - Room name
+ * @param {string} device - Device name
+ */
+export async function getDeviceState(room, device) {
+    return await fetchAPI(`/api/device-states/${encodeURIComponent(room)}/${encodeURIComponent(device)}`);
+}
+
+/**
+ * Update device state
+ * @param {string} room - Room name
+ * @param {string} device - Device name
+ * @param {boolean} state - Device state (true = ON, false = OFF)
+ */
+export async function updateDeviceState(room, device, state) {
+    return await fetchAPI(`/api/device-states/${encodeURIComponent(room)}/${encodeURIComponent(device)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ room, device, state }),
+    });
+}
+
 // ==================== MCP Object ====================
 
 export const mcp = {
@@ -1092,6 +1223,24 @@ export default {
     createRoutine,
     updateRoutine,
     deleteRoutine,
+    
+    // User Info
+    getUserInfo,
+    updateUserInfo,
+    
+    // Schedule
+    getScheduleItems,
+    createScheduleItem,
+    updateScheduleItem,
+    deleteScheduleItem,
+    resetSchedule,
+    setCustomTime,
+    getCustomTime,
+    
+    // Device States
+    getAllDeviceStates,
+    getDeviceState,
+    updateDeviceState,
     getActivityLogs,
     getLocationHistory,
     getCurrentLocation,
@@ -1123,6 +1272,7 @@ export default {
 
     // AI/MCP
     chat,
+    clearChatContext,
     getMCPTools,
     callMCPTool,
     analyzeBehavior,
