@@ -27,6 +27,7 @@ DEVICE_NORMALIZATION = {
     "light": "Light",
     "lights": "Light",
     "ac": "AC",
+    "air": "AC",
     "air conditioner": "AC",
     "airconditioner": "AC",
     "tv": "TV",

@@ -130,6 +130,7 @@ RULES:
 0. Intent: Informational (what/which/who/where/when) → chat_message; Action (turn/add/delete/change) → tool
 0.1-0.2. CRITICAL: Device control REQUIRES e_device_control tool call. Tool calls perform ACTUAL actions; chat_message only sends text.
 0.3. CRITICAL DEVICE PERSISTENCE: When you turn a device ON, it will stay ON until the user explicitly tells you to turn it OFF. NEVER automatically turn off a device after turning it on. NEVER make two tool calls (turn on then turn off) unless the user explicitly requests both actions. Devices maintain their state until explicitly changed.
+0.4. MULTIPLE DEVICES: When user requests multiple devices (e.g., "turn on air and alarm", "turn on light and AC"), make MULTIPLE e_device_control tool calls - ONE per device. Each device needs its own tool call. "air" = "AC" device. Example: "turn on air and alarm" → [{"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "AC", "action": "ON"}}, {"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Alarm", "action": "ON"}}]
 0.5-0.6. Use pronouns from last 2-4 messages. If user provides missing info after clarification, execute original action immediately.
 1. Device: If room not specified, use ACTUAL room name from "Current Location:" in state. Only 2 ways to control other room: user specifies OR responds to notification.
 1.5. Scheduled vs Immediate: If user mentions TIME AND device actions → SCHEDULE request (schedule_modifier), NOT immediate. If no time → immediate (e_device_control). System derives action/location from activity name.
@@ -163,6 +164,9 @@ OUTPUT REQUIREMENTS:
 EXAMPLES:
 - "What devices are ON?" → [{"tool": "chat_message", "arguments": {"message": "[from state]"}}]
 - "Turn on light" (Current Location: Bedroom) → [{"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Light", "action": "ON"}}]
+- "Turn on air and alarm" (Current Location: Bedroom) → [{"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "AC", "action": "ON"}}, {"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Alarm", "action": "ON"}}]
+- "Set Bedroom AC to ON" → [{"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "AC", "action": "ON"}}]
+- "Turn on light and AC" (Current Location: Living Room) → [{"tool": "e_device_control", "arguments": {"room": "Living Room", "device": "Light", "action": "ON"}}, {"tool": "e_device_control", "arguments": {"room": "Living Room", "device": "AC", "action": "ON"}}]
 - "Turn off everything" (Current Location: Bedroom) → [{"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Light", "action": "OFF"}}, {"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Alarm", "action": "OFF"}}, {"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "AC", "action": "OFF"}}]
 - "I'm awake" (if "Wake up" at 07:00 has action: Light:ON, Alarm:ON) → [{"tool": "schedule_modifier", "arguments": {"modify_type": "delete", "time": "07:00"}}, {"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Light", "action": "ON"}}, {"tool": "chat_message", "arguments": {"message": "Removed wake-up reminder. Turned on bedroom light."}}]
 - "I will not work today" (if "Work" at 09:00 exists) → [{"tool": "schedule_modifier", "arguments": {"modify_type": "delete", "time": "09:00"}}, {"tool": "chat_message", "arguments": {"message": "Removed work from your schedule for today"}}]
@@ -224,6 +228,7 @@ async def _infer_missing_e_device_control_args(
             "tv": "TV",
             "television": "TV",
             "ac": "AC",
+            "air": "AC",
             "aircon": "AC",
             "air conditioner": "AC",
             "airconditioner": "AC",
@@ -1198,40 +1203,14 @@ async def get_chat_history(
 ):
     """
     Get chat history from database.
-    Simple endpoint for frontend to fetch chat messages.
+    NOTE: Always returns empty array - each page refresh starts a fresh chat session.
+    Chat history is still saved to database for analytics but not loaded back to frontend.
     """
-    db = get_db(app_request)
-    
-    try:
-        messages = await db.get_recent_chat_history(limit=limit, session_id=session_id)
-        
-        # Format messages for frontend
-        formatted_messages = []
-        for msg in messages:
-            # Use database ID if available, otherwise generate a stable hash
-            msg_id = msg.get("id")
-            if not msg_id:
-                # Fallback: use hash of content for stable ID
-                content_hash = hashlib.md5(msg.get("content", "").encode()).hexdigest()[:8]
-                msg_id = int(content_hash, 16) if content_hash else None
-            
-            formatted_msg = {
-                "id": msg_id,
-                "role": msg.get("role"),
-                "content": msg.get("content"),
-                "isNotification": msg.get("is_notification", False)
-            }
-            if msg.get("content_full"):
-                formatted_msg["contentFull"] = msg["content_full"]
-            formatted_messages.append(formatted_msg)
-        
-        return {
-            "messages": formatted_messages,
-            "count": len(formatted_messages)
-        }
-    except Exception as e:
-        logger.error(f"Error fetching chat history: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to fetch chat history: {str(e)}")
+    # Always return empty - per user request, each refresh starts fresh chat
+    return {
+        "messages": [],
+        "count": 0
+    }
 
 
 @router.get("/chat/health")
@@ -1295,4 +1274,6 @@ async def clear_chat_context(request_body: ClearContextRequest, app_request: Req
             status_code=500,
             detail=f"Failed to clear chat context: {str(e)}"
         )
+
+
 

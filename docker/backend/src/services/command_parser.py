@@ -27,7 +27,8 @@ class CommandType(Enum):
 class ParsedCommand:
     """Result of parsing a command."""
     command_type: CommandType
-    device: Optional[str] = None
+    device: Optional[str] = None  # Single device (for backward compatibility)
+    devices: Optional[List[str]] = None  # Multiple devices
     action: Optional[str] = None  # "ON" or "OFF"
     room: Optional[str] = None
     all_rooms: bool = False
@@ -103,13 +104,31 @@ def find_keyword_match(text: str, keywords: List[str]) -> bool:
 
 
 def find_device(text: str) -> Optional[str]:
-    """Find device type from text."""
+    """Find device type from text (returns first match)."""
     normalized = normalize_text(text)
     for device_type, keywords in DEVICE_KEYWORDS.items():
         for keyword in keywords:
             if normalize_text(keyword) in normalized:
                 return device_type
     return None
+
+
+def find_devices(text: str) -> List[str]:
+    """Find all device types from text (supports multiple devices)."""
+    normalized = normalize_text(text)
+    found_devices = []
+    device_found = set()  # Track which device types we've already found
+    
+    for device_type, keywords in DEVICE_KEYWORDS.items():
+        if device_type in device_found:
+            continue
+        for keyword in keywords:
+            if normalize_text(keyword) in normalized:
+                found_devices.append(device_type)
+                device_found.add(device_type)
+                break
+    
+    return found_devices
 
 
 def find_action(text: str) -> Optional[str]:
@@ -181,11 +200,23 @@ def parse_command(message: str) -> ParsedCommand:
     
     # Check for device control
     action = find_action(message)
-    device = find_device(message)
+    devices = find_devices(message)  # Get all devices
     
     if action:
         result.action = action
-        result.device = device or "Light"  # Default to light if not specified
+        
+        # Check if multiple devices found
+        if len(devices) > 1:
+            result.devices = devices
+            result.device = devices[0]  # Keep first for backward compatibility
+            result.confidence = 0.9  # High confidence for multiple devices
+        elif len(devices) == 1:
+            result.device = devices[0]
+            result.confidence = 0.85
+        else:
+            # No device found, default to light
+            result.device = "Light"
+            result.confidence = 0.7
         
         if is_all_rooms(message):
             result.command_type = CommandType.DEVICE_CONTROL_ALL_ROOMS
@@ -194,7 +225,6 @@ def parse_command(message: str) -> ParsedCommand:
         else:
             result.command_type = CommandType.DEVICE_CONTROL
             result.room = find_room(message)
-            result.confidence = 0.85 if device else 0.7
         
         return result
     
@@ -242,9 +272,16 @@ async def execute_command(
     
     if parsed.command_type == CommandType.DEVICE_CONTROL:
         room = parsed.room or current_room
-        return await _handle_device_control(
-            db, mqtt_handler, room, parsed.device, parsed.action
-        )
+        
+        # Check if multiple devices
+        if parsed.devices and len(parsed.devices) > 1:
+            return await _handle_multiple_device_control(
+                db, mqtt_handler, room, parsed.devices, parsed.action
+            )
+        else:
+            return await _handle_device_control(
+                db, mqtt_handler, room, parsed.device, parsed.action
+            )
     
     if parsed.command_type == CommandType.DEVICE_CONTROL_ALL_ROOMS:
         return await _handle_all_rooms_control(
@@ -361,12 +398,16 @@ async def _handle_device_control(
     """Handle single device control."""
     try:
         from ..core.appliance_control import control_appliance_core
+        from ..core.database import normalize_room_name
+        
+        # Normalize room name to match database format (lowercase, no spaces)
+        normalized_room = normalize_room_name(room)
         
         state = action == "ON"
         result = await control_appliance_core(
             db=db,
             mqtt_handler=mqtt_handler,
-            room=room,
+            room=normalized_room,
             appliance=device,
             state=state
         )
@@ -391,6 +432,60 @@ async def _handle_device_control(
             }
     except Exception as e:
         logger.error(f"Error handling device control: {e}")
+        return {
+            "handled": False,
+            "message": "",
+            "should_use_llm": True
+        }
+
+
+async def _handle_multiple_device_control(
+    db, mqtt_handler, room: str, devices: List[str], action: str
+) -> Dict[str, Any]:
+    """Handle multiple device control in a single room."""
+    try:
+        from ..core.appliance_control import control_appliance_core
+        from ..core.database import normalize_room_name
+        
+        # Normalize room name to match database format (lowercase, no spaces)
+        normalized_room = normalize_room_name(room)
+        
+        state = action == "ON"
+        results = []
+        success_count = 0
+        
+        for device in devices:
+            try:
+                result = await control_appliance_core(
+                    db=db,
+                    mqtt_handler=mqtt_handler,
+                    room=normalized_room,
+                    appliance=device,
+                    state=state
+                )
+                if result.get("success"):
+                    success_count += 1
+                    results.append(result)
+            except Exception as e:
+                logger.warning(f"Failed to control {device} in {normalized_room}: {e}")
+        
+        action_str = "ON" if state else "OFF"
+        device_names = [d.capitalize() if d != "AC" else "AC" for d in devices]
+        room_name = room.capitalize()
+        
+        if success_count == len(devices):
+            message = f"Set {room_name} {', '.join(device_names)} to {action_str}"
+        else:
+            message = f"Set {room_name} {', '.join(device_names)} to {action_str} ({success_count}/{len(devices)} succeeded)"
+        
+        return {
+            "handled": True,
+            "message": message,
+            "should_use_llm": False,
+            "tool_result": results[0] if results else None  # Return first result for compatibility
+        }
+    except Exception as e:
+        logger.error(f"Error handling multiple device control: {e}")
         return {
             "handled": False,
             "message": "",
