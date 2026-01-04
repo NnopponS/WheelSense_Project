@@ -372,9 +372,10 @@ async def _handle_device_control(
         )
         
         if result.get("success"):
-            action_th = "เปิด" if state else "ปิด"
+            action_str = "ON" if state else "OFF"
             device_name = device.capitalize() if device != "AC" else "AC"
-            message = f"✅ {action_th}{device_name}ห้อง{room.capitalize()}แล้ว"
+            room_name = room.capitalize()
+            message = f"✅ Set {room_name} {device_name} to {action_str}"
             
             return {
                 "handled": True,
@@ -422,9 +423,9 @@ async def _handle_all_rooms_control(
             except Exception as e:
                 logger.warning(f"Failed to control {device} in {room}: {e}")
         
-        action_th = "เปิด" if state else "ปิด"
+        action_str = "ON" if state else "OFF"
         device_name = device.capitalize() if device != "AC" else "AC"
-        message = f"✅ {action_th}{device_name}ทุกห้องแล้ว ({success_count}/{len(rooms)} ห้อง)"
+        message = f"✅ Set {device_name} to {action_str} in all rooms ({success_count}/{len(rooms)} rooms)"
         
         return {
             "handled": True,

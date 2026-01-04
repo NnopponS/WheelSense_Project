@@ -113,7 +113,7 @@ DEVICES = [
         "room": "bedroom",
         "ip": "192.168.1.178",
         "status": "offline",
-        "rotation": 0
+        "rotation": 270
     },
     {
         "id": "TSIM_002",
@@ -123,7 +123,7 @@ DEVICES = [
         "room": "bathroom",
         "ip": "192.168.1.171",
         "status": "offline",
-        "rotation": 0
+        "rotation": 270
     },
     {
         "id": "TSIM_003",
@@ -133,7 +133,7 @@ DEVICES = [
         "room": "kitchen",
         "ip": "192.168.1.175",
         "status": "offline",
-        "rotation": 0
+        "rotation": 270
     },
     {
         "id": "TSIM_004",
@@ -143,7 +143,7 @@ DEVICES = [
         "room": "livingroom",
         "ip": "192.168.1.179",
         "status": "offline",
-        "rotation": 0
+        "rotation": 270
     }
 ]
 
