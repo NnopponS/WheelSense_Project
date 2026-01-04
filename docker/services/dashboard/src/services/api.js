@@ -1153,7 +1153,7 @@ export async function getCustomTime() {
  * Get all device states organized by room
  */
 export async function getAllDeviceStates() {
-    return await fetchAPI('/api/device-states');
+    return await fetchAPI('/device-states');
 }
 
 /**
@@ -1162,7 +1162,7 @@ export async function getAllDeviceStates() {
  * @param {string} device - Device name
  */
 export async function getDeviceState(room, device) {
-    return await fetchAPI(`/api/device-states/${encodeURIComponent(room)}/${encodeURIComponent(device)}`);
+    return await fetchAPI(`/device-states/${encodeURIComponent(room)}/${encodeURIComponent(device)}`);
 }
 
 /**
@@ -1172,7 +1172,7 @@ export async function getDeviceState(room, device) {
  * @param {boolean} state - Device state (true = ON, false = OFF)
  */
 export async function updateDeviceState(room, device, state) {
-    return await fetchAPI(`/api/device-states/${encodeURIComponent(room)}/${encodeURIComponent(device)}`, {
+    return await fetchAPI(`/device-states/${encodeURIComponent(room)}/${encodeURIComponent(device)}`, {
         method: 'PUT',
         body: JSON.stringify({ room, device, state }),
     });
