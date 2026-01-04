@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 export function ApplianceControlPage() {
-    const { rooms, appliances, toggleAppliance, setApplianceValue, role, currentUser } = useApp();
+    const { rooms, appliances, toggleAppliance, setApplianceValue, role, currentUser, deviceStates } = useApp();
     const { t } = useTranslation();
     // Default to user's room if user mode, but allow changing to other rooms
     const defaultRoom = role === 'user' ? (currentUser?.room || 'bedroom') : 'bedroom';
@@ -170,6 +170,21 @@ export function ApplianceControlPage() {
                         <div className="room-panel">
                             {roomAppliances.map(app => {
                                 const Icon = getApplianceIcon(app.type);
+
+                                // Get device state from deviceStates (source of truth)
+                                const normalizedRoom = selectedRoom?.toLowerCase().replace(/\s+/g, '');
+                                const deviceType = app.type;
+                                const deviceTypeCapitalized = deviceType.charAt(0).toUpperCase() + deviceType.slice(1);
+
+                                // Check CAPITALIZED first since database uses capitalized format
+                                const deviceState =
+                                    deviceStates?.[normalizedRoom]?.[deviceTypeCapitalized] ??
+                                    deviceStates?.[normalizedRoom]?.[deviceType] ??
+                                    deviceStates?.[selectedRoom]?.[deviceTypeCapitalized] ??
+                                    deviceStates?.[selectedRoom]?.[deviceType] ??
+                                    app.state;
+                                const isOn = deviceState === true || deviceState === 1;
+
                                 return (
                                     <div key={app.id} className="room-panel-item">
                                         <h4>
@@ -178,11 +193,11 @@ export function ApplianceControlPage() {
                                         </h4>
 
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                                            <span style={{ color: app.state ? 'var(--success-500)' : 'var(--text-muted)' }}>
-                                                {app.state ? t('On') : t('Off')}
+                                            <span style={{ color: isOn ? 'var(--success-500)' : 'var(--text-muted)' }}>
+                                                {isOn ? t('On') : t('Off')}
                                             </span>
                                             <div
-                                                className={`toggle-switch ${app.state ? 'active' : ''}`}
+                                                className={`toggle-switch ${isOn ? 'active' : ''}`}
                                                 onClick={() => toggleAppliance(selectedRoom, app.id)}
                                             />
                                         </div>
