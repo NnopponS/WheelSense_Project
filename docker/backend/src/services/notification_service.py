@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class NotificationService:
     """Background service for automated notifications."""
     
-    def __init__(self, db, mcp_router, mqtt_handler=None):
+    def __init__(self, db, mcp_router, mqtt_handler=None, app=None):
         """
         Initialize notification service.
         
@@ -27,10 +27,12 @@ class NotificationService:
             db: Database instance
             mcp_router: MCP router for executing chat_message tool
             mqtt_handler: MQTT handler for device control (optional)
+            app: FastAPI app instance for storing recent_notification in app.state
         """
         self.db = db
         self.mcp_router = mcp_router
         self.mqtt_handler = mqtt_handler
+        self.app = app  # Store app instance for app.state access
         self._running = False
         self._task = None
         self._last_check_minute = None
@@ -154,12 +156,24 @@ class NotificationService:
                 device_states = await self.db.get_all_device_states()
                 previous_room_devices = device_states.get(self._last_room, {})
                 
-                # Find devices that are still ON
-                devices_on = [
-                    {"room": self._last_room, "device": device}
-                    for device, state in previous_room_devices.items()
-                    if state
-                ]
+                # Find devices that are still ON (with deduplication)
+                devices_on = []
+                seen_devices = set()  # Track devices we've already added (case-insensitive)
+                
+                for device, state in previous_room_devices.items():
+                    if state:  # Device is ON
+                        # Create unique key for deduplication
+                        device_key = device.lower()
+                        
+                        # Skip if we've already added this device (different case variant)
+                        if device_key in seen_devices:
+                            continue
+                        
+                        seen_devices.add(device_key)
+                        devices_on.append({
+                            "room": self._last_room,
+                            "device": device.capitalize()  # Normalize to Title Case
+                        })
                 
                 if devices_on:
                     # Check notification preferences
@@ -186,6 +200,16 @@ class NotificationService:
                             message = f"💡 คุณลืมปิด {', '.join(device_names)} ห้อง{room_display} ต้องการให้ปิดไหม?"
                         
                         logger.info(f"🔔 Sending room change alert: {message}")
+                        
+                        # Store recent_notification in app.state for YES/NO response handling
+                        if self.app and hasattr(self.app, 'state'):
+                            self.app.state.recent_notification = {
+                                "devices": devices_to_notify,
+                                "message": message,
+                                "type": "room_change_alert"
+                            }
+                            logger.info(f"💾 Stored recent_notification in app.state: {len(devices_to_notify)} device(s)")
+                            logger.info(f"💾 Recent notification devices: {devices_to_notify}")
                         
                         await self._send_notification(
                             message=message,
@@ -376,7 +400,7 @@ def get_notification_service() -> Optional[NotificationService]:
     return _notification_service
 
 
-async def start_notification_service(db, mcp_router, mqtt_handler=None):
+async def start_notification_service(db, mcp_router, mqtt_handler=None, app=None):
     """
     Start the global notification service.
     
@@ -384,13 +408,14 @@ async def start_notification_service(db, mcp_router, mqtt_handler=None):
         db: Database instance
         mcp_router: MCP router instance
         mqtt_handler: MQTT handler (optional)
+        app: FastAPI app instance for storing recent_notification in app.state
     """
     global _notification_service
     
     if _notification_service:
         await _notification_service.stop()
     
-    _notification_service = NotificationService(db, mcp_router, mqtt_handler)
+    _notification_service = NotificationService(db, mcp_router, mqtt_handler, app)
     await _notification_service.start()
     return _notification_service
 

@@ -17,7 +17,8 @@ export function TopBar() {
         getCurrentTime,
         customTime,
         setCustomTime,
-        language
+        language,
+        setLanguage
     } = useApp();
     const { t } = useTranslation();
     const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -510,6 +511,46 @@ export function TopBar() {
                         )}
                     </>
                 )}
+
+                {/* Language Toggle */}
+                <div className="language-toggle" style={{ display: 'flex', gap: '0.25rem', marginRight: '0.5rem' }}>
+                    <button 
+                        className={language === 'en' ? 'active' : ''} 
+                        onClick={() => setLanguage('en')} 
+                        title="English"
+                        style={{
+                            padding: '0.375rem 0.75rem',
+                            background: language === 'en' ? 'var(--primary-500)' : 'var(--bg-tertiary)',
+                            color: language === 'en' ? 'white' : 'var(--text-primary)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        ENG
+                    </button>
+                    <button 
+                        className={language === 'th' ? 'active' : ''} 
+                        onClick={() => setLanguage('th')} 
+                        title="ไทย"
+                        style={{
+                            padding: '0.375rem 0.75rem',
+                            background: language === 'th' ? 'var(--primary-500)' : 'var(--bg-tertiary)',
+                            color: language === 'th' ? 'white' : 'var(--text-primary)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        TH
+                    </button>
+                </div>
 
                 {/* Theme Toggle */}
                 <div className="theme-toggle">

@@ -36,6 +36,14 @@ async def get_schedule_items(request: Request):
     
     try:
         items = await db.get_schedule_items()
+        # Get today's date
+        today = datetime.now().strftime("%Y-%m-%d")
+        # Get completed activities for today
+        completed = await db.get_completed_activities(today)
+        completed_set = {(c["time"], c["activity"]) for c in completed}
+        # Add completed status to items
+        for item in items:
+            item["completed"] = (item.get("time"), item.get("activity")) in completed_set
         return {"schedule_items": items}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get schedule items: {str(e)}")
@@ -388,4 +396,41 @@ async def get_custom_time(request: Request):
         "custom_date": custom_date,
         "using_custom_time": custom_time is not None
     }
+
+
+class MarkActivityCompletedRequest(BaseModel):
+    time: str
+    activity: str
+    date: Optional[str] = None  # If not provided, use today
+
+
+@router.post("/schedule/mark-completed")
+async def mark_activity_completed(request_body: MarkActivityCompletedRequest, request: Request):
+    """Mark a schedule activity as completed for a specific date."""
+    db = get_db(request)
+    
+    try:
+        # Use provided date or today
+        if request_body.date:
+            date = request_body.date
+        else:
+            # Get custom date if set, otherwise use today
+            custom_date = getattr(request.app.state, 'custom_date', None)
+            if custom_date:
+                date = custom_date
+            else:
+                date = datetime.now().strftime("%Y-%m-%d")
+        
+        success = await db.mark_activity_completed(
+            date=date,
+            time=request_body.time,
+            activity=request_body.activity
+        )
+        
+        if success:
+            return {"status": "success", "message": "Activity marked as completed"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to mark activity as completed")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to mark activity as completed: {str(e)}")
 

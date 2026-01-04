@@ -179,7 +179,33 @@ export async function checkMCPHealth() {
 
 // ==================== Translation ====================
 
-// Translation removed - English only mode
+/**
+ * Translate text using backend translation API
+ * @param {string} text - Text to translate
+ * @param {string} fromLang - Source language (default: 'en')
+ * @param {string} toLang - Target language (default: 'th')
+ * @returns {Promise<string>} Translated text
+ */
+export async function translateText(text, fromLang = 'en', toLang = 'th') {
+    if (!text || fromLang === toLang) {
+        return text;
+    }
+    
+    try {
+        const response = await fetchAPI('/translate', {
+            method: 'POST',
+            body: JSON.stringify({
+                text: text,
+                from_lang: fromLang,
+                to_lang: toLang
+            })
+        });
+        return response.translated || text;
+    } catch (error) {
+        console.error('Translation error:', error);
+        return text; // Fallback to original text
+    }
+}
 
 // ==================== Rooms ====================
 
@@ -1122,6 +1148,20 @@ export async function updateUserInfo(update) {
  */
 export async function getScheduleItems() {
     return await fetchAPI('/api/schedule-items');
+}
+
+/**
+ * Mark a schedule activity as completed
+ */
+export async function markActivityCompleted(time, activity, date = null) {
+    return await fetchAPI('/api/schedule/mark-completed', {
+        method: 'POST',
+        body: JSON.stringify({
+            time,
+            activity,
+            date
+        })
+    });
 }
 
 /**

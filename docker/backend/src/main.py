@@ -170,13 +170,24 @@ async def lifespan(app: FastAPI):
             await db.sync_location_to_user_info(room_name_en, broadcast_user_info_update)
             logger.info(f"✅ Updated current_location to: {room_name_en} (room: {room_type})")
             
-            # Trigger house check
+            # Trigger house check and store notification for YES/NO response handling
             if app.state.house_check_service:
                 try:
-                    await app.state.house_check_service.run_house_check(
+                    result = await app.state.house_check_service.run_house_check(
                         previous_location, 
                         room_name_en
                     )
+                    
+                    # Store recent_notification in app.state for command parser
+                    # This allows "yes" response to know which devices to turn off
+                    if result and result.get("notified") and result.get("devices"):
+                        app.state.recent_notification = {
+                            "devices": result.get("devices", []),
+                            "message": result.get("message", ""),
+                            "type": "house_check_notification"
+                        }
+                        logger.info(f"💾 Stored recent_notification in app.state: {len(result.get('devices', []))} device(s)")
+                        logger.info(f"💾 Recent notification devices: {result.get('devices', [])}")
                 except Exception as e:
                     logger.error(f"House check failed: {e}", exc_info=True)
             
@@ -294,7 +305,7 @@ async def lifespan(app: FastAPI):
     # Use mcp_router from app state if available, otherwise None
     mcp_router = getattr(app.state, 'mcp_router', None)
     if mcp_router:
-        notification_service = NotificationService(db, mcp_router, mqtt_handler)
+        notification_service = NotificationService(db, mcp_router, mqtt_handler, app)  # Pass app for app.state access
         await notification_service.start()  # Start the background loop
         app.state.notification_service = notification_service
         logger.info("✅ Notification Service initialized and started")
@@ -396,6 +407,7 @@ async def lifespan(app: FastAPI):
         # Create UDP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # Enable broadcast
         sock.bind(("0.0.0.0", discovery_port))
         sock.setblocking(False)
         
@@ -725,8 +737,8 @@ class TranslationRequest(BaseModel):
 @app.post("/translate")
 async def translate_text(request: TranslationRequest):
     """
-    Translate text from English to Thai using transformer model.
-    Uses Helsinki-NLP/opus-mt-en-th model for local translation.
+    Translate text from English to Thai using Google Translate.
+    Uses deep-translator library with LRU caching for performance.
     """
     try:
         # If same language, return as-is

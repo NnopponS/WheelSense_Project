@@ -3,7 +3,7 @@
  * Shows status, location, appliance control, and routines
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -13,9 +13,11 @@ import {
     Tv, Fan, Wind, Power, Bell
 } from 'lucide-react';
 import { pageToPath } from '../../App';
+import * as api from '../../services/api';
 
 export function UserHomePage() {
-    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, setCurrentPage, detectionState, userInfo, scheduleItems, customTime, getCurrentTime } = useApp();
+    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, setCurrentPage, detectionState, userInfo, scheduleItems, customTime, getCurrentTime, fetchData, addChatMessage } = useApp();
+    const [markingDone, setMarkingDone] = useState(false);
 
     // Check if wheelchair is detected in room using detectionState (same logic as MonitoringPage)
     const isWheelchairDetected = (room) => {
@@ -115,11 +117,20 @@ export function UserHomePage() {
         let nextActivity = null;
 
         for (let i = 0; i < sorted.length; i++) {
-            const itemTime = sorted[i].time || '';
+            const item = sorted[i];
+            const itemTime = item.time || '';
+            
+            // Skip completed activities
+            if (item.completed) {
+                continue;
+            }
+            
             if (itemTime <= currentTimeStr) {
-                currentActivity = sorted[i];
+                // This is a current or past activity that's not completed
+                currentActivity = item;
             } else if (!nextActivity) {
-                nextActivity = sorted[i];
+                // This is the first future activity
+                nextActivity = item;
                 break;
             }
         }
@@ -489,7 +500,15 @@ export function UserHomePage() {
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                 {t('Current Activity')}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)' }}>
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.75rem', 
+                                padding: '0.75rem', 
+                                background: currentActivity?.completed ? 'var(--bg-tertiary)' : 'var(--bg-hover)', 
+                                borderRadius: 'var(--radius-md)',
+                                opacity: currentActivity?.completed ? 0.6 : 1
+                            }}>
                                 <div style={{
                                     width: 44, height: 44, borderRadius: 'var(--radius-md)',
                                     background: 'linear-gradient(135deg, var(--success-500), var(--success-700))',
@@ -504,24 +523,60 @@ export function UserHomePage() {
                                     )}
                                 </div>
                                 <button
-                                    onClick={() => {
-                                        // Open AI chat to say "done"
-                                        const aiChatButton = document.querySelector('[data-ai-chat-trigger]');
-                                        if (aiChatButton) aiChatButton.click();
+                                    onClick={async () => {
+                                        if (markingDone || !currentActivity) return;
+                                        
+                                        setMarkingDone(true);
+                                        try {
+                                            // Get today's date
+                                            const today = new Date().toISOString().split('T')[0];
+                                            
+                                            // Mark activity as completed
+                                            await api.markActivityCompleted(
+                                                currentActivity.time,
+                                                currentActivity.activity,
+                                                today
+                                            );
+                                            
+                                            // Refresh schedule items to update UI
+                                            if (fetchData) {
+                                                await fetchData();
+                                            }
+                                            
+                                            // Send "done" message to AI chat
+                                            if (addChatMessage) {
+                                                addChatMessage({
+                                                    id: Date.now(),
+                                                    role: 'user',
+                                                    content: 'done'
+                                                });
+                                            }
+                                            
+                                            // Open AI chat to show response
+                                            const aiChatButton = document.querySelector('[data-ai-chat-trigger]');
+                                            if (aiChatButton) aiChatButton.click();
+                                        } catch (error) {
+                                            console.error('Error marking activity as done:', error);
+                                            alert(t('Failed to mark activity as done. Please try again.'));
+                                        } finally {
+                                            setMarkingDone(false);
+                                        }
                                     }}
+                                    disabled={markingDone || currentActivity?.completed}
                                     style={{
                                         padding: '0.5rem 1rem',
                                         borderRadius: 'var(--radius-md)',
-                                        background: 'var(--success-500)',
+                                        background: currentActivity?.completed ? 'var(--bg-tertiary)' : 'var(--success-500)',
                                         border: 'none',
-                                        color: 'white',
-                                        cursor: 'pointer',
+                                        color: currentActivity?.completed ? 'var(--text-muted)' : 'white',
+                                        cursor: (markingDone || currentActivity?.completed) ? 'not-allowed' : 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '0.5rem',
-                                        fontWeight: 500
+                                        fontWeight: 500,
+                                        opacity: (markingDone || currentActivity?.completed) ? 0.6 : 1
                                     }}
-                                    title={t('Mark as Done')}
+                                    title={currentActivity?.completed ? t('Already Completed') : t('Mark as Done')}
                                 >
                                     <CheckCircle size={16} />
                                     {t('Done')}

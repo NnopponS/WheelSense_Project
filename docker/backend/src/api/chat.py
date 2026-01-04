@@ -579,7 +579,151 @@ async def chat(request: ChatRequest, app_request: Request):
             logger.warning(f"Failed to save user message to chat history: {e}")
             # Continue even if save fails
         
-        # Step 1.5: Try command parser FIRST for faster response on common commands
+        # Step 1.5: Check for YES or NO response to notification FIRST (before command parser)
+        # This handles "yes" responses to turn off devices from previous room
+        # And "no" responses to acknowledge and leave devices on
+        recent_notification = getattr(app_request.app.state, 'recent_notification', None)
+        
+        # DEBUG: Log the recent_notification state
+        logger.info(f"[{correlation_id}] 🔍 DEBUG: recent_notification = {recent_notification}")
+        logger.info(f"[{correlation_id}] 🔍 DEBUG: user_message = '{user_message}'")
+        
+        if recent_notification and recent_notification.get("devices"):
+            from ..services.command_parser import YES_RESPONSE_KEYWORDS, NO_RESPONSE_KEYWORDS
+            normalized_msg = user_message.lower().strip()
+            is_yes_response = any(keyword in normalized_msg for keyword in YES_RESPONSE_KEYWORDS)
+            is_no_response = any(keyword in normalized_msg for keyword in NO_RESPONSE_KEYWORDS)
+            
+            logger.info(f"[{correlation_id}] 🔍 DEBUG: is_yes_response = {is_yes_response}, is_no_response = {is_no_response}")
+            
+            if is_yes_response:
+                logger.info(f"[{correlation_id}] ✅ Detected YES response to notification, handling via command parser")
+                from ..services.command_parser import parse_command, execute_command
+                
+                # Create a dummy parsed command for YES response
+                from ..services.command_parser import ParsedCommand, CommandType
+                parsed = ParsedCommand(
+                    command_type=CommandType.YES_RESPONSE,
+                    raw_message=user_message,
+                    confidence=0.9
+                )
+                
+                # Get current room from user info
+                user_info = await db.get_user_info()
+                current_room = user_info.get("current_location", "bedroom")
+                
+                # Get MQTT handler from app state
+                mqtt_handler = getattr(app_request.app.state, 'mqtt_handler', None)
+                
+                # Execute YES response handler
+                cmd_result = await execute_command(
+                    parsed=parsed,
+                    db=db,
+                    mqtt_handler=mqtt_handler,
+                    current_room=current_room,
+                    app=app_request.app,
+                    recent_notification=recent_notification
+                )
+                
+                if cmd_result.get("handled"):
+                    # Command was handled - return response directly
+                    response_message = cmd_result.get("message", "Done!")
+                    
+                    # Clear recent_notification after YES response
+                    try:
+                        if hasattr(app_request.app.state, 'recent_notification'):
+                            app_request.app.state.recent_notification = None
+                            logger.info(f"[{correlation_id}] Cleared recent_notification after YES response")
+                    except Exception as e:
+                        logger.warning(f"[{correlation_id}] Failed to clear recent_notification: {e}")
+                    
+                    # Save assistant response to chat history
+                    try:
+                        await db.save_chat_message({
+                            "role": "assistant",
+                            "content": response_message
+                        })
+                    except Exception as save_error:
+                        logger.warning(f"Failed to save response to chat history: {save_error}")
+                    
+                    # Broadcast via WebSocket if tool executed device control
+                    if cmd_result.get("tool_result"):
+                        ws_manager = getattr(app_request.app.state, 'ws_manager', None)
+                        if ws_manager:
+                            await ws_manager.broadcast({
+                                "type": "chat_response",
+                                "message": response_message,
+                                "timestamp": datetime.now().isoformat()
+                            })
+                    
+                    logger.info(f"[{correlation_id}] YES response handled by command parser (no LLM call)")
+                    return ChatResponse(
+                        response=response_message,
+                        timestamp=datetime.now().isoformat(),
+                        model="command_parser",
+                        tokens_used=0
+                    )
+            
+            elif is_no_response:
+                logger.info(f"[{correlation_id}] 🚫 Detected NO response to notification, leaving devices as they are")
+                from ..services.command_parser import parse_command, execute_command
+                
+                # Create a dummy parsed command for NO response
+                from ..services.command_parser import ParsedCommand, CommandType
+                parsed = ParsedCommand(
+                    command_type=CommandType.UNKNOWN,  # We handle NO explicitly in execute_command
+                    raw_message=user_message,
+                    confidence=0.9
+                )
+                
+                # Get current room from user info
+                user_info = await db.get_user_info()
+                current_room = user_info.get("current_location", "bedroom")
+                
+                # Get MQTT handler from app state
+                mqtt_handler = getattr(app_request.app.state, 'mqtt_handler', None)
+                
+                # Execute NO response handler
+                cmd_result = await execute_command(
+                    parsed=parsed,
+                    db=db,
+                    mqtt_handler=mqtt_handler,
+                    current_room=current_room,
+                    app=app_request.app,
+                    recent_notification=recent_notification
+                )
+                
+                if cmd_result.get("handled"):
+                    # Command was handled - return response directly
+                    response_message = cmd_result.get("message", "Okay, I'll leave the devices as they are.")
+                    
+                    # Clear recent_notification after NO response as well
+                    try:
+                        if hasattr(app_request.app.state, 'recent_notification'):
+                            app_request.app.state.recent_notification = None
+                            logger.info(f"[{correlation_id}] Cleared recent_notification after NO response")
+                    except Exception as e:
+                        logger.warning(f"[{correlation_id}] Failed to clear recent_notification: {e}")
+                    
+                    # Save assistant response to chat history
+                    try:
+                        await db.save_chat_message({
+                            "role": "assistant",
+                            "content": response_message
+                        })
+                    except Exception as save_error:
+                        logger.warning(f"Failed to save response to chat history: {save_error}")
+                    
+                    logger.info(f"[{correlation_id}] NO response handled by command parser (no LLM call)")
+                    return ChatResponse(
+                        response=response_message,
+                        timestamp=datetime.now().isoformat(),
+                        model="command_parser",
+                        tokens_used=0
+                    )
+
+        
+        # Step 1.6: Try command parser for other commands (device control, status queries, etc.)
         # This handles device control, status queries, etc. without calling LLM
         try:
             from ..services.command_parser import parse_command, execute_command
@@ -601,12 +745,24 @@ async def chat(request: ChatRequest, app_request: Request):
                     db=db,
                     mqtt_handler=mqtt_handler,
                     current_room=current_room,
-                    app=app_request.app
+                    app=app_request.app,
+                    recent_notification=recent_notification
                 )
                 
                 if cmd_result.get("handled"):
                     # Command was handled by parser - return response directly
                     response_message = cmd_result.get("message", "Done!")
+                    
+                    # Clear recent_notification if YES or NO response was handled
+                    if recent_notification:
+                        tool_result = cmd_result.get("tool_result", {})
+                        if tool_result.get("devices_turned_off") or tool_result.get("action") == "no_action":
+                            try:
+                                if hasattr(app_request.app.state, 'recent_notification'):
+                                    app_request.app.state.recent_notification = None
+                                    logger.info(f"[{correlation_id}] Cleared recent_notification after response")
+                            except Exception as e:
+                                logger.warning(f"[{correlation_id}] Failed to clear recent_notification: {e}")
                     
                     # Save assistant response to chat history
                     try:

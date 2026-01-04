@@ -162,6 +162,13 @@ class MQTTHandler:
                 )
                 return
             
+            # Handle central status from CucumberRS (appliance controller)
+            if topic == "WheelSense/central/status":
+                asyncio.run_coroutine_threadsafe(
+                    self._handle_central_status(msg.payload), loop
+                )
+                return
+            
             # Handle room-based topics: WheelSense/{room}/registration and /detection only
             for room in self.ROOMS:
                 if topic.startswith(f"WheelSense/{room}/"):
@@ -441,6 +448,49 @@ class MQTTHandler:
             
         except Exception as e:
             logger.error(f"Error handling device status: {e}", exc_info=True)
+    
+    async def _handle_central_status(self, payload: bytes):
+        """
+        Handle central status from CucumberRS appliance controller.
+        
+        Expected format:
+        {
+            "type": "central_status",
+            "device_type": "appliance_controller_central",
+            "device_id": "APPLIANCE_CENTRAL",
+            "rooms": {
+                "bedroom": {"Light": true, "AC": false, ...},
+                "bathroom": {"Light": false, ...},
+                ...
+            }
+        }
+        """
+        try:
+            data = json.loads(payload.decode("utf-8"))
+            device_type = data.get("device_type", "unknown")
+            device_id = data.get("device_id", "unknown")
+            rooms = data.get("rooms", {})
+            
+            logger.info(f"📊 Received central status from {device_id} ({device_type}) - {len(rooms)} rooms")
+            
+            # Log status for each room (diagnostics only, database is master)
+            for room_name, appliances in rooms.items():
+                if room_name in self.ROOMS:
+                    logger.debug(f"  {room_name}: {len(appliances)} appliances")
+                    for appliance, state in appliances.items():
+                        logger.debug(f"    {appliance}: {state}")
+            
+            # Broadcast to WebSocket clients for dashboard updates
+            await self._broadcast_ws({
+                "type": "central_status",
+                "device_id": device_id,
+                "device_type": device_type,
+                "rooms": rooms,
+                "timestamp": datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            logger.error(f"Error handling central status: {e}", exc_info=True)
     
     async def _handle_state_sync_request(self, payload: bytes):
         """

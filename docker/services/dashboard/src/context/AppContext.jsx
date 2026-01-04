@@ -721,7 +721,7 @@ export function AppProvider({ children }) {
                             // REMOVED: setTimeout refresh that was overwriting WS updates with stale data
                         }
 
-                        // Handle notification (schedule, room change alerts)
+                        // Handle notification (schedule, room change alerts, location change)
                         if (message.type === 'notification') {
                             const notificationData = message.data || message;
                             console.log('[AppContext] 🔔 Notification received:', notificationData);
@@ -729,25 +729,29 @@ export function AppProvider({ children }) {
                             // Set pending notification for AIChatPopup to handle
                             setPendingNotification(notificationData);
 
-                            // Also add to bell icon notifications (TopBar)
-                            const notificationType = notificationData.type || 'info';
-                            const notificationTitle = notificationData.type === 'schedule_notification' 
-                                ? '⏰ Schedule Reminder'
-                                : notificationData.type === 'room_change_alert'
-                                    ? '💡 Room Alert'
-                                    : '🔔 Notification';
-                            
-                            setNotifications(prev => {
-                                const newNotification = {
-                                    id: Date.now(),
-                                    type: notificationType === 'schedule_notification' ? 'info' : 'warning',
-                                    title: notificationTitle,
-                                    message: notificationData.message || notificationData.activity || 'New notification',
-                                    time: new Date(),
-                                    read: false
-                                };
-                                return [newNotification, ...prev].slice(0, 50);
-                            });
+                            // Also add to bell icon notifications (TopBar) - but skip location_change
+                            if (notificationData.show_in_bell_icon !== false && notificationData.type !== 'location_change') {
+                                const notificationType = notificationData.type || 'info';
+                                const notificationTitle = notificationData.type === 'schedule_notification' 
+                                    ? '⏰ Schedule Reminder'
+                                    : notificationData.type === 'room_change_alert'
+                                        ? '💡 Room Alert'
+                                        : notificationData.type === 'house_check_notification'
+                                            ? '💡 Device Alert'
+                                            : '🔔 Notification';
+                                
+                                setNotifications(prev => {
+                                    const newNotification = {
+                                        id: Date.now(),
+                                        type: notificationType === 'schedule_notification' ? 'info' : 'warning',
+                                        title: notificationTitle,
+                                        message: notificationData.message || notificationData.activity || 'New notification',
+                                        time: new Date(),
+                                        read: false
+                                    };
+                                    return [newNotification, ...prev].slice(0, 50);
+                                });
+                            }
                         }
 
                         // Handle schedule_item_update

@@ -22,6 +22,7 @@ class CommandType(Enum):
     CURRENT_ROOM_QUERY = "current_room_query"
     SCHEDULE_QUERY = "schedule_query"
     ACTIVITY_DONE = "activity_done"  # User says they finished current activity
+    YES_RESPONSE = "yes_response"  # User responds "yes" to notification (turn off devices)
     UNKNOWN = "unknown"
 
 
@@ -96,6 +97,19 @@ ACTIVITY_DONE_KEYWORDS = [
     "ทำเสร็จแล้ว", "เรียบร้อยแล้ว", "เรียบร้อย", "ทำเสร็จ",
     "เสร็จ", "จบแล้ว", "ต่อไปทำอะไร", "ต่อไป", "what's next task",
     "next task", "อะไรต่อไป", "แล้วต่อไป"
+]
+
+# Yes response keywords (user responds yes to notification)
+YES_RESPONSE_KEYWORDS = [
+    "yes", "yeah", "yep", "sure", "okay", "ok", "please", "do it",
+    "ใช่", "ได้", "โอเค", "ตกลง", "ปิดให้", "ปิดเลย", "turn them off", "turn it off"
+]
+
+# No response keywords (user responds no to notification - leave devices as they are)
+NO_RESPONSE_KEYWORDS = [
+    "no", "nope", "nah", "don't", "dont", "leave it", "leave them",
+    "ไม่", "ไม่ต้อง", "ไม่เป็นไร", "เปล่า", "ไม่ใช่", "ไม่ปิด", "ไม่ต้องปิด",
+    "keep it", "keep them", "it's fine", "that's fine"
 ]
 
 
@@ -264,7 +278,8 @@ async def execute_command(
     db,
     mqtt_handler,
     current_room: str = "bedroom",
-    app = None  # FastAPI app instance for accessing custom_time
+    app = None,  # FastAPI app instance for accessing custom_time
+    recent_notification: Optional[Dict[str, Any]] = None  # Recent notification context
 ) -> Dict[str, Any]:
     """
     Execute a parsed command.
@@ -280,6 +295,22 @@ async def execute_command(
         Dict with success status and response message
     """
     # Note: control_appliance_core is imported in the handler functions below
+    
+    # Check for YES or NO response to notification (must check BEFORE UNKNOWN)
+    if recent_notification and recent_notification.get("devices"):
+        normalized_msg = parsed.raw_message.lower().strip()
+        
+        # Check if message is a YES response - turn off the devices
+        is_yes_response = any(keyword in normalized_msg for keyword in YES_RESPONSE_KEYWORDS)
+        if is_yes_response:
+            logger.info(f"✅ Detected YES response to notification, turning off devices")
+            return await _handle_yes_response(db, mqtt_handler, recent_notification)
+        
+        # Check if message is a NO response - acknowledge and leave devices as they are
+        is_no_response = any(keyword in normalized_msg for keyword in NO_RESPONSE_KEYWORDS)
+        if is_no_response:
+            logger.info(f"🚫 Detected NO response to notification, leaving devices as they are")
+            return await _handle_no_response(recent_notification)
     
     if parsed.command_type == CommandType.UNKNOWN:
         return {
@@ -435,6 +466,16 @@ async def _handle_activity_done(db, app=None) -> Dict[str, Any]:
         # Get today's schedule
         schedule = await db.get_schedule_items()
         
+        # Get today's date
+        if app and hasattr(app.state, 'custom_date') and app.state.custom_date:
+            today = app.state.custom_date
+        else:
+            today = datetime.now().strftime("%Y-%m-%d")
+        
+        # Get completed activities for today
+        completed_activities = await db.get_completed_activities(today)
+        completed_set = {(c["time"], c["activity"]) for c in completed_activities}
+        
         # Use custom time if set, otherwise use real time
         if app and hasattr(app.state, 'custom_time') and app.state.custom_time:
             custom_time = app.state.custom_time
@@ -458,12 +499,18 @@ async def _handle_activity_done(db, app=None) -> Dict[str, Any]:
         # Sort by time
         sorted_schedule = sorted(schedule, key=lambda x: x.get("time", "99:99"))
         
-        # Find current and next activities
+        # Find current and next activities (skip completed ones)
         current_activity = None
         next_activity = None
         
         for i, item in enumerate(sorted_schedule):
             item_time = item.get("time", "")
+            item_activity = item.get("activity", "")
+            
+            # Skip completed activities
+            if (item_time, item_activity) in completed_set:
+                continue
+            
             if item_time <= current_time:
                 current_activity = item
             elif item_time > current_time:
@@ -512,6 +559,155 @@ async def _handle_activity_done(db, app=None) -> Dict[str, Any]:
             "message": "",
             "should_use_llm": True
         }
+
+
+async def _handle_yes_response(
+    db, mqtt_handler, recent_notification: Dict[str, Any]
+) -> Dict[str, Any]:
+    """
+    Handle YES response to notification - turn off all devices mentioned in notification.
+    
+    Args:
+        db: Database instance
+        mqtt_handler: MQTT handler instance
+        recent_notification: Dict with notification info:
+            {
+                "devices": [{"room": str, "device": str}, ...],
+                "message": str
+            }
+    
+    Returns:
+        Dict with success status and response message
+    """
+    try:
+        from ..core.appliance_control import control_appliance_core
+        from ..core.database import normalize_room_name
+        
+        devices = recent_notification.get("devices", [])
+        if not devices:
+            return {
+                "handled": False,
+                "message": "",
+                "should_use_llm": True
+            }
+        
+        # Turn off each device
+        success_count = 0
+        turned_off = []
+        
+        for device_info in devices:
+            room = device_info.get("room", "")
+            device = device_info.get("device", "")
+            
+            if not room or not device:
+                continue
+            
+            try:
+                normalized_room = normalize_room_name(room)
+                result = await control_appliance_core(
+                    db=db,
+                    mqtt_handler=mqtt_handler,
+                    room=normalized_room,
+                    appliance=device.lower(),
+                    state=False
+                )
+                if result.get("success"):
+                    success_count += 1
+                    device_name = device.capitalize() if device.lower() != "ac" else "AC"
+                    room_name = room.capitalize()
+                    turned_off.append(f"{room_name} {device_name}")
+            except Exception as e:
+                logger.warning(f"Failed to turn off {device} in {room}: {e}")
+        
+        if turned_off:
+            if len(turned_off) == 1:
+                message = f"Turned off {turned_off[0]}."
+            else:
+                devices_list = ", ".join(turned_off[:-1]) + f", and {turned_off[-1]}"
+                message = f"Turned off {devices_list}."
+            
+            return {
+                "handled": True,
+                "message": message,
+                "should_use_llm": False,
+                "tool_result": {
+                    "success": True,
+                    "devices_turned_off": turned_off,
+                    "count": success_count
+                }
+            }
+        else:
+            return {
+                "handled": False,
+                "message": "",
+                "should_use_llm": True
+            }
+    except Exception as e:
+        logger.error(f"Error handling yes response: {e}", exc_info=True)
+        return {
+            "handled": False,
+            "message": "",
+            "should_use_llm": True
+        }
+
+
+async def _handle_no_response(recent_notification: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Handle NO response to notification - acknowledge and leave devices as they are.
+    
+    Args:
+        recent_notification: Dict with notification info:
+            {
+                "devices": [{"room": str, "device": str}, ...],
+                "message": str
+            }
+    
+    Returns:
+        Dict with acknowledgment message, devices remain unchanged
+    """
+    try:
+        devices = recent_notification.get("devices", [])
+        
+        if not devices:
+            return {
+                "handled": True,
+                "message": "Okay, I'll leave the devices as they are.",
+                "should_use_llm": False
+            }
+        
+        # Build device list for acknowledgment
+        if len(devices) == 1:
+            device_info = devices[0]
+            device_desc = f"{device_info.get('room', '')} {device_info.get('device', '')}"
+            message = f"Okay, I'll leave the {device_desc} on."
+        else:
+            device_names = [f"{d.get('room', '')} {d.get('device', '')}" for d in devices]
+            if len(device_names) == 2:
+                devices_list = f"{device_names[0]} and {device_names[1]}"
+            else:
+                devices_list = ", ".join(device_names[:-1]) + f", and {device_names[-1]}"
+            message = f"Okay, I'll leave {devices_list} on."
+        
+        logger.info(f"🚫 NO response acknowledged: {message}")
+        
+        return {
+            "handled": True,
+            "message": message,
+            "should_use_llm": False,
+            "tool_result": {
+                "success": True,
+                "action": "no_action",
+                "devices_unchanged": len(devices)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error handling no response: {e}", exc_info=True)
+        return {
+            "handled": True,
+            "message": "Okay, I'll leave the devices as they are.",
+            "should_use_llm": False
+        }
+
 
 
 async def _handle_turn_off_all_on(db, mqtt_handler, room: str) -> Dict[str, Any]:

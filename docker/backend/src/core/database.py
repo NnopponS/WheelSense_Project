@@ -525,6 +525,18 @@ class Database:
             )
         """)
         
+        # Completed Activities table - track completed schedule activities per day
+        await self._db_connection.execute("""
+            CREATE TABLE IF NOT EXISTS completed_activities (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                time TEXT NOT NULL,
+                activity TEXT NOT NULL,
+                completed_at TEXT NOT NULL,
+                UNIQUE(date, time, activity)
+            )
+        """)
+        
         # Chat History table
         await self._db_connection.execute("""
             CREATE TABLE IF NOT EXISTS chat_history (
@@ -2155,6 +2167,47 @@ class Database:
         cursor = await self._db_connection.execute("DELETE FROM one_time_events")
         await self._db_connection.commit()
         return cursor.rowcount
+    
+    # ==================== Completed Activities Operations ====================
+    
+    async def mark_activity_completed(self, date: str, time: str, activity: str) -> bool:
+        """Mark a schedule activity as completed for a specific date."""
+        try:
+            completed_at = datetime.now().isoformat()
+            await self._db_connection.execute("""
+                INSERT OR REPLACE INTO completed_activities (date, time, activity, completed_at)
+                VALUES (?, ?, ?, ?)
+            """, (date, time, activity, completed_at))
+            await self._db_connection.commit()
+            return True
+        except Exception as e:
+            logger.error(f"Error marking activity as completed: {e}")
+            return False
+    
+    async def is_activity_completed(self, date: str, time: str, activity: str) -> bool:
+        """Check if a schedule activity is completed for a specific date."""
+        try:
+            async with self._db_connection.execute("""
+                SELECT 1 FROM completed_activities 
+                WHERE date = ? AND time = ? AND activity = ?
+            """, (date, time, activity)) as cursor:
+                row = await cursor.fetchone()
+                return row is not None
+        except Exception as e:
+            logger.error(f"Error checking if activity is completed: {e}")
+            return False
+    
+    async def get_completed_activities(self, date: str) -> List[Dict[str, str]]:
+        """Get all completed activities for a specific date."""
+        try:
+            async with self._db_connection.execute("""
+                SELECT time, activity FROM completed_activities WHERE date = ?
+            """, (date,)) as cursor:
+                rows = await cursor.fetchall()
+                return [{"time": row['time'], "activity": row['activity']} for row in rows]
+        except Exception as e:
+            logger.error(f"Error getting completed activities: {e}")
+            return []
     
     async def cleanup_old_one_time_events(self, before_date: str) -> int:
         """Delete one-time events before a specific date."""

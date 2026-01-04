@@ -71,6 +71,17 @@ async def update_user_info(update: UserInfoUpdate, request: Request):
                     )
                     logger.info(f"✅ House check triggered: {previous_location} → {update.current_location}")
                     logger.info(f"🔍 DEBUG: House check result: {result}")
+                    
+                    # Store recent_notification in app.state for command parser (logic-based)
+                    # This allows command parser to know which devices to turn off when user responds "yes"
+                    if result and result.get("notified") and result.get("devices"):
+                        request.app.state.recent_notification = {
+                            "devices": result.get("devices", []),
+                            "message": result.get("message", ""),
+                            "type": "house_check_notification"
+                        }
+                        logger.info(f"💾 Stored recent_notification in app.state: {len(result.get('devices', []))} device(s)")
+                        logger.info(f"💾 Recent notification devices: {result.get('devices', [])}")
                 except Exception as e:
                     logger.error(f"House check failed: {e}", exc_info=True)
             else:
