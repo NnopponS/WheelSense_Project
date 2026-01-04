@@ -545,7 +545,7 @@ export async function getChatHistory(limit = 50, sessionId = null) {
     if (sessionId) {
         params.append('session_id', sessionId);
     }
-    return fetchAPI(`/chat/history?${params.toString()}`);
+    return fetchAPI(`/api/chat/history?${params.toString()}`);
 }
 
 export async function getMCPTools() {

@@ -13,6 +13,7 @@ import uuid
 import time
 import re
 import hashlib
+from typing import List, Dict, Optional, Any
 
 from ..dependencies import get_db
 from ..services.llm_client import LLMClient
@@ -26,6 +27,25 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["Chat"])
+
+
+@router.get("/chat/history")
+async def get_chat_history(
+    limit: int = Query(50, ge=1, le=100),
+    session_id: Optional[str] = None,
+    request: Request = None
+):
+    """
+    Get recent chat history.
+    """
+    db = get_db(request)
+    try:
+        messages = await db.get_recent_chat_history(limit=limit)
+        return {"messages": messages}
+    except Exception as e:
+        logger.error(f"Failed to fetch chat history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 class ChatMessage(BaseModel):

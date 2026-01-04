@@ -743,7 +743,16 @@ class WebSocketStreamHandler:
                     "timestamp": datetime.now().isoformat()
                 }))
                 await self.camera_service_connection.send(frame)
-            logger.info(f"📤 Forwarded ORIGINAL frame to camera-service ({room}, device: {device_id}, rotation: {rotation}°): {len(frame)} bytes")
+            
+            # Log forwarding (throttled to every 5 seconds per room to reduce noise)
+            now = time.time()
+            # Use separate dict for log throttling to avoid conflict with frame throttling
+            if not hasattr(self, '_last_forward_log_time'):
+                self._last_forward_log_time = {}
+            
+            if now - self._last_forward_log_time.get(room, 0) >= 5.0:
+                logger.info(f"📤 Forwarded ORIGINAL frame to camera-service ({room}, device: {device_id}, rotation: {rotation}°): {len(frame)} bytes")
+                self._last_forward_log_time[room] = now
             
         except Exception as e:
             logger.error(f"Error forwarding frame to camera-service: {e}", exc_info=True)

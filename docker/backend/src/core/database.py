@@ -2359,20 +2359,22 @@ class Database:
             rows = await cursor.fetchall()
             result = []
             for row in reversed(rows):  # Chronological order
+                # Convert sqlite3.Row to dict for .get() support
+                row_dict = dict(row)
                 item = {
-                    "id": row.get('id'),  # Include database ID
-                    "role": row['role'],
-                    "content": row['content'],
-                    "is_notification": bool(row['is_notification']),
-                    "is_preference_update": bool(row['is_preference_update'])
+                    "id": row_dict.get('id'),  # Include database ID
+                    "role": row_dict['role'],
+                    "content": row_dict['content'],
+                    "is_notification": bool(row_dict['is_notification']),
+                    "is_preference_update": bool(row_dict['is_preference_update'])
                 }
-                if row.get('session_id'):
-                    item["session_id"] = row['session_id']
-                if row.get('content_full'):
-                    item["content_full"] = row['content_full']
-                if row.get('tool_result'):
+                if row_dict.get('session_id'):
+                    item["session_id"] = row_dict['session_id']
+                if row_dict.get('content_full'):
+                    item["content_full"] = row_dict['content_full']
+                if row_dict.get('tool_result'):
                     try:
-                        item["tool_result"] = json.loads(row['tool_result'])
+                        item["tool_result"] = json.loads(row_dict['tool_result'])
                     except (json.JSONDecodeError, TypeError):
                         pass
                 result.append(item)
