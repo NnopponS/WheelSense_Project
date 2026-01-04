@@ -375,7 +375,7 @@ async def _handle_device_control(
             action_str = "ON" if state else "OFF"
             device_name = device.capitalize() if device != "AC" else "AC"
             room_name = room.capitalize()
-            message = f"✅ Set {room_name} {device_name} to {action_str}"
+            message = f"Set {room_name} {device_name} to {action_str}"
             
             return {
                 "handled": True,
@@ -425,7 +425,7 @@ async def _handle_all_rooms_control(
         
         action_str = "ON" if state else "OFF"
         device_name = device.capitalize() if device != "AC" else "AC"
-        message = f"✅ Set {device_name} to {action_str} in all rooms ({success_count}/{len(rooms)} rooms)"
+        message = f"Set {device_name} to {action_str} in all rooms ({success_count}/{len(rooms)} rooms)"
         
         return {
             "handled": True,

@@ -49,21 +49,28 @@ async def control_appliance_core(
     """
     # Step 1: Send MQTT command to physical device FIRST (like manual toggle)
     # Convert device name for MQTT: lowercase except "AC" stays "AC"
-    if appliance == "AC":
-        mqtt_appliance = "AC"
+    mqtt_success = False
+    
+    if mqtt_handler:
+        if appliance == "AC":
+            mqtt_appliance = "AC"
+        else:
+            mqtt_appliance = appliance.lower()
+        
+        mqtt_success = await mqtt_handler.send_control_command(
+            room=room,
+            appliance=mqtt_appliance,
+            state=state,
+            value=value
+        )
+        
+        if not mqtt_success:
+            logger.warning(f"Failed to send MQTT command for {room}/{appliance}, but continuing with database update")
+            # Note: We continue even if MQTT fails, as database update is critical
+        else:
+            logger.info(f"MQTT command sent successfully: {room}/{mqtt_appliance} = {'ON' if state else 'OFF'}")
     else:
-        mqtt_appliance = appliance.lower()
-    
-    mqtt_success = await mqtt_handler.send_control_command(
-        room=room,
-        appliance=mqtt_appliance,
-        state=state,
-        value=value
-    )
-    
-    if not mqtt_success:
-        logger.warning(f"Failed to send MQTT command for {room}/{appliance}, but continuing with database update")
-        # Note: We continue even if MQTT fails, as database update is critical
+        logger.warning(f"MQTT handler not available, skipping MQTT command for {room}/{appliance}")
     
     # Step 2: Update database (DATABASE-FIRST ARCHITECTURE)
     # device_states table is the single source of truth
