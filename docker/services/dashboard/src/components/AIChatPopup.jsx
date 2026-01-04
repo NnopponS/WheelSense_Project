@@ -4,23 +4,6 @@ import { useTranslation } from '../hooks/useTranslation';
 import { Bot, Send, X, Minimize2, Maximize2, Mic, MicOff, Volume2, VolumeX, Check, Loader, MessageSquarePlus } from 'lucide-react';
 import * as api from '../services/api';
 
-// Helper to detect if text is Thai
-function isThaiText(text) {
-    // Thai Unicode range: \u0E00-\u0E7F
-    const thaiPattern = /[\u0E00-\u0E7F]/;
-    return thaiPattern.test(text);
-}
-
-// API function to translate text using deep-translator (only for AI chat)
-async function translateForAI(text, fromLang, toLang) {
-    try {
-        const result = await api.translateText(text, fromLang, toLang);
-        return result.translated || text;
-    } catch (error) {
-        console.error('[AIChatPopup] Translation failed:', error);
-        return text;
-    }
-}
 
 // Generate unique session ID
 function generateSessionId() {
@@ -28,7 +11,7 @@ function generateSessionId() {
 }
 
 export function AIChatPopup() {
-    const { rooms, appliances, toggleAppliance, patients, role, currentUser, language, registerChatMessageCallback } = useApp();
+    const { rooms, appliances, toggleAppliance, patients, role, currentUser, chatHistory, addChatMessage, clearChatHistory } = useApp();
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
@@ -72,27 +55,9 @@ export function AIChatPopup() {
         localStorage.setItem('wheelsense_chat_session_id', sessionId);
     }, [sessionId]);
 
-    // Welcome messages in both languages
-    const welcomeEN = 'Hello! I am WheelSense AI 🤖\nType commands or questions!\nOr click the microphone button to chat 🎤';
-    const welcomeTH = 'สวัสดี! ฉันคือ WheelSense AI 🤖\nพิมพ์คำสั่งหรือคำถาม!\nหรือกดปุ่มไมโครโฟนเพื่อพูดคุย 🎤';
-
-    const [messages, setMessages] = useState([
-        { id: 1, role: 'assistant', content: language === 'th' ? welcomeTH : welcomeEN }
-    ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
-
-    // Update welcome message when language changes (static, no API call)
-    useEffect(() => {
-        setMessages(prev => {
-            const updated = [...prev];
-            if (updated[0] && updated[0].role === 'assistant' && updated[0].id === 1) {
-                updated[0] = { ...updated[0], content: language === 'th' ? welcomeTH : welcomeEN };
-            }
-            return updated;
-        });
-    }, [language]);
 
     // Voice state
     const [isListening, setIsListening] = useState(false);
@@ -108,44 +73,7 @@ export function AIChatPopup() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
-
-    // Register callback to receive chat messages from WebSocket
-    useEffect(() => {
-        if (!registerChatMessageCallback) {
-            console.warn('%c⚠️ [AIChatPopup] registerChatMessageCallback not available', 'color: #ffa94d; font-weight: bold;');
-            return; // Guard if not available
-        }
-        
-        console.log('%c✅ [AIChatPopup] Registering chat message callback', 'color: #51cf66; font-weight: bold;');
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AIChatPopup.jsx:81', message: 'Registering callback', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
-        // #endregion
-        const cleanup = registerChatMessageCallback((message) => {
-            // Always add messages, even when chat is closed (they'll appear when user opens it)
-            console.log('%c📩 [AIChatPopup] Received message via callback', 'color: #339af0; font-size: 14px; font-weight: bold;', message);
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AIChatPopup.jsx:84', message: 'Callback invoked', data: message, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
-            // #endregion
-            setMessages(prev => {
-                // Check if message already exists (avoid duplicates based on content and timing)
-                const exists = prev.some(m => 
-                    m.role === message.role && 
-                    m.content === message.content &&
-                    Math.abs((m.id || 0) - (message.id || 0)) < 5000 // Same message within 5 seconds
-                );
-                if (exists) {
-                    console.log('%c⚠️ [AIChatPopup] Duplicate message detected, skipping', 'color: #ffa94d;');
-                    return prev;
-                }
-                console.log('%c✅ [AIChatPopup] Adding notification message to chat', 'color: #51cf66; font-weight: bold;', message.content);
-                return [...prev, message];
-            });
-        });
-        
-        console.log('%c✅ [AIChatPopup] Chat message callback registered successfully', 'color: #51cf66; font-weight: bold;');
-        return cleanup; // Cleanup on unmount
-    }, [registerChatMessageCallback]); // Remove isOpen, isMinimized from dependencies
+    }, [chatHistory]);
 
     // Start voice recognition
     const startListening = () => {
@@ -158,8 +86,8 @@ export function AIChatPopup() {
         const recognition = new SpeechRecognition();
         recognitionRef.current = recognition;
 
-        // Set language based on current UI language
-        recognition.lang = language === 'th' ? 'th-TH' : 'en-US';
+        // Set language to English
+        recognition.lang = 'en-US';
         recognition.continuous = false;
         recognition.interimResults = true;
 
@@ -184,7 +112,7 @@ export function AIChatPopup() {
             console.error('Speech recognition error:', event.error);
             setIsListening(false);
             if (event.error === 'no-speech') {
-                setVoiceText(language === 'th' ? 'ไม่มีเสียง ลองใหม่อีกครั้ง' : 'No sound detected. Please try again');
+                setVoiceText('No sound detected. Please try again');
             }
         };
 
@@ -224,8 +152,8 @@ export function AIChatPopup() {
 
         try {
             setIsSpeaking(true);
-            // Use Thai voice if text is Thai
-            const voiceLang = isThaiText(text) ? 'th-TH' : 'en-US';
+            // Use English voice
+            const voiceLang = 'en-US';
             await api.speak(text, voiceLang, 0.9);
         } catch (error) {
             console.error('TTS error:', error);
@@ -244,31 +172,13 @@ export function AIChatPopup() {
         if (!messageText.trim() || isLoading) return;
 
         const userMessage = { id: Date.now(), role: 'user', content: messageText };
-        setMessages(prev => [...prev, userMessage]);
+        addChatMessage(userMessage);
         setInput('');
         setIsLoading(true);
 
         try {
-            // Detect if user is speaking Thai
-            const userSpeaksThai = isThaiText(messageText);
-            console.log('[AIChatPopup] User language detected:', userSpeaksThai ? 'Thai' : 'English');
-
-            // Prepare the message for AI
-            let messageForAI = messageText;
-
-            // If user speaks Thai, translate to English for backend processing
-            if (userSpeaksThai) {
-                console.log('[AIChatPopup] Translating Thai input to English...');
-                messageForAI = await translateForAI(messageText, 'th', 'en');
-                console.log('[AIChatPopup] Translated to:', messageForAI);
-            }
-
-            // Add language instruction to the prompt
-            const languagePrompt = userSpeaksThai
-                ? 'The user is speaking Thai. Please respond in Thai (ภาษาไทย). '
-                : 'The user is speaking English. Please respond in English. ';
-
-            const fullMessage = languagePrompt + messageForAI;
+            // Use message as-is (English only)
+            const fullMessage = messageText;
 
             const response = await api.chat(
                 [{ role: 'user', content: fullMessage }],
@@ -283,25 +193,17 @@ export function AIChatPopup() {
                 throw new Error(responseText);
             }
 
-            // If user spoke Thai but AI responded in English, translate the response
-            let finalResponseText = responseText;
-            if (userSpeaksThai && !isThaiText(responseText)) {
-                console.log('[AIChatPopup] AI responded in English, translating to Thai...');
-                finalResponseText = await translateForAI(responseText, 'en', 'th');
-                console.log('[AIChatPopup] Response translated to Thai');
-            }
-
             const assistantMessage = {
                 id: Date.now() + 1,
                 role: 'assistant',
-                content: finalResponseText,
+                content: responseText,
                 toolResults: response.tool_results || []
             };
-            setMessages(prev => [...prev, assistantMessage]);
+            addChatMessage(assistantMessage);
 
             // Speak the response
             if (voiceEnabled) {
-                speakText(finalResponseText);
+                speakText(responseText);
             }
         } catch (error) {
             console.error('Chat API error:', error);
@@ -320,24 +222,15 @@ export function AIChatPopup() {
                 lowerErrorMessage.includes('fetch') ||
                 lowerErrorMessage.includes('ollama');
 
-            // Error messages in both languages
+            // Error messages in English
             let responseContent;
-            const userSpeaksThai = isThaiText(messageText);
-
             if (isConnectionError) {
-                responseContent = userSpeaksThai
-                    ? `⚠️ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ AI ได้\nรายละเอียด: ${errorMessage}\nกรุณาตรวจสอบ backend service แล้วลองใหม่`
-                    : `⚠️ Unable to connect to AI server.\nDetails: ${errorMessage}\nPlease check the backend service or your network and try again.`;
+                responseContent = `⚠️ Unable to connect to AI server.\nDetails: ${errorMessage}\nPlease check the backend service or your network and try again.`;
             } else {
-                responseContent = userSpeaksThai
-                    ? `⚠️ AI เกิดข้อผิดพลาด: ${errorMessage}\nกรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ`
-                    : `⚠️ AI error: ${errorMessage}\nPlease try again or contact the system administrator.`;
+                responseContent = `⚠️ AI error: ${errorMessage}\nPlease try again or contact the system administrator.`;
             }
 
-            setMessages(prev => [
-                ...prev,
-                { id: Date.now() + 1, role: 'assistant', content: responseContent }
-            ]);
+            addChatMessage({ id: Date.now() + 1, role: 'assistant', content: responseContent });
 
             if (voiceEnabled) {
                 speakText(responseContent);
@@ -358,7 +251,7 @@ export function AIChatPopup() {
         ? ['ดูสถานะทั้งหมด', 'ปิดไฟทั้งหมด', 'วิเคราะห์พฤติกรรม']
         : ['ตำแหน่งของฉัน', 'ดูตารางวันนี้', 'ขอความช่วยเหลือ'];
 
-    const quickActions = language === 'th' ? quickActionsTH : quickActionsEN;
+    const quickActions = quickActionsEN;
 
     // Drag handlers
     const handleMouseDown = (e) => {
@@ -494,9 +387,9 @@ export function AIChatPopup() {
                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>WheelSense AI</div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--success-500)' }}>
                             {isListening
-                                ? (language === 'th' ? '🎤 กำลังฟัง...' : '🎤 Listening...')
+                                ? '🎤 Listening...'
                                 : isSpeaking
-                                    ? (language === 'th' ? '🔊 กำลังพูด...' : '🔊 Speaking...')
+                                    ? '🔊 Speaking...'
                                     : '● Online'}
                         </div>
                     </div>
@@ -505,22 +398,22 @@ export function AIChatPopup() {
                     {/* New Chat button */}
                     <button
                         onClick={async () => {
-                            if (confirm(language === 'th' ? 'เริ่มการสนทนาใหม่?' : 'Start a new chat?')) {
+                            if (confirm('Start a new chat?')) {
                                 try {
                                     await api.clearChatContext(sessionId);
                                     const newSessionId = generateSessionId();
                                     setSessionId(newSessionId);
-                                    setMessages([{ id: 1, role: 'assistant', content: language === 'th' ? welcomeTH : welcomeEN }]);
+                                    clearChatHistory();
                                 } catch (error) {
                                     console.error('Failed to clear chat context:', error);
                                     // Still clear locally even if API fails
                                     const newSessionId = generateSessionId();
                                     setSessionId(newSessionId);
-                                    setMessages([{ id: 1, role: 'assistant', content: language === 'th' ? welcomeTH : welcomeEN }]);
+                                    clearChatHistory();
                                 }
                             }
                         }}
-                        title={language === 'th' ? 'เริ่มการสนทนาใหม่' : 'New Chat'}
+                        title="New Chat"
                         style={{ color: 'var(--text-muted)' }}
                     >
                         <MessageSquarePlus size={16} />
@@ -546,7 +439,7 @@ export function AIChatPopup() {
                 <>
                     {/* Messages */}
                     <div className="ai-popup-messages">
-                        {messages.map(msg => (
+                        {chatHistory.map(msg => (
                             <div key={msg.id} className={`ai-popup-message ${msg.role}`}>
                                 {msg.role === 'assistant' && (
                                     <div className="ai-popup-avatar"><Bot size={14} /></div>
@@ -558,7 +451,7 @@ export function AIChatPopup() {
                                     {/* Show tool results if any */}
                                     {msg.toolResults && msg.toolResults.length > 0 && (
                                         <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.75rem' }}>
-                                            ✅ {language === 'th' ? 'ดำเนินการแล้ว:' : 'Executed:'} {msg.toolResults.length} {language === 'th' ? 'รายการ' : 'items'}
+                                            ✅ Executed: {msg.toolResults.length} items
                                         </div>
                                     )}
                                 </div>
@@ -591,7 +484,7 @@ export function AIChatPopup() {
                             boxShadow: 'var(--shadow-lg)'
                         }}>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                                🎤 {language === 'th' ? 'ยืนยันข้อความ:' : 'Confirm spoken message:'}
+                                🎤 Confirm spoken message:
                             </div>
                             <div style={{ fontWeight: 500, marginBottom: '0.75rem', fontSize: '0.9rem' }}>
                                 "{voiceText}"
@@ -605,7 +498,7 @@ export function AIChatPopup() {
                                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem'
                                     }}
                                 >
-                                    <Check size={14} /> {language === 'th' ? 'ส่ง' : 'Send'}
+                                    <Check size={14} /> Send
                                 </button>
                                 <button
                                     onClick={cancelVoiceInput}
@@ -615,7 +508,7 @@ export function AIChatPopup() {
                                         borderRadius: 'var(--radius-md)', cursor: 'pointer'
                                     }}
                                 >
-                                    {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+                                    Cancel
                                 </button>
                             </div>
                         </div>
@@ -645,7 +538,7 @@ export function AIChatPopup() {
                                 color: isListening ? 'white' : 'var(--text-primary)',
                                 animation: isListening ? 'pulse 1s infinite' : 'none'
                             }}
-                            title={isListening ? (language === 'th' ? 'หยุดฟัง' : 'Stop Listening') : (language === 'th' ? 'พูด' : 'Speak')}
+                            title={isListening ? 'Stop Listening' : 'Speak'}
                         >
                             {isListening ? <MicOff size={18} /> : <Mic size={18} />}
                         </button>
@@ -653,8 +546,8 @@ export function AIChatPopup() {
                         <input
                             type="text"
                             placeholder={isListening
-                                ? (voiceText || (language === 'th' ? 'กำลังฟัง...' : 'Listening...'))
-                                : (language === 'th' ? 'พิมพ์หรือพูด...' : 'Type or speak...')}
+                                ? (voiceText || 'Listening...')
+                                : 'Type or speak...'}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSend()}

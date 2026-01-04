@@ -474,105 +474,115 @@ class MQTTHandler:
             logger.error(f"Error handling emergency: {e}")
     
     async def _broadcast_ws(self, message: Dict):
-        """Broadcast message to all WebSocket clients."""
-        import json as json_module
-        import time as time_module
-        import os
+        """
+        Broadcast message to all WebSocket clients.
         
-        # #region agent log
+        This method is OPTIONAL - failures are logged but never propagated.
+        The system must function correctly without WebSocket.
+        """
         try:
-            log_path = "/app/.cursor/debug.log"
-            os.makedirs(os.path.dirname(log_path), exist_ok=True)
-            log_entry = {
-                "timestamp": time_module.time() * 1000,
-                "location": "mqtt_handler.py:476",
-                "message": "_broadcast_ws() entry",
-                "sessionId": "debug-session",
-                "runId": "run1",
-                "hypothesisId": "C",
-                "data": {"message_type": message.get('type', 'unknown'), "websocket_count": len(self.websockets)}
-            }
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json_module.dumps(log_entry) + "\n")
-        except Exception:
-            pass
-        # #endregion
-        
-        if not self.websockets:
+            import json as json_module
+            import time as time_module
+            import os
+            
             # #region agent log
             try:
                 log_path = "/app/.cursor/debug.log"
                 os.makedirs(os.path.dirname(log_path), exist_ok=True)
                 log_entry = {
                     "timestamp": time_module.time() * 1000,
-                    "location": "mqtt_handler.py:478",
-                    "message": "No WebSocket clients connected",
+                    "location": "mqtt_handler.py:476",
+                    "message": "_broadcast_ws() entry",
                     "sessionId": "debug-session",
                     "runId": "run1",
                     "hypothesisId": "C",
-                    "data": {"message_type": message.get('type', 'unknown')}
+                    "data": {"message_type": message.get('type', 'unknown'), "websocket_count": len(self.websockets)}
                 }
                 with open(log_path, "a", encoding="utf-8") as f:
                     f.write(json_module.dumps(log_entry) + "\n")
             except Exception:
                 pass
             # #endregion
-            logger.warning(f"No WebSocket clients connected. Cannot broadcast message type: {message.get('type', 'unknown')}")
-            return
-        
-        message_json = json.dumps(message)
-        disconnected = set()
-        message_type = message.get('type', 'unknown')
-        
-        logger.debug(f"Broadcasting WebSocket message type '{message_type}' to {len(self.websockets)} client(s)")
-        # #region agent log
-        try:
-            log_path = "/app/.cursor/debug.log"
-            os.makedirs(os.path.dirname(log_path), exist_ok=True)
-            log_entry = {
-                "timestamp": time_module.time() * 1000,
-                "location": "mqtt_handler.py:490",
-                "message": "Sending to WebSocket clients",
-                "sessionId": "debug-session",
-                "runId": "run1",
-                "hypothesisId": "C",
-                "data": {"message_type": message_type, "client_count": len(self.websockets), "payload": message}
-            }
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json_module.dumps(log_entry) + "\n")
-        except Exception:
-            pass
-        # #endregion
-        
-        for ws in self.websockets:
+            
+            if not self.websockets:
+                # #region agent log
+                try:
+                    log_path = "/app/.cursor/debug.log"
+                    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                    log_entry = {
+                        "timestamp": time_module.time() * 1000,
+                        "location": "mqtt_handler.py:478",
+                        "message": "No WebSocket clients connected",
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "C",
+                        "data": {"message_type": message.get('type', 'unknown')}
+                    }
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json_module.dumps(log_entry) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                logger.debug(f"No WebSocket clients connected. Message type '{message.get('type', 'unknown')}' not broadcast (this is normal if WebSocket is unavailable)")
+                return
+            
+            message_json = json.dumps(message)
+            disconnected = set()
+            message_type = message.get('type', 'unknown')
+            
+            logger.debug(f"Broadcasting WebSocket message type '{message_type}' to {len(self.websockets)} client(s)")
+            # #region agent log
             try:
-                await ws.send_text(message_json)
-            except Exception as e:
-                logger.warning(f"Failed to send WebSocket message to client: {e}")
-                disconnected.add(ws)
-        
-        # Remove disconnected clients
-        self.websockets -= disconnected
-        if disconnected:
-            logger.info(f"Removed {len(disconnected)} disconnected WebSocket client(s). {len(self.websockets)} client(s) remaining")
-        # #region agent log
-        try:
-            log_path = "/app/.cursor/debug.log"
-            os.makedirs(os.path.dirname(log_path), exist_ok=True)
-            log_entry = {
-                "timestamp": time_module.time() * 1000,
-                "location": "mqtt_handler.py:496",
-                "message": "_broadcast_ws() completed",
-                "sessionId": "debug-session",
-                "runId": "run1",
-                "hypothesisId": "C",
-                "data": {"message_type": message_type, "disconnected_count": len(disconnected), "remaining_count": len(self.websockets)}
-            }
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json_module.dumps(log_entry) + "\n")
-        except Exception:
-            pass
-        # #endregion
+                log_path = "/app/.cursor/debug.log"
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                log_entry = {
+                    "timestamp": time_module.time() * 1000,
+                    "location": "mqtt_handler.py:490",
+                    "message": "Sending to WebSocket clients",
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "C",
+                    "data": {"message_type": message_type, "client_count": len(self.websockets), "payload": message}
+                }
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json_module.dumps(log_entry) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
+            for ws in self.websockets:
+                try:
+                    await ws.send_text(message_json)
+                except Exception as e:
+                    logger.debug(f"Failed to send WebSocket message to client: {e}")
+                    disconnected.add(ws)
+            
+            # Remove disconnected clients
+            self.websockets -= disconnected
+            if disconnected:
+                logger.debug(f"Removed {len(disconnected)} disconnected WebSocket client(s). {len(self.websockets)} client(s) remaining")
+            # #region agent log
+            try:
+                log_path = "/app/.cursor/debug.log"
+                os.makedirs(os.path.dirname(log_path), exist_ok=True)
+                log_entry = {
+                    "timestamp": time_module.time() * 1000,
+                    "location": "mqtt_handler.py:496",
+                    "message": "_broadcast_ws() completed",
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "C",
+                    "data": {"message_type": message_type, "disconnected_count": len(disconnected), "remaining_count": len(self.websockets)}
+                }
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json_module.dumps(log_entry) + "\n")
+            except Exception:
+                pass
+            # #endregion
+        except Exception as e:
+            # WebSocket broadcast is optional - log but never fail
+            logger.debug(f"WebSocket broadcast failed (optional): {e}")
+            # Don't propagate the exception - system must work without WebSocket
     
     # ==================== Public Methods ====================
     

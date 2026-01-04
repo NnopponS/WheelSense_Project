@@ -87,6 +87,9 @@ class Database:
             # Create tables
             await self._create_tables()
             
+            # Phase 1: Run migrations (non-breaking)
+            await self._run_phase1_migrations()
+            
             # Initialize MongoDB compatibility layer
             self._compat_layer = MongoDBCompatibilityLayer(self._db_connection, self)
             
@@ -175,6 +178,8 @@ class Database:
         """)
         
         # Activity Logs table
+        # DEPRECATED: Use events table with type='activity' instead (Phase 2 migration)
+        # This table is kept for backward compatibility during migration
         await self._db_connection.execute("""
             CREATE TABLE IF NOT EXISTS activityLogs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -188,6 +193,8 @@ class Database:
         """)
         
         # Emergency Events table
+        # DEPRECATED: Use events table with type='emergency' instead (Phase 2 migration)
+        # This table is kept for backward compatibility during migration
         await self._db_connection.execute("""
             CREATE TABLE IF NOT EXISTS emergencyEvents (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -221,6 +228,8 @@ class Database:
         """)
         
         # Map Config table
+        # DEPRECATED: Use map_config_view instead (Phase 1 migration)
+        # This table is kept for backward compatibility during migration
         await self._db_connection.execute("""
             CREATE TABLE IF NOT EXISTS mapConfig (
                 id TEXT PRIMARY KEY,
@@ -233,6 +242,8 @@ class Database:
         """)
         
         # Timeline table
+        # DEPRECATED: Use events table with type='location_change' instead (Phase 2 migration)
+        # This table is kept for backward compatibility during migration
         await self._db_connection.execute("""
             CREATE TABLE IF NOT EXISTS timeline (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -386,6 +397,9 @@ class Database:
         # Create MCP tables for LLM integration
         await self._create_mcp_tables()
         
+        # Phase 2: Create unified tables (alongside existing tables for gradual migration)
+        await self._create_unified_tables()
+        
         # Initialize MCP defaults
         await self._initialize_mcp_defaults()
         
@@ -417,6 +431,8 @@ class Database:
         """Create MCP-related tables for LLM integration."""
         
         # Device States table - lightweight state cache
+        # DEPRECATED: Use device_states_view instead (Phase 1 migration)
+        # This table is kept for backward compatibility during migration
         await self._db_connection.execute("""
             CREATE TABLE IF NOT EXISTS device_states (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -603,6 +619,463 @@ class Database:
                         VALUES (?, ?, ?, ?)
                     """, (room, device, state, now))
     
+    # ==================== Phase 1: Migration Support ====================
+    
+    async def _run_phase1_migrations(self):
+        """Run Phase 1 migrations: add foreign keys and create views (non-breaking)."""
+        try:
+            # Add foreign key columns (nullable initially for backward compatibility)
+            await self._migrate_add_foreign_keys()
+            
+            # Create views for derived data
+            await self._create_derived_views()
+            
+            await self._db_connection.commit()
+            logger.info("Phase 1 migrations completed successfully")
+        except Exception as e:
+            logger.warning(f"Phase 1 migration warning: {e}")
+            # Don't fail on migration errors - allow graceful degradation
+    
+    async def _migrate_add_foreign_keys(self):
+        """Add foreign key columns to existing tables (Phase 1)."""
+        migrations = [
+            # Add room_id to appliances (if room column exists, populate from it)
+            ("appliances", "room_id", "TEXT", """
+                UPDATE appliances 
+                SET room_id = (
+                    SELECT id FROM rooms 
+                    WHERE rooms.name = appliances.room 
+                       OR rooms.nameEn = appliances.room 
+                       OR rooms.roomType = appliances.room 
+                    LIMIT 1
+                )
+                WHERE room_id IS NULL AND room IS NOT NULL
+            """),
+            # Add room_id to patients
+            ("patients", "room_id", "TEXT", """
+                UPDATE patients 
+                SET room_id = (
+                    SELECT id FROM rooms 
+                    WHERE rooms.name = patients.room 
+                       OR rooms.nameEn = patients.room 
+                       OR rooms.roomType = patients.room 
+                    LIMIT 1
+                )
+                WHERE room_id IS NULL AND room IS NOT NULL
+            """),
+            # Add room_id to wheelchairs
+            ("wheelchairs", "room_id", "TEXT", """
+                UPDATE wheelchairs 
+                SET room_id = (
+                    SELECT id FROM rooms 
+                    WHERE rooms.name = wheelchairs.room 
+                       OR rooms.nameEn = wheelchairs.room 
+                       OR rooms.roomType = wheelchairs.room 
+                    LIMIT 1
+                )
+                WHERE room_id IS NULL AND room IS NOT NULL
+            """),
+            # Add room_id to devices
+            ("devices", "room_id", "TEXT", """
+                UPDATE devices 
+                SET room_id = (
+                    SELECT id FROM rooms 
+                    WHERE rooms.name = devices.room 
+                       OR rooms.nameEn = devices.room 
+                       OR rooms.roomType = devices.room 
+                    LIMIT 1
+                )
+                WHERE room_id IS NULL AND room IS NOT NULL
+            """),
+        ]
+        
+        for table_name, column_name, column_type, populate_sql in migrations:
+            try:
+                # Check if column already exists
+                async with self._db_connection.execute(
+                    f"PRAGMA table_info({table_name})"
+                ) as cursor:
+                    columns = await cursor.fetchall()
+                    column_exists = any(col[1] == column_name for col in columns)
+                
+                if not column_exists:
+                    # Add column
+                    await self._db_connection.execute(
+                        f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"
+                    )
+                    logger.info(f"Added column {column_name} to {table_name}")
+                    
+                    # Populate from existing room string field
+                    try:
+                        await self._db_connection.execute(populate_sql)
+                        logger.info(f"Populated {column_name} in {table_name} from existing room field")
+                    except Exception as e:
+                        logger.debug(f"Could not populate {column_name} in {table_name}: {e}")
+                else:
+                    logger.debug(f"Column {column_name} already exists in {table_name}")
+            except Exception as e:
+                logger.warning(f"Migration warning for {table_name}.{column_name}: {e}")
+    
+    async def _create_derived_views(self):
+        """Create views for derived data (Phase 1)."""
+        views = [
+            # Device states view - replaces device_states table
+            ("device_states_view", """
+                CREATE VIEW IF NOT EXISTS device_states_view AS
+                SELECT 
+                    COALESCE(a.room_id, a.room) as room,
+                    a.type as device,
+                    CASE WHEN a.isOn IS NOT NULL THEN a.isOn ELSE a.state END as state,
+                    COALESCE(a.lastStateChange, a.lastUpdated, a.updatedAt) as updated_at
+                FROM appliances a
+                WHERE a.type IS NOT NULL
+            """),
+            
+            # Current user location view - derived from timeline (latest location per user)
+            ("current_user_location_view", """
+                CREATE VIEW IF NOT EXISTS current_user_location_view AS
+                SELECT 
+                    t1.userId,
+                    t1.toRoom as current_location,
+                    t1.timestamp
+                FROM timeline t1
+                INNER JOIN (
+                    SELECT userId, MAX(timestamp) as max_timestamp
+                    FROM timeline
+                    WHERE type = 'location_change' AND toRoom IS NOT NULL
+                    GROUP BY userId
+                ) t2 ON t1.userId = t2.userId AND t1.timestamp = t2.max_timestamp
+                WHERE t1.type = 'location_change' AND t1.toRoom IS NOT NULL
+            """),
+            
+            # Map config view - derived from normalized tables (simplified version)
+            # Note: SQLite's json_group_object requires key-value pairs, so we use json_group_array with json_object
+            ("map_config_view", """
+                CREATE VIEW IF NOT EXISTS map_config_view AS
+                SELECT 
+                    'main' as id,
+                    (SELECT json_group_array(
+                        json_object(
+                            'id', b.id,
+                            'name', b.name,
+                            'nameEn', b.nameEn
+                        )
+                    ) FROM buildings b) as buildings,
+                    (SELECT json_group_array(
+                        json_object(
+                            'id', w.id,
+                            'room', COALESCE(w.room, ''),
+                            'room_id', COALESCE(w.room_id, ''),
+                            'status', COALESCE(w.status, '')
+                        )
+                    ) FROM wheelchairs w) as wheelchairPositions
+            """),
+        ]
+        
+        for view_name, view_sql in views:
+            try:
+                # Drop view if exists (to allow updates)
+                await self._db_connection.execute(f"DROP VIEW IF EXISTS {view_name}")
+                # Create view
+                await self._db_connection.execute(view_sql)
+                logger.info(f"Created view {view_name}")
+            except Exception as e:
+                logger.warning(f"Could not create view {view_name}: {e}")
+                # Continue with other views even if one fails
+    
+    # ==================== Phase 2: Unified Tables ====================
+    
+    async def _create_unified_tables(self):
+        """Create unified tables alongside existing tables for gradual migration (Phase 2)."""
+        try:
+            # Events table - unified event log (replaces activityLogs + timeline + emergencyEvents)
+            await self._db_connection.execute("""
+                CREATE TABLE IF NOT EXISTS events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL,
+                    room_id TEXT,
+                    user_id TEXT,
+                    device_id TEXT,
+                    from_room TEXT,
+                    to_room TEXT,
+                    severity TEXT,
+                    message TEXT,
+                    resolved INTEGER DEFAULT 0,
+                    resolved_at TEXT,
+                    metadata TEXT,
+                    timestamp TEXT NOT NULL,
+                    created_at TEXT
+                )
+            """)
+            
+            # Schedule events table - unified schedule (replaces schedule_items + one_time_events + daily_schedule_clones)
+            await self._db_connection.execute("""
+                CREATE TABLE IF NOT EXISTS schedule_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_type TEXT NOT NULL,
+                    base_schedule_id INTEGER,
+                    date TEXT,
+                    time TEXT NOT NULL,
+                    activity TEXT NOT NULL,
+                    location TEXT,
+                    action TEXT,
+                    is_active INTEGER DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            """)
+            
+            # Care records table - unified care management (replaces routines + doctorNotes)
+            await self._db_connection.execute("""
+                CREATE TABLE IF NOT EXISTS care_records (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    patient_id TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    title TEXT,
+                    content TEXT,
+                    scheduled_time TEXT,
+                    completed INTEGER DEFAULT 0,
+                    doctor_name TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            """)
+            
+            # Notification settings table - unified notifications (replaces notification_preferences + do_not_remind)
+            await self._db_connection.execute("""
+                CREATE TABLE IF NOT EXISTS notification_settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL,
+                    room_id TEXT,
+                    device_id TEXT,
+                    item TEXT,
+                    value INTEGER,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            
+            # Chat sessions table - unified chat (replaces chat_history + conversation_summaries)
+            await self._db_connection.execute("""
+                CREATE TABLE IF NOT EXISTS chat_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id TEXT,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    content_full TEXT,
+                    is_notification INTEGER DEFAULT 0,
+                    is_preference_update INTEGER DEFAULT 0,
+                    tool_result TEXT,
+                    summary_text TEXT,
+                    key_events TEXT,
+                    last_summarized_turn INTEGER DEFAULT 0,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            
+            # User context table - replaces user_info (without current_location - derived from events)
+            await self._db_connection.execute("""
+                CREATE TABLE IF NOT EXISTS user_context (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name_thai TEXT DEFAULT "",
+                    name_english TEXT DEFAULT "",
+                    condition TEXT DEFAULT "",
+                    last_schedule_check_minute TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            """)
+            
+            # Create indexes for unified tables
+            await self._create_unified_indexes()
+            
+            logger.info("Phase 2 unified tables created successfully")
+        except Exception as e:
+            logger.warning(f"Phase 2 unified tables creation warning: {e}")
+    
+    async def _create_unified_indexes(self):
+        """Create indexes for unified tables."""
+        indexes = [
+            "CREATE INDEX IF NOT EXISTS idx_events_type ON events(type)",
+            "CREATE INDEX IF NOT EXISTS idx_events_room_id ON events(room_id)",
+            "CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id)",
+            "CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp)",
+            "CREATE INDEX IF NOT EXISTS idx_events_resolved ON events(resolved)",
+            "CREATE INDEX IF NOT EXISTS idx_schedule_events_type ON schedule_events(event_type)",
+            "CREATE INDEX IF NOT EXISTS idx_schedule_events_date ON schedule_events(date)",
+            "CREATE INDEX IF NOT EXISTS idx_schedule_events_datetime ON schedule_events(date, time)",
+            "CREATE INDEX IF NOT EXISTS idx_care_records_patient_id ON care_records(patient_id)",
+            "CREATE INDEX IF NOT EXISTS idx_care_records_type ON care_records(type)",
+            "CREATE INDEX IF NOT EXISTS idx_notification_settings_type ON notification_settings(type)",
+            "CREATE INDEX IF NOT EXISTS idx_chat_sessions_session_id ON chat_sessions(session_id)",
+            "CREATE INDEX IF NOT EXISTS idx_chat_sessions_created_at ON chat_sessions(created_at)",
+        ]
+        
+        for index_sql in indexes:
+            try:
+                await self._db_connection.execute(index_sql)
+            except Exception as e:
+                logger.debug(f"Index creation warning: {e}")
+    
+    # ==================== Phase 2: Unified Fetch Methods ====================
+    # These methods support both old and new tables during migration
+    
+    async def get_events_unified(
+        self,
+        event_type: Optional[str] = None,
+        room_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        limit: int = 100,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+    ) -> List[Dict]:
+        """
+        Unified event fetch - supports both new events table and legacy tables.
+        During migration, reads from new table first, falls back to old tables if needed.
+        """
+        query = "SELECT * FROM events WHERE 1=1"
+        params = []
+        
+        if event_type:
+            query += " AND type = ?"
+            params.append(event_type)
+        
+        if room_id:
+            query += " AND room_id = ?"
+            params.append(room_id)
+        
+        if user_id:
+            query += " AND user_id = ?"
+            params.append(user_id)
+        
+        if start_date:
+            query += " AND timestamp >= ?"
+            params.append(start_date.isoformat())
+        
+        if end_date:
+            query += " AND timestamp <= ?"
+            params.append(end_date.isoformat())
+        
+        query += " ORDER BY timestamp DESC LIMIT ?"
+        params.append(limit)
+        
+        try:
+            async with self._db_connection.execute(query, params) as cursor:
+                rows = await cursor.fetchall()
+                if rows:
+                    return [self._serialize_doc(row) for row in rows]
+        except Exception as e:
+            logger.debug(f"Could not fetch from events table, falling back to legacy: {e}")
+        
+        # Fallback to legacy tables if new table is empty or fails
+        if event_type == 'activity':
+            return await self.get_activity_logs(room_id=room_id, limit=limit)
+        elif event_type == 'location_change':
+            return await self.get_timeline(user_id=user_id, room_id=room_id, limit=limit)
+        elif event_type == 'emergency':
+            return await self.get_active_emergencies() if not room_id else []
+        
+        return []
+    
+    async def save_event_unified(self, event_data: Dict) -> Dict:
+        """
+        Unified event save - writes to both new events table and legacy tables during migration.
+        """
+        now = datetime.now().isoformat()
+        event_type = event_data.get('type', 'activity')
+        event_id = None
+        
+        # Save to new unified events table
+        try:
+            cursor = await self._db_connection.execute("""
+                INSERT INTO events (
+                    type, room_id, user_id, device_id, from_room, to_room,
+                    severity, message, resolved, resolved_at, metadata, timestamp, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                event_type,
+                event_data.get('room_id'),
+                event_data.get('user_id'),
+                event_data.get('device_id'),
+                event_data.get('from_room'),
+                event_data.get('to_room'),
+                event_data.get('severity'),
+                event_data.get('message'),
+                1 if event_data.get('resolved', False) else 0,
+                event_data.get('resolved_at'),
+                json.dumps(event_data.get('metadata', {})),
+                event_data.get('timestamp', now),
+                now
+            ))
+            event_id = cursor.lastrowid
+            await self._db_connection.commit()
+        except Exception as e:
+            logger.warning(f"Could not save to events table: {e}")
+        
+        # Also save to legacy table for backward compatibility
+        legacy_result = {}
+        if event_type == 'activity':
+            legacy_result = await self.log_activity(
+                room_id=event_data.get('room_id', ''),
+                event_type=event_data.get('event_type', 'activity'),
+                details=event_data.get('metadata', {}),
+                user_id=event_data.get('user_id')
+            ) or {}
+        elif event_type == 'location_change':
+            legacy_result = await self.save_location_event(
+                user_id=event_data.get('user_id', ''),
+                wheelchair_id=event_data.get('metadata', {}).get('wheelchair_id', ''),
+                from_room=event_data.get('from_room'),
+                to_room=event_data.get('to_room', ''),
+                user_name=event_data.get('metadata', {}).get('user_name')
+            ) or {}
+        elif event_type == 'emergency':
+            legacy_result = await self.create_emergency(
+                room_id=event_data.get('room_id', ''),
+                event_type=event_data.get('event_type', 'emergency'),
+                severity=event_data.get('severity', 'medium'),
+                message=event_data.get('message'),
+                user_id=event_data.get('user_id')
+            ) or {}
+        
+        # Return the saved event from new table if available, otherwise legacy
+        if event_id:
+            try:
+                async with self._db_connection.execute(
+                    "SELECT * FROM events WHERE id = ?", (event_id,)
+                ) as result_cursor:
+                    row = await result_cursor.fetchone()
+                    if row:
+                        return self._serialize_doc(row)
+            except Exception as e:
+                logger.debug(f"Could not fetch saved event: {e}")
+        
+        # Return legacy result if new table save failed
+        return legacy_result if legacy_result else {}
+    
+    async def get_device_states_from_view(self) -> Dict[str, Dict[str, bool]]:
+        """
+        Get device states from view (Phase 1) - replaces device_states table.
+        Always up-to-date, no sync needed.
+        """
+        try:
+            async with self._db_connection.execute(
+                "SELECT room, device, state FROM device_states_view"
+            ) as cursor:
+                rows = await cursor.fetchall()
+                result = {}
+                for row in rows:
+                    room = row['room']
+                    device = row['device']
+                    state = bool(row['state'])
+                    if room not in result:
+                        result[room] = {}
+                    result[room][device] = state
+                return result
+        except Exception as e:
+            logger.warning(f"Could not fetch from device_states_view, falling back to table: {e}")
+            # Fallback to old table
+            return await self.get_all_device_states()
+    
     # ==================== Helper Methods ====================
     
     def _generate_id(self) -> str:
@@ -701,20 +1174,24 @@ class Database:
         
         return None
     
-    async def update_room_status(self, device_id: str, status: Dict):
-        """Update room status from device."""
+    async def update_room_status(self, room_type: str, status: Dict):
+        """Update room status by roomType (simple version)."""
+        # Normalize room name to match database format
+        normalized_room = normalize_room_name(room_type)
+        
         await self._db_connection.execute(
             """UPDATE rooms 
                SET isOccupied = ?, lastDetection = ?, lastStatus = ?
-               WHERE deviceId = ?""",
+               WHERE roomType = ? OR id = ?""",
             (
                 1 if status.get("user_detected", False) else 0,
                 datetime.now().isoformat() if status.get("user_detected") else None,
                 json.dumps(status),
-                device_id
+                normalized_room, normalized_room  # Match roomType or id
             )
         )
         await self._db_connection.commit()
+        logger.debug(f"Updated room status for {normalized_room}: isOccupied={1 if status.get('user_detected') else 0}")
     
     async def update_device_status(self, device_id: str, status: Dict):
         """Update or create device status."""
@@ -1141,8 +1618,8 @@ class Database:
         
         logger.info(f"Saved location event: {user_name or user_id} moved from {from_room} to {to_room}")
         
-        # Sync location to user_info (broadcast will be handled by caller if needed)
-        await self.sync_location_to_user_info(to_room)
+        # Note: Location sync to user_info is handled by the caller (e.g., main.py on_wheelchair_detection)
+        # to ensure proper room name normalization (English names like "Living Room" instead of raw types like "livingroom")
         
         # Fetch the created event
         async with self._db_connection.execute(
@@ -1337,11 +1814,11 @@ class Database:
         # Broadcast user_info_update via callback if provided
         if broadcast_callback:
             try:
+                # Send nested format to match API response format
                 await broadcast_callback({
                     "type": "user_info_update",
                     "data": {
-                        "name_thai": user_info.get("name_thai", ""),
-                        "name_english": user_info.get("name_english", ""),
+                        "name": user_info.get("name", {}),  # Send nested format to match API
                         "condition": user_info.get("condition", ""),
                         "current_location": user_info.get("current_location", "")
                     },
@@ -1840,6 +2317,7 @@ class Database:
             result = []
             for row in reversed(rows):  # Chronological order
                 item = {
+                    "id": row.get('id'),  # Include database ID
                     "role": row['role'],
                     "content": row['content'],
                     "is_notification": bool(row['is_notification']),
@@ -1847,9 +2325,9 @@ class Database:
                 }
                 if row.get('session_id'):
                     item["session_id"] = row['session_id']
-                if row['content_full']:
+                if row.get('content_full'):
                     item["content_full"] = row['content_full']
-                if row['tool_result']:
+                if row.get('tool_result'):
                     try:
                         item["tool_result"] = json.loads(row['tool_result'])
                     except (json.JSONDecodeError, TypeError):

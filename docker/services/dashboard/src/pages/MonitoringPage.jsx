@@ -5,40 +5,27 @@ import { Activity, Users, Cpu, AlertTriangle, Accessibility, MapPin } from 'luci
 import * as api from '../services/api';
 
 export function MonitoringPage() {
-    const { wheelchairs, patients, devices, rooms, openDrawer, timeline, wheelchairPositions, language, detectionState, deviceHeartbeats } = useApp();
+    const { wheelchairs, patients, devices, rooms, openDrawer, timeline, wheelchairPositions, detectionState, deviceHeartbeats, userInfo, language } = useApp();
     const [liveStatus, setLiveStatus] = useState({}); // Map of deviceId -> { online: boolean, ... }
 
-    // Compute real-time occupancy from detectionState - use detectionState as primary source
+    // Only show Occupied if this room is the current location
     const isRoomOccupied = (room) => {
-        // Normalize room name: lowercase and remove spaces (e.g., "Living Room" -> "livingroom")
-        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
-
-        // Check detection state first (real-time camera detection)
-        const normalizedNameEn = normalizeRoomName(room.nameEn);
-        const normalizedName = normalizeRoomName(room.name);
-        const detection = detectionState[room.id] ||
-            detectionState[room.roomType?.toLowerCase()] ||
-            detectionState[normalizedNameEn] ||
-            detectionState[normalizedName];
-
-        // If detectionState has this room (even if false), use it as the source of truth
-        // Only fallback to wheelchair positions if detectionState doesn't have this room at all
-        const hasDetectionState = detectionState[room.id] !== undefined ||
-            detectionState[room.roomType?.toLowerCase()] !== undefined ||
-            detectionState[normalizedNameEn] !== undefined ||
-            detectionState[normalizedName] !== undefined;
-
-        if (hasDetectionState) {
-            return detection?.detected === true;
+        // Get current location from database
+        const locationFromDB = userInfo?.current_location || '';
+        if (!locationFromDB) {
+            return false; // No current location = all rooms vacant
         }
-
-        // Fallback: check if any wheelchair is in this room (only if no detectionState exists)
-        return wheelchairs.some(w =>
-            w.room === room.id ||
-            w.room === room.roomType?.toLowerCase() ||
-            w.room === normalizedNameEn ||
-            normalizeRoomName(w.room) === normalizedNameEn
-        );
+        
+        // Check if this room matches the current location
+        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+        const matches = 
+            room.id?.toLowerCase() === locationFromDB.toLowerCase() ||
+            room.roomType?.toLowerCase() === locationFromDB.toLowerCase() ||
+            room.nameEn?.toLowerCase() === locationFromDB.toLowerCase() ||
+            normalizeRoomName(room.nameEn) === normalizeRoomName(locationFromDB) ||
+            room.name?.toLowerCase().includes(locationFromDB.toLowerCase());
+        
+        return matches;
     };
 
     // Check if wheelchair is detected in room (for green border) - SIMPLIFIED: no confidence threshold
@@ -52,7 +39,7 @@ export function MonitoringPage() {
             detectionState[normalizeRoomName(room.name)];
         return detection?.detected === true;
     };
-    const { t } = useTranslation(language);
+    const { t } = useTranslation();
 
     // Fetch live device status periodically (same as DevicesPage)
     useEffect(() => {

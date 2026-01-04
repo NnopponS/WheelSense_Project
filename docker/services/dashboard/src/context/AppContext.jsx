@@ -93,6 +93,45 @@ export function AppProvider({ children }) {
         return () => clearInterval(interval);
     }, []);
 
+    // Load chat history from database on startup and poll for updates
+    useEffect(() => {
+        const loadChatHistory = async () => {
+            try {
+                const result = await api.getChatHistory(50);
+                if (result.messages && result.messages.length > 0) {
+                    // Convert database messages to chat history format
+                    const dbMessages = result.messages.map((msg, idx) => ({
+                        id: msg.id || Date.now() + idx,
+                        role: msg.role,
+                        content: msg.content,
+                        isNotification: msg.isNotification || false
+                    }));
+                    
+                    // Merge with existing chat history, avoiding duplicates
+                    setChatHistory(prev => {
+                        // Keep welcome message if it exists
+                        const welcomeMsg = prev.find(m => m.id === 1 && m.role === 'assistant');
+                        const existingIds = new Set(prev.map(m => m.id));
+                        const newMessages = dbMessages.filter(m => !existingIds.has(m.id));
+                        
+                        // Combine: welcome message (if exists) + database messages
+                        const combined = welcomeMsg ? [welcomeMsg, ...newMessages] : newMessages;
+                        return combined.sort((a, b) => (a.id || 0) - (b.id || 0));
+                    });
+                }
+            } catch (error) {
+                console.error('[AppContext] Failed to load chat history:', error);
+            }
+        };
+        
+        // Load on startup
+        loadChatHistory();
+        
+        // Refresh chat history every 5 seconds to get new notifications
+        const interval = setInterval(loadChatHistory, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
     // Wheelchairs - Loaded from Database
     const [wheelchairs, setWheelchairs] = useState([]);
 
@@ -150,6 +189,56 @@ export function AppProvider({ children }) {
         anomalies: [],
     });
 
+    // Chat History - Shared across all chat interfaces
+    const getWelcomeMessage = (lang) => {
+        if (lang === 'th') {
+            return 'สวัสดี! ฉันคือ WheelSense AI 🤖\nพิมพ์คำสั่งหรือคำถาม!\nหรือกดปุ่มไมโครโฟนเพื่อพูดคุย 🎤';
+        }
+        return 'Hello! I am WheelSense AI 🤖\nType commands or questions!\nOr click the microphone button to chat 🎤';
+    };
+
+    const [chatHistory, setChatHistory] = useState(() => {
+        const initialLang = localStorage.getItem('wheelsense_language') || 'en';
+        return [{ id: 1, role: 'assistant', content: getWelcomeMessage(initialLang === 'th' ? 'th' : 'en') }];
+    });
+
+    // Update welcome message when language changes
+    useEffect(() => {
+        setChatHistory(prev => {
+            // If first message is welcome message, update it
+            if (prev.length > 0 && prev[0].id === 1 && prev[0].role === 'assistant') {
+                return [
+                    { id: 1, role: 'assistant', content: getWelcomeMessage(language) },
+                    ...prev.slice(1)
+                ];
+            }
+            return prev;
+        });
+    }, [language]);
+
+    // Helper function to add chat message with duplicate prevention
+    const addChatMessage = useCallback((message) => {
+        setChatHistory(prev => {
+            // Check if message already exists (avoid duplicates based on content and timing)
+            const exists = prev.some(m => 
+                m.role === message.role && 
+                m.content === message.content &&
+                Math.abs((m.id || 0) - (message.id || 0)) < 5000 // Same message within 5 seconds
+            );
+            if (exists) {
+                console.log('%c⚠️ [AppContext] Duplicate chat message detected, skipping', 'color: #ffa94d;');
+                return prev;
+            }
+            console.log('%c✅ [AppContext] Adding message to chat history', 'color: #51cf66; font-weight: bold;', message.content);
+            return [...prev, { ...message, id: message.id || Date.now() }];
+        });
+    }, []);
+
+    // Helper function to clear chat history (reset to welcome message)
+    const clearChatHistory = useCallback(() => {
+        setChatHistory([{ id: 1, role: 'assistant', content: getWelcomeMessage(language) }]);
+    }, [language]);
+
     // Fetch data from API - Auto-loads all data from database on startup
     // Retries automatically if API returns 503 (backend initializing)
     const fetchData = useCallback(async (retryCount = 0) => {
@@ -161,7 +250,7 @@ export function AppProvider({ children }) {
 
         try {
             // Fetch all data from database
-            const [roomsData, patientsData, devicesData, mapConfig, buildingsData, floorsData, wheelchairsData, appliancesData] = await Promise.all([
+            const [roomsData, patientsData, devicesData, mapConfig, buildingsData, floorsData, wheelchairsData, appliancesData, userInfoData] = await Promise.all([
                 api.getRooms().catch((err) => {
                     // If 503 and haven't exceeded retries, return null to trigger retry
                     if (err.message?.includes('503') || err.message?.includes('Service temporarily unavailable')) {
@@ -188,6 +277,7 @@ export function AppProvider({ children }) {
                     return [];
                 }),
                 api.getAllAppliances().catch(() => ({})),
+                api.getUserInfo().catch(() => null), // Load userInfo from database
             ]);
 
             // Check if critical data (rooms/wheelchairs) failed with 503 and need retry
@@ -230,6 +320,18 @@ export function AppProvider({ children }) {
             if (appliancesData && Object.keys(appliancesData).length > 0) {
                 console.log('[AppContext] Auto-loaded appliances from API:', Object.keys(appliancesData).length, 'rooms');
                 setAppliances(appliancesData);
+            }
+
+            // Update userInfo if API returns data
+            if (userInfoData) {
+                console.log('[AppContext] Auto-loaded userInfo from API:', userInfoData);
+                // Normalize the API response format (nested name object) to flat format used by state
+                setUserInfo({
+                    name_thai: userInfoData.name?.thai || '',
+                    name_english: userInfoData.name?.english || '',
+                    condition: userInfoData.condition || '',
+                    current_location: userInfoData.current_location || ''
+                });
             }
 
             // Update devices if API returns data
@@ -307,6 +409,24 @@ export function AppProvider({ children }) {
             return () => clearInterval(refreshInterval);
         }
     }, [fetchData, rooms.length, wheelchairs.length]);
+
+    // Simple periodic refresh for rooms to see updated isOccupied status
+    useEffect(() => {
+        const refreshRooms = async () => {
+            try {
+                const roomsData = await api.getRooms();
+                if (roomsData && roomsData.length > 0) {
+                    setRooms(roomsData);
+                }
+            } catch (error) {
+                console.error('[AppContext] Failed to refresh rooms:', error);
+            }
+        };
+        
+        // Refresh rooms every 2 seconds to see updated occupancy status
+        const interval = setInterval(refreshRooms, 2000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Periodically fetch live node status to keep device status updated across the app
     useEffect(() => {
@@ -556,6 +676,7 @@ export function AppProvider({ children }) {
                         }
 
                         // Handle appliance state updates from backend (real-time sync)
+                        // Also sync device states since they're the source of truth
                         if (message.type === 'appliance_update') {
                             const { room, appliance, state, value } = message;
                             console.log(`[AppContext] 🔌 Appliance update received: ${room}/${appliance} = ${state}`);
@@ -589,19 +710,44 @@ export function AppProvider({ children }) {
                                     [roomKey]: updatedAppliances
                                 };
                             });
+                            
+                            // Also update device states (source of truth)
+                            // Refresh from database to ensure consistency
+                            setTimeout(async () => {
+                                try {
+                                    const response = await api.getAllDeviceStates();
+                                    if (response && response.device_states) {
+                                        setDeviceStates(response.device_states);
+                                    }
+                                } catch (error) {
+                                    console.debug('[AppContext] Failed to refresh device states after appliance update:', error);
+                                }
+                            }, 100);
                         }
 
                         // Handle user_info_update
                         if (message.type === 'user_info_update') {
                             const { data } = message;
                             console.log('[AppContext] 👤 User info update received:', data);
-                            setUserInfo(prev => ({ ...prev, ...data }));
+                            
+                            // Normalize: handle both API format (nested name) and WebSocket format (flat)
+                            const normalizedData = {
+                                name_thai: data.name_thai || data.name?.thai || '',
+                                name_english: data.name_english || data.name?.english || '',
+                                condition: data.condition || '',
+                                current_location: data.current_location || ''
+                            };
+                            
+                            setUserInfo(prev => ({ ...prev, ...normalizedData }));
                         }
 
                         // Handle device_state_update
+                        // Refresh from database to ensure consistency (database is source of truth)
                         if (message.type === 'device_state_update') {
                             const { room, device, state } = message;
                             console.log(`[AppContext] 🔌 Device state update received: ${room}/${device} = ${state}`);
+                            
+                            // Update local state immediately for fast UI response
                             setDeviceStates(prev => ({
                                 ...prev,
                                 [room]: {
@@ -609,6 +755,19 @@ export function AppProvider({ children }) {
                                     [device]: state
                                 }
                             }));
+                            
+                            // Also refresh from database to ensure consistency
+                            // This ensures we always have the latest state from the source of truth
+                            setTimeout(async () => {
+                                try {
+                                    const response = await api.getAllDeviceStates();
+                                    if (response && response.device_states) {
+                                        setDeviceStates(response.device_states);
+                                    }
+                                } catch (error) {
+                                    console.debug('[AppContext] Failed to refresh device states after update:', error);
+                                }
+                            }, 100); // Small delay to let database commit
                         }
 
                         // Handle schedule_item_update
@@ -642,55 +801,38 @@ export function AppProvider({ children }) {
                             }
                         }
 
-                        // Handle schedule_notification
-                        if (message.type === 'schedule_notification') {
-                            // VERY VISIBLE LOG - Easy to spot in console
-                            console.log('%c🔔🔔🔔 SCHEDULE NOTIFICATION RECEIVED 🔔🔔🔔', 'color: #ff6b6b; font-size: 16px; font-weight: bold; background: #fff3cd; padding: 4px;');
-                            console.log('[AppContext] 🔔 Schedule notification received:', message);
-                            // #region agent log
-                            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:641', message: 'schedule_notification handler entered', data: message, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D'})}).catch(()=>{});
-                            // #endregion
+                        // Handle house_check_notification (immediate WebSocket delivery)
+                        if (message.type === 'house_check_notification') {
+                            const { message: notificationMessage, content, data } = message;
+                            console.log('[AppContext] 🔔 House check notification received:', notificationMessage);
                             
-                            const { time, activity, location, action: scheduleAction, message: notificationMessage } = message;
+                            // Add notification to chat history immediately (without waiting for database poll)
+                            const notificationEntry = {
+                                id: Date.now(),
+                                role: 'assistant',
+                                content: content || `🔔 ${notificationMessage}`,
+                                isNotification: true,
+                                devices: data?.devices || []
+                            };
                             
-                            addNotification({
-                                type: 'info',
-                                title: `Schedule: ${activity}`,
-                                message: `Time: ${time}${location ? ` | Location: ${location}` : ''}`
-                            });
-                            
-                            // Also send to chat interface if callback is registered
-                            // #region agent log
-                            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:655', message: 'Checking callback ref', data: {callback_exists: !!chatMessageCallbackRef.current}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
-                            // #endregion
-                            if (chatMessageCallbackRef.current) {
-                                try {
-                                    const chatMessage = {
-                                        id: Date.now(),
-                                        role: 'assistant',
-                                        content: `🔔 ${notificationMessage || `It's time to: ${activity}`}`,
-                                        isNotification: true
-                                    };
-                                    console.log('%c✅ SENDING TO CHAT CALLBACK', 'color: #51cf66; font-size: 14px; font-weight: bold;');
-                                    console.log('[AppContext] Calling chat callback with message:', chatMessage);
-                                    // #region agent log
-                                    fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:665', message: 'Calling chat callback', data: chatMessage, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
-                                    // #endregion
-                                    chatMessageCallbackRef.current(chatMessage);
-                                    console.log('%c✅ SUCCESS: Sent schedule notification to chat interface', 'color: #51cf66; font-weight: bold;');
-                                } catch (error) {
-                                    console.error('%c❌ ERROR SENDING TO CHAT', 'color: #ff6b6b; font-size: 14px; font-weight: bold;', error);
-                                    // #region agent log
-                                    fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:668', message: 'Callback error', data: {error: String(error)}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
-                                    // #endregion
+                            setChatHistory(prev => {
+                                // Check if notification already exists (avoid duplicates)
+                                const exists = prev.some(m => 
+                                    m.isNotification && 
+                                    m.content === notificationEntry.content &&
+                                    Math.abs((m.id || 0) - notificationEntry.id) < 1000 // Within 1 second
+                                );
+                                if (exists) {
+                                    console.log('[AppContext] Notification already exists, skipping duplicate');
+                                    return prev;
                                 }
-                            } else {
-                                console.warn('%c⚠️ CHAT CALLBACK NOT REGISTERED', 'color: #ffa94d; font-size: 14px; font-weight: bold;');
-                                // #region agent log
-                                fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:671', message: 'Callback not registered', data: {}, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E'})}).catch(()=>{});
-                                // #endregion
-                            }
+                                return [...prev, notificationEntry];
+                            });
                         }
+                        
+                        // Note: schedule_notification is still handled via database polling
+                        // House check notifications now use WebSocket for immediate delivery (above)
+                        // Database polling continues as fallback for both types
 
                     } catch (e) {
                         console.error('[AppContext] WebSocket message parse error:', e);
@@ -698,18 +840,21 @@ export function AppProvider({ children }) {
                 };
 
                 ws.onerror = (error) => {
-                    console.error('[AppContext] WebSocket error:', error);
+                    // WebSocket is optional - log silently, don't show errors to user
+                    console.debug('[AppContext] WebSocket error (optional):', error);
                 };
 
                 ws.onclose = () => {
-                    console.log('[AppContext] WebSocket disconnected, reconnecting in 5s...');
-                    // Reconnect after 5 seconds
+                    // WebSocket is optional - disconnect silently, system works via REST polling
+                    console.debug('[AppContext] WebSocket disconnected (optional, will reconnect silently)');
+                    // Reconnect after 5 seconds (silent reconnection)
                     reconnectTimeout = setTimeout(connectWebSocket, 5000);
                 };
 
             } catch (error) {
-                console.error('[AppContext] Failed to connect WebSocket:', error);
-                // Retry after 5 seconds
+                // WebSocket is optional - log silently, system works via REST polling
+                console.debug('[AppContext] Failed to connect WebSocket (optional):', error);
+                // Retry after 5 seconds (silent retry)
                 reconnectTimeout = setTimeout(connectWebSocket, 5000);
             }
         };
@@ -725,6 +870,116 @@ export function AppProvider({ children }) {
             }
         };
     }, []); // Empty dependency array - WebSocket connects once and uses refs for current state
+
+    // REST polling for wheelchair detection (fallback when WebSocket unavailable)
+    useEffect(() => {
+        const pollWheelchairPositions = async () => {
+            try {
+                const positions = await api.getWheelchairPositions();
+                if (positions && positions.positions) {
+                    // Update detection state based on wheelchair positions
+                    // Find which room has a wheelchair
+                    const roomsWithWheelchairs = new Set();
+                    Object.values(positions.positions).forEach(pos => {
+                        if (pos && pos.room) {
+                            roomsWithWheelchairs.add(pos.room.toLowerCase().replace(/\s+/g, ''));
+                        }
+                    });
+
+                    // Update detection state: detected=true for rooms with wheelchairs, false for others
+                    setDetectionState(prev => {
+                        const newState = { ...prev };
+                        // Clear all rooms first
+                        Object.keys(newState).forEach(room => {
+                            newState[room] = { ...newState[room], detected: false };
+                        });
+                        // Set detected=true for rooms with wheelchairs
+                        roomsWithWheelchairs.forEach(room => {
+                            newState[room] = {
+                                detected: true,
+                                confidence: 1.0,
+                                timestamp: new Date().toISOString(),
+                                device_id: 'rest-poll'
+                            };
+                        });
+                        return newState;
+                    });
+                }
+            } catch (error) {
+                // Silent error - polling is fallback only
+                console.debug('[AppContext] Failed to poll wheelchair positions:', error);
+            }
+        };
+
+        // Poll every 3 seconds (less frequent than WebSocket, but ensures updates)
+        pollWheelchairPositions();
+        const interval = setInterval(pollWheelchairPositions, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // REST polling for schedule items (fallback when WebSocket unavailable)
+    useEffect(() => {
+        const pollScheduleItems = async () => {
+            try {
+                const response = await api.getScheduleItems();
+                if (response && response.schedule_items) {
+                    setScheduleItems(response.schedule_items || []);
+                }
+            } catch (error) {
+                // Silent error - polling is fallback only
+                console.debug('[AppContext] Failed to poll schedule items:', error);
+            }
+        };
+
+        // Poll every 10 seconds (schedule changes are infrequent)
+        pollScheduleItems();
+        const interval = setInterval(pollScheduleItems, 10000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // REST polling for appliances (fallback when WebSocket unavailable)
+    // This also refetches after control actions
+    useEffect(() => {
+        const pollAppliances = async () => {
+            try {
+                const allAppliances = await api.getAllAppliances();
+                if (allAppliances) {
+                    setAppliances(allAppliances);
+                }
+            } catch (error) {
+                // Silent error - polling is fallback only
+                console.debug('[AppContext] Failed to poll appliances:', error);
+            }
+        };
+
+        // Poll every 5 seconds (appliance state changes are moderate frequency)
+        pollAppliances();
+        const interval = setInterval(pollAppliances, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Load device states from database on startup and poll for updates
+    // Device states are the single source of truth (from device_states table)
+    useEffect(() => {
+        const loadDeviceStates = async () => {
+            try {
+                const response = await api.getAllDeviceStates();
+                if (response && response.device_states) {
+                    console.log('[AppContext] Loaded device states from database:', response.device_states);
+                    setDeviceStates(response.device_states);
+                }
+            } catch (error) {
+                console.error('[AppContext] Failed to load device states:', error);
+            }
+        };
+
+        // Load on startup
+        loadDeviceStates();
+
+        // Poll every 3 seconds (device states are critical for UI)
+        const interval = setInterval(loadDeviceStates, 3000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Theme effect
     useEffect(() => {
@@ -849,6 +1104,16 @@ export function AppProvider({ children }) {
         try {
             console.log(`[toggleAppliance] Sending MQTT: room=${roomKey}, appliance=${appliance.type}, state=${newState}`);
             await api.controlAppliance(roomKey, appliance.type, newState);
+            
+            // Refetch appliances immediately after control (REST fallback if WebSocket unavailable)
+            try {
+                const allAppliances = await api.getAllAppliances();
+                if (allAppliances) {
+                    setAppliances(allAppliances);
+                }
+            } catch (refetchErr) {
+                console.debug('[AppContext] Failed to refetch appliances after control:', refetchErr);
+            }
         } catch (err) {
             console.error('Failed to control appliance via MQTT:', err);
         }
@@ -903,6 +1168,16 @@ export function AppProvider({ children }) {
             // The backend will forward it correctly
             console.log(`[setApplianceValue] Sending MQTT: room=${roomKey}, appliance=${appliance.type}, ${key}=${value}`);
             await api.controlAppliance(roomKey, appliance.type, true, value);
+            
+            // Refetch appliances immediately after control (REST fallback if WebSocket unavailable)
+            try {
+                const allAppliances = await api.getAllAppliances();
+                if (allAppliances) {
+                    setAppliances(allAppliances);
+                }
+            } catch (refetchErr) {
+                console.debug('[AppContext] Failed to refetch appliances after control:', refetchErr);
+            }
         } catch (err) {
             console.error('Failed to set appliance value via MQTT:', err);
         }
@@ -990,16 +1265,24 @@ export function AppProvider({ children }) {
         }
     };
 
-    // Function to register chat message callback
+    // Function to register chat message callback (backward compatibility)
+    // Now internally uses addChatMessage
     const registerChatMessageCallback = useCallback((callback) => {
-        console.log('[AppContext] Registering chat message callback');
-        chatMessageCallbackRef.current = callback;
+        console.log('[AppContext] Registering chat message callback (using addChatMessage internally)');
+        chatMessageCallbackRef.current = (message) => {
+            // Call the original callback if provided
+            if (callback) {
+                callback(message);
+            }
+            // Also add to chatHistory
+            addChatMessage(message);
+        };
         // Return cleanup function
         return () => {
             console.log('[AppContext] Unregistering chat message callback');
             chatMessageCallbackRef.current = null;
         };
-    }, []);
+    }, [addChatMessage]);
 
     const value = {
         language, setLanguage: setLanguageWithLog,
@@ -1034,6 +1317,7 @@ export function AppProvider({ children }) {
         aiAnalysis, setAiAnalysis,
         customTime, setCustomTime, getCurrentTime,
         registerChatMessageCallback,
+        chatHistory, addChatMessage, clearChatHistory, setChatHistory,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

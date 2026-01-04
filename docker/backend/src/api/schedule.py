@@ -59,7 +59,7 @@ async def create_schedule_item(item: ScheduleItemCreate, request: Request):
         
         item_id = await db.add_schedule_item(item_dict)
         
-        # Broadcast schedule_item_update via WebSocket
+        # Broadcast schedule_item_update via WebSocket (OPTIONAL - database already updated)
         try:
             await mqtt_handler._broadcast_ws({
                 "type": "schedule_item_update",
@@ -69,7 +69,7 @@ async def create_schedule_item(item: ScheduleItemCreate, request: Request):
                 "timestamp": datetime.now().isoformat()
             })
         except Exception as e:
-            logger.warning(f"Failed to broadcast schedule_item_update: {e}")
+            logger.debug(f"WebSocket broadcast failed (optional): {e}")
         
         return {"status": "created", "id": item_id, "item": item_dict}
     except Exception as e:
@@ -107,7 +107,7 @@ async def update_schedule_item(item_id: int, update: ScheduleItemUpdate, request
         all_items[item_id - 1] = update_dict
         await db.set_schedule_items(all_items)
         
-        # Broadcast schedule_item_update via WebSocket
+        # Broadcast schedule_item_update via WebSocket (OPTIONAL - database already updated)
         try:
             await mqtt_handler._broadcast_ws({
                 "type": "schedule_item_update",
@@ -117,7 +117,7 @@ async def update_schedule_item(item_id: int, update: ScheduleItemUpdate, request
                 "timestamp": datetime.now().isoformat()
             })
         except Exception as e:
-            logger.warning(f"Failed to broadcast schedule_item_update: {e}")
+            logger.debug(f"WebSocket broadcast failed (optional): {e}")
         
         return {"status": "updated", "item": update_dict}
     except HTTPException:
@@ -145,7 +145,7 @@ async def delete_schedule_item(item_id: int, request: Request):
         if not success:
             raise HTTPException(status_code=404, detail="Schedule item not found")
         
-        # Broadcast schedule_item_update via WebSocket
+        # Broadcast schedule_item_update via WebSocket (OPTIONAL - database already updated)
         try:
             await mqtt_handler._broadcast_ws({
                 "type": "schedule_item_update",
@@ -155,7 +155,7 @@ async def delete_schedule_item(item_id: int, request: Request):
                 "timestamp": datetime.now().isoformat()
             })
         except Exception as e:
-            logger.warning(f"Failed to broadcast schedule_item_update: {e}")
+            logger.debug(f"WebSocket broadcast failed (optional): {e}")
         
         return {"status": "deleted", "item_id": item_id}
     except HTTPException:
@@ -190,7 +190,20 @@ async def reset_schedule(request: Request):
             schedule_checker.sent_notifications.clear()
             logger.info("Cleared schedule checker sent_notifications cache on schedule reset")
         
-        # Broadcast schedule reset via WebSocket (broadcast all items as refresh)
+        # Clear chat history and restore initial greeting
+        chat_deleted_count = await db.clear_chat_history()
+        logger.info(f"Cleared {chat_deleted_count} chat history message(s) on schedule reset")
+        
+        # Insert initial greeting message
+        initial_greeting = {
+            "role": "assistant",
+            "content": "Hello! I am WheelSense AI 🤖\nType commands or questions!\nOr click the microphone button to chat 🎤",
+            "session_id": None
+        }
+        await db.save_chat_message(initial_greeting)
+        logger.info("Restored initial greeting message to chat history")
+        
+        # Broadcast schedule reset via WebSocket (OPTIONAL - database already updated)
         try:
             # Broadcast a refresh event that tells UI to reload all schedule items
             await mqtt_handler._broadcast_ws({
@@ -201,13 +214,15 @@ async def reset_schedule(request: Request):
                 "timestamp": datetime.now().isoformat()
             })
         except Exception as e:
-            logger.warning(f"Failed to broadcast schedule reset: {e}")
+            logger.debug(f"WebSocket broadcast failed (optional): {e}")
         
         return {
             "status": "reset",
             "one_time_events_cleared": deleted_count,
             "clone_reset": True,
-            "date": today
+            "date": today,
+            "chat_history_cleared": chat_deleted_count,
+            "initial_greeting_restored": True
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reset schedule: {str(e)}")

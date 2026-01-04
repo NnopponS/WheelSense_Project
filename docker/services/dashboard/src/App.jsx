@@ -137,14 +137,9 @@ function RouteSynchronizer() {
 }
 
 function AppContent() {
-    const { role, emergencies, language } = useApp();
+    const { role, emergencies } = useApp();
 
     const hasActiveEmergency = emergencies.some(e => !e.resolved);
-
-    // Log language changes (static translations, no preload needed)
-    useEffect(() => {
-        console.log('[AppContent] Language:', language, '(using static translations)');
-    }, [language]);
 
     return (
         <div className="app-container">

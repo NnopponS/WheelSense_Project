@@ -37,10 +37,22 @@ async def create_emergency(alert: EmergencyAlert, request: Request):
 
 @router.get("/emergency/active")
 async def get_active_emergencies(request: Request):
-    """Get all active emergency events."""
+    """Get all active emergency events. Uses unified events table."""
     db = get_db(request)
     
-    events = await db.get_active_emergencies()
+    # Use unified events table (Phase 2 migration)
+    events = await db.get_events_unified(
+        event_type='emergency',
+        limit=1000
+    )
+    
+    # Filter to only unresolved emergencies
+    events = [e for e in events if not e.get('resolved', False)]
+    
+    # Fallback to legacy method if unified returns empty
+    if not events:
+        events = await db.get_active_emergencies()
+    
     return {"emergencies": events}
 
 

@@ -179,16 +179,7 @@ export async function checkMCPHealth() {
 
 // ==================== Translation ====================
 
-export async function translateText(text, fromLang = 'en', toLang = 'th') {
-    return fetchAPI('/translate', {
-        method: 'POST',
-        body: JSON.stringify({
-            text,
-            from_lang: fromLang,
-            to_lang: toLang,
-        }),
-    });
-}
+// Translation removed - English only mode
 
 // ==================== Rooms ====================
 
@@ -547,6 +538,14 @@ export async function clearChatContext(sessionId) {
             session_id: sessionId
         }),
     });
+}
+
+export async function getChatHistory(limit = 50, sessionId = null) {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (sessionId) {
+        params.append('session_id', sessionId);
+    }
+    return fetchAPI(`/api/chat/history?${params.toString()}`);
 }
 
 export async function getMCPTools() {
@@ -1267,12 +1266,11 @@ export default {
     getTimelineSummary,
     saveLocationEvent,
 
-    // Translation
-    translateText,
 
     // AI/MCP
     chat,
     clearChatContext,
+    getChatHistory,
     getMCPTools,
     callMCPTool,
     analyzeBehavior,

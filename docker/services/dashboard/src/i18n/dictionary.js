@@ -1,10 +1,10 @@
 /**
  * Static Translation Dictionary
  * Fixed translations for UI strings - no dynamic API calls needed
- * Only use for strings that should be shown in Thai when Thai language is selected
+ * English-only mode - translations removed
  */
 
-// Thai translations dictionary
+// Thai translations dictionary (removed - English only)
 export const thaiTranslations = {
     // Navigation - Sidebar sections
     'Main': 'หลัก',

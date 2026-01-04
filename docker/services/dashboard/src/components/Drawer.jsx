@@ -5,8 +5,8 @@ import { X, Accessibility, MapPin, Clock, Activity, Lightbulb, Thermometer, Tv, 
 import { getStreamUrlInfo } from '../services/api';
 
 export function Drawer() {
-    const { drawerOpen, drawerContent, closeDrawer, rooms, appliances, toggleAppliance, patients, wheelchairs, language, detectionState, devices } = useApp();
-    const { t } = useTranslation(language);
+    const { drawerOpen, drawerContent, closeDrawer, rooms, appliances, toggleAppliance, patients, wheelchairs, detectionState, devices, userInfo, deviceStates } = useApp();
+    const { t } = useTranslation();
     const [videoSrc, setVideoSrc] = useState('');
     const [streamMode, setStreamMode] = useState('loading'); // 'loading', 'websocket', 'offline'
     const [rotation, setRotation] = useState(0);
@@ -230,12 +230,25 @@ export function Drawer() {
                     )}
 
                     {/* Room Detail with Appliance Control */}
-                    {type === 'room' && (
+                    {type === 'room' && (() => {
+                        // Compute occupied status based on current location
+                        const locationFromDB = userInfo?.current_location || '';
+                        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+                        const isCurrentLocation = locationFromDB && (
+                            data.id?.toLowerCase() === locationFromDB.toLowerCase() ||
+                            data.roomType?.toLowerCase() === locationFromDB.toLowerCase() ||
+                            data.nameEn?.toLowerCase() === locationFromDB.toLowerCase() ||
+                            normalizeRoomName(data.nameEn) === normalizeRoomName(locationFromDB) ||
+                            data.name?.toLowerCase().includes(locationFromDB.toLowerCase())
+                        );
+                        const occupied = isCurrentLocation;
+                        
+                        return (
                         <div style={{ padding: '1.5rem' }}>
                             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                                 <div style={{
                                     width: 80, height: 80,
-                                    background: data.occupied ? 'linear-gradient(135deg, var(--success-500), var(--success-600))' : 'var(--gray-600)',
+                                    background: occupied ? 'linear-gradient(135deg, var(--success-500), var(--success-600))' : 'var(--gray-600)',
                                     borderRadius: '1rem', margin: '0 auto 1rem',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     fontSize: '2rem'
@@ -244,8 +257,8 @@ export function Drawer() {
                                 </div>
                                 <h3>{data.nameEn || data.name}</h3>
                                 <p style={{ color: 'var(--dark-text-muted)' }}>{data.nameEn || data.name}</p>
-                                <span className={`list-item-badge ${data.occupied ? 'normal' : 'offline'}`}>
-                                    {data.occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}
+                                <span className={`list-item-badge ${occupied ? 'normal' : 'offline'}`}>
+                                    {occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}
                                 </span>
                             </div>
 
@@ -404,15 +417,27 @@ export function Drawer() {
                                                     }
                                                 }
 
+                                                // Get device state from database (source of truth)
+                                                // Try multiple room name formats to match deviceStates
+                                                const normalizedRoom = roomKey.toLowerCase().replace(/\s+/g, '');
+                                                const deviceState = deviceStates[normalizedRoom]?.[app.type] ?? 
+                                                                   deviceStates[roomKey]?.[app.type] ?? 
+                                                                   deviceStates[data.roomType?.toLowerCase()]?.[app.type] ??
+                                                                   deviceStates[data.nameEn?.toLowerCase()]?.[app.type] ??
+                                                                   app.state; // Fallback to appliance state if deviceStates not available
+                                                
+                                                // Use device state from database as source of truth
+                                                const isOn = deviceState === true || deviceState === 1;
+
                                                 return (
                                                     <div
                                                         key={app.id}
-                                                        className={`device-card ${app.state ? 'active' : ''}`}
+                                                        className={`device-card ${isOn ? 'active' : ''}`}
                                                         onClick={() => toggleAppliance(roomKey, app.id)}
                                                     >
                                                         <div className="device-icon"><Icon size={24} /></div>
                                                         <div className="device-name">{app.name || (app.type === 'AC' ? 'AC' : app.type)}</div>
-                                                        <div className="device-status">{app.state ? t('On') : t('Off')}</div>
+                                                        <div className="device-status">{isOn ? t('On') : t('Off')}</div>
                                                     </div>
                                                 );
                                             });
@@ -455,7 +480,8 @@ export function Drawer() {
                                 </div>
                             </div>
                         </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Patient Edit Form */}
                     {type === 'patient-edit' && (

@@ -14,12 +14,12 @@ export function TopBar() {
         markAllNotificationsRead, showNotifications, setShowNotifications,
         theme, toggleTheme, role,
         patients, wheelchairs, rooms, setCurrentPage, openDrawer,
-        language, setLanguage,
         getCurrentTime,
         customTime,
-        setCustomTime
+        setCustomTime,
+        language
     } = useApp();
-    const { t } = useTranslation(language);
+    const { t } = useTranslation();
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [timeInput, setTimeInput] = useState('');
@@ -52,7 +52,7 @@ export function TopBar() {
                 timeToDisplay = new Date();
             }
             
-            setDisplayTime(timeToDisplay.toLocaleTimeString(language === 'th' ? 'th-TH' : 'en-US', {
+            setDisplayTime(timeToDisplay.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
@@ -177,7 +177,7 @@ export function TopBar() {
         if (mins < 60) return `${mins} ${t('minutes ago')}`;
         const hours = Math.floor(mins / 60);
         if (hours < 24) return `${hours} ${t('hours ago')}`;
-        return new Date(date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US');
+        return new Date(date).toLocaleDateString('en-US');
     };
 
     const getNotificationIcon = (type) => {
@@ -508,50 +508,6 @@ export function TopBar() {
                         )}
                     </>
                 )}
-
-                {/* Language Toggle */}
-                <div className="language-toggle" style={{ display: 'flex', gap: '0.25rem', marginRight: '0.5rem' }}>
-                    <button
-                        className={language === 'th' ? 'active' : ''}
-                        onClick={() => {
-                            console.log('[TopBar] TH button clicked, current language:', language);
-                            setLanguage('th');
-                        }}
-                        style={{
-                            padding: '0.375rem 0.75rem',
-                            background: language === 'th' ? 'var(--primary-500)' : 'var(--bg-tertiary)',
-                            color: language === 'th' ? 'white' : 'var(--text-primary)',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: 'var(--radius-sm)',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem',
-                            fontWeight: language === 'th' ? 600 : 400,
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        TH
-                    </button>
-                    <button
-                        className={language === 'en' ? 'active' : ''}
-                        onClick={() => {
-                            console.log('[TopBar] EN button clicked, current language:', language);
-                            setLanguage('en');
-                        }}
-                        style={{
-                            padding: '0.375rem 0.75rem',
-                            background: language === 'en' ? 'var(--primary-500)' : 'var(--bg-tertiary)',
-                            color: language === 'en' ? 'white' : 'var(--text-primary)',
-                            border: '1px solid var(--border-color)',
-                            borderRadius: 'var(--radius-sm)',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem',
-                            fontWeight: language === 'en' ? 600 : 400,
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        EN
-                    </button>
-                </div>
 
                 {/* Theme Toggle */}
                 <div className="theme-toggle">

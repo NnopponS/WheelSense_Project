@@ -5,11 +5,8 @@ import { Bot, Send, Maximize2, Minimize2 } from 'lucide-react';
 import * as api from '../services/api';
 
 export function AIAssistantPage() {
-    const { rooms, appliances, toggleAppliance, patients, language } = useApp();
-    const { t } = useTranslation(language);
-    const [messages, setMessages] = useState([
-        { id: 1, role: 'assistant', content: 'Hello! I\'m WheelSense AI Assistant, ready to help 🤖\n\nYou can ask about:\n• Patient and Wheelchair status\n• Control appliances\n• View activity history\n• Get health recommendations\n\nFeel free to ask me anything!' }
-    ]);
+    const { rooms, appliances, toggleAppliance, patients, chatHistory, addChatMessage } = useApp();
+    const { t } = useTranslation();
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -21,14 +18,14 @@ export function AIAssistantPage() {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [chatHistory]);
 
     const handleSend = async () => {
         const messageText = input;
         if (!messageText.trim() || isLoading) return;
 
         const userMessage = { id: Date.now(), role: 'user', content: messageText };
-        setMessages(prev => [...prev, userMessage]);
+        addChatMessage(userMessage);
         setInput('');
         setIsLoading(true);
 
@@ -62,7 +59,7 @@ export function AIAssistantPage() {
                 content: responseText,
                 toolResults: response.tool_results || []
             };
-            setMessages(prev => [...prev, assistantMessage]);
+            addChatMessage(assistantMessage);
         } catch (error) {
             console.error('Chat error:', error);
 
@@ -93,10 +90,7 @@ export function AIAssistantPage() {
                     `Please try again or contact the system administrator.`;
             }
 
-            setMessages(prev => [
-                ...prev,
-                { id: Date.now() + 1, role: 'assistant', content: responseContent }
-            ]);
+            addChatMessage({ id: Date.now() + 1, role: 'assistant', content: responseContent });
         } finally {
             setIsLoading(false);
         }
@@ -159,7 +153,7 @@ export function AIAssistantPage() {
                     </div>
 
                     <div className="chat-messages" style={{ flex: 1, overflowY: 'auto' }}>
-                        {messages.map(msg => (
+                        {chatHistory.map(msg => (
                             <div key={msg.id} className={`chat-message ${msg.role}`}>
                                 <div className={`chat-avatar ${msg.role}`}>
                                     {msg.role === 'assistant' ? <Bot size={18} /> : <span>👤</span>}

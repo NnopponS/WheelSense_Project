@@ -27,9 +27,9 @@ export function MapPage() {
         floors, setFloors,
         selectedBuilding, setSelectedBuilding,
         selectedFloor, setSelectedFloor,
-        language, role
+        role
     } = useApp();
-    const { t } = useTranslation(language);
+    const { t } = useTranslation();
 
     // UI States
     const [loading, setLoading] = useState(true);

@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 
 export function SettingsPage() {
-    const { role, theme, toggleTheme, currentUser, compactMode, setCompactMode, language, setLanguage } = useApp();
-    const { t } = useTranslation(language);
+    const { role, theme, toggleTheme, currentUser, compactMode, setCompactMode, language } = useApp();
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState(role === 'user' ? 'profile' : 'general');
     const [saved, setSaved] = useState(false);
     const [loading, setLoading] = useState({});
@@ -520,26 +520,6 @@ export function SettingsPage() {
                                 <span className="card-title"><Settings size={18} /> General Settings</span>
                             </div>
                             <div className="card-body">
-                                <div className="form-group">
-                                    <label className="form-label"><Globe size={14} /> Language</label>
-                                    <select
-                                        className="form-input"
-                                        value={language}
-                                        onChange={(e) => {
-                                            const newLang = e.target.value;
-                                            setLanguage(newLang);
-                                            setSettings(prev => ({ ...prev, language: newLang }));
-                                        }}
-                                        style={{ maxWidth: '200px' }}
-                                    >
-                                        <option value="th">Thai 🇹🇭</option>
-                                        <option value="en">English 🇬🇧</option>
-                                    </select>
-                                    <p className="form-hint">
-                                        {language === 'th' ? 'TH mode: Thai translations are active' : 'EN mode: English mode'}
-                                    </p>
-                                </div>
-
                                 <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '1.5rem 0' }} />
 
                                 <div className="form-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

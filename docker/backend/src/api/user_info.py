@@ -13,8 +13,7 @@ router = APIRouter(prefix="/api", tags=["User Info"])
 
 
 class UserInfoUpdate(BaseModel):
-    name_thai: Optional[str] = None
-    name_english: Optional[str] = None
+    name: Optional[str] = None
     condition: Optional[str] = None
     current_location: Optional[str] = None
 
@@ -38,11 +37,8 @@ async def update_user_info(update: UserInfoUpdate, request: Request):
     mqtt_handler = get_mqtt_handler(request)
     
     try:
-        if update.name_thai is not None or update.name_english is not None:
-            await db.set_user_name(
-                thai=update.name_thai or "",
-                english=update.name_english or ""
-            )
+        if update.name is not None:
+            await db.set_user_name(name=update.name or "")
         
         if update.condition is not None:
             await db.set_user_condition(update.condition)
@@ -58,8 +54,7 @@ async def update_user_info(update: UserInfoUpdate, request: Request):
             await mqtt_handler._broadcast_ws({
                 "type": "user_info_update",
                 "data": {
-                    "name_thai": user_info.get("name_thai", ""),
-                    "name_english": user_info.get("name_english", ""),
+                    "name": user_info.get("name", ""),
                     "condition": user_info.get("condition", ""),
                     "current_location": user_info.get("current_location", "")
                 },

@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 
 export function AnalyticsPage() {
-    const { patients, wheelchairs, devices, timeline, emergencies, aiAnalysis, language } = useApp();
-    const { t } = useTranslation(language);
+    const { patients, wheelchairs, devices, timeline, emergencies, aiAnalysis } = useApp();
+    const { t } = useTranslation();
     const [dateRange, setDateRange] = useState('today');
 
     // Calculate statistics

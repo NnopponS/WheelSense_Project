@@ -3,7 +3,7 @@ Chat API - LLM chat endpoint for Phase 4A.
 Handles user messages, assembles context, calls LLM, and returns responses.
 """
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Query
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Any
 from datetime import datetime
@@ -11,6 +11,8 @@ import logging
 import json
 import uuid
 import time
+import re
+import hashlib
 
 from ..dependencies import get_db
 from ..services.llm_client import LLMClient
@@ -47,6 +49,7 @@ class ChatResponse(BaseModel):
 def _build_system_prompt(tool_registry) -> str:
     """
     Build system prompt with tool definitions.
+    Matches mcp_llm-wheelsense comprehensive prompt structure.
     
     Args:
         tool_registry: ToolRegistry instance
@@ -54,14 +57,7 @@ def _build_system_prompt(tool_registry) -> str:
     Returns:
         System prompt string
     """
-    base_prompt = """You are WheelSense, a helpful smart home assistant for wheelchair users.
-
-You can:
-- Answer questions about the user's current location and device states
-- Provide information about upcoming schedule items
-- Control devices (turn ON/OFF)
-- Modify schedules (add, delete, change activities)
-- Offer general assistance and conversation
+    base_prompt = """Smart environment assistant for elderly/disabled users. Control devices, manage schedules, answer questions.
 
 OUTPUT FORMAT (CRITICAL):
 - ALWAYS respond with valid JSON array: [{"tool": "...", "arguments": {...}}]
@@ -71,6 +67,30 @@ OUTPUT FORMAT (CRITICAL):
 - CORRECT (raw JSON): [{"tool": "chat_message", "arguments": {"message": "Hello"}}]
 - NEVER output plain text, explanations, or raw JSON tool calls
 - CRITICAL: For ANY device control action, you MUST call e_device_control tool. NEVER use chat_message to claim you turned something on/off without actually calling the tool.
+
+RAG/HEALTH:
+- If "HEALTH KNOWLEDGE CONTEXT" appears, use it directly. DO NOT ask for clarification. NEVER diagnose - recommend professional consultation.
+- CRITICAL: Before ANY lifestyle recommendations, check USER INFORMATION for health conditions. Read ENTIRE condition - consider ALL aspects (diseases, allergies, mobility limitations).
+- If condition mentions "wheelchair" or "uses a wheelchair", user CANNOT walk/jog/run or perform standing exercises. NEVER recommend walking/jogging/running or standing activities.
+- CRITICAL: Use ACCURATE medical knowledge from RAG context. Follow what the RAG knowledge ACTUALLY says - do NOT be overly cautious or add restrictions that aren't in the knowledge. If RAG knowledge says exercise is beneficial, state that. Only avoid activities if RAG knowledge specifically indicates contraindications.
+- Match recommendations to ALL aspects of user's condition (e.g., diabetes→avoid high-sugar foods for FOOD recommendations, wheelchair→seated exercises only for EXERCISE recommendations).
+- When RAG knowledge provided, incorporate specific recommendations (e.g., wheelchair exercises) and acknowledge they're tailored to user's condition.
+
+INFORMATIONAL QUESTIONS:
+- Answer using chat_message with info from CURRENT SYSTEM STATE. DO NOT modify schedule/devices.
+- "What's next?": Check TODAY'S ACTIVE SCHEDULE, find first activity AFTER CURRENT TIME.
+- "What should I do?" (ONLY informational - NOT action commands like "I'm awake"):
+  * CRITICAL: ALWAYS informational question, NEVER action command. ONLY use chat_message tool.
+  * Check CURRENT ACTIVITY in state - if notification was sent, that activity is CURRENT (not next).
+  * If CURRENT ACTIVITY exists, provide GUIDANCE on HOW to perform it. Focus on CURRENT, not future activities.
+  * If user has condition AND RAG context provided, use that knowledge for tailored guidance.
+- Lifestyle questions (food, exercise, activities): Check CURRENT ACTIVITY first, then USER INFORMATION for conditions.
+  * CRITICAL: Tailor recommendations to condition. Explicitly mention tailoring (e.g., "Given your diabetes...").
+  * If condition exists AND RAG context provided, use knowledge directly - DO NOT ask for clarification.
+- CRITICAL: These instructions ONLY apply to informational questions. Action commands handled by RULES section.
+
+NOTIFICATION SYSTEM:
+- Schedule items automatically trigger notifications at scheduled time. When notification says "It's time to: [Activity]", that becomes CURRENT ACTIVITY.
 
 TOOLS:"""
     
@@ -82,15 +102,169 @@ TOOLS:"""
     
     base_prompt += """
 
+AVAILABLE DEVICES BY ROOM:
+- Bedroom: Light, Alarm, AC | Bathroom: Light | Kitchen: Light, Alarm | Living Room: Light, TV, AC, Fan
+- Only suggest/control devices that exist in specified room.
+
+RULES:
+0. Intent: Informational (what/which/who/where/when) → chat_message; Action (turn/add/delete/change) → tool
+0.1-0.2. CRITICAL: Device control REQUIRES e_device_control tool call. Tool calls perform ACTUAL actions; chat_message only sends text.
+0.3. CRITICAL DEVICE PERSISTENCE: When you turn a device ON, it will stay ON until the user explicitly tells you to turn it OFF. NEVER automatically turn off a device after turning it on. NEVER make two tool calls (turn on then turn off) unless the user explicitly requests both actions. Devices maintain their state until explicitly changed.
+0.5-0.6. Use pronouns from last 2-4 messages. If user provides missing info after clarification, execute original action immediately.
+1. Device: If room not specified, use ACTUAL room name from "Current Location:" in state. Only 2 ways to control other room: user specifies OR responds to notification.
+1.5. Scheduled vs Immediate: If user mentions TIME AND device actions → SCHEDULE request (schedule_modifier), NOT immediate. If no time → immediate (e_device_control). System derives action/location from activity name.
+2. Ask vs Act: Ask ONLY if info genuinely missing. If Current Location known → ACT. Device control defaults to Current Location. Schedule: if time/activity provided → ACT.
+2.5. Permission: NEVER ask "Would you like me to..." when intent is CLEAR. Execute immediately. ONLY ask if info genuinely missing.
+3. Schedule: Always include modify_type. Keywords: "change"/"instead"→change, "add"/"also"→add. Multiple ops: execute "change"/"delete" BEFORE "add" if same time slot.
+   - CRITICAL: "I'm awake"/"I'm up"/"Let's work now" are ACTION COMMANDS (follow deletion rules). "What should I do?" is ALWAYS informational (guidance only).
+   - Delete by activity name: Look up time from TODAY'S ACTIVE SCHEDULE, use that time for delete.
+   - CRITICAL: When deleting schedule item, TWO CASES:
+     CASE 1: User DOESN'T WANT TO DO activity ("I will not work", "Cancel work", "Skip breakfast")
+       → Delete schedule item ONLY, DO NOT execute device controls.
+     CASE 2: User IS CURRENTLY DOING activity ("I'm awake", "I'm up", "Let's work now")
+       → REQUIRED STEPS (in order):
+         1. Find item in TODAY'S ACTIVE SCHEDULE, note: time for deletion, ALL devices in action.devices (EXCEPT Alarm), location field.
+         2. Delete schedule item (schedule_modifier delete).
+         3. Execute ALL devices from action.devices EXCEPT Alarm (one e_device_control per device, skip Alarm). Read "state" field: "ON"→turn ON, "OFF"→turn OFF.
+         4. If item.location exists AND != Current Location → include location message in chat_message.
+         5. Send chat_message summarizing all actions.
+   - Determine case: "not"/"won't"/"cancel"/"skip" = Case 1, "I'm"/"already"/"now"/"let's" = Case 2.
+3.5. Schedule modifications apply to today only. If user mentions "tomorrow" or future dates, inform them modifications can only be made for today.
+4. Notifications: "yes"/"yeah"→control ALL devices from context; "no"→acknowledge.
+5. "Yes"/"Yeah" Responses: Look back at conversation for most recent question/request. Determine context: advice→chat_message, device control→e_device_control, schedule→schedule_modifier. Check chat history - don't assume device control.
+
+OUTPUT REQUIREMENTS:
+- Format: [{"tool": "...", "arguments": {...}}] - valid JSON array only
+- CRITICAL: Output the JSON array directly, NOT wrapped in quotes or as a string
+- Required args: schedule_modifier (modify_type, time, activity, old_time for change), chat_message (message), e_device_control (room, device, action)
+- CRITICAL: schedule_modifier ONLY accepts: modify_type, time, activity, old_time (for change). Do NOT provide action, location, or date arguments.
+- FORBIDDEN: plain text, reasoning, incomplete JSON, raw tool calls as text, string-wrapped JSON
+
 EXAMPLES:
 - "What devices are ON?" → [{"tool": "chat_message", "arguments": {"message": "[from state]"}}]
 - "Turn on light" (Current Location: Bedroom) → [{"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Light", "action": "ON"}}]
+- "Turn off everything" (Current Location: Bedroom) → [{"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Light", "action": "OFF"}}, {"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Alarm", "action": "OFF"}}, {"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "AC", "action": "OFF"}}]
+- "I'm awake" (if "Wake up" at 07:00 has action: Light:ON, Alarm:ON) → [{"tool": "schedule_modifier", "arguments": {"modify_type": "delete", "time": "07:00"}}, {"tool": "e_device_control", "arguments": {"room": "Bedroom", "device": "Light", "action": "ON"}}, {"tool": "chat_message", "arguments": {"message": "Removed wake-up reminder. Turned on bedroom light."}}]
+- "I will not work today" (if "Work" at 09:00 exists) → [{"tool": "schedule_modifier", "arguments": {"modify_type": "delete", "time": "09:00"}}, {"tool": "chat_message", "arguments": {"message": "Removed work from your schedule for today"}}]
+- "I have a meeting at 14.00" → [{"tool": "schedule_modifier", "arguments": {"modify_type": "add", "time": "14:00", "activity": "Meeting"}}]
+   (System detects "Meeting" as one-time event, stores for today only)
+- "I have a meeting tomorrow at 14.00" → [{"tool": "schedule_modifier", "arguments": {"modify_type": "add", "time": "14:00", "activity": "Meeting"}}]
+   (System extracts "tomorrow" as date, detects "Meeting" as one-time event, stores for tomorrow only)
 - "Add breakfast at 08:00" → [{"tool": "schedule_modifier", "arguments": {"modify_type": "add", "time": "08:00", "activity": "Breakfast"}}]
+   (System detects "Breakfast" as recurring activity, stores in base schedule for all future days)
+- "change work to 10:00" (if work is at 09:00) → [{"tool": "schedule_modifier", "arguments": {"modify_type": "change", "old_time": "09:00", "time": "10:00"}}]
 
 CRITICAL FORMAT REMINDER:
+- WRONG (string-wrapped): '["{"tool": "chat_message", "arguments": {"message": "Hello"}}"]'
+- WRONG (string-wrapped): "["{"tool": "chat_message", "arguments": {"message": "Hello"}}"]"
+- CORRECT (raw JSON): [{"tool": "chat_message", "arguments": {"message": "Hello"}}]
 - Your response must be directly parseable as JSON - no quotes around it!"""
     
     return base_prompt
+
+
+async def _infer_missing_e_device_control_args(
+    user_message: str,
+    tool_args: Dict[str, Any],
+    system_context: str,
+    db
+) -> Dict[str, Any]:
+    """
+    Infer missing arguments for e_device_control from user message and system state.
+    This is a fallback when the LLM doesn't provide all required arguments.
+    
+    Args:
+        user_message: Original user message
+        tool_args: Arguments provided by LLM (may be incomplete)
+        system_context: System context string containing current location
+        db: Database instance
+        
+    Returns:
+        Updated tool_args with missing arguments filled in
+    """
+    import re
+    
+    # Check if all required arguments are present
+    room = tool_args.get("room")
+    device = tool_args.get("device")
+    action = tool_args.get("action")
+    
+    # If all arguments are present, return as-is
+    if room and device and action:
+        return tool_args
+    
+    # Infer device from user message
+    if not device:
+        message_lower = user_message.lower()
+        # Device name mappings
+        device_patterns = {
+            "light": "Light",
+            "lights": "Light",
+            "lamp": "Light",
+            "tv": "TV",
+            "television": "TV",
+            "ac": "AC",
+            "aircon": "AC",
+            "air conditioner": "AC",
+            "airconditioner": "AC",
+            "fan": "Fan",
+            "alarm": "Alarm"
+        }
+        
+        for pattern, device_name in device_patterns.items():
+            if pattern in message_lower:
+                device = device_name
+                break
+        
+        # Default to "Light" if no device mentioned
+        if not device:
+            device = "Light"
+    
+    # Infer action from user message
+    if not action:
+        message_lower = user_message.lower()
+        if any(phrase in message_lower for phrase in ["turn on", "switch on", "turnon", "switchon", "on"]):
+            action = "ON"
+        elif any(phrase in message_lower for phrase in ["turn off", "switch off", "turnoff", "switchoff", "off"]):
+            action = "OFF"
+        else:
+            # Default to ON for "turn on" type requests
+            action = "ON"
+    
+    # Infer room from system context
+    if not room:
+        # Import room normalization function
+        from ..core.state_manager import _room_to_english
+        
+        # Try to extract from system context
+        location_match = re.search(r'Current Location:\s*([^\n]+)', system_context, re.IGNORECASE)
+        if location_match:
+            room_raw = location_match.group(1).strip()
+            # Normalize room name to match expected format (e.g., "living room" -> "Living Room")
+            room = _room_to_english(room_raw)
+        else:
+            # Fallback: get from database
+            try:
+                user_info = await db.get_user_info()
+                room_raw = user_info.get("current_location", "Living Room")
+                # Normalize room name to match expected format
+                room = _room_to_english(room_raw)
+            except:
+                # If async fails, use default (already in correct format)
+                room = "Living Room"
+    
+    # Update tool_args with inferred values
+    updated_args = tool_args.copy()
+    if not updated_args.get("room"):
+        updated_args["room"] = room
+    if not updated_args.get("device"):
+        updated_args["device"] = device
+    if not updated_args.get("action"):
+        updated_args["action"] = action
+    
+    logger.info(f"Inferred missing e_device_control arguments: room={room}, device={device}, action={action}")
+    
+    return updated_args
 
 
 def _format_tool_response(tool_results: List[Dict[str, Any]]) -> str:
@@ -337,8 +511,9 @@ async def chat(request: ChatRequest, app_request: Request):
             detail="LLM service not available. Please ensure Ollama is running and configured."
         )
     
-    # Get tool registry from app state
+    # Get tool registry and MCP router from app state
     tool_registry = getattr(app_request.app.state, 'tool_registry', None)
+    mcp_router = getattr(app_request.app.state, 'mcp_router', None)
     
     # Validate request
     if not request.messages:
@@ -522,37 +697,63 @@ async def chat(request: ChatRequest, app_request: Request):
             include_history=True
         )
         
-        system_context = full_context.get("system_context", "")
         conversation_summary = full_context.get("conversation_summary")
         chat_history = full_context.get("chat_history", [])
         
-        # Step 6: Build system prompt with tool definitions
+        # Step 6: Build conditional state info (matching mcp_llm-wheelsense)
+        # Use conditional formatting based on user message intent
+        state_info = await context_builder.build_context_conditional(db, user_message)
+        
+        # Extract and log the current location from state info for verification
+        location_match = re.search(r'Current Location:\s*([^\n]+)', state_info, re.IGNORECASE)
+        if location_match:
+            detected_location = location_match.group(1).strip()
+            logger.info(f"[{correlation_id}] Current Location in state info: '{detected_location}'")
+        else:
+            logger.warning(f"[{correlation_id}] WARNING: Current Location not found in state info!")
+        
+        # Step 7: Build system prompt with tool definitions
         system_prompt = _build_system_prompt(tool_registry)
         
         # Add conversation summary to system prompt if available
+        summary_section = ""
         if conversation_summary:
-            summary_section = context_builder.format_conversation_summary(conversation_summary)
-            if summary_section:
-                system_prompt = f"{system_prompt}\n\n{summary_section}"
+            summary_text = conversation_summary.get("summary_text", "")
+            if summary_text:
+                summary_section = f"\n\nPREVIOUS CONVERSATION SUMMARY:\n{summary_text}"
+                if conversation_summary.get("key_events"):
+                    events_text = "\n".join([f"- {e.get('type', 'event')}: {e.get('summary', '')[:80]}" for e in conversation_summary['key_events'][-5:]])
+                    summary_section += f"\n\nRecent Key Events:\n{events_text}"
         
         # Add RAG context to system prompt if available (Phase 4D)
         rag_context_str = None
         if rag_context:
             rag_context_str = context_builder.format_rag_context(rag_context)
             if rag_context_str:
-                system_prompt = f"{system_prompt}\n\n{rag_context_str}"
+                rag_context_str = f"\n\n{rag_context_str}"
 
         # Phase 4E: Add notification context if user is responding to notification
         notification_context_str = None
         if recent_notification:
             notification_context_str = _build_notification_context(recent_notification)
             if notification_context_str:
-                system_prompt = f"{system_prompt}\n\n{notification_context_str}"
+                notification_context_str = f"\n\n{notification_context_str}"
 
+        # Add current timestamp and date for date calculations (matching mcp_llm-wheelsense)
+        from datetime import timedelta, timezone
+        current_datetime = datetime.now()
+        current_time = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        current_date = current_datetime.strftime("%Y-%m-%d")
+        tomorrow_date = (current_datetime + timedelta(days=1)).strftime("%Y-%m-%d")
+        timestamp_info = f"CURRENT TIME: {current_time}\nCURRENT DATE: {current_date}\nTOMORROW'S DATE: {tomorrow_date}"
+        
+        # Build system content with state info included (matching mcp_llm-wheelsense format)
+        system_content = f"{system_prompt}{summary_section}{rag_context_str or ''}{notification_context_str or ''}\n\n{timestamp_info}\n\nCURRENT SYSTEM STATE:\n{state_info}"
+        
         # Phase 4F: Enforce context size limits before LLM request
         enforced_context = context_builder.enforce_context_limits(
-            system_prompt=system_prompt,
-            system_context=system_context,
+            system_prompt=system_content,  # Use combined system_content for truncation
+            system_context="",  # State is now in system_content, so empty here
             conversation_summary=conversation_summary,
             chat_history=chat_history,
             rag_context=rag_context_str,
@@ -560,8 +761,7 @@ async def chat(request: ChatRequest, app_request: Request):
         )
         
         # Use enforced (truncated) values
-        system_prompt = enforced_context["system_prompt"]
-        system_context = enforced_context["system_context"]
+        system_content = enforced_context["system_prompt"]
         conversation_summary = enforced_context["conversation_summary"]
         chat_history = enforced_context["chat_history"]
         
@@ -571,19 +771,13 @@ async def chat(request: ChatRequest, app_request: Request):
                 "warnings": enforced_context["warnings"]
             })
         
-        # Step 7: Build LLM messages
+        # Step 8: Build LLM messages (matching mcp_llm-wheelsense structure)
         messages = [
             {
                 "role": "system",
-                "content": system_prompt
+                "content": system_content
             }
         ]
-        
-        # Add system context
-        messages.append({
-            "role": "user",
-            "content": f"=== CURRENT SYSTEM STATE ===\n{system_context}"
-        })
         
         # Add chat history (last 5 messages, chronological order)
         for msg in chat_history:
@@ -604,7 +798,7 @@ async def chat(request: ChatRequest, app_request: Request):
         # Phase 4F: Log context size before LLM request
         total_context_size = sum(len(str(msg.get("content", ""))) for msg in messages)
         system_prompt_size = len(system_prompt)
-        system_context_size = len(system_context)
+        state_info_size = len(state_info)
         chat_history_size = sum(len(str(msg.get("content", ""))) for msg in chat_history)
         rag_context_size = len(rag_context_str) if rag_context_str else 0
         
@@ -615,7 +809,7 @@ async def chat(request: ChatRequest, app_request: Request):
             "context_size_chars": total_context_size,
             "context_breakdown": {
                 "system_prompt": system_prompt_size,
-                "system_context": system_context_size,
+                "state_info": state_info_size,
                 "chat_history": chat_history_size,
                 "rag_context": rag_context_size
             }
@@ -670,7 +864,7 @@ async def chat(request: ChatRequest, app_request: Request):
             else:
                 final_response = "I encountered an error processing your request. Please try again."
         elif llm_response.get("tools"):
-            # Multiple tool calls detected - execute all of them
+            # Multiple tool calls detected - execute all of them via MCPRouter
             if not tool_registry:
                 logger.warning(f"[{correlation_id}] Tool calls detected but tool_registry is None")
                 final_response = "I encountered an issue processing that request. Tool registry is not available."
@@ -687,41 +881,62 @@ async def chat(request: ChatRequest, app_request: Request):
                     })
                     tool_calls = tool_calls[:max_tool_calls]
                 
-                # Execute tools
-                logger.info(f"[{correlation_id}] Executing {len(tool_calls)} tool call(s)", extra={
+                # Execute tools via MCPRouter
+                logger.info(f"[{correlation_id}] Executing {len(tool_calls)} tool call(s) via MCPRouter", extra={
                     "correlation_id": correlation_id,
                     "tool_count": len(tool_calls)
                 })
                 
                 tool_start_time = time.time()
-                for idx, tool_call in enumerate(tool_calls):
+                
+                # Prepare tool calls with user_message for schedule_modifier
+                prepared_tool_calls = []
+                for tool_call in tool_calls:
                     tool_name = tool_call.get("tool")
                     tool_args = tool_call.get("arguments", {})
                     
-                    tool_exec_start = time.time()
-                    logger.info(f"[{correlation_id}] Executing tool {idx+1}/{len(tool_calls)}: {tool_name}", extra={
-                        "correlation_id": correlation_id,
-                        "tool_name": tool_name,
-                        "tool_index": idx + 1,
-                        "total_tools": len(tool_calls)
-                    })
+                    # Infer missing arguments for e_device_control if needed
+                    if tool_name == "e_device_control":
+                        tool_args = await _infer_missing_e_device_control_args(
+                            user_message=user_message,
+                            tool_args=tool_args,
+                            system_context=state_info,
+                            db=db
+                        )
                     
-                    result = await tool_registry.call_tool(tool_name, tool_args, correlation_id=correlation_id)
-                    tool_exec_duration = (time.time() - tool_exec_start) * 1000
+                    # Add user_message to schedule_modifier arguments for context
+                    if tool_name == "schedule_modifier" and user_message:
+                        tool_args["user_message"] = user_message
                     
-                    # Phase 4F: Update metrics
-                    metrics["tool_executions_total"] = metrics.get("tool_executions_total", 0) + 1
-                    if not result.get("success"):
-                        metrics["tool_errors_total"] = metrics.get("tool_errors_total", 0) + 1
-                    
-                    tool_results.append(result)
-                    logger.info(f"[{correlation_id}] Tool execution completed", extra={
-                        "correlation_id": correlation_id,
+                    prepared_tool_calls.append({
                         "tool": tool_name,
-                        "success": result.get("success"),
-                        "duration_ms": round(tool_exec_duration, 2),
-                        "error": result.get("error")
+                        "arguments": tool_args
                     })
+                
+                # Execute via MCPRouter (handles multiple tool calls)
+                if mcp_router:
+                    router_result = await mcp_router.execute_multiple(
+                        prepared_tool_calls,
+                        user_message=user_message,
+                        correlation_id=correlation_id
+                    )
+                    
+                    # Extract individual tool results
+                    if router_result.get("tools"):
+                        tool_results = router_result["tools"]
+                    elif router_result.get("tool"):
+                        # Single tool result format
+                        tool_results = [router_result]
+                    else:
+                        tool_results = [router_result]
+                else:
+                    # Fallback to direct tool_registry calls if MCPRouter not available
+                    logger.warning(f"[{correlation_id}] MCPRouter not available, falling back to direct tool_registry calls")
+                    for tool_call in prepared_tool_calls:
+                        tool_name = tool_call.get("tool")
+                        tool_args = tool_call.get("arguments", {})
+                        result = await tool_registry.call_tool(tool_name, tool_args, correlation_id=correlation_id)
+                        tool_results.append(result)
                 
                 total_tool_duration = (time.time() - tool_start_time) * 1000
                 logger.info(f"[{correlation_id}] All tool executions completed", extra={
@@ -735,21 +950,46 @@ async def chat(request: ChatRequest, app_request: Request):
                 # Format response from tool results
                 final_response = _format_tool_response(tool_results)
         elif llm_response.get("tool"):
-            # Single tool call detected (backward compatibility)
-            if not tool_registry:
-                logger.warning(f"[{correlation_id}] Tool call detected but tool_registry is None")
-                final_response = "I encountered an issue processing that request. Tool registry is not available."
+            # Single tool call detected (backward compatibility) - execute via MCPRouter
+            if not mcp_router and not tool_registry:
+                logger.warning(f"[{correlation_id}] Tool call detected but neither MCPRouter nor tool_registry is available")
+                final_response = "I encountered an issue processing that request. Tool execution is not available."
             else:
                 tool_name = llm_response["tool"]
                 tool_args = llm_response.get("arguments", {})
                 
-                logger.info(f"[{correlation_id}] Executing single tool call: {tool_name}", extra={
+                # Infer missing arguments for e_device_control if needed
+                if tool_name == "e_device_control":
+                    tool_args = await _infer_missing_e_device_control_args(
+                        user_message=user_message,
+                        tool_args=tool_args,
+                        system_context=state_info,
+                        db=db
+                    )
+                
+                # Add user_message to schedule_modifier arguments for context
+                if tool_name == "schedule_modifier" and user_message:
+                    tool_args["user_message"] = user_message
+                
+                logger.info(f"[{correlation_id}] Executing single tool call via MCPRouter: {tool_name}", extra={
                     "correlation_id": correlation_id,
-                    "tool_name": tool_name
+                    "tool_name": tool_name,
+                    "tool_arguments": tool_args
                 })
                 
                 tool_start_time = time.time()
-                result = await tool_registry.call_tool(tool_name, tool_args, correlation_id=correlation_id)
+                
+                # Execute via MCPRouter
+                if mcp_router:
+                    result = await mcp_router.execute(
+                        {"tool": tool_name, "arguments": tool_args},
+                        user_message=user_message,
+                        correlation_id=correlation_id
+                    )
+                else:
+                    # Fallback to direct tool_registry call
+                    result = await tool_registry.call_tool(tool_name, tool_args, correlation_id=correlation_id)
+                
                 tool_duration = (time.time() - tool_start_time) * 1000
                 
                 metrics["tool_executions_total"] = metrics.get("tool_executions_total", 0) + 1
@@ -869,6 +1109,50 @@ async def chat(request: ChatRequest, app_request: Request):
             status_code=500,
             detail="An unexpected error occurred. Please try again."
         )
+
+
+@router.get("/chat/history")
+async def get_chat_history(
+    app_request: Request,
+    limit: int = Query(50, description="Maximum number of messages to return"),
+    session_id: Optional[str] = Query(None, description="Optional session ID to filter messages")
+):
+    """
+    Get chat history from database.
+    Simple endpoint for frontend to fetch chat messages.
+    """
+    db = get_db(app_request)
+    
+    try:
+        messages = await db.get_recent_chat_history(limit=limit, session_id=session_id)
+        
+        # Format messages for frontend
+        formatted_messages = []
+        for msg in messages:
+            # Use database ID if available, otherwise generate a stable hash
+            msg_id = msg.get("id")
+            if not msg_id:
+                # Fallback: use hash of content for stable ID
+                content_hash = hashlib.md5(msg.get("content", "").encode()).hexdigest()[:8]
+                msg_id = int(content_hash, 16) if content_hash else None
+            
+            formatted_msg = {
+                "id": msg_id,
+                "role": msg.get("role"),
+                "content": msg.get("content"),
+                "isNotification": msg.get("is_notification", False)
+            }
+            if msg.get("content_full"):
+                formatted_msg["contentFull"] = msg["content_full"]
+            formatted_messages.append(formatted_msg)
+        
+        return {
+            "messages": formatted_messages,
+            "count": len(formatted_messages)
+        }
+    except Exception as e:
+        logger.error(f"Error fetching chat history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch chat history: {str(e)}")
 
 
 @router.get("/chat/health")

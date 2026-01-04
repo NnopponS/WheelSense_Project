@@ -16,8 +16,7 @@ const SENSOR_HTTP_URL = 'http://localhost:8768';
 const MAX_GRAPH_POINTS = 100;
 
 export function SensorMonitoringPage() {
-    const { language } = useApp();
-    const { t } = useTranslation(language);
+    const { t } = useTranslation();
 
     // Connection state
     const [connected, setConnected] = useState(false);

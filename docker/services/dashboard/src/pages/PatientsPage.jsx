@@ -5,8 +5,8 @@ import { TranslationLoadingIndicator } from '../components/TranslationLoadingInd
 import { Users, Plus, Edit2, Trash2, X, Accessibility, MapPin } from 'lucide-react';
 
 export function PatientsPage() {
-    const { patients, setPatients, wheelchairs, setWheelchairs, openDrawer, role, rooms, language } = useApp();
-    const { t } = useTranslation(language);
+    const { patients, setPatients, wheelchairs, setWheelchairs, openDrawer, role, rooms } = useApp();
+    const { t } = useTranslation();
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingPatient, setEditingPatient] = useState(null);
     const [activeTab, setActiveTab] = useState('patients');

@@ -10,6 +10,7 @@ import logging
 
 from ..dependencies import get_db, get_mqtt_handler
 from ..core.database import Database
+from ..core.appliance_control import control_appliance_core
 
 logger = logging.getLogger(__name__)
 
@@ -25,86 +26,37 @@ class ApplianceControl(BaseModel):
 
 @router.post("/appliances/control")
 async def control_appliance(control: ApplianceControl, request: Request):
-    """Control an appliance in a room."""
+    """
+    Control an appliance in a room.
+    Uses shared control logic to ensure identical behavior with e_device_control tool.
+    """
     mqtt_handler = get_mqtt_handler(request)
     db = getattr(request.app.state, 'db', None)
     
-    success = await mqtt_handler.send_control_command(
+    if not db:
+        raise HTTPException(status_code=500, detail="Database not available")
+    
+    # Use shared control function (same logic as e_device_control)
+    result = await control_appliance_core(
+        db=db,
+        mqtt_handler=mqtt_handler,
         room=control.room,
         appliance=control.appliance,
         state=control.state,
         value=control.value
     )
     
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to send command")
-    
-    # Persist appliance state in MongoDB
-    if db:
-        try:
-            # Build update document
-            update_doc = {"state": control.state}
-            if control.value is not None:
-                update_doc["value"] = control.value
-            update_doc["lastUpdated"] = datetime.utcnow()
-            
-            # Update appliance state in database (match by room and type)
-            result = await db.db.appliances.update_many(
-                {"room": control.room, "type": control.appliance},
-                {"$set": update_doc}
-            )
-            logger.info(f"Persisted appliance state: {control.room}/{control.appliance} = {control.state} (updated {result.modified_count} docs)")
-            
-            # Also sync to device_states table
-            await db.sync_appliance_to_state(control.room, control.appliance, control.state)
-        except Exception as e:
-            logger.warning(f"Failed to persist appliance state: {e}")
-            
-    # Broadcast state change via WebSocket to sync all clients
-    try:
-        # Broadcast appliance_update (existing event)
-        await mqtt_handler._broadcast_ws({
-            "type": "appliance_update",
-            "room": control.room,
-            "appliance": control.appliance,
-            "state": control.state,
-            "value": control.value,
-            "timestamp": datetime.utcnow().isoformat()
-        })
-        logger.info(f"Broadcasted appliance update: {control.room}/{control.appliance} = {control.state}")
-        
-        # Also broadcast device_state_update for MCP compatibility
-        await mqtt_handler._broadcast_ws({
-            "type": "device_state_update",
-            "room": control.room,
-            "device": control.appliance,
-            "state": control.state,
-            "timestamp": datetime.utcnow().isoformat()
-        })
-        logger.info(f"Broadcasted device_state_update: {control.room}/{control.appliance} = {control.state}")
-    except Exception as e:
-        logger.warning(f"Failed to broadcast appliance/device state update: {e}")
-    
-    # Log activity
-    if db:
-        try:
-            await db.log_activity(
-                room_id=control.room,
-                event_type="appliance_on" if control.state else "appliance_off",
-                details={
-                    "appliance": control.appliance,
-                    "state": control.state,
-                    "value": control.value
-                }
-            )
-        except Exception as e:
-            logger.warning(f"Failed to log activity for appliance control: {e}")
+    if not result.get("success"):
+        raise HTTPException(
+            status_code=500,
+            detail=result.get("error", "Failed to control appliance")
+        )
     
     return {
         "success": True,
-        "room": control.room,
-        "appliance": control.appliance,
-        "state": control.state
+        "room": result["room"],
+        "appliance": result["appliance"],
+        "state": result["state"]
     }
 
 

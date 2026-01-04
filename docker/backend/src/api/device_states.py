@@ -21,14 +21,20 @@ class DeviceStateUpdate(BaseModel):
 
 @router.get("/device-states")
 async def get_all_device_states(request: Request):
-    """Get all device states organized by room."""
+    """Get all device states organized by room. Uses device_states_view (Phase 1 migration)."""
     db = get_db(request)
     
     try:
-        states = await db.get_all_device_states()
+        # Use view instead of table (Phase 1 migration)
+        states = await db.get_device_states_from_view()
         return {"device_states": states}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get device states: {str(e)}")
+        # Fallback to legacy method
+        try:
+            states = await db.get_all_device_states()
+            return {"device_states": states}
+        except Exception as e2:
+            raise HTTPException(status_code=500, detail=f"Failed to get device states: {str(e2)}")
 
 
 @router.get("/device-states/{room}/{device}")

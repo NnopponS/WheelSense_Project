@@ -15,7 +15,7 @@ import {
 import { pageToPath } from '../../App';
 
 export function UserHomePage() {
-    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, language, setCurrentPage, detectionState } = useApp();
+    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, setCurrentPage, detectionState, userInfo } = useApp();
 
     // Check if wheelchair is detected in room using detectionState (same logic as MonitoringPage)
     const isWheelchairDetected = (room) => {
@@ -27,37 +27,26 @@ export function UserHomePage() {
         return detection?.detected === true;
     };
 
-    // Check if room is occupied (same logic as MonitoringPage)
+    // Only show Occupied if this room is the current location
     const isRoomOccupied = (room) => {
-        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
-        const normalizedNameEn = normalizeRoomName(room.nameEn);
-        const normalizedName = normalizeRoomName(room.name);
-
-        // Check detection state first (real-time camera detection)
-        const detection = detectionState[room.id] ||
-            detectionState[room.roomType?.toLowerCase()] ||
-            detectionState[normalizedNameEn] ||
-            detectionState[normalizedName];
-
-        // If detectionState has this room (even if false), use it as the source of truth
-        const hasDetectionState = detectionState[room.id] !== undefined ||
-            detectionState[room.roomType?.toLowerCase()] !== undefined ||
-            detectionState[normalizedNameEn] !== undefined ||
-            detectionState[normalizedName] !== undefined;
-
-        if (hasDetectionState) {
-            return detection?.detected === true;
+        // Get current location from database
+        const locationFromDB = userInfo?.current_location || '';
+        if (!locationFromDB) {
+            return false; // No current location = all rooms vacant
         }
-
-        // Fallback: check if any wheelchair is in this room (only if no detectionState exists)
-        return wheelchairs.some(w =>
-            w.room === room.id ||
-            w.room === room.roomType?.toLowerCase() ||
-            w.room === normalizedNameEn ||
-            normalizeRoomName(w.room) === normalizedNameEn
-        );
+        
+        // Check if this room matches the current location
+        const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+        const matches = 
+            room.id?.toLowerCase() === locationFromDB.toLowerCase() ||
+            room.roomType?.toLowerCase() === locationFromDB.toLowerCase() ||
+            room.nameEn?.toLowerCase() === locationFromDB.toLowerCase() ||
+            normalizeRoomName(room.nameEn) === normalizeRoomName(locationFromDB) ||
+            room.name?.toLowerCase().includes(locationFromDB.toLowerCase());
+        
+        return matches;
     };
-    const { t } = useTranslation(language);
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     // Early return if currentUser is not available
@@ -88,6 +77,22 @@ export function UserHomePage() {
     }
     if (!myRoom && currentUser?.room) {
         myRoom = rooms.find(r => r.name?.toLowerCase().includes(currentUser.room?.toLowerCase() || ''));
+    }
+
+    // Find room from userInfo.current_location (from database) - PRIMARY SOURCE
+    const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
+    const locationFromDB = userInfo?.current_location || '';
+    let currentLocationRoom = null;
+    
+    if (locationFromDB) {
+        // Try to find room by matching current_location from database
+        currentLocationRoom = rooms.find(r => 
+            r.id?.toLowerCase() === locationFromDB.toLowerCase() ||
+            r.roomType?.toLowerCase() === locationFromDB.toLowerCase() ||
+            r.nameEn?.toLowerCase() === locationFromDB.toLowerCase() ||
+            normalizeRoomName(r.nameEn) === normalizeRoomName(locationFromDB) ||
+            r.name?.toLowerCase().includes(locationFromDB.toLowerCase())
+        );
     }
 
     const todayRoutines = routines.filter(r => r.patientId === currentUser?.id);
@@ -171,9 +176,8 @@ export function UserHomePage() {
 
             {/* Current Location Card */}
             {(() => {
-                const detectedRoom = rooms.find(room => isWheelchairDetected(room));
-                const currentRoom = detectedRoom || myRoom;
-                const isDetected = detectedRoom !== undefined;
+                // Use room from database (userInfo.current_location) as PRIMARY source
+                const currentRoom = currentLocationRoom || myRoom; // Fallback to myRoom if database location not found
 
                 return currentRoom ? (
                     <div className="card" style={{ marginBottom: '1rem', background: 'var(--bg-secondary)' }}>
@@ -197,12 +201,12 @@ export function UserHomePage() {
                             <div style={{
                                 padding: '0.5rem 1rem',
                                 borderRadius: 'var(--radius-md)',
-                                background: isDetected ? 'var(--success-500)' : 'var(--bg-secondary)',
-                                color: isDetected ? 'white' : 'var(--text-muted)',
+                                background: currentLocationRoom ? 'var(--success-500)' : 'var(--bg-secondary)',
+                                color: currentLocationRoom ? 'white' : 'var(--text-muted)',
                                 fontSize: '0.85rem',
                                 fontWeight: 500
                             }}>
-                                {isDetected ? '🟢 Detected' : '⚪ Not Detected'}
+                                {currentLocationRoom ? '🟢 Active' : '⚪ Unknown'}
                             </div>
                         </div>
                     </div>

@@ -9,8 +9,8 @@ import { Video, X, Maximize2, Minimize2, Zap, Lightbulb, Thermometer, Tv, Fan, P
 import * as api from '../../services/api';
 
 export function UserVideoPage() {
-    const { rooms, currentUser, appliances, toggleAppliance, language, devices } = useApp();
-    const { t } = useTranslation(language);
+    const { rooms, currentUser, appliances, toggleAppliance, devices } = useApp();
+    const { t } = useTranslation();
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [videoSrc, setVideoSrc] = useState('');

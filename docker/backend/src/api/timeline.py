@@ -38,15 +38,33 @@ async def get_timeline(
     event_type: Optional[str] = None,
     limit: int = 100
 ):
-    """Get timeline events with optional filters."""
+    """Get timeline events with optional filters. Uses unified events table."""
     db = get_db(request)
     
-    events = await db.get_timeline(
+    # Use unified events table (Phase 2 migration)
+    # Map event_type to unified type
+    unified_type = None
+    if event_type == 'location_change':
+        unified_type = 'location_change'
+    elif event_type in ['enter', 'exit', 'appliance_on', 'appliance_off']:
+        unified_type = 'activity'
+    
+    events = await db.get_events_unified(
+        event_type=unified_type or 'location_change',
         user_id=user_id,
         room_id=room_id,
-        event_type=event_type,
         limit=limit
     )
+    
+    # Fallback to legacy method if unified returns empty and no filters
+    if not events and not unified_type:
+        events = await db.get_timeline(
+            user_id=user_id,
+            room_id=room_id,
+            event_type=event_type,
+            limit=limit
+        )
+    
     return {"timeline": events, "count": len(events)}
 
 
@@ -74,11 +92,27 @@ async def get_timeline_summary(user_id: str, request: Request, date: Optional[st
 
 @router.post("/timeline/location")
 async def save_location_event(event: LocationEventRequest, request: Request):
-    """Save a location change event to timeline."""
+    """Save a location change event to timeline. Uses unified events table."""
     db = get_db(request)
     mqtt_handler = getattr(request.app.state, 'mqtt_handler', None)
     
-    saved_event = await db.save_location_event(
+    # Use unified events table (Phase 2 migration)
+    # Also save to legacy table for backward compatibility
+    saved_event = await db.save_event_unified({
+        'type': 'location_change',
+        'user_id': event.user_id,
+        'from_room': event.from_room,
+        'to_room': event.to_room,
+        'metadata': {
+            'wheelchair_id': event.wheelchair_id,
+            'user_name': event.user_name,
+            'detection_confidence': event.detection_confidence,
+            'bbox': event.bbox
+        }
+    })
+    
+    # Also save to legacy timeline table for backward compatibility
+    legacy_event = await db.save_location_event(
         user_id=event.user_id,
         wheelchair_id=event.wheelchair_id,
         from_room=event.from_room,
@@ -87,6 +121,9 @@ async def save_location_event(event: LocationEventRequest, request: Request):
         detection_confidence=event.detection_confidence,
         bbox=event.bbox
     )
+    
+    # Use legacy event format for response (maintains API compatibility)
+    saved_event = legacy_event if legacy_event else saved_event
     
     # Broadcast to WebSocket clients
     if mqtt_handler:
@@ -127,12 +164,26 @@ async def get_activities(
     event_type: Optional[str] = None,
     limit: int = 50
 ):
-    """Get activity logs."""
+    """Get activity logs. Uses unified events table."""
     db = get_db(request)
     
-    activities = await db.get_activity_logs(
+    # Use unified events table (Phase 2 migration)
+    activities = await db.get_events_unified(
+        event_type='activity',
         room_id=room_id,
-        event_types=[event_type] if event_type else None,
         limit=limit
     )
+    
+    # Filter by event_type if specified (for backward compatibility)
+    if event_type:
+        activities = [a for a in activities if a.get('eventType') == event_type or a.get('type') == event_type]
+    
+    # Fallback to legacy method if unified returns empty
+    if not activities:
+        activities = await db.get_activity_logs(
+            room_id=room_id,
+            event_types=[event_type] if event_type else None,
+            limit=limit
+        )
+    
     return {"activities": activities}

@@ -44,8 +44,8 @@ const actionsToDescription = (actions, room) => {
 };
 
 export function RoutinesPage() {
-    const { routines, addRoutine, updateRoutine, deleteRoutine, patients, role, currentUser, language } = useApp();
-    const { t } = useTranslation(language);
+    const { routines, addRoutine, updateRoutine, deleteRoutine, patients, role, currentUser } = useApp();
+    const { t } = useTranslation();
     const [selectedPatient, setSelectedPatient] = useState(role === 'user' ? currentUser?.id : 'all');
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingId, setEditingId] = useState(null);

@@ -5,10 +5,14 @@ Phase 4C: Extended with conversation summary and chat history.
 """
 
 import logging
+import re
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+# Import room normalization function
+from ..core.state_manager import _room_to_english
 
 
 class ContextBuilder:
@@ -24,7 +28,8 @@ class ContextBuilder:
     MAX_TOTAL_TOKENS = 300
     
     # Phase 4F: Hard character limits for context sections
-    MAX_SYSTEM_PROMPT_CHARS = 2000
+    # Increased to accommodate full system content including state info
+    MAX_SYSTEM_PROMPT_CHARS = 5000  # Increased from 2000 to preserve state info
     MAX_CONVERSATION_SUMMARY_CHARS = 500
     MAX_SYSTEM_CONTEXT_CHARS = 1000
     MAX_CHAT_HISTORY_CHARS = 2500  # 5 messages × 500 chars
@@ -50,10 +55,31 @@ class ContextBuilder:
             device_summary = await self._get_device_summary(db)
             schedule_summary = await self._get_schedule_summary(db)
             
-            context = f"""=== USER INFORMATION ===
+            # Extract current location from user info for prominent display (matching mcp_llm-wheelsense)
+            try:
+                user_info = await db.get_user_info()
+                location_raw = user_info.get("current_location", "Unknown")
+                # Normalize to English capitalized format (e.g., "living room" -> "Living Room", "livingroom" -> "Living Room")
+                # This ensures the LLM sees the correct format matching system prompt expectations
+                if location_raw and location_raw != "Unknown":
+                    location = _room_to_english(location_raw)
+                    # Log normalization for debugging
+                    logger.info(f"Location retrieved: raw='{location_raw}', normalized='{location}'")
+                else:
+                    location = "Unknown"
+                    logger.warning(f"Location not found in user_info, using 'Unknown'")
+            except Exception as e:
+                logger.error(f"Error getting/normalizing location: {e}", exc_info=True)
+                location = "Unknown"
+            
+            # Format context matching mcp_llm-wheelsense format
+            # CRITICAL: Current Location must be prominently displayed at the top, separate from user info
+            # This is the PRIMARY way the LLM knows the user's current location
+            context = f"""Current Location: {location}
+
 {user_summary}
 
-=== DEVICE STATES ===
+Device States:
 {device_summary}
 
 === UPCOMING SCHEDULE ===
@@ -64,6 +90,120 @@ class ContextBuilder:
             logger.error(f"Error building context: {e}")
             # Return minimal context on error
             return "=== USER INFORMATION ===\nInformation temporarily unavailable\n\n=== DEVICE STATES ===\nInformation temporarily unavailable\n\n=== UPCOMING SCHEDULE ===\nInformation temporarily unavailable"
+    
+    async def build_context_conditional(self, db, user_message: str) -> str:
+        """
+        Build context conditionally based on query intent (matching mcp_llm-wheelsense).
+        Only includes relevant sections to reduce token count.
+        
+        Args:
+            db: Database instance
+            user_message: User's current message for intent detection
+            
+        Returns:
+            Formatted context string with only relevant state information
+        """
+        if not user_message:
+            # Fallback to full context if no message
+            return await self.build_context(db)
+        
+        message_lower = user_message.lower()
+        lines = []
+        
+        # Always include current location (needed for device control defaults)
+        try:
+            user_info = await db.get_user_info()
+            location_raw = user_info.get("current_location", "Unknown")
+            if location_raw and location_raw != "Unknown":
+                location = _room_to_english(location_raw)
+            else:
+                location = "Unknown"
+        except Exception as e:
+            logger.error(f"Error getting/normalizing location: {e}")
+            location = "Unknown"
+        
+        lines.append(f"Current Location: {location}")
+        lines.append("")
+        
+        # Device queries: include device states
+        device_keywords = ['device', 'light', 'ac', 'tv', 'fan', 'alarm', 'turn', 'switch', 'on', 'off', 'everything', 'all devices']
+        is_device_query = any(word in message_lower for word in device_keywords)
+        
+        if is_device_query:
+            try:
+                device_summary = await self._get_device_summary(db)
+                lines.append("Device States:")
+                # Include all rooms for "all rooms" queries, otherwise just current room
+                if 'all rooms' in message_lower or 'everywhere' in message_lower:
+                    # Include full device summary
+                    lines.append(device_summary)
+                else:
+                    # Include only current room devices
+                    all_states_dict = await db.get_all_device_states()
+                    if location in all_states_dict:
+                        lines.append(f"  {location}:")
+                        for device, state in all_states_dict[location].items():
+                            status = "ON" if state else "OFF"
+                            lines.append(f"    - {device}: {status}")
+                lines.append("")
+            except Exception as e:
+                logger.error(f"Error getting device states: {e}")
+        
+        # Schedule queries: include schedule
+        schedule_keywords = ['schedule', 'appointment', 'meeting', 'time', 'activity', 'wake', 'sleep', 'breakfast', 'lunch', 'dinner', 'work', 'study', 'next', 'after', 'later', 'upcoming', 'what']
+        is_schedule_query = any(word in message_lower for word in schedule_keywords)
+        
+        # Check for deletion keywords that need full schedule visibility
+        deletion_keywords = ['awake', 'work now', 'delete', 'remove', 'cancel', 'skip', 'not doing', "won't", "will not"]
+        is_deletion_query = any(keyword in message_lower for keyword in deletion_keywords)
+        
+        if is_schedule_query or is_deletion_query:
+            try:
+                schedule_summary = await self._get_schedule_summary(db)
+                lines.append("TODAY'S ACTIVE SCHEDULE (sorted by time):")
+                lines.append(schedule_summary)
+                lines.append("")
+            except Exception as e:
+                logger.error(f"Error getting schedule: {e}")
+        
+        # User info queries: include user info
+        user_info_keywords = ['who', 'name', 'condition', 'about me', 'myself', 'tell me about']
+        is_user_info_query = any(word in message_lower for word in user_info_keywords)
+        
+        # CRITICAL: Also include USER INFORMATION for lifestyle queries
+        lifestyle_keywords = ['eat', 'food', 'meal', 'breakfast', 'lunch', 'dinner', 'snack', 'exercise', 'workout', 
+                             'activity', 'activities', 'sleep', 'rest', 'routine', 'lifestyle', 'wellness', 'fitness',
+                             'suggest', 'recommend', 'what should', 'what can', 'should i', 'what to', "don't know what", "don't know"]
+        is_lifestyle_query = any(keyword in message_lower for keyword in lifestyle_keywords)
+        
+        if (is_user_info_query or is_lifestyle_query):
+            try:
+                user_summary = await self._get_user_summary(db)
+                lines.append("USER INFORMATION:")
+                # Parse user summary to format properly
+                for line in user_summary.split('\n'):
+                    if line.strip():
+                        lines.append(f"  {line}")
+                if is_lifestyle_query:
+                    lines.append("  [CRITICAL: All recommendations MUST be tailored to this condition]")
+                lines.append("")
+            except Exception as e:
+                logger.error(f"Error getting user info: {e}")
+        
+        # If no specific sections added, include minimal state (location + current room devices)
+        if len(lines) <= 2:  # Only location and empty line
+            try:
+                lines.append("Device States:")
+                all_states_dict = await db.get_all_device_states()
+                if location in all_states_dict:
+                    lines.append(f"  {location}:")
+                    for device, state in all_states_dict[location].items():
+                        status = "ON" if state else "OFF"
+                        lines.append(f"    - {device}: {status}")
+            except Exception as e:
+                logger.error(f"Error getting minimal device states: {e}")
+        
+        return "\n".join(lines)
     
     async def _get_user_summary(self, db) -> str:
         """
@@ -83,10 +223,11 @@ class ContextBuilder:
             # Handle nested name structure from get_user_info()
             name_obj = user_info.get("name", {})
             if isinstance(name_obj, dict):
-                name = name_obj.get("english", "") or name_obj.get("thai", "") or "Not set"
+                # Handle legacy nested format (migration support)
+                name = name_obj.get("english", "") or name_obj.get("thai", "") or name_obj.get("name", "") or "Not set"
             else:
-                # Fallback for direct name fields
-                name = user_info.get("name_english", "") or user_info.get("name_thai", "") or "Not set"
+                # Use direct name field
+                name = user_info.get("name", "") or "Not set"
             
             location = user_info.get("current_location", "Unknown")
             condition = user_info.get("condition", "")
@@ -95,7 +236,8 @@ class ContextBuilder:
             if condition and len(condition) > 200:
                 condition = condition[:200] + "..."
             
-            return f"Name: {name}\nCurrent Location: {location}\nHealth Condition: {condition if condition else 'Not recorded'}"
+            # Format matching mcp_llm-wheelsense: Current Location is shown separately, not in user info
+            return f"Name: {name}\nHealth Condition: {condition if condition else 'Not recorded'}"
         except Exception as e:
             logger.error(f"Error getting user summary: {e}")
             return "Name: Error loading\nCurrent Location: Error loading\nHealth Condition: Error loading"
@@ -137,27 +279,34 @@ class ContextBuilder:
                     room_devices[room] = []
                 room_devices[room].append(state)
             
-            # Format by room
+            # Format by room matching mcp_llm-wheelsense format
             lines = []
             # Standard room order for consistent output
             room_order = ["Bedroom", "Living Room", "Kitchen", "Bathroom"]
             
             # Add rooms in order, then any others
+            # Format: "  RoomName:\n    - Device: Status"
             for room in room_order:
                 if room in room_devices:
-                    device_list = self._format_room_devices(room_devices[room])
-                    if device_list:
-                        lines.append(f"{room}: {device_list}")
+                    lines.append(f"  {room}:")
+                    for device in room_devices[room]:
+                        device_name = device.get("device", "")
+                        state = device.get("state", 0)
+                        status = "ON" if state else "OFF"
+                        lines.append(f"    - {device_name}: {status}")
                     del room_devices[room]
             
             # Add any remaining rooms
             for room, devices in room_devices.items():
-                device_list = self._format_room_devices(devices)
-                if device_list:
-                    lines.append(f"{room}: {device_list}")
+                lines.append(f"  {room}:")
+                for device in devices:
+                    device_name = device.get("device", "")
+                    state = device.get("state", 0)
+                    status = "ON" if state else "OFF"
+                    lines.append(f"    - {device_name}: {status}")
             
             if not lines:
-                return "No devices found"
+                return "  No devices found"
             
             return "\n".join(lines)
         except Exception as e:
@@ -326,10 +475,67 @@ class ContextBuilder:
         """
         warnings = []
         
-        # Truncate system prompt
+        # Truncate system prompt with smart preservation of state info
         if len(system_prompt) > self.MAX_SYSTEM_PROMPT_CHARS:
-            warnings.append(f"System prompt truncated from {len(system_prompt)} to {self.MAX_SYSTEM_PROMPT_CHARS} chars")
-            system_prompt = system_prompt[:self.MAX_SYSTEM_PROMPT_CHARS] + "..."
+            # Check if system_prompt contains "CURRENT SYSTEM STATE" section
+            state_marker = "CURRENT SYSTEM STATE:"
+            state_index = system_prompt.find(state_marker)
+            
+            if state_index != -1:
+                # State info exists - preserve it by truncating from the middle
+                # Keep: prompt part (before state) + state info (after marker)
+                prompt_part = system_prompt[:state_index]
+                state_part = system_prompt[state_index:]
+                
+                # Calculate available space for prompt part
+                state_part_size = len(state_part)
+                available_for_prompt = self.MAX_SYSTEM_PROMPT_CHARS - state_part_size - 10  # 10 chars for "..."
+                
+                if available_for_prompt > 0:
+                    # Truncate prompt part, keep state part intact
+                    if len(prompt_part) > available_for_prompt:
+                        warnings.append(f"System prompt truncated from {len(system_prompt)} to {self.MAX_SYSTEM_PROMPT_CHARS} chars (preserved state info)")
+                        system_prompt = prompt_part[:available_for_prompt] + "...\n\n" + state_part
+                    else:
+                        # No truncation needed
+                        system_prompt = prompt_part + state_part
+                else:
+                    # State part is too large, truncate it but ALWAYS keep Current Location
+                    # Extract Current Location line if it exists
+                    location_match = re.search(r'Current Location:\s*([^\n]+)', state_part, re.IGNORECASE)
+                    if location_match:
+                        location_line = location_match.group(0)
+                        # Keep Current Location + minimal state (just the location line)
+                        truncated_state = f"{state_marker}\n{location_line}\n"
+                        available_for_prompt = self.MAX_SYSTEM_PROMPT_CHARS - len(truncated_state) - 10
+                        if available_for_prompt > 0:
+                            if len(prompt_part) > available_for_prompt:
+                                warnings.append(f"System prompt truncated from {len(system_prompt)} to {self.MAX_SYSTEM_PROMPT_CHARS} chars (preserved Current Location)")
+                                system_prompt = prompt_part[:available_for_prompt] + "...\n\n" + truncated_state
+                            else:
+                                # Prompt part fits, just truncate state
+                                system_prompt = prompt_part + "\n\n" + truncated_state
+                        else:
+                            # Even Current Location doesn't fit - this shouldn't happen, but preserve it anyway
+                            warnings.append(f"System prompt severely truncated, preserving Current Location only")
+                            system_prompt = truncated_state
+                    else:
+                        # No Current Location found - this is a problem, log it
+                        logger.warning("State info found but Current Location not detected in truncation!")
+                        # Fallback: standard truncation but try to preserve last 200 chars (might contain state)
+                        if len(system_prompt) > self.MAX_SYSTEM_PROMPT_CHARS:
+                            # Keep first part and last 200 chars (might contain state info)
+                            keep_from_end = 200
+                            keep_from_start = self.MAX_SYSTEM_PROMPT_CHARS - keep_from_end - 20  # 20 for "..."
+                            if keep_from_start > 0:
+                                system_prompt = system_prompt[:keep_from_start] + "...\n\n" + system_prompt[-keep_from_end:]
+                            else:
+                                system_prompt = system_prompt[:self.MAX_SYSTEM_PROMPT_CHARS] + "..."
+                        warnings.append(f"System prompt truncated from {len(system_prompt)} to {self.MAX_SYSTEM_PROMPT_CHARS} chars (Current Location not found)")
+            else:
+                # No state info found - standard truncation
+                warnings.append(f"System prompt truncated from {len(system_prompt)} to {self.MAX_SYSTEM_PROMPT_CHARS} chars")
+                system_prompt = system_prompt[:self.MAX_SYSTEM_PROMPT_CHARS] + "..."
         
         # Truncate system context
         if len(system_context) > self.MAX_SYSTEM_CONTEXT_CHARS:

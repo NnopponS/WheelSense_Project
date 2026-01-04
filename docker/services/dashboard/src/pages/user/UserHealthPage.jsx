@@ -9,8 +9,8 @@ import { getUserInfo, updateUserInfo } from '../../services/api';
 import { Heart, User, Sparkles, Edit2, Save, X } from 'lucide-react';
 
 export function UserHealthPage() {
-    const { currentUser, aiAnalysis, language } = useApp();
-    const { t } = useTranslation(language);
+    const { currentUser, aiAnalysis } = useApp();
+    const { t } = useTranslation();
     const [condition, setCondition] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);

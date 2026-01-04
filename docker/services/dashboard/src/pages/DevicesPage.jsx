@@ -7,7 +7,7 @@ import { getVideoStreamUrl, getStreamUrlInfo } from '../services/api';
 
 // WebSocket Video Stream Component with Rotation Controls
 function VideoStreamPlayer({ room, onClose, language }) {
-    const { t } = useTranslation(language);
+    const { t } = useTranslation();
     const [videoSrc, setVideoSrc] = useState('');
     const [streamMode, setStreamMode] = useState('loading'); // 'loading', 'websocket', 'offline'
     const [rotation, setRotation] = useState(0);
@@ -280,8 +280,8 @@ function DeviceEditForm({ device, onSave, onCancel, rooms, t }) {
 }
 
 export function DevicesPage() {
-    const { devices, setDevices, deleteDevice, updateDevice, openModal, closeModal, rooms, role, language, deviceHeartbeats, wheelchairs, setWheelchairs, addNotification } = useApp();
-    const { t } = useTranslation(language);
+    const { devices, setDevices, deleteDevice, updateDevice, openModal, closeModal, rooms, role, deviceHeartbeats, wheelchairs, setWheelchairs, addNotification, language } = useApp();
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('nodes');
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [streamUrls, setStreamUrls] = useState({});

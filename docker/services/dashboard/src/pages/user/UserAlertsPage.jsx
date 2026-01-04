@@ -8,8 +8,8 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { Phone, Bell, AlertTriangle } from 'lucide-react';
 
 export function UserAlertsPage() {
-    const { currentUser, notifications, markNotificationRead, language } = useApp();
-    const { t } = useTranslation(language);
+    const { currentUser, notifications, markNotificationRead } = useApp();
+    const { t } = useTranslation();
 
     const myNotifications = notifications.filter(n => !n.read);
 

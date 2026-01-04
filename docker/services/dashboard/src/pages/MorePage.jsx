@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 
 export function MorePage() {
-    const { setCurrentPage, role, currentUser, notifications, language } = useApp();
-    const { t } = useTranslation(language);
+    const { setCurrentPage, role, currentUser, notifications } = useApp();
+    const { t } = useTranslation();
 
     const unreadCount = notifications.filter(n => !n.read).length;
 

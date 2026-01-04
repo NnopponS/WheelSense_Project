@@ -314,34 +314,24 @@ class ScheduleCheckerService:
                             devices_list = ", ".join(success_devices[:-1]) + f", and {success_devices[-1]}"
                             notification_message += f" I've turned on: {devices_list}."
                 
-                # Broadcast schedule notification via WebSocket (no database save - matches mcp_llm-wheelsense)
+                # Save notification as chat message in database (so it appears in chat interface)
+                # Simplified: Just save to database, frontend will fetch from there
                 try:
-                    notification_payload = {
-                        "type": "schedule_notification",
-                        "time": item.get("time"),
-                        "activity": item.get("activity"),
-                        "location": item.get("location"),
-                        "action": item.get("action"),
-                        "message": notification_message,
-                        "timestamp": datetime.now().isoformat()
-                    }
-                    # #region agent log
-                    debug_log("schedule_checker.py:257", "About to broadcast notification", {"payload": notification_payload, "websocket_count": len(self.mqtt_handler.websockets) if hasattr(self.mqtt_handler, 'websockets') else 'unknown'}, "C")
-                    # #endregion
-                    logger.info(f"🔔 Broadcasting schedule notification via WebSocket: {item['time']} - {item['activity']}")
-                    await self.mqtt_handler._broadcast_ws(notification_payload)
-                    # #region agent log
-                    debug_log("schedule_checker.py:258", "Broadcast completed", {"time": item.get("time"), "activity": item.get("activity")}, "C")
-                    # #endregion
+                    await self.db.save_chat_message({
+                        "role": "assistant",
+                        "content": f"🔔 {notification_message}",
+                        "is_notification": True,
+                        "notification_type": "schedule_notification",
+                        "schedule_time": item.get("time"),
+                        "schedule_activity": item.get("activity")
+                    })
+                    logger.info(f"💬 Saved schedule notification to chat_history: {item['time']} - {item['activity']}")
                     
                     # Mark as sent
                     self.sent_notifications.add(notification_key)
-                    logger.info(f"✅ Successfully sent schedule notification: {item['time']} - {item['activity']}")
+                    logger.info(f"✅ Successfully saved schedule notification: {item['time']} - {item['activity']}")
                 except Exception as e:
-                    # #region agent log
-                    debug_log("schedule_checker.py:263", "Broadcast failed", {"error": str(e)}, "C")
-                    # #endregion
-                    logger.error(f"❌ Failed to broadcast schedule notification: {e}", exc_info=True)
+                    logger.error(f"❌ Failed to save schedule notification: {e}", exc_info=True)
             
             # Clean up old sent notifications (keep only today's)
             self.sent_notifications = {

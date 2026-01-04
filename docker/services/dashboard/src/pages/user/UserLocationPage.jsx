@@ -8,8 +8,8 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { MapPin, Battery } from 'lucide-react';
 
 export function UserLocationPage() {
-    const { currentUser, rooms, wheelchairs, wheelchairPositions, language, detectionState } = useApp();
-    const { t } = useTranslation(language);
+    const { currentUser, rooms, wheelchairs, wheelchairPositions, detectionState } = useApp();
+    const { t } = useTranslation();
     const [detectedRoom, setDetectedRoom] = useState(null);
     const [detectionStatus, setDetectionStatus] = useState('⚪ Not Detected');
 

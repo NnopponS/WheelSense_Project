@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 
 export function ApplianceControlPage() {
-    const { rooms, appliances, toggleAppliance, setApplianceValue, role, currentUser, language } = useApp();
-    const { t } = useTranslation(language);
+    const { rooms, appliances, toggleAppliance, setApplianceValue, role, currentUser } = useApp();
+    const { t } = useTranslation();
     // Default to user's room if user mode, but allow changing to other rooms
     const defaultRoom = role === 'user' ? (currentUser?.room || 'bedroom') : 'bedroom';
     const [selectedRoom, setSelectedRoom] = useState(defaultRoom);

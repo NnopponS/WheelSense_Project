@@ -117,7 +117,7 @@ services:
       - DEVICE_ID=TSIM_004
       - DETECTION_METHOD=yolo
       - DETECTION_CONFIDENCE_THRESHOLD=0.5
-      - DETECTION_INTERVAL_SEC=0.1
+      - DETECTION_INTERVAL_SEC=2.0
       # Preview Mode (set to true to enable OpenCV preview window for debugging)
       - ENABLE_PREVIEW=false
       # GPU settings

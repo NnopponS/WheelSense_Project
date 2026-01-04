@@ -27,6 +27,7 @@ from .core.mqtt_handler import MQTTHandler
 from .services.emergency import EmergencyService
 from .services.schedule_checker import ScheduleCheckerService
 from .services.house_check_service import HouseCheckService
+from .services.notification_service import NotificationService
 from .core.websocket_handler import stream_handler
 from .init_data import initialize_data
 
@@ -115,207 +116,63 @@ async def lifespan(app: FastAPI):
     
     # Set callback for wheelchair detection to update database
     async def on_wheelchair_detection(room: str, detection: dict):
-        """Callback when wheelchair is detected - update position in database and save timeline."""
+        """Simple callback: detect room, update database."""
         if not detection.get("detected", False):
             return
         
         try:
-            # Find first wheelchair in the system (we only have one)
-            # Don't filter by room - the wheelchair moves between rooms
-            wheelchairs = await db.db.wheelchairs.find({}).to_list(length=1)
-            if not wheelchairs:
-                logger.warning(f"No wheelchair found in database")
-                return
-            
-            # Get the wheelchair
-            wheelchair = wheelchairs[0]
-            wheelchair_id = wheelchair.get("id", str(wheelchair.get("_id")))
-            previous_room = wheelchair.get("currentRoom")  # Track previous room for timeline
-            
-            logger.info(f"🦽 Processing detection for wheelchair {wheelchair_id} in room: {room} (was: {previous_room})")
-            
-            # Get current positions
-            map_config = await db.get_map_config()
-            positions = map_config.get("wheelchairPositions", {}) if map_config else {}
-            
-            # Get room data to calculate position
+            # Get room data
             room_data = await db.get_room(room)
             if not room_data:
                 logger.warning(f"Room not found: {room}")
                 return
             
-            # Calculate new position based on bbox or use room center
-            bbox = detection.get("bbox")
-            frame_size = detection.get("frame_size", {})
+            # Update room status
+            room_type = room_data.get("roomType") or room_data.get("id") or room
+            await db.update_room_status(room_type, {
+                "user_detected": True,
+                "detection_confidence": detection.get("confidence", 0.0),
+                "bbox": detection.get("bbox"),
+                "timestamp": datetime.now().isoformat()
+            })
+            logger.info(f"✅ Updated room status: {room_type} -> isOccupied=1")
             
-            room_x = room_data.get("x", 50)
-            room_y = room_data.get("y", 50)
-            room_width = room_data.get("width", 20)
-            room_height = room_data.get("height", 20)
+            # Update user location
+            room_name_en = room_data.get("nameEn")
+            if not room_name_en:
+                # Fallback mapping
+                room_name_map = {
+                    "bedroom": "Bedroom",
+                    "bathroom": "Bathroom",
+                    "kitchen": "Kitchen",
+                    "livingroom": "Living Room"
+                }
+                room_name_en = room_name_map.get(room_type.lower(), room_type.capitalize())
             
-            if bbox and len(bbox) == 4 and frame_size:
-                # bbox is (x, y, w, h) in pixels
-                x, y, w, h = bbox
-                frame_width = frame_size.get("width", 640)
-                frame_height = frame_size.get("height", 480)
-                
-                # Calculate center of bbox in pixel coordinates
-                bbox_center_x = x + w / 2
-                bbox_center_y = y + h / 2
-                
-                # Convert to percentage of video frame (0-100%)
-                video_x_percent = (bbox_center_x / frame_width) * 100
-                video_y_percent = (bbox_center_y / frame_height) * 100
-                
-                # Map video coordinates to room position on map
-                new_x = room_x + (video_x_percent / 100) * room_width
-                new_y = room_y + (video_y_percent / 100) * room_height
-                
-                # Clamp to room bounds
-                new_x = max(room_x, min(room_x + room_width, new_x))
-                new_y = max(room_y, min(room_y + room_height, new_y))
-                
-                positions[str(wheelchair_id)] = {"x": new_x, "y": new_y}
-                await db.save_wheelchair_positions(positions)
-                logger.info(f"📍 Updated wheelchair {wheelchair_id} to {room}: ({new_x:.1f}%, {new_y:.1f}%) [from bbox]")
-            else:
-                # No bbox - use center of room
-                new_x = room_x + room_width / 2
-                new_y = room_y + room_height / 2
-                
-                positions[str(wheelchair_id)] = {"x": new_x, "y": new_y}
-                await db.save_wheelchair_positions(positions)
-                logger.info(f"📍 Updated wheelchair {wheelchair_id} to {room}: ({new_x:.1f}%, {new_y:.1f}%) [center of room]")
+            # Get previous location before updating
+            user_info = await db.get_user_info()
+            previous_location = user_info.get("current_location", "Bedroom")
             
-            # Update the wheelchair document with current room and status
-            # Set status to "online" when wheelchair is detected in a room
-            # Use room_data.id (room ID from database) instead of room type string
-            room_id = room_data.get("id") or room_data.get("_id") or room
-            await db.db.wheelchairs.update_one(
-                {"_id": wheelchair["_id"]},
-                {"$set": {
-                    "currentRoom": room,  # Keep room type for backward compatibility
-                    "room": room_id,  # Use room ID from database for frontend matching
-                    "status": "online",  # Set status to online when detected
-                    "lastUpdated": datetime.now()
-                }}
-            )
+            # Create broadcast callback
+            async def broadcast_user_info_update(message):
+                if mqtt_handler:
+                    await mqtt_handler._broadcast_ws(message)
             
-            # Broadcast wheelchair update to all connected clients so frontend can refresh
-            if mqtt_handler:
-                # Get updated wheelchair data
-                updated_wheelchair = await db.db.wheelchairs.find_one({"_id": wheelchair["_id"]})
-                if updated_wheelchair:
-                    wheelchair_dict = Database._serialize_doc(updated_wheelchair)
-                    # Include position in the update message
-                    current_position = positions.get(str(wheelchair_id), {})
-                    await mqtt_handler._broadcast_ws({
-                        "type": "wheelchair_updated",
-                        "wheelchair": wheelchair_dict,
-                        "position": current_position,  # Include position so frontend can update marker
-                        "room_id": room_id  # Include room_id for reference
-                    })
-                    logger.info(f"📡 Broadcasted wheelchair update: {wheelchair_id} -> room: {room_id}, position: {current_position}")
+            await db.sync_location_to_user_info(room_name_en, broadcast_user_info_update)
+            logger.info(f"✅ Updated current_location to: {room_name_en} (room: {room_type})")
             
-            # ===== TIMELINE: Save location change event if room changed =====
-            if previous_room != room:
-                # Get user/patient info linked to this wheelchair
-                patient = await db.db.patients.find_one({"wheelchairId": wheelchair_id})
-                user_id = patient.get("id", "P001") if patient else "P001"
-                user_name = patient.get("name", "User") if patient else "User"
-                
-                # Save timeline event
-                confidence = detection.get("confidence", 0.0)
-                timeline_event = await db.save_location_event(
-                    user_id=user_id,
-                    wheelchair_id=wheelchair_id,
-                    from_room=previous_room,
-                    to_room=room,
-                    user_name=user_name,
-                    detection_confidence=confidence,
-                    bbox=bbox
-                )
-                
-                logger.info(f"📋 Timeline: {user_name} moved from {previous_room} to {room}")
-                
-                # Update user_info.current_location in SQLite
-                # Use room English name (e.g., "Bedroom", "Kitchen", "Living Room")
-                room_name_en = room_data.get("nameEn")
-                if not room_name_en:
-                    # Fallback: convert room type to proper name
-                    room_name_map = {
-                        "bedroom": "Bedroom",
-                        "bathroom": "Bathroom",
-                        "kitchen": "Kitchen",
-                        "livingroom": "Living Room"
-                    }
-                    room_name_en = room_name_map.get(room.lower(), room.capitalize())
-                
+            # Trigger house check
+            if app.state.house_check_service:
                 try:
-                    # Create broadcast callback for sync_location_to_user_info
-                    async def broadcast_user_info_update(message):
-                        if mqtt_handler:
-                            await mqtt_handler._broadcast_ws(message)
-                    
-                    await db.sync_location_to_user_info(room_name_en, broadcast_user_info_update)
-                    logger.info(f"✅ Updated user_info.current_location to: {room_name_en}")
+                    await app.state.house_check_service.run_house_check(
+                        previous_location, 
+                        room_name_en
+                    )
                 except Exception as e:
-                    logger.error(f"Failed to sync location to user_info: {e}", exc_info=True)
-                    # Continue even if sync fails
-                
-                # Phase 4E: Run house check on location change
-                if house_check_service and previous_room != room:
-                    try:
-                        check_result = await house_check_service.run_house_check(previous_room, room)
-                        if check_result and check_result.get("notified"):
-                            # Store notification context for chat API
-                            app.state.recent_notification = {
-                                "devices": check_result.get("devices", []),
-                                "message": check_result.get("message", ""),
-                                "timestamp": datetime.now().isoformat(),
-                                "type": "house_check"
-                            }
-                            logger.info(f"House check completed: notification sent for {len(check_result.get('devices', []))} device(s)")
-                    except Exception as e:
-                        logger.error(f"Error running house check: {e}", exc_info=True)
-                        # Don't interrupt location update on house check error
-                
-                # Note: user_info_update is already broadcast by sync_location_to_user_info above
-                # This additional broadcast ensures frontend gets the update even if sync broadcast failed
-                if mqtt_handler:
-                    try:
-                        user_info = await db.get_user_info()
-                        # Handle nested name structure from get_user_info()
-                        name_obj = user_info.get("name", {})
-                        if isinstance(name_obj, dict):
-                            name_thai = name_obj.get("thai", "")
-                            name_english = name_obj.get("english", "")
-                        else:
-                            name_thai = user_info.get("name_thai", "")
-                            name_english = user_info.get("name_english", "")
-                        
-                        await mqtt_handler._broadcast_ws({
-                            "type": "user_info_update",
-                            "data": {
-                                "name_thai": name_thai,
-                                "name_english": name_english,
-                                "condition": user_info.get("condition", ""),
-                                "current_location": user_info.get("current_location", "")
-                            },
-                            "timestamp": datetime.now().isoformat()
-                        })
-                    except Exception as e:
-                        logger.warning(f"Failed to broadcast user_info_update after location change: {e}")
-                
-                # Broadcast timeline event to all connected clients
-                if mqtt_handler:
-                    await mqtt_handler._broadcast_ws({
-                        "type": "timeline_event",
-                        "event": timeline_event
-                    })
+                    logger.error(f"House check failed: {e}", exc_info=True)
             
         except Exception as e:
-            logger.error(f"Error updating wheelchair position: {e}", exc_info=True)
+            logger.error(f"❌ Failed to update database: {e}", exc_info=True)
     
     mqtt_handler.on_detection_callback = on_wheelchair_detection
     await mqtt_handler.connect()
@@ -353,8 +210,13 @@ async def lifespan(app: FastAPI):
     app.state.schedule_checker = schedule_checker
     logger.info("✅ Schedule checker service started")
     
-    # Initialize House Check Service
-    house_check_service = HouseCheckService(db, mqtt_handler)
+    # Initialize Notification Service
+    notification_service = NotificationService(db, mqtt_handler)
+    app.state.notification_service = notification_service
+    logger.info("✅ Notification Service initialized")
+    
+    # Initialize House Check Service (pass notification_service for enhanced notifications)
+    house_check_service = HouseCheckService(db, mqtt_handler, notification_service=notification_service)
     app.state.house_check_service = house_check_service
     logger.info("✅ House Check Service initialized")
     
@@ -394,6 +256,39 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize tool registry: {e}", exc_info=True)
         tool_registry = None
         app.state.tool_registry = None
+    
+    # Initialize StateManager, MCPServer, and MCPRouter
+    try:
+        from .core.state_manager import StateManager
+        from .core.activity_derivation import ActivityDerivationService
+        from .mcp.server import MCPServer
+        from .mcp.router import MCPRouter
+        
+        # Create StateManager
+        state_manager = StateManager(db)
+        
+        # Create ActivityDerivationService and link to StateManager
+        activity_derivation = ActivityDerivationService()
+        state_manager.set_activity_derivation(activity_derivation)
+        
+        # Create MCPServer (wraps tool_registry and state_manager)
+        mcp_server = MCPServer(tool_registry, state_manager)
+        
+        # Create MCPRouter (routes tool calls via tool_registry)
+        mcp_router = MCPRouter(tool_registry, mcp_server)
+        
+        # Store in app state
+        app.state.state_manager = state_manager
+        app.state.activity_derivation = activity_derivation
+        app.state.mcp_server = mcp_server
+        app.state.mcp_router = mcp_router
+        
+        logger.info("✅ MCP components initialized (StateManager, MCPServer, MCPRouter)")
+    except Exception as e:
+        logger.error(f"Failed to initialize MCP components: {e}", exc_info=True)
+        app.state.state_manager = None
+        app.state.mcp_server = None
+        app.state.mcp_router = None
 
     # Start WebSocket server for camera connections
     camera_ws_port = 8765
@@ -891,18 +786,22 @@ async def stream_video_websocket(websocket: WebSocket, room_id: str):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket for real-time updates (status, events, etc.)."""
+    """
+    WebSocket for real-time updates (status, events, etc.).
+    
+    This endpoint is OPTIONAL - the system functions correctly without WebSocket.
+    Clients can use REST polling as a fallback.
+    """
     await websocket.accept()
     
     # Get mqtt_handler from app state if available, otherwise fallback to global
     handler = getattr(app.state, "mqtt_handler", mqtt_handler)
     
     if handler:
-        logger.info(f"Adding websocket to MQTT handler id={id(handler)}")
+        logger.debug(f"WebSocket client connected (total: {len(handler.websockets) + 1})")
         handler.add_websocket(websocket)
-        logger.info(f"Current websocket count: {len(handler.websockets)}")
     else:
-        logger.error("MQTT handler is None in websocket_endpoint!")
+        logger.debug("MQTT handler not available for WebSocket (optional)")
     
     try:
         while True:
@@ -918,11 +817,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif msg_type == "control":
                     if handler:
                         # Handle control commands via WebSocket
-                        await handler.send_control_command(
-                            room=message["room"],
-                            appliance=message["appliance"],
-                            state=message["state"]
-                        )
+                        try:
+                            await handler.send_control_command(
+                                room=message["room"],
+                                appliance=message["appliance"],
+                                state=message["state"]
+                            )
+                        except Exception as e:
+                            logger.debug(f"WebSocket control command failed (optional): {e}")
                 
                 elif msg_type == "wheelchair_detection":
                     # Handle wheelchair detection from test simulator or camera-service
@@ -932,45 +834,51 @@ async def websocket_endpoint(websocket: WebSocket):
                     frame_size = message.get("frame_size")
                     source = message.get("source")
                     
-                    logger.info(f"🦽 Wheelchair detection from client: room={room}, detected={detected}, source={source}")
+                    logger.debug(f"🦽 Wheelchair detection from client: room={room}, detected={detected}, source={source}")
                     
                     # ONLY accept detection from detection-test page for position updates
                     if source == "detection-test":
-                        # Broadcast to all clients
+                        # Broadcast to all clients (OPTIONAL)
                         if handler:
-                            await handler._broadcast_ws({
-                                "type": "wheelchair_detection",
-                                "room": room,
-                                "device_id": message.get("device_id", "TEST"),
-                                "detected": detected,
-                                "confidence": message.get("confidence", 0.9),
-                                "bbox": bbox,
-                                "frame_size": frame_size,
-                                "timestamp": datetime.now().isoformat(),
-                                "source": "detection-test"
-                            })
+                            try:
+                                await handler._broadcast_ws({
+                                    "type": "wheelchair_detection",
+                                    "room": room,
+                                    "device_id": message.get("device_id", "TEST"),
+                                    "detected": detected,
+                                    "confidence": message.get("confidence", 0.9),
+                                    "bbox": bbox,
+                                    "frame_size": frame_size,
+                                    "timestamp": datetime.now().isoformat(),
+                                    "source": "detection-test"
+                                })
+                            except Exception as e:
+                                logger.debug(f"WebSocket broadcast failed (optional): {e}")
                         
-                        # Trigger database update callback ONLY from detection-test
+                        # CRITICAL: Trigger database update callback (always happens, regardless of WebSocket)
                         if detected and stream_handler.on_detection_callback:
-                            await stream_handler.on_detection_callback(room, {
-                                "detected": detected,
-                                "bbox": bbox,
-                                "frame_size": frame_size,
-                                "wheelchair_id": message.get("wheelchair_id")
-                            })
+                            try:
+                                await stream_handler.on_detection_callback(room, {
+                                    "detected": detected,
+                                    "bbox": bbox,
+                                    "frame_size": frame_size,
+                                    "wheelchair_id": message.get("wheelchair_id")
+                                })
+                            except Exception as e:
+                                logger.error(f"Failed to update database for detection: {e}", exc_info=True)
                     else:
                         logger.debug(f"Ignoring wheelchair_detection from source: {source} (only accepting from detection-test)")
             except json.JSONDecodeError:
-                logger.warning(f"Invalid JSON received on WebSocket: {data}")
+                logger.debug(f"Invalid JSON received on WebSocket: {data}")
             except Exception as e:
-                logger.error(f"Error processing WebSocket message: {e}", exc_info=True)
+                logger.debug(f"Error processing WebSocket message (optional): {e}")
 
     except WebSocketDisconnect:
-        logger.info("WebSocket disconnected")
+        logger.debug("WebSocket disconnected (normal)")
         if handler:
             handler.remove_websocket(websocket)
     except Exception as e:
-        logger.error(f"WebSocket endpoint error: {e}", exc_info=True)
+        logger.debug(f"WebSocket endpoint error (optional): {e}")
         if handler:
             handler.remove_websocket(websocket)
 
@@ -2402,7 +2310,7 @@ async def reset_all_defaults():
     # Reset appliance states to off
     await db.db.appliances.update_many(
         {},
-        {"$set": {"state": False, "value": 0}}
+        {"$set": {"state": False, "isOn": False, "value": 0}}
     )
     
     # Reset wheelchair positions

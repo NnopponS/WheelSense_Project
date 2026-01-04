@@ -554,20 +554,42 @@ class WebSocketStreamHandler:
             # Add this room to known rooms
             self.known_rooms.add(room)
             
-            # Apply confidence threshold (like detection-test page)
-            is_detected = detected and confidence >= self.detection_confidence_threshold
+            # Camera service already applies confidence threshold (0.4), so we accept whatever it sends
+            # Only check that detected flag is True - no need to re-apply threshold here
+            is_detected = detected
             
             # Check if we should process this detection (throttle + room change logic)
             now = time.time()
             time_since_last_notify = now - self.last_detection_notify_time
             room_changed = self.last_detected_room != room
             
-            # Only process if detected AND (room changed OR throttle interval passed)
+            # Create proper detection dict for callback
+            callback_detection = {
+                "detected": True,
+                "confidence": confidence,
+                "bbox": bbox,
+                "frame_size": frame_size,
+                "device_id": device_id,
+                "method": detection.get("method", "yolo")
+            }
+            
+            # CRITICAL: ALWAYS update database FIRST (no throttling for database sync)
+            # This ensures database stays in sync with YOLO detection regardless of WebSocket availability
+            if is_detected and hasattr(self, 'on_detection_callback') and self.on_detection_callback:
+                try:
+                    await self.on_detection_callback(room, callback_detection)
+                    logger.debug(f"✅ Database updated for room: {room}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to update database for detection: {e}", exc_info=True)
+            
+            # Only broadcast to UI if detected AND (room changed OR throttle interval passed)
+            # This throttles UI updates but database is already updated above
+            # WebSocket broadcasts are OPTIONAL - system works without them
             if is_detected and (room_changed or time_since_last_notify >= self.detection_throttle_seconds):
                 logger.info(f"🦽 AUTO-PROCESSING detection: room={room}, confidence={confidence:.2f}, device={device_id} "
                           f"({'room changed' if room_changed else 'throttle interval'})")
                 
-                # Send detected=false for ALL other rooms
+                # Send detected=false for ALL other rooms (OPTIONAL - WebSocket only)
                 for other_room in self.known_rooms:
                     if other_room != room:
                         false_message = {
@@ -580,11 +602,14 @@ class WebSocketStreamHandler:
                             "timestamp": datetime.now().isoformat(),
                             "source": "detection-test"  # Use detection-test source for dashboard to accept
                         }
-                        await self._broadcast_detection_to_dashboard(false_message)
-                        if self.mqtt_handler and hasattr(self.mqtt_handler, '_broadcast_ws'):
-                            await self.mqtt_handler._broadcast_ws(false_message)
+                        try:
+                            await self._broadcast_detection_to_dashboard(false_message)
+                            if self.mqtt_handler and hasattr(self.mqtt_handler, '_broadcast_ws'):
+                                await self.mqtt_handler._broadcast_ws(false_message)
+                        except Exception as e:
+                            logger.debug(f"WebSocket broadcast failed (optional): {e}")
                 
-                # Send detected=true for the current room
+                # Send detected=true for the current room (OPTIONAL - WebSocket only)
                 detection_message = {
                     "type": "wheelchair_detection",
                     "room": room,
@@ -598,25 +623,22 @@ class WebSocketStreamHandler:
                     "source": "detection-test"  # Use detection-test source for dashboard to accept
                 }
                 
-                await self._broadcast_detection_to_dashboard(detection_message)
-                if self.mqtt_handler and hasattr(self.mqtt_handler, '_broadcast_ws'):
-                    await self.mqtt_handler._broadcast_ws(detection_message)
+                try:
+                    await self._broadcast_detection_to_dashboard(detection_message)
+                    if self.mqtt_handler and hasattr(self.mqtt_handler, '_broadcast_ws'):
+                        await self.mqtt_handler._broadcast_ws(detection_message)
+                    logger.debug(f"📤 Broadcasted via WebSocket: {room}=true, {len(self.known_rooms) - 1} other rooms=false")
+                except Exception as e:
+                    logger.debug(f"WebSocket broadcast failed (optional): {e}")
                 
-                logger.info(f"📤 Broadcasted: {room}=true, {len(self.known_rooms) - 1} other rooms=false")
-                
-                # Call the callback to update wheelchair position in database
-                if hasattr(self, 'on_detection_callback') and self.on_detection_callback:
-                    await self.on_detection_callback(room, detection)
-                    logger.info(f"✅ Called on_detection_callback for room: {room}")
-                
-                # Update tracking variables
+                # Update tracking variables for throttling (regardless of WebSocket success)
                 self.last_detected_room = room
                 self.last_detection_notify_time = now
             else:
-                # Just log for debugging (no action taken)
+                # UI broadcast throttled, but database was already updated above
                 if is_detected:
                     remaining = self.detection_throttle_seconds - time_since_last_notify
-                    logger.debug(f"🔇 Throttled: {room} (wait {remaining:.1f}s more)")
+                    logger.debug(f"🔇 UI broadcast throttled: {room} (wait {remaining:.1f}s more, but database already updated)")
                     
         except Exception as e:
             logger.error(f"Error handling detection from service: {e}", exc_info=True)

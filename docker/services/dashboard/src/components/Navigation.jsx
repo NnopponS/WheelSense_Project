@@ -10,15 +10,11 @@ import {
 } from 'lucide-react';
 
 export function Sidebar() {
-    const { role, setRole, currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, notifications, currentUser, language } = useApp();
-    const { t } = useTranslation(language);
+    const { role, setRole, currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, notifications, currentUser } = useApp();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Debug: Log when language changes
-    React.useEffect(() => {
-        console.log('[Sidebar] Language changed to:', language);
-    }, [language]);
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -180,8 +176,8 @@ export function Sidebar() {
 }
 
 export function BottomNav() {
-    const { currentPage, setCurrentPage, role, notifications, language } = useApp();
-    const { t } = useTranslation(language);
+    const { currentPage, setCurrentPage, role, notifications } = useApp();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const unreadCount = notifications.filter(n => !n.read).length;
 

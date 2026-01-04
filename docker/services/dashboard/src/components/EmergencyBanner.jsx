@@ -4,8 +4,8 @@ import { useTranslation } from '../hooks/useTranslation';
 import { AlertTriangle, X, Phone, CheckCircle } from 'lucide-react';
 
 export function EmergencyBanner() {
-    const { emergencies, resolveEmergency, rooms, language } = useApp();
-    const { t } = useTranslation(language);
+    const { emergencies, resolveEmergency, rooms } = useApp();
+    const { t } = useTranslation();
 
     const safeEmergencies = emergencies || [];
     const safeRooms = rooms || [];

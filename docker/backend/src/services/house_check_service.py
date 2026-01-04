@@ -18,9 +18,10 @@ class HouseCheckService:
     Detects devices ON in rooms other than user location and sends notifications.
     """
     
-    def __init__(self, db, mqtt_handler):
+    def __init__(self, db, mqtt_handler, notification_service=None):
         self.db = db
         self.mqtt_handler = mqtt_handler
+        self.notification_service = notification_service
         self.last_location: Optional[str] = None
         
         # Phase 4F: Health tracking
@@ -106,7 +107,7 @@ class HouseCheckService:
         
         try:
             # Detect potential issues
-            potential_issues = self.detect_potential_issues(current_location)
+            potential_issues = await self.detect_potential_issues(current_location)
             
             if not potential_issues:
                 logger.debug(f"House check: No devices ON in other rooms")
@@ -134,17 +135,31 @@ class HouseCheckService:
             # Build notification message
             message = self._build_notification_message(devices_to_notify)
             
-            # Broadcast via WebSocket (no database save - matches mcp_llm-wheelsense)
-            try:
-                await self.mqtt_handler._broadcast_ws({
-                    "type": "house_check_notification",
-                    "message": message,
-                    "devices": devices_to_notify,
-                    "timestamp": datetime.now().isoformat()
-                })
-                logger.info(f"Sent house check notification: {message}")
-            except Exception as e:
-                logger.error(f"Failed to broadcast house check notification: {e}")
+            # Send notification via NotificationService (saves to DB, broadcasts via WebSocket, executes callbacks)
+            if self.notification_service:
+                try:
+                    notification_result = await self.notification_service.send_notification(
+                        message=message,
+                        notification_data={
+                            "devices": devices_to_notify,
+                            "type": "house_check_notification"
+                        }
+                    )
+                    logger.info(f"💬 House check notification sent: {message} (DB: {notification_result.get('database_saved')}, WS: {notification_result.get('websocket_sent')})")
+                except Exception as e:
+                    logger.error(f"❌ Failed to send house check notification: {e}", exc_info=True)
+            else:
+                # Fallback to direct database save if notification service not available
+                try:
+                    await self.db.save_chat_message({
+                        "role": "assistant",
+                        "content": f"🔔 {message}",
+                        "is_notification": True,
+                        "notification_type": "house_check_notification"
+                    })
+                    logger.info(f"💬 Saved house check notification to chat_history (fallback): {message}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to save house check notification: {e}", exc_info=True)
             
             # Phase 4F: Record successful check
             self.last_successful_check = datetime.now()

@@ -7,8 +7,8 @@ import 'react-datepicker/dist/react-datepicker.css';
 import * as api from '../services/api';
 
 export function TimelinePage() {
-    const { timeline: localTimeline, patients, rooms, language, currentUser } = useApp();
-    const { t } = useTranslation(language);
+    const { timeline: localTimeline, patients, rooms, currentUser } = useApp();
+    const { t } = useTranslation();
     const [filter, setFilter] = useState('all');
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [viewMode, setViewMode] = useState('live'); // 'live' or 'history'
