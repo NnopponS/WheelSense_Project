@@ -112,6 +112,11 @@ async def lifespan(app: FastAPI):
         broker=settings.MQTT_BROKER,
         port=settings.MQTT_PORT
     )
+    
+    # Connect to MQTT broker
+    await mqtt_handler.connect()
+    logger.info("✅ MQTT handler connected to broker")
+    
     app.state.mqtt_handler = mqtt_handler
     
     # Set database reference on MQTT handler for state sync requests

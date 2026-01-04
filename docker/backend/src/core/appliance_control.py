@@ -58,7 +58,7 @@ async def control_appliance_core(
             mqtt_appliance = appliance.lower()
         
         mqtt_success = await mqtt_handler.send_control_command(
-            room=room,
+            room=room.lower(),
             appliance=mqtt_appliance,
             state=state,
             value=value
@@ -109,30 +109,33 @@ async def control_appliance_core(
     
     # Step 3: Broadcast state change via WebSocket to sync all clients
     # Database has already been updated above, so WebSocket failure doesn't affect correctness
-    try:
-        # Broadcast appliance_update (existing event)
-        await mqtt_handler._broadcast_ws({
-            "type": "appliance_update",
-            "room": room,
-            "appliance": appliance,
-            "state": state,
-            "value": value,
-            "timestamp": datetime.utcnow().isoformat()
-        })
-        logger.debug(f"Broadcasted appliance update via WebSocket: {room}/{appliance} = {state}")
-        
-        # Also broadcast device_state_update for MCP compatibility
-        await mqtt_handler._broadcast_ws({
-            "type": "device_state_update",
-            "room": room,
-            "device": appliance,
-            "state": state,
-            "timestamp": datetime.utcnow().isoformat()
-        })
-        logger.debug(f"Broadcasted device_state_update via WebSocket: {room}/{appliance} = {state}")
-    except Exception as e:
-        # WebSocket broadcast is optional - log but don't fail
-        logger.debug(f"WebSocket broadcast failed (optional): {e}")
+    if mqtt_handler:
+        try:
+            # Broadcast appliance_update (existing event)
+            await mqtt_handler._broadcast_ws({
+                "type": "appliance_update",
+                "room": room,
+                "appliance": appliance,
+                "state": state,
+                "value": value,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+            logger.info(f"Broadcasted appliance_update via WebSocket: {room}/{appliance} = {state}")
+            
+            # Also broadcast device_state_update for MCP compatibility
+            await mqtt_handler._broadcast_ws({
+                "type": "device_state_update",
+                "room": room,
+                "device": appliance,
+                "state": state,
+                "timestamp": datetime.utcnow().isoformat()
+            })
+            logger.info(f"Broadcasted device_state_update via WebSocket: {room}/{appliance} = {state}")
+        except Exception as e:
+            # WebSocket broadcast is optional - log but don't fail
+            logger.warning(f"WebSocket broadcast failed (optional): {e}")
+    else:
+        logger.warning(f"MQTT handler not available, skipping WebSocket broadcast for {room}/{appliance}")
     
     # Step 4: Log activity
     try:
