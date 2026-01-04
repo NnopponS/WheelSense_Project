@@ -1878,8 +1878,16 @@ class Database:
         # Normalize room name
         normalized_room = normalize_room_name(room)
         
+        # Delete any existing entries with different case variants to prevent duplicates
+        # This handles the case where 'light' and 'Light' might both exist
         await self._db_connection.execute("""
-            INSERT OR REPLACE INTO device_states (room, device, state, updated_at)
+            DELETE FROM device_states 
+            WHERE room = ? AND LOWER(device) = LOWER(?)
+        """, (normalized_room, normalized_device))
+        
+        # Insert the normalized entry
+        await self._db_connection.execute("""
+            INSERT INTO device_states (room, device, state, updated_at)
             VALUES (?, ?, ?, ?)
         """, (normalized_room, normalized_device, 1 if state else 0, now))
         await self._db_connection.commit()
