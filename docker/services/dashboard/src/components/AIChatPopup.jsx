@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { Bot, Send, X, Minimize2, Maximize2, Mic, MicOff, Volume2, VolumeX, Check, Loader, MessageSquarePlus } from 'lucide-react';
+import { Bot, Send, X, Minimize2, Maximize2, Mic, MicOff, Volume2, VolumeX, Check, Loader, MessageSquarePlus, Bell } from 'lucide-react';
 import * as api from '../services/api';
 
 
@@ -11,11 +11,11 @@ function generateSessionId() {
 }
 
 export function AIChatPopup() {
-    const { rooms, appliances, toggleAppliance, patients, role, currentUser, chatHistory, addChatMessage, clearChatHistory } = useApp();
+    const { rooms, appliances, toggleAppliance, patients, role, currentUser, chatHistory, addChatMessage, clearChatHistory, pendingNotification, clearPendingNotification } = useApp();
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
-    
+
     // Draggable position state
     const [position, setPosition] = useState(() => {
         // Load position from localStorage or use default
@@ -30,12 +30,12 @@ export function AIChatPopup() {
         }
         return null; // Default position (bottom: 24px, right: 24px)
     });
-    
+
     // Drag state
     const [isDragging, setIsDragging] = useState(false);
     const dragStartPos = useRef({ x: 0, y: 0 });
     const elementStartPos = useRef({ x: 0, y: 0 });
-    
+
     // Save position to localStorage when it changes
     useEffect(() => {
         if (position) {
@@ -49,7 +49,7 @@ export function AIChatPopup() {
         const stored = localStorage.getItem('wheelsense_chat_session_id');
         return stored || generateSessionId();
     });
-    
+
     // Save session ID to localStorage when it changes
     useEffect(() => {
         localStorage.setItem('wheelsense_chat_session_id', sessionId);
@@ -74,6 +74,39 @@ export function AIChatPopup() {
     useEffect(() => {
         scrollToBottom();
     }, [chatHistory]);
+
+    // Handle notifications - auto-open popup and show message
+    useEffect(() => {
+        if (pendingNotification) {
+            console.log('[AIChatPopup] Received notification:', pendingNotification);
+
+            // Auto-open popup if notification requests it
+            if (pendingNotification.auto_popup) {
+                setIsOpen(true);
+                setIsMinimized(false);
+            }
+
+            // Add notification message to chat
+            const notificationMessage = {
+                id: Date.now(),
+                role: 'assistant',
+                content: pendingNotification.message || '🔔 Notification',
+                isNotification: true,
+                notificationData: pendingNotification
+            };
+            addChatMessage(notificationMessage);
+
+            // Speak the notification if voice enabled
+            if (voiceEnabled && pendingNotification.message) {
+                speakText(pendingNotification.message);
+            }
+
+            // Clear the pending notification
+            if (clearPendingNotification) {
+                clearPendingNotification();
+            }
+        }
+    }, [pendingNotification]);
 
     // Start voice recognition
     const startListening = () => {
@@ -261,59 +294,59 @@ export function AIChatPopup() {
         dragStartPos.current = { x: e.clientX, y: e.clientY };
         elementStartPos.current = position || { x: window.innerWidth - 84, y: window.innerHeight - 84 };
     };
-    
+
     const handleTouchStart = (e) => {
         const touch = e.touches[0];
         setIsDragging(true);
         dragStartPos.current = { x: touch.clientX, y: touch.clientY };
         elementStartPos.current = position || { x: window.innerWidth - 84, y: window.innerHeight - 84 };
     };
-    
+
     const handleMouseMove = (e) => {
         if (!isDragging) return;
         e.preventDefault();
         const deltaX = e.clientX - dragStartPos.current.x;
         const deltaY = e.clientY - dragStartPos.current.y;
-        
+
         let newX = elementStartPos.current.x + deltaX;
         let newY = elementStartPos.current.y + deltaY;
-        
+
         // Keep within viewport bounds
         const maxX = window.innerWidth - 60;
         const maxY = window.innerHeight - 60;
         newX = Math.max(0, Math.min(newX, maxX));
         newY = Math.max(0, Math.min(newY, maxY));
-        
+
         setPosition({ x: newX, y: newY });
     };
-    
+
     const handleTouchMove = (e) => {
         if (!isDragging) return;
         e.preventDefault();
         const touch = e.touches[0];
         const deltaX = touch.clientX - dragStartPos.current.x;
         const deltaY = touch.clientY - dragStartPos.current.y;
-        
+
         let newX = elementStartPos.current.x + deltaX;
         let newY = elementStartPos.current.y + deltaY;
-        
+
         // Keep within viewport bounds
         const maxX = window.innerWidth - 60;
         const maxY = window.innerHeight - 60;
         newX = Math.max(0, Math.min(newX, maxX));
         newY = Math.max(0, Math.min(newY, maxY));
-        
+
         setPosition({ x: newX, y: newY });
     };
-    
+
     const handleMouseUp = () => {
         setIsDragging(false);
     };
-    
+
     const handleTouchEnd = () => {
         setIsDragging(false);
     };
-    
+
     // Add global event listeners for dragging
     useEffect(() => {
         if (isDragging) {
@@ -329,7 +362,7 @@ export function AIChatPopup() {
             };
         }
     }, [isDragging]);
-    
+
     // Calculate popup position (same as fab or use position)
     // When position is set, popup appears at bottom-right of fab position
     const popupStyle = position
@@ -341,7 +374,7 @@ export function AIChatPopup() {
             bottom: `${window.innerHeight - position.y - 60}px`
         }
         : {};
-    
+
     const fabStyle = position
         ? {
             position: 'fixed',
@@ -369,7 +402,7 @@ export function AIChatPopup() {
     }
 
     return (
-        <div 
+        <div
             className={`ai-popup ${isMinimized ? 'minimized' : ''}`}
             style={popupStyle}
         >

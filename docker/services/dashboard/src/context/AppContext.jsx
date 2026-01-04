@@ -68,6 +68,14 @@ export function AppProvider({ children }) {
     // Chat message callback ref for WebSocket notifications
     const chatMessageCallbackRef = useRef(null);
 
+    // Pending notification for auto-popup (from schedule or room change alerts)
+    const [pendingNotification, setPendingNotification] = useState(null);
+
+    // Clear pending notification
+    const clearPendingNotification = useCallback(() => {
+        setPendingNotification(null);
+    }, []);
+
     // Load notifications from API on startup
     useEffect(() => {
         const loadNotifications = async () => {
@@ -749,6 +757,15 @@ export function AppProvider({ children }) {
                             // REMOVED: setTimeout refresh that was overwriting WS updates with stale data
                         }
 
+                        // Handle notification (schedule, room change alerts)
+                        if (message.type === 'notification') {
+                            const notificationData = message.data || message;
+                            console.log('[AppContext] 🔔 Notification received:', notificationData);
+
+                            // Set pending notification for AIChatPopup to handle
+                            setPendingNotification(notificationData);
+                        }
+
                         // Handle schedule_item_update
                         if (message.type === 'schedule_item_update') {
                             const { action, item, item_id } = message;
@@ -1295,6 +1312,7 @@ export function AppProvider({ children }) {
         customTime, setCustomTime, getCurrentTime,
         registerChatMessageCallback,
         chatHistory, addChatMessage, clearChatHistory, setChatHistory,
+        pendingNotification, clearPendingNotification,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -554,6 +554,65 @@ async def chat(request: ChatRequest, app_request: Request):
             logger.warning(f"Failed to save user message to chat history: {e}")
             # Continue even if save fails
         
+        # Step 1.5: Try command parser FIRST for faster response on common commands
+        # This handles device control, status queries, etc. without calling LLM
+        try:
+            from ..services.command_parser import parse_command, execute_command
+            
+            parsed = parse_command(user_message)
+            logger.info(f"[{correlation_id}] Command parser result: type={parsed.command_type.value}, confidence={parsed.confidence}")
+            
+            if parsed.confidence >= 0.7:
+                # Get current room from user info
+                user_info = await db.get_user_info()
+                current_room = user_info.get("current_location", "bedroom")
+                
+                # Get MQTT handler from app state
+                mqtt_handler = getattr(app_request.app.state, 'mqtt_handler', None)
+                
+                # Execute the parsed command
+                cmd_result = await execute_command(
+                    parsed=parsed,
+                    db=db,
+                    mqtt_handler=mqtt_handler,
+                    current_room=current_room
+                )
+                
+                if cmd_result.get("handled"):
+                    # Command was handled by parser - return response directly
+                    response_message = cmd_result.get("message", "Done!")
+                    
+                    # Save assistant response to chat history
+                    try:
+                        await db.save_chat_message({
+                            "role": "assistant",
+                            "content": response_message
+                        })
+                    except Exception as save_error:
+                        logger.warning(f"Failed to save response to chat history: {save_error}")
+                    
+                    # Broadcast via WebSocket if tool executed device control
+                    if cmd_result.get("tool_result"):
+                        ws_manager = getattr(app_request.app.state, 'ws_manager', None)
+                        if ws_manager:
+                            await ws_manager.broadcast({
+                                "type": "chat_response",
+                                "message": response_message,
+                                "timestamp": datetime.now().isoformat()
+                            })
+                    
+                    logger.info(f"[{correlation_id}] Command handled by parser (no LLM call)")
+                    return ChatResponse(
+                        response=response_message,
+                        timestamp=datetime.now().isoformat(),
+                        model="command_parser",
+                        tokens_used=0
+                    )
+                # If not handled, fall through to LLM
+        except Exception as parser_error:
+            logger.warning(f"[{correlation_id}] Command parser failed, falling back to LLM: {parser_error}")
+            # Fall through to LLM
+        
         # Step 2: Check summarization triggers (Phase 4C)
         turn_count = await db.get_turn_count()
         message_count = await db.get_chat_history_count()
