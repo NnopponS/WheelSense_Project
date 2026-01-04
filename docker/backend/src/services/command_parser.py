@@ -222,7 +222,7 @@ async def execute_command(
     Returns:
         Dict with success status and response message
     """
-    from .tool_handlers import handle_device_control
+    # Note: control_appliance_core is imported in the handler functions below
     
     if parsed.command_type == CommandType.UNKNOWN:
         return {

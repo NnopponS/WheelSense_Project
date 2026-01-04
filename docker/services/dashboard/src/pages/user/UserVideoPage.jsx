@@ -319,10 +319,17 @@ export function UserVideoPage() {
                                     const Icon = getIcon(app.type);
 
                                     // Get device state from deviceStates (source of truth) 
-                                    // Try multiple room name formats to match
+                                    // Try multiple room name formats AND device type formats
                                     const normalizedRoom = selectedRoom?.toLowerCase().replace(/\s+/g, '');
-                                    const deviceState = deviceStates?.[normalizedRoom]?.[app.type] ??
-                                        deviceStates?.[selectedRoom]?.[app.type] ??
+                                    const deviceType = app.type; // e.g., "light"
+                                    const deviceTypeCapitalized = deviceType.charAt(0).toUpperCase() + deviceType.slice(1); // e.g., "Light"
+
+                                    // Check CAPITALIZED first since database uses capitalized format (Light, Alarm, AC)
+                                    const deviceState =
+                                        deviceStates?.[normalizedRoom]?.[deviceTypeCapitalized] ??
+                                        deviceStates?.[normalizedRoom]?.[deviceType] ??
+                                        deviceStates?.[selectedRoom]?.[deviceTypeCapitalized] ??
+                                        deviceStates?.[selectedRoom]?.[deviceType] ??
                                         app.state; // Fallback to appliance state if deviceStates not available
                                     const isOn = deviceState === true || deviceState === 1;
 

@@ -424,15 +424,16 @@ export function Drawer() {
                                                     const deviceTypeCapitalized = deviceType.charAt(0).toUpperCase() + deviceType.slice(1); // e.g., "Light"
 
                                                     // Try all combinations of room and device type formats
+                                                    // Check CAPITALIZED first since database uses capitalized format (Light, Alarm, AC)
                                                     const deviceState =
-                                                        deviceStates?.[normalizedRoom]?.[deviceType] ??
                                                         deviceStates?.[normalizedRoom]?.[deviceTypeCapitalized] ??
-                                                        deviceStates?.[roomKey]?.[deviceType] ??
+                                                        deviceStates?.[normalizedRoom]?.[deviceType] ??
                                                         deviceStates?.[roomKey]?.[deviceTypeCapitalized] ??
-                                                        deviceStates?.[data.roomType?.toLowerCase()]?.[deviceType] ??
+                                                        deviceStates?.[roomKey]?.[deviceType] ??
                                                         deviceStates?.[data.roomType?.toLowerCase()]?.[deviceTypeCapitalized] ??
-                                                        deviceStates?.[data.nameEn?.toLowerCase()]?.[deviceType] ??
+                                                        deviceStates?.[data.roomType?.toLowerCase()]?.[deviceType] ??
                                                         deviceStates?.[data.nameEn?.toLowerCase()]?.[deviceTypeCapitalized] ??
+                                                        deviceStates?.[data.nameEn?.toLowerCase()]?.[deviceType] ??
                                                         app.state; // Fallback to appliance state if deviceStates not available
 
                                                     // Use device state from database as source of truth
