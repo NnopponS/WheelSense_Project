@@ -17,9 +17,11 @@ class CommandType(Enum):
     """Types of commands that can be parsed."""
     DEVICE_CONTROL = "device_control"
     DEVICE_CONTROL_ALL_ROOMS = "device_control_all_rooms"
+    TURN_OFF_ALL_ON = "turn_off_all_on"  # Turn off all devices that are currently ON
     STATUS_QUERY = "status_query"
     CURRENT_ROOM_QUERY = "current_room_query"
     SCHEDULE_QUERY = "schedule_query"
+    ACTIVITY_DONE = "activity_done"  # User says they finished current activity
     UNKNOWN = "unknown"
 
 
@@ -86,6 +88,14 @@ CURRENT_ROOM_KEYWORDS = [
 SCHEDULE_KEYWORDS = [
     "ตารางเวลา", "schedule", "กำหนดการ", "แผนวันนี้",
     "what's next", "next activity", "กิจกรรมต่อไป"
+]
+
+# Activity done keywords (user says they finished current activity)
+ACTIVITY_DONE_KEYWORDS = [
+    "เสร็จแล้ว", "done", "finished", "complete", "completed",
+    "ทำเสร็จแล้ว", "เรียบร้อยแล้ว", "เรียบร้อย", "ทำเสร็จ",
+    "เสร็จ", "จบแล้ว", "ต่อไปทำอะไร", "ต่อไป", "what's next task",
+    "next task", "อะไรต่อไป", "แล้วต่อไป"
 ]
 
 
@@ -198,6 +208,12 @@ def parse_command(message: str) -> ParsedCommand:
         result.confidence = 0.9
         return result
     
+    # Check for activity done (user finished current activity)
+    if find_keyword_match(message, ACTIVITY_DONE_KEYWORDS):
+        result.command_type = CommandType.ACTIVITY_DONE
+        result.confidence = 0.85
+        return result
+    
     # Check for device control
     action = find_action(message)
     devices = find_devices(message)  # Get all devices
@@ -214,9 +230,18 @@ def parse_command(message: str) -> ParsedCommand:
             result.device = devices[0]
             result.confidence = 0.85
         else:
-            # No device found, default to light
-            result.device = "Light"
-            result.confidence = 0.7
+            # No device specified
+            if action == "OFF":
+                # Turn off with no device = turn off all ON devices in current room
+                result.command_type = CommandType.TURN_OFF_ALL_ON
+                result.device = None
+                result.confidence = 0.85
+                result.room = find_room(message)
+                return result
+            else:
+                # Turn on with no device - default to Light
+                result.device = "light"
+                result.confidence = 0.7
         
         if is_all_rooms(message):
             result.command_type = CommandType.DEVICE_CONTROL_ALL_ROOMS
@@ -238,7 +263,8 @@ async def execute_command(
     parsed: ParsedCommand,
     db,
     mqtt_handler,
-    current_room: str = "bedroom"
+    current_room: str = "bedroom",
+    app = None  # FastAPI app instance for accessing custom_time
 ) -> Dict[str, Any]:
     """
     Execute a parsed command.
@@ -248,6 +274,7 @@ async def execute_command(
         db: Database instance
         mqtt_handler: MQTT handler instance
         current_room: User's current room (from user_info)
+        app: FastAPI app instance (for custom_time access)
         
     Returns:
         Dict with success status and response message
@@ -269,6 +296,13 @@ async def execute_command(
     
     if parsed.command_type == CommandType.SCHEDULE_QUERY:
         return await _handle_schedule_query(db)
+    
+    if parsed.command_type == CommandType.ACTIVITY_DONE:
+        return await _handle_activity_done(db, app)
+    
+    if parsed.command_type == CommandType.TURN_OFF_ALL_ON:
+        room = parsed.room or current_room
+        return await _handle_turn_off_all_on(db, mqtt_handler, room)
     
     if parsed.command_type == CommandType.DEVICE_CONTROL:
         room = parsed.room or current_room
@@ -385,6 +419,160 @@ async def _handle_schedule_query(db) -> Dict[str, Any]:
         }
     except Exception as e:
         logger.error(f"Error handling schedule query: {e}")
+        return {
+            "handled": False,
+            "message": "",
+            "should_use_llm": True
+        }
+
+
+async def _handle_activity_done(db, app=None) -> Dict[str, Any]:
+    """Handle activity done command - tell user about next activity."""
+    try:
+        from datetime import datetime
+        import time
+        
+        # Get today's schedule
+        schedule = await db.get_schedule_items()
+        
+        # Use custom time if set, otherwise use real time
+        if app and hasattr(app.state, 'custom_time') and app.state.custom_time:
+            custom_time = app.state.custom_time
+            custom_time_set_timestamp = getattr(app.state, 'custom_time_set_timestamp', time.time())
+            # Parse custom time and add elapsed seconds
+            parts = custom_time.split(":")
+            if len(parts) >= 2:
+                hours = int(parts[0])
+                minutes = int(parts[1])
+                elapsed_seconds = int(time.time() - custom_time_set_timestamp)
+                total_minutes = hours * 60 + minutes + (elapsed_seconds // 60)
+                hours = (total_minutes // 60) % 24
+                minutes = total_minutes % 60
+                current_time = f"{hours:02d}:{minutes:02d}"
+            else:
+                current_time = custom_time
+            logger.info(f"Using custom time for activity done: {current_time}")
+        else:
+            current_time = datetime.now().strftime("%H:%M")
+        
+        # Sort by time
+        sorted_schedule = sorted(schedule, key=lambda x: x.get("time", "99:99"))
+        
+        # Find current and next activities
+        current_activity = None
+        next_activity = None
+        
+        for i, item in enumerate(sorted_schedule):
+            item_time = item.get("time", "")
+            if item_time <= current_time:
+                current_activity = item
+            elif item_time > current_time:
+                next_activity = item
+                break
+        
+        # Build response message
+        lines = []
+        
+        if current_activity:
+            lines.append(f"✅ {current_activity.get('activity', 'กิจกรรม')} เสร็จเรียบร้อย!")
+        else:
+            lines.append("✅ เรียบร้อยแล้ว!")
+        
+        if next_activity:
+            next_time = next_activity.get("time", "")
+            next_name = next_activity.get("activity", "กิจกรรม")
+            next_location = next_activity.get("location", "")
+            
+            lines.append("")
+            lines.append(f"⏰ กิจกรรมต่อไป: {next_name}")
+            lines.append(f"   เวลา: {next_time}")
+            if next_location:
+                lines.append(f"   สถานที่: {next_location}")
+            
+            # Check if there are device actions
+            action = next_activity.get("action")
+            if action and action.get("devices"):
+                devices = action.get("devices", [])
+                device_list = [f"{d.get('device')} ({d.get('state')})" for d in devices]
+                if device_list:
+                    lines.append(f"   อุปกรณ์: {', '.join(device_list)}")
+        else:
+            lines.append("")
+            lines.append("🎉 ไม่มีกิจกรรมที่กำหนดไว้แล้ววันนี้ พักผ่อนได้เลย!")
+        
+        return {
+            "handled": True,
+            "message": "\n".join(lines),
+            "should_use_llm": False
+        }
+    except Exception as e:
+        logger.error(f"Error handling activity done: {e}")
+        return {
+            "handled": False,
+            "message": "",
+            "should_use_llm": True
+        }
+
+
+async def _handle_turn_off_all_on(db, mqtt_handler, room: str) -> Dict[str, Any]:
+    """Handle turn off all ON devices in a room."""
+    try:
+        from ..core.appliance_control import control_appliance_core
+        from ..core.database import normalize_room_name
+        
+        # Normalize room name
+        normalized_room = normalize_room_name(room)
+        
+        # Get device states for this room
+        device_states = await db.get_all_device_states()
+        room_devices = device_states.get(normalized_room, {})
+        
+        # Find devices that are ON
+        on_devices = [dev for dev, state in room_devices.items() if state]
+        
+        if not on_devices:
+            return {
+                "handled": True,
+                "message": f"ไม่มีอุปกรณ์ใดเปิดอยู่ใน {room.capitalize()}",
+                "should_use_llm": False
+            }
+        
+        # Turn off each ON device
+        success_count = 0
+        turned_off = []
+        
+        for device in on_devices:
+            try:
+                result = await control_appliance_core(
+                    db=db,
+                    mqtt_handler=mqtt_handler,
+                    room=normalized_room,
+                    appliance=device,
+                    state=False
+                )
+                if result.get("success"):
+                    success_count += 1
+                    turned_off.append(device.capitalize() if device.lower() != "ac" else "AC")
+            except Exception as e:
+                logger.warning(f"Failed to turn off {device} in {normalized_room}: {e}")
+        
+        if turned_off:
+            room_name = room.capitalize()
+            message = f"ปิด {', '.join(turned_off)} ใน {room_name} แล้ว"
+            return {
+                "handled": True,
+                "message": message,
+                "should_use_llm": False,
+                "tool_result": {"success": True, "devices_turned_off": turned_off}
+            }
+        else:
+            return {
+                "handled": False,
+                "message": "",
+                "should_use_llm": True
+            }
+    except Exception as e:
+        logger.error(f"Error handling turn off all ON: {e}")
         return {
             "handled": False,
             "message": "",

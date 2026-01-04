@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from '../hooks/useTranslation';
-import { resetSchedule, setCustomTime } from '../services/api';
+import { resetSchedule, setCustomTime as setCustomTimeAPI } from '../services/api';
 import { Search, Bell, Menu, Sun, Moon, X, AlertTriangle, Info, CheckCircle, Clock, Edit2, Check, RotateCcw } from 'lucide-react';
 
 export function TopBar() {
@@ -34,24 +34,24 @@ export function TopBar() {
     useEffect(() => {
         const updateDisplayTime = () => {
             let timeToDisplay;
-            
+
             if (customTime) {
                 // Use custom time - create a date with custom hours and minutes
                 const [hours, minutes] = customTime.split(':');
                 const now = new Date();
-                
+
                 // Calculate elapsed seconds since custom time was set
-                const elapsedSeconds = customTimeSetAt.current 
+                const elapsedSeconds = customTimeSetAt.current
                     ? Math.floor((Date.now() - customTimeSetAt.current) / 1000)
                     : 0;
-                
+
                 now.setHours(parseInt(hours), parseInt(minutes), elapsedSeconds, 0);
                 timeToDisplay = now;
             } else {
                 // Use real time
                 timeToDisplay = new Date();
             }
-            
+
             setDisplayTime(timeToDisplay.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -82,14 +82,16 @@ export function TopBar() {
         // Validate HH:MM format
         const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
         if (timeRegex.test(timeInput)) {
-            setCustomTime(timeInput);
-            // Sync custom time to backend for schedule checker
+            // Call backend API FIRST to trigger notification, then update local state
             try {
-                await setCustomTime(timeInput, null);
+                console.log('[TopBar] Calling backend setCustomTime API with:', timeInput);
+                await setCustomTimeAPI(timeInput, null);
+                console.log('[TopBar] Backend setCustomTime API succeeded');
             } catch (error) {
                 console.error('[TopBar] Failed to sync custom time to backend:', error);
-                // Continue anyway - frontend custom time still works for display
             }
+            // Update local state for UI display
+            setCustomTime(timeInput);
             setShowTimePicker(false);
             setTimeInput('');
         } else {
@@ -98,14 +100,14 @@ export function TopBar() {
     };
 
     const handleResetTime = async () => {
-        setCustomTime(null);
-        // Reset custom time in backend
+        // Reset in backend first
         try {
-            await setCustomTime(null, null);
+            await setCustomTimeAPI(null, null);
         } catch (error) {
             console.error('[TopBar] Failed to reset custom time in backend:', error);
-            // Continue anyway
         }
+        // Update local state
+        setCustomTime(null);
         setShowTimePicker(false);
         setTimeInput('');
     };
@@ -317,9 +319,9 @@ export function TopBar() {
                         <span>{displayTime}</span>
                         <span style={{ fontSize: '0.65rem', opacity: 0.7, marginLeft: '0.25rem' }}>GMT+7</span>
                         {customTime && (
-                            <span style={{ 
-                                fontSize: '0.65rem', 
-                                opacity: 0.7, 
+                            <span style={{
+                                fontSize: '0.65rem',
+                                opacity: 0.7,
                                 marginLeft: '0.25rem',
                                 color: 'var(--primary-500)'
                             }}>
@@ -361,11 +363,11 @@ export function TopBar() {
                                 <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
                                     {t('Customize Time')}
                                 </h3>
-                                
+
                                 <div style={{ marginBottom: '1rem' }}>
-                                    <label style={{ 
-                                        display: 'block', 
-                                        marginBottom: '0.5rem', 
+                                    <label style={{
+                                        display: 'block',
+                                        marginBottom: '0.5rem',
                                         fontSize: '0.875rem',
                                         color: 'var(--text-secondary)'
                                     }}>
@@ -400,9 +402,9 @@ export function TopBar() {
                                         }}
                                         autoFocus
                                     />
-                                    <div style={{ 
-                                        fontSize: '0.75rem', 
-                                        color: 'var(--text-muted)', 
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        color: 'var(--text-muted)',
                                         marginTop: '0.25rem',
                                         textAlign: 'center'
                                     }}>
@@ -523,7 +525,7 @@ export function TopBar() {
                 <div style={{ position: 'relative' }}>
                     <button className="action-btn" onClick={() => setShowNotifications(!showNotifications)}>
                         <Bell />
-                        {unreadCount > 0 && <span className="badge"></span>}
+                        {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
                     </button>
 
                     {showNotifications && (

@@ -267,40 +267,94 @@ async def set_custom_time(custom_time: CustomTimeRequest, request: Request):
                 minutes = int(parts[1])
                 if hours < 0 or hours > 23 or minutes < 0 or minutes > 59:
                     raise ValueError("Invalid time values")
+                # Normalize to HH:MM format
+                normalized_time = f"{hours:02d}:{minutes:02d}"
             except (ValueError, IndexError):
                 raise HTTPException(status_code=400, detail="Invalid time format. Use HH:MM (e.g., '07:00')")
             
             # Store custom time in app.state
-            request.app.state.custom_time = custom_time.time
+            request.app.state.custom_time = normalized_time
             request.app.state.custom_time_set_timestamp = time.time()
             request.app.state.custom_date = custom_time.date  # Optional custom date
             
-            # #region agent log
+            logger.info(f"Custom time set to: {normalized_time}, date: {custom_time.date or 'today'}")
+            
+            # DIRECT NOTIFICATION: Check if custom time matches any schedule item and send notification immediately
+            db = get_db(request)
+            mqtt_handler = get_mqtt_handler(request)
             try:
-                log_path = "/app/.cursor/debug.log"
-                os.makedirs(os.path.dirname(log_path), exist_ok=True)
-                log_entry = {
-                    "timestamp": time.time() * 1000,
-                    "location": "schedule.py:233",
-                    "message": "Custom time stored in app.state",
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "F",
-                    "data": {"custom_time": request.app.state.custom_time, "timestamp": request.app.state.custom_time_set_timestamp}
-                }
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json_module.dumps(log_entry) + "\n")
-            except Exception:
-                pass
-            # #endregion
+                schedule_items = await db.get_schedule_items()
+                matching_items = [
+                    item for item in schedule_items 
+                    if item.get("time", "").strip() == normalized_time
+                ]
+                
+                logger.info(f"🔍 Checking schedule items for time {normalized_time}: found {len(matching_items)} matches")
+                
+                for item in matching_items:
+                    activity = item.get("activity", "Unknown")
+                    notification_message = f"⏰ ถึงเวลา: {activity}"
+                    
+                    # Execute device actions if present (skip Alarm - user must control manually)
+                    device_actions_msg = ""
+                    if item.get("action") and item["action"].get("devices"):
+                        from ..services.tool_handlers import handle_e_device_control
+                        devices = item["action"]["devices"]
+                        executed = []
+                        for dev in devices:
+                            dev_room = dev.get("room", "")
+                            dev_name = dev.get("device", "")
+                            dev_state = dev.get("state", "")
+                            
+                            if dev_room and dev_name and dev_state:
+                                try:
+                                    result = await handle_e_device_control(
+                                        db, mqtt_handler,
+                                        {"room": dev_room, "device": dev_name, "action": dev_state}
+                                    )
+                                    if result.get("success"):
+                                        executed.append(f"{dev_room} {dev_name} → {dev_state}")
+                                        logger.info(f"✓ Device action: {dev_room} {dev_name} → {dev_state}")
+                                except Exception as dev_error:
+                                    logger.warning(f"Device action failed: {dev_error}")
+                        if executed:
+                            device_actions_msg = "\n🔌 " + ", ".join(executed)
+                    
+                    # Mark this notification as sent (prevent duplicate from schedule_checker)
+                    schedule_checker = getattr(request.app.state, 'schedule_checker', None)
+                    if schedule_checker:
+                        notification_key = f"{datetime.now().strftime('%Y-%m-%d')}_{normalized_time}_{activity}"
+                        schedule_checker.sent_notifications.add(notification_key)
+                        logger.info(f"Marked notification as sent: {notification_key}")
+                    
+                    # Save to chat history
+                    await db.save_chat_message({
+                        "role": "assistant",
+                        "content": f"🔔 {notification_message}{device_actions_msg}",
+                        "is_notification": True,
+                        "notification_type": "schedule_notification",
+                        "schedule_time": normalized_time,
+                        "schedule_activity": activity
+                    })
+                    logger.info(f"💬 Saved notification to chat: {normalized_time} - {activity}")
+                    
+                    # Broadcast via WebSocket for real-time delivery
+                    await mqtt_handler._broadcast_ws({
+                        "type": "notification",
+                        "data": {
+                            "type": "schedule_notification",
+                            "message": notification_message + device_actions_msg,
+                            "activity": activity,
+                            "time": normalized_time,
+                            "auto_popup": True,
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    })
+                    logger.info(f"📡 Broadcasted notification via WebSocket: {normalized_time} - {activity}")
+                    
+            except Exception as notify_error:
+                logger.error(f"Failed to send direct notification: {notify_error}", exc_info=True)
             
-            # Reset last_checked_minute to allow immediate re-checking with new custom time
-            schedule_checker = getattr(request.app.state, 'schedule_checker', None)
-            if schedule_checker:
-                await schedule_checker.reset_last_checked_minute()
-                logger.info(f"Reset schedule checker last_checked_minute for custom time change")
-            
-            logger.info(f"Custom time set to: {custom_time.time}, date: {custom_time.date or 'today'}")
         else:
             # Reset to real time
             if hasattr(request.app.state, 'custom_time'):
@@ -309,12 +363,6 @@ async def set_custom_time(custom_time: CustomTimeRequest, request: Request):
                 delattr(request.app.state, 'custom_time_set_timestamp')
             if hasattr(request.app.state, 'custom_date'):
                 delattr(request.app.state, 'custom_date')
-            
-            # Reset last_checked_minute when switching back to real time
-            schedule_checker = getattr(request.app.state, 'schedule_checker', None)
-            if schedule_checker:
-                await schedule_checker.reset_last_checked_minute()
-                logger.info(f"Reset schedule checker last_checked_minute for real time reset")
             
             logger.info("Custom time reset to real time")
         

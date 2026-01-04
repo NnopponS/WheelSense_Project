@@ -600,7 +600,8 @@ async def chat(request: ChatRequest, app_request: Request):
                     parsed=parsed,
                     db=db,
                     mqtt_handler=mqtt_handler,
-                    current_room=current_room
+                    current_room=current_room,
+                    app=app_request.app
                 )
                 
                 if cmd_result.get("handled"):

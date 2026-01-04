@@ -5,6 +5,7 @@ Feature: Backend restart does not duplicate notifications, state continues from 
 
 import pytest
 from datetime import datetime, timezone, timedelta
+from unittest.mock import patch
 
 
 @pytest.mark.reliability

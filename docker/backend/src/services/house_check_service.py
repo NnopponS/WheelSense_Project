@@ -44,12 +44,15 @@ class HouseCheckService:
         try:
             # Get all device states from database (returns Dict[room, Dict[device, bool]])
             device_states = await self.db.get_all_device_states()
+            logger.info(f"🔍 DEBUG: Device states retrieved: {device_states}")
             if not device_states:
+                logger.warning(f"⚠️ No device states found in database!")
                 return []
             
             # Normalize current location for comparison
             from ..core.database import normalize_room_name
             current_normalized = normalize_room_name(current_location) if current_location else ""
+            logger.info(f"🔍 DEBUG: Current location normalized: '{current_location}' → '{current_normalized}'")
             
             # Filter devices that are ON and in different rooms
             potential_issues = []
@@ -107,14 +110,17 @@ class HouseCheckService:
         
         try:
             # Detect potential issues
+            logger.info(f"🔍 DEBUG: Running house check - previous: '{previous_location}', current: '{current_location}'")
             potential_issues = await self.detect_potential_issues(current_location)
+            logger.info(f"🔍 DEBUG: Potential issues detected: {potential_issues}")
             
             if not potential_issues:
-                logger.debug(f"House check: No devices ON in other rooms")
+                logger.info(f"🔍 DEBUG: House check: No devices ON in other rooms")
                 return None
             
             # Get notification preferences
             notification_prefs = await self.db.get_notification_preferences()
+            logger.info(f"🔍 DEBUG: Notification preferences: {notification_prefs}")
             
             # Filter out devices in notification preferences
             devices_to_notify = []
@@ -129,14 +135,18 @@ class HouseCheckService:
             
             # If no devices need notification (all are in preferences), return None
             if not devices_to_notify:
-                logger.debug(f"House check: Devices detected but all are in notification_preferences - skipping notification")
+                logger.info(f"🔍 DEBUG: Devices detected ({len(potential_issues)}) but all are in notification_preferences - skipping notification")
                 return None
+            
+            logger.info(f"🔍 DEBUG: Devices to notify after filtering: {len(devices_to_notify)} out of {len(potential_issues)}")
             
             # Build notification message
             message = self._build_notification_message(devices_to_notify)
+            logger.info(f"🔍 DEBUG: Notification message built: '{message}'")
             
             # Send notification via NotificationService (saves to DB, broadcasts via WebSocket, executes callbacks)
             if self.notification_service:
+                logger.info(f"🔍 DEBUG: Notification service available, sending notification...")
                 try:
                     notification_result = await self.notification_service.send_notification(
                         message=message,
@@ -145,10 +155,14 @@ class HouseCheckService:
                             "type": "house_check_notification"
                         }
                     )
-                    logger.info(f"💬 House check notification sent: {message} (DB: {notification_result.get('database_saved')}, WS: {notification_result.get('websocket_sent')})")
+                    logger.info(f"🔍 DEBUG: Notification result: {notification_result}")
+                    notified = notification_result.get('notified', False)
+                    result_message = notification_result.get('message', '')
+                    logger.info(f"💬 House check notification sent: {message} (notified={notified}, message='{result_message}')")
                 except Exception as e:
                     logger.error(f"❌ Failed to send house check notification: {e}", exc_info=True)
             else:
+                logger.warning(f"⚠️ Notification service not available, using fallback!")
                 # Fallback to direct database save if notification service not available
                 try:
                     await self.db.save_chat_message({

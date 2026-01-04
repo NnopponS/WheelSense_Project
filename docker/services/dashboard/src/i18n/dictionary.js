@@ -188,6 +188,11 @@ export const thaiTranslations = {
     'Activities Today': 'กิจกรรมวันนี้',
     'Battery': 'แบตเตอรี่',
     'Next Activity': 'กิจกรรมถัดไป',
+    'Current Activity': 'กิจกรรมปัจจุบัน',
+    'Today\'s Schedule': 'ตารางวันนี้',
+    'Done': 'เสร็จแล้ว',
+    'Mark as Done': 'ทำเสร็จแล้ว',
+    'No more activities for today': 'ไม่มีกิจกรรมที่เหลือสำหรับวันนี้',
     'All Completed!': 'เสร็จสมบูรณ์ทั้งหมด!',
 
     // User Health Page

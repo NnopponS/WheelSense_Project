@@ -101,44 +101,8 @@ export function AppProvider({ children }) {
         return () => clearInterval(interval);
     }, []);
 
-    // Load chat history from database on startup and poll for updates
-    useEffect(() => {
-        const loadChatHistory = async () => {
-            try {
-                const result = await api.getChatHistory(50);
-                if (result.messages && result.messages.length > 0) {
-                    // Convert database messages to chat history format
-                    const dbMessages = result.messages.map((msg, idx) => ({
-                        id: msg.id || Date.now() + idx,
-                        role: msg.role,
-                        content: msg.content,
-                        isNotification: msg.isNotification || false
-                    }));
-
-                    // Merge with existing chat history, avoiding duplicates
-                    setChatHistory(prev => {
-                        // Keep welcome message if it exists
-                        const welcomeMsg = prev.find(m => m.id === 1 && m.role === 'assistant');
-                        const existingIds = new Set(prev.map(m => m.id));
-                        const newMessages = dbMessages.filter(m => !existingIds.has(m.id));
-
-                        // Combine: welcome message (if exists) + database messages
-                        const combined = welcomeMsg ? [welcomeMsg, ...newMessages] : newMessages;
-                        return combined.sort((a, b) => (a.id || 0) - (b.id || 0));
-                    });
-                }
-            } catch (error) {
-                console.error('[AppContext] Failed to load chat history:', error);
-            }
-        };
-
-        // Load on startup
-        loadChatHistory();
-
-        // Refresh chat history every 5 seconds to get new notifications
-        const interval = setInterval(loadChatHistory, 5000);
-        return () => clearInterval(interval);
-    }, []);
+    // NOTE: Chat history is NOT loaded from database on startup
+    // Each page refresh starts a fresh chat session (per user request)
 
     // Wheelchairs - Loaded from Database
     const [wheelchairs, setWheelchairs] = useState([]);
@@ -764,6 +728,26 @@ export function AppProvider({ children }) {
 
                             // Set pending notification for AIChatPopup to handle
                             setPendingNotification(notificationData);
+
+                            // Also add to bell icon notifications (TopBar)
+                            const notificationType = notificationData.type || 'info';
+                            const notificationTitle = notificationData.type === 'schedule_notification' 
+                                ? '⏰ Schedule Reminder'
+                                : notificationData.type === 'room_change_alert'
+                                    ? '💡 Room Alert'
+                                    : '🔔 Notification';
+                            
+                            setNotifications(prev => {
+                                const newNotification = {
+                                    id: Date.now(),
+                                    type: notificationType === 'schedule_notification' ? 'info' : 'warning',
+                                    title: notificationTitle,
+                                    message: notificationData.message || notificationData.activity || 'New notification',
+                                    time: new Date(),
+                                    read: false
+                                };
+                                return [newNotification, ...prev].slice(0, 50);
+                            });
                         }
 
                         // Handle schedule_item_update

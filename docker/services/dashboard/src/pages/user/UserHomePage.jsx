@@ -15,7 +15,7 @@ import {
 import { pageToPath } from '../../App';
 
 export function UserHomePage() {
-    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, setCurrentPage, detectionState, userInfo } = useApp();
+    const { currentUser, rooms, appliances, toggleAppliance, setApplianceValue, routines, wheelchairs, wheelchairPositions, openDrawer, setCurrentPage, detectionState, userInfo, scheduleItems, customTime, getCurrentTime } = useApp();
 
     // Check if wheelchair is detected in room using detectionState (same logic as MonitoringPage)
     const isWheelchairDetected = (room) => {
@@ -34,16 +34,16 @@ export function UserHomePage() {
         if (!locationFromDB) {
             return false; // No current location = all rooms vacant
         }
-        
+
         // Check if this room matches the current location
         const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
-        const matches = 
+        const matches =
             room.id?.toLowerCase() === locationFromDB.toLowerCase() ||
             room.roomType?.toLowerCase() === locationFromDB.toLowerCase() ||
             room.nameEn?.toLowerCase() === locationFromDB.toLowerCase() ||
             normalizeRoomName(room.nameEn) === normalizeRoomName(locationFromDB) ||
             room.name?.toLowerCase().includes(locationFromDB.toLowerCase());
-        
+
         return matches;
     };
     const { t } = useTranslation();
@@ -83,10 +83,10 @@ export function UserHomePage() {
     const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
     const locationFromDB = userInfo?.current_location || '';
     let currentLocationRoom = null;
-    
+
     if (locationFromDB) {
         // Try to find room by matching current_location from database
-        currentLocationRoom = rooms.find(r => 
+        currentLocationRoom = rooms.find(r =>
             r.id?.toLowerCase() === locationFromDB.toLowerCase() ||
             r.roomType?.toLowerCase() === locationFromDB.toLowerCase() ||
             r.nameEn?.toLowerCase() === locationFromDB.toLowerCase() ||
@@ -97,7 +97,37 @@ export function UserHomePage() {
 
     const todayRoutines = routines.filter(r => r.patientId === currentUser?.id);
     const completedRoutines = todayRoutines.filter(r => r.completed).length;
-    const nextRoutine = todayRoutines.find(r => !r.completed);
+
+    // Calculate current and next activities from scheduleItems
+    const getScheduleActivities = () => {
+        if (!scheduleItems || scheduleItems.length === 0) {
+            return { currentActivity: null, nextActivity: null };
+        }
+
+        // Get current time (custom or real)
+        const now = getCurrentTime ? getCurrentTime() : new Date();
+        const currentTimeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+        // Sort by time
+        const sorted = [...scheduleItems].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+        let currentActivity = null;
+        let nextActivity = null;
+
+        for (let i = 0; i < sorted.length; i++) {
+            const itemTime = sorted[i].time || '';
+            if (itemTime <= currentTimeStr) {
+                currentActivity = sorted[i];
+            } else if (!nextActivity) {
+                nextActivity = sorted[i];
+                break;
+            }
+        }
+
+        return { currentActivity, nextActivity };
+    };
+
+    const { currentActivity, nextActivity } = getScheduleActivities();
 
     // Appliances for current room
     const myAppliances = appliances[currentUser?.room] || [];
@@ -447,32 +477,88 @@ export function UserHomePage() {
                 );
             })()}
 
-            {/* Next Activity Card - At Bottom */}
+            {/* Schedule Activities Card */}
             <div className="card">
                 <div className="card-header" style={{ padding: '0.75rem 1rem' }}>
-                    <span className="card-title"><Clock size={18} /> {t('Next Activity')}</span>
+                    <span className="card-title"><Calendar size={18} /> {t('Today\'s Schedule')}</span>
                 </div>
                 <div className="card-body" style={{ padding: '0.75rem 1rem' }}>
-                    {nextRoutine ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{
-                                width: 44, height: 44, borderRadius: 'var(--radius-md)',
-                                background: 'linear-gradient(135deg, var(--primary-500), var(--primary-700))',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                            }}>
-                                <Clock size={22} color="white" />
+                    {/* Current Activity */}
+                    {currentActivity ? (
+                        <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                {t('Current Activity')}
                             </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 600, fontSize: '1rem' }}>{nextRoutine.time} - {t(nextRoutine.title)}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t(nextRoutine.description)}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--bg-hover)', borderRadius: 'var(--radius-md)' }}>
+                                <div style={{
+                                    width: 44, height: 44, borderRadius: 'var(--radius-md)',
+                                    background: 'linear-gradient(135deg, var(--success-500), var(--success-700))',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                }}>
+                                    <Activity size={22} color="white" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 600, fontSize: '1rem' }}>{currentActivity.time} - {currentActivity.activity}</div>
+                                    {currentActivity.location && (
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>📍 {currentActivity.location}</div>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        // Open AI chat to say "done"
+                                        const aiChatButton = document.querySelector('[data-ai-chat-trigger]');
+                                        if (aiChatButton) aiChatButton.click();
+                                    }}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: 'var(--radius-md)',
+                                        background: 'var(--success-500)',
+                                        border: 'none',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontWeight: 500
+                                    }}
+                                    title={t('Mark as Done')}
+                                >
+                                    <CheckCircle size={16} />
+                                    {t('Done')}
+                                </button>
                             </div>
                         </div>
-                    ) : (
-                        <div style={{ textAlign: 'center', padding: '0.75rem', color: 'var(--text-muted)' }}>
-                            <CheckCircle size={28} style={{ marginBottom: '0.25rem', opacity: 0.5 }} />
-                            <p style={{ fontSize: '0.85rem' }}>{t('All Completed!')} 🎉</p>
+                    ) : null}
+
+                    {/* Next Activity */}
+                    <div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {t('Next Activity')}
                         </div>
-                    )}
+                        {nextActivity ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-color)' }}>
+                                <div style={{
+                                    width: 44, height: 44, borderRadius: 'var(--radius-md)',
+                                    background: 'linear-gradient(135deg, var(--primary-500), var(--primary-700))',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                }}>
+                                    <Clock size={22} color="white" />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 600, fontSize: '1rem' }}>{nextActivity.time} - {nextActivity.activity}</div>
+                                    {nextActivity.location && (
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>📍 {nextActivity.location}</div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                                <CheckCircle size={28} style={{ marginBottom: '0.25rem', opacity: 0.5, color: 'var(--success-500)' }} />
+                                <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>{t('All Completed!')} 🎉</p>
+                                <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>{t('No more activities for today')}</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

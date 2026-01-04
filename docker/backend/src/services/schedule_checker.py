@@ -101,6 +101,16 @@ class ScheduleCheckerService:
         self.last_checked_minute = None
         logger.info("Reset last_checked_minute - schedule checker will check on next cycle")
     
+    async def trigger_immediate_check(self):
+        """Trigger an immediate schedule check. Called when custom time is set."""
+        logger.info("🔔 Triggering immediate schedule check...")
+        self.last_checked_minute = None  # Reset to allow checking
+        try:
+            await self._check_schedule()
+            logger.info("✅ Immediate schedule check completed")
+        except Exception as e:
+            logger.error(f"Error in immediate schedule check: {e}", exc_info=True)
+    
     async def _run_loop(self):
         """Main loop that runs every 60 seconds."""
         # #region agent log
@@ -315,7 +325,7 @@ class ScheduleCheckerService:
                             notification_message += f" I've turned on: {devices_list}."
                 
                 # Save notification as chat message in database (so it appears in chat interface)
-                # Simplified: Just save to database, frontend will fetch from there
+                # And broadcast via WebSocket for real-time delivery
                 try:
                     await self.db.save_chat_message({
                         "role": "assistant",
@@ -326,6 +336,23 @@ class ScheduleCheckerService:
                         "schedule_activity": item.get("activity")
                     })
                     logger.info(f"💬 Saved schedule notification to chat_history: {item['time']} - {item['activity']}")
+                    
+                    # Broadcast via WebSocket for real-time delivery to frontend
+                    try:
+                        await self.mqtt_handler._broadcast_ws({
+                            "type": "notification",
+                            "data": {
+                                "type": "schedule_notification",
+                                "message": f"🔔 {notification_message}",
+                                "activity": item.get("activity"),
+                                "time": item.get("time"),
+                                "auto_popup": True,
+                                "timestamp": datetime.now().isoformat()
+                            }
+                        })
+                        logger.info(f"📡 Broadcasted schedule notification via WebSocket: {item['time']} - {item['activity']}")
+                    except Exception as ws_error:
+                        logger.warning(f"Failed to broadcast notification via WebSocket: {ws_error}")
                     
                     # Mark as sent
                     self.sent_notifications.add(notification_key)
@@ -369,11 +396,6 @@ class ScheduleCheckerService:
             room = device_action.get("room")
             device = device_action.get("device")
             state = device_action.get("state")  # "ON" or "OFF"
-            
-            # Skip Alarm devices (user must manually turn off)
-            if device and device.lower() == "alarm":
-                logger.debug(f"Skipping Alarm device (user must manually control)")
-                continue
             
             if not room or not device or not state:
                 logger.warning(f"Invalid device action: {device_action}")

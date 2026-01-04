@@ -6,8 +6,11 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+import logging
 
 from ..dependencies import get_db, get_mqtt_handler
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["User Info"])
 
@@ -37,6 +40,12 @@ async def update_user_info(update: UserInfoUpdate, request: Request):
     mqtt_handler = get_mqtt_handler(request)
     
     try:
+        # Get previous location before updating (for house check)
+        previous_location = None
+        if update.current_location is not None:
+            user_info_before = await db.get_user_info()
+            previous_location = user_info_before.get("current_location")
+        
         if update.name is not None:
             await db.set_user_name(name=update.name or "")
         
@@ -48,6 +57,24 @@ async def update_user_info(update: UserInfoUpdate, request: Request):
         
         # Return updated user info
         user_info = await db.get_user_info()
+        
+        # Trigger house check if location changed
+        if update.current_location is not None and previous_location != update.current_location:
+            logger.info(f"🔍 DEBUG: Location change detected - previous: '{previous_location}', current: '{update.current_location}'")
+            house_check_service = getattr(request.app.state, 'house_check_service', None)
+            if house_check_service:
+                logger.info(f"🔍 DEBUG: House check service found, triggering...")
+                try:
+                    result = await house_check_service.run_house_check(
+                        previous_location,
+                        update.current_location
+                    )
+                    logger.info(f"✅ House check triggered: {previous_location} → {update.current_location}")
+                    logger.info(f"🔍 DEBUG: House check result: {result}")
+                except Exception as e:
+                    logger.error(f"House check failed: {e}", exc_info=True)
+            else:
+                logger.warning(f"⚠️ House check service not found in app.state!")
         
         # Broadcast user_info_update via WebSocket
         try:
@@ -62,8 +89,6 @@ async def update_user_info(update: UserInfoUpdate, request: Request):
             })
         except Exception as e:
             # Log but don't fail the request if WebSocket broadcast fails
-            import logging
-            logger = logging.getLogger(__name__)
             logger.warning(f"Failed to broadcast user_info_update: {e}")
         
         return user_info

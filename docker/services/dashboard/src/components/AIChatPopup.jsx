@@ -43,17 +43,10 @@ export function AIChatPopup() {
         }
     }, [position]);
 
-    // Session management
-    const [sessionId, setSessionId] = useState(() => {
-        // Load session ID from localStorage or generate new one
-        const stored = localStorage.getItem('wheelsense_chat_session_id');
-        return stored || generateSessionId();
-    });
 
-    // Save session ID to localStorage when it changes
-    useEffect(() => {
-        localStorage.setItem('wheelsense_chat_session_id', sessionId);
-    }, [sessionId]);
+    // Session management - Generate new session ID on each page load (no persistence)
+    const [sessionId, setSessionId] = useState(() => generateSessionId());
+
 
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -430,20 +423,12 @@ export function AIChatPopup() {
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
                     {/* New Chat button */}
                     <button
-                        onClick={async () => {
+                        onClick={() => {
                             if (confirm('Start a new chat?')) {
-                                try {
-                                    await api.clearChatContext(sessionId);
-                                    const newSessionId = generateSessionId();
-                                    setSessionId(newSessionId);
-                                    clearChatHistory();
-                                } catch (error) {
-                                    console.error('Failed to clear chat context:', error);
-                                    // Still clear locally even if API fails
-                                    const newSessionId = generateSessionId();
-                                    setSessionId(newSessionId);
-                                    clearChatHistory();
-                                }
+                                // Simply clear local state - no API call needed
+                                const newSessionId = generateSessionId();
+                                setSessionId(newSessionId);
+                                clearChatHistory();
                             }
                         }}
                         title="New Chat"

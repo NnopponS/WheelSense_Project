@@ -3,6 +3,8 @@ Notification Service - Background task for schedule notifications and room chang
 Handles:
 1. Schedule-based notifications (trigger at scheduled time)
 2. Room change alerts (forgot to turn off appliances)
+
+Uses MCP chat_message tool to send notifications (same as mcp_llm-wheelsense).
 """
 
 import asyncio
@@ -17,17 +19,17 @@ logger = logging.getLogger(__name__)
 class NotificationService:
     """Background service for automated notifications."""
     
-    def __init__(self, db, ws_manager, mqtt_handler=None):
+    def __init__(self, db, mcp_router, mqtt_handler=None):
         """
         Initialize notification service.
         
         Args:
             db: Database instance
-            ws_manager: WebSocket manager for broadcasting notifications
+            mcp_router: MCP router for executing chat_message tool
             mqtt_handler: MQTT handler for device control (optional)
         """
         self.db = db
-        self.ws_manager = ws_manager
+        self.mcp_router = mcp_router
         self.mqtt_handler = mqtt_handler
         self._running = False
         self._task = None
@@ -70,9 +72,11 @@ class NotificationService:
         """Check for notifications to send."""
         now = datetime.now()
         current_minute = now.strftime("%H:%M")
+        current_second = now.strftime("%H:%M:%S")
         
         # Only check schedule once per minute
         if current_minute != self._last_check_minute:
+            logger.info(f"🔍 DEBUG: Checking schedule notifications at {current_second} (minute: {current_minute})")
             self._last_check_minute = current_minute
             await self._check_schedule_notifications(current_minute)
         
@@ -87,30 +91,47 @@ class NotificationService:
             current_time: Current time in HH:MM format
         """
         try:
+            logger.info(f"🔍 DEBUG: _check_schedule_notifications called with time: '{current_time}'")
             # Get schedule items
             schedule_items = await self.db.get_schedule_items()
+            logger.info(f"🔍 DEBUG: Found {len(schedule_items)} schedule items")
+            
+            if not schedule_items:
+                logger.warning(f"⚠️ No schedule items found in database!")
+                return
             
             for item in schedule_items:
                 item_time = item.get("time", "")
                 activity = item.get("activity", "Unknown Activity")
                 item_id = item.get("id", "")
                 
+                logger.info(f"🔍 DEBUG: Checking schedule item - time: '{item_time}', activity: '{activity}'")
+                
+                # Normalize time formats for comparison (handle both "07:00" and "7:00")
+                item_time_normalized = item_time.strip()
+                current_time_normalized = current_time.strip()
+                
                 # Check if this schedule matches current time
-                if item_time == current_time:
+                if item_time_normalized == current_time_normalized:
                     logger.info(f"📅 Schedule notification triggered: {activity} at {current_time}")
                     
-                    # Send notification to frontend
-                    await self._send_notification({
-                        "type": "schedule_notification",
-                        "activity": activity,
-                        "time": current_time,
-                        "message": f"⏰ ถึงเวลา: {activity}",
-                        "auto_popup": True,
-                        "item_id": item_id
-                    })
+                    # Send notification via MCP chat_message tool
+                    message = f"⏰ ถึงเวลา: {activity}"
+                    logger.info(f"🔍 DEBUG: Sending schedule notification: '{message}'")
+                    await self._send_notification(
+                        message=message,
+                        notification_type="schedule_notification",
+                        metadata={
+                            "activity": activity,
+                            "time": current_time,
+                            "item_id": item_id
+                        }
+                    )
+                else:
+                    logger.debug(f"🔍 DEBUG: Time mismatch - item: '{item_time_normalized}' != current: '{current_time_normalized}'")
                     
         except Exception as e:
-            logger.error(f"Error checking schedule notifications: {e}")
+            logger.error(f"Error checking schedule notifications: {e}", exc_info=True)
     
     async def _check_room_change(self):
         """
@@ -166,15 +187,16 @@ class NotificationService:
                         
                         logger.info(f"🔔 Sending room change alert: {message}")
                         
-                        await self._send_notification({
-                            "type": "room_change_alert",
-                            "message": message,
-                            "devices": devices_to_notify,
-                            "previous_room": self._last_room,
-                            "current_room": current_room,
-                            "auto_popup": True,
-                            "requires_confirmation": True
-                        })
+                        await self._send_notification(
+                            message=message,
+                            notification_type="room_change_alert",
+                            metadata={
+                                "devices": devices_to_notify,
+                                "previous_room": self._last_room,
+                                "current_room": current_room,
+                                "requires_confirmation": True
+                            }
+                        )
             
             # Update last room
             self._last_room = current_room
@@ -182,41 +204,167 @@ class NotificationService:
         except Exception as e:
             logger.error(f"Error checking room change: {e}")
     
-    async def _send_notification(self, notification: Dict[str, Any]):
+    async def _send_notification(self, message: str, notification_type: str, metadata: Optional[Dict[str, Any]] = None):
         """
-        Send notification to frontend via WebSocket.
+        Send notification via MCP chat_message tool (same as mcp_llm-wheelsense).
         
         Args:
-            notification: Notification data dict
+            message: Notification message text
+            notification_type: Type of notification (schedule_notification, room_change_alert, custom)
+            metadata: Optional metadata dict
         """
         try:
-            notification["timestamp"] = datetime.now().isoformat()
+            logger.info(f"🔍 DEBUG: _send_notification called - type: '{notification_type}', message: '{message}'")
+            if not self.mcp_router:
+                logger.warning("⚠️ MCP router not available for notification")
+                return
             
-            if self.ws_manager:
-                await self.ws_manager.broadcast({
-                    "type": "notification",
-                    "data": notification
-                })
-                logger.info(f"📤 Notification sent: {notification.get('type')}")
+            # Execute chat_message tool via MCP router (same as mcp_llm-wheelsense)
+            logger.info(f"🔍 DEBUG: Executing chat_message tool via MCP router...")
+            tool_result = await self.mcp_router.execute({
+                "tool": "chat_message",
+                "arguments": {
+                    "message": message
+                }
+            })
+            logger.info(f"🔍 DEBUG: Tool result: {tool_result}")
+            
+            if tool_result.get("success"):
+                notification_message = tool_result.get("message", message)
+                logger.info(f"📤 Notification sent via MCP: {notification_type}")
+                
+                # Save to chat history (same pattern as other services)
+                try:
+                    await self.db.save_chat_message({
+                        "role": "assistant",
+                        "content": f"🔔 {notification_message}",
+                        "is_notification": True,
+                        "notification_type": notification_type,
+                        "tool_result": tool_result
+                    })
+                    logger.info(f"✅ Notification saved to chat history: {notification_type}")
+                except Exception as e:
+                    logger.warning(f"Failed to save notification to chat history: {e}")
             else:
-                logger.warning("WebSocket manager not available for notification")
+                error = tool_result.get("error", "Unknown error")
+                logger.error(f"❌ Failed to send notification via MCP: {error}")
                 
         except Exception as e:
-            logger.error(f"Error sending notification: {e}")
+            logger.error(f"Error sending notification: {e}", exc_info=True)
+    
+    async def send_notification(
+        self, 
+        message: str, 
+        notification_data: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Public method for sending notifications (same approach as mcp_llm-wheelsense).
+        Uses MCP router to execute chat_message tool and saves to database.
+        No WebSocket broadcasting - messages are retrieved via chat history API.
+        
+        Args:
+            message: Notification message text
+            notification_data: Optional dict with notification metadata
+                Expected keys: "type", "devices", etc.
+        
+        Returns:
+            Dict with notification result (same format as mcp_llm-wheelsense):
+            {
+                "notified": bool,
+                "message": str,
+                "tool_result": dict (if tool was called)
+            }
+        """
+        notification_type = (
+            notification_data.get("type", "custom") 
+            if notification_data 
+            else "custom"
+        )
+        
+        # Send notification via MCP router (same as mcp_llm-wheelsense)
+        try:
+            logger.info(f"🔍 DEBUG: send_notification called - message: '{message}', type: '{notification_type}'")
+            # Execute chat_message tool via MCP router
+            if not self.mcp_router:
+                logger.warning("⚠️ MCP router not available for notification")
+                return {
+                    "notified": False,
+                    "message": "",
+                    "tool_result": {
+                        "success": False,
+                        "tool": "chat_message",
+                        "message": "",
+                        "error": "MCP router not available"
+                    }
+                }
+            
+            logger.info(f"🔍 DEBUG: Executing chat_message tool via MCP router...")
+            tool_result = await self.mcp_router.execute({
+                "tool": "chat_message",
+                "arguments": {
+                    "message": message
+                }
+            })
+            logger.info(f"🔍 DEBUG: Tool result: {tool_result}")
+            
+            if tool_result.get("success"):
+                notification_message = tool_result.get("message", message)
+                logger.info(f"📤 Notification sent via MCP: {notification_type}")
+                
+                # Save to chat history (same pattern as other services)
+                try:
+                    await self.db.save_chat_message({
+                        "role": "assistant",
+                        "content": f"🔔 {notification_message}",
+                        "is_notification": True,
+                        "notification_type": notification_type,
+                        "tool_result": tool_result
+                    })
+                    logger.debug(f"✅ Notification saved to chat history: {notification_type}")
+                except Exception as e:
+                    logger.warning(f"Failed to save notification to chat history: {e}")
+                
+                # Return success result (similar to mcp_llm-wheelsense)
+                return {
+                    "notified": True,
+                    "message": notification_message,
+                    "tool_result": tool_result
+                }
+            else:
+                error = tool_result.get("error", "Unknown error")
+                logger.error(f"Failed to send notification via MCP: {error}")
+                return {
+                    "notified": False,
+                    "message": "",
+                    "tool_result": tool_result
+                }
+                
+        except Exception as e:
+            logger.error(f"Failed to send notification: {e}", exc_info=True)
+            return {
+                "notified": False,
+                "message": "",
+                "tool_result": {
+                    "success": False,
+                    "tool": "chat_message",
+                    "message": "",
+                    "error": str(e)
+                }
+            }
     
     async def send_custom_notification(self, message: str, auto_popup: bool = True):
         """
-        Send a custom notification to the frontend.
+        Send a custom notification.
         
         Args:
             message: Notification message
-            auto_popup: Whether to auto-open the chat popup
+            auto_popup: Whether to auto-open the chat popup (kept for compatibility, not used in MCP approach)
         """
-        await self._send_notification({
-            "type": "custom",
-            "message": message,
-            "auto_popup": auto_popup
-        })
+        await self._send_notification(
+            message=message,
+            notification_type="custom",
+            metadata={"auto_popup": auto_popup}
+        )
 
 
 # Global instance
@@ -228,13 +376,13 @@ def get_notification_service() -> Optional[NotificationService]:
     return _notification_service
 
 
-async def start_notification_service(db, ws_manager, mqtt_handler=None):
+async def start_notification_service(db, mcp_router, mqtt_handler=None):
     """
     Start the global notification service.
     
     Args:
         db: Database instance
-        ws_manager: WebSocket manager
+        mcp_router: MCP router instance
         mqtt_handler: MQTT handler (optional)
     """
     global _notification_service
@@ -242,7 +390,7 @@ async def start_notification_service(db, ws_manager, mqtt_handler=None):
     if _notification_service:
         await _notification_service.stop()
     
-    _notification_service = NotificationService(db, ws_manager, mqtt_handler)
+    _notification_service = NotificationService(db, mcp_router, mqtt_handler)
     await _notification_service.start()
     return _notification_service
 

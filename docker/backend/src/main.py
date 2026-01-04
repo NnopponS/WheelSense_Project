@@ -219,16 +219,6 @@ async def lifespan(app: FastAPI):
     app.state.schedule_checker = schedule_checker
     logger.info("✅ Schedule checker service started")
     
-    # Initialize Notification Service
-    notification_service = NotificationService(db, mqtt_handler)
-    app.state.notification_service = notification_service
-    logger.info("✅ Notification Service initialized")
-    
-    # Initialize House Check Service (pass notification_service for enhanced notifications)
-    house_check_service = HouseCheckService(db, mqtt_handler, notification_service=notification_service)
-    app.state.house_check_service = house_check_service
-    logger.info("✅ House Check Service initialized")
-    
     # Initialize LLM client
     try:
         from .services.llm_client import LLMClient
@@ -298,6 +288,25 @@ async def lifespan(app: FastAPI):
         app.state.state_manager = None
         app.state.mcp_server = None
         app.state.mcp_router = None
+        mcp_router = None  # Set to None if initialization failed
+
+    # Initialize Notification Service (after mcp_router is created)
+    # Use mcp_router from app state if available, otherwise None
+    mcp_router = getattr(app.state, 'mcp_router', None)
+    if mcp_router:
+        notification_service = NotificationService(db, mcp_router, mqtt_handler)
+        await notification_service.start()  # Start the background loop
+        app.state.notification_service = notification_service
+        logger.info("✅ Notification Service initialized and started")
+    else:
+        logger.warning("⚠️ MCP router not available, Notification Service not initialized")
+        notification_service = None
+        app.state.notification_service = None
+    
+    # Initialize House Check Service (pass notification_service for enhanced notifications)
+    house_check_service = HouseCheckService(db, mqtt_handler, notification_service=notification_service)
+    app.state.house_check_service = house_check_service
+    logger.info("✅ House Check Service initialized")
 
     # Start WebSocket server for camera connections
     camera_ws_port = 8765
@@ -625,6 +634,82 @@ async def get_nodes_live_status():
             "timestamp": datetime.now().isoformat()
         }
     return {"nodes": [], "total": 0, "online_count": 0, "timestamp": datetime.now().isoformat()}
+
+
+@app.get("/debug/house-check")
+async def debug_house_check(request: Request):
+    """Debug endpoint to check house check system state."""
+    from ..dependencies import get_db
+    
+    db = get_db(request)
+    house_check_service = getattr(request.app.state, 'house_check_service', None)
+    notification_service = getattr(request.app.state, 'notification_service', None)
+    
+    try:
+        user_info = await db.get_user_info()
+        device_states = await db.get_all_device_states()
+        notification_prefs = await db.get_notification_preferences()
+        
+        return {
+            "user_location": user_info.get("current_location"),
+            "device_states": device_states,
+            "device_states_count": sum(len(devices) for devices in device_states.values()),
+            "devices_on": {
+                room: [dev for dev, state in devices.items() if state]
+                for room, devices in device_states.items()
+            },
+            "notification_preferences": notification_prefs,
+            "house_check_service_available": house_check_service is not None,
+            "house_check_service_last_location": house_check_service.last_location if house_check_service else None,
+            "house_check_service_health": house_check_service.get_health_status() if house_check_service else None,
+            "notification_service_available": notification_service is not None,
+            "notification_service_running": notification_service._running if notification_service else False,
+            "mcp_router_available": hasattr(notification_service, 'mcp_router') and notification_service.mcp_router is not None if notification_service else False,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error in debug endpoint: {e}", exc_info=True)
+        return {
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/debug/schedule")
+async def debug_schedule(request: Request):
+    """Debug endpoint to check schedule notification system state."""
+    from ..dependencies import get_db
+    
+    db = get_db(request)
+    notification_service = getattr(request.app.state, 'notification_service', None)
+    
+    try:
+        from datetime import datetime
+        schedule_items = await db.get_schedule_items()
+        current_time = datetime.now().strftime("%H:%M")
+        current_time_full = datetime.now().strftime("%H:%M:%S")
+        
+        return {
+            "current_time": current_time,
+            "current_time_full": current_time_full,
+            "schedule_items": schedule_items,
+            "schedule_items_count": len(schedule_items),
+            "notification_service_available": notification_service is not None,
+            "notification_service_running": notification_service._running if notification_service else False,
+            "last_check_minute": notification_service._last_check_minute if notification_service else None,
+            "mcp_router_available": hasattr(notification_service, 'mcp_router') and notification_service.mcp_router is not None if notification_service else False,
+            "matching_schedules": [
+                item for item in schedule_items 
+                if item.get("time", "").strip() == current_time.strip()
+            ],
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error in debug schedule endpoint: {e}", exc_info=True)
+        return {
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 
 # ==================== Translation API ====================

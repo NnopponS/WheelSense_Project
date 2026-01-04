@@ -1268,6 +1268,10 @@ class Database:
             rows = await cursor.fetchall()
             return [self._serialize_doc(row) for row in rows]
     
+    async def get_appliances_by_room(self, room_id: str) -> List[Dict]:
+        """Alias for get_room_appliances for backward compatibility with tests."""
+        return await self.get_room_appliances(room_id)
+    
     async def update_appliance_state(
         self, room_id: str, appliance_type: str, state: bool
     ):
@@ -1861,6 +1865,16 @@ class Database:
             row = await cursor.fetchone()
             return bool(row['state']) if row else False
     
+    async def set_appliance_state(self, room: str, device: str, state: bool) -> bool:
+        """
+        Alias for set_device_state for backward compatibility with tests.
+        Sets both appliance state and device state.
+        """
+        # Update appliance state (uses device name as appliance type)
+        await self.update_appliance_state(room, device, state)
+        # Also set device state
+        return await self.set_device_state(room, device, state)
+    
     async def set_device_state(self, room: str, device: str, state: bool) -> bool:
         """Set device state in device_states table.
         
@@ -1912,22 +1926,33 @@ class Database:
     # ==================== MCP User Info Operations ====================
     
     async def get_user_info(self) -> Dict[str, Any]:
-        """Get user information from user_info table."""
+        """Get user information from user_info table.
+        
+        Returns both nested structure (name.english) and flat structure (name_english)
+        for backward compatibility with tests.
+        """
         async with self._db_connection.execute(
             "SELECT * FROM user_info LIMIT 1"
         ) as cursor:
             row = await cursor.fetchone()
             if row:
+                name_thai = row['name_thai'] or ""
+                name_english = row['name_english'] or ""
                 return {
                     "name": {
-                        "thai": row['name_thai'] or "",
-                        "english": row['name_english'] or ""
+                        "thai": name_thai,
+                        "english": name_english
                     },
+                    # Flat structure for backward compatibility
+                    "name_thai": name_thai,
+                    "name_english": name_english,
                     "condition": row['condition'] or "",
                     "current_location": row['current_location'] or "Bedroom"
                 }
             return {
                 "name": {"thai": "", "english": ""},
+                "name_thai": "",
+                "name_english": "",
                 "condition": "",
                 "current_location": "Bedroom"
             }

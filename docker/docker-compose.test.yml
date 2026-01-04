@@ -69,6 +69,7 @@ services:
     volumes:
       - ./backend/src:/app/src
       - ./backend/tests:/app/tests
+      - ./backend/pytest.ini:/app/pytest.ini
       - test_db_data:/app/data
     networks:
       wheelsense-test-network:

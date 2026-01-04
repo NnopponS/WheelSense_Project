@@ -9,12 +9,34 @@ import shutil
 import os
 from pathlib import Path
 from datetime import datetime
-from typing import AsyncGenerator, Dict, Any, Optional
+from typing import AsyncGenerator, Dict, Any, Optional, List
 import logging
 
 # Import backend modules
 import sys
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+import os
+# Add parent directory to path so imports work as package (src.core, src.services, etc.)
+backend_src = Path(__file__).parent.parent / "src"
+backend_parent = backend_src.parent
+
+# Add parent directory first (so src can be imported as a package)
+if str(backend_parent) not in sys.path:
+    sys.path.insert(0, str(backend_parent))
+
+# Also add src for direct imports (from core import ...)
+if str(backend_src) not in sys.path:
+    sys.path.insert(0, str(backend_src))
+
+# Ensure __init__.py files exist to make directories packages
+# This helps with relative imports
+for init_file in [
+    backend_src / "__init__.py",
+    backend_src / "core" / "__init__.py",
+    backend_src / "services" / "__init__.py",
+    backend_src / "api" / "__init__.py",
+]:
+    if not init_file.exists():
+        init_file.touch()
 
 from core.database import Database
 from core.mqtt_handler import MQTTHandler
@@ -138,6 +160,10 @@ class MockMQTTClient:
                 payload = json.dumps(payload).encode()
             
             callback(None, None, MockMessage())
+    
+    def get_messages_for_topic(self, topic: str) -> List[Dict[str, Any]]:
+        """Get all messages published to a specific topic."""
+        return [msg for msg in self.published_messages if msg["topic"] == topic]
 
 
 @pytest.fixture
@@ -147,15 +173,14 @@ def mock_mqtt_client() -> MockMQTTClient:
 
 
 @pytest.fixture
-async def mqtt_handler(test_db: Database, mock_mqtt_client: MockMQTTClient) -> MQTTHandler:
+async def mqtt_handler(mock_mqtt_client: MockMQTTClient) -> MQTTHandler:
     """
     Create MQTT handler with mock client.
     Note: This doesn't actually connect to MQTT broker.
     """
     handler = MQTTHandler(
         broker="localhost",
-        port=1883,
-        db=test_db
+        port=1883
     )
     
     # Replace client with mock

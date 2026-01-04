@@ -944,33 +944,71 @@ export function startSpeechRecognition(onResult, onError, language = 'th-TH') {
 }
 
 // Text-to-Speech (uses Web Speech API)
-export function speak(text, lang = 'th-TH', rate = 1.0) {
+// Auto-detects language: Thai if contains Thai characters, otherwise English
+// Removes emoji and special characters before speaking
+export function speak(text, lang = null, rate = 1.0) {
     return new Promise((resolve, reject) => {
         if (!('speechSynthesis' in window)) {
             reject(new Error('Speech synthesis not supported'));
             return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang;
+        // Remove emoji and special characters
+        const cleanText = text
+            .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')  // Remove emoji symbols
+            .replace(/[\u{2600}-\u{26FF}]/gu, '')    // Remove misc symbols
+            .replace(/[\u{2700}-\u{27BF}]/gu, '')    // Remove dingbats
+            .replace(/[\u{1F600}-\u{1F64F}]/gu, '')  // Remove emoticons
+            .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')  // Remove transport symbols
+            .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')  // Remove flags
+            .replace(/[🔔⏰📍🔌✅❌🎉💬📡🟢⚪✓]/g, '') // Remove common emoji
+            .replace(/\s+/g, ' ')                     // Normalize whitespace
+            .trim();
+
+        if (!cleanText) {
+            resolve(); // Nothing to speak
+            return;
+        }
+
+        // Auto-detect language based on Thai characters
+        const hasThai = /[\u0E00-\u0E7F]/.test(cleanText);
+        const detectedLang = lang || (hasThai ? 'th-TH' : 'en-US');
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = detectedLang;
         utterance.rate = rate;
 
-        // Try to find Thai female voice
+        // Find appropriate voice based on detected language
         const voices = speechSynthesis.getVoices();
-        // First try to find Thai female voice
-        let thaiVoice = voices.find(v =>
-            v.lang.startsWith('th') &&
-            (v.name.toLowerCase().includes('female') ||
-                v.name.toLowerCase().includes('woman') ||
-                v.name.toLowerCase().includes('female') ||
-                v.gender === 'female')
-        );
-        // If no female voice found, try any Thai voice
-        if (!thaiVoice) {
-            thaiVoice = voices.find(v => v.lang.startsWith('th'));
-        }
-        if (thaiVoice) {
-            utterance.voice = thaiVoice;
+
+        if (detectedLang.startsWith('th')) {
+            // Try to find Thai female voice
+            let thaiVoice = voices.find(v =>
+                v.lang.startsWith('th') &&
+                (v.name.toLowerCase().includes('female') ||
+                    v.name.toLowerCase().includes('woman'))
+            );
+            // Fallback to any Thai voice
+            if (!thaiVoice) {
+                thaiVoice = voices.find(v => v.lang.startsWith('th'));
+            }
+            if (thaiVoice) {
+                utterance.voice = thaiVoice;
+            }
+        } else {
+            // Try to find English female voice
+            let englishVoice = voices.find(v =>
+                v.lang.startsWith('en') &&
+                (v.name.toLowerCase().includes('female') ||
+                    v.name.toLowerCase().includes('woman'))
+            );
+            // Fallback to any English voice
+            if (!englishVoice) {
+                englishVoice = voices.find(v => v.lang.startsWith('en'));
+            }
+            if (englishVoice) {
+                utterance.voice = englishVoice;
+            }
         }
 
         utterance.onend = resolve;

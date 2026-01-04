@@ -17,6 +17,9 @@ RUN pip install --upgrade pip
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy pytest configuration (if exists)
+COPY backend/pytest.ini* ./
+
 # Copy application code
 COPY backend/src/ ./src/
 
