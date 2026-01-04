@@ -83,20 +83,9 @@ async def control_appliance_core(
         
         # Sync to appliances table for backward compatibility
         try:
-            update_doc = {
-                "state": state,
-                "isOn": state,  # Update isOn field too
-                "lastUpdated": datetime.utcnow()
-            }
-            if value is not None:
-                update_doc["value"] = value
-            
-            # Update appliance state in database (match by room and type)
-            result = await db.db.appliances.update_many(
-                {"room": room, "type": appliance},
-                {"$set": update_doc}
-            )
-            logger.debug(f"Synced to appliances table: {room}/{appliance} = {state} (updated {result.modified_count} docs)")
+            # Use proper SQLite method to update appliances table
+            await db.update_appliance_state(room, appliance, state)
+            logger.debug(f"Synced to appliances table: {room}/{appliance} = {state}")
         except Exception as sync_error:
             # Non-critical: appliances sync failed but device_states was updated
             logger.warning(f"Failed to sync to appliances table (non-critical): {sync_error}")

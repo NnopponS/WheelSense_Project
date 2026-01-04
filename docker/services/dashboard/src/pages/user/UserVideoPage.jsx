@@ -9,7 +9,7 @@ import { Video, X, Maximize2, Minimize2, Zap, Lightbulb, Thermometer, Tv, Fan, P
 import * as api from '../../services/api';
 
 export function UserVideoPage() {
-    const { rooms, currentUser, appliances, toggleAppliance, devices } = useApp();
+    const { rooms, currentUser, appliances, toggleAppliance, devices, deviceStates } = useApp();
     const { t } = useTranslation();
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -317,15 +317,24 @@ export function UserVideoPage() {
                             <div className="device-grid">
                                 {selectedRoomAppliances.map(app => {
                                     const Icon = getIcon(app.type);
+
+                                    // Get device state from deviceStates (source of truth) 
+                                    // Try multiple room name formats to match
+                                    const normalizedRoom = selectedRoom?.toLowerCase().replace(/\s+/g, '');
+                                    const deviceState = deviceStates?.[normalizedRoom]?.[app.type] ??
+                                        deviceStates?.[selectedRoom]?.[app.type] ??
+                                        app.state; // Fallback to appliance state if deviceStates not available
+                                    const isOn = deviceState === true || deviceState === 1;
+
                                     return (
                                         <div
                                             key={app.id}
-                                            className={`device-card ${app.state ? 'active' : ''}`}
+                                            className={`device-card ${isOn ? 'active' : ''}`}
                                             onClick={() => toggleAppliance(selectedRoom, app.id)}
                                         >
                                             <div className="device-icon"><Icon size={24} /></div>
                                             <div className="device-name">{app.name}</div>
-                                            <div className="device-status">{app.state ? t('On') : t('Off')}</div>
+                                            <div className="device-status">{isOn ? t('On') : t('Off')}</div>
                                         </div>
                                     );
                                 })}

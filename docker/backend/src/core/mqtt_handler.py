@@ -124,9 +124,14 @@ class MQTTHandler:
             # Subscribe to device status topics (from CucumberRS ESP8266)
             status_topic = "WheelSense/+/status"
             client.subscribe(status_topic)
-            logger.info(f"Subscribed to {status_topic} (for device state sync)")
+            logger.info(f"Subscribed to {status_topic} (for device status info)")
             
-            logger.info("MQTT: Subscribed to registration, detection, and status topics")
+            # Subscribe to state sync request topic (for CucumberRS startup sync)
+            state_sync_topic = "WheelSense/central/state_sync_request"
+            client.subscribe(state_sync_topic)
+            logger.info(f"Subscribed to {state_sync_topic} (for CucumberRS startup sync)")
+            
+            logger.info("MQTT: Subscribed to registration, detection, status, and state_sync topics")
         else:
             logger.error(f"MQTT connection failed with code {rc}")
     
@@ -150,6 +155,13 @@ class MQTTHandler:
                 logger.error("No event loop available for async operations")
                 return
             
+            # Handle state sync request from CucumberRS (central topic)
+            if topic == "WheelSense/central/state_sync_request":
+                asyncio.run_coroutine_threadsafe(
+                    self._handle_state_sync_request(msg.payload), loop
+                )
+                return
+            
             # Handle room-based topics: WheelSense/{room}/registration and /detection only
             for room in self.ROOMS:
                 if topic.startswith(f"WheelSense/{room}/"):
@@ -162,7 +174,7 @@ class MQTTHandler:
                             self._handle_detection(room, msg.payload), loop
                         )
                     elif "/status" in topic:
-                        # Handle device status from CucumberRS
+                        # Handle device status from CucumberRS (info only)
                         asyncio.run_coroutine_threadsafe(
                             self._handle_device_status(room, msg.payload), loop
                         )
@@ -396,6 +408,11 @@ class MQTTHandler:
         """
         Handle device status from CucumberRS ESP8266.
         
+        NOTE: Dashboard (database) is the MASTER source of truth.
+        Device status is for DIAGNOSTICS ONLY and does NOT update the database.
+        The database is already updated when control commands are sent via
+        control_appliance_core().
+        
         Expected format:
         {
             "room": "bedroom",
@@ -408,15 +425,74 @@ class MQTTHandler:
         try:
             data = json.loads(payload.decode("utf-8"))
             appliances = data.get("appliances", {})
+            device_type = data.get("device_type", "unknown")
+            device_id = data.get("device_id", "unknown")
             
-            # Call device state callback if set (for MCP StateManager sync)
-            if self.on_device_state_callback:
-                for device, state in appliances.items():
-                    await self.on_device_state_callback(room, device, state)
-                    logger.info(f"Device state synced from MQTT: {room}/{device} = {state}")
+            # Log device status for diagnostics (but DON'T update database)
+            # The database is the single source of truth, updated only by control commands
+            for device, state in appliances.items():
+                logger.debug(f"Device status report (info only, not synced): {room}/{device} = {state} (from {device_id})")
+            
+            # REMOVED: on_device_state_callback - database is master, not the device
+            # This prevents CucumberRS from overwriting dashboard-controlled state
+            # The database is already updated by control_appliance_core() when commands are sent
+            
+            logger.info(f"📊 Received status from {device_id} ({device_type}) for {room} - {len(appliances)} appliances (info only, not synced to DB)")
             
         except Exception as e:
             logger.error(f"Error handling device status: {e}", exc_info=True)
+    
+    async def _handle_state_sync_request(self, payload: bytes):
+        """
+        Handle state sync request from CucumberRS on startup.
+        
+        When CucumberRS boots, it requests current state from the backend.
+        The backend responds with the database state (single source of truth)
+        so CucumberRS can sync its local state.
+        
+        Expected request format:
+        {
+            "type": "state_sync_request",
+            "device_id": "APPLIANCE_CENTRAL"
+        }
+        """
+        try:
+            data = json.loads(payload.decode("utf-8"))
+            device_id = data.get("device_id", "unknown")
+            
+            logger.info(f"🔄 State sync request from {device_id}")
+            
+            # Get database instance from app state (if available)
+            # The db reference is set by main.py when MQTT handler is initialized
+            db = getattr(self, 'db', None)
+            
+            if db:
+                try:
+                    # Get all device states from database (single source of truth)
+                    all_states = await db.get_all_device_states()
+                    
+                    # Send state sync to each room
+                    for room_name, devices in all_states.items():
+                        sync_topic = f"WheelSense/{room_name}/state_sync"
+                        sync_payload = json.dumps({
+                            "type": "state_sync",
+                            "room": room_name,
+                            "appliances": devices
+                        })
+                        
+                        if self.client and self.is_connected:
+                            self.client.publish(sync_topic, sync_payload)
+                            logger.debug(f"Sent state sync to {sync_topic}: {devices}")
+                    
+                    logger.info(f"✅ Sent state sync to device {device_id} for {len(all_states)} rooms")
+                    
+                except Exception as e:
+                    logger.error(f"Failed to get device states from database: {e}")
+            else:
+                logger.warning(f"Database not available for state sync request from {device_id}")
+            
+        except Exception as e:
+            logger.error(f"Error handling state sync request: {e}", exc_info=True)
     
     async def _handle_registration(self, room: str, payload: bytes):
         """Handle device IP registration from ESP32."""

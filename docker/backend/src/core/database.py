@@ -1271,20 +1271,31 @@ class Database:
     async def update_appliance_state(
         self, room_id: str, appliance_type: str, state: bool
     ):
-        """Update appliance state."""
-        room = await self.get_room(room_id)
-        if not room:
-            return
+        """Update appliance state in appliances table.
         
-        room_obj_id = room.get("_id")
+        Note: The appliances table uses 'room' field with room name (e.g., 'bedroom'),
+        not 'roomId' with UUID. This matches how init_data.py initializes the data.
+        """
+        # Normalize room name for consistent matching
+        room_name = normalize_room_name(room_id)
         
-        await self._db_connection.execute(
+        # Update using 'room' field (which stores room name like 'bedroom')
+        # Also try matching on roomId for backward compatibility
+        cursor = await self._db_connection.execute(
             """UPDATE appliances 
                SET isOn = ?, state = ?, lastStateChange = ?
-               WHERE roomId = ? AND type = ?""",
-            (1 if state else 0, 1 if state else 0, datetime.now().isoformat(), room_obj_id, appliance_type)
+               WHERE (room = ? OR roomId = ?) AND type = ?""",
+            (1 if state else 0, 1 if state else 0, datetime.now().isoformat(), 
+             room_name, room_name, appliance_type)
         )
         await self._db_connection.commit()
+        
+        # Check how many rows were updated
+        rowcount = cursor.rowcount
+        if rowcount == 0:
+            logger.warning(f"⚠️ update_appliance_state: NO ROWS UPDATED! room_name={room_name}, appliance_type={appliance_type}")
+        else:
+            logger.info(f"✅ update_appliance_state: Updated {rowcount} row(s) - room={room_name}, type={appliance_type}, state={state}")
         
         # Sync to device_states table
         await self.sync_appliance_to_state(room_id, appliance_type, state)
@@ -1743,12 +1754,22 @@ class Database:
     async def sync_appliance_to_state(self, room: str, device: str, state: bool):
         """Sync appliance state to device_states table."""
         now = datetime.now().isoformat()
+        
+        # Normalize device name: capitalize first letter (AC stays AC)
+        if device.upper() == "AC":
+            normalized_device = "AC"
+        else:
+            normalized_device = device.capitalize()
+        
+        # Normalize room name
+        normalized_room = normalize_room_name(room)
+        
         try:
             await self._db_connection.execute("BEGIN TRANSACTION")
             await self._db_connection.execute("""
                 INSERT OR REPLACE INTO device_states (room, device, state, updated_at)
                 VALUES (?, ?, ?, ?)
-            """, (room, device, 1 if state else 0, now))
+            """, (normalized_room, normalized_device, 1 if state else 0, now))
             await self._db_connection.commit()
         except Exception as e:
             await self._db_connection.execute("ROLLBACK")
@@ -1841,12 +1862,26 @@ class Database:
             return bool(row['state']) if row else False
     
     async def set_device_state(self, room: str, device: str, state: bool) -> bool:
-        """Set device state in device_states table."""
+        """Set device state in device_states table.
+        
+        Device names are normalized to capitalized format (e.g., 'light' -> 'Light')
+        to prevent duplicate entries with different cases.
+        """
         now = datetime.now().isoformat()
+        
+        # Normalize device name: capitalize first letter (AC stays AC)
+        if device.upper() == "AC":
+            normalized_device = "AC"
+        else:
+            normalized_device = device.capitalize()
+        
+        # Normalize room name
+        normalized_room = normalize_room_name(room)
+        
         await self._db_connection.execute("""
             INSERT OR REPLACE INTO device_states (room, device, state, updated_at)
             VALUES (?, ?, ?, ?)
-        """, (room, device, 1 if state else 0, now))
+        """, (normalized_room, normalized_device, 1 if state else 0, now))
         await self._db_connection.commit()
         return True
     

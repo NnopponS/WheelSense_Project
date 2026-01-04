@@ -126,6 +126,8 @@ bool wifiManagerConfigMode = false;
   
  // MQTT topics - ใช้ wildcard สำหรับรับทุกห้อง
  const char* MQTT_TOPIC_CONTROL_WILDCARD = "WheelSense/+/control";
+ const char* MQTT_TOPIC_STATE_SYNC_WILDCARD = "WheelSense/+/state_sync";  // For receiving state sync from backend
+ const char* MQTT_TOPIC_STATE_SYNC_REQUEST = "WheelSense/central/state_sync_request";  // For requesting state sync
  char MQTT_TOPIC_STATUS[64];
  char MQTT_TOPIC_REGISTRATION[64];
   
@@ -159,6 +161,7 @@ void sendStatus();
 void sendRoomStatus(int roomIndex);
 void resolveServerIPs();
 void reconnectMQTT();
+void requestInitialState();  // Request current state from backend (Dashboard is master)
  void setAppliance(int roomIndex, const char* appliance, bool state);
  void setApplianceValue(int roomIndex, const char* appliance, int value);
  void mqttCallback(char* topic, byte* payload, unsigned int length);
@@ -554,8 +557,44 @@ void reconnectMQTT();
      }
     
      String roomStr = topicStr.substring(firstSlash + 1, secondSlash);
+     
+     // Check for state_sync topic (WheelSense/<room>/state_sync)
+     // This is received from backend when we request initial state or when dashboard updates state
+     if (topicStr.endsWith("/state_sync")) {
+         Serial.printf("[MQTT] State sync received for room: %s\n", roomStr.c_str());
+         int roomIndex = getRoomIndex(roomStr.c_str());
+         if (roomIndex < 0) {
+             Serial.printf("[MQTT] Unknown room in state_sync: %s\n", roomStr.c_str());
+             return;
+         }
+         
+         // Parse JSON state sync
+         StaticJsonDocument<512> doc;
+         DeserializationError error = deserializeJson(doc, message);
+         if (error) {
+             Serial.printf("[MQTT] State sync JSON parse error: %s\n", error.c_str());
+             return;
+         }
+         
+         // Update local state from backend (Dashboard is master)
+         JsonObject appliances = doc["appliances"];
+         if (!appliances.isNull()) {
+             for (JsonPair kv : appliances) {
+                 const char* device = kv.key().c_str();
+                 bool state = kv.value().as<bool>();
+                 setAppliance(roomIndex, device, state);
+                 Serial.printf("[MQTT] Synced from backend: %s/%s = %s\n", 
+                              roomStr.c_str(), device, state ? "ON" : "OFF");
+             }
+             pushDisplayLog("State synced");
+             markDisplayDirty();
+         }
+         return;
+     }
+     
+     // Handle control topic (WheelSense/<room>/control)
      int roomIndex = getRoomIndex(roomStr.c_str());
-    
+     
      if (roomIndex < 0) {
          Serial.printf("[MQTT] Unknown room in topic: %s\n", roomStr.c_str());
          return;
@@ -713,6 +752,28 @@ void reconnectMQTT();
          Serial.println("[MQTT] Failed to publish IP registration");
      }
  }
+
+// ===== Request Initial State from Backend =====
+// Dashboard (database) is the single source of truth.
+// On startup, request current state from backend to sync local state.
+void requestInitialState() {
+    if (!mqtt.connected()) return;
+    
+    StaticJsonDocument<256> doc;
+    doc["type"] = "state_sync_request";
+    doc["device_id"] = DEVICE_ID;
+    doc["timestamp"] = millis() / 1000;
+    
+    String reqMsg;
+    serializeJson(doc, reqMsg);
+    
+    if (mqtt.publish(MQTT_TOPIC_STATE_SYNC_REQUEST, reqMsg.c_str())) {
+        Serial.println("[MQTT] Requested initial state sync from backend (Dashboard is master)");
+        pushDisplayLog("Sync requested");
+    } else {
+        Serial.println("[MQTT] Failed to request state sync");
+    }
+}
   
  // ===== Reconnect MQTT =====
  void reconnectMQTT() {
@@ -740,9 +801,16 @@ void reconnectMQTT();
          // Subscribe to wildcard control topic for ALL rooms
          mqtt.subscribe(MQTT_TOPIC_CONTROL_WILDCARD);
          Serial.printf("[MQTT] Subscribed to: %s (all rooms)\n", MQTT_TOPIC_CONTROL_WILDCARD);
+         
+         // Subscribe to state sync topic to receive current state from backend
+         mqtt.subscribe(MQTT_TOPIC_STATE_SYNC_WILDCARD);
+         Serial.printf("[MQTT] Subscribed to: %s (state sync from backend)\n", MQTT_TOPIC_STATE_SYNC_WILDCARD);
         
          // Register IP
          registerIPViaMQTT();
+         
+         // Request current state from backend (Dashboard is master source of truth)
+         requestInitialState();
      } else {
          Serial.printf("[MQTT] Failed to connect to %s:%d\n", mqttServerIP.c_str(), MQTT_PORT);
          if (mqttDisplayConnected) {

@@ -106,14 +106,14 @@ export function AppProvider({ children }) {
                         content: msg.content,
                         isNotification: msg.isNotification || false
                     }));
-                    
+
                     // Merge with existing chat history, avoiding duplicates
                     setChatHistory(prev => {
                         // Keep welcome message if it exists
                         const welcomeMsg = prev.find(m => m.id === 1 && m.role === 'assistant');
                         const existingIds = new Set(prev.map(m => m.id));
                         const newMessages = dbMessages.filter(m => !existingIds.has(m.id));
-                        
+
                         // Combine: welcome message (if exists) + database messages
                         const combined = welcomeMsg ? [welcomeMsg, ...newMessages] : newMessages;
                         return combined.sort((a, b) => (a.id || 0) - (b.id || 0));
@@ -123,10 +123,10 @@ export function AppProvider({ children }) {
                 console.error('[AppContext] Failed to load chat history:', error);
             }
         };
-        
+
         // Load on startup
         loadChatHistory();
-        
+
         // Refresh chat history every 5 seconds to get new notifications
         const interval = setInterval(loadChatHistory, 5000);
         return () => clearInterval(interval);
@@ -220,8 +220,8 @@ export function AppProvider({ children }) {
     const addChatMessage = useCallback((message) => {
         setChatHistory(prev => {
             // Check if message already exists (avoid duplicates based on content and timing)
-            const exists = prev.some(m => 
-                m.role === message.role && 
+            const exists = prev.some(m =>
+                m.role === message.role &&
                 m.content === message.content &&
                 Math.abs((m.id || 0) - (message.id || 0)) < 5000 // Same message within 5 seconds
             );
@@ -422,7 +422,7 @@ export function AppProvider({ children }) {
                 console.error('[AppContext] Failed to refresh rooms:', error);
             }
         };
-        
+
         // Refresh rooms every 2 seconds to see updated occupancy status
         const interval = setInterval(refreshRooms, 2000);
         return () => clearInterval(interval);
@@ -529,7 +529,7 @@ export function AppProvider({ children }) {
                         console.log('[AppContext] WebSocket message:', message);
                         // #region agent log
                         if (message.type === 'schedule_notification') {
-                            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({location: 'AppContext.jsx:409', message: 'WebSocket schedule_notification received', data: message, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D'})}).catch(()=>{});
+                            fetch('http://127.0.0.1:7242/ingest/124fafc7-2206-4943-b3f5-6f57d1dae272', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'AppContext.jsx:409', message: 'WebSocket schedule_notification received', data: message, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
                         }
                         // #endregion
 
@@ -553,11 +553,11 @@ export function AppProvider({ children }) {
                             // STEP 1: Update room color immediately (green when detected=true)
                             // When wheelchair is detected in a new room, clear all other rooms to detected=false
                             // This ensures only ONE room shows green at a time
-                            
+
                             // Normalize room name (lowercase, no spaces) to match backend format
                             const normalizeRoomName = (name) => name?.toLowerCase()?.replace(/\s+/g, '') || '';
                             const normalizedRoom = normalizeRoomName(room);
-                            
+
                             setDetectionState(prev => {
                                 if (detected) {
                                     // Clear all rooms and set only the current room as detected
@@ -710,26 +710,16 @@ export function AppProvider({ children }) {
                                     [roomKey]: updatedAppliances
                                 };
                             });
-                            
-                            // Also update device states (source of truth)
-                            // Refresh from database to ensure consistency
-                            setTimeout(async () => {
-                                try {
-                                    const response = await api.getAllDeviceStates();
-                                    if (response && response.device_states) {
-                                        setDeviceStates(response.device_states);
-                                    }
-                                } catch (error) {
-                                    console.debug('[AppContext] Failed to refresh device states after appliance update:', error);
-                                }
-                            }, 100);
+
+                            // WebSocket update IS the source of truth - no need to refetch
+                            // REMOVED: setTimeout refresh that was overwriting WS updates with stale data
                         }
 
                         // Handle user_info_update
                         if (message.type === 'user_info_update') {
                             const { data } = message;
                             console.log('[AppContext] 👤 User info update received:', data);
-                            
+
                             // Normalize: handle both API format (nested name) and WebSocket format (flat)
                             const normalizedData = {
                                 name_thai: data.name_thai || data.name?.thai || '',
@@ -737,7 +727,7 @@ export function AppProvider({ children }) {
                                 condition: data.condition || '',
                                 current_location: data.current_location || ''
                             };
-                            
+
                             setUserInfo(prev => ({ ...prev, ...normalizedData }));
                         }
 
@@ -746,8 +736,7 @@ export function AppProvider({ children }) {
                         if (message.type === 'device_state_update') {
                             const { room, device, state } = message;
                             console.log(`[AppContext] 🔌 Device state update received: ${room}/${device} = ${state}`);
-                            
-                            // Update local state immediately for fast UI response
+
                             setDeviceStates(prev => ({
                                 ...prev,
                                 [room]: {
@@ -755,26 +744,16 @@ export function AppProvider({ children }) {
                                     [device]: state
                                 }
                             }));
-                            
-                            // Also refresh from database to ensure consistency
-                            // This ensures we always have the latest state from the source of truth
-                            setTimeout(async () => {
-                                try {
-                                    const response = await api.getAllDeviceStates();
-                                    if (response && response.device_states) {
-                                        setDeviceStates(response.device_states);
-                                    }
-                                } catch (error) {
-                                    console.debug('[AppContext] Failed to refresh device states after update:', error);
-                                }
-                            }, 100); // Small delay to let database commit
+
+                            // WebSocket update IS the source of truth - no need to refetch
+                            // REMOVED: setTimeout refresh that was overwriting WS updates with stale data
                         }
 
                         // Handle schedule_item_update
                         if (message.type === 'schedule_item_update') {
                             const { action, item, item_id } = message;
                             console.log('[AppContext] 📅 Schedule item update received:', action, item);
-                            
+
                             if (action === 'reset') {
                                 // Reload all schedule items from API
                                 const loadScheduleItems = async () => {
@@ -805,7 +784,7 @@ export function AppProvider({ children }) {
                         if (message.type === 'house_check_notification') {
                             const { message: notificationMessage, content, data } = message;
                             console.log('[AppContext] 🔔 House check notification received:', notificationMessage);
-                            
+
                             // Add notification to chat history immediately (without waiting for database poll)
                             const notificationEntry = {
                                 id: Date.now(),
@@ -814,11 +793,11 @@ export function AppProvider({ children }) {
                                 isNotification: true,
                                 devices: data?.devices || []
                             };
-                            
+
                             setChatHistory(prev => {
                                 // Check if notification already exists (avoid duplicates)
-                                const exists = prev.some(m => 
-                                    m.isNotification && 
+                                const exists = prev.some(m =>
+                                    m.isNotification &&
                                     m.content === notificationEntry.content &&
                                     Math.abs((m.id || 0) - notificationEntry.id) < 1000 // Within 1 second
                                 );
@@ -829,7 +808,7 @@ export function AppProvider({ children }) {
                                 return [...prev, notificationEntry];
                             });
                         }
-                        
+
                         // Note: schedule_notification is still handled via database polling
                         // House check notifications now use WebSocket for immediate delivery (above)
                         // Database polling continues as fallback for both types
@@ -937,35 +916,36 @@ export function AppProvider({ children }) {
         return () => clearInterval(interval);
     }, []);
 
-    // REST polling for appliances (fallback when WebSocket unavailable)
-    // This also refetches after control actions
+    // Load appliances once on startup
+    // Real-time updates are handled by WebSocket (appliance_update event)
+    // REMOVED: 5-second polling which was overwriting WebSocket updates with stale data
     useEffect(() => {
-        const pollAppliances = async () => {
+        const loadAppliances = async () => {
             try {
                 const allAppliances = await api.getAllAppliances();
                 if (allAppliances) {
+                    console.log('[AppContext] Loaded appliances on startup');
                     setAppliances(allAppliances);
                 }
             } catch (error) {
-                // Silent error - polling is fallback only
-                console.debug('[AppContext] Failed to poll appliances:', error);
+                console.error('[AppContext] Failed to load appliances:', error);
             }
         };
 
-        // Poll every 5 seconds (appliance state changes are moderate frequency)
-        pollAppliances();
-        const interval = setInterval(pollAppliances, 5000);
-        return () => clearInterval(interval);
+        // Load only once on startup
+        loadAppliances();
+        // NO POLLING - rely on WebSocket updates from backend
     }, []);
 
-    // Load device states from database on startup and poll for updates
-    // Device states are the single source of truth (from device_states table)
+    // Load device states once on startup
+    // Real-time updates are handled by WebSocket (device_state_update event)
+    // REMOVED: 3-second polling which was overwriting WebSocket updates with stale data
     useEffect(() => {
         const loadDeviceStates = async () => {
             try {
                 const response = await api.getAllDeviceStates();
                 if (response && response.device_states) {
-                    console.log('[AppContext] Loaded device states from database:', response.device_states);
+                    console.log('[AppContext] Loaded device states on startup:', response.device_states);
                     setDeviceStates(response.device_states);
                 }
             } catch (error) {
@@ -973,12 +953,9 @@ export function AppProvider({ children }) {
             }
         };
 
-        // Load on startup
+        // Load only once on startup
         loadDeviceStates();
-
-        // Poll every 3 seconds (device states are critical for UI)
-        const interval = setInterval(loadDeviceStates, 3000);
-        return () => clearInterval(interval);
+        // NO POLLING - rely on WebSocket updates from backend
     }, []);
 
     // Theme effect
@@ -1104,7 +1081,7 @@ export function AppProvider({ children }) {
         try {
             console.log(`[toggleAppliance] Sending MQTT: room=${roomKey}, appliance=${appliance.type}, state=${newState}`);
             await api.controlAppliance(roomKey, appliance.type, newState);
-            
+
             // Refetch appliances immediately after control (REST fallback if WebSocket unavailable)
             try {
                 const allAppliances = await api.getAllAppliances();
@@ -1168,7 +1145,7 @@ export function AppProvider({ children }) {
             // The backend will forward it correctly
             console.log(`[setApplianceValue] Sending MQTT: room=${roomKey}, appliance=${appliance.type}, ${key}=${value}`);
             await api.controlAppliance(roomKey, appliance.type, true, value);
-            
+
             // Refetch appliances immediately after control (REST fallback if WebSocket unavailable)
             try {
                 const allAppliances = await api.getAllAppliances();

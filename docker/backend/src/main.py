@@ -114,6 +114,10 @@ async def lifespan(app: FastAPI):
     )
     app.state.mqtt_handler = mqtt_handler
     
+    # Set database reference on MQTT handler for state sync requests
+    # (Dashboard is master, CucumberRS requests current state on startup)
+    mqtt_handler.db = db
+    
     # Set callback for wheelchair detection to update database
     async def on_wheelchair_detection(room: str, detection: dict):
         """Simple callback: detect room, update database."""

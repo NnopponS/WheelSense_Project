@@ -242,133 +242,218 @@ export function Drawer() {
                             data.name?.toLowerCase().includes(locationFromDB.toLowerCase())
                         );
                         const occupied = isCurrentLocation;
-                        
+
                         return (
-                        <div style={{ padding: '1.5rem' }}>
-                            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                                <div style={{
-                                    width: 80, height: 80,
-                                    background: occupied ? 'linear-gradient(135deg, var(--success-500), var(--success-600))' : 'var(--gray-600)',
-                                    borderRadius: '1rem', margin: '0 auto 1rem',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '2rem'
-                                }}>
-                                    🏠
+                            <div style={{ padding: '1.5rem' }}>
+                                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                                    <div style={{
+                                        width: 80, height: 80,
+                                        background: occupied ? 'linear-gradient(135deg, var(--success-500), var(--success-600))' : 'var(--gray-600)',
+                                        borderRadius: '1rem', margin: '0 auto 1rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '2rem'
+                                    }}>
+                                        🏠
+                                    </div>
+                                    <h3>{data.nameEn || data.name}</h3>
+                                    <p style={{ color: 'var(--dark-text-muted)' }}>{data.nameEn || data.name}</p>
+                                    <span className={`list-item-badge ${occupied ? 'normal' : 'offline'}`}>
+                                        {occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}
+                                    </span>
                                 </div>
-                                <h3>{data.nameEn || data.name}</h3>
-                                <p style={{ color: 'var(--dark-text-muted)' }}>{data.nameEn || data.name}</p>
-                                <span className={`list-item-badge ${occupied ? 'normal' : 'offline'}`}>
-                                    {occupied ? `🟢 ${t('Occupied')}` : `⚪ ${t('Vacant')}`}
-                                </span>
-                            </div>
 
-                            {/* Video Stream */}
-                            <div className="card" style={{ marginBottom: '1rem' }}>
-                                <div className="card-header">
-                                    <span className="card-title"><Video size={16} /> Live Camera</span>
+                                {/* Video Stream */}
+                                <div className="card" style={{ marginBottom: '1rem' }}>
+                                    <div className="card-header">
+                                        <span className="card-title"><Video size={16} /> Live Camera</span>
 
-                                </div>
-                                <div className="video-stream" style={{ aspectRatio: '16/10', position: 'relative', background: 'linear-gradient(135deg, var(--dark-bg), var(--dark-surface))' }}>
-                                    {videoSrc && (
-                                        <img
-                                            key={`video-${data.id}`}
-                                            src={videoSrc}
-                                            alt={`${data.nameEn || data.name} Camera`}
-                                            style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                display: 'block',
-                                                position: 'relative',
-                                                zIndex: 2,
-                                                transform: rotation !== 0
-                                                    ? rotation === 90 || rotation === 270
-                                                        ? `rotate(${rotation}deg) scale(1.333)` // Scale to fill container when rotated
-                                                        : `rotate(${rotation}deg)`
-                                                    : 'none',
-                                                transformOrigin: 'center center',
-                                                transition: 'transform 0.3s ease'
-                                            }}
-                                            onLoad={(e) => {
-                                                // Check if image is larger than placeholder (which is ~165 bytes / 1x1 pixel)
-                                                const img = e.target;
-                                                const placeholder = document.getElementById(`video-placeholder-${data.id}`);
+                                    </div>
+                                    <div className="video-stream" style={{ aspectRatio: '16/10', position: 'relative', background: 'linear-gradient(135deg, var(--dark-bg), var(--dark-surface))' }}>
+                                        {videoSrc && (
+                                            <img
+                                                key={`video-${data.id}`}
+                                                src={videoSrc}
+                                                alt={`${data.nameEn || data.name} Camera`}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                    display: 'block',
+                                                    position: 'relative',
+                                                    zIndex: 2,
+                                                    transform: rotation !== 0
+                                                        ? rotation === 90 || rotation === 270
+                                                            ? `rotate(${rotation}deg) scale(1.333)` // Scale to fill container when rotated
+                                                            : `rotate(${rotation}deg)`
+                                                        : 'none',
+                                                    transformOrigin: 'center center',
+                                                    transition: 'transform 0.3s ease'
+                                                }}
+                                                onLoad={(e) => {
+                                                    // Check if image is larger than placeholder (which is ~165 bytes / 1x1 pixel)
+                                                    const img = e.target;
+                                                    const placeholder = document.getElementById(`video-placeholder-${data.id}`);
 
-                                                // If image dimensions are very small (placeholder), keep showing placeholder UI
-                                                if (img.naturalWidth <= 10 || img.naturalHeight <= 10) {
-                                                    console.log('Received placeholder frame, showing placeholder UI');
+                                                    // If image dimensions are very small (placeholder), keep showing placeholder UI
+                                                    if (img.naturalWidth <= 10 || img.naturalHeight <= 10) {
+                                                        console.log('Received placeholder frame, showing placeholder UI');
+                                                        if (placeholder) {
+                                                            placeholder.style.display = 'flex';
+                                                        }
+                                                        img.style.display = 'none';
+                                                    } else {
+                                                        // Real video frame - hide placeholder
+                                                        console.log('Received real video frame:', img.naturalWidth, 'x', img.naturalHeight);
+                                                        if (placeholder) {
+                                                            placeholder.style.display = 'none';
+                                                        }
+                                                        img.style.display = 'block';
+                                                    }
+                                                }}
+                                                onError={(e) => {
+                                                    // Show placeholder on error
+                                                    console.error('Video stream error for room:', data.id, e);
+                                                    e.target.style.display = 'none';
+                                                    const placeholder = document.getElementById(`video-placeholder-${data.id}`);
                                                     if (placeholder) {
                                                         placeholder.style.display = 'flex';
                                                     }
-                                                    img.style.display = 'none';
-                                                } else {
-                                                    // Real video frame - hide placeholder
-                                                    console.log('Received real video frame:', img.naturalWidth, 'x', img.naturalHeight);
-                                                    if (placeholder) {
-                                                        placeholder.style.display = 'none';
-                                                    }
-                                                    img.style.display = 'block';
-                                                }
-                                            }}
-                                            onError={(e) => {
-                                                // Show placeholder on error
-                                                console.error('Video stream error for room:', data.id, e);
-                                                e.target.style.display = 'none';
-                                                const placeholder = document.getElementById(`video-placeholder-${data.id}`);
-                                                if (placeholder) {
-                                                    placeholder.style.display = 'flex';
-                                                }
-                                            }}
-                                        />
-                                    )}
-                                    <div
-                                        id={`video-placeholder-${data.id}`}
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: 'linear-gradient(135deg, var(--dark-bg), var(--dark-surface))',
-                                            color: 'var(--dark-text-muted)',
-                                            fontSize: '0.9rem',
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            zIndex: 1
-                                        }}
-                                    >
-                                        {streamMode === 'loading' && (
-                                            <div className="loading-spinner" style={{ marginBottom: '1rem', width: '48px', height: '48px', border: '4px solid rgba(255,255,255,0.1)', borderTop: '4px solid var(--primary-500)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                                                }}
+                                            />
                                         )}
-                                        <Video size={48} style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }} />
-                                        <p style={{ margin: 0, textAlign: 'center' }}>
-                                            {streamMode === 'loading' && t('Connecting WebSocket...')}
-                                            {streamMode === 'offline' && t('Camera Offline')}
-                                            {!streamMode && t('Waiting for video from camera')}
-                                        </p>
-                                        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', opacity: 0.7, textAlign: 'center' }}>
-                                            {streamMode === 'loading' && t('Connecting to ESP32...')}
-                                            {streamMode === 'offline' && t('Cannot Connect')}
-                                            {streamMode === 'websocket' && t('Connected Successfully')}
-                                        </p>
+                                        <div
+                                            id={`video-placeholder-${data.id}`}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: 'linear-gradient(135deg, var(--dark-bg), var(--dark-surface))',
+                                                color: 'var(--dark-text-muted)',
+                                                fontSize: '0.9rem',
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                zIndex: 1
+                                            }}
+                                        >
+                                            {streamMode === 'loading' && (
+                                                <div className="loading-spinner" style={{ marginBottom: '1rem', width: '48px', height: '48px', border: '4px solid rgba(255,255,255,0.1)', borderTop: '4px solid var(--primary-500)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                                            )}
+                                            <Video size={48} style={{ color: 'rgba(255,255,255,0.3)', marginBottom: '1rem' }} />
+                                            <p style={{ margin: 0, textAlign: 'center' }}>
+                                                {streamMode === 'loading' && t('Connecting WebSocket...')}
+                                                {streamMode === 'offline' && t('Camera Offline')}
+                                                {!streamMode && t('Waiting for video from camera')}
+                                            </p>
+                                            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', opacity: 0.7, textAlign: 'center' }}>
+                                                {streamMode === 'loading' && t('Connecting to ESP32...')}
+                                                {streamMode === 'offline' && t('Cannot Connect')}
+                                                {streamMode === 'websocket' && t('Connected Successfully')}
+                                            </p>
+                                        </div>
+                                        {streamMode === 'websocket' && (
+                                            <span className="video-live-badge" style={{ zIndex: 2 }}>LIVE</span>
+                                        )}
                                     </div>
-                                    {streamMode === 'websocket' && (
-                                        <span className="video-live-badge" style={{ zIndex: 2 }}>LIVE</span>
-                                    )}
                                 </div>
-                            </div>
 
-                            {/* Appliance Control */}
-                            <div className="card">
-                                <div className="card-header">
-                                    <span className="card-title"><Power size={16} /> {t('Appliance Control')}</span>
-                                </div>
-                                <div className="card-body">
-                                    <div className="device-grid">
+                                {/* Appliance Control */}
+                                <div className="card">
+                                    <div className="card-header">
+                                        <span className="card-title"><Power size={16} /> {t('Appliance Control')}</span>
+                                    </div>
+                                    <div className="card-body">
+                                        <div className="device-grid">
+                                            {(() => {
+                                                // Find appliances by roomType, nameEn, or roomId
+                                                const roomMapping = {
+                                                    'bedroom': ['bed room', 'bedroom', 'Bedroom'],
+                                                    'bathroom': ['bathroom', 'Bathroom'],
+                                                    'livingroom': ['living room', 'livingroom', 'Living Room'],
+                                                    'kitchen': ['kitchen', 'Kitchen']
+                                                };
+
+                                                let roomAppliances = appliances[data.id] || [];
+
+                                                // Try by roomType
+                                                if (roomAppliances.length === 0 && data.roomType) {
+                                                    roomAppliances = appliances[data.roomType.toLowerCase()] || [];
+                                                }
+
+                                                // Try by nameEn
+                                                if (roomAppliances.length === 0 && data.nameEn) {
+                                                    roomAppliances = appliances[data.nameEn.toLowerCase()] || [];
+                                                }
+
+                                                // Try by name mapping
+                                                if (roomAppliances.length === 0) {
+                                                    for (const [key, names] of Object.entries(roomMapping)) {
+                                                        const roomName = (data.name || '').toLowerCase();
+                                                        const roomNameEn = (data.nameEn || '').toLowerCase();
+                                                        if (names.some(n => roomName.includes(n.toLowerCase()) || roomNameEn.includes(n.toLowerCase()) || n.toLowerCase().includes(roomName) || n.toLowerCase().includes(roomNameEn))) {
+                                                            roomAppliances = appliances[key] || [];
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+
+                                                return roomAppliances.map(app => {
+                                                    const Icon = app.type === 'light' ? Lightbulb :
+                                                        app.type === 'AC' ? Thermometer :
+                                                            app.type === 'tv' ? Tv :
+                                                                app.type === 'fan' ? Fan : Power;
+
+                                                    // Get room key for toggleAppliance
+                                                    let roomKey = data.roomType?.toLowerCase() || data.nameEn?.toLowerCase() || data.id;
+                                                    for (const [key, names] of Object.entries(roomMapping)) {
+                                                        const roomName = (data.name || '').toLowerCase();
+                                                        const roomNameEn = (data.nameEn || '').toLowerCase();
+                                                        if (names.some(n => roomName.includes(n.toLowerCase()) || roomNameEn.includes(n.toLowerCase()))) {
+                                                            roomKey = key;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    // Get device state from database (source of truth)
+                                                    // Try multiple room name formats AND device type formats
+                                                    const normalizedRoom = roomKey.toLowerCase().replace(/\s+/g, '');
+                                                    const deviceType = app.type; // e.g., "light"
+                                                    const deviceTypeCapitalized = deviceType.charAt(0).toUpperCase() + deviceType.slice(1); // e.g., "Light"
+
+                                                    // Try all combinations of room and device type formats
+                                                    const deviceState =
+                                                        deviceStates?.[normalizedRoom]?.[deviceType] ??
+                                                        deviceStates?.[normalizedRoom]?.[deviceTypeCapitalized] ??
+                                                        deviceStates?.[roomKey]?.[deviceType] ??
+                                                        deviceStates?.[roomKey]?.[deviceTypeCapitalized] ??
+                                                        deviceStates?.[data.roomType?.toLowerCase()]?.[deviceType] ??
+                                                        deviceStates?.[data.roomType?.toLowerCase()]?.[deviceTypeCapitalized] ??
+                                                        deviceStates?.[data.nameEn?.toLowerCase()]?.[deviceType] ??
+                                                        deviceStates?.[data.nameEn?.toLowerCase()]?.[deviceTypeCapitalized] ??
+                                                        app.state; // Fallback to appliance state if deviceStates not available
+
+                                                    // Use device state from database as source of truth
+                                                    const isOn = deviceState === true || deviceState === 1;
+
+                                                    return (
+                                                        <div
+                                                            key={app.id}
+                                                            className={`device-card ${isOn ? 'active' : ''}`}
+                                                            onClick={() => toggleAppliance(roomKey, app.id)}
+                                                        >
+                                                            <div className="device-icon"><Icon size={24} /></div>
+                                                            <div className="device-name">{app.name || (app.type === 'AC' ? 'AC' : app.type)}</div>
+                                                            <div className="device-status">{isOn ? t('On') : t('Off')}</div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
                                         {(() => {
-                                            // Find appliances by roomType, nameEn, or roomId
+                                            // Same logic to check if appliances exist
                                             const roomMapping = {
                                                 'bedroom': ['bed room', 'bedroom', 'Bedroom'],
                                                 'bathroom': ['bathroom', 'Bathroom'],
@@ -378,17 +463,14 @@ export function Drawer() {
 
                                             let roomAppliances = appliances[data.id] || [];
 
-                                            // Try by roomType
                                             if (roomAppliances.length === 0 && data.roomType) {
                                                 roomAppliances = appliances[data.roomType.toLowerCase()] || [];
                                             }
 
-                                            // Try by nameEn
                                             if (roomAppliances.length === 0 && data.nameEn) {
                                                 roomAppliances = appliances[data.nameEn.toLowerCase()] || [];
                                             }
 
-                                            // Try by name mapping
                                             if (roomAppliances.length === 0) {
                                                 for (const [key, names] of Object.entries(roomMapping)) {
                                                     const roomName = (data.name || '').toLowerCase();
@@ -400,86 +482,13 @@ export function Drawer() {
                                                 }
                                             }
 
-                                            return roomAppliances.map(app => {
-                                                const Icon = app.type === 'light' ? Lightbulb :
-                                                    app.type === 'AC' ? Thermometer :
-                                                        app.type === 'tv' ? Tv :
-                                                            app.type === 'fan' ? Fan : Power;
-
-                                                // Get room key for toggleAppliance
-                                                let roomKey = data.roomType?.toLowerCase() || data.nameEn?.toLowerCase() || data.id;
-                                                for (const [key, names] of Object.entries(roomMapping)) {
-                                                    const roomName = (data.name || '').toLowerCase();
-                                                    const roomNameEn = (data.nameEn || '').toLowerCase();
-                                                    if (names.some(n => roomName.includes(n.toLowerCase()) || roomNameEn.includes(n.toLowerCase()))) {
-                                                        roomKey = key;
-                                                        break;
-                                                    }
-                                                }
-
-                                                // Get device state from database (source of truth)
-                                                // Try multiple room name formats to match deviceStates
-                                                const normalizedRoom = roomKey.toLowerCase().replace(/\s+/g, '');
-                                                const deviceState = deviceStates[normalizedRoom]?.[app.type] ?? 
-                                                                   deviceStates[roomKey]?.[app.type] ?? 
-                                                                   deviceStates[data.roomType?.toLowerCase()]?.[app.type] ??
-                                                                   deviceStates[data.nameEn?.toLowerCase()]?.[app.type] ??
-                                                                   app.state; // Fallback to appliance state if deviceStates not available
-                                                
-                                                // Use device state from database as source of truth
-                                                const isOn = deviceState === true || deviceState === 1;
-
-                                                return (
-                                                    <div
-                                                        key={app.id}
-                                                        className={`device-card ${isOn ? 'active' : ''}`}
-                                                        onClick={() => toggleAppliance(roomKey, app.id)}
-                                                    >
-                                                        <div className="device-icon"><Icon size={24} /></div>
-                                                        <div className="device-name">{app.name || (app.type === 'AC' ? 'AC' : app.type)}</div>
-                                                        <div className="device-status">{isOn ? t('On') : t('Off')}</div>
-                                                    </div>
-                                                );
-                                            });
+                                            return roomAppliances.length === 0 ? (
+                                                <p style={{ color: 'var(--dark-text-muted)', textAlign: 'center' }}>{t('No Appliances in This Room')}</p>
+                                            ) : null;
                                         })()}
                                     </div>
-                                    {(() => {
-                                        // Same logic to check if appliances exist
-                                        const roomMapping = {
-                                            'bedroom': ['bed room', 'bedroom', 'Bedroom'],
-                                            'bathroom': ['bathroom', 'Bathroom'],
-                                            'livingroom': ['living room', 'livingroom', 'Living Room'],
-                                            'kitchen': ['kitchen', 'Kitchen']
-                                        };
-
-                                        let roomAppliances = appliances[data.id] || [];
-
-                                        if (roomAppliances.length === 0 && data.roomType) {
-                                            roomAppliances = appliances[data.roomType.toLowerCase()] || [];
-                                        }
-
-                                        if (roomAppliances.length === 0 && data.nameEn) {
-                                            roomAppliances = appliances[data.nameEn.toLowerCase()] || [];
-                                        }
-
-                                        if (roomAppliances.length === 0) {
-                                            for (const [key, names] of Object.entries(roomMapping)) {
-                                                const roomName = (data.name || '').toLowerCase();
-                                                const roomNameEn = (data.nameEn || '').toLowerCase();
-                                                if (names.some(n => roomName.includes(n.toLowerCase()) || roomNameEn.includes(n.toLowerCase()) || n.toLowerCase().includes(roomName) || n.toLowerCase().includes(roomNameEn))) {
-                                                    roomAppliances = appliances[key] || [];
-                                                    break;
-                                                }
-                                            }
-                                        }
-
-                                        return roomAppliances.length === 0 ? (
-                                            <p style={{ color: 'var(--dark-text-muted)', textAlign: 'center' }}>{t('No Appliances in This Room')}</p>
-                                        ) : null;
-                                    })()}
                                 </div>
                             </div>
-                        </div>
                         );
                     })()}
 
