@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "minor_version": 1,
+  "key": "person",
+  "data": {
+    "items": [
+      {
+        "id": "worapon_sangsasri",
+        "name": "Worapon Sangsasri",
+        "user_id": "1e751ab44d7e44b8b7c99cd72828edd9",
+        "device_trackers": []
+      }
+    ]
+  }
+}

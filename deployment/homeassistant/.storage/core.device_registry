@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "minor_version": 12,
+  "key": "core.device_registry",
+  "data": {
+    "devices": [
+      {"area_id":null,"config_entries":["01KH1PP7CBFFDMM7702AFAA3PF"],"config_entries_subentries":{"01KH1PP7CBFFDMM7702AFAA3PF":[null]},"configuration_url":"homeassistant://config/backup","connections":[],"created_at":"2026-02-09T17:20:19.345333+00:00","disabled_by":null,"entry_type":"service","hw_version":null,"id":"f91cba73e9fe8531987b622229fd0540","identifiers":[["backup","backup_manager"]],"labels":[],"manufacturer":"Home Assistant","model":"Home Assistant Backup","model_id":null,"modified_at":"2026-02-09T17:20:19.345385+00:00","name_by_user":null,"name":"Backup","primary_config_entry":"01KH1PP7CBFFDMM7702AFAA3PF","serial_number":null,"sw_version":"2026.2.1","via_device_id":null},
+      {"area_id":null,"config_entries":["01KH87Y9GDXA442EMY6T03NWSJ"],"config_entries_subentries":{"01KH87Y9GDXA442EMY6T03NWSJ":[null]},"configuration_url":"https://www.met.no/en","connections":[],"created_at":"2026-02-12T06:17:17.528800+00:00","disabled_by":null,"entry_type":"service","hw_version":null,"id":"8eaf961deb8f54434cd605b804cae680","identifiers":[["met","01KH87Y9GDXA442EMY6T03NWSJ"]],"labels":[],"manufacturer":"Met.no","model":"Forecast","model_id":null,"modified_at":"2026-02-12T06:17:17.528849+00:00","name_by_user":null,"name":"Forecast","primary_config_entry":"01KH87Y9GDXA442EMY6T03NWSJ","serial_number":null,"sw_version":null,"via_device_id":null}
+    ],
+    "deleted_devices": []
+  }
+}

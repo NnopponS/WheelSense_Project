@@ -1,0 +1,117 @@
+name: wheelsense
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=wheelsense
+      - POSTGRES_PASSWORD=wheelsense
+      - POSTGRES_DB=wheelsense
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U wheelsense" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - wheelsense
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    healthcheck:
+      test: [ "CMD", "ollama", "list" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - wheelsense
+
+  backend:
+    build:
+      context: ../backend
+      no_cache: true
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://wheelsense:wheelsense@postgres:5432/wheelsense
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - HA_URL=http://homeassistant:8123
+      - HA_TOKEN=${HA_TOKEN:-}
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:7b
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - wheelsense
+
+  frontend:
+    build:
+      context: ../frontend
+      no_cache: true
+    ports:
+      - "3001:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - wheelsense
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    restart: unless-stopped
+    networks:
+      - wheelsense
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./homeassistant:/config
+    environment:
+      - TZ=Asia/Bangkok
+    privileged: true
+    restart: unless-stopped
+    networks:
+      - wheelsense
+
+volumes:
+  postgres_data:
+  ollama_data:
+    external: true
+    name: docker_ollama_data
+  mosquitto_data:
+  mosquitto_log:
+
+
+networks:
+  wheelsense:
+    driver: bridge

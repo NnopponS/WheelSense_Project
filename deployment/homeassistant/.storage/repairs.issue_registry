@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "minor_version": 2,
+  "key": "repairs.issue_registry",
+  "data": {
+    "issues": [
+      {
+        "created": "2026-02-09T17:20:19.294481+00:00",
+        "dismissed_version": null,
+        "domain": "template",
+        "is_persistent": false,
+        "issue_id": "deprecate_legacy_templates_light_bedroom_light_27b0d25e8b2e5addad9615169bf819f6"
+      },
+      {
+        "created": "2026-02-09T17:20:19.294654+00:00",
+        "dismissed_version": null,
+        "domain": "template",
+        "is_persistent": false,
+        "issue_id": "deprecate_legacy_templates_light_living_room_light_27b0d25e8b2e5addad9615169bf819f6"
+      }
+    ]
+  }
+}

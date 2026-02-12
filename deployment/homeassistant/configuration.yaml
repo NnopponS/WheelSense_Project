@@ -1,0 +1,61 @@
+# WheelSense v2.0 Home Assistant Configuration
+
+homeassistant:
+  name: WheelSense Smart Home
+  unit_system: metric
+  time_zone: Asia/Bangkok
+  
+# API for WheelSense backend
+api:
+
+# Frontend dashboard
+frontend:
+
+# Enable configuration via UI
+config:
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+# Example light entities (replace with your actual devices)
+light:
+  - platform: template
+    lights:
+      bedroom_light:
+        friendly_name: "Bedroom Light"
+        value_template: "{{ states('input_boolean.bedroom_light') }}"
+        turn_on:
+          service: input_boolean.turn_on
+          entity_id: input_boolean.bedroom_light
+        turn_off:
+          service: input_boolean.turn_off
+          entity_id: input_boolean.bedroom_light
+      living_room_light:
+        friendly_name: "Living Room Light"
+        value_template: "{{ states('input_boolean.living_room_light') }}"
+        turn_on:
+          service: input_boolean.turn_on
+          entity_id: input_boolean.living_room_light
+        turn_off:
+          service: input_boolean.turn_off
+          entity_id: input_boolean.living_room_light
+
+# Input booleans for demo purposes
+input_boolean:
+  bedroom_light:
+    name: Bedroom Light
+    initial: off
+  living_room_light:
+    name: Living Room Light
+    initial: off
+
+# Automations
+automation: !include automations.yaml
+
+# Scripts
+script: !include scripts.yaml
+
+# Logger
+logger:
+  default: info
