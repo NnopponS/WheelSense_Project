@@ -1,162 +1,187 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Bell, Phone, AlertTriangle, MapPin, Lightbulb, Clock, RefreshCw } from 'lucide-react';
-import { getTodayTimeline, TimelineEvent } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { Phone, Bell, AlertTriangle, CheckCircle, Clock, Trash2, X } from 'lucide-react';
+import { useWheelSenseStore } from '@/store';
+import { useTranslation } from '@/lib/i18n';
+import {
+  getNotifications, markNotificationRead, markAllNotificationsRead,
+  sendEmergencyAlert, getPatients
+} from '@/lib/api';
+
+interface NotificationItem {
+  id: string | number;
+  type: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+}
 
 export default function UserAlertsPage() {
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const { patients, setPatients } = useWheelSenseStore();
+  const { t } = useTranslation();
+
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  const patient = patients[0];
+
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const res = await getTodayTimeline(20);
-      if (res.data) setEvents(res.data.timeline);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching alerts:', error);
-      setLoading(false);
-    }
+      const [pRes, nRes] = await Promise.all([getPatients(), getNotifications({ limit: 50 })]);
+      if (pRes.data) setPatients(pRes.data.patients || []);
+      if (nRes.data) setNotifications(nRes.data.notifications || []);
+    } catch (e) { console.error(e); }
+    setLoading(false);
   };
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const handleSOS = async () => {
+    if (!confirm(t('Send emergency alert? Staff will be notified immediately.'))) return;
+    try {
+      await sendEmergencyAlert({ message: 'Emergency alert from user', patient_id: patient?.id });
+    } catch (e) { console.error(e); }
+  };
 
-  const getIcon = (type: string) => {
+  const handleMarkRead = async (id: string | number) => {
+    try {
+      await markNotificationRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (e) { console.error(e); }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead(patient?.id);
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (e) { console.error(e); }
+  };
+
+  const getNotifIcon = (type: string) => {
     switch (type) {
-      case 'location_change': return MapPin;
-      case 'appliance_control': return Lightbulb;
-      case 'alert': return AlertTriangle;
-      default: return Bell;
+      case 'emergency': case 'alert': return <AlertTriangle size={18} />;
+      case 'info': return <Bell size={18} />;
+      default: return <Bell size={18} />;
     }
   };
 
-  const getIconColor = (type: string) => {
+  const getNotifColor = (type: string) => {
     switch (type) {
-      case 'location_change': return 'var(--info-500)';
-      case 'appliance_control': return 'var(--warning-500)';
-      case 'alert': return 'var(--danger-500)';
-      default: return 'var(--text-muted)';
+      case 'emergency': return '#ef4444';
+      case 'alert': case 'warning': return '#f59e0b';
+      default: return '#6366f1';
     }
   };
 
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('th-TH', {
-      hour: '2-digit', minute: '2-digit'
-    });
-  };
+  const unreadCount = notifications.filter(n => !n.read).length;
 
-  if (loading) {
-    return (
-      <div className="page-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <RefreshCw size={40} className="animate-spin" style={{ color: 'var(--primary-500)' }} />
-      </div>
-    );
-  }
+  if (loading) return <div className="empty-state" style={{ height: '60vh' }}><div className="loading-spinner" /><h3>{t('common.loading')}</h3></div>;
 
   return (
-    <div className="page-content">
-      <div className="page-header">
-        <h2>🔔 My Notifications</h2>
-        <p>Notifications and important events</p>
-      </div>
-
-      {/* Emergency Contact Button */}
+    <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {/* Emergency Contact Card */}
       <div className="card" style={{
-        marginBottom: '1.5rem',
-        background: 'linear-gradient(135deg, var(--danger-500), var(--danger-600))',
-        border: 'none', color: 'white'
+        background: 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.1))',
+        border: '1px solid rgba(239,68,68,0.3)',
       }}>
-        <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <Phone size={28} />
+        <div className="card-body" style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          flexWrap: 'wrap', gap: '1rem',
+        }}>
+          <div>
+            <h3 style={{ margin: '0 0 0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Phone size={20} style={{ color: '#ef4444' }} /> {t('Emergency Contact')}
+            </h3>
+            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+              {t('Press the button to alert staff immediately')}
+            </p>
           </div>
-          <div style={{ flex: 1 }}>
-            <h4 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>Emergency Contact Admin</h4>
-            <p style={{ opacity: 0.9, fontSize: '0.85rem' }}>Press to report emergency immediately</p>
-          </div>
-          <button style={{
-            padding: '0.75rem 1.5rem',
-            background: 'white', color: 'var(--danger-600)',
-            border: 'none', borderRadius: 'var(--radius-md)',
-            fontWeight: 600, cursor: 'pointer'
-          }}>
-            📞 Call Now
+          <button onClick={handleSOS} style={{
+            background: '#ef4444', border: 'none', color: 'white',
+            padding: '0.75rem 2rem', borderRadius: 'var(--radius-md)',
+            fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            boxShadow: '0 4px 12px rgba(239,68,68,0.4)',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+          }} onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}>
+            <Phone size={20} /> SOS
           </button>
         </div>
       </div>
 
-      {/* Notifications */}
+      {/* Notifications Card */}
       <div className="card">
         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="card-title"><Bell size={18} /> Notifications</span>
-          {events.length > 0 && (
-            <span style={{
-              padding: '0.25rem 0.6rem',
-              background: 'var(--danger-500)',
-              color: 'white',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.75rem', fontWeight: 600
-            }}>
-              {events.length}
-            </span>
+          <span className="card-title">
+            <Bell size={18} /> {t('Notifications')}
+            {unreadCount > 0 && (
+              <span style={{
+                marginLeft: '0.5rem', padding: '0.15rem 0.5rem',
+                borderRadius: 999, background: 'var(--danger-500)',
+                color: 'white', fontSize: '0.75rem', fontWeight: 600,
+              }}>{unreadCount}</span>
+            )}
+          </span>
+          {unreadCount > 0 && (
+            <button className="btn btn-sm btn-secondary" onClick={handleMarkAllRead}>
+              <CheckCircle size={14} /> {t('Mark All Read')}
+            </button>
           )}
         </div>
         <div className="card-body" style={{ padding: 0 }}>
-          {events.length > 0 ? (
-            events.map(event => {
-              const Icon = getIcon(event.event_type);
-              const color = getIconColor(event.event_type);
+          {notifications.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+              <Bell size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+              <p>{t('No notifications')}</p>
+            </div>
+          ) : (
+            notifications.map((n, i) => {
+              const color = getNotifColor(n.type);
               return (
-                <div
-                  key={event.id}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    padding: '1rem 1.25rem',
-                    borderBottom: '1px solid var(--border-color)',
-                    cursor: 'pointer',
-                    transition: '0.2s'
-                  }}
-                >
+                <div key={n.id} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  borderBottom: i < notifications.length - 1 ? '1px solid var(--border-color)' : 'none',
+                  background: n.read ? 'transparent' : `${color}08`,
+                  transition: 'background 0.2s',
+                }}>
+                  {/* Icon */}
                   <div style={{
-                    width: 40, height: 40, borderRadius: 'var(--radius-md)',
-                    background: `${color}20`,
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: `${color}22`, color: color,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0
+                    flexShrink: 0, marginTop: 2,
                   }}>
-                    <Icon size={18} color={color} />
+                    {getNotifIcon(n.type)}
                   </div>
+
+                  {/* Content */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                      {event.description || (
-                        event.event_type === 'location_change'
-                          ? `Moved to ${event.to_room_name}`
-                          : 'Activity recorded'
-                      )}
+                    <div style={{
+                      fontWeight: n.read ? 400 : 600,
+                      fontSize: '0.9rem', marginBottom: '0.15rem',
+                    }}>{n.title}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                      {n.message}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                      {event.patient_name && `${event.patient_name} • `}
-                      {event.event_type.replace('_', ' ')}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Clock size={12} /> {new Date(n.timestamp).toLocaleString()}
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Clock size={12} /> {formatTime(event.timestamp)}
-                  </div>
+
+                  {/* Actions */}
+                  {!n.read && (
+                    <button className="btn btn-icon btn-sm" onClick={() => handleMarkRead(n.id)}
+                      title={t('Mark as read')} style={{ flexShrink: 0 }}>
+                      <CheckCircle size={14} />
+                    </button>
+                  )}
                 </div>
               );
             })
-          ) : (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-              <Bell size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-              <p>No new notifications</p>
-            </div>
           )}
         </div>
       </div>

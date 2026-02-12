@@ -120,3 +120,4 @@ Dependencies: {'ffmpeg', 'image_upload', 'trace', 'blueprint'}; already set up: 
 2026-02-12 20:36:23.184 INFO (MainThread) [homeassistant.components.weather] Setting up met.weather
 2026-02-12 20:36:23.185 INFO (MainThread) [homeassistant.bootstrap] Home Assistant initialized in 3.63s
 2026-02-12 20:36:23.186 INFO (MainThread) [homeassistant.core] Starting Home Assistant 2026.2.1
+2026-02-12 21:13:43.318 WARNING (MainThread) [homeassistant.components.http.ban] Login attempt or request with invalid authentication from wheelsense-backend-1.wheelsense_wheelsense (172.18.0.6). Requested URL: '/api/'. (python-httpx/0.28.1)
