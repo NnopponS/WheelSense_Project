@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Activity, Users, Cpu, AlertTriangle, Accessibility,
   Wifi, MapPin, Building2, Layers, Send, Bell,
-  ChevronDown, Eye, EyeOff, Video
+  ChevronDown, Eye, EyeOff, Video, X, Home, Power
 } from 'lucide-react';
 import { useWheelSenseStore } from '@/store';
 import { useTranslation } from '@/lib/i18n';
@@ -30,7 +30,7 @@ export default function MonitoringPage() {
   const { t, language } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [healthStatus, setHealthStatus] = useState<{ mqtt: boolean; ha: boolean }>({ mqtt: false, ha: false });
-  const [wcFilter, setWcFilter] = useState<'all' | 'online' | 'offline'>('all');
+  const [wcFilter, setWcFilter] = useState<'all' | 'online' | 'alert'>('all');
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [alertMsg, setAlertMsg] = useState('');
   const [alertPatient, setAlertPatient] = useState('');
@@ -111,7 +111,6 @@ export default function MonitoringPage() {
     setSelectedRoom(room);
     const res = await getRoomAppliances(room.id);
     if (res.data) setRoomAppliances(res.data.appliances || []);
-    openDrawer({ type: 'room', data: room });
   };
 
   const handleSendAlert = async () => {
@@ -144,7 +143,7 @@ export default function MonitoringPage() {
   const onlineWheelchairs = wheelchairs.filter(w => w.status !== 'offline');
   const filteredWheelchairs = wcFilter === 'all' ? wheelchairs
     : wcFilter === 'online' ? wheelchairs.filter(w => w.status !== 'offline')
-      : wheelchairs.filter(w => w.status === 'offline');
+      : wheelchairs.filter(w => w.status === 'warning' || w.status === 'alert');
   const nodeDevices = devices.filter(d => d.type === 'node');
   const onlineNodes = nodeDevices.filter(d => d.status === 'online');
 
@@ -281,7 +280,7 @@ export default function MonitoringPage() {
             <div className="list-header">
               <span className="list-title"><Accessibility size={18} /> {t('admin.devices.wheelchairs')}</span>
               <div style={{ display: 'flex', gap: '0.25rem' }}>
-                {(['all', 'online', 'offline'] as const).map(f => (
+                {(['all', 'online', 'alert'] as const).map(f => (
                   <button key={f} onClick={() => setWcFilter(f)}
                     style={{
                       padding: '0.25rem 0.5rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600,
@@ -338,6 +337,98 @@ export default function MonitoringPage() {
       </div>
 
       {/* Alert Modal */}
+      {selectedRoom && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          width: 'min(360px, 92vw)',
+          height: '100vh',
+          background: 'var(--bg-secondary)',
+          borderLeft: '1px solid var(--border-color)',
+          zIndex: 140,
+          overflowY: 'auto'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '1rem',
+            borderBottom: '1px solid var(--border-color)'
+          }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Home size={18} /> Room Details</h3>
+            <button className="btn btn-icon" onClick={() => setSelectedRoom(null)}><X size={16} /></button>
+          </div>
+
+          <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            <div className="card" style={{ margin: 0 }}>
+              <div className="card-body" style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: 64, height: 64, margin: '0 auto 0.6rem', borderRadius: 16,
+                  background: 'linear-gradient(135deg, var(--success-500), var(--info-500))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem'
+                }}>🏠</div>
+                <div style={{ fontWeight: 800, fontSize: '1.2rem' }}>{selectedRoom.nameEn || selectedRoom.name}</div>
+                <span className={`list-item-badge ${wheelchairs.some(w => w.currentRoom === selectedRoom.id && w.status !== 'offline') ? 'online' : 'offline'}`}>
+                  {wheelchairs.some(w => w.currentRoom === selectedRoom.id && w.status !== 'offline') ? 'Occupied' : 'Vacant'}
+                </span>
+              </div>
+            </div>
+
+            <div className="card" style={{ margin: 0 }}>
+              <div className="card-header">
+                <span className="card-title"><Video size={16} /> Live Camera</span>
+              </div>
+              <div className="card-body" style={{ paddingTop: '0.5rem' }}>
+                <span className="list-item-badge" style={{ background: 'var(--danger-500)', color: 'white' }}>LIVE</span>
+                <div style={{
+                  marginTop: '0.7rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  minHeight: 140,
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: 'var(--text-muted)'
+                }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <Video size={30} style={{ margin: '0 auto 0.45rem', opacity: 0.65 }} />
+                    <div style={{ fontSize: '0.85rem' }}>Connected Successfully</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card" style={{ margin: 0 }}>
+              <div className="card-header">
+                <span className="card-title"><Power size={16} /> Appliance Control</span>
+              </div>
+              <div className="card-body" style={{ padding: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
+                  {roomAppliances.map((app: any) => (
+                    <button
+                      key={app.id}
+                      onClick={() => handleToggleAppliance(app)}
+                      style={{
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '10px',
+                        background: 'var(--bg-primary)',
+                        color: 'var(--text-primary)',
+                        padding: '0.7rem',
+                        textAlign: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{app.name}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>{app.state ? 'On' : 'Off'}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAlertModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'var(--bg-secondary)', borderRadius: '16px', padding: '1.5rem', width: '90%', maxWidth: '480px', border: '1px solid var(--border-color)' }}>

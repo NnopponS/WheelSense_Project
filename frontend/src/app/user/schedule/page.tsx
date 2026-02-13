@@ -61,12 +61,16 @@ export default function UserSchedulePage() {
     if (loading) return <div className="empty-state" style={{ height: '80vh' }}><div className="loading-spinner" /><h3>{t('common.loading')}</h3></div>;
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={24} /> {t('schedule.title')}</h2>
-                <button onClick={() => { setShowAdd(true); setEditing(null); }}
-                    style={{ background: 'var(--primary-500)', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', color: 'white', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Plus size={16} /> {t('schedule.addRoutine')}
+        <div style={{ maxWidth: '100%', margin: '0 auto' }}>
+            <div className="page-header" style={{ marginBottom: '1rem' }}>
+                <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={24} /> Routines</h2>
+                <p>Manage patient daily activity schedules</p>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem', marginBottom: '0.8rem' }}>
+                <button className="btn btn-secondary" onClick={fetchData}>Reset Schedule</button>
+                <button className="btn btn-primary" onClick={() => { setShowAdd(true); setEditing(null); }}>
+                    <Plus size={16} /> Add Activity
                 </button>
             </div>
 
@@ -93,24 +97,29 @@ export default function UserSchedulePage() {
             )}
 
             <div className="list-container">
-                <div className="list-body">
+                <div className="list-header">
+                    <span className="list-title"><Clock size={16} /> Activity Schedule ({routines.length})</span>
+                </div>
+                <div className="list-body" style={{ padding: '0.8rem' }}>
                     {routines.length === 0 ? (
                         <div className="empty-state"><Calendar size={48} /><h3>{t('schedule.noRoutines')}</h3><p>{t('schedule.addFirstRoutine')}</p></div>
                     ) : (
                         routines.map(r => {
                             const isPast = r.time <= now;
                             return (
-                                <div key={r.id} className="list-item" style={{ padding: '0.75rem', opacity: isPast ? 0.6 : 1 }}>
-                                    <div className="list-item-avatar" style={{ background: isPast ? 'var(--success-500)' : 'var(--primary-500)', fontSize: '0.75rem' }}>
-                                        {isPast ? <Check size={18} /> : <Clock size={18} />}
-                                    </div>
-                                    <div className="list-item-content">
-                                        <div className="list-item-title" style={{ textDecoration: isPast ? 'line-through' : 'none' }}>{r.title}</div>
-                                        <div className="list-item-subtitle">{r.time} {r.description ? `• ${r.description}` : ''}</div>
+                                <div key={r.id} style={{
+                                    display: 'flex', alignItems: 'center', gap: '1rem',
+                                    background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
+                                    borderRadius: '10px', padding: '0.8rem 0.9rem', marginBottom: '0.55rem', opacity: isPast ? 0.65 : 1
+                                }}>
+                                    <div style={{ minWidth: 74, fontWeight: 800, color: 'var(--primary-400)', fontSize: '1.05rem' }}>{r.time}</div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontWeight: 700, textDecoration: isPast ? 'line-through' : 'none' }}>{r.title}</div>
+                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{r.description || ''}</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                        <button onClick={() => startEdit(r)} style={{ background: 'none', border: 'none', color: 'var(--primary-400)', cursor: 'pointer' }}><Edit3 size={16} /></button>
-                                        <button onClick={() => handleDelete(r.id)} style={{ background: 'none', border: 'none', color: 'var(--danger-400)', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                        <button className="btn btn-icon" onClick={() => startEdit(r)}><Edit3 size={14} /></button>
+                                        <button className="btn btn-danger btn-icon" onClick={() => handleDelete(r.id)}><Trash2 size={14} /></button>
                                     </div>
                                 </div>
                             );

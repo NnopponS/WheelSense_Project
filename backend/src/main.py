@@ -43,6 +43,12 @@ async def lifespan(app: FastAPI):
     if _llm:
         validation = await _llm.validate_connection()
         ai_status = '✅ Connected' if validation.get('valid') else f"⚠️ {validation.get('message', 'Not available')}"
+        if validation.get('valid') and settings.LLM_WARMUP_ON_STARTUP:
+            warmup = await _llm.warmup()
+            if warmup.get('success'):
+                print("🔥 AI warmup completed")
+            else:
+                print(f"⚠️ AI warmup skipped: {warmup.get('error', 'unknown error')}")
     else:
         ai_status = '❌ Not initialized'
     

@@ -10,6 +10,7 @@ from enum import Enum
 import json
 import re
 import time
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +27,29 @@ class LLMClient:
     Features: circuit breaker, JSON tool-call parsing, response preprocessing.
     """
 
-    def __init__(self, host: str, model: str):
+    def __init__(
+        self,
+        host: str,
+        model: str,
+        timeout_seconds: float = 120.0,
+        temperature: float = 0.3,
+        top_p: float = 0.9,
+        num_ctx: int = 2048,
+        num_predict: int = 256,
+        keep_alive: str = "30m",
+        retry_attempts: int = 2,
+        retry_backoff_seconds: float = 1.5,
+    ):
         self.host = host.rstrip('/')
         self.model = model
-        self._client = httpx.AsyncClient(timeout=300.0)
+        self._client = httpx.AsyncClient(timeout=timeout_seconds)
+        self.temperature = temperature
+        self.top_p = top_p
+        self.num_ctx = num_ctx
+        self.num_predict = num_predict
+        self.keep_alive = keep_alive
+        self.retry_attempts = max(1, retry_attempts)
+        self.retry_backoff_seconds = max(0.5, retry_backoff_seconds)
 
         # Circuit breaker state
         self._circuit_state = CircuitState.CLOSED
@@ -159,17 +179,40 @@ class LLMClient:
                 "model": self.model,
                 "messages": messages,
                 "stream": False,
+                "keep_alive": self.keep_alive,
                 "options": {
-                    "temperature": 0.7,
-                    "num_ctx": 4096,
-                    "top_p": 0.9
+                    "temperature": self.temperature,
+                    "num_ctx": self.num_ctx,
+                    "top_p": self.top_p,
+                    "num_predict": self.num_predict,
                 }
             }
 
-            response = await self._client.post(
-                f"{self.host}/api/chat",
-                json=payload
-            )
+            response = None
+            last_error: Optional[Exception] = None
+            for attempt in range(1, self.retry_attempts + 1):
+                try:
+                    response = await self._client.post(
+                        f"{self.host}/api/chat",
+                        json=payload
+                    )
+                    if response.status_code < 500:
+                        break
+                    last_error = httpx.HTTPError(f"Ollama server error {response.status_code}")
+                except (httpx.TimeoutException, httpx.ConnectError) as e:
+                    last_error = e
+
+                if attempt < self.retry_attempts:
+                    await asyncio.sleep(self.retry_backoff_seconds * attempt)
+
+            if response is None:
+                if isinstance(last_error, httpx.TimeoutException):
+                    self._record_failure()
+                    raise httpx.HTTPError("Ollama request timed out")
+                if isinstance(last_error, httpx.ConnectError):
+                    self._record_failure()
+                    raise httpx.HTTPError(f"Cannot connect to Ollama at {self.host}")
+                raise httpx.HTTPError("Ollama request failed")
 
             if response.status_code != 200:
                 self._record_failure()
@@ -436,8 +479,23 @@ class LLMClient:
                     "content": "I can't connect to the AI service right now. Please try again later.",
                     "error": error_msg
                 }
-            return {
-                "tools": None, "tool": None, "arguments": {},
-                "content": "I encountered an error. Please try again.",
-                "error": error_msg
-            }
+                return {
+                    "tools": None, "tool": None, "arguments": {},
+                    "content": "I encountered an error. Please try again.",
+                    "error": error_msg
+                }
+
+    async def warmup(self) -> Dict[str, Any]:
+        """Run a lightweight warmup call so first user request is faster."""
+        try:
+            result = await self.chat(
+                messages=[
+                    {"role": "system", "content": "You are a concise assistant."},
+                    {"role": "user", "content": "Reply with exactly: OK"},
+                ],
+                correlation_id="warmup",
+            )
+            return {"success": True, "response": result[:20]}
+        except Exception as e:
+            logger.warning(f"LLM warmup failed: {e}")
+            return {"success": False, "error": str(e)}

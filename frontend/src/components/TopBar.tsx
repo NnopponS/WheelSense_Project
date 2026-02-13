@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useWheelSenseStore } from '@/store';
 import { useTranslation } from '@/lib/i18n';
+import { getBuildings, getFloors } from '@/lib/api';
 import {
     Search, Bell, Menu, Sun, Moon, X, AlertTriangle,
-    Info, CheckCircle, Clock, Globe
+    Info, CheckCircle, Clock
 } from 'lucide-react';
 
 export default function TopBar() {
@@ -15,13 +16,19 @@ export default function TopBar() {
         markAllNotificationsRead,
         theme, setTheme, role,
         language, setLanguage,
-        currentUser
+        currentUser,
+        selectedBuilding,
+        selectedFloor,
+        setSelectedBuilding,
+        setSelectedFloor,
     } = useWheelSenseStore();
 
     const { t } = useTranslation();
     const [showNotifications, setShowNotifications] = useState(false);
     const [currentTime, setCurrentTime] = useState<string>('');
     const [mounted, setMounted] = useState(false);
+    const [buildings, setBuildings] = useState<any[]>([]);
+    const [floors, setFloors] = useState<any[]>([]);
 
     // Prevent hydration mismatch — only render time on client
     useEffect(() => {
@@ -36,6 +43,19 @@ export default function TopBar() {
         }, 1000);
         return () => clearInterval(timer);
     }, [language]);
+
+    useEffect(() => {
+        const loadFilters = async () => {
+            const [bRes, fRes] = await Promise.all([getBuildings(), getFloors()]);
+            if (bRes.data?.buildings) setBuildings(bRes.data.buildings);
+            if (fRes.data?.floors) setFloors(fRes.data.floors);
+        };
+        loadFilters();
+    }, []);
+
+    const filteredFloors = selectedBuilding
+        ? floors.filter((f: any) => f.building_id === selectedBuilding)
+        : floors;
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -74,14 +94,45 @@ export default function TopBar() {
             </button>
 
             {role === 'admin' && (
-                <div className="search-bar">
-                    <Search />
-                    <input
-                        type="text"
-                        placeholder={t('topbar.searchPlaceholder')}
-                    />
-                </div>
+                <>
+                    <div className="global-filters">
+                        <select
+                            className="filter-select"
+                            value={selectedBuilding || ''}
+                            onChange={(e) => {
+                                setSelectedBuilding(e.target.value || null);
+                                setSelectedFloor(null);
+                            }}
+                        >
+                            {buildings.length === 0 && <option value="">Smart Home</option>}
+                            {buildings.map((b: any) => (
+                                <option key={b.id} value={b.id}>{b.name_en || b.name}</option>
+                            ))}
+                        </select>
+
+                        <select
+                            className="filter-select"
+                            value={selectedFloor || ''}
+                            onChange={(e) => setSelectedFloor(e.target.value || null)}
+                        >
+                            {filteredFloors.length === 0 && <option value="">Floor 1</option>}
+                            {filteredFloors.map((f: any) => (
+                                <option key={f.id} value={f.id}>{f.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="search-bar">
+                        <Search />
+                        <input
+                            type="text"
+                            placeholder={t('topbar.searchPlaceholder')}
+                        />
+                    </div>
+                </>
             )}
+
+            {role === 'user' && <div style={{ flex: 1 }} />}
 
             <div className="top-bar-actions">
                 {/* Live Clock */}
@@ -99,6 +150,12 @@ export default function TopBar() {
                     <span>{mounted ? currentTime : '--:--:--'}</span>
                     <span style={{ fontSize: '0.65rem', opacity: 0.7, marginLeft: '0.25rem' }}>GMT+7</span>
                 </div>
+
+                {role === 'user' && (
+                    <button className="btn btn-secondary" style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}>
+                        {language === 'th' ? 'รีเซ็ตตาราง' : 'Reset Schedule'}
+                    </button>
+                )}
 
                 {/* Language Toggle */}
                 <div style={{ display: 'flex', gap: '0.25rem' }}>

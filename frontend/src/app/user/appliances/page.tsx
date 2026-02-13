@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Lightbulb, Fan, Thermometer, Tv, Power, RefreshCw } from 'lucide-react';
+import { Lightbulb, Fan, Thermometer, Tv, Power, RefreshCw, Zap } from 'lucide-react';
 import { getAppliances, controlAppliance, Appliance } from '@/lib/api';
 import { useTranslation } from '@/lib/i18n';
 
@@ -10,6 +10,7 @@ export default function UserAppliancesPage() {
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [loading, setLoading] = useState(true);
   const [controlling, setControlling] = useState<string | null>(null);
+  const [activeRoom, setActiveRoom] = useState<string>('');
 
   const fetchData = async () => {
     try {
@@ -78,43 +79,83 @@ export default function UserAppliancesPage() {
     );
   }
 
+  const roomNames = Object.keys(grouped);
+  const selectedRoom = activeRoom || roomNames[0] || '';
+  const roomAppliances = selectedRoom ? grouped[selectedRoom] || [] : [];
+  const onCount = roomAppliances.filter((a) => !!a.state).length;
+
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">💡 {t('user.appliances.title')}</h1>
-        <p className="text-[var(--text-secondary)] text-sm">{t('user.appliances.subtitle')}</p>
+        <h1 className="text-2xl font-bold">⚡ Appliance Control</h1>
+        <p className="text-[var(--text-secondary)] text-sm">Control appliances in all rooms</p>
       </div>
 
-      {Object.entries(grouped).map(([roomName, roomAppliances]) => (
-        <div key={roomName} className="mb-6">
-          <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-3">{roomName}</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {roomAppliances.map((appliance) => {
-              const Icon = getIcon(appliance.type);
-              const isOn = !!appliance.state;
-              const isControlling = controlling === appliance.id;
-
-              return (
-                <button
-                  key={appliance.id}
-                  onClick={() => handleControl(appliance)}
-                  disabled={isControlling}
-                  className={`glass-card p-4 text-left transition-all active:scale-95 ${isOn ? 'ring-2 ring-emerald-500/50' : ''
-                    } ${isControlling ? 'opacity-50' : ''}`}
-                >
-                  <div className={`w-12 h-12 rounded-xl ${getColor(appliance.type, isOn)} flex items-center justify-center text-white mb-3`}>
-                    <Icon size={24} />
-                  </div>
-                  <h4 className="font-semibold text-sm mb-1">{appliance.name}</h4>
-                  <p className={`text-xs font-medium ${isOn ? 'text-emerald-400' : 'text-[var(--text-muted)]'}`}>
-                    {isOn ? 'ON' : 'OFF'}
-                  </p>
-                </button>
-              );
-            })}
+      {roomNames.length > 0 && (
+        <div className="card mb-4" style={{ padding: '0.35rem' }}>
+          <div style={{ display: 'grid', gap: '0.45rem', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+            {roomNames.map((room) => (
+              <button
+                key={room}
+                className="btn"
+                style={{
+                  background: selectedRoom === room ? 'var(--primary-500)' : 'transparent',
+                  color: selectedRoom === room ? 'white' : 'var(--text-secondary)',
+                  borderColor: selectedRoom === room ? 'var(--primary-500)' : 'transparent'
+                }}
+                onClick={() => setActiveRoom(room)}
+              >
+                {room}
+              </button>
+            ))}
           </div>
         </div>
-      ))}
+      )}
+
+      {selectedRoom && (
+        <div className="card mb-4">
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="card-title"><Zap size={16} /> {selectedRoom}</span>
+            <span className="list-item-badge info">{onCount}/{roomAppliances.length} On</span>
+          </div>
+          <div className="card-body">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {roomAppliances.map((appliance) => {
+                const Icon = getIcon(appliance.type);
+                const isOn = !!appliance.state;
+                const isControlling = controlling === appliance.id;
+                return (
+                  <div
+                    key={appliance.id}
+                    className="glass-card p-4"
+                    style={{ border: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg ${getColor(appliance.type, isOn)} flex items-center justify-center text-white`}>
+                          <Icon size={20} />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm">{appliance.name}</h4>
+                          <p className="text-xs text-[var(--text-muted)]">{isOn ? 'On' : 'Off'}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleControl(appliance)}
+                        disabled={isControlling}
+                        className="btn btn-icon"
+                        style={{ opacity: isControlling ? 0.6 : 1 }}
+                      >
+                        {isOn ? 'ON' : 'OFF'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {appliances.length === 0 && (
         <div className="glass-card p-8 text-center">

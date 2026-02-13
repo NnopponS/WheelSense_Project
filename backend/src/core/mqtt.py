@@ -55,6 +55,17 @@ class MQTTCollector:
                 pass
             self.connected = False
             print("⏹️ Disconnected from MQTT broker")
+
+    async def publish(self, topic: str, payload: str):
+        """Publish message to MQTT (for config push to devices)"""
+        if not self.connected or not self.client:
+            print("⚠️ MQTT not connected, cannot publish config")
+            return
+        try:
+            await self.client.publish(topic, payload)
+            print(f"📤 Published to {topic}")
+        except Exception as e:
+            print(f"❌ MQTT publish failed: {e}")
     
     async def start_listening(self):
         """Start listening for MQTT messages"""

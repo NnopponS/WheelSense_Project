@@ -1,0 +1,42 @@
+---
+description: Use project skills from .agent/skills/ before starting any task
+alwaysApply: true
+---
+
+# WheelSense Project Skills
+
+## Mandatory Skill Usage
+
+Before starting any task, **identify and read relevant skills** from `.agent/skills/`. Use the `Read` tool to load `SKILL.md` files.
+
+### Skill Mapping
+
+| Task Type | Skills to Read |
+|-----------|----------------|
+| **Frontend** (React, Next.js, Zustand, Tailwind) | `nextjs-frontend`, `react-patterns`, `react-state-management` |
+| **Backend** (FastAPI, Python, async) | `fastapi-backend`, `fastapi-pro`, `async-python-patterns` |
+| **API design** or new endpoints | `api-design-principles`, `fastapi-pro` |
+| **Docker** or deployment | `docker-deployment`, `docker-expert` |
+| **MQTT** or IoT data | `mqtt-protocol` |
+| **Writing tests** | `testing`, `python-testing-patterns`, `test-driven-development` |
+| **Debugging** | `systematic-debugging`, `error-handling` |
+| **Error handling** or resilience | `error-handling`, `async-python-patterns` |
+
+### Path Format
+
+```
+.agent/skills/<skill-name>/SKILL.md
+```
+
+Examples:
+- `.agent/skills/nextjs-frontend/SKILL.md`
+- `.agent/skills/fastapi-backend/SKILL.md`
+- `.agent/skills/systematic-debugging/SKILL.md`
+
+### Priority
+
+Prioritize **project-specific** skills: `nextjs-frontend`, `fastapi-backend`, `docker-deployment`, `mqtt-protocol`, `error-handling`, `testing`.
+
+### Additional Resources
+
+Each skill may have `resources/`, `assets/`, or `references/` subdirectories. Read these when the task requires deeper guidance.

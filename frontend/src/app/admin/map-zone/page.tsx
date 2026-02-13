@@ -265,6 +265,9 @@ export default function MapZonePage() {
     // ============ RENDER ============
     if (loading) return <div className="empty-state" style={{ height: '80vh' }}><div className="loading-spinner" /><h3>{t('common.loading')}</h3></div>;
 
+    const activeBuilding = buildings.find((b) => b.id === selBuilding);
+    const activeFloor = floors.find((f) => f.id === selFloor);
+
     return (
         <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
             {/* Header */}
@@ -284,6 +287,38 @@ export default function MapZonePage() {
                     )}
                 </div>
             </div>
+
+            {!editMode && (
+                <div className="card" style={{ marginBottom: '1rem' }}>
+                    <div className="card-body" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ minWidth: 220 }}>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Building</div>
+                            <div style={{
+                                padding: '0.65rem 0.75rem',
+                                borderRadius: '8px',
+                                background: 'var(--primary-600)',
+                                color: 'white',
+                                fontWeight: 700
+                            }}>
+                                {activeBuilding?.nameEn || activeBuilding?.name || 'Smart Home'}
+                            </div>
+                        </div>
+                        <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
+                        <div style={{ minWidth: 220 }}>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Floor</div>
+                            <div style={{
+                                padding: '0.65rem 0.75rem',
+                                borderRadius: '8px',
+                                background: 'var(--primary-600)',
+                                color: 'white',
+                                fontWeight: 700
+                            }}>
+                                {activeFloor?.name || 'Floor 1'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Management Panel */}
             <div className="card" style={{ marginBottom: '1rem' }}>
@@ -493,8 +528,14 @@ export default function MapZonePage() {
                             {selectedRoom && selectedRoomData ? (
                                 <>
                                     {/* Room Info */}
-                                    <div style={{ marginBottom: '1.5rem' }}>
+                                    <div style={{ marginBottom: '1.2rem' }}>
                                         <h3 style={{ margin: '0 0 0.5rem' }}>{selectedRoomData.nameEn || selectedRoomData.name}</h3>
+                                        {!editMode && (
+                                            <div style={{ display: 'flex', gap: '0.6rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                                                <span>🌡️ 25°C</span>
+                                                <span>💧 60%</span>
+                                            </div>
+                                        )}
                                         {editMode && (
                                             <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                                 📍 X: {Math.round(selectedRoomData.x)}% | Y: {Math.round(selectedRoomData.y)}% | W: {Math.round(selectedRoomData.width)}% | H: {Math.round(selectedRoomData.height)}%

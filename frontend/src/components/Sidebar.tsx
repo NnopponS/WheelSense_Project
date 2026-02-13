@@ -5,9 +5,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useWheelSenseStore } from '@/store';
 import { useTranslation } from '@/lib/i18n';
 import {
-    Accessibility, LayoutDashboard, Users, Settings,
+    Accessibility, Activity, Users, Settings,
     Home, Heart, Bell, Calendar, Map, Cpu,
-    BarChart3, MessageCircle, Clock
+    BarChart3, Bot, Clock, Zap, Gauge
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -20,25 +20,32 @@ interface NavItem {
 }
 
 const adminNavItems: NavItem[] = [
-    { labelKey: 'nav.monitor', icon: LayoutDashboard, path: '/admin/monitoring', sectionKey: 'section.main' },
+    { labelKey: 'nav.monitor', icon: Activity, path: '/admin/monitoring', sectionKey: 'section.main' },
     { labelKey: 'nav.mapZone', icon: Map, path: '/admin/map-zone', sectionKey: 'section.main' },
-    { labelKey: 'nav.patients', icon: Users, path: '/admin/patients', sectionKey: 'section.main' },
-    { labelKey: 'nav.devices', icon: Cpu, path: '/admin/devices', sectionKey: 'section.main' },
-    { labelKey: 'nav.analytics', icon: BarChart3, path: '/admin/analytics', sectionKey: 'section.main' },
-    { labelKey: 'nav.aiAssistant', icon: MessageCircle, path: '/admin/ai', sectionKey: 'section.ai' },
+    { labelKey: 'nav.patients', icon: Users, path: '/admin/patients', sectionKey: 'Management' },
+    { labelKey: 'nav.devices', icon: Cpu, path: '/admin/devices', sectionKey: 'Management' },
+    { labelKey: 'nav.timeline', icon: Clock, path: '/admin/timeline', sectionKey: 'Tracking', badge: true },
+    { labelKey: 'nav.schedule', icon: Calendar, path: '/admin/routines', sectionKey: 'Tracking' },
+    { labelKey: 'nav.analytics', icon: BarChart3, path: '/admin/analytics', sectionKey: 'Tracking' },
+    { labelKey: 'nav.appliances', icon: Zap, path: '/admin/appliances', sectionKey: 'Tools' },
+    { labelKey: 'nav.sensors', icon: Gauge, path: '/admin/sensors', sectionKey: 'Tools' },
+    { labelKey: 'nav.aiAssistant', icon: Bot, path: '/admin/ai', sectionKey: 'Tools' },
+    { labelKey: 'nav.settings', icon: Settings, path: '/admin/settings', sectionKey: 'Tools' },
 ];
 
 const userNavItems: NavItem[] = [
-    { labelKey: 'nav.home', icon: Home, path: '/user/home', sectionKey: 'section.main' },
-    { labelKey: 'nav.health', icon: Heart, path: '/user/health', sectionKey: 'section.main' },
-    { labelKey: 'nav.schedule', icon: Calendar, path: '/user/schedule', sectionKey: 'section.main' },
-    { labelKey: 'nav.timeline', icon: Clock, path: '/user/timeline', sectionKey: 'section.main' },
-    { labelKey: 'nav.aiChat', icon: MessageCircle, path: '/user/ai-chat', sectionKey: 'section.ai' },
-    { labelKey: 'nav.notifications', icon: Bell, path: '/user/notifications', sectionKey: 'section.main', badge: true },
+    { labelKey: 'nav.home', icon: Home, path: '/user/home', sectionKey: 'Main' },
+    { labelKey: 'nav.health', icon: Heart, path: '/user/health', sectionKey: 'Main' },
+    { labelKey: 'nav.schedule', icon: Calendar, path: '/user/schedule', sectionKey: 'Health' },
+    { labelKey: 'nav.appliances', icon: Zap, path: '/user/appliances', sectionKey: 'Control' },
+    { labelKey: 'nav.video', icon: Activity, path: '/user/video', sectionKey: 'Control' },
+    { labelKey: 'nav.aiAssistant', icon: Bot, path: '/user/ai', sectionKey: 'Control' },
+    { labelKey: 'nav.notifications', icon: Bell, path: '/user/alerts', sectionKey: 'More' },
+    { labelKey: 'nav.settings', icon: Settings, path: '/user/settings', sectionKey: 'More' },
 ];
 
 export default function Sidebar() {
-    const { role, setRole, sidebarOpen, wheelchairs } = useWheelSenseStore();
+    const { role, setRole, sidebarOpen, wheelchairs, currentUser, patients } = useWheelSenseStore();
     const { t } = useTranslation();
     const alertCount = wheelchairs.filter(w => w.status === 'alert' || w.status === 'warning').length;
     const router = useRouter();
@@ -66,11 +73,14 @@ export default function Sidebar() {
 
     // Group items by section
     const sections = navItems.reduce((acc, item) => {
-        const sectionLabel = t(item.sectionKey);
+        const sectionLabel = item.sectionKey.includes('.') ? t(item.sectionKey) : item.sectionKey;
         if (!acc[sectionLabel]) acc[sectionLabel] = [];
         acc[sectionLabel].push(item);
         return acc;
     }, {} as Record<string, typeof navItems>);
+
+    const patient = currentUser || patients[0];
+    const assignedWheelchair = wheelchairs.find((w) => w.patientId === patient?.id) || wheelchairs[0];
 
     return (
         <aside className={`sidebar ${role === 'user' ? 'user-mode' : ''} ${sidebarOpen ? 'open' : ''}`}>
@@ -100,6 +110,48 @@ export default function Sidebar() {
                     {t('role.user')}
                 </button>
             </div>
+
+            {role === 'user' && (
+                <div style={{ margin: '0 1rem 0.75rem' }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            padding: '0.75rem',
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, var(--primary-500), var(--primary-700))',
+                            color: 'white',
+                            border: '1px solid rgba(255,255,255,0.12)'
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: '999px',
+                                background: 'rgba(255,255,255,0.9)',
+                                color: 'var(--primary-700)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: '0.8rem'
+                            }}
+                        >
+                            {(patient?.name || 'U').slice(0, 1).toUpperCase()}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {patient?.name || 'User'}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', opacity: 0.9 }}>
+                                {assignedWheelchair?.id || 'WC001'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <nav className="sidebar-nav">
                 {Object.entries(sections).map(([sectionName, items]) => (

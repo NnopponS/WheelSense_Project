@@ -28,6 +28,15 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_KEEP_ALIVE=30m
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    gpus: all
     healthcheck:
       test: [ "CMD", "ollama", "list" ]
       interval: 30s
@@ -52,16 +61,36 @@ services:
       - HA_TOKEN=${HA_TOKEN:-}
       - OLLAMA_HOST=http://ollama:11434
       - OLLAMA_MODEL=qwen2.5:7b
+      - OLLAMA_REQUEST_TIMEOUT_SECONDS=${OLLAMA_REQUEST_TIMEOUT_SECONDS:-120}
+      - OLLAMA_TEMPERATURE=${OLLAMA_TEMPERATURE:-0.3}
+      - OLLAMA_TOP_P=${OLLAMA_TOP_P:-0.9}
+      - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX:-2048}
+      - OLLAMA_NUM_PREDICT=${OLLAMA_NUM_PREDICT:-256}
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE:-30m}
+      - OLLAMA_RETRY_ATTEMPTS=${OLLAMA_RETRY_ATTEMPTS:-2}
+      - OLLAMA_RETRY_BACKOFF_SECONDS=${OLLAMA_RETRY_BACKOFF_SECONDS:-1.5}
+      - CHAT_MAX_USER_MESSAGE_CHARS=${CHAT_MAX_USER_MESSAGE_CHARS:-2000}
+      - LLM_MAX_CONTEXT_CHARS=${LLM_MAX_CONTEXT_CHARS:-12000}
+      - LLM_WARMUP_ON_STARTUP=${LLM_WARMUP_ON_STARTUP:-true}
     depends_on:
       postgres:
         condition: service_healthy
       mosquitto:
         condition: service_started
       ollama:
+        condition: service_healthy
+      homeassistant:
         condition: service_started
     restart: unless-stopped
     networks:
       - wheelsense
+
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" ]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   frontend:
     build:
@@ -72,7 +101,8 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - wheelsense

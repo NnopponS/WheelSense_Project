@@ -1,14 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  MapPin, Phone, CheckCircle, Clock, Lightbulb, Fan, Thermometer, Tv,
-  Wind, Power, Bell, ChevronRight, Accessibility
-} from 'lucide-react';
+import { MapPin, Phone, CheckCircle, Clock, Accessibility, Zap } from 'lucide-react';
 import { useWheelSenseStore } from '@/store';
 import { useTranslation } from '@/lib/i18n';
 import {
-  getPatients, getWheelchairs, getRooms, getMapData,
+  getPatients, getWheelchairs, getMapData,
   getRoomAppliances, controlAppliance, getRoutines, sendEmergencyAlert
 } from '@/lib/api';
 import type { Room, Appliance } from '@/lib/api';
@@ -103,48 +100,44 @@ export default function UserHomePage() {
 
   if (loading) return <div className="empty-state" style={{ height: '60vh' }}><div className="loading-spinner" /><h3>{t('common.loading')}</h3></div>;
 
+  const onCount = appliances.filter((a) => !!a.state).length;
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {/* Profile Header Card */}
-      <div className="card" style={{
-        background: 'linear-gradient(135deg, var(--primary-500), var(--primary-700, #4338ca))',
-        color: 'white', border: 'none',
-      }}>
-        <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.2)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem',
-            }}>
-              {patient?.name?.[0]?.toUpperCase() || '👤'}
+    <div style={{ maxWidth: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+      <div className="card" style={{ border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+        <div style={{ padding: '1rem', background: 'linear-gradient(135deg, var(--primary-600), var(--primary-700))' }}>
+          <div style={{ fontWeight: 700, fontSize: '1.15rem', marginBottom: 2 }}>
+            {`Hello, ${patient?.name || (patient as any)?.name_en || t('User')} 👋`}
+          </div>
+          <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem' }}>{t('How is your health today?')}</div>
+        </div>
+        <div style={{ padding: '0.75rem 1rem', background: 'rgba(99,102,241,0.12)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div style={{ width: 34, height: 34, borderRadius: '999px', background: 'rgba(255,255,255,0.9)', color: 'var(--primary-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+              {(patient?.name || 'U').slice(0, 1).toUpperCase()}
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>
-                {t('Hello')}, {patient?.name || (patient as any)?.name_en || t('User')} 👋
-              </h2>
-              <div style={{ opacity: 0.85, display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                <MapPin size={14} />
-                <span>{(currentRoom as any)?.name_en || (currentRoom as any)?.nameEn || currentRoom?.name || t('Unknown Location')}</span>
-              </div>
+              <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{patient?.name || t('User')}</div>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>{wheelchair?.name || wheelchair?.id || 'Wheelchair-1'}</div>
             </div>
           </div>
-          <button onClick={handleSOS} style={{
-            background: '#ef4444', border: 'none', color: 'white',
-            padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-md)',
-            fontWeight: 700, fontSize: '1rem', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            boxShadow: '0 4px 12px rgba(239,68,68,0.4)',
-          }}>
-            <Phone size={18} /> SOS
-          </button>
+          <div style={{ textAlign: 'right', fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+            <div>---</div>
+            <div>{t('Health Score')}</div>
+          </div>
         </div>
       </div>
 
-      {/* Map Section */}
       <div className="card">
-        <div className="card-header">
-          <span className="card-title"><MapPin size={18} /> {t('Current Location')}</span>
+        <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+            <MapPin size={16} style={{ color: 'var(--primary-400)' }} />
+            <div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{t('Current Location')}</div>
+              <div style={{ fontWeight: 700 }}>{(currentRoom as any)?.name_en || (currentRoom as any)?.nameEn || currentRoom?.name || t('Unknown Location')}</div>
+            </div>
+          </div>
+          <span className="list-item-badge online">Active</span>
         </div>
         <div style={{
           position: 'relative', minHeight: '300px',
@@ -192,21 +185,20 @@ export default function UserHomePage() {
         </div>
       </div>
 
-      {/* Appliance Controls */}
       {appliances.length > 0 && (
         <div className="card">
           <div className="card-header">
-            <span className="card-title">⚡ {t('Room Controls')}</span>
+            <span className="card-title"><Zap size={16} /> Appliance Control - {(currentRoom as any)?.name_en || currentRoom?.name || 'Room'}</span>
           </div>
           <div className="card-body">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(185px, 1fr))', gap: '0.6rem' }}>
               {appliances.map(app => {
                 const iconData = APPLIANCE_ICONS[app.type] || APPLIANCE_ICONS.light;
                 const isOn = !!app.state;
                 return (
                   <div key={app.id} style={{
                     display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem',
-                    background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)',
+                    background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)',
                     border: `1px solid ${isOn ? 'var(--primary-500)' : 'var(--border-color)'}`,
                     transition: 'all 0.2s',
                   }}>
@@ -236,18 +228,18 @@ export default function UserHomePage() {
                 );
               })}
             </div>
+            <div style={{ marginTop: '0.7rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{onCount}/{appliances.length} On</div>
           </div>
         </div>
       )}
 
-      {/* Schedule Section */}
       {routines.length > 0 && (
         <div className="card">
           <div className="card-header">
             <span className="card-title"><Clock size={18} /> {t('Today\'s Schedule')}</span>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
-            {routines.map((r, i) => {
+            {routines.slice(0, 6).map((r, i) => {
               const isDone = completedRoutines.has(r.id);
               return (
                 <div key={r.id} style={{

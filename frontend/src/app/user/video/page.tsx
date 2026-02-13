@@ -86,6 +86,11 @@ export default function UserVideoPage() {
     };
 
     const selectedRoomData = selectedRoom ? rooms.find(r => r.id === selectedRoom) : null;
+    const defaultRoom = rooms[0]?.id || null;
+
+    useEffect(() => {
+        if (!selectedRoom && defaultRoom) setSelectedRoom(defaultRoom);
+    }, [defaultRoom, selectedRoom]);
 
     if (loading) {
         return (
@@ -126,6 +131,7 @@ export default function UserVideoPage() {
                             >
                                 <Video size={24} style={{ marginBottom: '0.5rem' }} />
                                 <div style={{ fontWeight: 500 }}>{room.name_en || room.name}</div>
+                                {selectedRoom === room.id && <div style={{ fontSize: '0.7rem', marginTop: '0.25rem', opacity: 0.95 }}>📍 Your Location</div>}
                             </button>
                         ))}
                     </div>

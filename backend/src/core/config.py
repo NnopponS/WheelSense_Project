@@ -38,6 +38,19 @@ class Settings(BaseSettings):
     # Ollama AI (for AI Chat with MCP tool calling)
     OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
     OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+    OLLAMA_REQUEST_TIMEOUT_SECONDS: float = float(os.getenv("OLLAMA_REQUEST_TIMEOUT_SECONDS", "120"))
+    OLLAMA_TEMPERATURE: float = float(os.getenv("OLLAMA_TEMPERATURE", "0.3"))
+    OLLAMA_TOP_P: float = float(os.getenv("OLLAMA_TOP_P", "0.9"))
+    OLLAMA_NUM_CTX: int = int(os.getenv("OLLAMA_NUM_CTX", "2048"))
+    OLLAMA_NUM_PREDICT: int = int(os.getenv("OLLAMA_NUM_PREDICT", "256"))
+    OLLAMA_KEEP_ALIVE: str = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
+    OLLAMA_RETRY_ATTEMPTS: int = int(os.getenv("OLLAMA_RETRY_ATTEMPTS", "2"))
+    OLLAMA_RETRY_BACKOFF_SECONDS: float = float(os.getenv("OLLAMA_RETRY_BACKOFF_SECONDS", "1.5"))
+
+    # Chat / prompt safety limits
+    CHAT_MAX_USER_MESSAGE_CHARS: int = int(os.getenv("CHAT_MAX_USER_MESSAGE_CHARS", "2000"))
+    LLM_MAX_CONTEXT_CHARS: int = int(os.getenv("LLM_MAX_CONTEXT_CHARS", "12000"))
+    LLM_WARMUP_ON_STARTUP: bool = os.getenv("LLM_WARMUP_ON_STARTUP", "true").lower() == "true"
     
     class Config:
         env_file = ".env"

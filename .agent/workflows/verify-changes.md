@@ -27,7 +27,7 @@ Run this workflow after making any code changes to the WheelSense project.
    ```
    docker compose up --build -d
    ```
-   Cwd: `c:\Users\worap\Documents\TSE\LE402\WheelSense\WheelSense2.0`
+   Cwd: `c:\Users\worap\Documents\TSE\LE402\WheelSense\deployment`
 
    > Note: `docker-compose.yml` has `no_cache: true` set for frontend and backend services, so `--build` will always do a full rebuild.
 
@@ -36,7 +36,7 @@ Run this workflow after making any code changes to the WheelSense project.
    ```
    docker compose logs --tail=30
    ```
-   Cwd: `c:\Users\worap\Documents\TSE\LE402\WheelSense\WheelSense2.0`
+   Cwd: `c:\Users\worap\Documents\TSE\LE402\WheelSense\deployment`
 
    - If any container fails to start, fix the issue and repeat from step 1.
 

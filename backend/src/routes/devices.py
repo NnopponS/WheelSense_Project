@@ -1,13 +1,29 @@
 """
 WheelSense v2.0 - Devices Routes
 Device management (legacy compatibility + nodes)
+Config sync for M5StickCPlus2 (rooms, nodes, 2-way config push)
 """
 
+from datetime import datetime
+from typing import Optional, List
+
 from fastapi import APIRouter
+from pydantic import BaseModel
 
 from ..core.database import db
+from ..core.mqtt import mqtt_collector
 
 router = APIRouter()
+
+
+class DeviceConfigPush(BaseModel):
+    """Config to push to device via MQTT"""
+    wifi_ssid: Optional[str] = None
+    wifi_password: Optional[str] = None
+    mqtt_broker: Optional[str] = None
+    mqtt_port: Optional[int] = None
+    rooms: Optional[List[dict]] = None
+    nodes: Optional[List[dict]] = None
 
 
 @router.get("")
@@ -82,3 +98,29 @@ async def get_device_stats():
         "online": online["count"] if online else 0,
         "offline": offline["count"] if offline else 0,
     }
+
+
+@router.get("/{device_id}/config")
+async def get_device_config(device_id: str):
+    """Return config + rooms + nodes for device (device calls when Sync pressed)"""
+    rooms = await db.fetch_all(
+        "SELECT id, name FROM rooms ORDER BY name"
+    )
+    nodes = await db.fetch_all(
+        "SELECT id, room_id, name FROM nodes ORDER BY id"
+    )
+    return {
+        "rooms": [{"id": r["id"], "name": r["name"]} for r in rooms],
+        "nodes": [{"id": n["id"], "room_id": n["room_id"], "name": n["name"]} for n in nodes],
+        "timestamp": datetime.now().isoformat(),
+    }
+
+
+@router.post("/{device_id}/config")
+async def push_device_config(device_id: str, config: DeviceConfigPush):
+    """Push configuration to device via MQTT"""
+    import json
+    topic = f"WheelSense/config/{device_id}"
+    payload = config.model_dump_json(exclude_none=True)
+    await mqtt_collector.publish(topic, payload)
+    return {"message": "Config pushed to device"}

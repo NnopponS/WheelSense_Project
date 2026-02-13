@@ -56,7 +56,15 @@ def initialize_ai():
     # 1) LLM Client
     llm_client = LLMClient(
         host=settings.OLLAMA_HOST,
-        model=settings.OLLAMA_MODEL
+        model=settings.OLLAMA_MODEL,
+        timeout_seconds=settings.OLLAMA_REQUEST_TIMEOUT_SECONDS,
+        temperature=settings.OLLAMA_TEMPERATURE,
+        top_p=settings.OLLAMA_TOP_P,
+        num_ctx=settings.OLLAMA_NUM_CTX,
+        num_predict=settings.OLLAMA_NUM_PREDICT,
+        keep_alive=settings.OLLAMA_KEEP_ALIVE,
+        retry_attempts=settings.OLLAMA_RETRY_ATTEMPTS,
+        retry_backoff_seconds=settings.OLLAMA_RETRY_BACKOFF_SECONDS,
     )
 
     # 2) Tool Registry
@@ -260,6 +268,12 @@ def initialize_ai():
     logger.info(f"AI components initialized: {len(tool_registry.get_tools())} tools registered")
 
 
+def _trim_context(text: str, max_chars: int) -> str:
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + "\n\n[Context truncated for performance]"
+
+
 def _build_system_prompt(tool_definitions: list, system_context: str) -> str:
     """Build the system prompt with tool definitions and context."""
     tools_json = json.dumps(tool_definitions, indent=2)
@@ -321,6 +335,13 @@ async def chat(request: ChatRequest):
     correlation_id = str(uuid.uuid4())[:8]
 
     try:
+        user_message = (request.message or "").strip()
+        if not user_message:
+            return ChatResponse(response="Please provide a message.", actions=[])
+
+        if len(user_message) > settings.CHAT_MAX_USER_MESSAGE_CHARS:
+            user_message = user_message[: settings.CHAT_MAX_USER_MESSAGE_CHARS]
+
         # 1) Build system context (with HA integration and role-based scoping)
         system_context = await context_builder.build_context(
             db,
@@ -328,6 +349,7 @@ async def chat(request: ChatRequest):
             patient_id=request.patient_id,
             role=request.role or "user"
         )
+        system_context = _trim_context(system_context, settings.LLM_MAX_CONTEXT_CHARS)
 
         # 2) Build system prompt with tools
         tool_defs = mcp_server.get_tool_definitions()
@@ -336,7 +358,7 @@ async def chat(request: ChatRequest):
         # 3) Build messages
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": request.message}
+            {"role": "user", "content": user_message}
         ]
 
         # 4) Call LLM and parse tool calls
