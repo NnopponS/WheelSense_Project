@@ -1,140 +1,63 @@
+﻿---
+name: Next.js Frontend (Current)
+description: Current frontend conventions for WheelSense v2.0 (Next.js 16 + TypeScript + Tailwind v4 + Zustand)
 ---
-name: Next.js Frontend Conventions
-description: Conventions and patterns for the WheelSense Next.js 16 frontend with TypeScript, Tailwind v4, Zustand, and React Query
----
 
-# Next.js Frontend Conventions
+# Next.js Frontend (Current)
 
-## Tech Stack
-- **Framework**: Next.js 16 with App Router
-- **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS v4 via `@tailwindcss/postcss`
-- **State Management**: Zustand v5 with `persist` middleware
-- **Data Fetching**: `@tanstack/react-query` v5
-- **Icons**: Lucide React
-- **Charts**: Recharts v3
-- **Real-time**: MQTT.js v5
+Use this skill when changing anything under `frontend/src/`.
 
-## Project Structure
+## Stack (source of truth)
+- Next.js 16 App Router
+- React 19
+- TypeScript (strict)
+- Tailwind CSS v4
+- Zustand for app state
+- API access via `frontend/src/lib/api.ts`
 
-```
-frontend/src/
-├── app/                    # Next.js App Router pages
-│   ├── layout.tsx          # Root layout
-│   ├── page.tsx            # Root page (redirect)
-│   ├── globals.css         # Global styles + Tailwind + design tokens
-│   ├── admin/              # Admin dashboard pages
-│   │   ├── monitoring/     # Live monitoring with floor map
-│   │   ├── dashboard/      # System overview
-│   │   ├── map/            # Interactive floor map
-│   │   ├── patients/       # Patient management
-│   │   ├── devices/        # Node & device management
-│   │   ├── appliances/     # Smart home control
-│   │   ├── timeline/       # Activity history
-│   │   ├── analytics/      # Usage statistics
-│   │   └── settings/       # System configuration
-│   └── user/               # User-facing pages
-│       ├── home/           # User dashboard
-│       ├── appliances/     # Appliance control
-│       ├── health/         # Health info
-│       ├── alerts/         # Notifications
-│       └── settings/       # User settings
-├── components/             # Shared components
-│   ├── AIChatPopup.tsx     # AI chat overlay
-│   ├── BottomNav.tsx       # Mobile bottom navigation
-│   ├── ClientLayout.tsx    # Client-side layout wrapper
-│   ├── Drawer.tsx          # Slide-out drawer
-│   ├── Navigation.tsx      # Main navigation
-│   ├── Sidebar.tsx         # Admin sidebar
-│   └── TopBar.tsx          # Top toolbar
-├── lib/
-│   └── api.ts              # API client (fetchApi wrapper + typed endpoints)
-├── store/
-│   └── index.ts            # Zustand store (single store pattern)
-└── types/
-    └── index.ts            # All TypeScript interfaces
-```
+## Contract Rules (important)
+- Backend responses are snake_case (`room_id`, `current_room_id`, etc.)
+- Keep API-facing types aligned with backend in `frontend/src/lib/api.ts`
+- If `frontend/src/types/index.ts` is also used by store/pages, update both files in the same change
+- Always run `npm run build` after touching types
 
-## Key Conventions
+## Known Failure Pattern
+- Type mismatch between `Device.room` vs `Device.room_id` breaks production build
+- When fixing, align usage in pages (for example `admin/sensors`) with the active `Device` type contract
 
-### 1. Client Components
-- All interactive components MUST start with `'use client';`
-- Page components that use hooks, state, or browser APIs must be client-side
-- Static metadata can only be exported from Server Components
+## Page Ownership (high impact)
+- Admin operations: `frontend/src/app/admin/devices/page.tsx`
+- Sensor/RSSI view: `frontend/src/app/admin/sensors/page.tsx`
+- Settings/health UX: `frontend/src/app/admin/settings/page.tsx`
+- User dashboards: `frontend/src/app/user/*`
 
-### 2. Zustand Store Pattern
-The project uses a **single global store** (`useWheelSenseStore`) with:
+## API Layer Pattern
+- Use `fetchApi<T>()` in `frontend/src/lib/api.ts`
+- Add typed wrappers for every new backend endpoint
+- Avoid raw `fetch()` calls in pages unless there is a strong reason
 
-```typescript
-// DO: Use the store via the hook
-const { wheelchairs, setWheelchairs } = useWheelSenseStore();
+## State Pattern
+- Global state is in `frontend/src/store/index.ts`
+- Keep persisted keys minimal and backward-compatible
+- Avoid duplicating derived server data in many local component states
 
-// DO: Use selectors for derived state
-const onlineWheelchairs = useWheelSenseStore(
-  (s) => s.wheelchairs.filter(w => w.status === 'online')
-);
+## Stability-First UX Guidelines
+1. Admin pages must expose mapping completeness and sync status clearly
+2. Unknown/unmapped state must be explicit, never hidden as fake room data
+3. Device actions should show request/result feedback (sync, reboot, config push)
+4. Polling views should remain lightweight to avoid UI stutter
 
-// DON'T: Create separate stores
-// DON'T: Use React.useState for data that should be shared
-```
-
-**State categories in the store:**
-- UI state: `theme`, `role`, `language`, `sidebarOpen`, `currentPage`, `drawerOpen`
-- Data state: `wheelchairs`, `patients`, `devices`, `rooms`, `buildings`, `floors`, `appliances`
-- RSSI state: `currentLocation`, `nearbyNodes`, `detectionState`
-- User state: `currentUser`, `notifications`, `timeline`
-
-### 3. API Layer (`lib/api.ts`)
-All API calls go through the `fetchApi<T>()` wrapper:
-
-```typescript
-// Standard pattern - all functions return ApiResponse<T>
-export async function getWheelchairs(): Promise<ApiResponse<Wheelchair[]>> {
-  return fetchApi<Wheelchair[]>('/api/wheelchairs');
-}
-
-// POST with body
-export async function controlAppliance(id: string, state: boolean, value?: number) {
-  return fetchApi(`/api/appliances/${id}/control`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ state, value }),
-  });
-}
-```
-
-**API base URL**: `process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'`
-
-### 4. Type Definitions (`types/index.ts`)
-All interfaces are centralized in a single file. Key entities:
-- `Wheelchair`, `Patient`, `Device`, `Room`, `Building`, `Floor`
-- `Appliance`, `Routine`, `TimelineEvent`, `Notification`
-- `MQTTWheelchairMessage`, `NearbyNode`, `LocationEstimate`
-- `Role` ('admin' | 'user'), `Theme` ('dark' | 'light')
-
-**Convention**: Frontend types use camelCase, backend API returns snake_case. Transform at the API boundary.
-
-### 5. Styling
-- Tailwind v4 with PostCSS plugin (NOT className-based v3 config)
-- Global styles and CSS custom properties in `app/globals.css`
-- Design system uses CSS variables for theming (dark/light mode)
-- Use Tailwind utility classes in JSX
-
-### 6. Bilingual Support
-- Thai (`th`) and English (`en`) supported
-- Many entities have both `name` (Thai) and `nameEn` (English) fields
-- Use the Zustand `language` state to determine display language
-
-### 7. Admin vs User Routes
-- Admin pages: `/admin/*` — Dashboard, monitoring, device management
-- User pages: `/user/*` — Patient-facing, simplified controls
-- Role stored in Zustand store, determines which navigation to show
-
-## Running Locally
+## Local Commands
 ```bash
 cd frontend
 npm install
-npm run dev    # Development at http://localhost:3000
-npm run build  # Production build
-npm run lint   # ESLint check
+npm run dev
+npm run build
+npm run lint
+```
+
+## Minimum Verification Before Commit
+```bash
+cd frontend
+npm run build
 ```

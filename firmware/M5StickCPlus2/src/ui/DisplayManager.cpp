@@ -162,3 +162,7 @@ lgfx::LovyanGFX& DisplayManager::getGfx() {
     if (spriteReady) return canvas;
     return M5.Lcd;
 }
+
+bool DisplayManager::isSpriteEnabled() const {
+    return spriteReady;
+}

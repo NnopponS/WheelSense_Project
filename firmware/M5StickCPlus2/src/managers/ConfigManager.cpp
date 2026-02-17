@@ -1,6 +1,44 @@
 #include "ConfigManager.h"
 #include "utils/FingerprintMatcher.h"
 
+namespace {
+String buildDefaultWsName() {
+    uint32_t raw = static_cast<uint32_t>(ESP.getEfuseMac() & 0xFFFFFFFFULL);
+    uint16_t num = static_cast<uint16_t>(raw % 100U);
+    if (num == 0) num = 1;
+    char out[16];
+    snprintf(out, sizeof(out), "WS_%02u", static_cast<unsigned int>(num));
+    return String(out);
+}
+
+String normalizeDeviceNameWs(const String& rawInput) {
+    String cleaned = rawInput;
+    cleaned.trim();
+
+    String digits = "";
+    for (size_t i = 0; i < cleaned.length(); i++) {
+        char c = cleaned[i];
+        if (c >= '0' && c <= '9') digits += c;
+    }
+
+    if (digits.length() == 0) {
+        return buildDefaultWsName();
+    }
+
+    int parsed = digits.toInt();
+    if (parsed <= 0) {
+        return buildDefaultWsName();
+    }
+
+    parsed = parsed % 100;
+    if (parsed == 0) parsed = 1;
+
+    char out[16];
+    snprintf(out, sizeof(out), "WS_%02d", parsed);
+    return String(out);
+}
+} // namespace
+
 ConfigManager ConfigMgr;
 
 ConfigManager::ConfigManager() {}
@@ -13,10 +51,7 @@ void ConfigManager::begin() {
 }
 
 void ConfigManager::loadConfig() {
-    config.deviceName = prefs.getString("name", DEFAULT_DEVICE_NAME);
-    if (config.deviceName.length() == 0) {
-        config.deviceName = DEFAULT_DEVICE_NAME;
-    }
+    config.deviceName = normalizeDeviceNameWs(prefs.getString("name", DEFAULT_DEVICE_NAME));
     config.wifiSSID = prefs.getString("ssid", DEFAULT_WIFI_SSID);
     config.wifiPass = prefs.getString("pass", DEFAULT_WIFI_PASS);
     

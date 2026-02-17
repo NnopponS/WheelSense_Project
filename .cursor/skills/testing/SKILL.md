@@ -1,220 +1,66 @@
+﻿---
+name: Testing and Verification (Current)
+description: Stability-first verification workflow for WheelSense v2.0 across frontend, backend, firmware, and docker runtime
 ---
-name: Testing Strategy
-description: Testing setup, conventions, and priority areas for both frontend (Vitest) and backend (pytest) of the WheelSense project
----
 
-# Testing Strategy
+# Testing and Verification (Current)
 
-> **Current State**: No tests exist yet. This skill documents the recommended approach.
+Use this skill before merging any medium or high impact change.
 
-## Backend Testing (pytest)
+## Current Reality
+- Automated test suites are still limited.
+- Reliability currently depends on strict build and smoke checks.
 
-### Setup
+## Mandatory Verification Gates
+Run all of these locally (or in CI):
 
+### 1) Frontend build gate
 ```bash
-# Install test dependencies
-pip install pytest pytest-asyncio httpx
+cd frontend
+npm run build
 ```
 
-Add to `requirements.txt`:
-```
-pytest>=8.0
-pytest-asyncio>=0.23
-```
-
-### Test File Structure
-```
-backend/
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py          # Shared fixtures (db, client, mock MQTT)
-│   ├── test_health.py       # Health endpoint
-│   ├── test_wheelchairs.py  # Wheelchair CRUD
-│   ├── test_patients.py     # Patient CRUD
-│   ├── test_nodes.py        # Node CRUD
-│   ├── test_appliances.py   # Appliance control
-│   ├── test_map.py          # Map data endpoints
-│   ├── test_timeline.py     # Timeline queries
-│   └── test_mqtt.py         # MQTT message processing
-```
-
-### conftest.py Pattern
-
-```python
-import pytest
-import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
-from src.main import app
-from src.core.database import Database
-
-@pytest_asyncio.fixture
-async def test_db(tmp_path):
-    """Create a fresh test database"""
-    db = Database(str(tmp_path / "test.db"))
-    await db.connect()
-    await db.init_schema()
-    yield db
-    await db.disconnect()
-
-@pytest_asyncio.fixture
-async def client(test_db, monkeypatch):
-    """Create test client with isolated database"""
-    monkeypatch.setattr("src.core.database.db", test_db)
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
-```
-
-### Test Example
-
-```python
-import pytest
-
-@pytest.mark.asyncio
-async def test_list_wheelchairs(client):
-    response = await client.get("/api/wheelchairs")
-    assert response.status_code == 200
-    assert isinstance(response.json(), list)
-
-@pytest.mark.asyncio
-async def test_get_wheelchair_not_found(client):
-    response = await client.get("/api/wheelchairs/nonexistent")
-    assert response.status_code == 404
-```
-
-### MQTT Processing Test
-
-```python
-@pytest.mark.asyncio
-async def test_process_mqtt_message(test_db):
-    from src.core.mqtt import MQTTCollector
-    collector = MQTTCollector()
-    # Override database
-    message_data = {
-        "device_id": "WheelSense_M5_TEST",
-        "timestamp": "2024-01-15T10:30:00+07:00",
-        "wheelchair": {"distance_m": 10.0, "speed_ms": 0.5, "status": "OK"},
-        "selected_node": {"node_id": 1, "rssi": -45},
-        "nearby_nodes": [{"node_id": 2, "rssi": -60}]
-    }
-    await collector._process_new_system_message(message_data)
-    # Verify wheelchair was created in DB
-    row = await test_db.fetch_one("SELECT * FROM wheelchairs WHERE device_id = ?", ("WheelSense_M5_TEST",))
-    assert row is not None
-```
-
-### Running Backend Tests
+### 2) Backend compile + smoke gate
 ```bash
 cd backend
-python -m pytest tests/ -v
-python -m pytest tests/ -v --tb=short  # Shorter traceback
-python -m pytest tests/test_health.py  # Single file
+python -m py_compile src/main.py src/core/config.py src/core/database.py src/core/mqtt.py src/routes/devices.py src/routes/cameras.py
 ```
-
----
-
-## Frontend Testing (Vitest)
-
-### Setup
-
+If backend is running:
 ```bash
-cd frontend
-npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
+curl http://localhost:8000/api/health
 ```
 
-Add to `package.json`:
-```json
-{
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest"
-  }
-}
-```
-
-Create `vitest.config.ts`:
-```typescript
-import { defineConfig } from 'vitest/config';
-import path from 'path';
-
-export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./src/test/setup.ts'],
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-});
-```
-
-### Test File Structure
-```
-frontend/src/
-├── test/
-│   └── setup.ts               # Test setup (jsdom, mocks)
-├── lib/
-│   └── __tests__/
-│       └── api.test.ts         # API client tests
-├── store/
-│   └── __tests__/
-│       └── index.test.ts       # Zustand store tests
-└── components/
-    └── __tests__/
-        └── Navigation.test.tsx # Component tests
-```
-
-### Zustand Store Test Example
-
-```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { useWheelSenseStore } from '@/store';
-
-describe('WheelSenseStore', () => {
-  beforeEach(() => {
-    useWheelSenseStore.setState(useWheelSenseStore.getInitialState());
-  });
-
-  it('should set theme', () => {
-    useWheelSenseStore.getState().setTheme('light');
-    expect(useWheelSenseStore.getState().theme).toBe('light');
-  });
-
-  it('should update wheelchair room', () => {
-    useWheelSenseStore.getState().updateWheelchairRoom('WC-001', 'bedroom');
-    const wc = useWheelSenseStore.getState().wheelchairs.find(w => w.id === 'WC-001');
-    expect(wc?.currentRoom).toBe('bedroom');
-  });
-});
-```
-
-### Running Frontend Tests
+### 3) Firmware build gates
 ```bash
-cd frontend
-npm run test         # Run once
-npm run test:watch   # Watch mode
+cd firmware/M5StickCPlus2
+pio run
+
+cd ../Node_Tsimcam
+pio run
 ```
 
----
+## Integration Smoke Scenarios
+After flashing boards and running backend:
+1. M5 publishes telemetry to `WheelSense/data`
+2. Tsim publishes camera `registration/status`
+3. Backend updates DB rows for wheelchairs and camera nodes
+4. Admin UI shows device online state and mapping status
+5. Config sync and reboot commands reach devices via MQTT
 
-## Priority Test Areas
+## Data Quality Checks (manual until automated)
+- Unknown room ratio should trend down after mapping is complete
+- Unmapped camera/node list should be visible and actionable
+- Last-seen lag should detect offline devices within 60 seconds
 
-### High Priority (test first)
-1. **Backend health endpoint** — Ensures system is running
-2. **MQTT message processing** — Core data pipeline
-3. **Wheelchair CRUD** — Critical business data
-4. **Zustand store actions** — State management correctness
+## Regression Checklist for MQTT Changes
+- No topic name regressions
+- ID canonicalization remains `WS_##` and `WSN_###`
+- Backward-tolerant parser for additional payload fields
+- Reconnect logic still increments counters and recovers automatically
 
-### Medium Priority
-5. **Patient CRUD** — User management
-6. **Appliance control** — Home automation commands
-7. **API client** (`fetchApi`) — Error handling
-8. **Map data endpoints** — Room/building data
-
-### Lower Priority
-9. **Timeline queries** — Activity history
-10. **AI Chat** — Gemini integration
-11. **Component rendering** — UI correctness
+## Recommended Next Step (automation)
+Add CI workflow with these jobs:
+1. `frontend-build`
+2. `backend-compile-smoke`
+3. `firmware-m5-build`
+4. `firmware-tsim-build`

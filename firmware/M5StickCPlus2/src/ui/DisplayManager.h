@@ -22,6 +22,7 @@ public:
     
     // Helper
     lgfx::LovyanGFX& getGfx(); // Access current drawing target
+    bool isSpriteEnabled() const;
     
 private:
     M5Canvas canvas;

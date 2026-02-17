@@ -14,6 +14,7 @@ static constexpr unsigned long WINDOW_MS = 1000;
 static constexpr float MOVE_THRESH_RAD = 0.10f;
 static constexpr float GYRO_THRESHOLD_DPS = 200.0f;
 static constexpr float MAX_SPEED_MPS = 3.0f;
+static constexpr float RAD2DEG_LOCAL = 57.2957795f;
 
 static inline float unwrapDelta(float now, float prev) {
     float d = now - prev;
@@ -35,6 +36,10 @@ void SensorManager::begin() {
     memset(&data, 0, sizeof(data));
     data.batPercentage = -1;
     data.batVoltage = 0.0f;
+    data.batRawMv = 0;
+    data.batFilteredMv = 0;
+    data.isChargingRaw = false;
+    data.isCharging = false;
     data.imuValid = false;
     data.distanceM = 0.0f;
     data.speedMps = 0.0f;
@@ -49,12 +54,17 @@ void SensorManager::begin() {
     haveTheta = false;
     winStartMs = millis();
     winSignedSum = 0.0f;
+    lastBatterySampleMs = 0;
+    batteryFilterInit = false;
+    chargeDebounceInit = false;
+    chargingStableState = false;
+    chargingCandidateState = false;
+    chargingCandidateCount = 0;
+    chargingLastSwitchMs = 0;
 }
 
 void SensorManager::update() {
     updateIMU();
-    
-    // Update battery less frequently? M5.Power calls are fast enough
     updateBattery();
 }
 
@@ -72,6 +82,9 @@ void SensorManager::updateIMU() {
     data.gyroY = imu_data.gyro.y;
     data.gyroZ = imu_data.gyro.z;
     data.imuValid = true;
+    data.roll = atan2f(data.accelY, data.accelZ) * RAD2DEG_LOCAL;
+    data.pitch = atan2f(-data.accelX, sqrtf((data.accelY * data.accelY) + (data.accelZ * data.accelZ))) * RAD2DEG_LOCAL;
+    data.yaw = 0.0f;
 
     // Fall Detection
     float magnitude = sqrtf(data.accelX * data.accelX + data.accelY * data.accelY + data.accelZ * data.accelZ);
@@ -154,40 +167,139 @@ void SensorManager::updateIMU() {
 
 }
 
+float SensorManager::mapBatteryPercentLiIon(float mv) const {
+    struct VoltagePoint {
+        float mv;
+        float pct;
+    };
+
+    // Typical Li-ion 18650 open-circuit curve.
+    static const VoltagePoint curve[] = {
+        {3200.0f, 0.0f}, {3300.0f, 3.0f}, {3400.0f, 8.0f}, {3500.0f, 14.0f},
+        {3600.0f, 24.0f}, {3700.0f, 42.0f}, {3750.0f, 52.0f}, {3800.0f, 62.0f},
+        {3850.0f, 72.0f}, {3900.0f, 82.0f}, {3950.0f, 88.0f}, {4000.0f, 93.0f},
+        {4050.0f, 96.0f}, {4100.0f, 98.0f}, {4150.0f, 99.0f}, {4200.0f, 100.0f}
+    };
+
+    constexpr size_t count = sizeof(curve) / sizeof(curve[0]);
+    if (mv <= curve[0].mv) return curve[0].pct;
+    if (mv >= curve[count - 1].mv) return curve[count - 1].pct;
+
+    for (size_t i = 1; i < count; i++) {
+        if (mv <= curve[i].mv) {
+            const float x0 = curve[i - 1].mv;
+            const float x1 = curve[i].mv;
+            const float y0 = curve[i - 1].pct;
+            const float y1 = curve[i].pct;
+            const float t = (mv - x0) / (x1 - x0);
+            return y0 + (y1 - y0) * t;
+        }
+    }
+    return 100.0f;
+}
+
+bool SensorManager::updateChargingState(bool rawState, unsigned long nowMs) {
+    if (!chargeDebounceInit) {
+        chargeDebounceInit = true;
+        chargingStableState = rawState;
+        chargingCandidateState = rawState;
+        chargingCandidateCount = 0;
+        chargingLastSwitchMs = nowMs;
+        return chargingStableState;
+    }
+
+    if (rawState == chargingStableState) {
+        chargingCandidateState = chargingStableState;
+        chargingCandidateCount = 0;
+        return chargingStableState;
+    }
+
+    if (rawState != chargingCandidateState) {
+        chargingCandidateState = rawState;
+        chargingCandidateCount = 1;
+        return chargingStableState;
+    }
+
+    if (chargingCandidateCount < 255) chargingCandidateCount++;
+
+    if (chargingCandidateCount >= BATTERY_CHARGE_DEBOUNCE_SAMPLES &&
+        (nowMs - chargingLastSwitchMs) >= BATTERY_CHARGE_MIN_SWITCH_MS) {
+        chargingStableState = chargingCandidateState;
+        chargingLastSwitchMs = nowMs;
+        chargingCandidateCount = 0;
+    }
+
+    return chargingStableState;
+}
+
 void SensorManager::updateBattery() {
-    // BruceDevices-style voltage->percent conversion with smoothing to reduce jitter.
+    const unsigned long nowMs = millis();
+    if (batteryFilterInit && (nowMs - lastBatterySampleMs) < BATTERY_SAMPLE_INTERVAL_MS) {
+        return;
+    }
+    lastBatterySampleMs = nowMs;
+
     const int rawMv = M5.Power.getBatteryVoltage();
-    const bool validRaw = (rawMv >= 2800 && rawMv <= 4600);
-    const float mv = validRaw ? (float)rawMv : 3700.0f;
+    const bool validRaw = (rawMv >= 3000 && rawMv <= 4500);
+    const bool chargingRaw = M5.Power.isCharging();
+    const bool chargingStable = updateChargingState(chargingRaw, nowMs);
+
+    float sampleMv = validRaw ? (float)rawMv : filteredBatVoltageMv;
+    if (!validRaw && sampleMv <= 0.0f) sampleMv = 3700.0f;
 
     if (!batteryFilterInit) {
         batteryFilterInit = true;
-        filteredBatVoltageMv = mv;
+        filteredBatVoltageMv = sampleMv;
     } else {
-        filteredBatVoltageMv = (0.9f * filteredBatVoltageMv) + (0.1f * mv);
+        const float alpha = chargingStable ? 0.06f : 0.12f;
+        filteredBatVoltageMv = (1.0f - alpha) * filteredBatVoltageMv + (alpha * sampleMv);
     }
 
-    const float MIN_VOLTAGE_MV = 3300.0f;
-    const float MAX_VOLTAGE_MV = 4150.0f;
-    float percent = ((filteredBatVoltageMv - MIN_VOLTAGE_MV) / (MAX_VOLTAGE_MV - (MIN_VOLTAGE_MV + 50.0f))) * 100.0f;
-    if (percent < 1.0f) percent = 1.0f;
+    float percent = mapBatteryPercentLiIon(filteredBatVoltageMv);
+    if (percent < 0.0f) percent = 0.0f;
     if (percent > 100.0f) percent = 100.0f;
 
     if (stableBatPercent < 0) {
         filteredBatPercent = percent;
         stableBatPercent = (int)roundf(percent);
     } else {
-        filteredBatPercent = (0.85f * filteredBatPercent) + (0.15f * percent);
+        filteredBatPercent = (0.92f * filteredBatPercent) + (0.08f * percent);
         int nextPct = (int)roundf(filteredBatPercent);
-        // 1% hysteresis: keep value unless it actually changes by >=1.
-        if (abs(nextPct - stableBatPercent) >= 1) {
-            stableBatPercent = nextPct;
+
+        if (chargingStable) {
+            if (nextPct < stableBatPercent && (stableBatPercent - nextPct) <= 2) {
+                nextPct = stableBatPercent;
+            }
+        } else {
+            if (nextPct > stableBatPercent && (nextPct - stableBatPercent) <= 2) {
+                nextPct = stableBatPercent;
+            }
+        }
+
+        if (nextPct > stableBatPercent) {
+            stableBatPercent += 1;
+        } else if (nextPct < stableBatPercent) {
+            stableBatPercent -= 1;
+        }
+
+        if (stableBatPercent < 0) stableBatPercent = 0;
+        if (stableBatPercent > 100) stableBatPercent = 100;
+
+        if (validRaw) {
+            if (chargingStable && rawMv >= 4180 && stableBatPercent < 99) {
+                stableBatPercent = 99;
+            } else if (!chargingStable && rawMv <= 3300 && stableBatPercent > 3) {
+                stableBatPercent = 3;
+            }
         }
     }
 
     data.batVoltage = filteredBatVoltageMv / 1000.0f;
     data.batPercentage = stableBatPercent;
-    data.isCharging = M5.Power.isCharging();
+    data.batRawMv = rawMv;
+    data.batFilteredMv = (int)lroundf(filteredBatVoltageMv);
+    data.isChargingRaw = chargingRaw;
+    data.isCharging = chargingStable;
 }
 
 SensorData& SensorManager::getData() {

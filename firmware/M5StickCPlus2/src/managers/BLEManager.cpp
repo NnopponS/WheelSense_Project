@@ -4,27 +4,74 @@
 
 BLEManager BLEMgr;
 
-static bool parseNodeId(const String& name, int& outId) {
-    if (!name.startsWith(NODE_PREFIX)) return false;
+namespace {
+static constexpr unsigned long NODE_STALE_TIMEOUT_MS = 12000;
+static constexpr unsigned long PASSIVE_SCAN_REST_MS = 5500;
+}
 
-    String suffix = name.substring(strlen(NODE_PREFIX));
-    if (suffix.length() == 0) return false;
-
-    for (size_t i = 0; i < suffix.length(); i++) {
-        if (!isdigit((unsigned char)suffix[i])) return false;
+static bool parseNodeIdentity(const String& name, int& outId, String& outNodeKey) {
+    String suffix;
+    if (name.startsWith(NODE_PREFIX_PRIMARY)) {
+        suffix = name.substring(strlen(NODE_PREFIX_PRIMARY));
+    } else {
+        return false;
     }
 
-    int id = suffix.toInt();
-    if (id < 1 || id > MAX_BLE_NODES) return false;
+    if (suffix.length() == 0) return false;
+    suffix.trim();
+    if (suffix.length() == 0) return false;
 
-    outId = id;
+    outId = 0;
+
+    String digits = "";
+    for (size_t i = 0; i < suffix.length(); i++) {
+        const char c = suffix[i];
+        if (isdigit((unsigned char)c)) digits += c;
+    }
+
+    if (digits.length() > 0) {
+        int normalized = digits.toInt();
+        if (normalized <= 0) normalized = 1;
+        normalized = normalized % 1000;
+        if (normalized == 0) normalized = 1;
+
+        char keyBuf[16];
+        snprintf(keyBuf, sizeof(keyBuf), "WSN_%03d", normalized);
+        outNodeKey = String(keyBuf);
+
+        int id = normalized;
+        if (id >= 1 && id <= MAX_BLE_NODES) {
+            outId = id;
+        }
+    } else {
+        outNodeKey = String(NODE_PREFIX_PRIMARY) + suffix;
+    }
+
     return true;
+}
+
+static bool parseNodeIdForFingerprint(const String& name, int& outId) {
+    String nodeKey;
+    outId = 0;
+    if (!parseNodeIdentity(name, outId, nodeKey)) return false;
+    if (outId < 1 || outId > MAX_BLE_NODES) return false;
+    return true;
+}
+
+static bool matchesNode(const BLENode& node, int id, const String& nodeKey) {
+    if (nodeKey.length() > 0 && node.nodeKey.length() > 0) {
+        return node.nodeKey.equalsIgnoreCase(nodeKey);
+    }
+    return (id > 0 && node.id == id);
 }
 
 void BLEManager::BLECallbacksImpl::onResult(BLEAdvertisedDevice advertisedDevice) {
     String name = advertisedDevice.getName().c_str();
+    if (name.length() == 0) return;
+
     int id = 0;
-    if (!parseNodeId(name, id)) return;
+    String nodeKey;
+    if (!parseNodeIdentity(name, id, nodeKey)) return;
 
     int rssi = advertisedDevice.getRSSI();
     String mac = advertisedDevice.getAddress().toString().c_str();
@@ -32,9 +79,16 @@ void BLEManager::BLECallbacksImpl::onResult(BLEAdvertisedDevice advertisedDevice
     BLEMgr.lock();
     bool found = false;
     for (int i = 0; i < BLEMgr.nodeCount; i++) {
-        if (BLEMgr.nodes[i].id == id) {
+        if (matchesNode(BLEMgr.nodes[i], id, nodeKey)) {
             BLEMgr.nodes[i].rssi = rssi;
             BLEMgr.nodes[i].lastSeen = millis();
+            BLEMgr.nodes[i].mac = mac;
+            if (BLEMgr.nodes[i].nodeKey.length() == 0) {
+                BLEMgr.nodes[i].nodeKey = nodeKey;
+            }
+            if (BLEMgr.nodes[i].id == 0 && id > 0) {
+                BLEMgr.nodes[i].id = id;
+            }
             found = true;
             break;
         }
@@ -42,6 +96,7 @@ void BLEManager::BLECallbacksImpl::onResult(BLEAdvertisedDevice advertisedDevice
 
     if (!found && BLEMgr.nodeCount < MAX_BLE_NODES) {
         BLEMgr.nodes[BLEMgr.nodeCount].id = id;
+        BLEMgr.nodes[BLEMgr.nodeCount].nodeKey = nodeKey;
         BLEMgr.nodes[BLEMgr.nodeCount].rssi = rssi;
         BLEMgr.nodes[BLEMgr.nodeCount].lastSeen = millis();
         BLEMgr.nodes[BLEMgr.nodeCount].mac = mac;
@@ -60,7 +115,7 @@ void BLEManager::begin() {
     }
 
     Serial.printf("[BLE] init start, heap=%lu\n", (unsigned long)ESP.getFreeHeap());
-    BLEDevice::init("WheelSense_Gateway");
+    BLEDevice::init("WSN_Gateway");
     Serial.printf("[BLE] init done, heap=%lu\n", (unsigned long)ESP.getFreeHeap());
 
     mutex = xSemaphoreCreateMutex();
@@ -75,9 +130,10 @@ void BLEManager::begin() {
         return;
     }
     pBLEScan->setAdvertisedDeviceCallbacks(&bleCallbacks);
-    pBLEScan->setActiveScan(true);
-    pBLEScan->setInterval(100);
-    pBLEScan->setWindow(99);
+    // Passive scan in normal runtime to reduce heat/power.
+    pBLEScan->setActiveScan(false);
+    pBLEScan->setInterval(160);
+    pBLEScan->setWindow(50);
 
     xTaskCreatePinnedToCore(
         BLEManager::scanTask,
@@ -94,7 +150,8 @@ void BLEManager::update() {
     lock();
     unsigned long now = millis();
     for (int i = 0; i < nodeCount; ) {
-        if (now - nodes[i].lastSeen > 5000) {
+        // Keep nodes long enough to survive passive scan gaps.
+        if (now - nodes[i].lastSeen > NODE_STALE_TIMEOUT_MS) {
             for (int j = i; j < nodeCount - 1; j++) {
                 nodes[j] = nodes[j + 1];
             }
@@ -133,6 +190,7 @@ void BLEManager::scanTask(void* param) {
             mgr->fingerprintScanRunning = true;
             mgr->fingerprintScanDone = false;
             mgr->fingerprintScanProgress = 0;
+            mgr->pBLEScan->setActiveScan(true);
 
             for (int r = 0; r < rounds; r++) {
                 mgr->pBLEScan->start(1, true);
@@ -142,7 +200,7 @@ void BLEManager::scanTask(void* param) {
                     BLEAdvertisedDevice dev = mgr->pBLEScan->getResults().getDevice(i);
                     String name = dev.getName().c_str();
                     int id = 0;
-                    if (!parseNodeId(name, id)) continue;
+                    if (!parseNodeIdForFingerprint(name, id)) continue;
                     if (id > FINGERPRINT_RSSI_SLOTS) continue;
 
                     int idx = id - 1;
@@ -171,12 +229,14 @@ void BLEManager::scanTask(void* param) {
             mgr->fingerprintScanProgress = 100;
             mgr->fingerprintScanRunning = false;
             mgr->fingerprintScanDone = true;
+            mgr->pBLEScan->setActiveScan(false);
             continue;
         }
 
+        mgr->pBLEScan->setActiveScan(false);
         mgr->pBLEScan->start(1, false);
         mgr->pBLEScan->clearResults();
-        vTaskDelay(pdMS_TO_TICKS(4000));
+        vTaskDelay(pdMS_TO_TICKS(PASSIVE_SCAN_REST_MS));
     }
 }
 

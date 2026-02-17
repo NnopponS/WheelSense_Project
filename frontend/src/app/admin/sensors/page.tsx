@@ -54,7 +54,7 @@ export default function SensorsPage() {
             <div className="card-body">
               <div className="mb-3">
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  Room: {getRoomName(node.room)}
+                  Room: {getRoomName(node.room_id)}
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   Node ID: <code>{node.id}</code>

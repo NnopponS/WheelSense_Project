@@ -4,9 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { MessageCircle, Send, Plus, Trash2, Bot, User } from 'lucide-react';
 import { useWheelSenseStore } from '@/store';
 import { useTranslation } from '@/lib/i18n';
-import { createChatSession, listChatSessions, getSessionMessages, deleteChatSession } from '@/lib/api';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { createChatSession, listChatSessions, getSessionMessages, deleteChatSession, sendChatMessage } from '@/lib/api';
 
 export default function UserAIChatPage() {
     const { currentUser } = useWheelSenseStore();
@@ -53,13 +51,13 @@ export default function UserAIChatPage() {
         setMessages(prev => [...prev, { role: 'user', content: msg, created_at: new Date().toISOString() }]);
         setSending(true);
         try {
-            const response = await fetch(`${API_URL}/api/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: msg, role: 'user', patient_id: currentUser?.id, session_id: activeSession }),
+            const response = await sendChatMessage(msg, {
+                role: 'user',
+                patientId: currentUser?.id,
+                sessionId: activeSession,
             });
-            const data = await response.json();
-            setMessages(prev => [...prev, { role: 'assistant', content: data.response || data.message || 'No response', created_at: new Date().toISOString(), actions: data.actions }]);
+            const reply = response.data?.response || response.error || 'No response';
+            setMessages(prev => [...prev, { role: 'assistant', content: reply, created_at: new Date().toISOString(), actions: response.data?.actions }]);
         } catch (e) {
             setMessages(prev => [...prev, { role: 'assistant', content: 'Error: Failed to get response', created_at: new Date().toISOString() }]);
         }

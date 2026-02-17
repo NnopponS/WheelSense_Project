@@ -15,11 +15,11 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://wheelsense:wheelsense@localhost:5432/wheelsense"
     
     # MQTT Configuration
-    MQTT_BROKER: str = os.getenv("MQTT_BROKER", "localhost")
+    MQTT_BROKER: str = os.getenv("MQTT_BROKER", "broker.emqx.io")
     MQTT_PORT: int = int(os.getenv("MQTT_PORT", "1883"))
     MQTT_TOPIC: str = os.getenv("MQTT_TOPIC", "WheelSense/data")
-    MQTT_USER: Optional[str] = os.getenv("MQTT_USER")
-    MQTT_PASSWORD: Optional[str] = os.getenv("MQTT_PASSWORD")
+    MQTT_USER: Optional[str] = os.getenv("MQTT_USER", "")
+    MQTT_PASSWORD: Optional[str] = os.getenv("MQTT_PASSWORD", "")
     
     # Home Assistant
     HA_URL: str = os.getenv("HA_URL", "http://localhost:8123")
@@ -29,11 +29,21 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    DEVICE_BACKEND_URL: str = os.getenv("DEVICE_BACKEND_URL", "").strip()
+    DEVICE_SERVER_IP: str = os.getenv("DEVICE_SERVER_IP", "").strip()
     
     # RSSI Fingerprinting Settings
     RSSI_THRESHOLD: int = -100  # Ignore nodes with RSSI below this
     NODE_TIMEOUT_SECONDS: int = 30  # Mark node as offline after this
     STALE_DATA_SECONDS: int = 30  # Mark wheelchair data as stale after this
+    WHEELCHAIR_OFFLINE_SECONDS: int = int(os.getenv("WHEELCHAIR_OFFLINE_SECONDS", "60"))
+    CAMERA_OFFLINE_SECONDS: int = int(os.getenv("CAMERA_OFFLINE_SECONDS", "30"))
+
+    # History sampling + retention
+    HISTORY_SAMPLE_INTERVAL_SECONDS: int = int(os.getenv("HISTORY_SAMPLE_INTERVAL_SECONDS", "5"))
+    HISTORY_RETENTION_DAYS: int = int(os.getenv("HISTORY_RETENTION_DAYS", "7"))
+    HISTORY_RETENTION_AUTO_ENABLED: bool = os.getenv("HISTORY_RETENTION_AUTO_ENABLED", "false").lower() == "true"
+    HISTORY_RETENTION_AUTO_INTERVAL_MINUTES: int = int(os.getenv("HISTORY_RETENTION_AUTO_INTERVAL_MINUTES", "360"))
     
     # Ollama AI (for AI Chat with MCP tool calling)
     OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")

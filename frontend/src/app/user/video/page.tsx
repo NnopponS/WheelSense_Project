@@ -1,17 +1,135 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Video, X, Maximize2, Minimize2, Zap, Lightbulb, Thermometer, Tv, Fan, Power, RefreshCw } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Video, X, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
 import { getRooms, Room } from '@/lib/api';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+function resolveWsBaseUrl(): string {
+    try {
+        const url = new URL(API_URL);
+        url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        url.pathname = '';
+        url.search = '';
+        url.hash = '';
+        return url.toString().replace(/\/$/, '');
+    } catch {
+        if (typeof window !== 'undefined') {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            return `${protocol}//${window.location.hostname}:8000`;
+        }
+        return 'ws://localhost:8000';
+    }
+}
 
 export default function UserVideoPage() {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [videoSrc, setVideoSrc] = useState('');
     const [streamMode, setStreamMode] = useState<'loading' | 'websocket' | 'offline'>('loading');
     const [loading, setLoading] = useState(true);
+    const [hasFrame, setHasFrame] = useState(false);
+
     const wsRef = useRef<WebSocket | null>(null);
+    const imgRef = useRef<HTMLImageElement | null>(null);
+    const latestBlobUrlRef = useRef<string | null>(null);
+    const reconnectTimerRef = useRef<number | null>(null);
+    const reconnectAttemptRef = useRef(0);
+    const activeRoomRef = useRef<string | null>(null);
+    const hasFrameRef = useRef(false);
+
+    const cleanupImage = useCallback(() => {
+        if (latestBlobUrlRef.current) {
+            URL.revokeObjectURL(latestBlobUrlRef.current);
+            latestBlobUrlRef.current = null;
+        }
+        if (imgRef.current) imgRef.current.src = '';
+        hasFrameRef.current = false;
+        setHasFrame(false);
+    }, []);
+
+    const disconnectWebSocket = useCallback(() => {
+        if (reconnectTimerRef.current !== null) {
+            window.clearTimeout(reconnectTimerRef.current);
+            reconnectTimerRef.current = null;
+        }
+
+        const ws = wsRef.current;
+        if (ws) {
+            ws.onopen = null;
+            ws.onmessage = null;
+            ws.onerror = null;
+            ws.onclose = null;
+            ws.close();
+            wsRef.current = null;
+        }
+    }, []);
+
+    const connectWebSocket = useCallback((roomId: string) => {
+        disconnectWebSocket();
+        cleanupImage();
+
+        activeRoomRef.current = roomId;
+        setStreamMode('loading');
+        const wsBase = resolveWsBaseUrl();
+        const wsUrl = `${wsBase}/api/ws/stream/${encodeURIComponent(roomId)}`;
+        const ws = new WebSocket(wsUrl);
+        ws.binaryType = 'arraybuffer';
+
+        ws.onopen = () => {
+            reconnectAttemptRef.current = 0;
+            setStreamMode('websocket');
+        };
+
+        ws.onmessage = (event) => {
+            if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+                const blob = event.data instanceof Blob
+                    ? event.data
+                    : new Blob([event.data], { type: 'image/jpeg' });
+                const nextUrl = URL.createObjectURL(blob);
+                const previousUrl = latestBlobUrlRef.current;
+                latestBlobUrlRef.current = nextUrl;
+                if (imgRef.current) imgRef.current.src = nextUrl;
+                if (previousUrl) URL.revokeObjectURL(previousUrl);
+
+                if (!hasFrameRef.current) {
+                    hasFrameRef.current = true;
+                    setHasFrame(true);
+                }
+                return;
+            }
+
+            if (typeof event.data === 'string') {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === 'ping') ws.send('pong');
+                } catch {
+                    // Ignore non-JSON text frames.
+                }
+            }
+        };
+
+        ws.onerror = () => {
+            setStreamMode('offline');
+        };
+
+        ws.onclose = () => {
+            if (activeRoomRef.current !== roomId) return;
+            cleanupImage();
+            setStreamMode('offline');
+
+            const attempt = reconnectAttemptRef.current;
+            const backoffMs = Math.min(10000, 1000 * (2 ** attempt));
+            reconnectAttemptRef.current = attempt + 1;
+
+            reconnectTimerRef.current = window.setTimeout(() => {
+                if (activeRoomRef.current === roomId) connectWebSocket(roomId);
+            }, backoffMs);
+        };
+
+        wsRef.current = ws;
+    }, [cleanupImage, disconnectWebSocket]);
 
     useEffect(() => {
         const load = async () => {
@@ -26,64 +144,20 @@ export default function UserVideoPage() {
         load();
     }, []);
 
-    // WebSocket video stream
     useEffect(() => {
         if (!selectedRoom) {
-            setVideoSrc('');
-            setStreamMode('loading');
+            activeRoomRef.current = null;
             disconnectWebSocket();
+            cleanupImage();
+            setStreamMode('loading');
             return;
         }
 
         connectWebSocket(selectedRoom);
-        return () => disconnectWebSocket();
-    }, [selectedRoom]);
-
-    const connectWebSocket = async (roomId: string) => {
-        disconnectWebSocket();
-        try {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.host;
-            const wsUrl = `${protocol}//${host}/api/ws/stream/${roomId}`;
-
-            setStreamMode('loading');
-            const ws = new WebSocket(wsUrl);
-            ws.binaryType = 'arraybuffer';
-
-            ws.onopen = () => {
-                setStreamMode('websocket');
-            };
-
-            ws.onmessage = (event) => {
-                if (event.data instanceof ArrayBuffer) {
-                    const blob = new Blob([event.data], { type: 'image/jpeg' });
-                    const url = URL.createObjectURL(blob);
-                    setVideoSrc(prev => {
-                        if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
-                        return url;
-                    });
-                } else if (typeof event.data === 'string') {
-                    try {
-                        const data = JSON.parse(event.data);
-                        if (data.type === 'ping') ws.send(JSON.stringify({ type: 'pong' }));
-                    } catch { /* ignore */ }
-                }
-            };
-
-            ws.onerror = () => setStreamMode('offline');
-            ws.onclose = () => setStreamMode('offline');
-            wsRef.current = ws;
-        } catch {
-            setStreamMode('offline');
-        }
-    };
-
-    const disconnectWebSocket = () => {
-        if (wsRef.current) {
-            wsRef.current.close();
-            wsRef.current = null;
-        }
-    };
+        return () => {
+            disconnectWebSocket();
+        };
+    }, [selectedRoom, connectWebSocket, disconnectWebSocket, cleanupImage]);
 
     const selectedRoomData = selectedRoom ? rooms.find(r => r.id === selectedRoom) : null;
     const defaultRoom = rooms[0]?.id || null;
@@ -91,6 +165,14 @@ export default function UserVideoPage() {
     useEffect(() => {
         if (!selectedRoom && defaultRoom) setSelectedRoom(defaultRoom);
     }, [defaultRoom, selectedRoom]);
+
+    useEffect(() => {
+        return () => {
+            activeRoomRef.current = null;
+            disconnectWebSocket();
+            cleanupImage();
+        };
+    }, [disconnectWebSocket, cleanupImage]);
 
     if (loading) {
         return (
@@ -163,18 +245,22 @@ export default function UserVideoPage() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             overflow: 'hidden'
                         }}>
-                            {videoSrc && (
-                                <img
-                                    src={videoSrc}
-                                    alt={`${selectedRoomData?.name} Camera`}
-                                    style={{ width: '100%', height: 'auto', maxHeight: '100%', objectFit: 'contain', display: 'block' }}
-                                />
-                            )}
+                            <img
+                                ref={imgRef}
+                                alt={`${selectedRoomData?.name} Camera`}
+                                style={{
+                                    width: '100%',
+                                    height: 'auto',
+                                    maxHeight: '100%',
+                                    objectFit: 'contain',
+                                    display: hasFrame ? 'block' : 'none',
+                                }}
+                            />
 
                             {/* Placeholder when no video */}
                             <div style={{
                                 width: '100%', height: '100%',
-                                display: videoSrc ? 'none' : 'flex',
+                                display: hasFrame ? 'none' : 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center', justifyContent: 'center',
                                 position: 'absolute', top: 0, left: 0,
@@ -194,7 +280,7 @@ export default function UserVideoPage() {
                                 <p style={{ margin: 0, textAlign: 'center' }}>
                                     {streamMode === 'loading' && 'Connecting WebSocket...'}
                                     {streamMode === 'offline' && 'Camera Offline'}
-                                    {streamMode === 'websocket' && !videoSrc && 'Waiting for video from camera'}
+                                    {streamMode === 'websocket' && !hasFrame && 'Waiting for video from camera'}
                                 </p>
                             </div>
 

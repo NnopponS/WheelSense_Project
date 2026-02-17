@@ -1,119 +1,62 @@
+﻿---
+name: Docker Deployment (Current)
+description: Current WheelSense v2.0 Docker Compose stack (PostgreSQL, backend, frontend, MQTT, Home Assistant, Ollama)
 ---
-name: Docker Deployment Stack
-description: Docker Compose deployment configuration for WheelSense services including MQTT broker, Home Assistant, backend, and frontend
----
 
-# Docker Deployment Stack
+# Docker Deployment (Current)
 
-## Architecture Overview
+Use this skill for `deployment/*` and environment/runtime operations.
 
-```
-┌─────────────────────────────────────────────────┐
-│              Docker Network: wheelsense          │
-│                                                   │
-│  ┌──────────┐  ┌───────────┐  ┌──────────────┐  │
-│  │ Frontend  │  │  Backend  │  │  Mosquitto   │  │
-│  │ :3000     │─▶│  :8000    │─▶│  MQTT :1883  │  │
-│  └──────────┘  └─────┬─────┘  └──────────────┘  │
-│                      │                            │
-│                      ▼                            │
-│               ┌──────────────┐                   │
-│               │   Home       │                   │
-│               │   Assistant  │                   │
-│               │   :8123      │                   │
-│               └──────────────┘                   │
-└─────────────────────────────────────────────────┘
-```
+## Compose Topology (`deployment/docker-compose.yml`)
+- `postgres` (PostgreSQL 16) on `5432`
+- `backend` (FastAPI) on `8000`
+- `frontend` (Next.js) on `3001` externally (`3000` in container)
+- `mosquitto` on `1883` and `9001`
+- `homeassistant` on `8123`
+- `ollama` on `11434`
 
-## Services
+## Current Defaults
+- Backend DB URL points to postgres service
+- Backend MQTT defaults to public broker (`broker.emqx.io`) unless overridden
+- Frontend talks to backend via `NEXT_PUBLIC_API_URL`
 
-### 1. Backend (FastAPI)
-- **Build**: `../backend/Dockerfile` (Python 3.11-slim)
-- **Port**: 8000
-- **Volumes**: `backend_data:/app/data` (SQLite database persistence)
-- **Depends on**: mosquitto
-- **Env vars**: `DATABASE_URL`, `MQTT_BROKER=mosquitto`, `HA_URL`, `HA_TOKEN`, `GEMINI_API_KEY`
+## Required Env Keys
+From `deployment/.env.example`:
+- `DATABASE_URL`
+- `MQTT_BROKER`, `MQTT_PORT`, `MQTT_TOPIC`, `MQTT_USER`, `MQTT_PASSWORD`
+- `HA_URL`, `HA_TOKEN`
+- `OLLAMA_*`
+- `CHAT_MAX_USER_MESSAGE_CHARS`, `LLM_MAX_CONTEXT_CHARS`, `LLM_WARMUP_ON_STARTUP`
 
-### 2. Frontend (Next.js)
-- **Build**: `../frontend/Dockerfile` (Node 20-alpine, multi-stage)
-- **Port**: 3000
-- **Depends on**: backend
-- **Env vars**: `NEXT_PUBLIC_API_URL=http://localhost:8000`
-
-### 3. Mosquitto (MQTT Broker)
-- **Image**: `eclipse-mosquitto:2`
-- **Ports**: 1883 (MQTT), 9001 (WebSocket)
-- **Config**: `./mosquitto/mosquitto.conf`
-- **Volumes**: `mosquitto_data`, `mosquitto_log`
-
-### 4. Home Assistant
-- **Image**: `ghcr.io/home-assistant/home-assistant:stable`
-- **Port**: 8123
-- **Config**: `./homeassistant/` directory
-- **Timezone**: `Asia/Bangkok`
-- **Privileged**: Yes (required for device access)
-
-## File Locations
-
-```
-WheelSense2.0/
-├── docker-compose.yml      # Main compose file
-├── .env                    # Environment variables (HA_TOKEN, GEMINI_API_KEY)
-├── .env.example            # Template for .env
-├── mosquitto/
-│   └── mosquitto.conf      # MQTT broker configuration
-└── homeassistant/          # HA config directory (auto-populated on first run)
-```
-
-## Quick Start Commands
-
+## Common Commands
 ```bash
-# Start all services
-cd WheelSense2.0
-docker-compose up -d
+cd deployment
 
-# View logs
-docker-compose logs -f backend
-docker-compose logs -f frontend
+# start or rebuild
+docker compose up -d --build
 
-# Restart a specific service
-docker-compose restart backend
+# restart backend only
+docker compose restart backend
 
-# Stop all services
-docker-compose down
+# logs
+docker compose logs -f backend
+docker compose logs -f frontend
 
-# Stop and remove volumes (resets database)
-docker-compose down -v
+# health checks
+curl http://localhost:8000/api/health
+curl http://localhost:3001
 ```
 
-## Development vs Production
+## Troubleshooting Checklist
+1. `docker compose ps` shows all services healthy
+2. backend health reports `mqtt_connected=true` when broker is reachable
+3. postgres is healthy before backend starts
+4. frontend build failures are fixed before image rebuild
+5. if HA is disconnected, inspect `HA_URL` and `HA_TOKEN`
 
-### Development (recommended for coding)
-Run services separately for hot-reload:
+## Data Safety
+- Postgres data is in volume `postgres_data`
+- Remove volumes only when intentional reset is required:
 ```bash
-# Terminal 1: Docker services (MQTT + HA only)
-cd WheelSense2.0 && docker-compose up mosquitto homeassistant
-
-# Terminal 2: Backend with auto-reload
-cd backend && uvicorn src.main:app --reload --port 8000
-
-# Terminal 3: Frontend with hot-reload
-cd frontend && npm run dev
+docker compose down -v
 ```
-
-### Production (full Docker)
-```bash
-cd WheelSense2.0 && docker-compose up -d
-```
-
-## Network
-All services communicate on the `wheelsense` bridge network. Internal DNS:
-- `mosquitto` → MQTT broker
-- `homeassistant` → HA API
-- `backend` → FastAPI
-- `frontend` → Next.js
-
-## Volume Persistence
-- `backend_data` — SQLite database (`wheelsense.db`)
-- `mosquitto_data` — MQTT retained messages
-- `mosquitto_log` — MQTT broker logs

@@ -19,6 +19,7 @@ enum SceneID {
     SCENE_DEVICE_INFO,
     SCENE_SERVER_CONFIG,
     SCENE_CALIBRATE,
+    SCENE_CAMERA_CONFIG,
     SCENE_QR_CODE
 };
 
@@ -33,7 +34,8 @@ public:
         KBD_CTX_MQTT_PASS,
         KBD_CTX_BACKEND_URL,
         KBD_CTX_DEVICE_NAME,
-        KBD_CTX_WHEEL_RADIUS
+        KBD_CTX_WHEEL_RADIUS,
+        KBD_CTX_CAMERA_MQTT_PORT
     };
 
     SceneManager();
@@ -78,6 +80,10 @@ private:
     
     // Boot (non-blocking)
     unsigned long bootStartMs = 0;
+    bool bootReachedFull = false;
+    bool bootRenderedFull = false;
+    unsigned long bootFullShownMs = 0;
+    int bootLastDrawnPct = -1;
     
     // Config from Server
     bool serverConfigSyncing = false;
@@ -95,6 +101,8 @@ private:
     // Dirty flag / UI throttle
     bool needsRedraw = true;
     unsigned long lastDrawMs = 0;
+    uint32_t dashboardLastHash = 0;
+    bool dashboardHashValid = false;
     
     KeyboardContext keyboardReturnContext = KBD_CTX_NONE;
     
@@ -104,6 +112,38 @@ private:
     char mqttMenuUserStr[32];
     char mqttMenuPassStr[32];
     char mqttMenuModeStr[32];
+
+    // Camera Config (Phase 2)
+    static const int MAX_CAMERA_NODES = 12;
+    CameraNodeInfo cameraNodes[MAX_CAMERA_NODES];
+    int cameraNodeCount = 0;
+    int cameraNodeIndex = 0;
+    bool cameraListLoaded = false;
+    bool cameraListLoading = false;
+    bool cameraListOk = false;
+
+    bool cameraEditorActive = false;
+    int cameraEditMenuIndex = 0;
+    String cameraTargetDeviceId;
+    CameraConfigPayload cameraDraft;
+    String cameraDraftMqttPort;
+
+    String cameraStatusText;
+    bool cameraStatusSuccess = false;
+    bool cameraResultMode = false;
+    int cameraLastAction = -1; // 0=Push,1=Push+Sync,2=EnterConfig,3=SyncOnly
+
+    char cameraItemDevice[48];
+    char cameraItemNode[48];
+    char cameraItemRoomId[48];
+    char cameraItemRoomName[48];
+    char cameraItemWiFiSsid[48];
+    char cameraItemWiFiPass[32];
+    char cameraItemMqttHost[48];
+    char cameraItemMqttPort[24];
+    char cameraItemMqttUser[32];
+    char cameraItemMqttPass[32];
+    char cameraItemBackend[48];
     
     void updateBoot();
     void updateDashboard();
@@ -113,17 +153,25 @@ private:
     void updateMQTTConfig();
     void updateServerConfig();
     void updateCalibrate();
+    void updateCameraConfig();
     
     void drawDashboard();
+    uint32_t buildDashboardHash();
     void drawMainMenu();
     void drawWiFiScan();
     void drawKeyboard();
+    void drawCameraList();
+    void drawCameraEditor();
+    void drawCameraResult();
     
     // Helper
     const char* getCharFromIndex(int index);
     int getKeyboardCharCount();
     char getKeyboardCharAt(int index);
     void appendKeyboardChar(char c);
+    bool loadCameraNodes();
+    void activateCameraEditor(int index);
+    bool runCameraAction(int actionId, String& outMessage);
 };
 
 extern SceneManager SceneMgr;

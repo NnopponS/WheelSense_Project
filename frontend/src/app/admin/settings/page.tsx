@@ -388,6 +388,23 @@ export default function SettingsPage() {
                         onChange={(e) => setSettings({ ...settings, mqttTopic: e.target.value })}
                       />
                     </div>
+                    {health?.mqtt_metrics && (
+                      <div style={{
+                        marginTop: '0.75rem',
+                        padding: '0.75rem',
+                        background: 'var(--bg-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.85rem'
+                      }}>
+                        <div>Broker runtime: {health.mqtt_metrics.broker || '-'}:{health.mqtt_metrics.port || '-'}</div>
+                        <div>Reconnect events: {health.mqtt_metrics.reconnect_events || 0}</div>
+                        <div>Publish failures: {health.mqtt_metrics.publish_failures || 0}</div>
+                        <div>Config sync failures: {health.mqtt_metrics.config_sync_failures || 0}</div>
+                        {health.mqtt_metrics.last_error && (
+                          <div style={{ color: 'var(--danger-500)' }}>Last error: {health.mqtt_metrics.last_error}</div>
+                        )}
+                      </div>
+                    )}
                     <p className="form-hint">* MQTT settings are configured via environment variables on the backend</p>
                   </div>
 
@@ -440,6 +457,24 @@ export default function SettingsPage() {
                         </>
                       )}
                     </div>
+                    {health?.ha_diagnostics && (
+                      <div style={{
+                        marginTop: '0.75rem',
+                        padding: '0.75rem',
+                        background: 'var(--bg-secondary)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.85rem'
+                      }}>
+                        <div>Configured URL: {health.ha_diagnostics.url || '-'}</div>
+                        <div>Token configured: {health.ha_diagnostics.token_configured ? 'Yes' : 'No'}</div>
+                        <div>Last status code: {health.ha_diagnostics.last_status_code ?? '-'}</div>
+                        {health.ha_diagnostics.last_error ? (
+                          <div style={{ color: 'var(--danger-500)' }}>Reason: {health.ha_diagnostics.last_error}</div>
+                        ) : (
+                          <div style={{ color: 'var(--success-500)' }}>Reason: OK</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -459,6 +494,11 @@ export default function SettingsPage() {
                       onChange={(e) => setSettings({ ...settings, staleTimeout: e.target.value })}
                     />
                     <p className="form-hint">Mark wheelchair data as stale after this time without updates</p>
+                    {health?.watchdog?.thresholds_seconds && (
+                      <p className="form-hint">
+                        Runtime stale threshold: {health.watchdog.thresholds_seconds.wheelchair_stale}s, offline threshold: {health.watchdog.thresholds_seconds.wheelchair_offline}s
+                      </p>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="form-label">Node Timeout (seconds)</label>
@@ -469,8 +509,18 @@ export default function SettingsPage() {
                       onChange={(e) => setSettings({ ...settings, nodeTimeout: e.target.value })}
                     />
                     <p className="form-hint">Mark node as offline after this time without detection</p>
+                    {health?.watchdog?.thresholds_seconds && (
+                      <p className="form-hint">
+                        Runtime node/camera offline: {health.watchdog.thresholds_seconds.node_offline}s / {health.watchdog.thresholds_seconds.camera_offline}s
+                      </p>
+                    )}
                   </div>
                 </div>
+                {health?.history_policy && (
+                  <p className="form-hint" style={{ marginTop: '0.75rem' }}>
+                    History policy: sample every {health.history_policy.sample_interval_seconds}s, retention {health.history_policy.retention_days} days (auto: {health.history_policy.auto_retention_enabled ? `on/${health.history_policy.auto_retention_interval_minutes}m` : 'off'})
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -989,7 +1039,7 @@ export default function SettingsPage() {
             <p><strong>Version:</strong> 2.0.0</p>
             <p><strong>Technology:</strong> RSSI Fingerprint Localization using M5StickCPlus2</p>
             <p><strong>Frontend:</strong> Next.js 16 with TypeScript</p>
-            <p><strong>Backend:</strong> Python FastAPI with SQLite</p>
+            <p><strong>Backend:</strong> Python FastAPI with PostgreSQL</p>
             <p><strong>Integration:</strong> MQTT + Home Assistant</p>
           </div>
         </div>

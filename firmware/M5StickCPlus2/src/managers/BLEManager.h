@@ -9,10 +9,11 @@
 #include <BLEAdvertisedDevice.h>
 
 #define MAX_BLE_NODES 10
-#define NODE_PREFIX "WheelSense_"
+#define NODE_PREFIX_PRIMARY "WSN_"
 
 struct BLENode {
     int id;
+    String nodeKey;
     int rssi;
     String mac;
     unsigned long lastSeen;

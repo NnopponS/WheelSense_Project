@@ -40,6 +40,7 @@ class ChatRequest(BaseModel):
     message: str
     patient_id: Optional[str] = None
     role: Optional[str] = "user"  # "admin" or "user"
+    session_id: Optional[str] = None
     context: Optional[Dict[str, Any]] = None
 
 
@@ -342,6 +343,34 @@ async def chat(request: ChatRequest):
         if len(user_message) > settings.CHAT_MAX_USER_MESSAGE_CHARS:
             user_message = user_message[: settings.CHAT_MAX_USER_MESSAGE_CHARS]
 
+        session_id = (request.session_id or "").strip()
+        if session_id:
+            existing_session = await db.fetch_one(
+                "SELECT id FROM ai_chat_sessions WHERE id = $1",
+                (session_id,),
+            )
+            if not existing_session:
+                title = (user_message[:48] or "New Chat").strip()
+                await db.execute(
+                    """
+                    INSERT INTO ai_chat_sessions (id, patient_id, title, role)
+                    VALUES ($1, $2, $3, $4)
+                    """,
+                    (session_id, request.patient_id, title, request.role or "user"),
+                )
+
+            await db.execute(
+                """
+                INSERT INTO ai_chat_messages (session_id, role, content, actions)
+                VALUES ($1, 'user', $2, $3::jsonb)
+                """,
+                (session_id, user_message, "[]"),
+            )
+            await db.execute(
+                "UPDATE ai_chat_sessions SET updated_at = NOW() WHERE id = $1",
+                (session_id,),
+            )
+
         # 1) Build system context (with HA integration and role-based scoping)
         system_context = await context_builder.build_context(
             db,
@@ -406,10 +435,27 @@ async def chat(request: ChatRequest):
         if llm_result.get("error"):
             logger.warning(f"[{correlation_id}] LLM error: {llm_result['error']}")
 
+        if session_id:
+            await db.execute(
+                """
+                INSERT INTO ai_chat_messages (session_id, role, content, actions)
+                VALUES ($1, 'assistant', $2, $3::jsonb)
+                """,
+                (session_id, response_text.strip(), json.dumps(action_results)),
+            )
+            await db.execute(
+                "UPDATE ai_chat_sessions SET updated_at = NOW() WHERE id = $1",
+                (session_id,),
+            )
+
         return ChatResponse(
             response=response_text.strip(),
             actions=action_results,
-            context={"patient_id": request.patient_id, "correlation_id": correlation_id}
+            context={
+                "patient_id": request.patient_id,
+                "correlation_id": correlation_id,
+                "session_id": session_id or None,
+            }
         )
 
     except Exception as e:

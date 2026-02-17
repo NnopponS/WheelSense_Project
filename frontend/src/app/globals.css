@@ -658,6 +658,12 @@ body {
   gap: 1.5rem;
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  align-items: start;
+}
+
 /* ============================================ */
 /* Map Container */
 /* ============================================ */
@@ -1713,6 +1719,10 @@ body {
 
 @media (max-width: 1024px) {
   .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -7,7 +7,7 @@
 #define FIRMWARE_VERSION "2.1.0"
 
 // Default Settings
-#define DEFAULT_DEVICE_NAME "WS_001"
+#define DEFAULT_DEVICE_NAME "WS_01"
 #define DEFAULT_WIFI_SSID ""
 #define DEFAULT_WIFI_PASS ""
 #define DEFAULT_WHEEL_RADIUS_M 0.30f
@@ -20,7 +20,7 @@
 #define DEFAULT_MQTT_PASS ""
 #define DEFAULT_MQTT_TOPIC_DATA "WheelSense/data"
 #define DEFAULT_MQTT_TOPIC_CONFIG_PREFIX "WheelSense/config/"
-#define DEFAULT_BACKEND_URL "http://192.168.1.100:8000"
+#define DEFAULT_BACKEND_URL ""
 
 // Hardware Pins (M5StickC Plus2)
 // These are usually handled by the library, but good to have if we need raw access
@@ -49,10 +49,18 @@
 
 // Timing
 #define MQTT_PUBLISH_INTERVAL 1000
-#define SENSOR_READ_INTERVAL 100
-#define DISPLAY_UPDATE_INTERVAL 100
+#define SENSOR_READ_INTERVAL 120
+#define NETWORK_UPDATE_INTERVAL 100
+#define BLE_UPDATE_INTERVAL 250
+#define DISPLAY_UPDATE_INTERVAL 500
+#define MAIN_LOOP_IDLE_DELAY_MS 5
 #define BOOT_DURATION_MS 3000
 #define INPUT_DEBOUNCE_MS 50
 #define INPUT_TASK_STACK 2048
+
+// Battery/Charging stability tuning
+#define BATTERY_SAMPLE_INTERVAL_MS 2000
+#define BATTERY_CHARGE_DEBOUNCE_SAMPLES 3
+#define BATTERY_CHARGE_MIN_SWITCH_MS 6000
 
 #endif

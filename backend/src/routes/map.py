@@ -237,10 +237,25 @@ async def get_map_data(building_id: Optional[str] = None, floor_id: Optional[str
         LEFT JOIN rooms r ON w.current_room_id = r.id
         WHERE w.status != 'offline'
     """)
+
+    cameras = await db.fetch_all("""
+        SELECT
+            c.device_id,
+            c.node_id,
+            c.room_id,
+            COALESCE(NULLIF(c.room_name, ''), r.name) as room_name,
+            c.status,
+            c.config_mode,
+            c.last_seen
+        FROM camera_nodes c
+        LEFT JOIN rooms r ON c.room_id = r.id
+        ORDER BY c.device_id
+    """)
     
     return {
         "buildings": buildings,
         "floors": floors,
         "rooms": rooms,
-        "wheelchairs": wheelchairs
+        "wheelchairs": wheelchairs,
+        "cameras": cameras,
     }

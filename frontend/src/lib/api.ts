@@ -104,6 +104,38 @@ export const getOnlineDevices = () => fetchApi<{ devices: Device[] }>('/api/devi
 export const getDeviceStats = () => fetchApi<DeviceStats>('/api/devices/stats');
 export const updateDevice = (id: string, data: Record<string, any>) =>
     fetchApi('/api/devices/' + id, { method: 'PUT', body: JSON.stringify(data) });
+export const getCameras = () => fetchApi<{ cameras: CameraNode[] }>('/api/cameras');
+export const setCameraMode = (deviceId: string, mode: 'config' | 'reboot' | 'sync_config') =>
+    fetchApi(`/api/cameras/${deviceId}/mode`, {
+        method: 'POST',
+        body: JSON.stringify({ mode }),
+    });
+export const pushDeviceConfig = (deviceId: string, payload: Record<string, any>) =>
+    fetchApi(`/api/devices/${deviceId}/config`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+export const sendDeviceCommand = (deviceId: string, mode: 'sync_config' | 'reboot' | 'config') =>
+    fetchApi(`/api/devices/${deviceId}/command`, {
+        method: 'POST',
+        body: JSON.stringify({ mode }),
+    });
+export const deleteDeviceFromSystem = (deviceId: string) =>
+    fetchApi<{ message: string; deleted: Record<string, boolean> }>(`/api/devices/${deviceId}`, {
+        method: 'DELETE',
+    });
+export const getDataQuality = () => fetchApi<DataQualityResponse>('/api/data-quality');
+export const getSystemReadiness = () => fetchApi<SystemReadinessResponse>('/api/system/readiness');
+export const triggerHistoryRetention = (payload?: {
+    retention_days?: number;
+    dry_run?: boolean;
+    aggregate_hourly?: boolean;
+    aggregate_daily?: boolean;
+}) =>
+    fetchApi<HistoryRetentionResponse>('/api/maintenance/history-retention', {
+        method: 'POST',
+        body: JSON.stringify(payload || {}),
+    });
 
 // ===== Timeline =====
 export const getTimeline = (params?: { patient_id?: string; wheelchair_id?: string; date?: string; limit?: number }) => {
@@ -120,11 +152,30 @@ export const getTodayTimeline = (limit?: number) =>
 export const getTimelineStats = () => fetchApi('/api/timeline/stats');
 
 // ===== Chat =====
-export const sendChatMessage = (message: string, patientId?: string) =>
-    fetchApi<ChatResponse>('/api/chat', {
+export const sendChatMessage = (
+    message: string,
+    options?: string | {
+        patientId?: string;
+        role?: 'admin' | 'user';
+        sessionId?: string;
+        context?: Record<string, any>;
+    }
+) => {
+    const resolved = typeof options === 'string'
+        ? { patientId: options }
+        : (options || {});
+
+    return fetchApi<ChatResponse>('/api/chat', {
         method: 'POST',
-        body: JSON.stringify({ message, patient_id: patientId })
+        body: JSON.stringify({
+            message,
+            patient_id: resolved.patientId,
+            role: resolved.role,
+            session_id: resolved.sessionId,
+            context: resolved.context,
+        })
     });
+};
 export const getChatStatus = () => fetchApi('/api/chat/status');
 
 // ===== Types =====
@@ -135,6 +186,64 @@ export interface HealthResponse {
     database: string;
     wheelchairs: number;
     online_nodes: number;
+    camera_nodes?: {
+        total: number;
+        online: number;
+        offline?: number;
+        config_mode: number;
+    };
+    watchdog?: {
+        stale_wheelchairs: number;
+        offline_wheelchairs: number;
+        offline_nodes: number;
+        offline_cameras: number;
+        thresholds_seconds: {
+            wheelchair_stale: number;
+            wheelchair_offline: number;
+            node_offline: number;
+            camera_offline: number;
+        };
+    };
+    mqtt_metrics?: {
+        connected?: boolean;
+        broker?: string;
+        port?: number;
+        topic?: string;
+        connect_attempts?: number;
+        connect_successes?: number;
+        connect_failures?: number;
+        reconnect_events?: number;
+        publish_attempts?: number;
+        publish_successes?: number;
+        publish_failures?: number;
+        messages_received?: number;
+        messages_processed?: number;
+        messages_failed?: number;
+        config_requests?: number;
+        config_replies?: number;
+        config_sync_failures?: number;
+        history_inserts?: number;
+        history_skipped?: number;
+        last_error?: string;
+        last_connected_at?: string | null;
+        last_disconnected_at?: string | null;
+        last_message_at?: string | null;
+    };
+    ha_diagnostics?: {
+        url: string;
+        token_configured: boolean;
+        connected: boolean;
+        last_status_code?: number | null;
+        last_error?: string;
+        last_checked_at?: string | null;
+        last_success_at?: string | null;
+    };
+    history_policy?: {
+        sample_interval_seconds: number;
+        retention_days: number;
+        auto_retention_enabled: boolean;
+        auto_retention_interval_minutes: number;
+    };
 }
 
 export interface Building {
@@ -224,6 +333,12 @@ export interface Wheelchair {
     rssi?: number;
     stale?: number;
     last_seen?: string;
+    same_wifi?: boolean;
+    features_limited?: boolean;
+    warning_message?: string;
+    sync_device_ip?: string;
+    sync_server_ip?: string;
+    sync_last_seen?: string;
 }
 
 export interface WheelchairPosition {
@@ -271,10 +386,158 @@ export interface Device {
     last_seen?: string;
 }
 
+export interface CameraNode {
+    device_id: string;
+    node_id?: string;
+    room_id?: string;
+    room_name?: string;
+    room_binding_last_updated?: string;
+    ip_address?: string;
+    status: string;
+    mapping_state?: 'mapped' | 'unmapped' | 'stale' | string;
+    heartbeat_lag_seconds?: number;
+    config_mode: boolean;
+    ws_connected: boolean;
+    frames_sent: number;
+    frames_dropped: number;
+    last_seen?: string;
+    updated_at?: string;
+    same_wifi?: boolean;
+    features_limited?: boolean;
+    warning_message?: string;
+    sync_device_ip?: string;
+    sync_server_ip?: string;
+    sync_last_seen?: string;
+}
+
 export interface DeviceStats {
     total: number;
     online: number;
     offline: number;
+}
+
+export interface DataQualityResponse {
+    generated_at: string;
+    unknown_room_ratio: number;
+    unknown_room: {
+        active_unknown: number;
+        active_total: number;
+        all_unknown: number;
+        all_total: number;
+    };
+    mapping: {
+        cameras: {
+            total: number;
+            mapped: number;
+            unmapped: number;
+            completeness_ratio: number;
+        };
+        nodes: {
+            total: number;
+            mapped: number;
+            unmapped: number;
+            completeness_ratio: number;
+        };
+    };
+    unmapped_cameras: Array<{
+        device_id: string;
+        node_id?: string;
+        room_id?: string;
+        room_name?: string;
+        status?: string;
+        last_seen?: string;
+        updated_at?: string;
+        room_binding_last_updated?: string;
+    }>;
+    unmapped_nodes: Array<{
+        id: string;
+        name?: string;
+        room_id?: string;
+        room_name?: string;
+        status?: string;
+        last_seen?: string;
+    }>;
+    stale_devices: Array<{
+        device_type: 'wheelchair' | 'node' | 'camera' | string;
+        device_id: string;
+        status?: string;
+        last_seen?: string;
+        lag_seconds?: number;
+    }>;
+    stale_device_count: number;
+    last_seen_lag_seconds: {
+        wheelchairs_max: number;
+        nodes_max: number;
+        cameras_max: number;
+    };
+}
+
+export interface SystemReadinessResponse {
+    generated_at: string;
+    state: 'ready' | 'degraded' | string;
+    infrastructure: {
+        database_connected: boolean;
+        mqtt_connected: boolean;
+        home_assistant_connected: boolean;
+        ha_diagnostics?: {
+            url?: string;
+            token_configured?: boolean;
+            connected?: boolean;
+            last_status_code?: number | null;
+            last_error?: string;
+            last_checked_at?: string | null;
+            last_success_at?: string | null;
+        };
+    };
+    mapping: {
+        camera_total: number;
+        camera_unmapped: number;
+        node_total: number;
+        node_unmapped: number;
+        mapping_ready: boolean;
+    };
+    data_quality: {
+        active_unknown_room: number;
+        active_wheelchairs: number;
+        unknown_room_ratio: number;
+        unknown_room_target: number;
+        meets_target: boolean;
+    };
+    runtime: {
+        stale_device_count: number;
+        stale_breakdown: {
+            wheelchairs: number;
+            nodes: number;
+            cameras: number;
+        };
+        mqtt_publish_failures: number;
+        mqtt_config_sync_failures: number;
+        runtime_ready: boolean;
+    };
+    thresholds_seconds: {
+        wheelchair_offline: number;
+        node_offline: number;
+        camera_offline: number;
+    };
+}
+
+export interface HistoryRetentionResponse {
+    executed_at: string;
+    dry_run: boolean;
+    retention_days: number;
+    raw: {
+        old_rows_before: number;
+        old_rows_after: number;
+        deleted_rows: number;
+    };
+    aggregates: {
+        hourly_rows_before: number;
+        hourly_rows_after: number;
+        hourly_delta: number;
+        daily_rows_before: number;
+        daily_rows_after: number;
+        daily_delta: number;
+    };
 }
 
 export interface TimelineEvent {
@@ -295,7 +558,7 @@ export interface TimelineEvent {
 export interface ChatResponse {
     response: string;
     actions: { success: boolean; message: string }[];
-    context?: { patient_id?: string };
+    context?: { patient_id?: string; session_id?: string; correlation_id?: string };
 }
 
 export interface MapData {
@@ -303,6 +566,7 @@ export interface MapData {
     floors: Floor[];
     rooms: Room[];
     wheelchairs: Wheelchair[];
+    cameras?: CameraNode[];
 }
 
 // ===== Routines =====

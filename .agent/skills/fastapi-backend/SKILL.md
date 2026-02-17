@@ -1,180 +1,69 @@
+﻿---
+name: FastAPI Backend (Current)
+description: Current backend architecture for WheelSense v2.0 (FastAPI + asyncpg/PostgreSQL + MQTT + Home Assistant + Ollama)
 ---
-name: FastAPI Backend Patterns
-description: Architecture patterns and conventions for the WheelSense Python FastAPI backend with SQLite, MQTT, and Home Assistant integration
----
 
-# FastAPI Backend Patterns
+# FastAPI Backend (Current)
 
-## Tech Stack
-- **Framework**: FastAPI >= 0.109
-- **Server**: Uvicorn with standard extras
-- **Database**: SQLite via aiosqlite (async)
-- **Config**: Pydantic Settings v2
-- **MQTT**: aiomqtt >= 2.0
-- **HTTP Client**: httpx (for Home Assistant)
-- **AI**: Google Generative AI (Gemini)
-- **Math**: numpy + scipy (for RSSI fingerprinting)
+Use this skill when changing anything under `backend/src/`.
 
-## Project Structure
+## Stack (source of truth)
+- Framework: FastAPI
+- DB: PostgreSQL via `asyncpg` pool (not SQLite)
+- MQTT: `aiomqtt`
+- Home Assistant: `httpx`
+- AI: Ollama client in `routes/chat.py`
 
-```
-backend/src/
-├── __init__.py
-├── main.py                 # FastAPI app, lifespan, CORS, router mounting
-├── core/
-│   ├── __init__.py
-│   ├── config.py           # Pydantic Settings (env vars)
-│   ├── database.py         # Async SQLite wrapper + schema + defaults
-│   ├── mqtt.py             # MQTT collector (subscribe, process, store)
-│   └── homeassistant.py    # Home Assistant REST API client
-└── routes/
-    ├── __init__.py
-    ├── wheelchairs.py      # GET /api/wheelchairs/*
-    ├── devices.py          # GET /api/devices/*
-    ├── nodes.py            # CRUD /api/nodes/*
-    ├── map.py              # GET /api/map, /api/rooms, /api/buildings, /api/floors
-    ├── chat.py             # POST /api/chat (Gemini AI)
-    ├── patients.py         # CRUD /api/patients/*
-    ├── appliances.py       # GET + POST control /api/appliances/*
-    └── timeline.py         # GET /api/timeline/*
-```
+## Main Runtime Flow
+1. `backend/src/main.py` lifespan starts services in this order:
+   - `db.connect()` + `db.init_schema()`
+   - `ha_client.connect()`
+   - `mqtt_collector.connect()` + `start_listening()`
+   - background tasks: stale monitor, routine scheduler, safety monitor, periodic health scoring
+2. Routers are mounted under `/api/*`.
+3. MQTT collector updates wheelchairs/nodes/cameras and writes timeline/history records.
 
-## Key Patterns
+## Identity Contract (must stay canonical)
+- Camera/Node: `WSN_###`
+- Wheelchair (M5): `WS_##`
+- Canonicalization is implemented in `backend/src/core/mqtt.py` and `backend/src/routes/devices.py`.
+- Never introduce new public aliases in API responses.
 
-### 1. Application Lifecycle (`main.py`)
-The app uses FastAPI's `lifespan` context manager for startup/shutdown:
+## MQTT Control Contract
+- Telemetry: `WheelSense/data`
+- Config request from board: `WheelSense/config/request/{device_id}`
+- Config push from server: `WheelSense/config/{device_id}`
+- Commands from server: `WheelSense/{device_id}/control`
+- Camera status/registration: `WheelSense/camera/{device_id}/status|registration`
 
-```python
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: connect all services in order
-    await db.connect()
-    await db.init_schema()
-    await ha_client.connect()
-    await mqtt_collector.connect()
-    await mqtt_collector.start_listening()
-    stale_task = asyncio.create_task(mark_stale_data_task())
-    
-    yield  # App is running
-    
-    # Shutdown: graceful cleanup in reverse order
-    stale_task.cancel()
-    await mqtt_collector.stop_listening()
-    await mqtt_collector.disconnect()
-    await ha_client.disconnect()
-    await db.disconnect()
-```
+## Database Conventions
+- Use Postgres placeholders: `$1`, `$2`, ...
+- Use `db.fetch_one`, `db.fetch_all`, `db.execute` from `backend/src/core/database.py`
+- Keep schema changes migration-safe with `CREATE TABLE IF NOT EXISTS` and `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`
 
-### 2. Database Pattern (`core/database.py`)
-Single `Database` class wrapping aiosqlite:
+## Route Design Rules
+- Keep endpoints under `/api/`
+- Return explicit error codes via `HTTPException`
+- For device operations, prefer MQTT publish and persist control/sync state in DB
+- If adding admin diagnostics, keep responses cheap enough for frequent polling
 
-```python
-# Global singleton
-db = Database()
+## Stability-First Priorities
+When implementing pilot hardening work, prioritize this order:
+1. Build green (type/schema consistency)
+2. Location correctness (mapping completeness, unknown-room visibility)
+3. Runtime resilience (offline detection, reconnect counters)
+4. Ops visibility (`health`, readiness/quality endpoints, retention jobs)
 
-# Usage in routes:
-rows = await db.fetch_all("SELECT * FROM wheelchairs WHERE status = ?", ("online",))
-row = await db.fetch_one("SELECT * FROM patients WHERE id = ?", (patient_id,))
-await db.execute("INSERT INTO nodes (id, name) VALUES (?, ?)", (id, name))
-```
-
-**Schema management**: `init_schema()` creates all tables with `CREATE TABLE IF NOT EXISTS`.
-**Default data**: `_insert_default_data()` seeds rooms, buildings, floors if tables are empty.
-
-### 3. Configuration (`core/config.py`)
-Uses Pydantic Settings for typed environment variables:
-
-```python
-class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./data/wheelsense.db"
-    MQTT_BROKER: str = "localhost"
-    MQTT_PORT: int = 1883
-    MQTT_TOPIC: str = "WheelSense/data"
-    HA_URL: str = "http://localhost:8123"
-    HA_TOKEN: Optional[str] = None
-    GEMINI_API_KEY: Optional[str] = None
-    RSSI_THRESHOLD: int = -100
-    NODE_TIMEOUT_SECONDS: int = 30
-    STALE_DATA_SECONDS: int = 30
-
-settings = Settings()  # Global singleton
-```
-
-### 4. Router Convention
-All routers follow this pattern:
-
-```python
-from fastapi import APIRouter, HTTPException
-
-router = APIRouter()
-
-@router.get("/")
-async def list_items():
-    rows = await db.fetch_all("SELECT * FROM items")
-    return rows
-
-@router.get("/{item_id}")
-async def get_item(item_id: str):
-    row = await db.fetch_one("SELECT * FROM items WHERE id = ?", (item_id,))
-    if not row:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return row
-```
-
-**Router mounting in `main.py`**:
-```python
-app.include_router(wheelchairs.router, prefix="/api/wheelchairs", tags=["Wheelchairs"])
-```
-
-### 5. MQTT Data Processing (`core/mqtt.py`)
-The `MQTTCollector` class:
-- Connects to broker with retry logic
-- Subscribes to `WheelSense/data` topic
-- Processes M5StickCPlus2 JSON messages
-- Updates wheelchair position, speed, status in database
-- Updates node RSSI and last-seen timestamps
-- Logs room change events to timeline
-- Has automatic reconnection on disconnect
-
-### 6. Home Assistant Integration (`core/homeassistant.py`)
-The `ha_client` uses httpx to:
-- Control entities (lights, switches, fans, etc.)
-- Fetch entity states
-- Map WheelSense appliance types to HA service calls
-
-### 7. Background Tasks
-`mark_stale_data_task()` runs every 10 seconds:
-- Marks wheelchairs as stale after 30 seconds without update
-- Marks wheelchairs as offline after 60 seconds
-- Marks nodes as offline after 30 seconds
-
-### 8. CORS Configuration
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # TODO: restrict in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-## API Prefix Convention
-All routes are prefixed with `/api/`:
-- `/api/health` — Health check
-- `/api/wheelchairs` — Wheelchair data
-- `/api/devices` — Device data
-- `/api/nodes` — BLE node management
-- `/api/map`, `/api/rooms`, `/api/buildings`, `/api/floors` — Map data
-- `/api/chat` — AI chat
-- `/api/patients` — Patient management
-- `/api/appliances` — Smart home control
-- `/api/timeline` — Activity timeline
-
-## Running Locally
+## Local Commands
 ```bash
 cd backend
 pip install -r requirements.txt
 uvicorn src.main:app --reload --port 8000
-# API docs at http://localhost:8000/docs
+```
+
+## Minimum Verification Before Commit
+```bash
+cd backend
+python -m py_compile src/main.py src/core/config.py src/core/database.py src/core/mqtt.py src/routes/devices.py src/routes/cameras.py
+curl http://localhost:8000/api/health
 ```

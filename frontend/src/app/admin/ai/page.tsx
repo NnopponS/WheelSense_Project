@@ -6,11 +6,9 @@ import {
 } from 'lucide-react';
 import {
     createChatSession, listChatSessions, getSessionMessages,
-    deleteChatSession
+    deleteChatSession, sendChatMessage
 } from '@/lib/api';
 import { useTranslation } from '@/lib/i18n';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function AdminAIPage() {
     const { t, language } = useTranslation();
@@ -62,13 +60,9 @@ export default function AdminAIPage() {
         setSending(true);
 
         try {
-            const response = await fetch(`${API_URL}/api/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: msg, role: 'admin', session_id: activeSession }),
-            });
-            const data = await response.json();
-            setMessages(prev => [...prev, { role: 'assistant', content: data.response || data.message || 'No response', created_at: new Date().toISOString(), actions: data.actions }]);
+            const response = await sendChatMessage(msg, { role: 'admin', sessionId: activeSession });
+            const reply = response.data?.response || response.error || 'No response';
+            setMessages(prev => [...prev, { role: 'assistant', content: reply, created_at: new Date().toISOString(), actions: response.data?.actions }]);
         } catch (e) {
             setMessages(prev => [...prev, { role: 'assistant', content: 'Error: Failed to get response', created_at: new Date().toISOString() }]);
         }

@@ -47,6 +47,8 @@ export interface Device {
   deviceId?: string;
   name: string;
   type: 'node' | 'gateway';
+  room_id?: string;
+  room_name?: string;
   room?: string;
   ip?: string;
   status: 'online' | 'offline';

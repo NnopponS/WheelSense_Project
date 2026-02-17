@@ -1,0 +1,89 @@
+name: Pilot Phase 1 CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+  backend-compile-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile critical backend modules
+        working-directory: backend
+        run: |
+          python -m py_compile \
+            src/main.py \
+            src/core/config.py \
+            src/core/database.py \
+            src/core/identity.py \
+            src/core/mqtt.py \
+            src/routes/devices.py \
+            src/routes/cameras.py
+
+      - name: Smoke API route wiring
+        working-directory: backend
+        run: |
+          python -c "from src.main import app; required={'/api/health','/api/devices','/api/cameras','/api/wheelchairs'}; paths={route.path for route in app.router.routes}; missing=sorted(required - paths); (_ for _ in ()).throw(SystemExit(f'Missing required routes: {missing}')) if missing else print('Smoke OK: required API routes are mounted.')"
+
+  firmware-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project_dir:
+          - firmware/M5StickCPlus2
+          - firmware/Node_Tsimcam
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
+
+      - name: Build firmware
+        run: pio run -d "${{ matrix.project_dir }}"

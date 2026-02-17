@@ -19,6 +19,9 @@ struct SensorData {
     int batPercentage;
     float batVoltage;
     bool isCharging;
+    bool isChargingRaw;
+    int batRawMv;
+    int batFilteredMv;
 
     // Health
     bool imuValid;
@@ -63,6 +66,12 @@ private:
     float filteredBatVoltageMv = 0.0f;
     float filteredBatPercent = 0.0f;
     int stableBatPercent = -1;
+    unsigned long lastBatterySampleMs = 0;
+    bool chargeDebounceInit = false;
+    bool chargingStableState = false;
+    bool chargingCandidateState = false;
+    uint8_t chargingCandidateCount = 0;
+    unsigned long chargingLastSwitchMs = 0;
 
     // Wheel-distance/speed estimation
     bool haveTheta = false;
@@ -72,6 +81,9 @@ private:
     int histIdx = 0;
     unsigned long winStartMs = 0;
     float winSignedSum = 0.0f;
+
+    float mapBatteryPercentLiIon(float mv) const;
+    bool updateChargingState(bool rawState, unsigned long nowMs);
 };
 
 extern SensorManager SensorMgr;

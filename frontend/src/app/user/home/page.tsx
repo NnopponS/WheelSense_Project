@@ -8,7 +8,7 @@ import {
   getPatients, getWheelchairs, getMapData,
   getRoomAppliances, controlAppliance, getRoutines, sendEmergencyAlert
 } from '@/lib/api';
-import type { Room, Appliance } from '@/lib/api';
+import type { Room, Appliance, CameraNode } from '@/lib/api';
 
 const APPLIANCE_ICONS: Record<string, { emoji: string; label: string }> = {
   light: { emoji: '💡', label: 'Light' },
@@ -36,6 +36,7 @@ export default function UserHomePage() {
   const [loading, setLoading] = useState(true);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
   const [appliances, setAppliances] = useState<Appliance[]>([]);
+  const [cameras, setCameras] = useState<CameraNode[]>([]);
   const [routines, setRoutinesState] = useState<RoutineItem[]>([]);
   const [completedRoutines, setCompletedRoutines] = useState<Set<string>>(new Set());
 
@@ -56,6 +57,7 @@ export default function UserHomePage() {
       if (pRes.data) setPatients(pRes.data.patients as any || []);
       if (wRes.data) setWheelchairs(wRes.data.wheelchairs as any || []);
       if (mRes.data) setRooms(mRes.data.rooms as any || []);
+      if (mRes.data?.cameras) setCameras(mRes.data.cameras || []);
 
       // Get current room from wheelchair
       const wc = wRes.data?.wheelchairs?.[0];
@@ -182,6 +184,39 @@ export default function UserHomePage() {
               </div>
             );
           })}
+
+          {cameras
+            .filter((camera) => camera.room_id)
+            .map((camera) => {
+              const room = rooms.find((r) => r.id === camera.room_id);
+              if (!room) return null;
+              const left = room.x + (room.width * 0.78);
+              const top = room.y + (room.height * 0.18);
+              const isOnline = camera.status === 'online';
+              return (
+                <div
+                  key={camera.device_id}
+                  title={`${camera.device_id} (${room.name})`}
+                  style={{
+                    position: 'absolute',
+                    left: `${left}%`,
+                    top: `${top}%`,
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    background: isOnline ? 'var(--info-500)' : 'var(--text-muted)',
+                    color: 'white',
+                    fontSize: '0.55rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: isOnline ? '0 0 10px rgba(59,130,246,0.5)' : 'none',
+                  }}
+                >
+                  C
+                </div>
+              );
+            })}
         </div>
       </div>
 

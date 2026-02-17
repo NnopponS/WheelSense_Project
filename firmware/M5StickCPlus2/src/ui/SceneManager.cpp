@@ -11,6 +11,28 @@ SceneManager SceneMgr;
 const char* KEYBOARD_CHARS_LOWER = "1234567890-_=qwertyuiop[]asdfghjkl;'\\zxcvbnm,./";
 const char* KEYBOARD_CHARS_UPPER = "1234567890-_=QWERTYUIOP[]ASDFGHJKL;\"|ZXCVBNM<>?";
 const int KEYBOARD_LEN = strlen(KEYBOARD_CHARS_LOWER);
+static constexpr unsigned long BOOT_REDRAW_INTERVAL_MS = 120;
+static constexpr unsigned long BOOT_FULL_HOLD_MS = 650;
+static constexpr int BOOT_PROGRESS_STEP_PCT = 4;
+
+static uint32_t hashMix(uint32_t h, int32_t v) {
+    h ^= static_cast<uint32_t>(v);
+    h *= 16777619u;
+    return h;
+}
+
+static uint32_t hashMixString(uint32_t h, const String& value) {
+    for (size_t i = 0; i < value.length(); i++) {
+        h = hashMix(h, static_cast<int32_t>(value[i]));
+    }
+    return h;
+}
+
+static String formatNodeLabel(const BLENode& node) {
+    if (node.id > 0) return "N" + String(node.id);
+    if (node.nodeKey.length() > 0) return node.nodeKey;
+    return "-";
+}
 
 SceneManager::SceneManager() {}
 
@@ -42,6 +64,13 @@ void SceneManager::switchScene(SceneID scene) {
     needsRedraw = true;
     if (scene == SCENE_BOOT) {
         bootStartMs = millis();
+        bootReachedFull = false;
+        bootRenderedFull = false;
+        bootFullShownMs = 0;
+        bootLastDrawnPct = -1;
+    }
+    if (scene == SCENE_DASHBOARD) {
+        dashboardHashValid = false;
     }
     if (scene == SCENE_SERVER_CONFIG) {
         serverConfigSyncing = false;
@@ -122,7 +151,9 @@ void SceneManager::update() {
                 g.drawString("IP: " + NetworkMgr.getIP(), 8, y); y += rowH;
                 g.drawString("WiFi Retry: " + String(NetworkMgr.getWiFiReconnectAttempts()), 8, y); y += rowH;
                 g.drawString("MQTT Retry: " + String(NetworkMgr.getMQTTReconnectAttempts()), 8, y); y += rowH;
-                g.drawString("Battery: " + String(data.batPercentage) + "%", 8, y); y += rowH;
+                g.drawString("Battery: " + String(data.batPercentage) + "% " +
+                             String(data.batVoltage, 2) + "V " +
+                             String(data.isCharging ? "CHG" : "BAT"), 8, y); y += rowH;
                 g.drawString("FW: " + String(FIRMWARE_VERSION), 8, y);
 
                 needsRedraw = false;
@@ -147,6 +178,7 @@ void SceneManager::update() {
             break;
         case SCENE_SERVER_CONFIG: updateServerConfig(); break;
         case SCENE_CALIBRATE: updateCalibrate(); break;
+        case SCENE_CAMERA_CONFIG: updateCameraConfig(); break;
     }
     DisplayMgr.present();
 }
@@ -156,16 +188,36 @@ void SceneManager::updateBoot() {
     const int w = DisplayMgr.getGfx().width();
     const int h = DisplayMgr.getGfx().height();
     const int cx = w / 2;
+    const unsigned long elapsed = now - bootStartMs;
+    const bool shouldBeFull = elapsed >= BOOT_DURATION_MS;
+    const float rawProgress = shouldBeFull
+        ? 1.0f
+        : (float)elapsed / (float)BOOT_DURATION_MS;
 
-    if (!needsRedraw && (now - lastDrawMs) < 33) {
-        if (now - bootStartMs >= BOOT_DURATION_MS) {
+    int pct = static_cast<int>(rawProgress * 100.0f + 0.5f);
+    if (pct > 100) pct = 100;
+    if (pct < 100) {
+        pct = (pct / BOOT_PROGRESS_STEP_PCT) * BOOT_PROGRESS_STEP_PCT;
+    }
+    const float progress = static_cast<float>(pct) / 100.0f;
+
+    if (pct >= 100 && !bootReachedFull) {
+        bootReachedFull = true;
+        bootFullShownMs = now;
+    }
+
+    const unsigned long redrawInterval = DisplayMgr.isSpriteEnabled()
+        ? BOOT_REDRAW_INTERVAL_MS
+        : (BOOT_REDRAW_INTERVAL_MS + 100);
+    const bool progressChanged = (pct != bootLastDrawnPct);
+
+    if (!needsRedraw && !progressChanged && (now - lastDrawMs) < redrawInterval) {
+        if (bootReachedFull && bootRenderedFull && bootFullShownMs > 0 && (now - bootFullShownMs) >= BOOT_FULL_HOLD_MS) {
             switchScene(SCENE_DASHBOARD);
         }
         return;
     }
 
-    float progress = (float)(now - bootStartMs) / (float)BOOT_DURATION_MS;
-    if (progress > 1.0f) progress = 1.0f;
     float spinTurns = 8.0f;
     float angle = progress * spinTurns * 2.0f * PI;
 
@@ -218,27 +270,87 @@ void SceneManager::updateBoot() {
     int fillW = (int)(barW * progress);
     DisplayMgr.getGfx().drawRoundRect(20, h - 22, barW, 10, 5, 0x7BEF);
     DisplayMgr.getGfx().fillRoundRect(21, h - 21, fillW > 2 ? fillW - 2 : 0, 8, 4, COLOR_PRIMARY);
+    DisplayMgr.getGfx().setTextDatum(MC_DATUM);
+    DisplayMgr.getGfx().setTextColor(0xC618);
+    DisplayMgr.getGfx().drawString(String(pct) + "%", cx, h - 8);
 
     needsRedraw = false;
     lastDrawMs = now;
+    bootLastDrawnPct = pct;
+    if (pct >= 100) {
+        bootRenderedFull = true;
+    }
 
-    if (now - bootStartMs >= BOOT_DURATION_MS) {
+    if (bootReachedFull && bootRenderedFull && bootFullShownMs > 0 && (now - bootFullShownMs) >= BOOT_FULL_HOLD_MS) {
         switchScene(SCENE_DASHBOARD);
     }
+}
+
+uint32_t SceneManager::buildDashboardHash() {
+    SensorData& data = SensorMgr.getData();
+    BLENode nodes[MAX_BLE_NODES];
+    int nodeCount = BLEMgr.copyNodes(nodes, MAX_BLE_NODES);
+
+    int strongestRssi = -127;
+    String strongestNodeLabel = "-";
+    for (int i = 0; i < nodeCount; i++) {
+        if (nodes[i].rssi > strongestRssi) {
+            strongestRssi = nodes[i].rssi;
+            strongestNodeLabel = formatNodeLabel(nodes[i]);
+        }
+    }
+
+    uint32_t h = 2166136261u;
+    h = hashMix(h, dashboardPage);
+    h = hashMix(h, NetworkMgr.isWiFiConnected() ? 1 : 0);
+    h = hashMix(h, NetworkMgr.isMQTTConnected() ? 1 : 0);
+    h = hashMix(h, static_cast<int32_t>(lroundf(data.speedMps * 20.0f)));      // 0.05 m/s
+    h = hashMix(h, static_cast<int32_t>(lroundf(data.distanceM * 10.0f)));      // 0.1 m
+    h = hashMix(h, data.batPercentage);
+    h = hashMix(h, static_cast<int32_t>(lroundf(data.batVoltage * 50.0f)));     // 0.02 V
+    h = hashMix(h, data.isCharging ? 1 : 0);
+    h = hashMix(h, data.wheelchairStatusBits);
+    h = hashMix(h, data.motionDirection);
+    h = hashMix(h, nodeCount);
+    h = hashMixString(h, strongestNodeLabel);
+    h = hashMix(h, strongestRssi / 2);                                           // 2 dBm step
+
+    if (dashboardPage == 1) {
+        h = hashMix(h, static_cast<int32_t>(lroundf(data.accelX * 25.0f)));     // 0.04 g
+        h = hashMix(h, static_cast<int32_t>(lroundf(data.accelY * 25.0f)));
+        h = hashMix(h, static_cast<int32_t>(lroundf(data.accelZ * 25.0f)));
+        h = hashMix(h, static_cast<int32_t>(lroundf(data.gyroX * 5.0f)));       // 0.2 dps
+        h = hashMix(h, static_cast<int32_t>(lroundf(data.gyroY * 5.0f)));
+        h = hashMix(h, static_cast<int32_t>(lroundf(data.gyroZ * 5.0f)));
+    }
+
+    return h;
 }
 
 void SceneManager::updateDashboard() {
     const unsigned long now = millis();
     const bool dataRefresh = (now - lastDrawMs >= DISPLAY_UPDATE_INTERVAL);
-    
+
+    uint32_t nextHash = 0;
+    bool shouldDraw = needsRedraw;
     if (needsRedraw || dataRefresh) {
+        nextHash = buildDashboardHash();
+        if (!shouldDraw) {
+            shouldDraw = (!dashboardHashValid || (nextHash != dashboardLastHash));
+        }
+    }
+
+    if (shouldDraw) {
         drawDashboard();
+        dashboardLastHash = nextHash;
+        dashboardHashValid = true;
         needsRedraw = false;
         lastDrawMs = now;
     }
     
     if (InputMgr.wasPressed(BTN_B)) {
         dashboardPage = (dashboardPage + 1) % 3;
+        dashboardHashValid = false;
         needsRedraw = true;
     }
     if (InputMgr.wasPressed(BTN_A) || InputMgr.wasPressed(BTN_C)) {
@@ -258,12 +370,12 @@ void SceneManager::drawDashboard() {
 
     int strongestIdx = -1;
     int strongestRssi = -127;
-    int strongestNodeId = 0;
+    String strongestNodeLabel = "-";
     for (int i = 0; i < nodeCount; i++) {
         if (nodes[i].rssi > strongestRssi) {
             strongestRssi = nodes[i].rssi;
             strongestIdx = i;
-            strongestNodeId = nodes[i].id;
+            strongestNodeLabel = formatNodeLabel(nodes[i]);
         }
     }
     int nearbyCount = nodeCount > 0 ? (nodeCount - 1) : 0;
@@ -314,7 +426,7 @@ void SceneManager::drawDashboard() {
         g.drawString("Node & Room", w - 110, 52);
         if (strongestIdx >= 0) {
             g.setTextColor(COLOR_PRIMARY);
-            g.drawString("N" + String(strongestNodeId) + "  " + String(strongestRssi) + "dBm", w - 110, 68);
+            g.drawString(strongestNodeLabel + "  " + String(strongestRssi) + "dBm", w - 110, 68);
         } else {
             g.setTextColor(COLOR_WARNING);
             g.drawString("No Node", w - 110, 68);
@@ -328,7 +440,9 @@ void SceneManager::drawDashboard() {
         g.fillRoundRect(8, 114, w - 16, 14, 4, 0x18E3);
         g.setTextColor((data.wheelchairStatusBits == 0) ? COLOR_PRIMARY : COLOR_ERROR);
         g.drawString(
-            statusShort + "  Bat " + String(data.batPercentage) + "%  M:" + motionShort,
+            statusShort + "  " + String(data.batPercentage) + "% " +
+            String(data.batVoltage, 2) + "V " +
+            String(data.isCharging ? "CHG" : "BAT") + " M:" + motionShort,
             12, 118
         );
     } else if (dashboardPage == 1) {
@@ -378,8 +492,8 @@ void SceneManager::drawDashboard() {
 }
 
 void SceneManager::updateMainMenu() {
-    const char* items[] = {"Config from Server", "Calibrate", "WiFi Settings", "MQTT Config", "Device Info", "Exit"};
-    int count = 6;
+    const char* items[] = {"Config from Server", "Calibrate", "Camera Config", "WiFi Settings", "MQTT Config", "Device Info", "Exit"};
+    int count = 7;
     
     if (InputMgr.wasPressed(BTN_B)) {
         menuIndex = (menuIndex + 1) % count;
@@ -395,17 +509,34 @@ void SceneManager::updateMainMenu() {
             switchScene(SCENE_CALIBRATE);
             return;
         } else if (menuIndex == 2) {
+            cameraNodeCount = 0;
+            cameraNodeIndex = 0;
+            cameraListLoaded = false;
+            cameraListLoading = false;
+            cameraListOk = false;
+            cameraEditorActive = false;
+            cameraEditMenuIndex = 0;
+            cameraStatusText = "";
+            cameraStatusSuccess = false;
+            cameraResultMode = false;
+            cameraLastAction = -1;
+            cameraTargetDeviceId = "";
+            cameraDraft = CameraConfigPayload();
+            cameraDraftMqttPort = "";
+            switchScene(SCENE_CAMERA_CONFIG);
+            return;
+        } else if (menuIndex == 3) {
             isScanning = false;
             scanFailed = false;
             switchScene(SCENE_WIFI_SCAN);
             return;
-        } else if (menuIndex == 3) {
+        } else if (menuIndex == 4) {
             switchScene(SCENE_MQTT_CONFIG);
             return;
-        } else if (menuIndex == 4) {
+        } else if (menuIndex == 5) {
             switchScene(SCENE_DEVICE_INFO);
             return;
-        } else if (menuIndex == 5) {
+        } else if (menuIndex == 6) {
             switchScene(SCENE_DASHBOARD);
             return;
         }
@@ -552,7 +683,7 @@ void SceneManager::updateServerConfig() {
             DisplayMgr.getGfx().setTextDatum(TL_DATUM);
             DisplayMgr.getGfx().setTextColor(COLOR_TEXT);
             DisplayMgr.getGfx().drawString("Sync configuration", 5, 40);
-            DisplayMgr.getGfx().drawString("from backend server", 5, 58);
+            DisplayMgr.getGfx().drawString("via MQTT request/reply", 5, 58);
             DisplayMgr.drawFooter("A:Sync Now", "", "C:Back");
             needsRedraw = false;
         }
@@ -588,8 +719,15 @@ void SceneManager::updateServerConfig() {
             DisplayMgr.getGfx().setTextColor(COLOR_ERROR);
             DisplayMgr.getGfx().drawString("Sync failed", 5, 40);
             DisplayMgr.getGfx().setTextColor(COLOR_TEXT);
-            DisplayMgr.getGfx().drawString("Check WiFi/Backend URL", 5, 60);
-            DisplayMgr.getGfx().drawString("Using cached (if any)", 5, 80);
+            String err = NetworkMgr.getLastConfigSyncError();
+            if (err.length() == 0) {
+                DisplayMgr.getGfx().drawString("Check WiFi/MQTT", 5, 60);
+                DisplayMgr.getGfx().drawString("Using cached (if any)", 5, 80);
+            } else {
+                if (err.length() > 30) err = err.substring(0, 30) + "..";
+                DisplayMgr.getGfx().drawString(err, 5, 60);
+                DisplayMgr.getGfx().drawString("Using cached (if any)", 5, 80);
+            }
         }
         DisplayMgr.drawFooter("A:Retry", "", "C:Back");
         needsRedraw = false;
@@ -792,6 +930,422 @@ void SceneManager::updateCalibrate() {
     }
 }
 
+bool SceneManager::loadCameraNodes() {
+    cameraListLoading = true;
+    String err;
+    int count = 0;
+    bool ok = NetworkMgr.fetchCameras(cameraNodes, MAX_CAMERA_NODES, count, &err);
+    cameraListLoading = false;
+    cameraListLoaded = true;
+    cameraListOk = ok;
+    cameraNodeCount = count;
+    if (cameraNodeIndex >= cameraNodeCount) cameraNodeIndex = 0;
+
+    if (!ok) {
+        cameraStatusSuccess = false;
+        cameraStatusText = "Load failed: " + err;
+        return false;
+    }
+
+    cameraStatusSuccess = true;
+    cameraStatusText = "Loaded " + String(cameraNodeCount) + " camera(s)";
+    return true;
+}
+
+void SceneManager::activateCameraEditor(int index) {
+    if (index < 0 || index >= cameraNodeCount) return;
+
+    AppConfig& cfg = ConfigMgr.getConfig();
+    CameraNodeInfo& c = cameraNodes[index];
+    cameraTargetDeviceId = c.deviceId;
+    cameraDraft = CameraConfigPayload();
+    cameraDraft.deviceId = c.deviceId;
+    cameraDraft.nodeId = c.nodeId;
+    cameraDraft.roomId = c.roomId;
+    cameraDraft.roomName = c.roomName;
+    cameraDraft.wifiSSID = cfg.wifiSSID;
+    cameraDraft.wifiPass = "";
+    cameraDraft.mqttBroker = cfg.mqttBroker;
+    cameraDraft.mqttPort = cfg.mqttPort > 0 ? cfg.mqttPort : DEFAULT_MQTT_PORT;
+    cameraDraft.mqttUser = cfg.mqttUser;
+    cameraDraft.mqttPass = cfg.mqttPass;
+    cameraDraft.backendUrl = cfg.backendUrl;
+    cameraDraft.wsPath = "/api/ws/camera";
+    cameraDraft.serverIP = "";
+    cameraDraftMqttPort = String(cameraDraft.mqttPort);
+
+    cameraEditorActive = true;
+    cameraEditMenuIndex = 0;
+    cameraResultMode = false;
+    cameraLastAction = -1;
+    cameraStatusText = "Editing " + cameraTargetDeviceId;
+    cameraStatusSuccess = true;
+}
+
+bool SceneManager::runCameraAction(int actionId, String& outMessage) {
+    if (cameraTargetDeviceId.length() == 0) {
+        outMessage = "No camera selected";
+        return false;
+    }
+
+    if (cameraDraft.deviceId.length() == 0) {
+        outMessage = "Camera name/device id is empty";
+        return false;
+    }
+
+    if (cameraDraft.mqttPort <= 0 || cameraDraft.mqttPort > 65535) {
+        outMessage = "Invalid MQTT port";
+        return false;
+    }
+
+    String err;
+    bool ok = false;
+    if (actionId == 0) {
+        ok = NetworkMgr.pushCameraConfig(cameraTargetDeviceId, cameraDraft, &err);
+        outMessage = ok ? ("Config pushed (" + err + ")") : ("Push failed: " + err);
+        return ok;
+    }
+
+    if (actionId == 1) {
+        ok = NetworkMgr.pushCameraConfig(cameraTargetDeviceId, cameraDraft, &err);
+        if (!ok) {
+            outMessage = "Push failed: " + err;
+            return false;
+        }
+        String syncTransport;
+        ok = NetworkMgr.setCameraMode(cameraTargetDeviceId, "sync_config", &err);
+        syncTransport = err;
+        outMessage = ok ? ("Config pushed + sync sent (" + syncTransport + ")") : ("Sync command failed: " + err);
+        return ok;
+    }
+
+    if (actionId == 2) {
+        ok = NetworkMgr.setCameraMode(cameraTargetDeviceId, "config", &err);
+        outMessage = ok ? ("Enter Config command sent (" + err + ")") : ("Enter config failed: " + err);
+        return ok;
+    }
+
+    if (actionId == 3) {
+        ok = NetworkMgr.setCameraMode(cameraTargetDeviceId, "sync_config", &err);
+        outMessage = ok ? ("Sync command sent (" + err + ")") : ("Sync failed: " + err);
+        return ok;
+    }
+
+    outMessage = "Unknown action";
+    return false;
+}
+
+void SceneManager::drawCameraList() {
+    DisplayMgr.clear();
+    DisplayMgr.drawHeader("Camera Config");
+    auto& g = DisplayMgr.getGfx();
+    g.setTextDatum(TL_DATUM);
+
+    if (cameraListLoading) {
+        g.setTextColor(COLOR_TEXT);
+        g.drawString("Loading camera list...", 8, 42);
+        g.drawString("Please wait", 8, 60);
+        return;
+    }
+
+    if (!cameraListOk) {
+        g.setTextColor(COLOR_ERROR);
+        g.drawString("Load failed", 8, 42);
+        g.setTextColor(COLOR_TEXT);
+        String msg = cameraStatusText;
+        if (msg.length() > 28) msg = msg.substring(0, 28) + "..";
+        g.drawString(msg, 8, 60);
+        g.drawString("A:Retry  C:Back", 8, 98);
+        return;
+    }
+
+    if (cameraNodeCount <= 0) {
+        g.setTextColor(COLOR_WARNING);
+        g.drawString("No cameras found", 8, 44);
+        g.setTextColor(COLOR_TEXT);
+        g.drawString("A:Reload  C:Back", 8, 98);
+        return;
+    }
+
+    const int itemH = 16;
+    const int topY = 30;
+    const int maxVisible = max(1, (g.height() - topY - 10) / itemH);
+    int startIdx = 0;
+    if (cameraNodeIndex >= maxVisible) startIdx = cameraNodeIndex - maxVisible + 1;
+    if (startIdx > cameraNodeCount - maxVisible) startIdx = cameraNodeCount - maxVisible;
+    if (startIdx < 0) startIdx = 0;
+    int visible = cameraNodeCount - startIdx;
+    if (visible > maxVisible) visible = maxVisible;
+
+    for (int i = 0; i < visible; i++) {
+        int idx = startIdx + i;
+        int y = topY + (i * itemH);
+        bool selected = (idx == cameraNodeIndex);
+        uint16_t fill = selected ? COLOR_PRIMARY : 0x18E3;
+        uint16_t text = selected ? COLOR_BG : COLOR_TEXT;
+        g.fillRoundRect(6, y, g.width() - 12, itemH - 2, 4, fill);
+        g.setTextColor(text);
+        g.setTextDatum(ML_DATUM);
+
+        String device = cameraNodes[idx].deviceId;
+        if (device.length() > 12) device = device.substring(0, 12) + "..";
+        String status = cameraNodes[idx].configMode ? "CFG" : cameraNodes[idx].status;
+        if (cameraNodes[idx].wsConnected) status += " WS";
+        String row = device + " [" + status + "]";
+        if (row.length() > 24) row = row.substring(0, 24);
+        g.drawString(row, 10, y + (itemH / 2) - 1);
+    }
+}
+
+void SceneManager::drawCameraEditor() {
+    String v;
+    v = cameraDraft.deviceId.length() ? cameraDraft.deviceId : "-";
+    if (v.length() > 13) v = v.substring(0, 13) + "..";
+    snprintf(cameraItemDevice, sizeof(cameraItemDevice), "Name: %s", v.c_str());
+
+    v = cameraDraft.nodeId.length() ? cameraDraft.nodeId : "-";
+    if (v.length() > 13) v = v.substring(0, 13) + "..";
+    snprintf(cameraItemNode, sizeof(cameraItemNode), "Node: %s", v.c_str());
+
+    v = cameraDraft.roomId.length() ? cameraDraft.roomId : "-";
+    if (v.length() > 13) v = v.substring(0, 13) + "..";
+    snprintf(cameraItemRoomId, sizeof(cameraItemRoomId), "Room ID: %s", v.c_str());
+
+    v = cameraDraft.roomName.length() ? cameraDraft.roomName : "-";
+    if (v.length() > 11) v = v.substring(0, 11) + "..";
+    snprintf(cameraItemRoomName, sizeof(cameraItemRoomName), "Room Name: %s", v.c_str());
+
+    v = cameraDraft.wifiSSID.length() ? cameraDraft.wifiSSID : "-";
+    if (v.length() > 12) v = v.substring(0, 12) + "..";
+    snprintf(cameraItemWiFiSsid, sizeof(cameraItemWiFiSsid), "WiFi SSID: %s", v.c_str());
+    snprintf(cameraItemWiFiPass, sizeof(cameraItemWiFiPass), "WiFi Pass: %s", cameraDraft.wifiPass.length() ? "*" : "-");
+
+    v = cameraDraft.mqttBroker.length() ? cameraDraft.mqttBroker : "-";
+    if (v.length() > 12) v = v.substring(0, 12) + "..";
+    snprintf(cameraItemMqttHost, sizeof(cameraItemMqttHost), "MQTT Host: %s", v.c_str());
+    snprintf(cameraItemMqttPort, sizeof(cameraItemMqttPort), "MQTT Port: %d", cameraDraft.mqttPort);
+    snprintf(cameraItemMqttUser, sizeof(cameraItemMqttUser), "MQTT User: %s", cameraDraft.mqttUser.length() ? "*" : "-");
+    snprintf(cameraItemMqttPass, sizeof(cameraItemMqttPass), "MQTT Pass: %s", cameraDraft.mqttPass.length() ? "*" : "-");
+
+    v = cameraDraft.backendUrl.length() ? cameraDraft.backendUrl : "-";
+    if (v.length() > 10) v = v.substring(0, 10) + "..";
+    snprintf(cameraItemBackend, sizeof(cameraItemBackend), "Backend: %s", v.c_str());
+
+    String serverItem = "Server IP: ";
+    serverItem += cameraDraft.serverIP.length() ? cameraDraft.serverIP : "-";
+    if (serverItem.length() > 24) serverItem = serverItem.substring(0, 24);
+
+    const char* menuItems[] = {
+        cameraItemDevice,
+        cameraItemNode,
+        cameraItemRoomId,
+        cameraItemRoomName,
+        cameraItemWiFiSsid,
+        cameraItemWiFiPass,
+        cameraItemMqttHost,
+        cameraItemMqttPort,
+        cameraItemMqttUser,
+        cameraItemMqttPass,
+        cameraItemBackend,
+        serverItem.c_str(),
+        "Push Config",
+        "Push + Sync",
+        "Enter Config Mode",
+        "Sync Config",
+        "Back to List"
+    };
+
+    DisplayMgr.drawMenu("Camera Editor", menuItems, 17, cameraEditMenuIndex, false);
+}
+
+void SceneManager::drawCameraResult() {
+    DisplayMgr.clear();
+    DisplayMgr.drawHeader("Camera Result");
+    auto& g = DisplayMgr.getGfx();
+    g.setTextDatum(TL_DATUM);
+    g.setTextColor(COLOR_TEXT);
+
+    const char* actionName = "Unknown";
+    if (cameraLastAction == 0) actionName = "Push Config";
+    else if (cameraLastAction == 1) actionName = "Push + Sync";
+    else if (cameraLastAction == 2) actionName = "Enter Config";
+    else if (cameraLastAction == 3) actionName = "Sync Config";
+
+    g.drawString("Target: " + cameraTargetDeviceId, 8, 34);
+    g.drawString("Action: " + String(actionName), 8, 50);
+
+    g.setTextColor(cameraStatusSuccess ? COLOR_PRIMARY : COLOR_ERROR);
+    String msg = cameraStatusText;
+    int y = 72;
+    int start = 0;
+    while (start <= msg.length() && y <= 104) {
+        int maxLen = 30;
+        String line = msg.substring(start, min((int)msg.length(), start + maxLen));
+        g.drawString(line, 8, y);
+        y += 14;
+        start += maxLen;
+    }
+
+    g.setTextColor(COLOR_TEXT);
+    g.drawString("A:Retry  B:Edit  C:List", 8, 118);
+}
+
+void SceneManager::updateCameraConfig() {
+    if (!cameraListLoaded && !cameraListLoading) {
+        cameraListLoading = true;
+        needsRedraw = true;
+        drawCameraList();
+        DisplayMgr.present(true);
+        loadCameraNodes();
+        needsRedraw = true;
+        return;
+    }
+
+    if (cameraResultMode) {
+        if (InputMgr.wasPressed(BTN_A) && cameraLastAction >= 0) {
+            String msg;
+            bool ok = runCameraAction(cameraLastAction, msg);
+            cameraStatusText = msg;
+            cameraStatusSuccess = ok;
+            if (ok) cameraListLoaded = false;
+            if (ok) BuzzerMgr.beepSuccess();
+            else BuzzerMgr.beepError();
+            needsRedraw = true;
+        }
+        if (InputMgr.wasPressed(BTN_B)) {
+            cameraResultMode = false;
+            needsRedraw = true;
+        }
+        if (InputMgr.wasPressed(BTN_C)) {
+            cameraResultMode = false;
+            cameraEditorActive = false;
+            needsRedraw = true;
+        }
+        if (needsRedraw) {
+            drawCameraResult();
+            needsRedraw = false;
+            lastDrawMs = millis();
+        }
+        return;
+    }
+
+    if (!cameraEditorActive) {
+        if (InputMgr.wasPressed(BTN_A)) {
+            if (!cameraListOk || cameraNodeCount <= 0) {
+                loadCameraNodes();
+            } else {
+                activateCameraEditor(cameraNodeIndex);
+                BuzzerMgr.beepButton();
+            }
+            needsRedraw = true;
+        }
+        if (InputMgr.wasPressed(BTN_B)) {
+            if (cameraListOk && cameraNodeCount > 0) {
+                cameraNodeIndex = (cameraNodeIndex + 1) % cameraNodeCount;
+                BuzzerMgr.beepButton();
+                needsRedraw = true;
+            }
+        }
+        if (InputMgr.wasLongPressed(BTN_B)) {
+            loadCameraNodes();
+            BuzzerMgr.beepButton();
+            needsRedraw = true;
+        }
+        if (InputMgr.wasPressed(BTN_C)) {
+            switchScene(SCENE_MAIN_MENU);
+            return;
+        }
+
+        if (needsRedraw) {
+            drawCameraList();
+            needsRedraw = false;
+            lastDrawMs = millis();
+        }
+        return;
+    }
+
+    const int cameraMenuCount = 17;
+    if (InputMgr.wasPressed(BTN_B)) {
+        cameraEditMenuIndex = (cameraEditMenuIndex + 1) % cameraMenuCount;
+        BuzzerMgr.beepButton();
+        needsRedraw = true;
+    }
+    if (InputMgr.wasPressed(BTN_C)) {
+        cameraEditorActive = false;
+        needsRedraw = true;
+        return;
+    }
+    if (InputMgr.wasPressed(BTN_A)) {
+        BuzzerMgr.beepButton();
+        switch (cameraEditMenuIndex) {
+            case 0:
+                startKeyboardInput("Camera Name", &cameraDraft.deviceId, 24, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 1:
+                startKeyboardInput("Node ID", &cameraDraft.nodeId, 24, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 2:
+                startKeyboardInput("Room ID", &cameraDraft.roomId, 24, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 3:
+                startKeyboardInput("Room Name", &cameraDraft.roomName, 24, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 4:
+                startKeyboardInput("WiFi SSID", &cameraDraft.wifiSSID, 32, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 5:
+                startKeyboardInput("WiFi Password", &cameraDraft.wifiPass, 32, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 6:
+                startKeyboardInput("MQTT Host", &cameraDraft.mqttBroker, 63, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 7:
+                cameraDraftMqttPort = String(cameraDraft.mqttPort);
+                startKeyboardInput("MQTT Port", &cameraDraftMqttPort, 6, SCENE_CAMERA_CONFIG, KBD_CTX_CAMERA_MQTT_PORT);
+                return;
+            case 8:
+                startKeyboardInput("MQTT User", &cameraDraft.mqttUser, 32, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 9:
+                startKeyboardInput("MQTT Pass", &cameraDraft.mqttPass, 32, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 10:
+                startKeyboardInput("Backend URL", &cameraDraft.backendUrl, 63, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 11:
+                startKeyboardInput("Server IP", &cameraDraft.serverIP, 32, SCENE_CAMERA_CONFIG, KBD_CTX_NONE);
+                return;
+            case 12:
+            case 13:
+            case 14:
+            case 15: {
+                int actionId = cameraEditMenuIndex - 12;
+                String msg;
+                bool ok = runCameraAction(actionId, msg);
+                cameraStatusText = msg;
+                cameraStatusSuccess = ok;
+                if (ok) cameraListLoaded = false;
+                cameraResultMode = true;
+                cameraLastAction = actionId;
+                if (ok) BuzzerMgr.beepSuccess();
+                else BuzzerMgr.beepError();
+                needsRedraw = true;
+                return;
+            }
+            case 16:
+                cameraEditorActive = false;
+                needsRedraw = true;
+                return;
+        }
+    }
+
+    if (needsRedraw) {
+        drawCameraEditor();
+        needsRedraw = false;
+        lastDrawMs = millis();
+    }
+}
+
 void SceneManager::updateMQTTConfig() {
     AppConfig& cfg = ConfigMgr.getConfig();
     
@@ -916,6 +1470,15 @@ void SceneManager::updateKeyboard() {
                     } else {
                         ConfigMgr.getConfig().mqttPort = parsed;
                     }
+                } else if (keyboardReturnContext == KBD_CTX_CAMERA_MQTT_PORT) {
+                    int parsed = value.toInt();
+                    if (parsed < 1 || parsed > 65535) {
+                        valid = false;
+                        BuzzerMgr.beepError();
+                    } else {
+                        cameraDraft.mqttPort = parsed;
+                        cameraDraftMqttPort = String(parsed);
+                    }
                 } else if (keyboardReturnContext == KBD_CTX_WHEEL_RADIUS) {
                     float parsed = value.toFloat();
                     if (parsed < 0.05f || parsed > 1.0f) {
@@ -929,7 +1492,18 @@ void SceneManager::updateKeyboard() {
                 }
 
                 if (valid) {
-                    ConfigMgr.saveConfig();
+                    bool persistConfig =
+                        (keyboardReturnContext == KBD_CTX_WIFI_PASS) ||
+                        (keyboardReturnContext == KBD_CTX_MQTT_BROKER) ||
+                        (keyboardReturnContext == KBD_CTX_MQTT_PORT) ||
+                        (keyboardReturnContext == KBD_CTX_MQTT_USER) ||
+                        (keyboardReturnContext == KBD_CTX_MQTT_PASS) ||
+                        (keyboardReturnContext == KBD_CTX_BACKEND_URL) ||
+                        (keyboardReturnContext == KBD_CTX_DEVICE_NAME) ||
+                        (keyboardReturnContext == KBD_CTX_WHEEL_RADIUS);
+                    if (persistConfig) {
+                        ConfigMgr.saveConfig();
+                    }
                     if (keyboardReturnContext == KBD_CTX_DEVICE_NAME) {
                         DisplayMgr.drawMessage("Reboot", "Applying new device name...");
                         DisplayMgr.present(true);

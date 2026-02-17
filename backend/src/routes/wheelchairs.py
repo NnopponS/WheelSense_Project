@@ -31,10 +31,20 @@ class WheelchairUpdate(BaseModel):
 async def get_wheelchairs():
     """Get all wheelchairs"""
     wheelchairs = await db.fetch_all("""
-        SELECT w.*, p.name as patient_name, r.name as room_name
+        SELECT
+            w.*,
+            p.name as patient_name,
+            r.name as room_name,
+            ds.same_wifi,
+            ds.features_limited,
+            ds.warning_message,
+            ds.device_ip as sync_device_ip,
+            ds.server_ip as sync_server_ip,
+            ds.last_seen as sync_last_seen
         FROM wheelchairs w
         LEFT JOIN patients p ON w.patient_id = p.id
         LEFT JOIN rooms r ON w.current_room_id = r.id
+        LEFT JOIN device_sync_status ds ON ds.device_id = w.mac_address
         ORDER BY w.name
     """)
     return {"wheelchairs": wheelchairs}
@@ -44,10 +54,20 @@ async def get_wheelchairs():
 async def get_wheelchair(wheelchair_id: str):
     """Get a specific wheelchair"""
     wheelchair = await db.fetch_one("""
-        SELECT w.*, p.name as patient_name, r.name as room_name
+        SELECT
+            w.*,
+            p.name as patient_name,
+            r.name as room_name,
+            ds.same_wifi,
+            ds.features_limited,
+            ds.warning_message,
+            ds.device_ip as sync_device_ip,
+            ds.server_ip as sync_server_ip,
+            ds.last_seen as sync_last_seen
         FROM wheelchairs w
         LEFT JOIN patients p ON w.patient_id = p.id
         LEFT JOIN rooms r ON w.current_room_id = r.id
+        LEFT JOIN device_sync_status ds ON ds.device_id = w.mac_address
         WHERE w.id = $1
     """, (wheelchair_id,))
     
@@ -106,11 +126,13 @@ async def get_wheelchair_position(wheelchair_id: str):
     wheelchair = await db.fetch_one("""
         SELECT w.id, w.name, w.current_room_id, w.current_node_id, w.status,
                w.distance_m, w.speed_ms, w.rssi,
+               ds.same_wifi, ds.features_limited, ds.warning_message,
                r.name as room_name, r.x, r.y, r.width, r.height,
                n.name as node_name
         FROM wheelchairs w
         LEFT JOIN rooms r ON w.current_room_id = r.id
         LEFT JOIN nodes n ON w.current_node_id = n.id
+        LEFT JOIN device_sync_status ds ON ds.device_id = w.mac_address
         WHERE w.id = $1
     """, (wheelchair_id,))
     

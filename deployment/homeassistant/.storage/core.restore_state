@@ -4,32 +4,32 @@
   "key": "core.restore_state",
   "data": [
     {
-      "state": {"entity_id":"person.worapon_sangsasri","state":"unknown","attributes":{"editable":true,"id":"worapon_sangsasri","device_trackers":[],"source":"person.worapon_sangsasri","user_id":"1e751ab44d7e44b8b7c99cd72828edd9","friendly_name":"Worapon Sangsasri"},"last_changed":"2026-02-13T08:25:45.486657+00:00","last_reported":"2026-02-13T08:25:45.486657+00:00","last_updated":"2026-02-13T08:25:45.486657+00:00","context":{"id":"01KHB1P98E47PKA5DTM33K5RW6","parent_id":null,"user_id":null}},
+      "state": {"entity_id":"input_boolean.bedroom_light","state":"off","attributes":{"editable":false,"friendly_name":"Bedroom Light"},"last_changed":"2026-02-17T09:03:11.072127+00:00","last_reported":"2026-02-17T09:03:11.072127+00:00","last_updated":"2026-02-17T09:03:11.072127+00:00","context":{"id":"01KHNDDP70ZVJA5H6HWY5J6PTC","parent_id":null,"user_id":null}},
       "extra_data": null,
-      "last_seen": "2026-02-13T08:25:47.940348+00:00"
+      "last_seen": "2026-02-17T09:48:13.499819+00:00"
     },
     {
-      "state": {"entity_id":"input_boolean.bedroom_light","state":"off","attributes":{"editable":false,"friendly_name":"Bedroom Light"},"last_changed":"2026-02-13T08:25:45.568802+00:00","last_reported":"2026-02-13T08:25:45.568802+00:00","last_updated":"2026-02-13T08:25:45.568802+00:00","context":{"id":"01KHB1P9B0VFCR8JNHJXSSKSN3","parent_id":null,"user_id":null}},
+      "state": {"entity_id":"input_boolean.living_room_light","state":"off","attributes":{"editable":false,"friendly_name":"Living Room Light"},"last_changed":"2026-02-17T09:03:11.072242+00:00","last_reported":"2026-02-17T09:03:11.072242+00:00","last_updated":"2026-02-17T09:03:11.072242+00:00","context":{"id":"01KHNDDP70ZYZPFBXTAFY4QDVK","parent_id":null,"user_id":null}},
       "extra_data": null,
-      "last_seen": "2026-02-13T08:25:47.940348+00:00"
+      "last_seen": "2026-02-17T09:48:13.499819+00:00"
     },
     {
-      "state": {"entity_id":"input_boolean.living_room_light","state":"off","attributes":{"editable":false,"friendly_name":"Living Room Light"},"last_changed":"2026-02-13T08:25:45.568908+00:00","last_reported":"2026-02-13T08:25:45.568908+00:00","last_updated":"2026-02-13T08:25:45.568908+00:00","context":{"id":"01KHB1P9B06BMX1C23VGYQA625","parent_id":null,"user_id":null}},
+      "state": {"entity_id":"person.worapon_sangsasri","state":"unknown","attributes":{"editable":true,"id":"worapon_sangsasri","device_trackers":[],"user_id":"1e751ab44d7e44b8b7c99cd72828edd9","friendly_name":"Worapon Sangsasri"},"last_changed":"2026-02-17T09:03:11.079190+00:00","last_reported":"2026-02-17T09:03:13.610622+00:00","last_updated":"2026-02-17T09:03:13.610622+00:00","context":{"id":"01KHNDDRPAJSX22679A3C5MNWE","parent_id":null,"user_id":null}},
       "extra_data": null,
-      "last_seen": "2026-02-13T08:25:47.940348+00:00"
+      "last_seen": "2026-02-17T09:48:13.499819+00:00"
     },
     {
-      "state": {"entity_id":"event.backup_automatic_backup","state":"unknown","attributes":{"event_types":["completed","failed","in_progress"],"event_type":null,"friendly_name":"Backup Automatic backup"},"last_changed":"2026-02-13T08:25:47.139891+00:00","last_reported":"2026-02-13T08:25:47.139891+00:00","last_updated":"2026-02-13T08:25:47.139891+00:00","context":{"id":"01KHB1PAW3QPC0DWSSKR59YNG2","parent_id":null,"user_id":null}},
+      "state": {"entity_id":"event.backup_automatic_backup","state":"unknown","attributes":{"event_types":["completed","failed","in_progress"],"event_type":null,"friendly_name":"Backup Automatic backup"},"last_changed":"2026-02-17T09:03:11.559818+00:00","last_reported":"2026-02-17T09:03:11.559818+00:00","last_updated":"2026-02-17T09:03:11.559818+00:00","context":{"id":"01KHNDDPP7R84B58KN9029N0XS","parent_id":null,"user_id":null}},
       "extra_data": {
         "last_event_type": null,
         "last_event_attributes": null
       },
-      "last_seen": "2026-02-13T08:25:47.940348+00:00"
+      "last_seen": "2026-02-17T09:48:13.499819+00:00"
     },
     {
-      "state": {"entity_id":"tts.google_translate_en_com","state":"unknown","attributes":{"friendly_name":"Google Translate en com"},"last_changed":"2026-02-13T08:25:47.148164+00:00","last_reported":"2026-02-13T08:25:47.148164+00:00","last_updated":"2026-02-13T08:25:47.148164+00:00","context":{"id":"01KHB1PAWCHXNTB3FSHEK96WNQ","parent_id":null,"user_id":null}},
+      "state": {"entity_id":"tts.google_translate_en_com","state":"unknown","attributes":{"friendly_name":"Google Translate en com"},"last_changed":"2026-02-17T09:03:11.566368+00:00","last_reported":"2026-02-17T09:03:11.566368+00:00","last_updated":"2026-02-17T09:03:11.566368+00:00","context":{"id":"01KHNDDPPEHKKBT9ADHG29GS0F","parent_id":null,"user_id":null}},
       "extra_data": null,
-      "last_seen": "2026-02-13T08:25:47.940348+00:00"
+      "last_seen": "2026-02-17T09:48:13.499819+00:00"
     }
   ]
 }

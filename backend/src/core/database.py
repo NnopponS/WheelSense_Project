@@ -124,6 +124,40 @@ class Database:
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 );
+
+                -- Camera nodes (TsimCam status/config state)
+                CREATE TABLE IF NOT EXISTS camera_nodes (
+                    device_id TEXT PRIMARY KEY,
+                    node_id TEXT,
+                    room_id TEXT,
+                    room_name TEXT,
+                    room_binding_last_updated TIMESTAMPTZ,
+                    ip_address TEXT,
+                    status TEXT DEFAULT 'offline',
+                    config_mode BOOLEAN DEFAULT FALSE,
+                    ws_connected BOOLEAN DEFAULT FALSE,
+                    frames_sent BIGINT DEFAULT 0,
+                    frames_dropped BIGINT DEFAULT 0,
+                    last_seen TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+
+                -- Device config sync/network compatibility snapshots
+                CREATE TABLE IF NOT EXISTS device_sync_status (
+                    device_id TEXT PRIMARY KEY,
+                    device_type TEXT,
+                    device_ip TEXT,
+                    wifi_ssid TEXT,
+                    request_host TEXT,
+                    server_ip TEXT,
+                    same_wifi BOOLEAN DEFAULT FALSE,
+                    features_limited BOOLEAN DEFAULT FALSE,
+                    warning_message TEXT,
+                    last_seen TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
                 
                 -- Patients
                 CREATE TABLE IF NOT EXISTS patients (
@@ -172,6 +206,44 @@ class Database:
                     status TEXT,
                     rssi INTEGER,
                     created_at TIMESTAMPTZ DEFAULT NOW()
+                );
+
+                -- Hourly aggregates from wheelchair history
+                CREATE TABLE IF NOT EXISTS wheelchair_history_hourly (
+                    wheelchair_id TEXT NOT NULL REFERENCES wheelchairs(id) ON DELETE CASCADE,
+                    bucket_start TIMESTAMPTZ NOT NULL,
+                    room_id TEXT,
+                    node_id TEXT,
+                    samples INTEGER NOT NULL DEFAULT 0,
+                    distance_min_m REAL,
+                    distance_max_m REAL,
+                    distance_delta_m REAL,
+                    speed_avg_ms REAL,
+                    rssi_avg REAL,
+                    first_seen TIMESTAMPTZ,
+                    last_seen TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    PRIMARY KEY (wheelchair_id, bucket_start)
+                );
+
+                -- Daily aggregates from wheelchair history
+                CREATE TABLE IF NOT EXISTS wheelchair_history_daily (
+                    wheelchair_id TEXT NOT NULL REFERENCES wheelchairs(id) ON DELETE CASCADE,
+                    bucket_date DATE NOT NULL,
+                    room_id TEXT,
+                    node_id TEXT,
+                    samples INTEGER NOT NULL DEFAULT 0,
+                    distance_min_m REAL,
+                    distance_max_m REAL,
+                    distance_delta_m REAL,
+                    speed_avg_ms REAL,
+                    rssi_avg REAL,
+                    first_seen TIMESTAMPTZ,
+                    last_seen TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW(),
+                    PRIMARY KEY (wheelchair_id, bucket_date)
                 );
                 
                 -- Appliances (controlled via Home Assistant)
@@ -284,6 +356,30 @@ class Database:
             await conn.execute("""
                 ALTER TABLE health_scores ADD COLUMN IF NOT EXISTS components JSONB DEFAULT '{}'::jsonb;
                 ALTER TABLE rooms ADD COLUMN IF NOT EXISTS restricted BOOLEAN DEFAULT FALSE;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS node_id TEXT;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS room_id TEXT;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS room_name TEXT;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS room_binding_last_updated TIMESTAMPTZ;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS ip_address TEXT;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'offline';
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS config_mode BOOLEAN DEFAULT FALSE;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS ws_connected BOOLEAN DEFAULT FALSE;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS frames_sent BIGINT DEFAULT 0;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS frames_dropped BIGINT DEFAULT 0;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ;
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+                ALTER TABLE camera_nodes ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS device_type TEXT;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS device_ip TEXT;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS wifi_ssid TEXT;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS request_host TEXT;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS server_ip TEXT;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS same_wifi BOOLEAN DEFAULT FALSE;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS features_limited BOOLEAN DEFAULT FALSE;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS warning_message TEXT;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ;
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+                ALTER TABLE device_sync_status ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
             """)
             
             # Create indexes
@@ -298,6 +394,8 @@ class Database:
                 CREATE INDEX IF NOT EXISTS idx_timeline_timestamp ON timeline_events(timestamp);
                 CREATE INDEX IF NOT EXISTS idx_wheelchair_history_wheelchair ON wheelchair_history(wheelchair_id);
                 CREATE INDEX IF NOT EXISTS idx_wheelchair_history_timestamp ON wheelchair_history(timestamp);
+                CREATE INDEX IF NOT EXISTS idx_wheelchair_history_hourly_bucket ON wheelchair_history_hourly(bucket_start);
+                CREATE INDEX IF NOT EXISTS idx_wheelchair_history_daily_bucket ON wheelchair_history_daily(bucket_date);
                 CREATE INDEX IF NOT EXISTS idx_routines_patient ON routines(patient_id);
                 CREATE INDEX IF NOT EXISTS idx_routines_time ON routines(time);
                 CREATE INDEX IF NOT EXISTS idx_notifications_patient ON notifications(patient_id);
@@ -305,6 +403,13 @@ class Database:
                 CREATE INDEX IF NOT EXISTS idx_chat_sessions_patient ON ai_chat_sessions(patient_id);
                 CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON ai_chat_messages(session_id);
                 CREATE INDEX IF NOT EXISTS idx_health_scores_patient ON health_scores(patient_id);
+                CREATE INDEX IF NOT EXISTS idx_camera_nodes_room ON camera_nodes(room_id);
+                CREATE INDEX IF NOT EXISTS idx_camera_nodes_status ON camera_nodes(status);
+                CREATE INDEX IF NOT EXISTS idx_camera_nodes_last_seen ON camera_nodes(last_seen);
+                CREATE INDEX IF NOT EXISTS idx_camera_nodes_binding ON camera_nodes(room_binding_last_updated);
+                CREATE INDEX IF NOT EXISTS idx_sync_status_type ON device_sync_status(device_type);
+                CREATE INDEX IF NOT EXISTS idx_sync_status_same_wifi ON device_sync_status(same_wifi);
+                CREATE INDEX IF NOT EXISTS idx_sync_status_last_seen ON device_sync_status(last_seen);
             """)
         
         print("✅ Database schema initialized (no mock data)")

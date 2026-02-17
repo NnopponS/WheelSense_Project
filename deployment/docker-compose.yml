@@ -55,8 +55,13 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://wheelsense:wheelsense@postgres:5432/wheelsense
-      - MQTT_BROKER=mosquitto
+      - MQTT_BROKER=broker.emqx.io
       - MQTT_PORT=1883
+      - MQTT_TOPIC=WheelSense/data
+      - MQTT_USER=
+      - MQTT_PASSWORD=
+      - DEVICE_BACKEND_URL=${DEVICE_BACKEND_URL:-}
+      - DEVICE_SERVER_IP=${DEVICE_SERVER_IP:-}
       - HA_URL=http://homeassistant:8123
       - HA_TOKEN=${HA_TOKEN:-}
       - OLLAMA_HOST=http://ollama:11434
@@ -75,8 +80,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mosquitto:
-        condition: service_started
       ollama:
         condition: service_healthy
       homeassistant:
