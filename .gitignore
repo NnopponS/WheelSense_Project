@@ -1,0 +1,29 @@
+# .gitignore for WheelSense Platform
+
+# Common
+.DS_Store
+Thumbs.db
+*.log
+.env
+
+# Node/Server
+node_modules/
+dist/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv/
+env/
+.pytest_cache/
+
+# Firmware (PlatformIO)
+.pio/
+.vscode/
+
+# Docker
+.docker-data/
+postgres-data/
+mosquitto/data/
+mosquitto/log/
