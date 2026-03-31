@@ -12,6 +12,8 @@ public:
     void beepButton();
     void beepSuccess();
     void beepError();
+    void beepStartRecord();
+    void beepStopRecord();
     
 private:
     static const int TONE_BUTTON_FREQ = 2000;

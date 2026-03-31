@@ -32,6 +32,10 @@ bool SceneManager::isAPPortalActive() const {
     return currentScene == SCENE_AP_PORTAL && APPortalMgr.isRunning();
 }
 
+SceneID SceneManager::getCurrentScene() const {
+    return currentScene;
+}
+
 const char* SceneManager::getCharset() {
     return keyboardCaps ? CHARS_UPPER : CHARS_LOWER;
 }
@@ -83,6 +87,7 @@ void SceneManager::update() {
         case SCENE_DEVICE_INFO: updateDeviceInfo(); break;
         case SCENE_AP_PORTAL:   updateAPPortal(); break;
         case SCENE_CONFIRM:     updateConfirm(); break;
+        case SCENE_RECORDING:   updateRecording(); break;
     }
     DisplayMgr.present();
 }
@@ -144,19 +149,26 @@ void SceneManager::updateDashboard() {
         int y = 30;
         
         // Status bar
-        g.fillRoundRect(4, y, 60, 12, 3, NetworkMgr.isWiFiConnected() ? 0x0480 : 0x6000);
-        g.fillRoundRect(68, y, 60, 12, 3, NetworkMgr.isMQTTConnected() ? 0x0480 : 0x6000);
+        g.fillRoundRect(4, y, 52, 12, 3, NetworkMgr.isWiFiConnected() ? 0x0480 : 0x6000);
+        g.fillRoundRect(58, y, 52, 12, 3, NetworkMgr.isMQTTConnected() ? 0x0480 : 0x6000);
         
-        // Orientation check (Z-axis gravity shouldn't be too high if mounted properly)
+        // BLE node count
+        BLENode bleCheck[MAX_BLE_NODES];
+        int bleCount = BLEMgr.copyNodes(bleCheck, MAX_BLE_NODES);
+        uint32_t bleColor = (bleCount > 0) ? 0x0480 : 0x6000;
+        g.fillRoundRect(112, y, 42, 12, 3, bleColor);
+
+        // Orientation check
         bool orientOk = (fabsf(d.accelZ) < 0.45f);
         uint32_t orientColor = orientOk ? COLOR_PRIMARY : COLOR_ERROR;
-        g.fillRoundRect(132, y, w - 136, 12, 3, orientColor);
+        g.fillRoundRect(156, y, w - 160, 12, 3, orientColor);
 
         g.setTextColor(COLOR_TEXT);
         g.setTextDatum(MC_DATUM);
-        g.drawString(NetworkMgr.isWiFiConnected() ? "WiFi" : "NoWiFi", 34, y + 6);
-        g.drawString(NetworkMgr.isMQTTConnected() ? "MQTT" : "NoMQ", 98, y + 6);
-        g.drawString(orientOk ? "MOUNT OK" : "MOUNT ERR", 132 + (w - 136) / 2, y + 6);
+        g.drawString(NetworkMgr.isWiFiConnected() ? "WiFi" : "NoWi", 30, y + 6);
+        g.drawString(NetworkMgr.isMQTTConnected() ? "MQTT" : "NoMQ", 84, y + 6);
+        g.drawString("B:" + String(bleCount), 133, y + 6);
+        g.drawString(orientOk ? "OK" : "ERR", 156 + (w - 160) / 2, y + 6);
         y += 16;
 
         // Big equally prominent Speed, Distance, Accel
@@ -199,8 +211,8 @@ void SceneManager::updateDashboard() {
         g.setTextSize(1);
         g.setTextColor(COLOR_TEXT);
         g.drawString("m/s", w - 10, y + 8);
-        g.drawString("2", w - 6, y + 14); // pseudo-superscript
-        g.setTextSize(1); // restore
+        g.drawString("2", w - 6, y + 14);
+        g.setTextSize(1);
         y += rowH + 4;
         
     } else {
@@ -228,44 +240,62 @@ void SceneManager::updateDashboard() {
         g.drawString("IP: " + NetworkMgr.getIP(), w/2, y + 74);
     }
 
-    // Footer guide
-    DisplayMgr.drawFooter("A:MENU", "B:PAGE", "C:MENU");
+    // Footer guide — new button mapping
+    DisplayMgr.drawFooter("M5:SLEEP", "B:PAGE", "C:MENU");
 
     needsRedraw = false;
     lastDrawMs = now;
 
-    // Buttons: BtnB=change page, BtnA or BtnC=menu
+    // === Button handling ===
+    // BtnA short press = manual sleep
+    if (InputMgr.wasPressed(BTN_A)) {
+        requestManualSleep = true;
+    }
+    // BtnA long press = open menu (shortcut)
+    if (InputMgr.wasLongPressed(BTN_A)) {
+        switchScene(SCENE_MAIN_MENU);
+        return;
+    }
+    // BtnB = change page
     if (InputMgr.wasPressed(BTN_B)) {
         dashboardPage = (dashboardPage + 1) % 2;
         needsRedraw = true;
     }
-    if (InputMgr.wasPressed(BTN_A) || InputMgr.wasPressed(BTN_C)) {
+    // BtnC = open menu
+    if (InputMgr.wasPressed(BTN_C)) {
         switchScene(SCENE_MAIN_MENU);
     }
 }
 
 // ===== MAIN MENU =====
 void SceneManager::updateMainMenu() {
+    AppConfig& config = ConfigMgr.getConfig();
+    const char* dispModeStr = (config.displayMode == DISPLAY_MODE_ALWAYS_ON) ? "Display: AlwaysOn" : "Display: AutoSleep";
     const char* items[] = {
         "WiFi Settings",
         "MQTT Config",
         "Device Name",
         "AP Config Mode",
         "Device Info",
+        dispModeStr,
+        "Recalibrate IMU",
         "Reset Distance",
         "Factory Reset",
         "Exit"
     };
-    const int count = 8;
+    const int count = 10;
 
+    // BtnB = navigate down
     if (InputMgr.wasPressed(BTN_B)) {
         menuIndex = (menuIndex + 1) % count;
         needsRedraw = true;
     }
+    // BtnC = back to dashboard
     if (InputMgr.wasPressed(BTN_C)) {
         switchScene(SCENE_DASHBOARD);
         return;
     }
+    // BtnA = select/enter
     if (InputMgr.wasPressed(BTN_A)) {
         switch (menuIndex) {
             case 0: // WiFi Settings
@@ -287,26 +317,49 @@ void SceneManager::updateMainMenu() {
             case 4: // Device Info
                 switchScene(SCENE_DEVICE_INFO);
                 return;
-            case 5: // Reset Distance
+            case 5: { // Display Mode toggle
+                config.displayMode = (config.displayMode == DISPLAY_MODE_ALWAYS_ON)
+                                     ? DISPLAY_MODE_AUTO_SLEEP
+                                     : DISPLAY_MODE_ALWAYS_ON;
+                ConfigMgr.saveConfig();
+                const char* modeStr = (config.displayMode == DISPLAY_MODE_ALWAYS_ON)
+                                      ? "Always On" : "Auto Sleep";
+                DisplayMgr.drawMessage("Display Mode", modeStr, COLOR_PRIMARY);
+                DisplayMgr.present(true);
+                delay(800);
+                needsRedraw = true;
+                return;
+            }
+            case 6: { // Recalibrate IMU
+                DisplayMgr.drawMessage("IMU", "Calibrating...\nKeep device still!", COLOR_WARNING);
+                DisplayMgr.present(true);
+                SensorMgr.recalibrate();
+                DisplayMgr.drawMessage("IMU", "Calibration done!", COLOR_PRIMARY);
+                DisplayMgr.present(true);
+                delay(800);
+                needsRedraw = true;
+                return;
+            }
+            case 7: // Reset Distance
                 SensorMgr.getData().distanceM = 0.0f;
                 DisplayMgr.drawMessage("Distance", "Reset to 0.0m", COLOR_PRIMARY);
                 DisplayMgr.present(true);
                 delay(800);
                 needsRedraw = true;
                 return;
-            case 6: // Factory Reset
+            case 8: // Factory Reset
                 startConfirm("Factory Reset",
                              "Erase all settings?\nA=Yes  C=Cancel",
                              CONFIRM_FACTORY_RESET, SCENE_MAIN_MENU);
                 return;
-            case 7: // Exit
+            case 9: // Exit
                 switchScene(SCENE_DASHBOARD);
                 return;
         }
     }
 
     if (needsRedraw) {
-        DisplayMgr.drawMenu("Menu", items, count, menuIndex, false);
+        DisplayMgr.drawMenu("Menu", items, count, menuIndex, true);
         needsRedraw = false;
         lastDrawMs = millis();
     }
@@ -531,8 +584,8 @@ void SceneManager::updateKeyboard() {
 
         g.setTextColor(0x7BEF);
         g.setTextDatum(TL_DATUM);
-        g.drawString(keyboardSelectAction ? "B:next A:sel" : "B:char A:type", 4, g.height() - 12);
-        g.drawString("C:toggle actions", g.width() / 2, g.height() - 12);
+        g.drawString(keyboardSelectAction ? "A:DO  B:NEXT" : "A:TYPE  B:CHAR", 4, g.height() - 12);
+        g.drawString("C:TOGGLE", g.width() / 2 + 20, g.height() - 12);
         
         needsRedraw = false;
         lastDrawMs = millis();
@@ -569,7 +622,7 @@ void SceneManager::updateMQTTConfig() {
     }
 
     if (needsRedraw) {
-        DisplayMgr.drawMenu("MQTT Config", items, count, menuIndex, false);
+        DisplayMgr.drawMenu("MQTT Config", items, count, menuIndex, true);
         needsRedraw = false;
         lastDrawMs = millis();
     }
@@ -730,7 +783,7 @@ void SceneManager::updateConfirm() {
         }
 
         // Footer
-        DisplayMgr.drawFooter("A:YES", "", "C:CANCEL");
+        DisplayMgr.drawFooter("A:YES", "", "C:NO");
 
         needsRedraw = false;
         lastDrawMs = millis();
@@ -754,4 +807,87 @@ void SceneManager::updateConfirm() {
     if (InputMgr.wasPressed(BTN_C)) {
         switchScene(lastScene);
     }
+}
+
+// ===== RECORDING SCENE =====
+// Black background, red blinking "REC", label from server, elapsed time
+void SceneManager::updateRecording() {
+    const unsigned long now = millis();
+
+    // Stop recording on button press
+    if (InputMgr.wasPressed(BTN_B) || InputMgr.wasPressed(BTN_A) || InputMgr.wasPressed(BTN_C)) {
+        extern bool requestStopRecord;
+        requestStopRecord = true;
+        return;
+    }
+
+    // If recording stopped externally, return to dashboard
+    if (!isRecording) {
+        switchScene(SCENE_DASHBOARD);
+        return;
+    }
+
+    // Redraw at 2Hz (500ms) for blinking effect
+    if (!needsRedraw && (now - lastDrawMs) < 500) return;
+
+    auto& g = DisplayMgr.getGfx();
+    int w = g.width();
+    int h = g.height();
+
+    // Full black background (no gradient)
+    g.fillScreen(COLOR_BG);
+
+    // Blinking red dot + REC text
+    bool blink = ((now / 500) % 2 == 0);
+
+    if (blink) {
+        // Red circle (recording indicator)
+        g.fillCircle(30, h / 2 - 20, 12, COLOR_ERROR);
+        // "REC" text
+        g.setTextSize(3);
+        g.setTextColor(COLOR_ERROR);
+        g.setTextDatum(ML_DATUM);
+        g.drawString("REC", 50, h / 2 - 20);
+    } else {
+        // Dim red circle
+        g.fillCircle(30, h / 2 - 20, 12, 0x4000);
+        g.setTextSize(3);
+        g.setTextColor(0x4000);
+        g.setTextDatum(ML_DATUM);
+        g.drawString("REC", 50, h / 2 - 20);
+    }
+
+    // Label from server command
+    g.setTextSize(1);
+    g.setTextColor(COLOR_ERROR);
+    g.setTextDatum(MC_DATUM);
+    String labelText = "Label: " + currentRecordLabel;
+    if (labelText.length() > 30) labelText = labelText.substring(0, 30);
+    g.drawString(labelText, w / 2, h / 2 + 10);
+
+    // Elapsed time
+    unsigned long elapsedMs = now - recordStartMs;
+    int secs = (elapsedMs / 1000) % 60;
+    int mins = (elapsedMs / 60000);
+    char timeBuf[16];
+    snprintf(timeBuf, sizeof(timeBuf), "%02d:%02d", mins, secs);
+    g.setTextSize(2);
+    g.setTextColor(COLOR_ERROR);
+    g.setTextDatum(MC_DATUM);
+    g.drawString(timeBuf, w / 2, h / 2 + 35);
+
+    // Battery (small, top-right corner)
+    SensorData& d = SensorMgr.getData();
+    g.setTextSize(1);
+    g.setTextColor(0x4208); // Dim gray
+    g.setTextDatum(TR_DATUM);
+    g.drawString(String(d.batPercentage) + "%", w - 4, 4);
+
+    // Footer
+    g.setTextColor(COLOR_ERROR);
+    g.setTextDatum(MC_DATUM);
+    g.drawString("Press any button to STOP", w / 2, h - 12);
+
+    needsRedraw = false;
+    lastDrawMs = now;
 }

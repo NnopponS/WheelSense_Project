@@ -24,6 +24,27 @@ void SensorManager::begin() {
     lastBatterySampleMs = 0;
     batteryFilterInit = false;
     chargeDebounceInit = false;
+
+    // Gyroscope Calibration (Zero-Rate Offset)
+    Serial.println("Calibrating Gyro...");
+    float sumZ = 0.0f;
+    int samples = 0;
+    delay(100);
+    unsigned long startCalib = millis();
+    while (millis() - startCalib < 1000) { // 1 second calibration
+        if (M5.Imu.update()) {
+            auto imu_data = M5.Imu.getImuData();
+            sumZ += imu_data.gyro.z;
+            samples++;
+        }
+        delay(2);
+    }
+    if (samples > 0) {
+        gyroZOffset = sumZ / samples;
+    } else {
+        gyroZOffset = 0.0f;
+    }
+    Serial.printf("Gyro Z Offset: %.2f dps (%d samples)\n", gyroZOffset, samples);
 }
 
 void SensorManager::update() {
@@ -47,7 +68,7 @@ void SensorManager::updateIMU() {
     data.accelZ = imu_data.accel.z;
     data.gyroX = imu_data.gyro.x;
     data.gyroY = imu_data.gyro.y;
-    data.gyroZ = imu_data.gyro.z;
+    data.gyroZ = imu_data.gyro.z - gyroZOffset; // Apply DC bias offset
     data.imuValid = true;
 
     // Orientation from accelerometer
@@ -56,12 +77,13 @@ void SensorManager::updateIMU() {
                         sqrtf(data.accelY * data.accelY + data.accelZ * data.accelZ)) * RAD_TO_DEG_F;
 
     // --- Gyroscope-based distance/velocity/acceleration ---
-    // gyroZ = angular velocity of wheel rotation (dps)
-    // Mount M5StickC so Z-axis is perpendicular to wheel plane.
     if (dt > 0.0f && dt < 1.0f) {
-        float gzDps = data.gyroZ;
+        // EMA low-pass filter on gyroZ to suppress sensor noise
+        filteredGyroZ = GYRO_LPF_ALPHA * data.gyroZ + (1.0f - GYRO_LPF_ALPHA) * filteredGyroZ;
 
-        // Apply deadband
+        float gzDps = filteredGyroZ;
+
+        // Apply deadband (increased for MPU6886 noise floor)
         if (fabsf(gzDps) < GYRO_DEADBAND_DPS) {
             gzDps = 0.0f;
         }
@@ -76,9 +98,10 @@ void SensorManager::updateIMU() {
         data.distanceM += distDelta;
         winDistanceM += distDelta;
 
-        // Direction from sign of gyroZ
+        // Track last motion time
         if (fabsf(gzDps) >= GYRO_DEADBAND_DPS) {
             data.direction = (gzDps > 0.0f) ? 1 : -1;
+            lastMotionMs = nowMs;
         } else {
             data.direction = 0;
         }
@@ -89,6 +112,15 @@ void SensorManager::updateIMU() {
         float windowSec = (nowMs - winStartMs) / 1000.0f;
         if (windowSec > 0.0f) {
             float velocity = winDistanceM / windowSec;
+
+            // Velocity decay: if no motion for VELOCITY_DECAY_MS, decay to zero
+            if ((nowMs - lastMotionMs) >= VELOCITY_DECAY_MS) {
+                velocity *= VELOCITY_DECAY_ALPHA;
+            }
+
+            // Zero snap: eliminate sub-perceptual drift
+            if (velocity < 0.01f) velocity = 0.0f;
+
             if (velocity > MAX_SPEED_MPS) velocity = MAX_SPEED_MPS;
             data.accelMs2 = (velocity - prevVelocityMs) / windowSec;
             data.velocityMs = velocity;
@@ -194,6 +226,36 @@ void SensorManager::updateBattery() {
     data.batRawMv = rawMv;
     data.batFilteredMv = (int)lroundf(filteredBatVoltageMv);
     data.isCharging = chargingStable;
+}
+
+void SensorManager::recalibrate() {
+    Serial.println("[IMU] Recalibrating Gyro...");
+    float sumZ = 0.0f;
+    int samples = 0;
+    delay(100);
+    unsigned long startCalib = millis();
+    while (millis() - startCalib < 1000) {
+        if (M5.Imu.update()) {
+            auto imu_data = M5.Imu.getImuData();
+            sumZ += imu_data.gyro.z;
+            samples++;
+        }
+        delay(2);
+    }
+    if (samples > 0) {
+        gyroZOffset = sumZ / samples;
+    }
+    // Reset motion state
+    filteredGyroZ = 0.0f;
+    data.velocityMs = 0.0f;
+    data.accelMs2 = 0.0f;
+    data.direction = 0;
+    prevVelocityMs = 0.0f;
+    winDistanceM = 0.0f;
+    winStartMs = millis();
+    lastImuReadMs = millis();
+    lastMotionMs = 0;
+    Serial.printf("[IMU] New Gyro Z Offset: %.2f dps (%d samples)\n", gyroZOffset, samples);
 }
 
 SensorData& SensorManager::getData() {

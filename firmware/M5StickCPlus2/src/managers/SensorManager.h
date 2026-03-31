@@ -31,6 +31,7 @@ public:
     void begin();
     void update();
     SensorData& getData();
+    void recalibrate();
 
 private:
     SensorData data;
@@ -39,13 +40,19 @@ private:
     void updateBattery();
 
     // Gyro-based distance/velocity/acceleration
-    static constexpr float GYRO_DEADBAND_DPS = 3.0f;
+    static constexpr float GYRO_DEADBAND_DPS = 5.0f;
     static constexpr float MAX_SPEED_MPS = 3.0f;
     static constexpr unsigned long WINDOW_MS = 500;
+    static constexpr float GYRO_LPF_ALPHA = 0.3f;           // EMA low-pass on gyroZ
+    static constexpr unsigned long VELOCITY_DECAY_MS = 200;  // Decay velocity after no motion
+    static constexpr float VELOCITY_DECAY_ALPHA = 0.15f;     // Decay rate per window
     unsigned long lastImuReadMs = 0;
     unsigned long winStartMs = 0;
     float winDistanceM = 0.0f;
     float prevVelocityMs = 0.0f;
+    float filteredGyroZ = 0.0f;       // EMA-filtered gyroZ
+    unsigned long lastMotionMs = 0;   // Last time above deadband
+    float gyroZOffset = 0.0f;         // DC bias calibration
 
     // Battery filtering
     bool batteryFilterInit = false;

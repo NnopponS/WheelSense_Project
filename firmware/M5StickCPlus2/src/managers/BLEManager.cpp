@@ -85,7 +85,7 @@ void BLEManager::begin() {
     pBLEScan->setAdvertisedDeviceCallbacks(&scanCb);
     pBLEScan->setActiveScan(false);  // Passive to save power
     pBLEScan->setInterval(160);
-    pBLEScan->setWindow(50);
+    pBLEScan->setWindow(30);          // Reduced from 50 for power saving
 
     xTaskCreatePinnedToCore(scanTask, "BLE_Scan", 4096, this, 1, &scanTaskHandle, 0);
     Serial.println("[BLE] Started");

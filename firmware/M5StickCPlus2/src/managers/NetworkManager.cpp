@@ -131,21 +131,32 @@ void NetworkManager::onMQTTMessage(char* topic, byte* payload, unsigned int leng
         return;
     }
 
+extern bool requestStartRecord;
+extern bool requestStopRecord;
+extern String currentRecordLabel;
+
     // Control commands
     String controlTopic = String("WheelSense/") + config.deviceName + "/control";
     if (topicStr == controlTopic) {
         StaticJsonDocument<256> doc;
         if (deserializeJson(doc, msg) != DeserializationError::Ok) return;
-        String cmd = doc["command"] | "";
+        String cmd = doc["cmd"] | doc["command"] | "";
         cmd.toLowerCase();
+        
         if (cmd == "reboot") {
             Serial.println("[MQTT] Reboot requested");
             delay(200);
             ESP.restart();
-        }
-        if (cmd == "reset_distance") {
+        } else if (cmd == "reset_distance") {
             SensorMgr.getData().distanceM = 0.0f;
             Serial.println("[MQTT] Distance reset");
+        } else if (cmd == "start_record") {
+            requestStartRecord = true;
+            currentRecordLabel = doc["label"] | "unknown";
+            Serial.printf("[MQTT] Start Record requested (%s)\n", currentRecordLabel.c_str());
+        } else if (cmd == "stop_record") {
+            requestStopRecord = true;
+            Serial.println("[MQTT] Stop Record requested");
         }
         return;
     }

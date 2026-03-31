@@ -120,10 +120,9 @@ void DisplayManager::drawMenu(
         return;
     }
 
-    (void)showGuideFooter;
     const int topY = 28;
     const int itemH = 16;
-    const int bottomReserved = 8;
+    const int bottomReserved = showGuideFooter ? 16 : 8;
     const int maxVisible = max(1, (g.height() - topY - bottomReserved) / itemH);
 
     int startIdx = 0;
@@ -147,6 +146,9 @@ void DisplayManager::drawMenu(
         g.drawString(items[idx], 12, y + (itemH / 2) - 1);
     }
 
+    if (showGuideFooter) {
+        drawFooter("A:SEL", "B:NEXT", "C:BACK");
+    }
 }
 
 void DisplayManager::drawMessage(const char* title, const char* msg, uint16_t color) {

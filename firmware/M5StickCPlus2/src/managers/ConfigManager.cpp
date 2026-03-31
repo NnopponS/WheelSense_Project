@@ -18,6 +18,7 @@ void ConfigManager::loadConfig() {
     config.mqttUser   = prefs.getString("mqttUser", DEFAULT_MQTT_USER);
     config.mqttPass   = prefs.getString("mqttPass", DEFAULT_MQTT_PASS);
     config.wheelRadiusM = prefs.getFloat("wheelR", DEFAULT_WHEEL_RADIUS_M);
+    config.displayMode  = prefs.getUChar("dispMode", DISPLAY_MODE_AUTO_SLEEP);
     prefs.end();
 
     Serial.printf("[Config] Device=%s MQTT=%s:%d Wheel=%.3fm\n",
@@ -37,6 +38,7 @@ void ConfigManager::saveConfig() {
     prefs.putString("mqttUser", config.mqttUser);
     prefs.putString("mqttPass", config.mqttPass);
     prefs.putFloat("wheelR", config.wheelRadiusM);
+    prefs.putUChar("dispMode", config.displayMode);
     prefs.end();
     Serial.println("[Config] Saved");
 }

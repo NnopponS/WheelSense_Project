@@ -18,7 +18,8 @@ enum SceneID {
     SCENE_MQTT_CONFIG,
     SCENE_DEVICE_INFO,
     SCENE_AP_PORTAL,
-    SCENE_CONFIRM
+    SCENE_CONFIRM,
+    SCENE_RECORDING
 };
 
 class SceneManager {
@@ -37,13 +38,15 @@ public:
     // Confirmation context
     enum ConfirmContext {
         CONFIRM_NONE,
-        CONFIRM_FACTORY_RESET
+        CONFIRM_FACTORY_RESET,
+        CONFIRM_DISPLAY_MODE
     };
 
     SceneManager();
     void begin();
     void update();
     void switchScene(SceneID scene);
+    SceneID getCurrentScene() const;
     bool isWiFiScanScene() const;
     bool isAPPortalActive() const;
     
@@ -101,6 +104,7 @@ private:
     void updateDeviceInfo();
     void updateAPPortal();
     void updateConfirm();
+    void updateRecording();
     
     // Keyboard helpers
     void startKeyboardInput(const char* title, String* targetStr, int maxLen,
@@ -112,5 +116,10 @@ private:
 };
 
 extern SceneManager SceneMgr;
+
+extern bool isRecording;
+extern String currentRecordLabel;
+extern unsigned long recordStartMs;
+extern bool requestManualSleep;
 
 #endif

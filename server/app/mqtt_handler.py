@@ -16,7 +16,7 @@ import aiomqtt
 
 from .config import settings
 from .database import (
-    AsyncSessionLocal, Device, IMUTelemetry, RSSIReading, RoomPrediction, utcnow,
+    AsyncSessionLocal, Device, IMUTelemetry, RSSIReading, RoomPrediction, MotionTrainingData, utcnow,
 )
 from .localization import predict_room
 
@@ -111,6 +111,19 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
             charging=battery.get("charging", False),
         )
         session.add(imu_row)
+
+        if data.get("is_recording", False):
+            motion_row = MotionTrainingData(
+                device_id=device_id,
+                timestamp=ts,
+                action_label=data.get("action_label", "unknown"),
+                ax=imu.get("ax"), ay=imu.get("ay"), az=imu.get("az"),
+                gx=imu.get("gx"), gy=imu.get("gy"), gz=imu.get("gz"),
+                distance_m=motion.get("distance_m"),
+                velocity_ms=motion.get("velocity_ms"),
+                accel_ms2=motion.get("accel_ms2"),
+            )
+            session.add(motion_row)
 
         # Store RSSI readings
         for r in rssi_list:

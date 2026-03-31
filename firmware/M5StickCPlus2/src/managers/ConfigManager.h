@@ -13,6 +13,7 @@ struct AppConfig {
     String mqttUser;
     String mqttPass;
     float wheelRadiusM;
+    uint8_t displayMode;   // 0=Always On, 1=Auto Sleep
 };
 
 class ConfigManager {

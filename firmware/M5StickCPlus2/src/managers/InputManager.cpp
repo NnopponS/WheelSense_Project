@@ -61,6 +61,11 @@ bool InputManager::wasPressed(ButtonID btn) {
     return r;
 }
 
+bool InputManager::peekPressed(ButtonID btn) {
+    if (btn >= 3) return false;
+    return pressed[btn];
+}
+
 bool InputManager::wasLongPressed(ButtonID btn) {
     if (btn >= 3) return false;
     bool r = longPressed[btn];

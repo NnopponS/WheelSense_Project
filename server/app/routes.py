@@ -57,6 +57,13 @@ class CameraCommand(BaseModel):
     interval_ms: int = 200
     resolution: str = "VGA"
 
+class MotionRecordStartRequest(BaseModel):
+    device_id: str
+    label: str
+
+class MotionRecordStopRequest(BaseModel):
+    device_id: str
+
 
 # ─── Devices ────────────────────────────────────────────────────────
 
@@ -257,6 +264,44 @@ async def list_predictions(
         }
         for r in rows
     ]
+
+
+# ─── Motion Recording ───────────────────────────────────────────────
+
+@router.post("/motion-record/start")
+async def start_motion_recording(body: MotionRecordStartRequest):
+    """Send MQTT command to start recording motion for ML classification."""
+    payload = {"cmd": "start_record", "label": body.label}
+    topic = f"WheelSense/{body.device_id}/control"
+    try:
+        async with aiomqtt.Client(
+            hostname=settings.mqtt_broker,
+            port=settings.mqtt_port,
+            username=settings.mqtt_user or None,
+            password=settings.mqtt_password or None,
+        ) as client:
+            await client.publish(topic, json.dumps(payload))
+    except Exception as e:
+        raise HTTPException(502, f"Failed to send MQTT command: {e}")
+    return {"message": "Start record command sent. Device will beep for 3 seconds.", "label": body.label}
+
+
+@router.post("/motion-record/stop")
+async def stop_motion_recording(body: MotionRecordStopRequest):
+    """Send MQTT command to manually stop recording motion."""
+    payload = {"cmd": "stop_record"}
+    topic = f"WheelSense/{body.device_id}/control"
+    try:
+        async with aiomqtt.Client(
+            hostname=settings.mqtt_broker,
+            port=settings.mqtt_port,
+            username=settings.mqtt_user or None,
+            password=settings.mqtt_password or None,
+        ) as client:
+            await client.publish(topic, json.dumps(payload))
+    except Exception as e:
+        raise HTTPException(502, f"Failed to send MQTT command: {e}")
+    return {"message": "Stop record command sent."}
 
 
 # ─── Camera Control ─────────────────────────────────────────────────

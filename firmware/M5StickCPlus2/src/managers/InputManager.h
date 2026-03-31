@@ -17,6 +17,7 @@ public:
     void update();
     
     bool wasPressed(ButtonID btn);
+    bool peekPressed(ButtonID btn);
     bool wasLongPressed(ButtonID btn);
     bool isPressed(ButtonID btn);
     

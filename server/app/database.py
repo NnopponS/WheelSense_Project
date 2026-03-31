@@ -106,6 +106,24 @@ class RSSITrainingData(Base):
     collected_at = Column(DateTime(timezone=True), default=utcnow)
 
 
+class MotionTrainingData(Base):
+    __tablename__ = "motion_training_data"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    device_id = Column(String(32), nullable=False, index=True)
+    timestamp = Column(DateTime(timezone=True), default=utcnow, index=True)
+    action_label = Column(String(32), nullable=False, index=True)
+    ax = Column(Float)
+    ay = Column(Float)
+    az = Column(Float)
+    gx = Column(Float)
+    gy = Column(Float)
+    gz = Column(Float)
+    distance_m = Column(Float)
+    velocity_ms = Column(Float)
+    accel_ms2 = Column(Float)
+
+
 async def get_session() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         yield session

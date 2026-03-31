@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 // Version
-#define FIRMWARE_VERSION "3.0.0"
+#define FIRMWARE_VERSION "3.2.0"
 
 // Default Settings
 #define DEFAULT_DEVICE_NAME "WS_01"
@@ -57,5 +57,21 @@
 // AP Portal
 #define AP_PORTAL_SSID_PREFIX "WheelSense_"
 #define AP_PORTAL_PORT 80
+
+// Power Saving — LCD
+#define LCD_DIM_TIMEOUT_MS      15000   // Dim after 15s inactivity
+#define LCD_OFF_TIMEOUT_MS      60000   // Turn LCD off after 60s inactivity
+#define LCD_BRIGHTNESS_FULL     80
+#define LCD_BRIGHTNESS_DIM      20
+#define LCD_BRIGHTNESS_OFF      0
+
+// Power Saving — Adaptive Rates (idle = not recording, LCD off)
+#define MQTT_PUBLISH_INTERVAL_IDLE  5000   // 5s when idle
+#define SENSOR_READ_INTERVAL_IDLE   200    // 5Hz when idle
+#define MAIN_LOOP_IDLE_DELAY_SLEEP_MS 20   // Longer delay when sleeping
+
+// Display mode: user-selectable
+#define DISPLAY_MODE_ALWAYS_ON  0
+#define DISPLAY_MODE_AUTO_SLEEP 1
 
 #endif
