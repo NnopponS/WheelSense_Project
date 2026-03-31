@@ -177,7 +177,7 @@ server/
 ├── Dockerfile              # Server container
 ├── docker-compose.yml      # Full stack (server + postgres + mosquitto)
 ├── requirements.txt        # Python dependencies
-├── CLAUDE.md               # Project memory for AI assistants
+├── AGENTS.md               # Project memory for AI assistants (Claude, Gemini, etc.)
 └── mypy.ini                # Type checker config
 ```
 

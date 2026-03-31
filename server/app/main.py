@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version="3.0.0",
+    version="3.2.0",
     description="WheelSense IoT Platform — IMU telemetry, RSSI localization, camera control",
     lifespan=lifespan,
 )
@@ -59,7 +59,7 @@ app.include_router(router)
 async def root():
     return {
         "name": settings.app_name,
-        "version": "3.0.0",
+        "version": "3.2.0",
         "docs": "/docs",
         "health": "/api/health",
     }
