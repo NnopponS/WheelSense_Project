@@ -1,47 +1,58 @@
 #!/usr/bin/env python3
-"""WheelSense CLI — Terminal UI for device control and data collection.
+"""WheelSense CLI — Terminal interface for workspace management and data collection.
 
 Usage:
     python cli.py                    # Interactive TUI mode
     python cli.py --server URL       # Custom server URL
     python cli.py --help             # Show help
-
-Connects to the running WheelSense FastAPI server via REST API.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
+import json
 from datetime import datetime, timezone
+from typing import Any
 
-import requests
+import requests  # type: ignore[import-untyped]
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
-from rich.text import Text
-from rich.live import Live
-from rich.layout import Layout
-from rich.align import Align
 
 console = Console()
 
 DEFAULT_SERVER = "http://localhost:8000"
+LABELS_FILE = "motion_labels.json"
 
-# Predefined motion labels for classification
-MOTION_LABELS = [
-    "forward_push",
-    "backward_pull",
-    "turn_left",
-    "turn_right",
-    "stop",
-    "idle",
-    "bump",
-    "ramp_up",
-    "ramp_down",
-]
+def load_motion_labels() -> list[str]:
+    default_labels = [
+        "forward_push",
+        "backward_pull",
+        "turn_left",
+        "turn_right",
+        "stop",
+        "idle",
+        "bump",
+        "ramp_up",
+        "ramp_down",
+    ]
+    if os.path.exists(LABELS_FILE):
+        try:
+            with open(LABELS_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass  # nosec B110
+    # Create the default file if it doesn't exist so user can edit it
+    try:
+        with open(LABELS_FILE, "w") as f:
+            json.dump(default_labels, f, indent=4)
+    except Exception:
+        pass  # nosec B110
+    return default_labels
 
 
 class WheelSenseClient:
@@ -54,12 +65,27 @@ class WheelSenseClient:
     def health(self) -> dict:
         return requests.get(f"{self.api}/health", timeout=5).json()
 
+    # --- Workspaces ---
+    def workspaces(self) -> list[dict]:
+        return requests.get(f"{self.api}/workspaces", timeout=5).json()
+
+    def create_workspace(self, name: str, mode: str) -> dict:
+        return requests.post(f"{self.api}/workspaces", json={"name": name, "mode": mode}, timeout=5).json()
+
+    def activate_workspace(self, ws_id: int) -> dict:
+        return requests.post(f"{self.api}/workspaces/{ws_id}/activate", timeout=5).json()
+
+    # --- Devices ---
     def devices(self, device_type: str | None = None) -> list[dict]:
         params = {}
         if device_type:
             params["device_type"] = device_type
         return requests.get(f"{self.api}/devices", params=params, timeout=5).json()
 
+    def register_device(self, device_id: str, device_type: str = "wheelchair") -> dict:
+        return requests.post(f"{self.api}/devices", json={"device_id": device_id, "device_type": device_type}, timeout=5).json()
+
+    # --- Rooms ---
     def rooms(self) -> list[dict]:
         return requests.get(f"{self.api}/rooms", timeout=5).json()
 
@@ -70,10 +96,12 @@ class WheelSenseClient:
             timeout=5,
         ).json()
 
+    # --- Recording ---
     def start_record(self, device_id: str, label: str) -> dict:
+        session_id = f"session_{int(time.time())}"
         resp = requests.post(
             f"{self.api}/motion-record/start",
-            json={"device_id": device_id, "label": label},
+            json={"device_id": device_id, "label": label, "session_id": session_id},
             timeout=10,
         )
         resp.raise_for_status()
@@ -88,17 +116,9 @@ class WheelSenseClient:
         resp.raise_for_status()
         return resp.json()
 
+    # --- Localization ---
     def localization_info(self) -> dict:
         return requests.get(f"{self.api}/localization", timeout=5).json()
-
-    def train_localization(self, data: list[dict]) -> dict:
-        resp = requests.post(
-            f"{self.api}/localization/train",
-            json={"data": data},
-            timeout=30,
-        )
-        resp.raise_for_status()
-        return resp.json()
 
     def retrain(self) -> dict:
         resp = requests.post(f"{self.api}/localization/retrain", timeout=30)
@@ -106,50 +126,97 @@ class WheelSenseClient:
         return resp.json()
 
     def telemetry(self, device_id: str | None = None, limit: int = 10) -> list[dict]:
-        params = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit}
         if device_id:
             params["device_id"] = device_id
         return requests.get(f"{self.api}/telemetry", params=params, timeout=5).json()
 
     def predictions(self, device_id: str | None = None, limit: int = 10) -> list[dict]:
-        params = {"limit": limit}
+        params: dict[str, Any] = {"limit": limit}
         if device_id:
             params["device_id"] = device_id
-        return requests.get(
-            f"{self.api}/localization/predictions", params=params, timeout=5
-        ).json()
+        return requests.get(f"{self.api}/localization/predictions", params=params, timeout=5).json()
 
 
-# ─── Helpers ────────────────────────────────────────────────────────────
+# ─── Display Helpers ────────────────────────────────────────────────────
 
+def clear_screen():
+    console.clear()
 
-def print_banner():
-    banner = Text()
-    banner.append("🎯 WheelSense CLI", style="bold cyan")
-    banner.append("  v3.1.0", style="dim")
-    console.print(
-        Panel(
-            Align.center(banner),
-            border_style="cyan",
-            padding=(1, 2),
-        )
-    )
-
-
-def check_server(client: WheelSenseClient) -> bool:
+def print_banner(client: WheelSenseClient):
+    clear_screen()
+    console.print(Panel("WHEELSENSE PLATFORM CLI", style="bold white on black", expand=False))
+    
     try:
-        info = client.health()
-        model_status = "✅ Ready" if info.get("model_ready") else "❌ Not trained"
-        console.print(f"  Server: [green]Connected[/]  Model: {model_status}")
-        return True
-    except Exception as e:
-        console.print(f"  [red]✗ Cannot reach server:[/] {e}")
-        console.print(f"  [dim]Ensure server is running: docker compose up -d[/]")
-        return False
+        ws_list = client.workspaces()
+        active = next((w for w in ws_list if w.get("is_active")), None)
+        if active:
+            console.print(f"Active Workspace: [bold cyan]{active['name']}[/] (Mode: {active['mode']})")
+        else:
+            console.print("Active Workspace: [bold red]NONE[/] (Please configure a workspace)")
+    except Exception:
+        console.print("[red]Cannot connect to server API.[/]")
+    console.print("-" * 50)
+
+
+# ─── Workspace Management ────────────────────────────────────────────────
+
+def manage_workspaces(client: WheelSenseClient):
+    while True:
+        print_banner(client)
+        console.print("[bold]Workspace Management[/]")
+        try:
+            ws_list = client.workspaces()
+        except Exception:
+            console.print("[red]API Error.[/]")
+            input("Press Enter...")
+            return
+
+        for i, w in enumerate(ws_list, 1):
+            mark = "*" if w.get("is_active") else " "
+            console.print(f" [{mark}] {i}. {w['name']} ({w['mode']})")
+
+        console.print("\nOptions:")
+        console.print("  [N] Create new workspace")
+        console.print("  [B] Back to main menu")
+        console.print("  [1-9] Select workspace to activate")
+        
+        choice = Prompt.ask("Select").strip().lower()
+        if choice == 'b':
+            return
+        elif choice == 'n':
+            name = Prompt.ask("Workspace Name")
+            mode = Prompt.ask("Mode (real/simulation)", choices=["real", "simulation"], default="real")
+            created_ws = client.create_workspace(name, mode)
+            console.print("[green]Workspace created.[/]")
+            
+            if mode == "simulation" and "id" in created_ws:
+                rooms_count = IntPrompt.ask("How many virtual rooms to create?", default=3)
+                device_count = IntPrompt.ask("How many virtual devices to register?", default=1)
+                
+                # Activate before injecting
+                client.activate_workspace(created_ws["id"])
+                
+                for i in range(1, rooms_count + 1):
+                    client.create_room(f"SimRoom_{i}", "Auto-generated simulation room")
+                for i in range(1, device_count + 1):
+                    client.register_device(f"SIM_DEVICE_0{i}")
+                
+                console.print(f"[bold green]Seeded {rooms_count} rooms and {device_count} devices.[/]")
+
+            time.sleep(1)
+        else:
+            try:
+                idx = int(choice) - 1
+                if 0 <= idx < len(ws_list):
+                    client.activate_workspace(ws_list[idx]["id"])
+                    console.print("[green]Workspace activated.[/]")
+                    time.sleep(1)
+            except ValueError:
+                pass
 
 
 def select_device(client: WheelSenseClient) -> str | None:
-    """Let user pick a device from the list."""
     try:
         devices = client.devices()
     except Exception as e:
@@ -157,16 +224,17 @@ def select_device(client: WheelSenseClient) -> str | None:
         return None
 
     if not devices:
-        console.print("[yellow]No devices found. Is the M5StickC connected?[/]")
+        console.print("[yellow]No devices found in this workspace.[/]")
         manual = Prompt.ask("Enter device_id manually (or 'q' to quit)")
-        return None if manual.lower() == "q" else manual
+        if manual.lower() != 'q':
+            client.register_device(manual)
+            return manual
+        return None
 
-    table = Table(title="🔌 Connected Devices", border_style="cyan")
-    table.add_column("#", style="bold", width=3)
-    table.add_column("Device ID", style="cyan")
-    table.add_column("Type", style="green")
-    table.add_column("Firmware")
-    table.add_column("Battery")
+    table = Table(title="Connected Devices", show_header=True, header_style="bold")
+    table.add_column("#")
+    table.add_column("Device ID")
+    table.add_column("Type")
     table.add_column("Last Seen")
 
     for i, d in enumerate(devices, 1):
@@ -182,35 +250,21 @@ def select_device(client: WheelSenseClient) -> str | None:
                 else:
                     last_seen = f"{int(age_s/3600)}h ago"
             except Exception:
-                pass
-
-        table.add_row(
-            str(i),
-            d.get("device_id", "?"),
-            d.get("device_type", "?"),
-            d.get("firmware", "?"),
-            "",  # Battery info not in device list, shown in telemetry
-            last_seen,
-        )
+                pass  # nosec B110
+        table.add_row(str(i), d.get("device_id", "?"), d.get("device_type", "?"), last_seen)
 
     console.print(table)
-
-    choice = IntPrompt.ask(
-        "Select device number (0 to enter manually)",
-        default=1,
-    )
+    choice = IntPrompt.ask("Select device number (0 to register a new device manually)", default=1)
 
     if choice == 0:
-        return Prompt.ask("Enter device_id")
+        manual = Prompt.ask("Enter new device_id")
+        client.register_device(manual)
+        return manual
     if 1 <= choice <= len(devices):
         return devices[choice - 1]["device_id"]
-
-    console.print("[red]Invalid choice[/]")
     return None
 
-
 def show_device_status(client: WheelSenseClient, device_id: str):
-    """Show latest telemetry for a device."""
     try:
         data = client.telemetry(device_id=device_id, limit=1)
         if not data:
@@ -220,18 +274,15 @@ def show_device_status(client: WheelSenseClient, device_id: str):
         latest = data[0]
         bat = latest.get("battery", {})
         motion = latest.get("motion", {})
-        imu_data = latest.get("imu", {})
 
-        table = Table(title=f"📊 {device_id} Status", border_style="green")
-        table.add_column("Metric", style="cyan")
-        table.add_column("Value", style="bold")
-
+        table = Table(title=f"Status: {device_id}", show_header=False)
+        table.add_column("Metric", style="bold")
+        table.add_column("Value")
         table.add_row("Battery", f"{bat.get('percentage', '?')}% ({bat.get('voltage_v', '?')}V)")
-        table.add_row("Charging", "⚡ Yes" if bat.get("charging") else "🔋 No")
+        table.add_row("Charging", "Yes" if bat.get("charging") else "No")
         table.add_row("Speed", f"{motion.get('velocity_ms', 0):.2f} m/s")
         table.add_row("Distance", f"{motion.get('distance_m', 0):.2f} m")
-        table.add_row("Accel", f"{motion.get('accel_ms2', 0):.2f} m/s²")
-        table.add_row("Timestamp", latest.get("timestamp", "?"))
+        table.add_row("Accel", f"{motion.get('accel_ms2', 0):.2f} m/s2")
         console.print(table)
     except Exception as e:
         console.print(f"[red]Error:[/] {e}")
@@ -239,268 +290,188 @@ def show_device_status(client: WheelSenseClient, device_id: str):
 
 # ─── Mode: Record Motion ───────────────────────────────────────────────
 
-
 def mode_record_motion(client: WheelSenseClient, device_id: str):
-    """Interactive motion recording for ML classification."""
-    console.print(
-        Panel(
-            "[bold red]🎬 Record Motion Mode[/]\n"
-            "Record labeled IMU data for motion classification training.",
-            border_style="red",
-        )
-    )
-
+    labels = load_motion_labels()
+    
+    print_banner(client)
+    console.print("[bold]DATA COLLECTION: Motion Classes[/]")
+    
     while True:
-        console.print("\n[bold]Select a motion label:[/]")
-        for i, label in enumerate(MOTION_LABELS, 1):
-            console.print(f"  [cyan]{i:2d}[/] — {label}")
-        console.print(f"  [cyan] 0[/] — Custom label")
-        console.print(f"  [cyan] q[/] — Back to main menu")
+        console.print("\nSelect a motion label:")
+        for i, label in enumerate(labels, 1):
+            console.print(f"  {i:2d}. {label}")
+        console.print("   C. Custom free-text label")
+        console.print("   Q. Back")
 
-        choice = Prompt.ask("Choice", default="q")
-        if choice.lower() == "q":
+        choice = Prompt.ask("Choice").strip().lower()
+        if choice == "q":
             return
-
-        try:
-            idx = int(choice)
-        except ValueError:
-            console.print("[red]Invalid choice[/]")
-            continue
-
-        if idx == 0:
-            label = Prompt.ask("Enter custom label")
-        elif 1 <= idx <= len(MOTION_LABELS):
-            label = MOTION_LABELS[idx - 1]
+            
+        label = ""
+        if choice == "c":
+            label = Prompt.ask("Enter custom label").strip()
+            # Optionally save to json
+            if label and label not in labels:
+                labels.append(label)
+                try:
+                    with open(LABELS_FILE, "w") as f:
+                        json.dump(labels, f, indent=4)
+                except Exception:
+                    pass  # nosec B110  # nosec B110
         else:
-            console.print("[red]Invalid choice[/]")
+            try:
+                idx = int(choice)
+                if 1 <= idx <= len(labels):
+                    label = labels[idx - 1]
+            except ValueError:
+                pass
+                
+        if not label:
+            console.print("[red]Invalid choice.[/]")
             continue
 
-        console.print(f"\n[bold yellow]⚠ Device will beep for 3 seconds before recording starts.[/]")
-        console.print(f"[bold]Label: [cyan]{label}[/][/]")
+        console.print("\n[bold yellow]Device will beep before recording starts.[/]")
+        console.print(f"Target Label: [bold cyan]{label}[/]")
 
-        if not Confirm.ask("Start recording?", default=True):
+        if not Confirm.ask("Proceed to record?", default=True):
+            print_banner(client)
             continue
 
-        # Send start command
         try:
-            result = client.start_record(device_id, label)
-            console.print(f"[green]✓[/] {result.get('message', 'Recording started')}")
+            client.start_record(device_id, label)
+            console.print("[green]Recording Started.[/]")
         except Exception as e:
-            console.print(f"[red]✗ Failed to start:[/] {e}")
+            console.print(f"[red]Failed to start:[/] {e}")
             continue
 
-        # Wait for user to stop
-        console.print("\n[bold red]● RECORDING[/] — Press [bold]Enter[/] to stop...\n")
+        console.print("\n[bold red][ RECORDING IN PROGRESS ][/] — Press Enter to stop.")
         start_time = time.time()
-
         try:
-            input()  # Blocks until Enter
+            input()
         except KeyboardInterrupt:
             pass
 
         elapsed = time.time() - start_time
-
-        # Send stop command
         try:
-            result = client.stop_record(device_id)
-            console.print(f"[green]✓[/] {result.get('message', 'Recording stopped')}")
-            console.print(f"[dim]Duration: {elapsed:.1f}s[/]")
+            client.stop_record(device_id)
+            console.print(f"[green]Recording Saved.[/] Duration: {elapsed:.1f}s")
         except Exception as e:
-            console.print(f"[red]✗ Failed to stop:[/] {e}")
+            console.print(f"[red]Failed to stop:[/] {e}")
+            
+        time.sleep(1)
+        print_banner(client)
 
 
-# ─── Mode: Learning Location ───────────────────────────────────────────
-
+# ─── Mode: RSSI Localization ───────────────────────────────────────────
 
 def mode_learning_location(client: WheelSenseClient, device_id: str):
-    """Interactive RSSI location learning."""
-    console.print(
-        Panel(
-            "[bold blue]📍 Learning Location Mode[/]\n"
-            "Collect RSSI fingerprints for room localization training.",
-            border_style="blue",
-        )
-    )
-
     while True:
-        console.print("\n[bold]Location Actions:[/]")
-        console.print("  [cyan]1[/] — View rooms")
-        console.print("  [cyan]2[/] — Create new room")
-        console.print("  [cyan]3[/] — Train/retrain model from DB")
-        console.print("  [cyan]4[/] — View model info")
-        console.print("  [cyan]5[/] — View recent predictions")
-        console.print("  [cyan]6[/] — View device status")
-        console.print("  [cyan]q[/] — Back to main menu")
+        print_banner(client)
+        console.print("[bold]DATA COLLECTION: RSSI Localization[/]")
+        console.print("  1. View configured rooms")
+        console.print("  2. Create new room")
+        console.print("  3. Retrain model from database")
+        console.print("  4. View active predictions")
+        console.print("  Q. Back")
 
-        choice = Prompt.ask("Choice", default="q")
-
+        choice = Prompt.ask("\nChoice").strip().lower()
         if choice == "q":
             return
         elif choice == "1":
-            _view_rooms(client)
+            try:
+                rooms = client.rooms()
+                table = Table(title="Configured Rooms")
+                table.add_column("ID")
+                table.add_column("Name")
+                for r in rooms:
+                    table.add_row(str(r["id"]), r["name"])
+                console.print(table)
+            except Exception as e:
+                console.print(f"[red]Error:[/] {e}")
+            input("\nPress Enter...")
         elif choice == "2":
-            _create_room(client)
+            name = Prompt.ask("Room name")
+            desc = Prompt.ask("Description", default="")
+            client.create_room(name, desc)
+            console.print("[green]Room created.[/]")
+            time.sleep(1)
         elif choice == "3":
-            _retrain_model(client)
+            console.print("Retraining model...")
+            try:
+                res = client.retrain()
+                console.print(f"[green]Model retrained.[/] {res}")
+            except Exception as e:
+                console.print(f"[red]Retrain failed:[/] {e}")
+            input("\nPress Enter...")
         elif choice == "4":
-            _view_model_info(client)
-        elif choice == "5":
-            _view_predictions(client, device_id)
-        elif choice == "6":
-            show_device_status(client, device_id)
-        else:
-            console.print("[red]Invalid choice[/]")
-
-
-def _view_rooms(client: WheelSenseClient):
-    try:
-        rooms = client.rooms()
-        if not rooms:
-            console.print("[yellow]No rooms defined yet.[/]")
-            return
-
-        table = Table(title="🏠 Rooms", border_style="blue")
-        table.add_column("ID", style="bold", width=4)
-        table.add_column("Name", style="cyan")
-        table.add_column("Description")
-
-        for r in rooms:
-            table.add_row(str(r["id"]), r["name"], r.get("description", ""))
-        console.print(table)
-    except Exception as e:
-        console.print(f"[red]Error:[/] {e}")
-
-
-def _create_room(client: WheelSenseClient):
-    name = Prompt.ask("Room name")
-    desc = Prompt.ask("Description (optional)", default="")
-    try:
-        result = client.create_room(name, desc)
-        console.print(f"[green]✓ Room created:[/] ID={result['id']} Name={result['name']}")
-    except Exception as e:
-        console.print(f"[red]Error:[/] {e}")
-
-
-def _retrain_model(client: WheelSenseClient):
-    console.print("[dim]Retraining model from all stored training data...[/]")
-    try:
-        result = client.retrain()
-        console.print(f"[green]✓ Model retrained:[/] {result}")
-    except requests.HTTPError as e:
-        if e.response is not None and e.response.status_code == 400:
-            console.print("[yellow]No training data in database. Collect RSSI data first.[/]")
-        else:
-            console.print(f"[red]Error:[/] {e}")
-    except Exception as e:
-        console.print(f"[red]Error:[/] {e}")
-
-
-def _view_model_info(client: WheelSenseClient):
-    try:
-        info = client.localization_info()
-        if info.get("status") == "not_trained":
-            console.print("[yellow]Model not trained yet.[/]")
-        else:
-            table = Table(title="🧠 Model Info", border_style="green")
-            table.add_column("Property", style="cyan")
-            table.add_column("Value", style="bold")
-            table.add_row("Status", info.get("status", "?"))
-            table.add_row("Rooms", str(info.get("rooms", "?")))
-            table.add_row("K", str(info.get("k", "?")))
-            table.add_row("Nodes", ", ".join(info.get("nodes", [])))
-            console.print(table)
-    except Exception as e:
-        console.print(f"[red]Error:[/] {e}")
-
-
-def _view_predictions(client: WheelSenseClient, device_id: str):
-    try:
-        preds = client.predictions(device_id=device_id, limit=10)
-        if not preds:
-            console.print("[yellow]No predictions yet.[/]")
-            return
-
-        table = Table(title="📍 Recent Predictions", border_style="blue")
-        table.add_column("Time", style="dim")
-        table.add_column("Room", style="bold cyan")
-        table.add_column("Confidence", style="green")
-        table.add_column("Model")
-
-        for p in preds:
-            ts = p.get("timestamp", "?")
-            if isinstance(ts, str) and len(ts) > 19:
-                ts = ts[:19]
-            conf = p.get("confidence", 0)
-            conf_str = f"{conf:.1%}"
-            table.add_row(ts, p.get("predicted_room_name", "?"), conf_str, p.get("model_type", "?"))
-        console.print(table)
-    except Exception as e:
-        console.print(f"[red]Error:[/] {e}")
+            try:
+                preds = client.predictions(device_id=device_id, limit=5)
+                table = Table(title="Recent Predictions")
+                table.add_column("Time")
+                table.add_column("Room")
+                table.add_column("Confidence")
+                for p in preds:
+                    table.add_row(str(p.get("timestamp"))[:19], p.get("predicted_room_name", ""), f"{p.get('confidence', 0):.2f}")
+                console.print(table)
+            except Exception as e:
+                console.print(f"[red]Error:[/] {e}")
+            input("\nPress Enter...")
 
 
 # ─── Main ───────────────────────────────────────────────────────────────
 
-
-def main_menu(client: WheelSenseClient):
-    """Main interactive loop."""
-    print_banner()
-
-    if not check_server(client):
-        sys.exit(1)
-
-    # Select device
-    device_id = select_device(client)
-    if not device_id:
-        console.print("[red]No device selected. Exiting.[/]")
-        sys.exit(1)
-
-    console.print(f"\n[bold green]✓ Active device:[/] [bold cyan]{device_id}[/]\n")
-
-    while True:
-        console.print("\n[bold]═══ Main Menu ═══[/]")
-        console.print("  [cyan]1[/] — 🎬 Record Motion (IMU classification)")
-        console.print("  [cyan]2[/] — 📍 Learning Location (RSSI training)")
-        console.print("  [cyan]3[/] — 📊 Device Status")
-        console.print("  [cyan]4[/] — 🔄 Switch Device")
-        console.print("  [cyan]q[/] — Exit")
-
-        choice = Prompt.ask("Choice", default="q")
-
-        if choice == "q":
-            console.print("[dim]Goodbye! 👋[/]")
-            break
-        elif choice == "1":
-            mode_record_motion(client, device_id)
-        elif choice == "2":
-            mode_learning_location(client, device_id)
-        elif choice == "3":
-            show_device_status(client, device_id)
-        elif choice == "4":
-            new_device = select_device(client)
-            if new_device:
-                device_id = new_device
-                console.print(f"[green]✓ Switched to:[/] [bold cyan]{device_id}[/]")
-        else:
-            console.print("[red]Invalid choice[/]")
-
-
 def main():
-    parser = argparse.ArgumentParser(
-        description="WheelSense CLI — Terminal UI for device control and data collection",
-    )
-    parser.add_argument(
-        "--server",
-        default=DEFAULT_SERVER,
-        help=f"Server URL (default: {DEFAULT_SERVER})",
-    )
+    parser = argparse.ArgumentParser(description="WheelSense CLI")
+    parser.add_argument("--server", default=DEFAULT_SERVER, help="Server URL")
     args = parser.parse_args()
 
     client = WheelSenseClient(args.server)
-    try:
-        main_menu(client)
-    except KeyboardInterrupt:
-        console.print("\n[dim]Interrupted. Goodbye! 👋[/]")
+    
+    while True:
+        print_banner(client)
+        
+        try:
+            ws_list = client.workspaces()
+            if not any(w.get("is_active") for w in ws_list):
+                console.print("[yellow]Initial setup required.[/]")
+                manage_workspaces(client)
+                continue
+        except Exception:
+            console.print("[red]Ensure server handles are running and accessible.[/]")
+            time.sleep(5)
+            sys.exit(1)
 
+        device_id = select_device(client)
+        if not device_id:
+            continue
+
+        while True:
+            print_banner(client)
+            console.print(f"Target Device: [bold]{device_id}[/]\n")
+            console.print("[bold]Operations Menu[/]")
+            console.print("  1. Motion Classification Collection")
+            console.print("  2. RSSI Localization Control")
+            console.print("  3. View Telemetry Status")
+            console.print("  4. Switch Workspace")
+            console.print("  5. Switch Device")
+            console.print("  Q. Exit")
+
+            choice = Prompt.ask("\nChoice").strip().lower()
+
+            if choice == "q":
+                sys.exit(0)
+            elif choice == "1":
+                mode_record_motion(client, device_id)
+            elif choice == "2":
+                mode_learning_location(client, device_id)
+            elif choice == "3":
+                show_device_status(client, device_id)
+                input("\nPress Enter...")
+            elif choice == "4":
+                manage_workspaces(client)
+                break # Refresh device selection for new workspace
+            elif choice == "5":
+                break
 
 if __name__ == "__main__":
     main()

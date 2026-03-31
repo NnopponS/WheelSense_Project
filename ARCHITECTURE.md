@@ -120,3 +120,64 @@ Follow the interactive prompts to start recording labeled maneuvers.
 Use PlatformIO in VSCode.
 - Open `firmware/M5StickCPlus2/`
 - Build and Upload (Environment: `m5stick-c-plus2`)
+
+### 4. Running Tests
+```bash
+cd server/
+pytest --cov=app --cov-report=term-missing
+```
+
+### 5. Static Analysis
+```bash
+cd server/
+mypy .          # Type checking
+ruff check .    # Linting
+bandit -r app cli.py sim_controller.py  # Security scan
+```
+
+---
+
+## Security & Quality Audit (2026-04-01)
+
+All backend code has passed a comprehensive security and quality audit:
+
+| Tool | Result | Details |
+|------|--------|---------|
+| `bandit` | ✅ 0 issues | Command injection fixed, CSPRNG enforced |
+| `ruff` | ✅ 0 issues | PEP 8 compliant |
+| `mypy` | ✅ 0 app issues | Full type safety with async SQLAlchemy |
+| `pytest` | ✅ 25 passed (78% coverage) | Localization 100%, MQTT handler 82% |
+
+---
+
+## Project Structure
+
+```text
+server/
+├── app/                    # Application code (Docker COPY target)
+│   ├── api/                # FastAPI endpoints
+│   │   └── endpoints/      # devices, rooms, telemetry, localization, motion
+│   ├── db/                 # Database engine & session
+│   ├── models/             # SQLAlchemy ORM models
+│   ├── schemas/            # Pydantic request/response schemas
+│   ├── services/           # Business logic layer
+│   ├── config.py           # Environment-driven settings
+│   ├── localization.py     # KNN room prediction engine
+│   ├── mqtt_handler.py     # MQTT ingestion & processing
+│   └── main.py             # FastAPI app & lifespan
+├── tests/                  # Test suite (SQLite in-memory)
+│   ├── conftest.py         # Fixtures, DB setup, client factory
+│   ├── test_api.py         # API integration tests
+│   ├── test_localization.py # ML model unit tests
+│   └── test_mqtt_handler.py # MQTT handler unit tests
+├── reports/                # Static analysis outputs (bandit, mypy, ruff)
+├── alembic/                # Database migrations
+├── cli.py                  # Data collection CLI (runs outside Docker)
+├── sim_controller.py       # Simulation data replayer
+├── Dockerfile              # Server container
+├── docker-compose.yml      # Full stack (server + postgres + mosquitto)
+├── requirements.txt        # Python dependencies
+├── CLAUDE.md               # Project memory for AI assistants
+└── mypy.ini                # Type checker config
+```
+

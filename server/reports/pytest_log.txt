@@ -1,0 +1,21 @@
+
+---
+ImportError while loading conftest 'C:\Users\worap\Documents\Project\wheelsense-platform\server\tests\conftest.py'.
+tests\conftest.py:10: in <module>
+    from app.main import app
+app\main.py:12: in <module>
+    from app.db.session import init_db
+app\db\__init__.py:1: in <module>
+    from .session import async_engine, sync_engine, get_session, init_db
+app\db\session.py:8: in <module>
+    async_engine = create_async_engine(settings.database_url, echo=False, pool_size=5, max_overflow=10)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\ext\asyncio\engine.py:120: in create_async_engine
+    sync_engine = _create_engine(url, **kw)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\deprecations.py:281: in warned
+    return fn(*args, **kwargs)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^
+..\..\..\..\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\engine\create.py:697: in create_engine
+    raise TypeError(
+E   TypeError: Invalid argument(s) 'pool_size','max_overflow' sent to create_engine(), using configuration SQLiteDialect_aiosqlite/StaticPool/Engine.  Please check that the keyword arguments are appropriate for this combination of components.

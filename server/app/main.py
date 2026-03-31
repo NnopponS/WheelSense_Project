@@ -9,9 +9,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .config import settings
-from .database import init_db
+from app.db.session import init_db
 from .mqtt_handler import mqtt_listener
-from .routes import router
+from app.api.router import api_router as router
 
 logging.basicConfig(
     level=logging.INFO,

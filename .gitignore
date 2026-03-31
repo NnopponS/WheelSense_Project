@@ -6,17 +6,28 @@ Thumbs.db
 *.log
 .env
 
-# Node/Server
-node_modules/
-dist/
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.venv
+.venv/
 venv/
 env/
+
+# Testing & Quality Tools
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Reports (keep tracked, but regenerable)
+# server/reports/
+
+# Node/Server
+node_modules/
+dist/
 
 # Firmware (PlatformIO)
 .pio/
