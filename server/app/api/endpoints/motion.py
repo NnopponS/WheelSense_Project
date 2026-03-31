@@ -1,14 +1,53 @@
+"""WheelSense — Motion recording and classification endpoints.
+
+Endpoints:
+    POST /record/start  — Send MQTT start-record command to device
+    POST /record/stop   — Send MQTT stop-record command to device
+    POST /train         — Train XGBoost from motion_training_data in DB
+    POST /predict       — Predict action from raw IMU window
+    GET  /model         — Get model info (status, labels, accuracy)
+    POST /model/save    — Persist model to disk
+    POST /model/load    — Load model from disk
+"""
+
 import json
-from fastapi import APIRouter, HTTPException
+from typing import Any
+
 import aiomqtt
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 import app.config as config
-from app.schemas.core import MotionRecordStartRequest, MotionRecordStopRequest
+from app.api.dependencies import get_db, get_active_ws
+from app.feature_engineering import extract_features, create_sliding_windows
+from app.models.core import Workspace
+from app.models.telemetry import MotionTrainingData
+from app.motion_classifier import (
+    get_motion_model_info,
+    is_motion_model_ready,
+    load_model,
+    predict_motion,
+    save_model,
+    train_motion_model,
+)
+from app.schemas.core import (
+    MotionPredictRequest,
+    MotionRecordStartRequest,
+    MotionRecordStopRequest,
+    MotionTrainRequest,
+)
 
 router = APIRouter()
 settings = config.settings
 
+
+# ── Recording control (existing, unchanged) ───────────────────────
+
+
 @router.post("/record/start")
-async def start_motion_recording(body: MotionRecordStartRequest):
+async def start_motion_recording(body: MotionRecordStartRequest) -> dict[str, str]:
+    """Send MQTT command to start labeled IMU recording on device."""
     payload = {"cmd": "start_record", "label": body.label, "session_id": body.session_id}
     topic = f"WheelSense/{body.device_id}/control"
     try:
@@ -25,7 +64,8 @@ async def start_motion_recording(body: MotionRecordStartRequest):
 
 
 @router.post("/record/stop")
-async def stop_motion_recording(body: MotionRecordStopRequest):
+async def stop_motion_recording(body: MotionRecordStopRequest) -> dict[str, str]:
+    """Send MQTT command to stop IMU recording on device."""
     payload = {"cmd": "stop_record"}
     topic = f"WheelSense/{body.device_id}/control"
     try:
@@ -39,3 +79,113 @@ async def stop_motion_recording(body: MotionRecordStopRequest):
     except Exception as e:
         raise HTTPException(502, f"Failed to send MQTT command: {e}")
     return {"message": "Stop record command sent."}
+
+
+# ── ML: Train / Predict / Model management ────────────────────────
+
+
+@router.post("/train")
+async def train_motion(
+    body: MotionTrainRequest | None = None,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_active_ws),
+) -> dict[str, Any]:
+    """Train XGBoost model from motion_training_data in DB.
+
+    Pipeline: query DB → group by session → sliding window → extract features → train.
+    """
+    params = body or MotionTrainRequest()
+
+    # 1. Query all motion training data for active workspace
+    result = await db.execute(
+        select(MotionTrainingData)
+        .where(MotionTrainingData.workspace_id == ws.id)
+        .order_by(MotionTrainingData.session_id, MotionTrainingData.timestamp)
+    )
+    rows = result.scalars().all()
+
+    if not rows:
+        raise HTTPException(400, "No motion training data in database. Record data first.")
+
+    # 2. Group by session_id
+    sessions: dict[str, list[dict[str, Any]]] = {}
+    session_labels: dict[str, str] = {}
+    for r in rows:
+        sid = r.session_id or "unknown"
+        if sid not in sessions:
+            sessions[sid] = []
+            session_labels[sid] = r.action_label or "unknown"
+        sessions[sid].append({
+            "ax": r.ax, "ay": r.ay, "az": r.az,
+            "gx": r.gx, "gy": r.gy, "gz": r.gz,
+            "distance_m": r.distance_m, "velocity_ms": r.velocity_ms,
+        })
+
+    # 3. Create sliding windows + extract features
+    all_features: list[dict[str, float]] = []
+    all_labels: list[str] = []
+
+    for sid, samples in sessions.items():
+        label = session_labels[sid]
+        windows = create_sliding_windows(samples, params.window_size, params.overlap)
+        for window in windows:
+            features = extract_features(window)
+            all_features.append(features)
+            all_labels.append(label)
+
+    if len(all_features) < 2:
+        raise HTTPException(
+            400,
+            f"Not enough data windows ({len(all_features)}). "
+            f"Need at least 2 windows. Record more data or reduce window_size.",
+        )
+
+    unique_labels = set(all_labels)
+    if len(unique_labels) < 2:
+        raise HTTPException(
+            400,
+            f"Need at least 2 different action labels to train. Found: {unique_labels}",
+        )
+
+    # 4. Train
+    stats = train_motion_model(all_features, all_labels, test_size=params.test_split)
+    return {"message": "Motion model trained", **stats}
+
+
+@router.post("/predict")
+async def predict_motion_action(body: MotionPredictRequest) -> dict[str, Any]:
+    """Predict action label from a raw IMU data window."""
+    if not is_motion_model_ready():
+        raise HTTPException(400, "Motion model not trained yet. POST /api/motion/train first.")
+
+    if len(body.imu_data) < 5:
+        raise HTTPException(400, f"Need at least 5 IMU samples, got {len(body.imu_data)}")
+
+    features = extract_features(body.imu_data)
+    result = predict_motion(features)
+    if result is None:
+        raise HTTPException(500, "Prediction failed")
+    return result
+
+
+@router.get("/model")
+async def motion_model_info() -> dict[str, Any]:
+    """Get current motion model status and metadata."""
+    return get_motion_model_info()
+
+
+@router.post("/model/save")
+async def save_motion_model() -> dict[str, str]:
+    """Persist trained model to disk."""
+    if not is_motion_model_ready():
+        raise HTTPException(400, "No trained model to save")
+    return save_model()
+
+
+@router.post("/model/load")
+async def load_motion_model() -> dict[str, Any]:
+    """Load persisted model from disk."""
+    try:
+        return load_model()
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))

@@ -45,3 +45,12 @@ class MotionRecordStartRequest(BaseModel):
 
 class MotionRecordStopRequest(BaseModel):
     device_id: str
+
+class MotionTrainRequest(BaseModel):
+    window_size: int = 40          # samples per window (2 sec @ 20Hz)
+    overlap: float = 0.5           # 50% overlap
+    test_split: float = 0.2        # 80/20 train/test
+
+class MotionPredictRequest(BaseModel):
+    imu_data: List[Dict[str, float]]  # raw IMU samples [{ax,ay,az,gx,gy,gz}, ...]
+

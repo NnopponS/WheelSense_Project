@@ -1,4 +1,4 @@
-"""WheelSense Server — Room localization using KNN / XGBoost.
+"""WheelSense Server — Room localization using KNN.
 
 The model is trained on labeled RSSI fingerprint data and predicts rooms
 from incoming RSSI vectors. Thread-safe for use from async MQTT handler.
