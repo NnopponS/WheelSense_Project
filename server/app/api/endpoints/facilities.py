@@ -1,8 +1,8 @@
 """Facility and Floor CRUD endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
 
 from app.api.dependencies import (
     RequireRole,
@@ -12,20 +12,21 @@ from app.api.dependencies import (
     ROLE_SUPERVISOR_READ,
 )
 from app.models.core import Workspace
+from app.models.core import Room
 from app.models.users import User
 from app.models.facility import Facility, Floor
 from app.schemas.facility import (
     FacilityCreate,
+    FacilityUpdate,
     FacilityOut,
     FloorCreate,
+    FloorUpdate,
     FloorOut,
 )
 from app.services.base import CRUDBase
 
-_UpdatePlaceholder = type("_UpdatePlaceholder", (BaseModel,), {})
-
-facility_service = CRUDBase[Facility, FacilityCreate, _UpdatePlaceholder](Facility)
-floor_service = CRUDBase[Floor, FloorCreate, _UpdatePlaceholder](Floor)
+facility_service = CRUDBase[Facility, FacilityCreate, FacilityUpdate](Facility)
+floor_service = CRUDBase[Floor, FloorCreate, FloorUpdate](Floor)
 
 router = APIRouter()
 
@@ -79,6 +80,20 @@ async def delete_facility(
         raise HTTPException(404, "Facility not found")
 
 
+@router.patch("/{facility_id}", response_model=FacilityOut)
+async def update_facility(
+    facility_id: int,
+    data: FacilityUpdate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
+    if not fac:
+        raise HTTPException(404, "Facility not found")
+    return await facility_service.update(db, ws_id=ws.id, db_obj=fac, obj_in=data)
+
+
 # ── Floor CRUD ───────────────────────────────────────────────────────────────
 
 
@@ -108,3 +123,50 @@ async def create_floor(
     # Override facility_id from path
     floor_data = data.model_copy(update={"facility_id": facility_id})
     return await floor_service.create(db, ws_id=ws.id, obj_in=floor_data)
+
+
+@router.patch("/{facility_id}/floors/{floor_id}", response_model=FloorOut)
+async def update_floor(
+    facility_id: int,
+    floor_id: int,
+    data: FloorUpdate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
+    if not fac:
+        raise HTTPException(404, "Facility not found")
+    floor = await floor_service.get(db, ws_id=ws.id, id=floor_id)
+    if not floor or floor.facility_id != facility_id:
+        raise HTTPException(404, "Floor not found")
+    return await floor_service.update(db, ws_id=ws.id, db_obj=floor, obj_in=data)
+
+
+@router.delete("/{facility_id}/floors/{floor_id}", status_code=204)
+async def delete_floor(
+    facility_id: int,
+    floor_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
+    if not fac:
+        raise HTTPException(404, "Facility not found")
+
+    floor = await floor_service.get(db, ws_id=ws.id, id=floor_id)
+    if not floor or floor.facility_id != facility_id:
+        raise HTTPException(404, "Floor not found")
+
+    linked_rooms = await db.execute(
+        select(Room.id).where(Room.workspace_id == ws.id, Room.floor_id == floor_id).limit(1)
+    )
+    if linked_rooms.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot delete floor while rooms are assigned to this floor",
+        )
+
+    await db.delete(floor)
+    await db.commit()

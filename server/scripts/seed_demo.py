@@ -35,6 +35,7 @@ from app.models import (
     Device,
     Facility,
     Floor,
+    FloorplanLayout,
     Patient,
     PatientDeviceAssignment,
     Room,
@@ -282,6 +283,67 @@ async def seed_rooms(
         rooms.append(room)
     await session.commit()
     return rooms
+
+
+def _layout_room_geometry(index: int) -> tuple[float, float, float, float]:
+    """Return deterministic room box geometry (percent-based) for demo layouts."""
+    cols = 4
+    col = index % cols
+    row = index // cols
+    gap = 2.0
+    w = 22.0
+    h = 20.0
+    x = 2.0 + (w + gap) * col
+    y = 2.0 + (h + gap) * row
+    return x, y, w, h
+
+
+async def seed_floorplan_layouts(
+    session: AsyncSession,
+    workspace_id: int,
+    facility: Facility,
+    floors: list[Floor],
+    rooms: list[Room],
+) -> None:
+    """Ensure each seeded floor has interactive floorplan JSON."""
+    for floor in floors:
+        floor_rooms = [room for room in rooms if room.floor_id == floor.id]
+        layout_rooms = []
+        for idx, room in enumerate(floor_rooms):
+            x, y, w, h = _layout_room_geometry(idx)
+            layout_rooms.append(
+                {
+                    "id": f"room-{room.id}",
+                    "label": room.name,
+                    "x": x,
+                    "y": y,
+                    "w": w,
+                    "h": h,
+                    "device_id": None,
+                    "power_kw": None,
+                }
+            )
+
+        payload = {"version": 1, "rooms": layout_rooms}
+        q = await session.execute(
+            select(FloorplanLayout).where(
+                FloorplanLayout.workspace_id == workspace_id,
+                FloorplanLayout.facility_id == facility.id,
+                FloorplanLayout.floor_id == floor.id,
+            )
+        )
+        row = q.scalar_one_or_none()
+        if row is None:
+            row = FloorplanLayout(
+                workspace_id=workspace_id,
+                facility_id=facility.id,
+                floor_id=floor.id,
+                layout_json=payload,
+            )
+            session.add(row)
+        else:
+            row.layout_json = payload
+    await session.commit()
 
 
 async def seed_caregivers_and_users(
@@ -656,6 +718,7 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
 
         facility, floors = await seed_facility(session, ws.id)
         rooms = await seed_rooms(session, ws.id, floors)
+        await seed_floorplan_layouts(session, ws.id, facility, floors, rooms)
         caregivers_by_role, users_by_role = await seed_caregivers_and_users(session, ws.id)
         patients, devices = await seed_patients_and_devices(session, ws.id, rooms)
         patient_user = await seed_patient_user(session, ws.id, patients[0])

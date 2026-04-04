@@ -21,6 +21,8 @@ interface AuthContextValue {
   error: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  /** Re-fetch /auth/me (e.g. after workspace change on server). */
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -39,6 +41,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("ws_token") : null;
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    try {
+      const me = await api.get<User>("/auth/me");
+      setUser(me);
+      setError(null);
+    } catch {
+      setUser(null);
     }
   }, []);
 
@@ -75,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -93,11 +93,163 @@ async def test_create_and_list_rooms(client: AsyncClient):
     assert res.status_code == 200
     room = res.json()
     assert room["name"] == "Room A"
+    assert "floor_name" in room
 
     list_res = await client.get("/api/rooms")
     assert list_res.status_code == 200
     rooms = list_res.json()
     assert any(r["name"] == "Room A" for r in rooms)
+    assert all("floor_id" in r for r in rooms)
+
+
+@pytest.mark.asyncio
+async def test_create_room_with_floor_and_meta_one_request(client: AsyncClient):
+    ws_res = await client.post("/api/workspaces", json={"name": "OneShotRoomWS", "mode": "simulation"})
+    await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
+    fac_res = await client.post(
+        "/api/facilities",
+        json={"name": "B-OS", "address": "", "description": "", "config": {}},
+    )
+    assert fac_res.status_code == 201
+    facility_id = fac_res.json()["id"]
+    floor_res = await client.post(
+        f"/api/facilities/{facility_id}/floors",
+        json={"facility_id": facility_id, "floor_number": 1, "name": "L1", "map_data": {}},
+    )
+    assert floor_res.status_code == 201
+    floor_id = floor_res.json()["id"]
+
+    res = await client.post(
+        "/api/rooms",
+        json={
+            "name": "OneShot",
+            "description": "",
+            "floor_id": floor_id,
+            "room_type": "bedroom",
+            "node_device_id": None,
+        },
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["name"] == "OneShot"
+    assert body["floor_id"] == floor_id
+    assert body["room_type"] == "bedroom"
+    assert body["floor_name"] is not None
+
+
+@pytest.mark.asyncio
+async def test_room_update_and_delete(client: AsyncClient):
+    ws_res = await client.post("/api/workspaces", json={"name": "RoomPatchWS", "mode": "simulation"})
+    await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
+
+    create = await client.post("/api/rooms", json={"name": "Room C", "description": "Legacy"})
+    assert create.status_code == 200
+    room_id = create.json()["id"]
+
+    patch = await client.patch(f"/api/rooms/{room_id}", json={"name": "Room C Updated"})
+    assert patch.status_code == 200
+    assert patch.json()["name"] == "Room C Updated"
+
+    delete = await client.delete(f"/api/rooms/{room_id}")
+    assert delete.status_code == 204
+
+    missing = await client.get(f"/api/rooms/{room_id}")
+    assert missing.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_list_rooms_filter_by_floor(client: AsyncClient):
+    ws_res = await client.post(
+        "/api/workspaces", json={"name": "FloorFilterWS", "mode": "simulation"}
+    )
+    await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
+
+    fac_res = await client.post(
+        "/api/facilities",
+        json={"name": "B1", "address": "", "description": "", "config": {}},
+    )
+    assert fac_res.status_code == 201
+    facility_id = fac_res.json()["id"]
+
+    floor1 = await client.post(
+        f"/api/facilities/{facility_id}/floors",
+        json={"facility_id": facility_id, "floor_number": 1, "name": "L1", "map_data": {}},
+    )
+    floor2 = await client.post(
+        f"/api/facilities/{facility_id}/floors",
+        json={"facility_id": facility_id, "floor_number": 2, "name": "L2", "map_data": {}},
+    )
+    assert floor1.status_code == 201
+    assert floor2.status_code == 201
+    f1_id = floor1.json()["id"]
+    f2_id = floor2.json()["id"]
+
+    r1 = await client.post("/api/rooms", json={"name": "R-F1", "description": ""})
+    r2 = await client.post("/api/rooms", json={"name": "R-F2", "description": ""})
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+    await client.patch(f"/api/rooms/{r1.json()['id']}", json={"floor_id": f1_id})
+    await client.patch(f"/api/rooms/{r2.json()['id']}", json={"floor_id": f2_id})
+
+    f1_only = await client.get(f"/api/rooms?floor_id={f1_id}")
+    assert f1_only.status_code == 200
+    assert {r["name"] for r in f1_only.json()} == {"R-F1"}
+
+    bad = await client.get("/api/rooms?floor_id=999999")
+    assert bad.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_facility_and_floor_update_delete(client: AsyncClient):
+    ws_res = await client.post(
+        "/api/workspaces", json={"name": "FacilityPatchWS", "mode": "simulation"}
+    )
+    await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
+
+    fac_res = await client.post(
+        "/api/facilities",
+        json={"name": "Building A", "address": "", "description": "", "config": {}},
+    )
+    assert fac_res.status_code == 201
+    facility_id = fac_res.json()["id"]
+
+    fac_patch = await client.patch(
+        f"/api/facilities/{facility_id}",
+        json={"name": "Building A Updated"},
+    )
+    assert fac_patch.status_code == 200
+    assert fac_patch.json()["name"] == "Building A Updated"
+
+    floor_res = await client.post(
+        f"/api/facilities/{facility_id}/floors",
+        json={"facility_id": facility_id, "floor_number": 1, "name": "L1", "map_data": {}},
+    )
+    assert floor_res.status_code == 201
+    floor_id = floor_res.json()["id"]
+
+    floor_patch = await client.patch(
+        f"/api/facilities/{facility_id}/floors/{floor_id}",
+        json={"name": "Level One"},
+    )
+    assert floor_patch.status_code == 200
+    assert floor_patch.json()["name"] == "Level One"
+
+    room_res = await client.post("/api/rooms", json={"name": "Guarded Room", "description": ""})
+    assert room_res.status_code == 200
+    room_id = room_res.json()["id"]
+    room_link = await client.patch(f"/api/rooms/{room_id}", json={"floor_id": floor_id})
+    assert room_link.status_code == 200
+
+    blocked = await client.delete(f"/api/facilities/{facility_id}/floors/{floor_id}")
+    assert blocked.status_code == 409
+
+    unlink_room = await client.patch(f"/api/rooms/{room_id}", json={"floor_id": None})
+    assert unlink_room.status_code == 200
+    drop_room = await client.delete(f"/api/rooms/{room_id}")
+    assert drop_room.status_code == 204
+
+    floor_delete = await client.delete(f"/api/facilities/{facility_id}/floors/{floor_id}")
+    assert floor_delete.status_code == 204
 
 
 @pytest.mark.asyncio

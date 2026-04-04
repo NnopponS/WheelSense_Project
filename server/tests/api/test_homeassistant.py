@@ -155,3 +155,50 @@ async def test_control_device_denies_cross_workspace_access(
         headers=make_token_headers(other_workspace_user),
     )
     assert response.status_code == 404
+
+
+async def test_patch_smart_device(client: AsyncClient, setup_ha_data):
+    _, room, device = setup_ha_data
+    response = await client.patch(
+        f"/api/ha/devices/{device.id}",
+        json={"name": "Renamed AC", "is_active": False},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Renamed AC"
+    assert data["is_active"] is False
+    assert data["room_id"] == room.id
+
+
+async def test_patch_smart_device_invalid_room_id(
+    client: AsyncClient,
+    setup_ha_data,
+    isolated_ha_device,
+):
+    _, _, device = setup_ha_data
+    other_room_id = isolated_ha_device.room_id
+    assert other_room_id is not None
+    response = await client.patch(
+        f"/api/ha/devices/{device.id}",
+        json={"room_id": other_room_id},
+    )
+    assert response.status_code == 400
+
+
+async def test_patch_smart_device_cross_workspace_returns_404(
+    client: AsyncClient,
+    isolated_ha_device,
+):
+    response = await client.patch(
+        f"/api/ha/devices/{isolated_ha_device.id}",
+        json={"name": "Should not apply"},
+    )
+    assert response.status_code == 404
+
+
+async def test_delete_smart_device(client: AsyncClient, setup_ha_data):
+    _, _, device = setup_ha_data
+    response = await client.delete(f"/api/ha/devices/{device.id}")
+    assert response.status_code == 204
+    listed = await client.get("/api/ha/devices")
+    assert all(d["id"] != device.id for d in listed.json())

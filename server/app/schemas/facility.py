@@ -15,6 +15,13 @@ class FacilityCreate(BaseModel):
     config: dict[str, Any] = {}
 
 
+class FacilityUpdate(BaseModel):
+    name: str | None = None
+    address: str | None = None
+    description: str | None = None
+    config: dict[str, Any] | None = None
+
+
 class FacilityOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -33,6 +40,12 @@ class FloorCreate(BaseModel):
     floor_number: int
     name: str = ""
     map_data: dict[str, Any] = {}
+
+
+class FloorUpdate(BaseModel):
+    floor_number: int | None = None
+    name: str | None = None
+    map_data: dict[str, Any] | None = None
 
 
 class FloorOut(BaseModel):

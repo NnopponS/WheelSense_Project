@@ -4,12 +4,13 @@ from sqlalchemy.future import select
 from typing import List
 
 from app.api.dependencies import RequireRole, get_current_user_workspace, get_db
-from app.models.core import SmartDevice, Workspace
+from app.models.core import Room, SmartDevice, Workspace
 from app.schemas.homeassistant import (
     SmartDeviceResponse,
     SmartDeviceCreate,
+    SmartDeviceUpdate,
     HADeviceControl,
-    HAResponse
+    HAResponse,
 )
 from app.services.homeassistant import ha_service
 
@@ -50,6 +51,57 @@ async def add_smart_device(
     await db.commit()
     await db.refresh(new_device)
     return new_device
+
+
+@router.patch("/devices/{device_id}", response_model=SmartDeviceResponse)
+async def update_smart_device(
+    device_id: int,
+    body: SmartDeviceUpdate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _=Depends(RequireRole(["admin"])),
+):
+    stmt = select(SmartDevice).where(
+        SmartDevice.id == device_id,
+        SmartDevice.workspace_id == ws.id,
+    )
+    result = await db.execute(stmt)
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Smart device not found")
+
+    patch = body.model_dump(exclude_unset=True)
+    if "room_id" in patch and patch["room_id"] is not None:
+        room = await db.get(Room, patch["room_id"])
+        if not room or room.workspace_id != ws.id:
+            raise HTTPException(status_code=400, detail="Invalid room_id")
+
+    for key, value in patch.items():
+        setattr(device, key, value)
+    db.add(device)
+    await db.commit()
+    await db.refresh(device)
+    return device
+
+
+@router.delete("/devices/{device_id}", status_code=204)
+async def delete_smart_device(
+    device_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _=Depends(RequireRole(["admin"])),
+):
+    stmt = select(SmartDevice).where(
+        SmartDevice.id == device_id,
+        SmartDevice.workspace_id == ws.id,
+    )
+    result = await db.execute(stmt)
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Smart device not found")
+    await db.delete(device)
+    await db.commit()
+
 
 @router.post("/devices/{device_id}/control", response_model=HAResponse)
 async def control_smart_device(

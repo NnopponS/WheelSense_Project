@@ -72,11 +72,39 @@ async function request<T>(
   }
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new ApiError(res.status, body.detail || res.statusText);
+    const raw = await res.text();
+    let msg = res.statusText || "Error";
+    try {
+      const j = JSON.parse(raw) as { detail?: unknown };
+      if (j.detail !== undefined) {
+        msg =
+          typeof j.detail === "string"
+            ? j.detail
+            : Array.isArray(j.detail)
+              ? j.detail
+                  .map((e) =>
+                    typeof e === "object" && e && "msg" in e
+                      ? String((e as { msg: unknown }).msg)
+                      : JSON.stringify(e),
+                  )
+                  .join("; ")
+              : JSON.stringify(j.detail);
+      }
+    } catch {
+      if (raw.trim()) msg = raw.slice(0, 200);
+    }
+    throw new ApiError(res.status, msg);
   }
 
-  return res.json() as Promise<T>;
+  if (res.status === 204 || res.status === 205) {
+    return undefined as T;
+  }
+
+  const raw = await res.text();
+  if (!raw.trim()) {
+    return undefined as T;
+  }
+  return JSON.parse(raw) as T;
 }
 
 /** Login with username/password via OAuth2 form */

@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
+# JSON column may store legacy list[str] or structured {condition, severity, ...} dicts.
+MedicalConditionEntry = str | dict[str, Any]
 
 # ── Patient ───────────────────────────────────────────────────────────────────
 
@@ -17,7 +19,7 @@ class PatientCreate(BaseModel):
     height_cm: float | None = None
     weight_kg: float | None = None
     blood_type: str = ""
-    medical_conditions: list[str] = []
+    medical_conditions: list[MedicalConditionEntry] = []
     allergies: list[str] = []
     medications: list[dict[str, Any]] = []
     care_level: str = "normal"
@@ -35,7 +37,7 @@ class PatientUpdate(BaseModel):
     care_level: str | None = None
     mobility_type: str | None = None
     notes: str | None = None
-    medical_conditions: list[str] | None = None
+    medical_conditions: list[MedicalConditionEntry] | None = None
     allergies: list[str] | None = None
     medications: list[dict[str, Any]] | None = None
     room_id: int | None = None
@@ -53,7 +55,7 @@ class PatientOut(BaseModel):
     height_cm: float | None
     weight_kg: float | None
     blood_type: str
-    medical_conditions: list[str]
+    medical_conditions: list[MedicalConditionEntry]
     allergies: list[str]
     medications: list[dict[str, Any]]
     care_level: str

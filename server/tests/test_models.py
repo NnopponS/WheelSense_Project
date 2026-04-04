@@ -699,6 +699,38 @@ class TestPydanticSchemas:
         assert data.mobility_type == "wheelchair"
         assert data.medical_conditions == []
 
+    def test_patient_out_accepts_structured_medical_conditions(self) -> None:
+        """DB/seed may store medical_conditions as list[dict] (severity + condition)."""
+        from datetime import UTC, datetime
+
+        from app.schemas.patients import PatientOut
+
+        now = datetime.now(UTC)
+        row = PatientOut(
+            id=1,
+            workspace_id=1,
+            first_name="A",
+            last_name="B",
+            nickname="",
+            date_of_birth=None,
+            gender="",
+            height_cm=None,
+            weight_kg=None,
+            blood_type="",
+            medical_conditions=[{"severity": "high", "condition": "diabetes"}],
+            allergies=[],
+            medications=[],
+            care_level="normal",
+            mobility_type="wheelchair",
+            current_mode="wheelchair",
+            notes="",
+            admitted_at=now,
+            is_active=True,
+            room_id=None,
+            created_at=now,
+        )
+        assert row.medical_conditions[0]["condition"] == "diabetes"
+
     def test_facility_create(self) -> None:
         from app.schemas.facility import FacilityCreate
 

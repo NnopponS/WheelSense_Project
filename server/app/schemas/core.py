@@ -17,6 +17,20 @@ class WorkspaceOut(BaseModel):
 class RoomCreate(BaseModel):
     name: str
     description: str = ""
+    floor_id: int | None = None
+    room_type: str | None = None
+    node_device_id: str | None = None
+
+
+class RoomUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    floor_id: int | None = None
+    room_type: str | None = None
+    node_device_id: str | None = None
+    adjacent_rooms: List[int] | None = None
+    config: Dict[str, object] | None = None
+
 
 class DeviceCreate(BaseModel):
     device_id: str

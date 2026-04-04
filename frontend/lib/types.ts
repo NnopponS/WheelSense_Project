@@ -73,7 +73,7 @@ export interface Device {
 
 export interface Room {
   id: number;
-  workspace_id: number;
+  workspace_id?: number;
   floor_id: number | null;
   name: string;
   description: string;
@@ -81,8 +81,11 @@ export interface Room {
   room_type: string;
   adjacent_rooms: number[];
   config: Record<string, unknown>;
-  facility_id?: number;
-  created_at: string;
+  floor_name?: string | null;
+  floor_number?: number | null;
+  facility_id?: number | null;
+  facility_name?: string | null;
+  created_at?: string;
 }
 
 // ── Vital Reading ───────────────────────────────────────────────────────────

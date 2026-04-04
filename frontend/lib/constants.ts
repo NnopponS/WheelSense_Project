@@ -1,4 +1,4 @@
-/** API base URL — proxied through Next.js rewrites in dev */
+/** API base URL — proxied by `app/api/[[...path]]/route.ts` to the FastAPI server */
 export const API_BASE = "/api";
 
 /** Routes — Phase 12R role shells */

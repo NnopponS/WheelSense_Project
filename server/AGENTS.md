@@ -529,7 +529,7 @@ cd server/
 python scripts/seed_demo.py --reset
 ```
 
-The seed script attaches the **bootstrap admin** user (`BOOTSTRAP_ADMIN_USERNAME`, default `admin`) to the **demo workspace** so `/admin` lists patients/devices/vitals for the same data as `demo_*` users. If you previously logged in as `admin`, refresh the dashboard (workspace scope is read from the DB on each request).
+The seed script attaches the **bootstrap admin** user (`BOOTSTRAP_ADMIN_USERNAME`, default `admin`) to the **demo workspace** so `/admin` lists patients/devices/vitals for the same data as `demo_*` users. It also seeds `floorplan_layouts` per demo floor so **Interactive floorplans** opens with editable rooms immediately. If you previously logged in as `admin`, refresh the dashboard (workspace scope is read from the DB on each request).
 
 If `docker compose up -d` fails pulling `copilot-cli` (registry denied), start the stack without it:  
 `docker compose up -d db mosquitto ollama wheelsense-platform-server`.

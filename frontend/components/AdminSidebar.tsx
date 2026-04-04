@@ -12,7 +12,6 @@ import {
   MapPin,
   Bell,
   UserCog,
-  Building2,
   LogOut,
   Activity,
   Shield,
@@ -53,7 +52,6 @@ const NAV_GROUPS: NavGroup[] = [
     categoryKey: "nav.category.admin",
     items: [
       { href: "/admin/users", labelKey: "nav.users", icon: Shield },
-      { href: "/admin/facilities", labelKey: "nav.facilities", icon: Building2 },
       { href: "/admin/settings", labelKey: "nav.settings", icon: Settings },
       { href: "/admin/audit", labelKey: "nav.auditLog", icon: ScrollText },
     ],

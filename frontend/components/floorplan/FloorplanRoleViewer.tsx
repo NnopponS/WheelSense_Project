@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@/hooks/useQuery";
-import type { Facility, Floor } from "@/lib/types";
+import type { Facility, Floor, Room } from "@/lib/types";
 import {
+  bootstrapRoomsFromDbFloor,
   normalizeFloorplanRooms,
   type FloorplanLayoutResponse,
 } from "@/lib/floorplanLayout";
@@ -59,10 +60,23 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
     error: layoutError,
   } = useQuery<FloorplanLayoutResponse>(layoutEndpoint);
 
-  const rooms = useMemo(
-    () => normalizeFloorplanRooms(layoutRes?.layout_json),
-    [layoutRes],
+  const floorRoomsEndpoint =
+    floorId === "" ? null : `/rooms?floor_id=${floorId}`;
+  const { data: floorRooms, isLoading: loadingFloorRooms } = useQuery<Room[]>(
+    floorRoomsEndpoint,
   );
+
+  const rooms = useMemo(() => {
+    const fromLayout = normalizeFloorplanRooms(layoutRes?.layout_json);
+    if (fromLayout.length > 0) return fromLayout;
+    if (!floorRooms?.length) return [];
+    return bootstrapRoomsFromDbFloor(floorRooms);
+  }, [layoutRes, floorRooms]);
+
+  const canvasLoading =
+    loadingLayout ||
+    (normalizeFloorplanRooms(layoutRes?.layout_json).length === 0 &&
+      loadingFloorRooms);
 
   useEffect(() => {
     setSelectedId(null);
@@ -142,8 +156,8 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
       {facilityId !== "" && floorId !== "" && loadingFloors === false && (
         floors?.length === 0 ? (
           <p className="text-sm text-on-surface-variant">{t("floorplan.noFloors")}</p>
-        ) : loadingLayout ? (
-          <div className="min-h-[320px] flex items-center justify-center rounded-xl border border-outline-variant/30 bg-surface-container-low/80">
+        ) : canvasLoading ? (
+          <div className="min-h-[min(78vh,720px)] flex items-center justify-center rounded-xl border border-outline-variant/30 bg-surface-container-low/80">
             <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         ) : layoutError ? (

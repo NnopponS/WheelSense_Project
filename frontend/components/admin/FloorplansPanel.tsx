@@ -12,6 +12,7 @@ import {
   type FloorplanRoomShape,
 } from "@/lib/floorplanLayout";
 import {
+  Pencil,
   Building2,
   ChevronRight,
   Layers,
@@ -62,7 +63,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
     return `/future/floorplans/layout?facility_id=${facilityId}&floor_id=${floorId}`;
   }, [facilityId, floorId]);
 
-  const { data: layoutRes, isLoading: loadingLayout, refetch } =
+  const { data: layoutRes, isLoading: loadingLayout, error: layoutError, refetch } =
     useQuery<FloorplanLayoutResponse>(layoutEndpoint);
 
   const { data: devices } = useQuery<Device[]>("/devices");
@@ -104,9 +105,19 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
   }, [layoutRes, facilityId, floorId]);
 
   useEffect(() => {
+    if (facilityId !== "" || !facilities?.length) return;
+    setFacilityId(facilities[0].id);
+  }, [facilities, facilityId]);
+
+  useEffect(() => {
     setFloorId("");
     setShowNewFloor(false);
   }, [facilityId]);
+
+  useEffect(() => {
+    if (floorId !== "" || !floors?.length) return;
+    setFloorId(floors[0].id);
+  }, [floors, floorId]);
 
   const selected = rooms.find((r) => r.id === selectedId) ?? null;
 
@@ -211,6 +222,78 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
     }
   }
 
+  async function handleRenameFacility() {
+    if (facilityId === "") return;
+    const nextName = window.prompt(
+      t("floorplan.buildingName"),
+      selectedFacilityName || "",
+    )?.trim();
+    if (!nextName) return;
+    setMessage(null);
+    try {
+      await api.patch<Facility>(`/facilities/${facilityId}`, {
+        name: nextName,
+      });
+      await refetchFacilities();
+      setMessage(t("floorplan.saved"));
+    } catch (e) {
+      setMessage(e instanceof ApiError ? e.message : t("floorplan.saveFailed"));
+    }
+  }
+
+  async function handleDeleteFacility() {
+    if (facilityId === "") return;
+    if (!window.confirm("Delete selected building and all its floors/layouts?")) return;
+    setMessage(null);
+    try {
+      await api.delete<void>(`/facilities/${facilityId}`);
+      await refetchFacilities();
+      setFacilityId("");
+      setFloorId("");
+      setRooms([]);
+      setSelectedId(null);
+      setMessage(t("floorplan.saved"));
+    } catch (e) {
+      setMessage(e instanceof ApiError ? e.message : t("floorplan.saveFailed"));
+    }
+  }
+
+  async function handleRenameFloor() {
+    if (facilityId === "" || floorId === "") return;
+    const current = (floors ?? []).find((f) => f.id === floorId);
+    const nextName = window.prompt(
+      t("floorplan.floorDisplayName"),
+      current?.name ?? "",
+    )?.trim();
+    if (!nextName) return;
+    setMessage(null);
+    try {
+      await api.patch<Floor>(`/facilities/${facilityId}/floors/${floorId}`, {
+        name: nextName,
+      });
+      await refetchFloors();
+      setMessage(t("floorplan.saved"));
+    } catch (e) {
+      setMessage(e instanceof ApiError ? e.message : t("floorplan.saveFailed"));
+    }
+  }
+
+  async function handleDeleteFloor() {
+    if (facilityId === "" || floorId === "") return;
+    if (!window.confirm("Delete selected floor?")) return;
+    setMessage(null);
+    try {
+      await api.delete<void>(`/facilities/${facilityId}/floors/${floorId}`);
+      await refetchFloors();
+      setFloorId("");
+      setRooms([]);
+      setSelectedId(null);
+      setMessage(t("floorplan.saved"));
+    } catch (e) {
+      setMessage(e instanceof ApiError ? e.message : t("floorplan.saveFailed"));
+    }
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       {!embedded && (
@@ -255,17 +338,37 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                 <Building2 className="w-4 h-4 text-primary" />
                 {t("floorplan.building")}
               </label>
-              <button
-                type="button"
-                className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1"
-                onClick={() => {
-                  setShowNewFacility((v) => !v);
-                  setShowNewFloor(false);
-                }}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {t("floorplan.newBuilding")}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none"
+                  disabled={facilityId === ""}
+                  onClick={() => void handleRenameFacility()}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-error hover:underline inline-flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none"
+                  disabled={facilityId === ""}
+                  onClick={() => void handleDeleteFacility()}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1"
+                  onClick={() => {
+                    setShowNewFacility((v) => !v);
+                    setShowNewFloor(false);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {t("floorplan.newBuilding")}
+                </button>
+              </div>
             </div>
             <select
               className="input-field text-sm w-full"
@@ -333,18 +436,38 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                 <Layers className="w-4 h-4 text-primary" />
                 {t("floorplan.floor")}
               </label>
-              <button
-                type="button"
-                className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none"
-                disabled={facilityId === ""}
-                onClick={() => {
-                  openNewFloorPanel();
-                  setShowNewFacility(false);
-                }}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {t("floorplan.newFloor")}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none"
+                  disabled={facilityId === "" || floorId === ""}
+                  onClick={() => void handleRenameFloor()}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-error hover:underline inline-flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none"
+                  disabled={facilityId === "" || floorId === ""}
+                  onClick={() => void handleDeleteFloor()}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1 disabled:opacity-40 disabled:pointer-events-none"
+                  disabled={facilityId === ""}
+                  onClick={() => {
+                    openNewFloorPanel();
+                    setShowNewFacility(false);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {t("floorplan.newFloor")}
+                </button>
+              </div>
             </div>
             <select
               className="input-field text-sm w-full"
@@ -482,6 +605,17 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
             {loadingLayout ? (
               <div className="h-80 flex items-center justify-center surface-card">
                 <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : layoutError ? (
+              <div className="h-80 surface-card p-4 flex flex-col justify-center gap-3">
+                <p className="text-sm text-error">{t("floorplan.layoutError")}</p>
+                <button
+                  type="button"
+                  className="px-3 py-2 text-sm rounded-lg border border-outline-variant/30 bg-surface-container-low w-fit"
+                  onClick={() => void refetch()}
+                >
+                  Retry
+                </button>
               </div>
             ) : (
               <FloorplanCanvas
