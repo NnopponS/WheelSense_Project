@@ -22,8 +22,19 @@ env/
 .coverage
 htmlcov/
 
-# Reports (keep tracked, but regenerable)
-# server/reports/
+# Reports (regenerable)
+server/reports/
+server/pytest_output.txt
+
+# Runtime uploads / local storage
+server/storage/
+
+# Home Assistant runtime (keep configuration.yaml tracked separately if needed)
+server/homeassistant/.storage/
+server/homeassistant/*.log
+server/homeassistant/*.log.*
+server/homeassistant/*.fault
+server/homeassistant/.ha_run.lock
 
 # Node/Server
 node_modules/

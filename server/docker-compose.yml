@@ -1,4 +1,4 @@
-version: "3.8"
+name: wheelsense-platform
 
 services:
   db:
@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: wheelsense
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_dev}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -33,7 +33,8 @@ services:
       timeout: 5s
       retries: 3
 
-  server:
+  wheelsense-platform-server:
+    container_name: wheelsense-platform-server
     build:
       context: .
       dockerfile: Dockerfile
@@ -43,17 +44,60 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
       DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      SECRET_KEY: ${SECRET_KEY:-wheelsense-local-dev-secret-key}
       MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      AI_PROVIDER: ${AI_PROVIDER:-ollama}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gemma3:4b}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434/v1}
+      COPILOT_CLI_URL: ${COPILOT_CLI_URL:-copilot-cli:4321}
+      COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
+      BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-true}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-wheelsense2026}
     depends_on:
       db:
         condition: service_healthy
       mosquitto:
         condition: service_healthy
+      ollama:
+        condition: service_started
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  copilot-cli:
+    image: ghcr.io/github/copilot-cli:latest
+    restart: unless-stopped
+    command: ["--headless", "--port", "4321"]
+    ports:
+      - "4321:4321"
+    environment:
+      - COPILOT_GITHUB_TOKEN=${COPILOT_GITHUB_TOKEN:-}
+    volumes:
+      - copilot_sessions:/root/.copilot/session-state
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./homeassistant:/config
+    environment:
+      - TZ=Asia/Bangkok
+    network_mode: bridge
 
 volumes:
   pgdata:
   mosquitto_data:
   mosquitto_log:
+  ollama_data:
+  copilot_sessions:

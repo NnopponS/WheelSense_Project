@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.core import Workspace
+from app.models.users import User
 
 
 # ── Workspace tests ──────────────────────────────────────────────────────────
@@ -18,13 +23,14 @@ async def test_health(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_create_first_workspace_becomes_active(client: AsyncClient):
+async def test_create_workspace(client: AsyncClient):
+    # test_admin_workspace is already active, so this one won't become active
     res = await client.post("/api/workspaces", json={"name": "Sim-A", "mode": "simulation"})
     assert res.status_code == 200
     data = res.json()
     assert data["name"] == "Sim-A"
     assert data["mode"] == "simulation"
-    assert data["is_active"] is True
+    assert data["is_active"] is False
 
 
 @pytest.mark.asyncio
@@ -43,11 +49,29 @@ async def test_activate_workspace(client: AsyncClient):
 
     res = await client.post(f"/api/workspaces/{ws2_id}/activate")
     assert res.status_code == 200
+    assert res.json()["id"] == ws2_id
 
-    all_ws = await client.get("/api/workspaces")
-    active = [w for w in all_ws.json() if w["is_active"]]
-    assert len(active) == 1
-    assert active[0]["id"] == ws2_id
+    me = await client.get("/api/auth/me")
+    assert me.status_code == 200
+    assert me.json()["workspace_id"] == ws2_id
+
+
+@pytest.mark.asyncio
+async def test_switch_workspace_changes_visible_resources(client: AsyncClient):
+    ws1 = await client.post("/api/workspaces", json={"name": "WS-A", "mode": "simulation"})
+    ws1_id = ws1.json()["id"]
+    await client.post(f"/api/workspaces/{ws1_id}/activate")
+    await client.post("/api/rooms", json={"name": "Room A", "description": "A"})
+
+    ws2 = await client.post("/api/workspaces", json={"name": "WS-B", "mode": "simulation"})
+    ws2_id = ws2.json()["id"]
+    await client.post(f"/api/workspaces/{ws2_id}/activate")
+    await client.post("/api/rooms", json={"name": "Room B", "description": "B"})
+
+    rooms = await client.get("/api/rooms")
+    assert rooms.status_code == 200
+    names = {room["name"] for room in rooms.json()}
+    assert names == {"Room B"}
 
 
 @pytest.mark.asyncio
@@ -63,7 +87,8 @@ async def test_list_workspaces(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_create_and_list_rooms(client: AsyncClient):
-    await client.post("/api/workspaces", json={"name": "RoomWS", "mode": "simulation"})
+    ws_res = await client.post("/api/workspaces", json={"name": "RoomWS", "mode": "simulation"})
+    await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
     res = await client.post("/api/rooms", json={"name": "Room A", "description": "Main room"})
     assert res.status_code == 200
     room = res.json()
@@ -76,8 +101,14 @@ async def test_create_and_list_rooms(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_no_active_workspace_returns_400(client: AsyncClient):
-    # No workspace created → should 400
+async def test_invalid_current_workspace_returns_400(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    admin_user.workspace_id = 999999
+    await db_session.commit()
+
     res = await client.get("/api/rooms")
     assert res.status_code == 400
 
@@ -86,29 +117,43 @@ async def test_no_active_workspace_returns_400(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_create_and_list_devices(client: AsyncClient):
-    await client.post("/api/workspaces", json={"name": "DevWS", "mode": "simulation"})
+    ws_res = await client.post("/api/workspaces", json={"name": "DeviceWS", "mode": "simulation"})
+    await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
+
+    # Create a device
     res = await client.post("/api/devices", json={"device_id": "WS_01", "device_type": "wheelchair"})
     assert res.status_code == 200
     assert res.json()["device_id"] == "WS_01"
 
-    list_res = await client.get("/api/devices")
-    assert list_res.status_code == 200
-    devices = list_res.json()
-    assert any(d["device_id"] == "WS_01" for d in devices)
+    # List devices
+    res = await client.get("/api/devices")
+    assert res.status_code == 200
+    assert len(res.json()) == 1
+    assert res.json()[0]["device_id"] == "WS_01"
 
 
 # ── Telemetry tests ──────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
-async def test_query_imu_requires_active_workspace(client: AsyncClient):
+async def test_query_imu_ignores_global_active_workspace(
+    client: AsyncClient,
+    db_session: AsyncSession,
+):
+    await db_session.execute(update(Workspace).values(is_active=False))
+    await db_session.commit()
     res = await client.get("/api/telemetry/imu")
-    assert res.status_code == 400
+    assert res.status_code == 200
 
 
 @pytest.mark.asyncio
-async def test_query_rssi_requires_active_workspace(client: AsyncClient):
+async def test_query_rssi_ignores_global_active_workspace(
+    client: AsyncClient,
+    db_session: AsyncSession,
+):
+    await db_session.execute(update(Workspace).values(is_active=False))
+    await db_session.commit()
     res = await client.get("/api/telemetry/rssi")
-    assert res.status_code == 400
+    assert res.status_code == 200
 
 
 # ── Localization tests ───────────────────────────────────────────────────────
@@ -127,6 +172,7 @@ async def test_predict_without_model_returns_400(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_retrain_without_data_returns_400(client: AsyncClient):
-    await client.post("/api/workspaces", json={"name": "LocalWS", "mode": "simulation"})
+    ws_res = await client.post("/api/workspaces", json={"name": "LocalWS", "mode": "simulation"})
+    await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
     res = await client.post("/api/localization/retrain")
     assert res.status_code == 400

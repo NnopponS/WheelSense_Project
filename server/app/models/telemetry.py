@@ -82,3 +82,16 @@ class MotionTrainingData(Base):
     distance_m = Column(Float)
     velocity_ms = Column(Float)
     accel_ms2 = Column(Float)
+
+
+class PhotoRecord(Base):
+    __tablename__ = "photo_records"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    device_id = Column(String(32), nullable=False, index=True)
+    photo_id = Column(String(64), nullable=False, unique=True, index=True)
+    filepath = Column(String(255), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    timestamp = Column(DateTime(timezone=True), default=utcnow, index=True)
+

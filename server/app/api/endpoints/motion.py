@@ -19,9 +19,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.config as config
-from app.api.dependencies import get_db, get_active_ws
-from app.feature_engineering import extract_features, create_sliding_windows
-from app.models.core import Workspace
+from app.api.dependencies import get_current_user_workspace, get_db
+from app.feature_engineering import create_sliding_windows, extract_features
+from app.models.core import Device, Workspace
 from app.models.telemetry import MotionTrainingData
 from app.motion_classifier import (
     get_motion_model_info,
@@ -46,8 +46,21 @@ settings = config.settings
 
 
 @router.post("/record/start")
-async def start_motion_recording(body: MotionRecordStartRequest) -> dict[str, str]:
+async def start_motion_recording(
+    body: MotionRecordStartRequest,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+) -> dict[str, str]:
     """Send MQTT command to start labeled IMU recording on device."""
+    result = await db.execute(
+        select(Device).where(
+            Device.workspace_id == ws.id,
+            Device.device_id == body.device_id,
+        )
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(404, "Device not found in current workspace")
+
     payload = {"cmd": "start_record", "label": body.label, "session_id": body.session_id}
     topic = f"WheelSense/{body.device_id}/control"
     try:
@@ -64,8 +77,21 @@ async def start_motion_recording(body: MotionRecordStartRequest) -> dict[str, st
 
 
 @router.post("/record/stop")
-async def stop_motion_recording(body: MotionRecordStopRequest) -> dict[str, str]:
+async def stop_motion_recording(
+    body: MotionRecordStopRequest,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+) -> dict[str, str]:
     """Send MQTT command to stop IMU recording on device."""
+    result = await db.execute(
+        select(Device).where(
+            Device.workspace_id == ws.id,
+            Device.device_id == body.device_id,
+        )
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(404, "Device not found in current workspace")
+
     payload = {"cmd": "stop_record"}
     topic = f"WheelSense/{body.device_id}/control"
     try:
@@ -88,7 +114,7 @@ async def stop_motion_recording(body: MotionRecordStopRequest) -> dict[str, str]
 async def train_motion(
     body: MotionTrainRequest | None = None,
     db: AsyncSession = Depends(get_db),
-    ws: Workspace = Depends(get_active_ws),
+    ws: Workspace = Depends(get_current_user_workspace),
 ) -> dict[str, Any]:
     """Train XGBoost model from motion_training_data in DB.
 
@@ -111,10 +137,10 @@ async def train_motion(
     sessions: dict[str, list[dict[str, Any]]] = {}
     session_labels: dict[str, str] = {}
     for r in rows:
-        sid = r.session_id or "unknown"
+        sid = str(r.session_id) if r.session_id else "unknown"
         if sid not in sessions:
             sessions[sid] = []
-            session_labels[sid] = r.action_label or "unknown"
+            session_labels[sid] = str(r.action_label) if r.action_label else "unknown"
         sessions[sid].append({
             "ax": r.ax, "ay": r.ay, "az": r.az,
             "gx": r.gx, "gy": r.gy, "gz": r.gz,
@@ -148,44 +174,49 @@ async def train_motion(
         )
 
     # 4. Train
-    stats = train_motion_model(all_features, all_labels, test_size=params.test_split)
+    stats = train_motion_model(
+        all_features, all_labels, workspace_id=ws.id, test_size=params.test_split
+    )
     return {"message": "Motion model trained", **stats}
 
 
 @router.post("/predict")
-async def predict_motion_action(body: MotionPredictRequest) -> dict[str, Any]:
+async def predict_motion_action(
+    body: MotionPredictRequest,
+    ws: Workspace = Depends(get_current_user_workspace),
+) -> dict[str, Any]:
     """Predict action label from a raw IMU data window."""
-    if not is_motion_model_ready():
+    if not is_motion_model_ready(ws.id):
         raise HTTPException(400, "Motion model not trained yet. POST /api/motion/train first.")
 
     if len(body.imu_data) < 5:
         raise HTTPException(400, f"Need at least 5 IMU samples, got {len(body.imu_data)}")
 
     features = extract_features(body.imu_data)
-    result = predict_motion(features)
+    result = predict_motion(features, workspace_id=ws.id)
     if result is None:
         raise HTTPException(500, "Prediction failed")
     return result
 
 
 @router.get("/model")
-async def motion_model_info() -> dict[str, Any]:
+async def motion_model_info(ws: Workspace = Depends(get_current_user_workspace)) -> dict[str, Any]:
     """Get current motion model status and metadata."""
-    return get_motion_model_info()
+    return get_motion_model_info(ws.id)
 
 
 @router.post("/model/save")
-async def save_motion_model() -> dict[str, str]:
+async def save_motion_model(ws: Workspace = Depends(get_current_user_workspace)) -> dict[str, str]:
     """Persist trained model to disk."""
-    if not is_motion_model_ready():
+    if not is_motion_model_ready(ws.id):
         raise HTTPException(400, "No trained model to save")
-    return save_model()
+    return save_model(workspace_id=ws.id)
 
 
 @router.post("/model/load")
-async def load_motion_model() -> dict[str, Any]:
+async def load_motion_model(ws: Workspace = Depends(get_current_user_workspace)) -> dict[str, Any]:
     """Load persisted model from disk."""
     try:
-        return load_model()
+        return load_model(workspace_id=ws.id)
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))

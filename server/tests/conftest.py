@@ -12,6 +12,8 @@ from unittest.mock import AsyncMock, patch
 # ── Must be set BEFORE any app import so Settings() reads them ───────────────
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["DATABASE_URL_SYNC"] = "sqlite:///:memory:"
+os.environ["SECRET_KEY"] = "test-secret-key"
+os.environ["BOOTSTRAP_ADMIN_ENABLED"] = "false"
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -19,7 +21,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from app.api.dependencies import get_db
+from app.core.security import create_access_token, get_password_hash
+import app.models  # noqa: F401 — register all ORM models on Base.metadata
 from app.models.base import Base
+from app.models.core import Workspace
+from app.models.users import User
 
 # ── Shared in-memory engine (StaticPool keeps same connection across tests) ──
 _engine = create_async_engine(
@@ -59,9 +65,45 @@ async def db_session():
         yield session
 
 
+@pytest_asyncio.fixture()
+async def admin_user(db_session: AsyncSession) -> User:
+    ws = Workspace(name="test_admin_workspace", is_active=True)
+    db_session.add(ws)
+    await db_session.flush()
+
+    user = User(
+        username="admin",
+        hashed_password=get_password_hash("adminpass"),
+        role="admin",
+        workspace_id=ws.id,
+    )
+    db_session.add(user)
+    await db_session.flush()
+    return user
+
+
+@pytest_asyncio.fixture()
+async def admin_token(admin_user: User) -> str:
+    return create_access_token(subject=str(admin_user.id), role=admin_user.role)
+
+
+@pytest_asyncio.fixture()
+async def admin_token_headers(admin_token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {admin_token}"}
+
+
+@pytest_asyncio.fixture()
+async def make_token_headers():
+    def _make(user: User) -> dict[str, str]:
+        token = create_access_token(subject=str(user.id), role=user.role)
+        return {"Authorization": f"Bearer {token}"}
+
+    return _make
+
+
 # ── HTTP client fixture — lifespan bypassed, DB overridden ──────────────────
 @pytest_asyncio.fixture()
-async def client(db_session: AsyncSession):
+async def client(db_session: AsyncSession, admin_token: str):
 
     async def _override_db():
         yield db_session
@@ -76,7 +118,9 @@ async def client(db_session: AsyncSession):
         app.dependency_overrides[get_db] = _override_db
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), base_url="http://test"
+            transport=ASGITransport(app=app), 
+            base_url="http://test",
+            headers={"Authorization": f"Bearer {admin_token}"}
         ) as ac:
             yield ac
 

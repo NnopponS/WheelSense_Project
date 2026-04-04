@@ -3,7 +3,7 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
-from app.api.dependencies import get_db, get_active_ws
+from app.api.dependencies import get_current_user_workspace, get_db
 from app.models.core import Workspace
 from app.models.telemetry import RSSITrainingData, RoomPrediction
 from app.schemas.core import TrainRequest, PredictRequest
@@ -12,15 +12,15 @@ from app.localization import get_model_info, is_model_ready, predict_room, train
 router = APIRouter()
 
 @router.get("")
-async def localization_info():
-    """Get current model info."""
-    return get_model_info()
+async def localization_info(ws: Workspace = Depends(get_current_user_workspace)):
+    """Get current model info for the authenticated user's workspace."""
+    return get_model_info(ws.id)
 
 @router.post("/train")
 async def train_localization(
     body: TrainRequest, 
     db: AsyncSession = Depends(get_db),
-    ws: Workspace = Depends(get_active_ws)
+    ws: Workspace = Depends(get_current_user_workspace),
 ):
     if not body.data:
         raise HTTPException(400, "No training data")
@@ -45,13 +45,13 @@ async def train_localization(
         }
         for item in body.data
     ]
-    stats = train_model(training_list)
+    stats = train_model(training_list, workspace_id=ws.id)
     return {"message": "Model trained", **stats}
 
 @router.post("/retrain")
 async def retrain_from_db(
     db: AsyncSession = Depends(get_db),
-    ws: Workspace = Depends(get_active_ws)
+    ws: Workspace = Depends(get_current_user_workspace),
 ):
     result = await db.execute(select(RSSITrainingData).where(RSSITrainingData.workspace_id == ws.id))
     rows = result.scalars().all()
@@ -66,14 +66,17 @@ async def retrain_from_db(
         }
         for r in rows
     ]
-    stats = train_model(training_list)
+    stats = train_model(training_list, workspace_id=ws.id)
     return {"message": "Model retrained from DB", **stats}
 
 @router.post("/predict")
-async def predict_localization(body: PredictRequest):
-    if not is_model_ready():
+async def predict_localization(
+    body: PredictRequest,
+    ws: Workspace = Depends(get_current_user_workspace),
+):
+    if not is_model_ready(ws.id):
         raise HTTPException(400, "Model not trained yet. POST /api/localization/train first.")
-    result = predict_room(body.rssi_vector)
+    result = predict_room(body.rssi_vector, workspace_id=ws.id)
     if result is None:
         raise HTTPException(500, "Prediction failed")
     return result
@@ -83,7 +86,7 @@ async def list_predictions(
     device_id: Optional[str] = None,
     limit: int = Query(default=50, le=500),
     db: AsyncSession = Depends(get_db),
-    ws: Workspace = Depends(get_active_ws)
+    ws: Workspace = Depends(get_current_user_workspace),
 ):
     query = select(RoomPrediction).where(RoomPrediction.workspace_id == ws.id).order_by(desc(RoomPrediction.timestamp)).limit(limit)
     if device_id:

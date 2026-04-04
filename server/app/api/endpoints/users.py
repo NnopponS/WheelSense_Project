@@ -1,0 +1,52 @@
+"""User endpoints: Management and CRUD for system users."""
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.dependencies import RequireRole, get_current_user_workspace, get_db
+from app.models.core import Workspace
+from app.models.users import User
+from app.schemas.users import UserCreate, UserOut, UserUpdate
+from app.services.auth import UserService
+
+router = APIRouter(tags=["Users"])
+
+
+@router.post("", response_model=UserOut)
+async def create_user(
+    data: UserCreate,
+    session: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(["admin"])),
+):
+    """
+    Create a new user. Only Admins can perform this action.
+    """
+    return await UserService.create_user(session, ws.id, data)
+
+
+@router.get("", response_model=list[UserOut])
+async def read_users(
+    session: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(["admin", "supervisor"])),
+):
+    """
+    Retrieve users. Admins and Supervisors can view users.
+    """
+    return await UserService.get_users_by_workspace(session, ws.id)
+
+
+@router.put("/{user_id}", response_model=UserOut)
+async def update_user(
+    user_id: int,
+    data: UserUpdate,
+    session: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(["admin"])),
+):
+    """
+    Update a user. Only Admins can perform this action.
+    """
+    update_data = data.model_dump(exclude_unset=True)
+    return await UserService.update_user(session, user_id, ws.id, update_data)

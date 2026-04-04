@@ -1,0 +1,15 @@
+# Architecture Decision Records
+
+> Architectural decisions for the WheelSense platform, recorded as they happen.
+
+| ADR | Title | Status | Date |
+|-----|-------|--------|------|
+| [0001](0001-fastmcp-sse-for-ai-integration.md) | Use FastMCP SSE for AI Agent Integration | accepted | 2026-04-01 |
+| [0002](0002-polar-ble-dual-path.md) | Dual-Path Polar Verity Sense Integration (BLE + Mobile SDK) | accepted | 2026-04-01 |
+| [0003](0003-facility-hierarchy-for-spatial-model.md) | Facility → Floor → Room Hierarchy for Spatial Model | accepted | 2026-04-01 |
+| [0004](0004-configurable-localization-strategy.md) | Configurable Localization Strategy (Max RSSI / KNN) | accepted | 2026-04-01 |
+| [0005](0005-camera-photo-only-internet-independent.md) | Photo-Only Camera Mode with Internet-Independent Upload | accepted | 2026-04-01 |
+| [0006](0006-cli-tui-first-no-web-dashboard.md) | CLI/TUI First — No Web Dashboard Until System Matures | accepted | 2026-04-01 |
+| [0007](0007-tdd-service-layer-architecture.md) | TDD with Service Layer Architecture | accepted | 2026-04-01 |
+| [0008](0008-workflow-domains-for-role-operations.md) | Workflow Domains for Role Operations | accepted | 2026-04-04 |
+| [0009](0009-future-domains-floorplan-prescription-pharmacy.md) | Future Domains for Floorplan, Prescription, and Pharmacy | accepted | 2026-04-04 |

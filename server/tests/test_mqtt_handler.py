@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 import json
-from datetime import datetime
+from datetime import datetime, UTC
 
 from app.models.core import Workspace, Device
 from app.models.telemetry import IMUTelemetry, MotionTrainingData, RSSIReading, RoomPrediction
@@ -12,7 +12,6 @@ from app.mqtt_handler import (
     _handle_telemetry,
     _handle_camera_registration,
     _handle_camera_status,
-    get_active_workspace,
     mqtt_listener
 )
 
@@ -25,15 +24,6 @@ async def active_workspace():
         await session.commit()
         await session.refresh(ws)
         return ws
-
-
-@pytest.mark.asyncio
-@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-async def test_get_active_workspace(active_workspace):
-    async with _SessionFactory() as session:
-        ws = await get_active_workspace(session)
-        assert ws is not None
-        assert ws.id == active_workspace.id
 
 
 @pytest.mark.asyncio
@@ -58,15 +48,24 @@ async def test_handle_telemetry(mock_predict, active_workspace):
         "is_recording": True,
         "action_label": "Walking",
         "session_id": "session-123",
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(UTC).isoformat()
     }
+
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id="WHEEL_1",
+                workspace_id=active_workspace.id,
+                device_type="wheelchair",
+            )
+        )
+        await session.commit()
     
     await _handle_telemetry(json.dumps(payload).encode(), mock_client)
     
     # Check DB updates
     async with _SessionFactory() as session:
         from sqlalchemy import select
-        # Device created
         device = (await session.execute(select(Device).where(Device.device_id == "WHEEL_1"))).scalar_one_or_none()
         assert device is not None
         assert device.workspace_id == active_workspace.id
@@ -96,7 +95,7 @@ async def test_handle_telemetry(mock_predict, active_workspace):
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 async def test_handle_telemetry_no_workspace():
-    # Will drop telemetry if no active workspace
+    # Will drop telemetry if device is not registered
     mock_client = AsyncMock()
     payload = {"device_id": "WHEEL_1"}
     await _handle_telemetry(json.dumps(payload).encode(), mock_client)
@@ -116,6 +115,16 @@ async def test_handle_camera_registration(active_workspace):
         "firmware": "v2.0",
         "node_id": "NODE_CAM_1"
     }
+
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id="CAM_1",
+                workspace_id=active_workspace.id,
+                device_type="camera",
+            )
+        )
+        await session.commit()
     
     await _handle_camera_registration(json.dumps(payload).encode())
     

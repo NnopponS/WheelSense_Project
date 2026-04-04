@@ -9,9 +9,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .config import settings
+from app.core.security import validate_runtime_settings
 from app.db.session import init_db
 from .mqtt_handler import mqtt_listener
 from app.api.router import api_router as router
+from app.mcp_server import mcp
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,18 +27,32 @@ logger = logging.getLogger("wheelsense")
 async def lifespan(app: FastAPI):
     """Startup: create tables & launch MQTT listener. Shutdown: cancel tasks."""
     logger.info("Starting %s", settings.app_name)
+    validate_runtime_settings()
 
-    # Create database tables
+    from app.db.init_db import init_admin_user
+
     await init_db()
     logger.info("Database initialized")
+    await init_admin_user()
 
     # Start MQTT listener as background task
     mqtt_task = asyncio.create_task(mqtt_listener())
     logger.info("MQTT listener started")
 
+    # Start retention scheduler (Phase 6)
+    from app.workers.retention_worker import (
+        start_retention_scheduler,
+        stop_retention_scheduler,
+    )
+    if settings.retention_enabled:
+        start_retention_scheduler()
+    else:
+        logger.info("Retention scheduler disabled via config")
+
     yield
 
     # Shutdown
+    stop_retention_scheduler()
     mqtt_task.cancel()
     try:
         await mqtt_task
@@ -62,4 +78,10 @@ async def root():
         "version": "3.2.0",
         "docs": "/docs",
         "health": "/api/health",
+        "mcp": "/mcp",
     }
+
+# Mount the MCP server's SSE ASGI app under /mcp
+# This enables agents like Claude Desktop or GitHub Copilot (via MCP adapters)
+# to discover and connect to the WheelSense MCP AI tools.
+app.mount("/mcp", mcp.sse_app())

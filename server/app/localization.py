@@ -1,13 +1,15 @@
 """WheelSense Server — Room localization using KNN.
 
 The model is trained on labeled RSSI fingerprint data and predicts rooms
-from incoming RSSI vectors. Thread-safe for use from async MQTT handler.
+from incoming RSSI vectors. Models are isolated per workspace_id.
+Thread-safe for use from async MQTT handler.
 """
 
 from __future__ import annotations
 
 import logging
 import threading
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
@@ -17,26 +19,33 @@ from sklearn.preprocessing import LabelEncoder
 logger = logging.getLogger("wheelsense.localization")
 
 _model_lock = threading.Lock()
-_model: KNeighborsClassifier | None = None
-_label_encoder: LabelEncoder | None = None
-_node_order: list[str] = []
-_room_id_map: dict[int, dict] = {}  # encoded_label -> {"room_id": ..., "room_name": ...}
 
 
-def train_model(training_data: list[dict]) -> dict:
-    """Train KNN model on labeled RSSI data.
+@dataclass
+class _WorkspaceKnnState:
+    model: KNeighborsClassifier
+    label_encoder: LabelEncoder
+    node_order: list[str]
+    room_id_map: dict[int, dict]
+
+
+# Per-workspace KNN state (workspace_id -> trained model bundle)
+_ws_models: dict[int, _WorkspaceKnnState] = {}
+
+
+def train_model(training_data: list[dict], workspace_id: int) -> dict:
+    """Train KNN model on labeled RSSI data for a workspace.
 
     Args:
         training_data: List of dicts with keys:
             - room_id: int
             - room_name: str
             - rssi_vector: dict[str, int]  e.g. {"WSN_001": -65, "WSN_002": -72}
+        workspace_id: Tenant scope for this model.
 
     Returns:
         dict with training stats: {"samples": N, "rooms": M, "nodes": K}
     """
-    global _model, _label_encoder, _node_order, _room_id_map
-
     if not training_data:
         return {"error": "No training data provided"}
 
@@ -79,17 +88,21 @@ def train_model(training_data: list[dict]) -> dict:
     knn.fit(X_arr, y_encoded)
 
     # Build room_id_map
-    id_map = {}
+    id_map: dict[int, dict] = {}
     for encoded_val in range(len(le.classes_)):
         label = le.classes_[encoded_val]
         if label in room_info:
             id_map[encoded_val] = room_info[label]
 
+    state = _WorkspaceKnnState(
+        model=knn,
+        label_encoder=le,
+        node_order=node_order,
+        room_id_map=id_map,
+    )
+
     with _model_lock:
-        _model = knn
-        _label_encoder = le
-        _node_order = node_order
-        _room_id_map = id_map
+        _ws_models[workspace_id] = state
 
     stats = {
         "samples": len(X_arr),
@@ -97,29 +110,31 @@ def train_model(training_data: list[dict]) -> dict:
         "nodes": len(node_order),
         "node_ids": node_order,
         "k": k,
+        "workspace_id": workspace_id,
     }
-    logger.info("Model trained: %s", stats)
+    logger.info("KNN model trained for workspace %s: %s", workspace_id, stats)
     return stats
 
 
-def predict_room(rssi_vector: dict[str, int]) -> dict[str, Any] | None:
-    """Predict room from an RSSI vector.
+def predict_room(rssi_vector: dict[str, int], workspace_id: int) -> dict[str, Any] | None:
+    """Predict room from an RSSI vector for the given workspace.
 
     Args:
         rssi_vector: {"WSN_001": -65, "WSN_002": -72, ...}
+        workspace_id: Model scope.
 
     Returns:
         {"room_id": 1, "room_name": "Living Room", "confidence": 0.87, "model_type": "knn"}
-        or None if no model is trained.
+        or None if no model is trained for this workspace.
     """
     with _model_lock:
-        model = _model
-        le = _label_encoder
-        node_order = _node_order
-        id_map = _room_id_map
-
-    if model is None or le is None:
-        return None
+        state = _ws_models.get(workspace_id)
+        if state is None:
+            return None
+        model = state.model
+        le = state.label_encoder
+        node_order = state.node_order
+        id_map = state.room_id_map
 
     # Build feature vector
     features = [rssi_vector.get(node, -100) for node in node_order]
@@ -140,18 +155,34 @@ def predict_room(rssi_vector: dict[str, int]) -> dict[str, Any] | None:
     }
 
 
-def is_model_ready() -> bool:
+def is_model_ready(workspace_id: int | None = None) -> bool:
+    """Return True if a trained KNN model exists (optionally for one workspace)."""
     with _model_lock:
-        return _model is not None
+        if workspace_id is not None:
+            return workspace_id in _ws_models
+        return len(_ws_models) > 0
 
 
-def get_model_info() -> dict:
+def get_model_info(workspace_id: int | None = None) -> dict:
+    """Return model metadata; if workspace_id is set, scope to that workspace."""
     with _model_lock:
-        if _model is None:
+        if workspace_id is not None:
+            state = _ws_models.get(workspace_id)
+            if state is None:
+                return {"status": "not_trained", "workspace_id": workspace_id}
+            return {
+                "status": "ready",
+                "workspace_id": workspace_id,
+                "nodes": state.node_order,
+                "rooms": len(state.room_id_map),
+                "k": state.model.n_neighbors,
+            }
+        if not _ws_models:
             return {"status": "not_trained"}
+        # Aggregate summary when no workspace specified (e.g. legacy callers)
+        wids = sorted(_ws_models.keys())
         return {
             "status": "ready",
-            "nodes": _node_order,
-            "rooms": len(_room_id_map),
-            "k": _model.n_neighbors,
+            "workspaces_trained": wids,
+            "workspace_count": len(wids),
         }

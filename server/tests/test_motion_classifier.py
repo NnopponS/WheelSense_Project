@@ -10,15 +10,15 @@ from app.motion_classifier import (
     get_motion_model_info,
     save_model,
     load_model,
-    _lock,
 )
+
+WS_ID = 1
 
 
 def _make_feature_set(label: str, n: int = 20, seed: float = 0.0) -> tuple[list[dict], list[str]]:
     """Create n feature dicts with distinct patterns per label."""
     features_list = []
     for i in range(n):
-        # Vary by label to create separable clusters
         offset = {"idle": 0.0, "straight": 2.0, "turn_left": -2.0, "fall": 5.0}.get(label, 1.0)
         samples = [
             {
@@ -39,54 +39,51 @@ def _make_feature_set(label: str, n: int = 20, seed: float = 0.0) -> tuple[list[
 
 @pytest.fixture(autouse=True)
 def _reset_model():
-    """Reset module-level model state before each test."""
+    """Reset per-workspace model state before each test."""
     import app.motion_classifier as mc
+
     with mc._lock:
-        mc._model = None
-        mc._label_encoder = None
-        mc._model_info = {"trained": False}
+        mc._ws_motion.clear()
     yield
     with mc._lock:
-        mc._model = None
-        mc._label_encoder = None
-        mc._model_info = {"trained": False}
+        mc._ws_motion.clear()
 
 
 class TestTrainMotionModel:
     def test_train_basic(self):
         f1, l1 = _make_feature_set("idle", 15, seed=0.0)
         f2, l2 = _make_feature_set("straight", 15, seed=1.0)
-        result = train_motion_model(f1 + f2, l1 + l2)
+        result = train_motion_model(f1 + f2, l1 + l2, workspace_id=WS_ID)
         assert result["trained"] is True
         assert result["n_classes"] == 2
         assert result["accuracy"] >= 0.0
         assert "idle" in result["labels"]
         assert "straight" in result["labels"]
-        assert is_motion_model_ready()
+        assert is_motion_model_ready(WS_ID)
 
     def test_train_empty_raises(self):
         with pytest.raises(ValueError, match="non-empty"):
-            train_motion_model([], [])
+            train_motion_model([], [], workspace_id=WS_ID)
 
     def test_train_mismatched_raises(self):
         f1, _ = _make_feature_set("idle", 5)
         with pytest.raises(ValueError, match="same length"):
-            train_motion_model(f1, ["idle"] * 3)
+            train_motion_model(f1, ["idle"] * 3, workspace_id=WS_ID)
 
 
 class TestPredictMotion:
     def test_predict_no_model(self):
-        assert not is_motion_model_ready()
+        assert not is_motion_model_ready(WS_ID)
         f1, _ = _make_feature_set("idle", 1)
-        result = predict_motion(f1[0])
+        result = predict_motion(f1[0], workspace_id=WS_ID)
         assert result is None
 
     def test_predict_after_train(self):
         f1, l1 = _make_feature_set("idle", 15, seed=0.0)
         f2, l2 = _make_feature_set("fall", 15, seed=3.0)
-        train_motion_model(f1 + f2, l1 + l2)
+        train_motion_model(f1 + f2, l1 + l2, workspace_id=WS_ID)
 
-        result = predict_motion(f1[0])
+        result = predict_motion(f1[0], workspace_id=WS_ID)
         assert result is not None
         assert result["predicted_label"] in ("idle", "fall")
         assert 0.0 <= result["confidence"] <= 1.0
@@ -95,14 +92,14 @@ class TestPredictMotion:
 
 class TestModelInfo:
     def test_info_before_train(self):
-        info = get_motion_model_info()
+        info = get_motion_model_info(WS_ID)
         assert info["trained"] is False
 
     def test_info_after_train(self):
         f1, l1 = _make_feature_set("idle", 15)
         f2, l2 = _make_feature_set("straight", 15, seed=1.0)
-        train_motion_model(f1 + f2, l1 + l2)
-        info = get_motion_model_info()
+        train_motion_model(f1 + f2, l1 + l2, workspace_id=WS_ID)
+        info = get_motion_model_info(WS_ID)
         assert info["trained"] is True
         assert info["n_features"] > 0
 
@@ -110,30 +107,34 @@ class TestModelInfo:
 class TestSaveLoadModel:
     def test_save_no_model_raises(self):
         with pytest.raises(RuntimeError, match="No trained"):
-            save_model()
+            save_model(workspace_id=WS_ID)
 
     def test_save_and_load(self, tmp_path):
         f1, l1 = _make_feature_set("idle", 15)
         f2, l2 = _make_feature_set("turn_left", 15, seed=2.0)
-        train_motion_model(f1 + f2, l1 + l2)
+        train_motion_model(f1 + f2, l1 + l2, workspace_id=WS_ID)
 
         mp = tmp_path / "model.json"
         ep = tmp_path / "labels.json"
-        paths = save_model(model_path=mp, encoder_path=ep)
+        paths = save_model(WS_ID, model_path=mp, encoder_path=ep)
         assert mp.exists()
         assert ep.exists()
+        assert "workspace_id" in paths
 
-        # Reset and reload
         import app.motion_classifier as mc
-        with mc._lock:
-            mc._model = None
-            mc._label_encoder = None
-        assert not is_motion_model_ready()
 
-        info = load_model(model_path=mp, encoder_path=ep)
-        assert is_motion_model_ready()
+        with mc._lock:
+            mc._ws_motion.clear()
+        assert not is_motion_model_ready(WS_ID)
+
+        info = load_model(WS_ID, model_path=mp, encoder_path=ep)
+        assert is_motion_model_ready(WS_ID)
         assert "idle" in info["labels"]
 
     def test_load_missing_raises(self, tmp_path):
         with pytest.raises(FileNotFoundError):
-            load_model(model_path=tmp_path / "nope.json", encoder_path=tmp_path / "nope2.json")
+            load_model(
+                WS_ID,
+                model_path=tmp_path / "nope.json",
+                encoder_path=tmp_path / "nope2.json",
+            )

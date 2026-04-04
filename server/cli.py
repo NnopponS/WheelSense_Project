@@ -28,6 +28,11 @@ console = Console()
 DEFAULT_SERVER = "http://localhost:8000"
 LABELS_FILE = "motion_labels.json"
 
+
+class UnauthorizedError(Exception):
+    """Raised when the API session is missing or the bearer token expired."""
+
+
 def load_motion_labels() -> list[str]:
     default_labels = [
         "forward_push",
@@ -61,81 +66,134 @@ class WheelSenseClient:
     def __init__(self, base_url: str = DEFAULT_SERVER):
         self.base_url = base_url.rstrip("/")
         self.api = f"{self.base_url}/api"
+        self.session = requests.Session()
+        self.token: str | None = None
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        auth: bool = True,
+        timeout: int = 5,
+        **kwargs: Any,
+    ) -> Any:
+        headers = dict(kwargs.pop("headers", {}))
+        if auth:
+            if not self.token:
+                raise UnauthorizedError("Not authenticated")
+            headers["Authorization"] = f"Bearer {self.token}"
+
+        response = self.session.request(
+            method,
+            f"{self.api}{path}",
+            headers=headers,
+            timeout=timeout,
+            **kwargs,
+        )
+        if response.status_code == 401:
+            self.token = None
+            raise UnauthorizedError("Token expired or invalid")
+
+        response.raise_for_status()
+        if not response.content:
+            return {}
+        return response.json()
+
+    def login(self, username: str, password: str) -> dict[str, Any]:
+        response = self.session.post(
+            f"{self.api}/auth/login",
+            data={"username": username, "password": password},
+            timeout=10,
+        )
+        if response.status_code == 401:
+            raise UnauthorizedError("Incorrect username or password")
+        response.raise_for_status()
+        data = response.json()
+        self.token = data["access_token"]
+        return data
+
+    def me(self) -> dict[str, Any]:
+        return self._request("GET", "/auth/me")
 
     def health(self) -> dict:
-        return requests.get(f"{self.api}/health", timeout=5).json()
+        return self._request("GET", "/health", auth=False)
 
     # --- Workspaces ---
     def workspaces(self) -> list[dict]:
-        return requests.get(f"{self.api}/workspaces", timeout=5).json()
+        return self._request("GET", "/workspaces")
 
     def create_workspace(self, name: str, mode: str) -> dict:
-        return requests.post(f"{self.api}/workspaces", json={"name": name, "mode": mode}, timeout=5).json()
+        return self._request(
+            "POST",
+            "/workspaces",
+            json={"name": name, "mode": mode},
+        )
 
     def activate_workspace(self, ws_id: int) -> dict:
-        return requests.post(f"{self.api}/workspaces/{ws_id}/activate", timeout=5).json()
+        return self._request("POST", f"/workspaces/{ws_id}/activate")
 
     # --- Devices ---
     def devices(self, device_type: str | None = None) -> list[dict]:
-        params = {}
+        params: dict[str, str] = {}
         if device_type:
             params["device_type"] = device_type
-        return requests.get(f"{self.api}/devices", params=params, timeout=5).json()
+        return self._request("GET", "/devices", params=params)
 
     def register_device(self, device_id: str, device_type: str = "wheelchair") -> dict:
-        return requests.post(f"{self.api}/devices", json={"device_id": device_id, "device_type": device_type}, timeout=5).json()
+        return self._request(
+            "POST",
+            "/devices",
+            json={"device_id": device_id, "device_type": device_type},
+        )
 
     # --- Rooms ---
     def rooms(self) -> list[dict]:
-        return requests.get(f"{self.api}/rooms", timeout=5).json()
+        return self._request("GET", "/rooms")
 
     def create_room(self, name: str, description: str = "") -> dict:
-        return requests.post(
-            f"{self.api}/rooms",
+        return self._request(
+            "POST",
+            "/rooms",
             json={"name": name, "description": description},
-            timeout=5,
-        ).json()
+        )
 
     # --- Recording ---
     def start_record(self, device_id: str, label: str) -> dict:
         session_id = f"session_{int(time.time())}"
-        resp = requests.post(
-            f"{self.api}/motion-record/start",
+        return self._request(
+            "POST",
+            "/motion/record/start",
             json={"device_id": device_id, "label": label, "session_id": session_id},
             timeout=10,
         )
-        resp.raise_for_status()
-        return resp.json()
 
     def stop_record(self, device_id: str) -> dict:
-        resp = requests.post(
-            f"{self.api}/motion-record/stop",
+        return self._request(
+            "POST",
+            "/motion/record/stop",
             json={"device_id": device_id},
             timeout=10,
         )
-        resp.raise_for_status()
-        return resp.json()
 
     # --- Localization ---
     def localization_info(self) -> dict:
-        return requests.get(f"{self.api}/localization", timeout=5).json()
+        return self._request("GET", "/localization")
 
     def retrain(self) -> dict:
-        resp = requests.post(f"{self.api}/localization/retrain", timeout=30)
-        resp.raise_for_status()
-        return resp.json()
+        return self._request("POST", "/localization/retrain", timeout=30)
 
     def telemetry(self, device_id: str | None = None, limit: int = 10) -> list[dict]:
         params: dict[str, Any] = {"limit": limit}
         if device_id:
             params["device_id"] = device_id
-        return requests.get(f"{self.api}/telemetry", params=params, timeout=5).json()
+        return self._request("GET", "/telemetry/imu", params=params)
 
     def predictions(self, device_id: str | None = None, limit: int = 10) -> list[dict]:
         params: dict[str, Any] = {"limit": limit}
         if device_id:
             params["device_id"] = device_id
-        return requests.get(f"{self.api}/localization/predictions", params=params, timeout=5).json()
+        return self._request("GET", "/localization/predictions", params=params)
 
 
 # ─── Display Helpers ────────────────────────────────────────────────────
@@ -143,17 +201,39 @@ class WheelSenseClient:
 def clear_screen():
     console.clear()
 
+
+def prompt_login(client: WheelSenseClient):
+    while True:
+        clear_screen()
+        console.print(Panel("WHEELSENSE LOGIN", style="bold white on black", expand=False))
+        username = Prompt.ask("Username", default="admin")
+        password = Prompt.ask("Password", password=True)
+        try:
+            client.login(username, password)
+            return
+        except UnauthorizedError:
+            console.print("[red]Login failed.[/]")
+            time.sleep(1)
+        except Exception as exc:
+            console.print(f"[red]Login error:[/] {exc}")
+            time.sleep(2)
+
+
 def print_banner(client: WheelSenseClient):
     clear_screen()
     console.print(Panel("WHEELSENSE PLATFORM CLI", style="bold white on black", expand=False))
-    
+
     try:
+        me = client.me()
         ws_list = client.workspaces()
-        active = next((w for w in ws_list if w.get("is_active")), None)
+        active = next((w for w in ws_list if w.get("id") == me.get("workspace_id")), None)
+        console.print(f"User: [bold green]{me['username']}[/] ({me['role']})")
         if active:
             console.print(f"Active Workspace: [bold cyan]{active['name']}[/] (Mode: {active['mode']})")
         else:
-            console.print("Active Workspace: [bold red]NONE[/] (Please configure a workspace)")
+            console.print("Current Workspace: [bold red]NONE[/] (User is not assigned to a workspace)")
+    except UnauthorizedError:
+        console.print("[yellow]Authentication required.[/]")
     except Exception:
         console.print("[red]Cannot connect to server API.[/]")
     console.print("-" * 50)
@@ -167,13 +247,16 @@ def manage_workspaces(client: WheelSenseClient):
         console.print("[bold]Workspace Management[/]")
         try:
             ws_list = client.workspaces()
+            me = client.me()
+        except UnauthorizedError:
+            raise
         except Exception:
             console.print("[red]API Error.[/]")
             input("Press Enter...")
             return
 
         for i, w in enumerate(ws_list, 1):
-            mark = "*" if w.get("is_active") else " "
+            mark = "*" if w.get("id") == me.get("workspace_id") else " "
             console.print(f" [{mark}] {i}. {w['name']} ({w['mode']})")
 
         console.print("\nOptions:")
@@ -189,14 +272,14 @@ def manage_workspaces(client: WheelSenseClient):
             mode = Prompt.ask("Mode (real/simulation)", choices=["real", "simulation"], default="real")
             created_ws = client.create_workspace(name, mode)
             console.print("[green]Workspace created.[/]")
-            
+
             if mode == "simulation" and "id" in created_ws:
                 rooms_count = IntPrompt.ask("How many virtual rooms to create?", default=3)
                 device_count = IntPrompt.ask("How many virtual devices to register?", default=1)
-                
+
                 # Activate before injecting
                 client.activate_workspace(created_ws["id"])
-                
+
                 for i in range(1, rooms_count + 1):
                     client.create_room(f"SimRoom_{i}", "Auto-generated simulation room")
                 for i in range(1, device_count + 1):
@@ -219,6 +302,8 @@ def manage_workspaces(client: WheelSenseClient):
 def select_device(client: WheelSenseClient) -> str | None:
     try:
         devices = client.devices()
+    except UnauthorizedError:
+        raise
     except Exception as e:
         console.print(f"[red]Error fetching devices:[/] {e}")
         return None
@@ -284,6 +369,8 @@ def show_device_status(client: WheelSenseClient, device_id: str):
         table.add_row("Distance", f"{motion.get('distance_m', 0):.2f} m")
         table.add_row("Accel", f"{motion.get('accel_ms2', 0):.2f} m/s2")
         console.print(table)
+    except UnauthorizedError:
+        raise
     except Exception as e:
         console.print(f"[red]Error:[/] {e}")
 
@@ -340,6 +427,8 @@ def mode_record_motion(client: WheelSenseClient, device_id: str):
         try:
             client.start_record(device_id, label)
             console.print("[green]Recording Started.[/]")
+        except UnauthorizedError:
+            raise
         except Exception as e:
             console.print(f"[red]Failed to start:[/] {e}")
             continue
@@ -355,6 +444,8 @@ def mode_record_motion(client: WheelSenseClient, device_id: str):
         try:
             client.stop_record(device_id)
             console.print(f"[green]Recording Saved.[/] Duration: {elapsed:.1f}s")
+        except UnauthorizedError:
+            raise
         except Exception as e:
             console.print(f"[red]Failed to stop:[/] {e}")
             
@@ -386,6 +477,8 @@ def mode_learning_location(client: WheelSenseClient, device_id: str):
                 for r in rooms:
                     table.add_row(str(r["id"]), r["name"])
                 console.print(table)
+            except UnauthorizedError:
+                raise
             except Exception as e:
                 console.print(f"[red]Error:[/] {e}")
             input("\nPress Enter...")
@@ -400,6 +493,8 @@ def mode_learning_location(client: WheelSenseClient, device_id: str):
             try:
                 res = client.retrain()
                 console.print(f"[green]Model retrained.[/] {res}")
+            except UnauthorizedError:
+                raise
             except Exception as e:
                 console.print(f"[red]Retrain failed:[/] {e}")
             input("\nPress Enter...")
@@ -413,6 +508,8 @@ def mode_learning_location(client: WheelSenseClient, device_id: str):
                 for p in preds:
                     table.add_row(str(p.get("timestamp"))[:19], p.get("predicted_room_name", ""), f"{p.get('confidence', 0):.2f}")
                 console.print(table)
+            except UnauthorizedError:
+                raise
             except Exception as e:
                 console.print(f"[red]Error:[/] {e}")
             input("\nPress Enter...")
@@ -426,16 +523,21 @@ def main():
     args = parser.parse_args()
 
     client = WheelSenseClient(args.server)
-    
+
+    prompt_login(client)
+
     while True:
-        print_banner(client)
-        
         try:
+            print_banner(client)
             ws_list = client.workspaces()
-            if not any(w.get("is_active") for w in ws_list):
-                console.print("[yellow]Initial setup required.[/]")
+            me = client.me()
+            if not any(w.get("id") == me.get("workspace_id") for w in ws_list):
+                console.print("[yellow]Workspace assignment is missing or invalid.[/]")
                 manage_workspaces(client)
                 continue
+        except UnauthorizedError:
+            prompt_login(client)
+            continue
         except Exception:
             console.print("[red]Ensure server handles are running and accessible.[/]")
             time.sleep(5)
@@ -446,31 +548,35 @@ def main():
             continue
 
         while True:
-            print_banner(client)
-            console.print(f"Target Device: [bold]{device_id}[/]\n")
-            console.print("[bold]Operations Menu[/]")
-            console.print("  1. Motion Classification Collection")
-            console.print("  2. RSSI Localization Control")
-            console.print("  3. View Telemetry Status")
-            console.print("  4. Switch Workspace")
-            console.print("  5. Switch Device")
-            console.print("  Q. Exit")
+            try:
+                print_banner(client)
+                console.print(f"Target Device: [bold]{device_id}[/]\n")
+                console.print("[bold]Operations Menu[/]")
+                console.print("  1. Motion Classification Collection")
+                console.print("  2. RSSI Localization Control")
+                console.print("  3. View Telemetry Status")
+                console.print("  4. Switch Workspace")
+                console.print("  5. Switch Device")
+                console.print("  Q. Exit")
 
-            choice = Prompt.ask("\nChoice").strip().lower()
+                choice = Prompt.ask("\nChoice").strip().lower()
 
-            if choice == "q":
-                sys.exit(0)
-            elif choice == "1":
-                mode_record_motion(client, device_id)
-            elif choice == "2":
-                mode_learning_location(client, device_id)
-            elif choice == "3":
-                show_device_status(client, device_id)
-                input("\nPress Enter...")
-            elif choice == "4":
-                manage_workspaces(client)
-                break # Refresh device selection for new workspace
-            elif choice == "5":
+                if choice == "q":
+                    sys.exit(0)
+                elif choice == "1":
+                    mode_record_motion(client, device_id)
+                elif choice == "2":
+                    mode_learning_location(client, device_id)
+                elif choice == "3":
+                    show_device_status(client, device_id)
+                    input("\nPress Enter...")
+                elif choice == "4":
+                    manage_workspaces(client)
+                    break # Refresh device selection for new workspace
+                elif choice == "5":
+                    break
+            except UnauthorizedError:
+                prompt_login(client)
                 break
 
 if __name__ == "__main__":
