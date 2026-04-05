@@ -56,13 +56,31 @@ services:
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
       BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-true}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      # Use a non-empty password; an empty value in host .env overrides the default and skips/wrong-hash admin.
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-wheelsense2026}
+      # Literal "true" so a blank line in host .env cannot disable (Compose ${VAR:-default} still passes "" if VAR is set empty).
+      BOOTSTRAP_ADMIN_SYNC_PASSWORD: "true"
+      BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE: "true"
     depends_on:
       db:
         condition: service_healthy
       mosquitto:
         condition: service_healthy
       ollama:
+        condition: service_started
+
+  wheelsense-platform-web:
+    container_name: wheelsense-platform-web
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      WHEELSENSE_API_ORIGIN: http://wheelsense-platform-server:8000
+    depends_on:
+      wheelsense-platform-server:
         condition: service_started
 
   ollama:

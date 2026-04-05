@@ -23,6 +23,8 @@ from app.schemas.caregivers import (
     ShiftCreate,
     ShiftOut,
 )
+from app.schemas.devices import CaregiverDeviceAssignmentCreate, CaregiverDeviceAssignmentOut
+from app.services import device_management as caregiver_device_service
 from app.services.base import CRUDBase
 
 # Service instances — CareGiver has simple CRUD, no custom business methods yet
@@ -125,6 +127,46 @@ async def assign_zone(
     await db.commit()
     await db.refresh(zone)
     return zone
+
+
+# ── Caregiver device assignments ─────────────────────────────────────────────
+
+
+@router.get(
+    "/{caregiver_id}/devices",
+    response_model=list[CaregiverDeviceAssignmentOut],
+)
+async def list_caregiver_devices(
+    caregiver_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_SUPERVISOR_READ)),
+):
+    rows = await caregiver_device_service.list_caregiver_device_assignments(
+        db, ws.id, caregiver_id
+    )
+    return rows
+
+
+@router.post(
+    "/{caregiver_id}/devices",
+    response_model=CaregiverDeviceAssignmentOut,
+    status_code=201,
+)
+async def assign_caregiver_device(
+    caregiver_id: int,
+    data: CaregiverDeviceAssignmentCreate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    return await caregiver_device_service.assign_caregiver_device(
+        db,
+        ws.id,
+        caregiver_id,
+        data.device_id,
+        data.device_role,
+    )
 
 
 # ── Shifts ───────────────────────────────────────────────────────────────────

@@ -133,6 +133,7 @@ async def test_handle_camera_registration(active_workspace):
         device = (await session.execute(select(Device).where(Device.device_id == "CAM_1"))).scalar_one_or_none()
         assert device is not None
         assert device.device_type == "camera"
+        assert device.hardware_type == "node"
         assert device.ip_address == "192.168.1.10"
 
     # Run again to update existing
@@ -162,6 +163,8 @@ async def test_handle_camera_status(active_workspace):
         from sqlalchemy import select
         device = (await session.execute(select(Device).where(Device.device_id == "CAM_STATUS"))).scalar_one_or_none()
         assert device.last_seen is not None
+        assert isinstance(device.config, dict)
+        assert "camera_status" in device.config
 
 
 @pytest.mark.asyncio

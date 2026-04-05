@@ -75,6 +75,16 @@ docker compose down
 
 ## Testing
 
+### Phase 2 device / fleet / presence work
+
+When implementing **Phase 2** device features (fleet API, snapshot job correlation, floorplan presence overlay), follow the repo execution plan and ADRs:
+
+- [docs/plans/phase2-device-management-execution-plan.md](../../docs/plans/phase2-device-management-execution-plan.md)
+- [docs/adr/0010-phase2-device-fleet-control-plane.md](../../docs/adr/0010-phase2-device-fleet-control-plane.md)
+- [docs/adr/0011-phase2-map-person-presence-projection.md](../../docs/adr/0011-phase2-map-person-presence-projection.md)
+
+Add focused tests under `tests/` as new modules land (e.g. fleet batch, presence projection); keep full suite green with `python -m pytest tests/ --ignore=scripts/ -q`.
+
 ### Test Architecture
 
 Tests use an in-memory SQLite database via `aiosqlite`. No running Postgres is needed to run tests.

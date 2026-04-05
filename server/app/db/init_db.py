@@ -31,7 +31,16 @@ async def init_admin_user() -> None:
         user = res.scalars().first()
 
         if user:
-            logger.info("Admin user already exists. Skipping initialization.")
+            if settings.bootstrap_admin_sync_password:
+                user.hashed_password = get_password_hash(settings.bootstrap_admin_password)
+                user.role = "admin"
+                user.is_active = True
+                await session.commit()
+                logger.info(
+                    "Bootstrap admin password synced from environment (bootstrap_admin_sync_password)."
+                )
+            else:
+                logger.info("Admin user already exists. Skipping initialization.")
             return
 
         res_ws = await session.execute(select(Workspace).order_by(Workspace.id).limit(1))
@@ -53,3 +62,38 @@ async def init_admin_user() -> None:
         session.add(admin_user)
         await session.commit()
         logger.info("Created initial admin user '%s'.", settings.bootstrap_admin_username)
+
+
+async def try_attach_bootstrap_admin_to_demo_workspace() -> None:
+    """If the demo workspace from seed_demo exists, move bootstrap admin onto it (Docker / dev UX)."""
+    if not settings.bootstrap_admin_attach_demo_workspace:
+        return
+    name = (settings.bootstrap_demo_workspace_name or "").strip()
+    if not name:
+        return
+
+    async with AsyncSessionLocal() as session:
+        r = await session.execute(select(Workspace).where(Workspace.name == name))
+        demo = r.scalars().first()
+        if not demo:
+            logger.info(
+                "Demo workspace %r not found — run `python scripts/seed_demo.py` once to load mock data.",
+                name,
+            )
+            return
+
+        r2 = await session.execute(
+            select(User).where(User.username == settings.bootstrap_admin_username)
+        )
+        user = r2.scalars().first()
+        if not user:
+            return
+        if user.workspace_id == demo.id:
+            return
+        user.workspace_id = demo.id
+        await session.commit()
+        logger.info(
+            "Bootstrap admin workspace set to demo %r (id=%s) for seeded data visibility.",
+            name,
+            demo.id,
+        )

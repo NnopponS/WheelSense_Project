@@ -21,6 +21,7 @@ from sqlalchemy import update
 from app.db.session import AsyncSessionLocal
 from app.models import Workspace, Room, Patient, User, Device, PatientDeviceAssignment
 from app.core.security import get_password_hash
+from seed_device_extras import seed_additional_sim_devices
 
 ENVIRONMENTS = [
     "Simulation 1 - Nursing Home",
@@ -256,9 +257,23 @@ async def seed_data(env_name: str):
             )
             device = result.scalar_one_or_none()
             if not device:
-                device = Device(workspace_id=ws.id, device_id=dev_id, device_type="wheelchair")
+                device = Device(
+                    workspace_id=ws.id,
+                    device_id=dev_id,
+                    device_type="wheelchair",
+                    hardware_type="wheelchair",
+                    display_name=f"Wheelchair {i + 1:02d}",
+                    ip_address="",
+                    firmware="sim-v1",
+                    config={},
+                )
                 session.add(device)
                 await session.flush()
+            else:
+                device.hardware_type = "wheelchair"
+                device.device_type = "wheelchair"
+                if not (device.display_name or "").strip():
+                    device.display_name = f"Wheelchair {i + 1:02d}"
 
             # Check assignment
             result = await session.execute(
@@ -274,10 +289,13 @@ async def seed_data(env_name: str):
                     workspace_id=ws.id,
                     patient_id=patient.id,
                     device_id=dev_id,
-                    device_role="wheelchair",
+                    device_role="wheelchair_sensor",
                     is_active=True
                 )
                 session.add(assignment)
+
+        print("Seeding Node / Polar Sense / Mobile Phone sim devices...")
+        await seed_additional_sim_devices(session, ws.id)
 
         await session.commit()
         print("[OK] Environment seeding complete.")

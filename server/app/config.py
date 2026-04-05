@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     bootstrap_admin_enabled: bool = True
     bootstrap_admin_username: str = "admin"
     bootstrap_admin_password: str = ""
+    # When true and BOOTSTRAP_ADMIN_PASSWORD is set, re-hash password on startup if admin user exists.
+    # Docker Compose enables this so login matches compose env after DB volume reuse.
+    bootstrap_admin_sync_password: bool = False
+    # Name of the demo workspace created by scripts/seed_demo.py (must match that script).
+    bootstrap_demo_workspace_name: str = "WheelSense Demo Workspace"
+    # When true and that workspace exists, point bootstrap admin at it so /admin sees seeded data.
+    bootstrap_admin_attach_demo_workspace: bool = False
 
     # HomeAssistant
     ha_base_url: str = "http://localhost:8123"

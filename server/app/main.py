@@ -29,11 +29,15 @@ async def lifespan(app: FastAPI):
     logger.info("Starting %s", settings.app_name)
     validate_runtime_settings()
 
-    from app.db.init_db import init_admin_user
+    from app.db.init_db import (
+        init_admin_user,
+        try_attach_bootstrap_admin_to_demo_workspace,
+    )
 
     await init_db()
     logger.info("Database initialized")
     await init_admin_user()
+    await try_attach_bootstrap_admin_to_demo_workspace()
 
     # Start MQTT listener as background task
     mqtt_task = asyncio.create_task(mqtt_listener())

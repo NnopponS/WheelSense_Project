@@ -38,6 +38,9 @@
 | `BOOTSTRAP_ADMIN_ENABLED` | No | `true` | Create admin user on first startup if not present |
 | `BOOTSTRAP_ADMIN_USERNAME` | No | `admin` | Username for the bootstrap admin account |
 | `BOOTSTRAP_ADMIN_PASSWORD` | No | _(empty)_ | Password for bootstrap admin — skipped if empty |
+| `BOOTSTRAP_ADMIN_SYNC_PASSWORD` | No | `false` | When `true` and password is set, re-hash bootstrap admin password on every startup (Docker Compose defaults this to `true` so `admin` matches `BOOTSTRAP_ADMIN_PASSWORD` after DB volume reuse) |
+| `BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE` | No | `false` | When `true` and a workspace named `BOOTSTRAP_DEMO_WORKSPACE_NAME` exists (from `scripts/seed_demo.py`), assign bootstrap `admin` to that workspace so dashboards list patients/devices (Compose defaults to `true`) |
+| `BOOTSTRAP_DEMO_WORKSPACE_NAME` | No | `WheelSense Demo Workspace` | Must match the name used by `scripts/seed_demo.py` |
 
 ## HomeAssistant Integration
 
@@ -82,6 +85,16 @@ SECRET_KEY=any-random-string-for-local-dev
 BOOTSTRAP_ADMIN_PASSWORD=admin1234
 MQTT_BROKER=localhost
 ```
+
+## Phase 2 (reserved — not implemented until code lands)
+
+Optional future knobs for device snapshot timeouts and fleet batch limits. **Do not rely on these until implemented** and documented in `server/AGENTS.md`.
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DEVICE_SNAPSHOT_ACK_TIMEOUT_SEC` | No | _(unset)_ | Max seconds to wait for ack/photo correlation after a `capture` dispatch |
+| `DEVICE_FLEET_COMMAND_MAX_BATCH` | No | _(unset)_ | Max devices per `POST /api/devices/fleet/commands` request |
+| `DEVICE_PRESENCE_STALE_SEC` | No | _(unset)_ | Staleness threshold for presence projection |
 
 ## Production Checklist
 

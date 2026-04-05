@@ -17,12 +17,38 @@ class Device(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
-    device_id = Column(String(32), nullable=False, index=True) # Uniqueness combined with workspace
-    device_type = Column(String(16), nullable=False)  # 'wheelchair' | 'camera'
+    device_id = Column(String(32), nullable=False, index=True)  # Immutable hardware identity (per workspace)
+    device_type = Column(String(32), nullable=False)  # legacy: wheelchair | camera | ...
+    hardware_type = Column(
+        String(32), nullable=False, default="wheelchair"
+    )  # wheelchair | node | polar_sense | mobile_phone
+    display_name = Column(String(128), nullable=False, default="")
     ip_address = Column(String(45), default="")
     firmware = Column(String(16), default="")
     last_seen = Column(DateTime(timezone=True), default=utcnow)
     config = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
+
+
+class DeviceCommandDispatch(Base):
+    """Audit trail for MQTT commands sent from admin/API (optional device ack)."""
+
+    __tablename__ = "device_command_dispatches"
+
+    id = Column(String(36), primary_key=True)  # UUID string
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    device_id = Column(String(32), nullable=False, index=True)  # devices.device_id string
+    topic = Column(String(256), nullable=False)
+    payload = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
+    status = Column(String(16), nullable=False, default="sent")  # sent | acked | failed
+    error_message = Column(Text, default="")
+    dispatched_at = Column(DateTime(timezone=True), default=utcnow)
+    ack_at = Column(DateTime(timezone=True), nullable=True)
+    ack_payload = Column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
 
 class Room(Base):
     """Room / ห้อง — maps 1:1 to a T-SIMCam Node."""

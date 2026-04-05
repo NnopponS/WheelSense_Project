@@ -180,6 +180,16 @@ docker compose exec db pg_dump -U wheelsense wheelsense > backup_$(date +%Y%m%d)
 cat backup_20260403.sql | docker compose exec -T db psql -U wheelsense wheelsense
 ```
 
+## Phase 2 device operations (planned)
+
+> Full execution plan: [docs/plans/phase2-device-management-execution-plan.md](../../docs/plans/phase2-device-management-execution-plan.md).
+
+| Symptom | Severity | First action |
+|---------|----------|--------------|
+| Snapshot `capture` commands never yield photos | High | Verify node registered; check Mosquitto logs; confirm `WheelSense/camera/{id}/photo` chunk flow; see `server/AGENTS.md` MQTT table |
+| Bulk fleet commands partial failure | Medium | Inspect per-device rows in `device_command_dispatches`; retry failed IDs only; avoid duplicate batch without idempotency key |
+| Presence overlay disagrees with assignments | Low–Medium | Expected until Wave 3 rules finalized; treat overlay as **inferred** not clinical bed assignment |
+
 ## Alerting & Escalation
 
 | Symptom | Severity | First Action |

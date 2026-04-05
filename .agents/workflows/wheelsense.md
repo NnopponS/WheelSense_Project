@@ -68,6 +68,8 @@ select(Model).where(Model.workspace_id == ws.id)
 
 Check whether request and response schemas already exist before creating new ones.
 
+Device registry extensions live in `app/schemas/devices.py` (`DeviceCreate`, `DevicePatch`, `DeviceCommandRequest`) and are served from `/api/devices` with workspace scope; caregiver ↔ device assignments use `/api/caregivers/{id}/devices`.
+
 ### Step 2: Write or update the service
 
 Business rules should live in the service layer first. Endpoints should call the service.
@@ -184,7 +186,23 @@ A fresh database should boot correctly without manually entering the container t
 ```bash
 cd server
 docker compose up -d --build
-docker compose logs -f server
+docker compose logs -f wheelsense-platform-server
+```
+
+### After editing `frontend/` or `server/` (runtime stack)
+
+Compose serves the API and Next.js app from **built images** (`wheelsense-platform-server`, `wheelsense-platform-web`). Source changes are not picked up until you rebuild those images and recreate the containers.
+
+```bash
+cd server
+docker compose build wheelsense-platform-server wheelsense-platform-web
+docker compose up -d wheelsense-platform-server wheelsense-platform-web
+```
+
+Equivalent one-liner:
+
+```bash
+cd server && docker compose up -d --build wheelsense-platform-server wheelsense-platform-web
 ```
 
 ---
@@ -234,11 +252,13 @@ alembic upgrade head
 
 ### Full suite
 
-As of 2026-04-04, `python -m pytest tests/ --ignore=scripts/ -q` reports **172 passed** (in-memory SQLite; no Docker DB required).
+As of 2026-04-05, `python -m pytest tests/ --ignore=scripts/ -q` reports **189 passed** (in-memory SQLite; no Docker DB required).
 
 ```bash
 cd server
 python -m pytest tests/ --ignore=scripts/ -q
+pytest -q tests/test_devices_mvp.py
+# Phase 2 implementation: add targeted suites listed in docs/plans/phase2-device-management-execution-plan.md
 pytest --cov=app --cov-report=term-missing
 ```
 
@@ -284,6 +304,7 @@ Update documentation whenever backend behavior changes, not only when adding a n
 1. `server/AGENTS.md`
 2. `.agents/workflows/wheelsense.md`
 3. `.agents/changes/phase12b-refactoring.md` or the relevant change log
+4. **Phase 2 device program** (when implementing fleet / snapshot jobs / presence): `docs/plans/phase2-device-management-execution-plan.md`, ADRs `docs/adr/0010-*.md` and `docs/adr/0011-*.md`, and `.agents/changes/phase2-device-management.md`
 
 ### What to update
 

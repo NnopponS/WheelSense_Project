@@ -1,12 +1,12 @@
 # WheelSense Server - Project Memory
 
-> **Version**: 4.3.0 | **Last audit**: 2026-04-04 | **Tests**: full suite `pytest tests/ --ignore=scripts/` — **172 pass** (workflow hardening, future domains, frontend gates)
+> **Version**: 4.3.1 | **Last audit**: 2026-04-05 | **Tests**: full suite `pytest tests/ --ignore=scripts/` — **189 pass** (device management MVP, workflow hardening, future domains, frontend gates)
 >
 > Warning: AI must read this file before starting backend work so it does not recreate patterns that already exist.
 >
 > Workflow Skill: `.agents/workflows/wheelsense.md` - Quick rules and implementation workflow
 > Cursor Skill: `.cursor/skills/wheelsense-workflow/SKILL.md` - Agent entry point; defers detail to this file and the workflow above
-> ADRs: [docs/adr/](../docs/adr/README.md) - Architecture Decision Records (9 decisions)
+> ADRs: [docs/adr/](../docs/adr/README.md) - Architecture Decision Records (11 decisions; 0010–0011 proposed for Phase 2)
 > Developer Docs: [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md) | [docs/ENV.md](./docs/ENV.md) | [docs/RUNBOOK.md](./docs/RUNBOOK.md)
 
 ---
@@ -197,14 +197,29 @@ Requires the current user workspace.
 
 | Method | Path | Body/Params | Description |
 |--------|------|-------------|-------------|
-| `GET` | `/api/devices` | `?device_type=wheelchair` | List devices in the current user workspace |
+| `GET` | `/api/devices` | `?device_type=&hardware_type=` | List devices (optional filters) |
+| `GET` | `/api/devices/{device_id}` | - | Device detail: identity, config, latest realtime, room/prediction, patient/caregiver links, latest photo (node) |
 | `POST` | `/api/devices` | `DeviceCreate` | Register a device manually |
-| `POST` | `/api/devices/cameras/{device_id}/command` | `CameraCommand` | Send an MQTT command to a camera |
+| `PATCH` | `/api/devices/{device_id}` | `DevicePatch` | Update `display_name` and merge `config` (e.g. `wifi_ssid`, `mqtt_broker`); `device_id` is immutable |
+| `POST` | `/api/devices/{device_id}/commands` | `DeviceCommandRequest` | Publish JSON to `WheelSense/{device_id}/control` or `WheelSense/camera/{device_id}/control`; logs row in `device_command_dispatches` |
+| `GET` | `/api/devices/{device_id}/commands` | `?limit=` | Recent command dispatches for the device |
+| `POST` | `/api/devices/{device_id}/camera/check` | - | Node only: MQTT `capture` snapshot hint; poll detail for `latest_photo` |
+| `POST` | `/api/devices/cameras/{device_id}/command` | `CameraCommand` | Send an MQTT command to a camera (same as commands with `channel=camera`) |
 
-`DeviceCreate`: `{ "device_id": str, "device_type": "wheelchair" | "camera" }`  
+`DeviceCreate`: `{ "device_id": str, "device_type": str (legacy), "hardware_type": optional, "display_name": optional }`  
+Hardware types: `wheelchair`, `node`, `polar_sense`, `mobile_phone` (nodes still use legacy `device_type` `camera` in DB for MQTT paths).  
+`DevicePatch`: `{ "display_name": optional, "config": optional dict }`  
+`DeviceCommandRequest`: `{ "channel": "wheelchair" | "camera", "payload": object }` — payload includes server-generated `command_id` for optional acks.  
 `CameraCommand`: `{ "command": str, "interval_ms": 200, "resolution": "VGA" }`
 
 Camera commands: `start_stream`, `stop_stream`, `set_resolution`, `capture`
+
+### Caregivers — device assignments (`/api/caregivers`)
+
+| Method | Path | Body | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/caregivers/{id}/devices` | - | List caregiver ↔ device assignments |
+| `POST` | `/api/caregivers/{id}/devices` | `{ device_id, device_role }` | Assign device to caregiver (one active device per workspace enforced) |
 
 ### Rooms (`/api/rooms`)
 
@@ -330,6 +345,8 @@ Requires `get_current_user_workspace`. Mutating routes use `RequireRole` (see ea
 | `WheelSense/camera/{device_id}/registration` | Device -> Server | T-SIMCam | `{"device_id", "ip_address", "firmware", "node_id"}` |
 | `WheelSense/camera/{device_id}/status` | Device -> Server | T-SIMCam | `{"device_id", ...}` |
 | `WheelSense/camera/{device_id}/control` | Server -> Device | FastAPI | `{"command": "start_stream" \| "stop_stream" \| ...}` |
+| `WheelSense/{device_id}/ack` | Device -> Server | Firmware (optional) | Command acknowledgement; includes `command_id` |
+| `WheelSense/camera/{device_id}/ack` | Device -> Server | Firmware (optional) | Same for camera channel |
 
 ---
 
@@ -341,7 +358,9 @@ All tables use `workspace_id` foreign keys for data isolation.
 |-------|---------|-------------|
 | `workspaces` | Workspace isolation | id, name, mode, is_active |
 | `users` | Auth, RBAC, current workspace binding | username, role, workspace_id |
-| `devices` | Device registry | device_id, device_type, ip_address, firmware, config(JSON), last_seen |
+| `devices` | Device registry | device_id, device_type (legacy), hardware_type, display_name, ip_address, firmware, config(JSON), last_seen |
+| `caregiver_device_assignments` | Caregiver ↔ device | workspace_id, caregiver_id, device_id, device_role, is_active |
+| `device_command_dispatches` | MQTT command audit | id (UUID), topic, payload, status, ack_payload |
 | `rooms` | Room definitions | name, description |
 | `smart_devices` | Home Assistant entity mapping | room_id, ha_entity_id, state |
 | `imu_telemetry` | Raw IMU time series | device_id, timestamp, ax/ay/az, gx/gy/gz, distance, velocity, battery |
@@ -388,8 +407,11 @@ Main schemas come from `app/schemas/core.py` plus feature-specific schema module
 | `WorkspaceCreate` | name, mode="simulation" | POST /api/workspaces |
 | `WorkspaceOut` | id, name, mode, is_active | GET /api/workspaces response |
 | `RoomCreate` | name, description="" | POST /api/rooms |
-| `DeviceCreate` | device_id, device_type="wheelchair" | POST /api/devices |
+| `DeviceCreate` | device_id, device_type, hardware_type?, display_name? | POST /api/devices |
+| `DevicePatch` | display_name?, config? | PATCH /api/devices/{device_id} |
+| `DeviceCommandRequest` | channel, payload | POST /api/devices/{id}/commands |
 | `CameraCommand` | command, interval_ms=200, resolution="VGA" | POST /api/devices/cameras/{id}/command |
+| `CaregiverDeviceAssignmentCreate` | device_id, device_role | POST /api/caregivers/{id}/devices |
 | `TrainingDataItem` | room_id, room_name, rssi_vector | Part of TrainRequest |
 | `TrainRequest` | data: List[TrainingDataItem] | POST /api/localization/train |
 | `PredictRequest` | rssi_vector: Dict[str, int] | POST /api/localization/predict |
@@ -420,7 +442,9 @@ Note:
 | `app/api/router.py` | API router combining sub-routers | all endpoints |
 | `app/api/dependencies.py` | `get_db()`, `get_current_user_workspace()`, auth helpers | db/session, models |
 | `app/api/endpoints/workspaces.py` | Workspace CRUD + per-user workspace switch | dependencies, schemas |
-| `app/api/endpoints/devices.py` | Device CRUD + camera command | dependencies, schemas, aiomqtt |
+| `app/api/endpoints/devices.py` | Device registry, detail, patch, MQTT commands, camera check | dependencies, schemas, `device_management` service |
+| `app/services/device_management.py` | Device create/patch, detail aggregation, MQTT publish + command log | models, aiomqtt |
+| `app/schemas/devices.py` | `DeviceCreate`, `DevicePatch`, `DeviceCommandRequest`, camera command | Pydantic |
 | `app/api/endpoints/rooms.py` | Room CRUD | dependencies, schemas |
 | `app/api/endpoints/telemetry.py` | IMU + RSSI query | dependencies, models |
 | `app/api/endpoints/localization.py` | Train/predict/retrain + prediction history | dependencies, localization, models |
@@ -504,6 +528,15 @@ Current startup behavior:
 2. Runtime settings are validated
 3. FastAPI starts with JWT, MQTT, and scheduler services
 
+**After changing `server/app/` or `frontend/`**: rebuild and recreate the API and web images so the compose stack picks up the new code:
+
+```bash
+cd server/
+docker compose up -d --build wheelsense-platform-server wheelsense-platform-web
+```
+
+(See also [.agents/workflows/wheelsense.md](../.agents/workflows/wheelsense.md) §8.)
+
 ### CLI (Data Collection - runs OUTSIDE Docker)
 
 ```bash
@@ -529,10 +562,12 @@ cd server/
 python scripts/seed_demo.py --reset
 ```
 
-The seed script attaches the **bootstrap admin** user (`BOOTSTRAP_ADMIN_USERNAME`, default `admin`) to the **demo workspace** so `/admin` lists patients/devices/vitals for the same data as `demo_*` users. It also seeds `floorplan_layouts` per demo floor so **Interactive floorplans** opens with editable rooms immediately. If you previously logged in as `admin`, refresh the dashboard (workspace scope is read from the DB on each request).
+The seed script attaches the **bootstrap admin** user (`BOOTSTRAP_ADMIN_USERNAME`, default `admin`) to the **demo workspace** so `/admin` lists patients/devices/vitals for the same data as `demo_*` users. It also seeds `floorplan_layouts` per demo floor so **Interactive floorplans** opens with editable rooms immediately. Device registry includes **10 wheelchairs** (patient-linked) plus **13 sim peripherals** for room-map wiring: `SIM_NODE_01`–`03`, `SIM_POLAR_01`–`05`, `SIM_PHONE_01`–`05` (no patient assignment — bind in **Monitoring** / room / floorplan UI). Re-run `python scripts/seed_demo.py` (without `--reset`) to upsert missing rows on an existing workspace. If you previously logged in as `admin`, refresh the dashboard (workspace scope is read from the DB on each request).
 
 If `docker compose up -d` fails pulling `copilot-cli` (registry denied), start the stack without it:  
 `docker compose up -d db mosquitto ollama wheelsense-platform-server`.
+
+**Admin dashboard empty after login:** API data is scoped to the user’s `workspace_id`. Bootstrap `admin` starts on **System Workspace** until you run `python scripts/seed_demo.py` (creates **WheelSense Demo Workspace** and attaches `admin`). Docker Compose sets `BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE=true` so after the demo workspace exists, each API restart keeps `admin` on that workspace.
 
 Demo credentials after seeding:
 
@@ -583,7 +618,7 @@ bandit -r app cli.py sim_controller.py
 
 | Command | Result |
 |---------|--------|
-| `python -m pytest tests/ --ignore=scripts/ -q` | **172 passed** (2026-04-04; ~48s locally) |
+| `python -m pytest tests/ --ignore=scripts/ -q` | **189 passed** (2026-04-05) |
 
 ### Targeted remediation batches (historical reference)
 
@@ -610,7 +645,7 @@ bandit -r app cli.py sim_controller.py
 | `bandit` | run before release | low-severity findings possible in `sim_controller` / default dev secrets; review output |
 | `ruff` | repo-wide baseline may need cleanup | run `ruff check .` before release; fix new issues in touched files |
 | `mypy` | repo-wide baseline may need cleanup | run `mypy .` before release; fix new issues in touched files |
-| `pytest` | **172 passed** | full `tests/` suite (2026-04-04), SQLite in-memory |
+| `pytest` | **189 passed** | full `tests/` suite (2026-04-05), SQLite in-memory |
 
 Security-sensitive changes now in code:
 
@@ -683,6 +718,12 @@ Security-sensitive changes now in code:
 | 7 | Push notification gateway | Pending | FCM for mobile + web push |
 | 13 | Mobile app (Polar + App) | Pending | Flutter or React Native, Polar SDK, FCM receiver |
 
+#### Group D: Device management — Phase 2 (planned)
+
+| Phase | Scope | Status | Details |
+|-------|-------|--------|---------|
+| **P2** | Device fleet + snapshot hardening + map presence | Planned | Execution plan: [docs/plans/phase2-device-management-execution-plan.md](../docs/plans/phase2-device-management-execution-plan.md). ADRs: [0010](../docs/adr/0010-phase2-device-fleet-control-plane.md), [0011](../docs/adr/0011-phase2-map-person-presence-projection.md). **Non-goal**: realtime Node video preview in web UI (snapshot/image only). |
+
 Key architecture decisions (see `docs/adr/`):
 
 - ADR-0001: FastMCP SSE at `/mcp`
@@ -694,6 +735,8 @@ Key architecture decisions (see `docs/adr/`):
 - ADR-0007: TDD + Service Layer Architecture
 - ADR-0008: Workflow domains for role operations
 - ADR-0009: Future domains (floorplans, specialists, prescriptions, pharmacy)
+- ADR-0010: Phase 2 device fleet control plane (proposed)
+- ADR-0011: Phase 2 map–room–person presence projection (proposed)
 
 Future (after v4.3):
 

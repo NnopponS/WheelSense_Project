@@ -58,15 +58,78 @@ export interface Patient {
   created_at: string;
 }
 
-// ── Device ──────────────────────────────────────────────────────────────────
+// ── Device (registry /api/devices) ───────────────────────────────────────────
 
+export type HardwareType =
+  | "wheelchair"
+  | "node"
+  | "polar_sense"
+  | "mobile_phone";
+
+/** List/summary row from GET /api/devices */
 export interface Device {
   id: number;
-  workspace_id: number;
   device_id: string;
   device_type: string;
+  hardware_type: string;
+  display_name: string;
+  ip_address?: string;
+  firmware?: string;
   last_seen: string | null;
-  metadata: Record<string, unknown>;
+  config: Record<string, unknown>;
+  wifi_ssid?: string | null;
+  mqtt_broker?: string | null;
+}
+
+export interface DevicePatientLink {
+  patient_id: number;
+  patient_name: string;
+  device_role: string;
+  assigned_at: string | null;
+}
+
+export interface DeviceCaregiverLink {
+  caregiver_id: number;
+  caregiver_name: string;
+  device_role: string;
+  assigned_at: string | null;
+}
+
+export interface DeviceLocationInfo {
+  room_id?: number;
+  room_name?: string;
+  floor_id?: number | null;
+  node_device_id?: string | null;
+  predicted_room_id?: number | null;
+  predicted_room_name?: string | null;
+  prediction_confidence?: number | null;
+  prediction_at?: string | null;
+}
+
+export interface DeviceRealtimeSnapshot {
+  timestamp: string | null;
+  battery_pct: number | null;
+  battery_v: number | null;
+  charging: boolean | null;
+  velocity_ms: number | null;
+  distance_m: number | null;
+}
+
+export interface DeviceLatestPhoto {
+  id: number;
+  photo_id: string;
+  timestamp: string | null;
+  url: string;
+}
+
+/** GET /api/devices/{device_id} */
+export interface DeviceDetail extends Device {
+  realtime: DeviceRealtimeSnapshot;
+  location: DeviceLocationInfo | null;
+  patient: DevicePatientLink | null;
+  caregiver: DeviceCaregiverLink | null;
+  latest_photo: DeviceLatestPhoto | null;
+  camera_status: Record<string, unknown>;
 }
 
 // ── Room ────────────────────────────────────────────────────────────────────

@@ -110,12 +110,16 @@ async def mqtt_listener():
                 await client.subscribe("WheelSense/camera/+/registration")
                 await client.subscribe("WheelSense/camera/+/status")
                 await client.subscribe("WheelSense/camera/+/photo")  # Phase 4: photo chunks
+                await client.subscribe("WheelSense/+/ack")
+                await client.subscribe("WheelSense/camera/+/ack")
 
                 async for message in client.messages:
                     topic = str(message.topic)
                     try:
                         if topic == "WheelSense/data":
                             await _handle_telemetry(message.payload, client)
+                        elif topic.endswith("/ack"):
+                            await _handle_device_ack(message.payload)
                         elif "/registration" in topic:
                             await _handle_camera_registration(message.payload)
                         elif "/status" in topic:
@@ -481,6 +485,22 @@ async def _handle_photo_chunk(payload: bytes, save_dir: str | None = None):
 # ── Camera Handlers (unchanged) ─────────────────────────────────────────────
 
 
+async def _handle_device_ack(payload: bytes):
+    """Optional command acknowledgements from firmware (WheelSense/.../ack)."""
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON on ack topic")
+        return
+    command_id = data.get("command_id")
+    if not command_id:
+        return
+    from app.services.device_management import apply_command_ack
+
+    async with AsyncSessionLocal() as session:
+        await apply_command_ack(session, str(command_id), data)
+
+
 async def _handle_camera_registration(payload: bytes):
     """Handle camera node registration."""
     data = json.loads(payload)
@@ -495,10 +515,13 @@ async def _handle_camera_registration(payload: bytes):
             return
 
         device.device_type = "camera"  # type: ignore[assignment]
+        device.hardware_type = "node"  # type: ignore[assignment]
         device.ip_address = data.get("ip_address", "")  # type: ignore[assignment]
         device.firmware = data.get("firmware", "")  # type: ignore[assignment]
         device.last_seen = utcnow()  # type: ignore[assignment]
-        device.config = {"node_id": data.get("node_id", "")}  # type: ignore[assignment]
+        cfg = dict(device.config or {})
+        cfg["node_id"] = data.get("node_id", cfg.get("node_id", ""))
+        device.config = cfg  # type: ignore[assignment]
         await session.commit()
         logger.info(
             "Camera registered in workspace %d: %s at %s",
@@ -523,4 +546,10 @@ async def _handle_camera_status(payload: bytes):
 
         if device:
             device.last_seen = utcnow()  # type: ignore[assignment]
+            cfg = dict(device.config or {})
+            cfg["camera_status"] = {
+                "payload": data,
+                "updated_at": utcnow().isoformat(),
+            }
+            device.config = cfg  # type: ignore[assignment]
             await session.commit()

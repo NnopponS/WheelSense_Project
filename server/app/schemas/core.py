@@ -32,15 +32,6 @@ class RoomUpdate(BaseModel):
     config: Dict[str, object] | None = None
 
 
-class DeviceCreate(BaseModel):
-    device_id: str
-    device_type: str = "wheelchair"
-
-class CameraCommand(BaseModel):
-    command: str
-    interval_ms: int = 200
-    resolution: str = "VGA"
-
 class TrainingDataItem(BaseModel):
     room_id: int
     room_name: str = ""

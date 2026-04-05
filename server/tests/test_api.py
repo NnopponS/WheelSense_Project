@@ -282,6 +282,7 @@ async def test_create_and_list_devices(client: AsyncClient):
     assert res.status_code == 200
     assert len(res.json()) == 1
     assert res.json()[0]["device_id"] == "WS_01"
+    assert res.json()[0]["hardware_type"] == "wheelchair"
 
 
 # ── Telemetry tests ──────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 from sqlalchemy import (
     Column,
     Integer,
+    Index,
     String,
     Text,
     Boolean,
@@ -10,7 +11,9 @@ from sqlalchemy import (
     Time,
     DateTime,
     ForeignKey,
+    text,
 )
+from sqlalchemy import orm
 
 from .base import Base, utcnow
 
@@ -73,3 +76,40 @@ class CareGiverShift(Base):
     end_time = Column(Time, nullable=False)
     shift_type = Column(String(16), default="regular")  # regular | overtime | on_call
     notes = Column(Text, default="")
+
+
+class CareGiverDeviceAssignment(Base):
+    """Caregiver ↔ Device binding (e.g. mobile handset, Polar gateway)."""
+
+    __tablename__ = "caregiver_device_assignments"
+    __table_args__ = (
+        Index(
+            "uq_caregiver_device_assignments_active_device",
+            "workspace_id",
+            "device_id",
+            unique=True,
+            postgresql_where=text("is_active = true"),
+            sqlite_where=text("is_active = 1"),
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    caregiver_id = Column(
+        Integer,
+        ForeignKey("caregivers.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    device_id = Column(String(32), nullable=False, index=True)
+    device_role = Column(String(32), nullable=False)  # mobile_phone | polar_gateway | observer_device
+    assigned_at = Column(DateTime(timezone=True), default=utcnow)
+    unassigned_at = Column(DateTime(timezone=True), nullable=True)
+    is_active = Column(Boolean, default=True)
+
+    caregiver = orm.relationship("CareGiver", backref="device_assignments")

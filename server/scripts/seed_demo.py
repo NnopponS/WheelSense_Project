@@ -25,6 +25,7 @@ if str(ROOT) not in sys.path:
 
 from app.core.security import get_password_hash
 from app.db.session import AsyncSessionLocal
+from seed_device_extras import seed_additional_sim_devices
 from app.models import (
     ActivityTimeline,
     Alert,
@@ -449,6 +450,8 @@ async def seed_patients_and_devices(
                 workspace_id=workspace_id,
                 device_id=device_id,
                 device_type="wheelchair",
+                hardware_type="wheelchair",
+                display_name=f"Wheelchair {i + 1:02d}",
                 ip_address="",
                 firmware="sim-v1",
                 config={},
@@ -721,6 +724,8 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
         await seed_floorplan_layouts(session, ws.id, facility, floors, rooms)
         caregivers_by_role, users_by_role = await seed_caregivers_and_users(session, ws.id)
         patients, devices = await seed_patients_and_devices(session, ws.id, rooms)
+        extra_devices = await seed_additional_sim_devices(session, ws.id)
+        devices.extend(extra_devices)
         patient_user = await seed_patient_user(session, ws.id, patients[0])
         users_by_role["patient"] = patient_user
 

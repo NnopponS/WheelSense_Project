@@ -1,9 +1,9 @@
 from .base import Base
-from .core import Workspace, Device, Room, SmartDevice
+from .core import Workspace, Device, DeviceCommandDispatch, Room, SmartDevice
 from .facility import Facility, Floor
 from .users import User
 from .patients import Patient, PatientDeviceAssignment, PatientContact
-from .caregivers import CareGiver, CareGiverZone, CareGiverShift
+from .caregivers import CareGiver, CareGiverZone, CareGiverShift, CareGiverDeviceAssignment
 from .vitals import VitalReading, HealthObservation
 from .activity import ActivityTimeline, Alert
 from .telemetry import IMUTelemetry, RSSIReading, RoomPrediction, RSSITrainingData, MotionTrainingData, PhotoRecord
@@ -30,6 +30,7 @@ __all__ = [
     # Core
     "Workspace",
     "Device",
+    "DeviceCommandDispatch",
     "Room",
     "SmartDevice",
     # Facility Hierarchy
@@ -42,6 +43,7 @@ __all__ = [
     "CareGiver",
     "CareGiverZone",
     "CareGiverShift",
+    "CareGiverDeviceAssignment",
     # Health
     "VitalReading",
     "HealthObservation",

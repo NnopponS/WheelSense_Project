@@ -102,6 +102,8 @@ async def list_devices(workspace_id: int):
                     "id": d.id,
                     "device_id": d.device_id,
                     "device_type": d.device_type,
+                    "hardware_type": getattr(d, "hardware_type", d.device_type),
+                    "display_name": getattr(d, "display_name", "") or "",
                     "ip_address": d.ip_address,
                     "firmware": d.firmware,
                     "last_seen": d.last_seen.isoformat() if d.last_seen else None,
