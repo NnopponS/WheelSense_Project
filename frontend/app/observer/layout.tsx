@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import ObserverSidebar from "@/components/ObserverSidebar";
 import TopBar from "@/components/TopBar";
 import AIChatPopup from "@/components/ai/AIChatPopup";
+import { canAccessAppRole } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/routes";
 
 export default function ObserverLayout({
@@ -21,7 +22,7 @@ export default function ObserverLayout({
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!loading && user && user.role !== "observer" && user.role !== "admin") {
+    if (!loading && user && !canAccessAppRole(user.role, "/observer")) {
       router.replace(getRoleHome(user.role));
     }
   }, [user, loading, router]);

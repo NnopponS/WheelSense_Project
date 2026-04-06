@@ -14,6 +14,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import UserAvatar from "@/components/shared/UserAvatar";
 
 interface NavItem {
   href: string;
@@ -32,7 +33,7 @@ const ITEMS: NavItem[] = [
 export default function ObserverSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
 
   return (
@@ -69,6 +70,22 @@ export default function ObserverSidebar() {
           );
         })}
       </nav>
+
+      {user && (
+        <div className="px-4 py-3 border-t border-outline-variant/10 bg-surface-container-low">
+          <div className="flex items-center gap-3">
+            <UserAvatar
+              username={user.username}
+              profileImageUrl={user.profile_image_url}
+              sizePx={32}
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-on-surface truncate">{user.username}</p>
+              <p className="text-[11px] text-on-surface-variant capitalize">{user.role}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="p-3 border-t border-outline-variant/10">
         <button

@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import PatientSidebar from "@/components/PatientSidebar";
 import TopBar from "@/components/TopBar";
 import AIChatPopup from "@/components/ai/AIChatPopup";
+import { canAccessAppRole } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/routes";
 
 export default function PatientLayout({
@@ -23,7 +24,7 @@ export default function PatientLayout({
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!loading && user && user.role !== "patient" && user.role !== "admin") {
+    if (!loading && user && !canAccessAppRole(user.role, "/patient")) {
       router.replace(getRoleHome(user.role));
     }
   }, [user, loading, router]);

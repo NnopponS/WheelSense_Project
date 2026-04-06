@@ -30,7 +30,7 @@ function pathAllowedForRole(pathname: string, role: string): boolean {
   return !!prefix;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (

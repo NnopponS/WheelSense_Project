@@ -155,6 +155,12 @@ export const api = {
 
   delete: <T>(endpoint: string) =>
     request<T>(endpoint, { method: "DELETE" }),
+
+  postForm: <T>(endpoint: string, body: FormData) =>
+    request<T>(endpoint, {
+      method: "POST",
+      body,
+    }),
 };
 
 export { ApiError };

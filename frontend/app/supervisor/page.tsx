@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, type ComponentType } from "react";
 import { api } from "@/lib/api";
 import { useQuery } from "@/hooks/useQuery";
-import type { Alert, Patient, VitalReading } from "@/lib/types";
+import type { Alert, Device, Patient, VitalReading } from "@/lib/types";
 import { CheckCircle2, ClipboardList, Siren, Stethoscope } from "lucide-react";
 import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
 
@@ -41,6 +41,7 @@ export default function SupervisorDashboardPage() {
   const { data: patients } = useQuery<Patient[]>("/patients");
   const { data: alerts } = useQuery<Alert[]>("/alerts");
   const { data: vitals } = useQuery<VitalReading[]>("/vitals/readings?limit=120");
+  const { data: devices } = useQuery<Device[]>("/devices");
   const { data: tasks, refetch: refetchTasks } = useQuery<CareTask[]>("/workflow/tasks?limit=80");
   const { data: directives, refetch: refetchDirectives } = useQuery<CareDirective[]>(
     "/workflow/directives?limit=80",
@@ -61,6 +62,16 @@ export default function SupervisorDashboardPage() {
     }
     return map;
   }, [vitals]);
+  const fleetHealth = useMemo(() => {
+    const list = devices ?? [];
+    const now = Date.now();
+    const online = list.filter((d) => {
+      if (!d.last_seen) return false;
+      return now - new Date(d.last_seen).getTime() <= 5 * 60 * 1000;
+    }).length;
+    const polarSensors = list.filter((d) => d.hardware_type === "polar_sense").length;
+    return { total: list.length, online, polarSensors };
+  }, [devices]);
 
   const activeAlerts = useMemo(
     () => (alerts ?? []).filter((alert) => alert.status === "active"),
@@ -176,6 +187,15 @@ export default function SupervisorDashboardPage() {
           accent="info"
           href="/supervisor/directives"
         />
+      </section>
+
+      <section className="surface-card p-4">
+        <h3 className="text-xs uppercase tracking-wide text-on-surface-variant mb-2">
+          Device health snapshot
+        </h3>
+        <p className="text-sm text-on-surface">
+          {fleetHealth.online}/{fleetHealth.total} online · Polar sensors {fleetHealth.polarSensors}
+        </p>
       </section>
 
       <FloorplanRoleViewer />

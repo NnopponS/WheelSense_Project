@@ -6,6 +6,8 @@ import type { Alert, Patient, SmartDevice, VitalReading } from "@/lib/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bell, Heart, MessageCircle, Siren, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslation } from "@/lib/i18n";
 
 type CareTask = {
   id: number;
@@ -28,6 +30,9 @@ type AssistanceKind = "assistance" | "sos";
 
 export default function PatientDashboard() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { t } = useTranslation();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [vitals, setVitals] = useState<VitalReading[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -39,11 +44,52 @@ export default function PatientDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [submittingAlert, setSubmittingAlert] = useState<AssistanceKind | null>(null);
   const [controllingDeviceId, setControllingDeviceId] = useState<number | null>(null);
+  const [adminPickerPatients, setAdminPickerPatients] = useState<Patient[] | null>(null);
 
-  const patientId = user?.patient_id ?? null;
+  const previewRaw = searchParams.get("previewAs");
+  const previewNum = previewRaw != null && previewRaw !== "" ? Number(previewRaw) : NaN;
+  const hasValidPreview = Number.isFinite(previewNum) && previewNum > 0;
+  const previewPatientId = hasValidPreview ? Math.floor(previewNum) : null;
+
+  const isAdminPreview =
+    user?.role === "admin" && previewPatientId != null && previewPatientId > 0;
+
+  const effectivePatientId = useMemo(() => {
+    if (user?.role === "admin" && previewPatientId != null) return previewPatientId;
+    return user?.patient_id ?? null;
+  }, [user?.role, user?.patient_id, previewPatientId]);
+
+  const showAdminPatientPicker =
+    user?.role === "admin" && user.patient_id == null && !hasValidPreview;
+
+  useEffect(() => {
+    if (!showAdminPatientPicker) {
+      setAdminPickerPatients(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get<Patient[]>("/patients")
+      .then((list) => {
+        if (!cancelled) setAdminPickerPatients(list);
+      })
+      .catch(() => {
+        if (!cancelled) setAdminPickerPatients([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showAdminPatientPicker]);
 
   const fetchDashboard = useCallback(async () => {
-    if (!patientId) {
+    if (showAdminPatientPicker) {
+      setLoading(false);
+      setError(null);
+      setPatient(null);
+      return;
+    }
+
+    if (!effectivePatientId) {
       setError("Your account is not linked to a patient record.");
       setLoading(false);
       return;
@@ -51,11 +97,12 @@ export default function PatientDashboard() {
 
     setLoading(true);
     try {
+      const pid = effectivePatientId;
       const [patientData, vitalsData, alertsData, messagesData, devicesData] =
         await Promise.all([
-          api.get<Patient>(`/patients/${patientId}`),
-          api.get<VitalReading[]>(`/vitals/readings?patient_id=${patientId}&limit=24`),
-          api.get<Alert[]>(`/alerts?status=active&limit=8`),
+          api.get<Patient>(`/patients/${pid}`),
+          api.get<VitalReading[]>(`/vitals/readings?patient_id=${pid}&limit=24`),
+          api.get<Alert[]>(`/alerts?status=active&limit=8&patient_id=${pid}`),
           api.get<RoleMessage[]>("/workflow/messages?inbox_only=true&limit=5"),
           api.get<SmartDevice[]>("/ha/devices"),
         ]);
@@ -83,7 +130,7 @@ export default function PatientDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [patientId]);
+  }, [effectivePatientId, showAdminPatientPicker]);
 
   useEffect(() => {
     void fetchDashboard();
@@ -106,6 +153,40 @@ export default function PatientDashboard() {
       (device) => device.room_id === patient.room_id && device.is_active,
     );
   }, [devices, patient?.room_id]);
+
+  if (showAdminPatientPicker) {
+    if (adminPickerPatients === null) {
+      return (
+        <div className="flex justify-center py-20">
+          <div className="w-10 h-10 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+        </div>
+      );
+    }
+    return (
+      <div className="surface-card mx-auto max-w-lg space-y-4 rounded-2xl border border-outline-variant/20 p-6">
+        <h2 className="text-xl font-bold text-on-surface">{t("patientPortal.choosePatient")}</h2>
+        <p className="text-sm text-on-surface-variant">{t("patientPortal.adminPickHint")}</p>
+        <select
+          className="input-field w-full rounded-xl py-2.5 text-sm"
+          defaultValue=""
+          aria-label={t("patientPortal.choosePatient")}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v) router.push(`/patient?previewAs=${v}`);
+          }}
+        >
+          <option value="" disabled>
+            —
+          </option>
+          {adminPickerPatients.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.first_name} {p.last_name} (#{p.id})
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
 
   async function raiseAssistance(kind: AssistanceKind) {
     if (!patient) return;
@@ -166,6 +247,17 @@ export default function PatientDashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in">
+      {isAdminPreview ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
+          <p className="text-on-surface">{t("patientPortal.previewBanner")}</p>
+          <Link
+            href="/patient"
+            className="shrink-0 font-semibold text-primary hover:underline"
+          >
+            {t("patientPortal.previewClear")}
+          </Link>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-3xl font-bold text-on-surface">
@@ -205,6 +297,14 @@ export default function PatientDashboard() {
           icon={Bell}
         />
       </div>
+
+      <section className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-6">
+        <h3 className="text-lg font-semibold text-on-surface mb-2">Device health</h3>
+        <p className="text-sm text-on-surface-variant">
+          Polar battery: {latest?.sensor_battery ?? "--"}% · Room smart devices:{" "}
+          {roomDevices.length}
+        </p>
+      </section>
 
       <section className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-6">
         <h3 className="text-lg font-semibold text-on-surface mb-3">My Vitals Trend</h3>

@@ -1,99 +1,165 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@/hooks/useQuery";
 import EmptyState from "@/components/EmptyState";
-import { UserCog, Search, Plus, Phone, Mail } from "lucide-react";
-import { useState } from "react";
+import CaregiverCardGrid from "@/components/admin/caregivers/CaregiverCardGrid";
+import AddCaregiverModal from "@/components/admin/caregivers/AddCaregiverModal";
+import type { Caregiver, User } from "@/lib/types";
+import { Plus, Search, UserCog, X } from "lucide-react";
 
-interface Caregiver {
-  id: number;
-  user_id: number;
-  specialization?: string;
-  license_number?: string;
-  phone?: string;
-  email?: string;
-  username?: string;
+type RoleFilter = "all" | "admin" | "head_nurse" | "supervisor" | "observer";
+type ActiveFilter = "all" | "active" | "inactive";
+
+function normalizeCaregiverRole(role: string): string {
+  return role.trim().toLowerCase();
+}
+
+function matchesRoleFilter(c: Caregiver, roleFilter: RoleFilter): boolean {
+  if (roleFilter === "all") return true;
+  return normalizeCaregiverRole(c.role) === roleFilter;
+}
+
+function matchesActiveFilter(c: Caregiver, activeFilter: ActiveFilter): boolean {
+  if (activeFilter === "all") return true;
+  if (activeFilter === "active") return c.is_active;
+  return !c.is_active;
 }
 
 export default function CaregiversPage() {
   const { t } = useTranslation();
-  const { data: caregivers, isLoading } = useQuery<Caregiver[]>("/caregivers");
-  const [search, setSearch] = useState("");
+  const { data: caregivers, isLoading: loadingCaregivers, refetch } = useQuery<Caregiver[]>("/caregivers");
+  const { data: users, isLoading: loadingUsers } = useQuery<User[]>("/users");
 
-  const filtered = caregivers?.filter((c) =>
-    (c.username || c.specialization || "")
-      .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
+  const [addModalOpen, setAddModalOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    const list = caregivers ?? [];
+    const q = search.trim().toLowerCase();
+    return list.filter((c) => {
+      if (!matchesRoleFilter(c, roleFilter)) return false;
+      if (!matchesActiveFilter(c, activeFilter)) return false;
+      if (!q) return true;
+      const blob = `${c.first_name} ${c.last_name} ${c.role} ${c.phone} ${c.email} ${c.id}`
+        .toLowerCase();
+      return blob.includes(q);
+    });
+  }, [caregivers, search, roleFilter, activeFilter]);
+
+  const isLoading = loadingCaregivers || loadingUsers;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-on-surface">{t("caregivers.title")}</h2>
-        <button className="gradient-cta px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-smooth cursor-pointer">
-          <Plus className="w-4 h-4" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-on-surface">{t("caregivers.title")}</h2>
+          <p className="mt-1 text-sm text-on-surface-variant">
+            {t("caregivers.directorySubtitle")}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="gradient-cta inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-smooth hover:opacity-90"
+          onClick={() => setAddModalOpen(true)}
+        >
+          <Plus className="h-4 w-4" aria-hidden />
           {t("caregivers.addNew")}
         </button>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-outline" />
-        <input
-          type="text"
-          placeholder={t("caregivers.search")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="input-field input-field--leading-icon py-2.5 text-sm"
-        />
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative max-w-lg flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-outline"
+            aria-hidden
+          />
+          <input
+            type="search"
+            placeholder={t("caregivers.searchDetailed")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className={`input-field input-field--leading-icon w-full rounded-xl py-2.5 text-sm ${search.trim() ? "pr-10" : ""}`}
+            aria-label={t("caregivers.search")}
+          />
+          {search.trim() ? (
+            <button
+              type="button"
+              aria-label={t("caregivers.clearSearchAria")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              onClick={() => setSearch("")}
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="flex min-w-[160px] flex-col gap-1">
+            <label htmlFor="caregiver-role-filter" className="text-xs text-on-surface-variant">
+              Caregiver role
+            </label>
+            <select
+              id="caregiver-role-filter"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
+              className="input-field rounded-xl py-2 text-sm"
+            >
+              <option value="all">{t("devicesDetail.tabAll")}</option>
+              <option value="admin">Admin</option>
+              <option value="head_nurse">Head Nurse</option>
+              <option value="supervisor">Supervisor</option>
+              <option value="observer">Observer</option>
+            </select>
+          </div>
+          <div className="flex min-w-[160px] flex-col gap-1">
+            <label htmlFor="caregiver-active-filter" className="text-xs text-on-surface-variant">
+              Status
+            </label>
+            <select
+              id="caregiver-active-filter"
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
+              className="input-field rounded-xl py-2 text-sm"
+            >
+              <option value="all">{t("alerts.all")}</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <div
+            className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent"
+            role="status"
+            aria-label="Loading"
+          />
         </div>
-      ) : !filtered || filtered.length === 0 ? (
+      ) : !caregivers?.length ? (
         <EmptyState icon={UserCog} message={t("caregivers.empty")} />
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 py-12 text-center text-sm text-on-surface-variant">
+          {t("caregivers.listNoMatches")}
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((cg) => (
-            <div key={cg.id} className="surface-card p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-11 h-11 rounded-full gradient-cta flex items-center justify-center text-white font-bold shrink-0">
-                  {(cg.username?.[0] || "C").toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-semibold text-on-surface text-sm">
-                    {cg.username || `Caregiver #${cg.id}`}
-                  </p>
-                  {cg.specialization && (
-                    <p className="text-xs text-on-surface-variant">
-                      {cg.specialization}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="space-y-1.5 text-xs text-on-surface-variant">
-                {cg.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3 h-3 text-outline" />
-                    {cg.phone}
-                  </div>
-                )}
-                {cg.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3 h-3 text-outline" />
-                    {cg.email}
-                  </div>
-                )}
-                {cg.license_number && (
-                  <p className="text-outline">License: {cg.license_number}</p>
-                )}
-              </div>
-            </div>
-          ))}
+        <div>
+          <h3 className="mb-3 text-sm font-semibold text-on-surface-variant">
+            {t("caregivers.allStaff")}
+          </h3>
+          <CaregiverCardGrid caregivers={filtered} users={users} basePath="/admin/caregivers" />
         </div>
       )}
+
+      <AddCaregiverModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onCreated={() => void refetch()}
+      />
     </div>
   );
 }

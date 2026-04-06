@@ -7,7 +7,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import type { Facility, Floor } from "@/lib/types";
+import SearchableListboxPicker, {
+  type SearchableListboxOption,
+} from "@/components/shared/SearchableListboxPicker";
 import { X } from "lucide-react";
+
+const ROOM_FORM_NONE_ID = "__none";
+
+function floorOptionTitle(f: Floor, floorPrefix: string): string {
+  return f.name?.trim()
+    ? `${f.name} (${floorPrefix} ${f.floor_number})`
+    : `${floorPrefix} ${f.floor_number}`;
+}
 
 const ROOM_TYPE_KEYS: TranslationKey[] = [
   "monitoring.roomTypes.general",
@@ -57,6 +68,12 @@ export default function RoomFormModal({
   const { t } = useTranslation();
   const { user } = useAuth();
   const titleId = useId();
+  const facilityLabelId = useId();
+  const facilityInputId = useId();
+  const facilityListboxId = useId();
+  const floorLabelId = useId();
+  const floorInputId = useId();
+  const floorListboxId = useId();
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
@@ -68,6 +85,8 @@ export default function RoomFormModal({
   const [nodeDeviceId, setNodeDeviceId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [facilitySearch, setFacilitySearch] = useState("");
+  const [floorSearch, setFloorSearch] = useState("");
 
   const facilitiesEndpoint = useMemo(
     () => (open ? withWorkspaceScope("/facilities", user?.workspace_id) : null),
@@ -108,6 +127,8 @@ export default function RoomFormModal({
       setTypeOther("");
       setNodeDeviceId("");
     }
+    setFacilitySearch("");
+    setFloorSearch("");
     setError(null);
   }, [open, mode, room, defaultFacilityId, defaultFloorId]);
 
@@ -126,15 +147,93 @@ export default function RoomFormModal({
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const handleFacilityChange = useCallback((value: string) => {
-    if (value === "") {
-      setFacilityId("");
-      setFloorId("");
-      return;
+  const floorPrefix = t("monitoring.floorPrefix");
+
+  const { facilityOptions, facilityEmptyNoMatch } = useMemo(() => {
+    const q = facilitySearch.trim().toLowerCase();
+    const noneTitle = t("monitoring.roomForm.noFacility");
+    const noneMatches =
+      !q || noneTitle.toLowerCase().includes(q) || q === "none";
+    const list = facilities ?? [];
+    const filtered = !q
+      ? list
+      : list.filter(
+          (f) =>
+            f.name.toLowerCase().includes(q) || String(f.id).includes(q),
+        );
+    const opts: SearchableListboxOption[] = [];
+    if (noneMatches) {
+      opts.push({ id: ROOM_FORM_NONE_ID, title: noneTitle });
     }
-    setFacilityId(Number(value));
-    setFloorId("");
-  }, []);
+    opts.push(
+      ...filtered.map((f) => ({
+        id: String(f.id),
+        title: f.name,
+        subtitle: `#${f.id}`,
+      })),
+    );
+    const emptyNoMatch =
+      !facilitiesLoading &&
+      facilitySearch.trim().length > 0 &&
+      opts.length === 0;
+    return { facilityOptions: opts, facilityEmptyNoMatch: emptyNoMatch };
+  }, [facilities, facilitySearch, facilitiesLoading, t]);
+
+  const facilityEmptyPool =
+    !facilitiesLoading && (facilities?.length ?? 0) === 0;
+
+  const { floorOptions, floorEmptyNoMatch } = useMemo(() => {
+    if (facilityId === "") {
+      return {
+        floorOptions: [] as SearchableListboxOption[],
+        floorEmptyNoMatch: false,
+      };
+    }
+    const q = floorSearch.trim().toLowerCase();
+    const noneTitle = t("monitoring.roomForm.noFloor");
+    const noneMatches =
+      !q || noneTitle.toLowerCase().includes(q) || q === "none";
+    const list = floors ?? [];
+    const filtered = !q
+      ? list
+      : list.filter((f) => {
+          const title = floorOptionTitle(f, floorPrefix).toLowerCase();
+          return (
+            title.includes(q) ||
+            String(f.floor_number).includes(q) ||
+            String(f.id).includes(q) ||
+            (f.name?.trim().toLowerCase().includes(q) ?? false)
+          );
+        });
+    const opts: SearchableListboxOption[] = [];
+    if (noneMatches) {
+      opts.push({ id: ROOM_FORM_NONE_ID, title: noneTitle });
+    }
+    opts.push(
+      ...filtered.map((f) => ({
+        id: String(f.id),
+        title: floorOptionTitle(f, floorPrefix),
+        subtitle: `#${f.id}`,
+      })),
+    );
+    const emptyNoMatch =
+      !floorsLoading &&
+      floorSearch.trim().length > 0 &&
+      opts.length === 0;
+    return { floorOptions: opts, floorEmptyNoMatch: emptyNoMatch };
+  }, [
+    facilityId,
+    floors,
+    floorSearch,
+    floorsLoading,
+    floorPrefix,
+    t,
+  ]);
+
+  const floorNoFloorsYet =
+    facilityId !== "" &&
+    !floorsLoading &&
+    (floors?.length ?? 0) === 0;
 
   const submit = useCallback(async () => {
     const trimmed = name.trim();
@@ -254,50 +353,91 @@ export default function RoomFormModal({
           </div>
 
           <div>
-            <label htmlFor="room-facility" className="text-xs font-medium text-on-surface-variant">
+            <label
+              id={facilityLabelId}
+              htmlFor={facilityInputId}
+              className="text-xs font-medium text-on-surface-variant"
+            >
               {t("monitoring.roomForm.facility")}
             </label>
-            <select
-              id="room-facility"
-              className="input-field mt-1 w-full text-sm"
-              value={facilityId === "" ? "" : String(facilityId)}
-              onChange={(e) => handleFacilityChange(e.target.value)}
-              disabled={facilitiesLoading}
-            >
-              <option value="">{t("monitoring.roomForm.noFacility")}</option>
-              {(facilities ?? []).map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
-            {!facilitiesLoading && facilities?.length === 0 ? (
-              <p className="text-xs text-on-surface-variant mt-1">{t("monitoring.roomForm.addFacilityFirst")}</p>
+            <div className="mt-1">
+              <SearchableListboxPicker
+                inputId={facilityInputId}
+                listboxId={facilityListboxId}
+                ariaLabelledBy={facilityLabelId}
+                options={facilityOptions}
+                search={facilitySearch}
+                onSearchChange={setFacilitySearch}
+                searchPlaceholder={t("monitoring.roomForm.searchFacility")}
+                selectedOptionId={
+                  facilityId === "" ? ROOM_FORM_NONE_ID : String(facilityId)
+                }
+                onSelectOption={(id) => {
+                  if (id === ROOM_FORM_NONE_ID) {
+                    setFacilityId("");
+                    setFloorId("");
+                  } else {
+                    setFacilityId(Number(id));
+                    setFloorId("");
+                  }
+                  setFacilitySearch("");
+                  setFloorSearch("");
+                }}
+                disabled={facilitiesLoading}
+                listboxAriaLabel={t("monitoring.roomForm.selectFacility")}
+                noMatchMessage={t("monitoring.roomForm.noFacilityMatchesSearch")}
+                emptyNoMatch={facilityEmptyNoMatch}
+                listPresentation="portal"
+                listboxZIndex={160}
+              />
+            </div>
+            {facilityEmptyPool ? (
+              <p className="text-xs text-on-surface-variant mt-1">
+                {t("monitoring.roomForm.addFacilityFirst")}
+              </p>
             ) : null}
           </div>
 
           <div>
-            <label htmlFor="room-floor" className="text-xs font-medium text-on-surface-variant">
+            <label
+              id={floorLabelId}
+              htmlFor={floorInputId}
+              className="text-xs font-medium text-on-surface-variant"
+            >
               {t("monitoring.roomForm.floor")}
             </label>
-            <select
-              id="room-floor"
-              className="input-field mt-1 w-full text-sm"
-              value={floorId === "" ? "" : String(floorId)}
-              onChange={(e) => setFloorId(e.target.value === "" ? "" : Number(e.target.value))}
-              disabled={facilityId === "" || floorsLoading}
-            >
-              <option value="">{t("monitoring.roomForm.noFloor")}</option>
-              {(floors ?? []).map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name?.trim()
-                    ? `${f.name} (${t("monitoring.floorPrefix")} ${f.floor_number})`
-                    : `${t("monitoring.floorPrefix")} ${f.floor_number}`}
-                </option>
-              ))}
-            </select>
-            {facilityId !== "" && !floorsLoading && floors?.length === 0 ? (
-              <p className="text-xs text-on-surface-variant mt-1">{t("monitoring.roomForm.noFloorsInBuilding")}</p>
+            <div className="mt-1">
+              <SearchableListboxPicker
+                inputId={floorInputId}
+                listboxId={floorListboxId}
+                ariaLabelledBy={floorLabelId}
+                options={floorOptions}
+                search={floorSearch}
+                onSearchChange={setFloorSearch}
+                searchPlaceholder={t("monitoring.roomForm.searchFloor")}
+                selectedOptionId={
+                  floorId === "" ? ROOM_FORM_NONE_ID : String(floorId)
+                }
+                onSelectOption={(id) => {
+                  if (id === ROOM_FORM_NONE_ID) {
+                    setFloorId("");
+                  } else {
+                    setFloorId(Number(id));
+                  }
+                  setFloorSearch("");
+                }}
+                disabled={facilityId === "" || floorsLoading}
+                listboxAriaLabel={t("monitoring.roomForm.selectFloor")}
+                noMatchMessage={t("monitoring.roomForm.noFloorMatchesSearch")}
+                emptyNoMatch={floorEmptyNoMatch}
+                listPresentation="portal"
+                listboxZIndex={160}
+              />
+            </div>
+            {floorNoFloorsYet ? (
+              <p className="text-xs text-on-surface-variant mt-1">
+                {t("monitoring.roomForm.noFloorsInBuilding")}
+              </p>
             ) : null}
             {mode === "edit" &&
             room?.floor_id &&

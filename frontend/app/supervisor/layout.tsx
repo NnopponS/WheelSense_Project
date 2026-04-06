@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import SupervisorSidebar from "@/components/SupervisorSidebar";
 import TopBar from "@/components/TopBar";
 import AIChatPopup from "@/components/ai/AIChatPopup";
+import { canAccessAppRole } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/routes";
 
 export default function SupervisorLayout({
@@ -21,12 +22,7 @@ export default function SupervisorLayout({
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (
-      !loading &&
-      user &&
-      user.role !== "supervisor" &&
-      user.role !== "admin"
-    ) {
+    if (!loading && user && !canAccessAppRole(user.role, "/supervisor")) {
       router.replace(getRoleHome(user.role));
     }
   }, [user, loading, router]);

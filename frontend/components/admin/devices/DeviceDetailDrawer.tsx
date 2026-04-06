@@ -1,22 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@/hooks/useQuery";
 import { api } from "@/lib/api";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import type { TranslationKey } from "@/lib/i18n";
-import type { DeviceDetail, HardwareType } from "@/lib/types";
-import { X, Camera, Radio, Save, Send, RefreshCw, MapPin, User, UserCog } from "lucide-react";
+import type { DeviceAssignment, DeviceDetail, HardwareType } from "@/lib/types";
+import { isDeviceOnline } from "@/lib/deviceOnline";
+import {
+  X,
+  Camera,
+  Radio,
+  Save,
+  RefreshCw,
+  User,
+  Smartphone,
+  HeartPulse,
+} from "lucide-react";
+import PatientLinkSection from "@/components/admin/devices/PatientLinkSection";
 
 type TFn = (key: TranslationKey) => string;
-
-const ONLINE_MS = 5 * 60 * 1000;
-
-function isOnline(lastSeen: string | null, nowMs: number): boolean {
-  if (!lastSeen) return false;
-  return nowMs - new Date(lastSeen).getTime() <= ONLINE_MS;
-}
 
 export interface DeviceDetailDrawerProps {
   deviceId: string | null;
@@ -44,8 +47,6 @@ export default function DeviceDetailDrawer({
   );
 
   const [displayName, setDisplayName] = useState("");
-  const [wifiSsid, setWifiSsid] = useState("");
-  const [mqttBroker, setMqttBroker] = useState("");
   const [saving, setSaving] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [actionErr, setActionErr] = useState<string | null>(null);
@@ -53,13 +54,23 @@ export default function DeviceDetailDrawer({
   useEffect(() => {
     if (!detail) return;
     setDisplayName(detail.display_name || "");
-    setWifiSsid(
-      typeof detail.wifi_ssid === "string" ? detail.wifi_ssid : "",
-    );
-    setMqttBroker(
-      typeof detail.mqtt_broker === "string" ? detail.mqtt_broker : "",
-    );
   }, [detail]);
+
+  const patientAssignmentsEndpoint =
+    detail?.hardware_type === "mobile_phone" && detail?.patient?.patient_id
+      ? withWorkspaceScope(
+          `/patients/${detail.patient.patient_id}/devices`,
+          workspaceId,
+        )
+      : null;
+  const { data: patientAssignments } = useQuery<DeviceAssignment[]>(
+    patientAssignmentsEndpoint,
+  );
+
+  const linkedPolar = useMemo(() => {
+    const rows = patientAssignments ?? [];
+    return rows.find((r) => r.device_role === "polar_hr" && r.is_active);
+  }, [patientAssignments]);
 
   const doSave = useCallback(async () => {
     if (!deviceId || workspaceId == null) return;
@@ -74,10 +85,6 @@ export default function DeviceDetailDrawer({
       if (!path) return;
       await api.patch(path, {
         display_name: displayName,
-        config: {
-          wifi_ssid: wifiSsid || null,
-          mqtt_broker: mqttBroker || null,
-        },
       });
       setActionMsg(t("devicesDetail.saved"));
       await refetch();
@@ -91,36 +98,10 @@ export default function DeviceDetailDrawer({
     deviceId,
     workspaceId,
     displayName,
-    wifiSsid,
-    mqttBroker,
     refetch,
     onMutate,
     t,
   ]);
-
-  const pushConfig = useCallback(async () => {
-    if (!deviceId || workspaceId == null) return;
-    setActionErr(null);
-    setActionMsg(null);
-    try {
-      const path = withWorkspaceScope(
-        `/devices/${encodeURIComponent(deviceId)}/commands`,
-        workspaceId,
-      );
-      if (!path) return;
-      await api.post(path, {
-        channel: "wheelchair",
-        payload: {
-          cmd: "apply_network_config",
-          wifi_ssid: wifiSsid || undefined,
-          mqtt_broker: mqttBroker || undefined,
-        },
-      });
-      setActionMsg(t("devicesDetail.pushed"));
-    } catch (e: unknown) {
-      setActionErr(e instanceof Error ? e.message : String(e));
-    }
-  }, [deviceId, workspaceId, wifiSsid, mqttBroker, t]);
 
   const cameraCheck = useCallback(async () => {
     if (!deviceId || workspaceId == null) return;
@@ -143,7 +124,7 @@ export default function DeviceDetailDrawer({
   if (!deviceId) return null;
 
   const nowMs = Date.now();
-  const online = detail ? isOnline(detail.last_seen, nowMs) : false;
+  const online = detail ? isDeviceOnline(detail.last_seen, nowMs) : false;
   const hw = (detail?.hardware_type || "wheelchair") as HardwareType;
 
   return (
@@ -221,43 +202,17 @@ export default function DeviceDetailDrawer({
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                 />
-              </section>
-
-              <section className="space-y-2 rounded-xl border border-outline-variant/20 p-3 bg-surface-container-low/50">
-                <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  {t("devicesDetail.mapRoom")}
-                </h4>
-                {detail.location?.room_name ? (
-                  <p className="text-sm text-on-surface">
-                    {detail.location.room_name}
-                    {detail.location.floor_id != null
-                      ? ` · ${t("monitoring.floorPrefix")} ${detail.location.floor_id}`
-                      : ""}
-                  </p>
-                ) : (
-                  <p className="text-xs text-on-surface-variant">
-                    {t("devicesDetail.noRoom")}
-                  </p>
-                )}
-                {detail.location?.predicted_room_name && (
-                  <p className="text-xs text-on-surface-variant">
-                    {t("devicesDetail.predicted")}:{" "}
-                    {detail.location.predicted_room_name}
-                    {detail.location.prediction_confidence != null
-                      ? ` (${Math.round(
-                          (detail.location.prediction_confidence as number) *
-                            100,
-                        )}%)`
-                      : ""}
-                  </p>
-                )}
-                <Link
-                  href="/admin/monitoring"
-                  className="text-xs text-primary font-medium inline-flex items-center gap-1 hover:underline"
-                >
-                  {t("devicesDetail.openMonitoring")}
-                </Link>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold gradient-cta disabled:opacity-50"
+                    onClick={() => void doSave()}
+                  >
+                    <Save className="w-4 h-4" />
+                    {t("devicesDetail.save")}
+                  </button>
+                </div>
               </section>
 
               <section className="space-y-2">
@@ -286,98 +241,144 @@ export default function DeviceDetailDrawer({
                         : "—"}
                     </p>
                   </div>
+                  <div>
+                    <span className="text-on-surface-variant">V</span>
+                    <p className="font-medium text-on-surface">
+                      {detail.realtime?.velocity_ms != null
+                        ? `${detail.realtime.velocity_ms.toFixed(2)} m/s`
+                        : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-on-surface-variant">d</span>
+                    <p className="font-medium text-on-surface">
+                      {detail.realtime?.distance_m != null
+                        ? `${detail.realtime.distance_m.toFixed(2)} m`
+                        : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-on-surface-variant">accel</span>
+                    <p className="font-medium text-on-surface">
+                      {detail.realtime?.accel_ms2 != null
+                        ? `${detail.realtime.accel_ms2.toFixed(2)} m/s²`
+                        : "—"}
+                    </p>
+                  </div>
                 </div>
+                {(hw === "wheelchair" || hw === "mobile_phone") && (
+                  <div className="grid grid-cols-3 gap-2 text-[11px] text-on-surface-variant">
+                    <div>
+                      IMU ax/ay/az:
+                      <p className="text-on-surface">
+                        {detail.realtime?.ax ?? "—"} / {detail.realtime?.ay ?? "—"} /{" "}
+                        {detail.realtime?.az ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      IMU gx/gy/gz:
+                      <p className="text-on-surface">
+                        {detail.realtime?.gx ?? "—"} / {detail.realtime?.gy ?? "—"} /{" "}
+                        {detail.realtime?.gz ?? "—"}
+                      </p>
+                    </div>
+                    <div>
+                      {t("devicesDetail.battery")}:
+                      <p className="text-on-surface">
+                        {detail.realtime?.battery_v != null
+                          ? `${detail.realtime.battery_v.toFixed(2)}V`
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </section>
 
-              <section className="space-y-2">
-                <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {t("devicesDetail.patient")}
-                </h4>
-                {detail.patient ? (
-                  <p className="text-sm text-on-surface">
-                    <Link
-                      href={`/admin/patients/${detail.patient.patient_id}`}
-                      className="text-primary font-medium hover:underline"
-                    >
-                      {detail.patient.patient_name}
-                    </Link>
-                    <span className="text-on-surface-variant text-xs ml-2">
-                      ({detail.patient.device_role})
-                    </span>
-                  </p>
-                ) : (
-                  <p className="text-xs text-on-surface-variant">
-                    {t("devicesDetail.noPatient")}
-                  </p>
-                )}
-                <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2 pt-2">
-                  <UserCog className="w-4 h-4" />
-                  {t("devicesDetail.caregiver")}
-                </h4>
-                {detail.caregiver ? (
-                  <p className="text-sm text-on-surface">
-                    {detail.caregiver.caregiver_name}
-                    <span className="text-on-surface-variant text-xs ml-2">
-                      ({detail.caregiver.device_role})
-                    </span>
-                  </p>
-                ) : (
-                  <p className="text-xs text-on-surface-variant">
-                    {t("devicesDetail.noCaregiver")}
-                  </p>
-                )}
-              </section>
+              {(hw === "wheelchair" || hw === "polar_sense" || hw === "mobile_phone") && (
+                <PatientLinkSection
+                  deviceId={detail.device_id}
+                  workspaceId={workspaceId}
+                  linkedPatient={detail.patient}
+                  defaultDeviceRole={
+                    hw === "polar_sense"
+                      ? "polar_hr"
+                      : hw === "mobile_phone"
+                        ? "mobile"
+                        : "wheelchair_sensor"
+                  }
+                  t={t}
+                  onMutate={async () => {
+                    await refetch();
+                    onMutate();
+                  }}
+                />
+              )}
 
-              <section className="space-y-2">
-                <h4 className="text-sm font-semibold text-on-surface">
-                  {t("devicesDetail.networkConfig")}
-                </h4>
-                <label className="text-xs text-on-surface-variant block">
-                  Wi‑Fi SSID
-                </label>
-                <input
-                  className="input-field text-sm w-full"
-                  value={wifiSsid}
-                  onChange={(e) => setWifiSsid(e.target.value)}
-                />
-                <label className="text-xs text-on-surface-variant block">
-                  MQTT broker
-                </label>
-                <input
-                  className="input-field text-sm w-full font-mono"
-                  placeholder="host:1883"
-                  value={mqttBroker}
-                  onChange={(e) => setMqttBroker(e.target.value)}
-                />
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold gradient-cta disabled:opacity-50"
-                    onClick={() => void doSave()}
-                  >
-                    <Save className="w-4 h-4" />
-                    {t("devicesDetail.save")}
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 bg-surface-container-low"
-                    onClick={() => void pushConfig()}
-                  >
-                    <Send className="w-4 h-4" />
-                    {t("devicesDetail.pushMqtt")}
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 bg-surface-container-low"
-                    onClick={() => void refetch()}
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    {t("devicesDetail.refresh")}
-                  </button>
-                </div>
-              </section>
+              {hw === "polar_sense" && (
+                <section className="space-y-2 rounded-xl border border-outline-variant/20 p-3">
+                  <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
+                    <HeartPulse className="w-4 h-4" />
+                    Polar BLE
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-on-surface-variant">Battery (0x180F)</span>
+                      <p className="font-medium text-on-surface">
+                        {detail.polar_vitals?.sensor_battery != null
+                          ? `${detail.polar_vitals.sensor_battery}%`
+                          : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-on-surface-variant">Heart rate (0x180D)</span>
+                      <p className="font-medium text-on-surface">
+                        {detail.polar_vitals?.heart_rate_bpm != null
+                          ? `${detail.polar_vitals.heart_rate_bpm} bpm`
+                          : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-on-surface-variant">RR interval</span>
+                      <p className="font-medium text-on-surface">
+                        {detail.polar_vitals?.rr_interval_ms != null
+                          ? `${detail.polar_vitals.rr_interval_ms} ms`
+                          : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-on-surface-variant">Last reading</span>
+                      <p className="font-medium text-on-surface">
+                        {detail.polar_vitals?.timestamp
+                          ? new Date(detail.polar_vitals.timestamp).toLocaleString()
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {hw === "mobile_phone" && (
+                <section className="space-y-2 rounded-xl border border-outline-variant/20 p-3">
+                  <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
+                    <Smartphone className="w-4 h-4" />
+                    {t("devicesDetail.mobileWalk")}
+                  </h4>
+                  <p className="text-xs text-on-surface-variant">
+                    {t("devicesDetail.mobileWalkHint")}
+                  </p>
+                  <p className="text-sm text-on-surface">
+                    {detail.realtime?.velocity_ms != null
+                      ? `${detail.realtime.velocity_ms.toFixed(2)} m/s · ${detail.realtime.distance_m?.toFixed(2) ?? "0.00"} m`
+                      : "—"}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    {t("devicesDetail.linkedPolar")}:{" "}
+                    <span className="text-on-surface">
+                      {linkedPolar?.device_id ?? "—"}
+                    </span>
+                  </p>
+                </section>
+              )}
 
               {hw === "node" && (
                 <section className="space-y-2 rounded-xl border border-outline-variant/20 p-3">
@@ -416,6 +417,17 @@ export default function DeviceDetailDrawer({
                   {actionErr || actionMsg}
                 </p>
               )}
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 bg-surface-container-low"
+                  onClick={() => void refetch()}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  {t("devicesDetail.refresh")}
+                </button>
+              </div>
             </>
           )}
         </div>

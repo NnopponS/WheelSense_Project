@@ -3,7 +3,7 @@
 import { useMemo, type ComponentType } from "react";
 import { useQuery } from "@/hooks/useQuery";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
-import type { Device } from "@/lib/types";
+import type { Device, VitalReading } from "@/lib/types";
 import { AlertTriangle, LocateFixed, Signal, Tablet } from "lucide-react";
 
 type RoomPrediction = {
@@ -27,6 +27,7 @@ export default function ObserverDevicesPage() {
     "/localization/predictions?limit=120",
   );
   const { data: activeAlerts } = useQuery<AlertLite[]>("/alerts?status=active&limit=120");
+  const { data: vitals } = useQuery<VitalReading[]>("/vitals/readings?limit=200");
 
   const deviceList = devices ?? [];
   const alertsList = activeAlerts ?? [];
@@ -45,6 +46,13 @@ export default function ObserverDevicesPage() {
     return nowMs - new Date(device.last_seen).getTime() <= onlineCutoffMs;
   }).length;
   const offlineCount = deviceList.length - onlineCount;
+  const latestVitalByDevice = useMemo(() => {
+    const m = new Map<string, VitalReading>();
+    for (const v of vitals ?? []) {
+      if (!m.has(v.device_id)) m.set(v.device_id, v);
+    }
+    return m;
+  }, [vitals]);
 
   if (isLoading) {
     return (
@@ -93,7 +101,7 @@ export default function ObserverDevicesPage() {
                       {device.device_id}
                     </p>
                     <p className="text-xs text-on-surface-variant mt-0.5">
-                      {device.device_type}
+                      {device.hardware_type}
                     </p>
                   </div>
                   <span
@@ -115,6 +123,35 @@ export default function ObserverDevicesPage() {
                     }
                   />
                   <DataPoint label="Active alerts" value={alertCount} />
+                </div>
+
+                <div className="mt-2 rounded-lg bg-surface-container-low px-3 py-2 text-xs">
+                  {device.hardware_type === "polar_sense" ? (
+                    <p className="text-on-surface-variant">
+                      Polar battery:{" "}
+                      <span className="text-on-surface font-medium">
+                        {latestVitalByDevice.get(device.device_id)?.sensor_battery ?? "—"}%
+                      </span>
+                      {" · "}HR:{" "}
+                      <span className="text-on-surface font-medium">
+                        {latestVitalByDevice.get(device.device_id)?.heart_rate_bpm ?? "—"}
+                      </span>
+                    </p>
+                  ) : device.hardware_type === "mobile_phone" ? (
+                    <p className="text-on-surface-variant">
+                      Mobile walk stream:{" "}
+                      <span className="text-on-surface font-medium">
+                        {isOnline ? "active" : "offline"}
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-on-surface-variant">
+                      Sensor stream:{" "}
+                      <span className="text-on-surface font-medium">
+                        {isOnline ? "healthy" : "stale"}
+                      </span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="mt-4 rounded-lg bg-surface-container-low px-3 py-2.5">

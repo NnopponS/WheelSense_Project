@@ -14,11 +14,12 @@ import {
   UserCog,
   LogOut,
   Activity,
-  Shield,
   ScrollText,
   Settings,
+  UserCircle2,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import UserAvatar from "@/components/shared/UserAvatar";
 
 interface NavItem {
   href: string;
@@ -38,6 +39,8 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin", labelKey: "nav.dashboard", icon: LayoutDashboard },
       { href: "/admin/patients", labelKey: "nav.patients", icon: Users },
       { href: "/admin/alerts", labelKey: "nav.alerts", icon: Bell },
+      // Optional Vitals: restore `app/admin/vitals/page.tsx` from git, import Heart from lucide-react, then add:
+      // { href: "/admin/vitals", labelKey: "nav.vitals", icon: Heart },
     ],
   },
   {
@@ -46,12 +49,12 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/monitoring", labelKey: "nav.roomsMap", icon: MapPin },
       { href: "/admin/devices", labelKey: "nav.devices", icon: Tablet },
       { href: "/admin/caregivers", labelKey: "nav.staff", icon: UserCog },
+      { href: "/admin/account-management", labelKey: "nav.myAccount", icon: UserCircle2 },
     ],
   },
   {
     categoryKey: "nav.category.admin",
     items: [
-      { href: "/admin/users", labelKey: "nav.users", icon: Shield },
       { href: "/admin/settings", labelKey: "nav.settings", icon: Settings },
       { href: "/admin/audit", labelKey: "nav.auditLog", icon: ScrollText },
     ],
@@ -70,8 +73,9 @@ export default function AdminSidebar() {
   }
 
   function isActive(href: string): boolean {
-    if (href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(href);
+    const base = href.split("?")[0];
+    if (base === "/admin") return pathname === "/admin";
+    return pathname === base || pathname.startsWith(`${base}/`);
   }
 
   return (
@@ -143,9 +147,11 @@ export default function AdminSidebar() {
       {user && (
         <div className="px-4 py-3 border-t border-outline-variant/10 bg-surface-container-low">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full gradient-cta flex items-center justify-center text-white text-xs font-bold shrink-0">
-              {user.username?.[0]?.toUpperCase() || "U"}
-            </div>
+            <UserAvatar
+              username={user.username}
+              profileImageUrl={user.profile_image_url}
+              sizePx={32}
+            />
             <div className="min-w-0">
               <p className="text-sm font-medium text-on-surface truncate">
                 {user.username}

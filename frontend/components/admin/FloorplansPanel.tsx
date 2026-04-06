@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@/hooks/useQuery";
 import { api, ApiError } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
-import type { Device, Facility, Floor } from "@/lib/types";
+import type { Device, Facility, Floor, HardwareType } from "@/lib/types";
+import { DEVICE_HARDWARE_TABS } from "@/lib/deviceHardwareTabs";
 import FloorplanCanvas from "@/components/floorplan/FloorplanCanvas";
+import SearchableListboxPicker from "@/components/shared/SearchableListboxPicker";
 import {
   normalizeFloorplanRooms,
   type FloorplanLayoutResponse,
@@ -72,6 +74,8 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [nodeHardwareTab, setNodeHardwareTab] = useState<HardwareType | "all">("all");
+  const [nodeDeviceSearch, setNodeDeviceSearch] = useState("");
 
   const [showNewFacility, setShowNewFacility] = useState(false);
   const [newFacilityName, setNewFacilityName] = useState("");
@@ -120,6 +124,54 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
   }, [floors, floorId]);
 
   const selected = rooms.find((r) => r.id === selectedId) ?? null;
+
+  const devicesList = useMemo(() => devices ?? [], [devices]);
+
+  const devicesByHardwareTab = useMemo(() => {
+    if (nodeHardwareTab === "all") return devicesList;
+    return devicesList.filter(
+      (d) => (d.hardware_type || "").toLowerCase() === nodeHardwareTab,
+    );
+  }, [devicesList, nodeHardwareTab]);
+
+  const filteredNodeDevices = useMemo(() => {
+    const q = nodeDeviceSearch.trim().toLowerCase();
+    if (!q) return devicesByHardwareTab;
+    return devicesByHardwareTab.filter((d) => {
+      const label = (d.display_name || d.device_id).toLowerCase();
+      const id = d.device_id.toLowerCase();
+      const hw = (d.hardware_type || "").toLowerCase();
+      const dt = (d.device_type || "").toLowerCase();
+      return (
+        label.includes(q) || id.includes(q) || hw.includes(q) || dt.includes(q)
+      );
+    });
+  }, [devicesByHardwareTab, nodeDeviceSearch]);
+
+  const nodeDeviceOptions = useMemo(
+    () =>
+      filteredNodeDevices.map((d) => ({
+        id: String(d.id),
+        title: d.display_name || d.device_id,
+        subtitle: `${d.device_id}${d.hardware_type ? ` · ${d.hardware_type}` : ""}`,
+      })),
+    [filteredNodeDevices],
+  );
+
+  const nodeEmptyPool = devicesByHardwareTab.length === 0;
+  const nodeEmptyNoMatch =
+    devicesByHardwareTab.length > 0 &&
+    filteredNodeDevices.length === 0 &&
+    nodeDeviceSearch.trim().length > 0;
+
+  const selectedNodeDevice =
+    selected?.device_id != null
+      ? devicesList.find((d) => d.id === selected.device_id) ?? null
+      : null;
+
+  useEffect(() => {
+    setNodeDeviceSearch("");
+  }, [selectedId]);
 
   const updateSelected = useCallback(
     (patch: Partial<FloorplanRoomShape>) => {
@@ -648,27 +700,84 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                     onChange={(e) => updateSelected({ label: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="text-xs text-on-surface-variant">
-                    {t("floorplan.nodeDevice")}
-                  </label>
-                  <select
-                    className="input-field mt-1 text-sm"
-                    value={selected.device_id ?? ""}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      updateSelected({
-                        device_id: v === "" ? null : Number(v),
-                      });
-                    }}
-                  >
-                    <option value="">{t("floorplan.noNode")}</option>
-                    {(devices ?? []).map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.device_id} ({d.device_type})
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-3">
+                  <p className="text-xs text-on-surface-variant">{t("floorplan.nodeDeviceLinkHint")}</p>
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-on-surface-variant">
+                      {t("floorplan.deviceCategoryStep")}
+                    </p>
+                    <div
+                      className="flex flex-wrap gap-1.5"
+                      role="tablist"
+                      aria-label={t("floorplan.deviceCategoryStep")}
+                    >
+                      {DEVICE_HARDWARE_TABS.map((tab) => {
+                        const active = nodeHardwareTab === tab.key;
+                        return (
+                          <button
+                            key={tab.key}
+                            type="button"
+                            role="tab"
+                            aria-selected={active}
+                            onClick={() => {
+                              setNodeHardwareTab(tab.key);
+                              setNodeDeviceSearch("");
+                            }}
+                            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-smooth ${
+                              active
+                                ? "border-primary bg-primary/15 text-primary"
+                                : "border-outline-variant/30 text-on-surface hover:bg-surface-container-high"
+                            }`}
+                          >
+                            {t(tab.labelKey)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-on-surface-variant">
+                      {t("floorplan.deviceSearchStep")}
+                    </p>
+                    <SearchableListboxPicker
+                      inputId={`floorplans-panel-node-combobox-${selected.id}`}
+                      listboxId={`floorplans-panel-node-listbox-${selected.id}`}
+                      options={nodeDeviceOptions}
+                      search={nodeDeviceSearch}
+                      onSearchChange={setNodeDeviceSearch}
+                      searchPlaceholder={t("floorplan.searchNodeDevice")}
+                      selectedOptionId={
+                        selected.device_id != null ? String(selected.device_id) : null
+                      }
+                      onSelectOption={(id) => {
+                        updateSelected({ device_id: Number(id) });
+                      }}
+                      disabled={nodeEmptyPool}
+                      listboxAriaLabel={t("floorplan.selectNodeDevice")}
+                      noMatchMessage={t("floorplan.noNodeDeviceMatches")}
+                      emptyStateMessage={
+                        nodeEmptyPool ? t("floorplan.noDevicesInCategory") : null
+                      }
+                      emptyNoMatch={nodeEmptyNoMatch}
+                    />
+                  </div>
+                  {selected.device_id != null ? (
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-on-surface">
+                      <span className="truncate font-medium">
+                        {t("patients.deviceSelected")}:{" "}
+                        {selectedNodeDevice
+                          ? selectedNodeDevice.display_name || selectedNodeDevice.device_id
+                          : `#${selected.device_id}`}
+                      </span>
+                      <button
+                        type="button"
+                        className="ml-auto shrink-0 font-semibold text-primary hover:underline"
+                        onClick={() => updateSelected({ device_id: null })}
+                      >
+                        {t("floorplan.noNode")}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 <div>
                   <label className="text-xs text-on-surface-variant">

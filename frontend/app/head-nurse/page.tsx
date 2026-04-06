@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@/hooks/useQuery";
+import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import {
   AlertTriangle,
   Bell,
@@ -11,7 +12,7 @@ import {
   Stethoscope,
   Users,
 } from "lucide-react";
-import type { Alert, Caregiver, Patient, TimelineEvent } from "@/lib/types";
+import type { Alert, Caregiver, Device, Patient, TimelineEvent } from "@/lib/types";
 
 interface WardSummary {
   total_patients: number;
@@ -48,6 +49,7 @@ interface CareSchedule {
 }
 
 export default function HeadNurseHomePage() {
+  const nowMs = useFixedNowMs();
   const { data: wardSummary } = useQuery<WardSummary>("/analytics/wards/summary");
   const { data: alertSummary } = useQuery<AlertSummary>("/analytics/alerts/summary");
   const { data: vitalsAverage } = useQuery<VitalsAverage>("/analytics/vitals/averages?hours=24");
@@ -57,12 +59,17 @@ export default function HeadNurseHomePage() {
   const { data: tasks } = useQuery<CareTask[]>("/workflow/tasks?status=pending");
   const { data: schedules } = useQuery<CareSchedule[]>("/workflow/schedules?status=scheduled");
   const { data: patients } = useQuery<Patient[]>("/patients");
+  const { data: devices } = useQuery<Device[]>("/devices");
 
   const activeAlerts = alerts?.filter((item) => item.status === "active") ?? [];
   const criticalActiveAlerts = activeAlerts.filter(
     (item) => item.severity === "critical",
   );
   const onDutyCount = caregivers?.filter((item) => item.is_active).length ?? 0;
+  const onlineDevices = (devices ?? []).filter((d) => {
+    if (!d.last_seen) return false;
+    return nowMs - new Date(d.last_seen).getTime() <= 5 * 60 * 1000;
+  }).length;
 
   const stats = [
     {
@@ -213,6 +220,15 @@ export default function HeadNurseHomePage() {
               </div>
               <span className="font-semibold text-on-surface">
                 {Object.keys(alertSummary?.by_type ?? {}).length}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-on-surface-variant">
+                <Users className="w-4 h-4 text-info" />
+                Device connectivity
+              </div>
+              <span className="font-semibold text-on-surface">
+                {onlineDevices}/{devices?.length ?? 0} online
               </span>
             </div>
           </div>

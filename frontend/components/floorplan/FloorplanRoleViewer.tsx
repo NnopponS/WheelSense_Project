@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@/hooks/useQuery";
 import type { Facility, Floor, Room } from "@/lib/types";
 import {
@@ -29,30 +29,24 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
   const { data: facilities, isLoading: loadingFac } = useQuery<Facility[]>(
     "/facilities",
   );
+  const effectiveFacilityId = useMemo<number | "">(
+    () => (facilityId === "" ? (facilities?.[0]?.id ?? "") : facilityId),
+    [facilityId, facilities],
+  );
   const floorsEndpoint =
-    facilityId === "" ? null : `/facilities/${facilityId}/floors`;
+    effectiveFacilityId === "" ? null : `/facilities/${effectiveFacilityId}/floors`;
   const { data: floors, isLoading: loadingFloors } = useQuery<Floor[]>(
     floorsEndpoint,
   );
-
-  useEffect(() => {
-    if (facilityId !== "" || !facilities?.length) return;
-    setFacilityId(facilities[0].id);
-  }, [facilities, facilityId]);
-
-  useEffect(() => {
-    setFloorId("");
-  }, [facilityId]);
-
-  useEffect(() => {
-    if (floorId !== "" || !floors?.length) return;
-    setFloorId(floors[0].id);
-  }, [floors, floorId]);
+  const effectiveFloorId = useMemo<number | "">(
+    () => (floorId === "" ? (floors?.[0]?.id ?? "") : floorId),
+    [floorId, floors],
+  );
 
   const layoutEndpoint = useMemo(() => {
-    if (facilityId === "" || floorId === "") return null;
-    return `/future/floorplans/layout?facility_id=${facilityId}&floor_id=${floorId}`;
-  }, [facilityId, floorId]);
+    if (effectiveFacilityId === "" || effectiveFloorId === "") return null;
+    return `/future/floorplans/layout?facility_id=${effectiveFacilityId}&floor_id=${effectiveFloorId}`;
+  }, [effectiveFacilityId, effectiveFloorId]);
 
   const {
     data: layoutRes,
@@ -61,7 +55,7 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
   } = useQuery<FloorplanLayoutResponse>(layoutEndpoint);
 
   const floorRoomsEndpoint =
-    floorId === "" ? null : `/rooms?floor_id=${floorId}`;
+    effectiveFloorId === "" ? null : `/rooms?floor_id=${effectiveFloorId}`;
   const { data: floorRooms, isLoading: loadingFloorRooms } = useQuery<Room[]>(
     floorRoomsEndpoint,
   );
@@ -77,10 +71,10 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
     loadingLayout ||
     (normalizeFloorplanRooms(layoutRes?.layout_json).length === 0 &&
       loadingFloorRooms);
-
-  useEffect(() => {
-    setSelectedId(null);
-  }, [layoutRes, facilityId, floorId]);
+  const visibleSelectedId = useMemo(
+    () => (rooms.some((room) => room.id === selectedId) ? selectedId : null),
+    [rooms, selectedId],
+  );
 
   const noop = () => {};
 
@@ -115,10 +109,12 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
           </label>
           <select
             className="input-field text-sm w-full"
-            value={facilityId === "" ? "" : String(facilityId)}
+            value={effectiveFacilityId === "" ? "" : String(effectiveFacilityId)}
             onChange={(e) => {
               const v = e.target.value;
               setFacilityId(v === "" ? "" : Number(v));
+              setFloorId("");
+              setSelectedId(null);
             }}
             disabled={loadingFac}
           >
@@ -136,12 +132,13 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
           </label>
           <select
             className="input-field text-sm w-full"
-            value={floorId === "" ? "" : String(floorId)}
+            value={effectiveFloorId === "" ? "" : String(effectiveFloorId)}
             onChange={(e) => {
               const v = e.target.value;
               setFloorId(v === "" ? "" : Number(v));
+              setSelectedId(null);
             }}
-            disabled={facilityId === "" || loadingFloors}
+            disabled={effectiveFacilityId === "" || loadingFloors}
           >
             <option value="">{t("floorplan.selectFloor")}</option>
             {(floors ?? []).map((fl) => (
@@ -153,7 +150,7 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
         </div>
       </div>
 
-      {facilityId !== "" && floorId !== "" && loadingFloors === false && (
+      {effectiveFacilityId !== "" && effectiveFloorId !== "" && loadingFloors === false && (
         floors?.length === 0 ? (
           <p className="text-sm text-on-surface-variant">{t("floorplan.noFloors")}</p>
         ) : canvasLoading ? (
@@ -170,7 +167,7 @@ export default function FloorplanRoleViewer({ className = "" }: Props) {
               readOnly
               rooms={rooms}
               onRoomsChange={noop}
-              selectedId={selectedId}
+              selectedId={visibleSelectedId}
               onSelect={setSelectedId}
             />
             <p className="text-xs text-on-surface-variant mt-2">

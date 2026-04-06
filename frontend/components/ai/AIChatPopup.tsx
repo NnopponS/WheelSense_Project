@@ -1,27 +1,68 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { MessageCircle, Send, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChevronDown,
+  History,
+  MessageCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  Send,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { API_BASE } from "@/lib/constants";
 
-/**
- * Streams plain text from `POST /api/chat/stream` (WheelSense FastAPI).
- * Pairs with backend `text/plain` streaming response.
- */
+/* ── Minimal markdown renderer ─────────────────────────────────────────── */
+
+function renderMarkdown(text: string): string {
+  const html = text
+    // code blocks
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="bg-surface-container-low rounded-lg p-2 my-1 text-xs overflow-x-auto"><code>$2</code></pre>')
+    // inline code
+    .replace(/`([^`]+)`/g, '<code class="bg-surface-container-low rounded px-1 py-0.5 text-xs">$1</code>')
+    // bold
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    // italic
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    // unordered list items
+    .replace(/^[-*] (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+    // numbered list items
+    .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>')
+    // headings
+    .replace(/^### (.+)$/gm, '<p class="font-semibold mt-1">$1</p>')
+    .replace(/^## (.+)$/gm, '<p class="font-bold mt-1">$1</p>')
+    .replace(/^# (.+)$/gm, '<p class="font-bold text-base mt-1">$1</p>')
+    // line breaks → <br>
+    .replace(/\n/g, "<br />");
+  return html;
+}
+
+/* ── Types ──────────────────────────────────────────────────────────────── */
+
+type Message = { role: "user" | "assistant"; content: string };
+type Conversation = { id: number; title: string | null; updated_at: string };
+
+/* ── Component ─────────────────────────────────────────────────────────── */
+
 export default function AIChatPopup() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
-  const [conversations, setConversations] = useState<
-    Array<{ id: number; title: string | null; updated_at: string }>
-  >([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [provider, setProvider] = useState<"ollama" | "copilot" | "">("");
   const [model, setModel] = useState("");
   const [error, setError] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  /* ── Role-based quick prompts ────────────────────────────────────────── */
 
   const quickPrompts = useMemo(() => {
     switch (user?.role) {
@@ -38,6 +79,8 @@ export default function AIChatPopup() {
     }
   }, [user?.role]);
 
+  /* ── Auth headers ───────────────────────────────────────────────────── */
+
   const authHeaders = useCallback((): HeadersInit => {
     const token =
       typeof window !== "undefined" ? localStorage.getItem("ws_token") : null;
@@ -47,21 +90,26 @@ export default function AIChatPopup() {
     };
   }, []);
 
+  /* ── Auto-scroll ────────────────────────────────────────────────────── */
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  /* ── Load data on open ──────────────────────────────────────────────── */
+
   const loadConversations = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/chat/conversations`, {
         headers: authHeaders(),
       });
       if (!res.ok) return;
-      const data = (await res.json()) as Array<{ id: number; title: string | null; updated_at: string }>;
+      const data = (await res.json()) as Conversation[];
       setConversations(data);
-      if (!conversationId && data.length > 0) {
-        setConversationId(data[0].id);
-      }
     } catch {
       // keep chat usable even if history endpoint fails
     }
-  }, [authHeaders, conversationId]);
+  }, [authHeaders]);
 
   const loadConversationMessages = useCallback(
     async (id: number) => {
@@ -76,6 +124,7 @@ export default function AIChatPopup() {
           .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
         setMessages(filtered);
         setConversationId(id);
+        setShowHistory(false);
       } catch {
         // non-fatal
       }
@@ -103,11 +152,39 @@ export default function AIChatPopup() {
     void loadSettings();
   }, [open, user, loadConversations, loadSettings]);
 
+  /* ── New Chat ───────────────────────────────────────────────────────── */
+
+  function handleNewChat() {
+    setConversationId(null);
+    setMessages([]);
+    setError("");
+    setShowHistory(false);
+  }
+
+  /* ── Delete conversation ────────────────────────────────────────────── */
+
+  async function handleDeleteConversation(id: number) {
+    try {
+      await fetch(`${API_BASE}/chat/conversations/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      setConversations((prev) => prev.filter((c) => c.id !== id));
+      if (conversationId === id) {
+        handleNewChat();
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+
+  /* ── Send message ───────────────────────────────────────────────────── */
+
   const send = useCallback(async () => {
     if (!input.trim()) return;
     setLoading(true);
     setError("");
-    const userMessage = { role: "user" as const, content: input.trim() };
+    const userMessage: Message = { role: "user", content: input.trim() };
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
     setInput("");
@@ -175,119 +252,228 @@ export default function AIChatPopup() {
 
   if (!user) return null;
 
+  const activeTitle =
+    conversations.find((c) => c.id === conversationId)?.title || null;
+
+  /* ── Render ─────────────────────────────────────────────────────────── */
+
   return (
     <>
+      {/* ── FAB ────────────────────────────────────────────────────── */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full gradient-cta text-white shadow-elevated flex items-center justify-center hover:opacity-90 transition-smooth"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full gradient-cta text-white shadow-elevated hover:opacity-90 transition-smooth"
         aria-label="Open EaseAI chat"
       >
-        <MessageCircle className="w-7 h-7" />
+        <MessageCircle className="h-7 w-7" />
       </button>
 
+      {/* ── Popup ──────────────────────────────────────────────────── */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[min(100vw-2rem,24rem)] h-[28rem] surface-card shadow-modal flex flex-col overflow-hidden border border-outline-variant/20">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/15 bg-surface-container-low">
-            <div>
-              <p className="text-sm font-semibold text-on-surface">EaseAI</p>
-              <p className="text-[11px] text-on-surface-variant capitalize">
-                {user.role.replace("_", " ")}
-              </p>
-            </div>
-            <button
-              type="button"
-              className="p-1 rounded-lg hover:bg-surface-container"
-              onClick={() => setOpen(false)}
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="px-3 py-2 border-b border-outline-variant/15 grid grid-cols-2 gap-2">
-            <select
-              className="input-field text-xs"
-              value={provider}
-              onChange={(e) => setProvider(e.target.value as "ollama" | "copilot")}
-            >
-              <option value="ollama">ollama</option>
-              <option value="copilot">copilot</option>
-            </select>
-            <input
-              className="input-field text-xs"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              placeholder="model"
-            />
-          </div>
-          <div className="px-3 py-2 border-b border-outline-variant/15">
-            <div className="flex flex-wrap gap-1">
-              {quickPrompts.map((qp) => (
+        <div className="fixed bottom-24 right-6 z-50 flex h-[36rem] w-[min(100vw-2rem,28rem)] overflow-hidden rounded-2xl border border-outline-variant/20 surface-card shadow-modal">
+          {/* ── History sidebar ─────────────────────────────────── */}
+          {showHistory && (
+            <div className="flex w-56 shrink-0 flex-col border-r border-outline-variant/15 bg-surface-container-low">
+              <div className="flex items-center justify-between border-b border-outline-variant/15 px-3 py-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+                  History
+                </p>
                 <button
-                  key={qp}
                   type="button"
-                  className="text-[11px] px-2 py-1 rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
-                  onClick={() => setInput(qp)}
+                  className="rounded-lg p-1 hover:bg-surface-container"
+                  onClick={() => setShowHistory(false)}
+                  aria-label="Close history"
                 >
-                  {qp}
+                  <PanelLeftClose className="h-4 w-4" aria-hidden />
                 </button>
-              ))}
+              </div>
+              <button
+                type="button"
+                className="mx-2 mt-2 flex items-center gap-2 rounded-xl border border-outline-variant/20 px-3 py-2 text-xs font-medium text-on-surface hover:bg-surface-container transition-smooth"
+                onClick={handleNewChat}
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                New Chat
+              </button>
+              <ul className="mt-2 flex-1 overflow-y-auto px-1 pb-2 space-y-0.5">
+                {conversations.map((c) => (
+                  <li key={c.id} className="group">
+                    <button
+                      type="button"
+                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-smooth ${
+                        conversationId === c.id
+                          ? "bg-primary-fixed/50 text-primary font-medium"
+                          : "text-on-surface-variant hover:bg-surface-container"
+                      }`}
+                      onClick={() => void loadConversationMessages(c.id)}
+                    >
+                      <History className="h-3 w-3 shrink-0" aria-hidden />
+                      <span className="min-w-0 truncate flex-1">
+                        {(c.title || "Untitled").slice(0, 30)}
+                      </span>
+                      <button
+                        type="button"
+                        className="ml-auto hidden rounded p-0.5 hover:bg-critical/20 group-hover:inline-flex"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDeleteConversation(c.id);
+                        }}
+                        aria-label="Delete conversation"
+                      >
+                        <Trash2 className="h-3 w-3 text-critical" aria-hidden />
+                      </button>
+                    </button>
+                  </li>
+                ))}
+                {conversations.length === 0 && (
+                  <li className="px-3 py-4 text-center text-[11px] text-on-surface-variant">
+                    No conversations yet.
+                  </li>
+                )}
+              </ul>
             </div>
-            {conversations.length > 0 && (
-              <div className="mt-2 flex gap-1 overflow-x-auto">
-                {conversations.slice(0, 6).map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className={`text-[11px] px-2 py-1 rounded-lg ${
-                      conversationId === c.id
-                        ? "bg-primary text-on-primary"
-                        : "bg-surface-container text-on-surface-variant"
-                    }`}
-                    onClick={() => void loadConversationMessages(c.id)}
+          )}
+
+          {/* ── Main panel ─────────────────────────────────────── */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            {/* Header */}
+            <div className="flex items-center gap-2 border-b border-outline-variant/15 bg-surface-container-low px-3 py-2.5">
+              <button
+                type="button"
+                className="rounded-lg p-1 hover:bg-surface-container transition-smooth"
+                onClick={() => setShowHistory((o) => !o)}
+                aria-label="Toggle history"
+              >
+                <PanelLeftOpen className="h-4 w-4" aria-hidden />
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-on-surface">EaseAI</p>
+                <p className="truncate text-[11px] text-on-surface-variant">
+                  {activeTitle || `${user.role.replace("_", " ")} assistant`}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-lg p-1 hover:bg-surface-container transition-smooth"
+                onClick={handleNewChat}
+                aria-label="New chat"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="rounded-lg p-1 hover:bg-surface-container transition-smooth"
+                onClick={() => setOpen(false)}
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+
+            {/* Settings dropdown */}
+            <div className="border-b border-outline-variant/15">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between px-3 py-1.5 text-[11px] text-on-surface-variant hover:bg-surface-container-low transition-smooth"
+                onClick={() => setSettingsOpen((o) => !o)}
+              >
+                <span>
+                  {provider || "ollama"} · {model || "default"}
+                </span>
+                <ChevronDown
+                  className={`h-3 w-3 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+                  aria-hidden
+                />
+              </button>
+              {settingsOpen && (
+                <div className="grid grid-cols-2 gap-2 px-3 pb-2">
+                  <select
+                    className="input-field text-xs"
+                    value={provider}
+                    onChange={(e) => setProvider(e.target.value as "ollama" | "copilot")}
                   >
-                    {(c.title || "Untitled").slice(0, 18)}
+                    <option value="ollama">ollama</option>
+                    <option value="copilot">copilot</option>
+                  </select>
+                  <input
+                    className="input-field text-xs"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    placeholder="model"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Quick prompts (only when no messages) */}
+            {messages.length === 0 && !loading && (
+              <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-outline-variant/15">
+                {quickPrompts.map((qp) => (
+                  <button
+                    key={qp}
+                    type="button"
+                    className="rounded-lg bg-surface-container px-2 py-1 text-[11px] text-on-surface-variant hover:bg-surface-container-high transition-smooth"
+                    onClick={() => setInput(qp)}
+                  >
+                    {qp}
                   </button>
                 ))}
               </div>
             )}
-          </div>
-          <div className="flex-1 overflow-y-auto p-3 text-sm text-on-surface whitespace-pre-wrap space-y-2">
-            {messages.length === 0 && !loading && (
-              <p className="text-on-surface-variant">
-                Ask about patients, alerts, workflows, or ward operations.
-              </p>
-            )}
-            {messages.map((m, idx) => (
-              <div
-                key={`${m.role}-${idx}`}
-                className={`rounded-xl px-3 py-2 ${
-                  m.role === "user"
-                    ? "bg-primary-container text-on-primary-container ml-8"
-                    : "bg-surface-container-low mr-8"
-                }`}
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-3 text-sm text-on-surface space-y-2">
+              {messages.length === 0 && !loading && (
+                <p className="text-on-surface-variant">
+                  Ask about patients, alerts, workflows, or ward operations.
+                </p>
+              )}
+              {messages.map((m, idx) => (
+                <div
+                  key={`${m.role}-${idx}`}
+                  className={`rounded-xl px-3 py-2 ${
+                    m.role === "user"
+                      ? "bg-primary-container text-on-primary-container ml-8"
+                      : "bg-surface-container-low mr-8"
+                  }`}
+                >
+                  {m.role === "assistant" ? (
+                    <div
+                      className="prose-sm [&_pre]:my-1 [&_code]:text-xs [&_li]:my-0"
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdown(
+                          m.content || (loading && idx === messages.length - 1 ? "…" : ""),
+                        ),
+                      }}
+                    />
+                  ) : (
+                    <span>{m.content}</span>
+                  )}
+                </div>
+              ))}
+              {error && <p className="text-critical text-xs">{error}</p>}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="flex gap-2 border-t border-outline-variant/15 p-3">
+              <input
+                className="input-field flex-1 text-sm"
+                placeholder="Message…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+              />
+              <button
+                type="button"
+                disabled={loading}
+                onClick={send}
+                className="rounded-xl gradient-cta px-3 text-white disabled:opacity-50 transition-smooth"
               >
-                {m.content || (loading && m.role === "assistant" ? "…" : "")}
-              </div>
-            ))}
-            {error && <p className="text-critical text-xs">{error}</p>}
-          </div>
-          <div className="p-3 border-t border-outline-variant/15 flex gap-2">
-            <input
-              className="input-field flex-1 text-sm"
-              placeholder="Message…"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
-            />
-            <button
-              type="button"
-              disabled={loading}
-              onClick={send}
-              className="px-3 rounded-xl gradient-cta text-white disabled:opacity-50"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

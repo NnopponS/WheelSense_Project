@@ -15,6 +15,7 @@ import {
   Pill,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import UserAvatar from "@/components/shared/UserAvatar";
 
 interface NavItem {
   href: string;
@@ -103,9 +104,12 @@ export default function SupervisorSidebar() {
       {user && (
         <div className="px-4 py-3 border-t border-outline-variant/30 bg-surface-container-low">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">
-              {user.username?.[0]?.toUpperCase() || "S"}
-            </div>
+            <UserAvatar
+              username={user.username}
+              profileImageUrl={user.profile_image_url}
+              sizePx={32}
+              fallbackClassName="bg-primary/20 text-primary"
+            />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-on-surface truncate">
                 {user.username}

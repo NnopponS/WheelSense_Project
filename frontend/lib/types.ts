@@ -17,6 +17,8 @@ export interface User {
   is_active: boolean;
   caregiver_id: number | null;
   patient_id: number | null;
+  /** Hosted platform path or external http(s) URL for avatar */
+  profile_image_url?: string | null;
   email?: string;
   phone?: string;
   created_at: string;
@@ -34,6 +36,21 @@ export interface Workspace {
 
 // ── Patient ─────────────────────────────────────────────────────────────────
 
+export type MedicalConditionEntry = string | Record<string, unknown>;
+
+export interface PatientPastSurgery {
+  procedure?: string;
+  facility?: string;
+  year?: number | string;
+}
+
+export interface PatientMedication {
+  name?: string;
+  dosage?: string;
+  frequency?: string;
+  instructions?: string;
+}
+
 export interface Patient {
   id: number;
   workspace_id: number;
@@ -45,9 +62,10 @@ export interface Patient {
   height_cm: number | null;
   weight_kg: number | null;
   blood_type: string;
-  medical_conditions: Array<Record<string, string>>;
+  medical_conditions: MedicalConditionEntry[];
   allergies: string[];
-  medications: Array<Record<string, unknown>>;
+  medications: PatientMedication[];
+  past_surgeries: PatientPastSurgery[];
   care_level: "normal" | "special" | "critical";
   mobility_type: string;
   current_mode: string;
@@ -56,6 +74,18 @@ export interface Patient {
   is_active: boolean;
   room_id: number | null;
   created_at: string;
+}
+
+export interface PatientContact {
+  id: number;
+  patient_id: number;
+  contact_type: string;
+  name: string;
+  relationship: string;
+  phone: string;
+  email: string;
+  is_primary: boolean;
+  notes?: string;
 }
 
 // ── Device (registry /api/devices) ───────────────────────────────────────────
@@ -77,8 +107,32 @@ export interface Device {
   firmware?: string;
   last_seen: string | null;
   config: Record<string, unknown>;
-  wifi_ssid?: string | null;
-  mqtt_broker?: string | null;
+}
+
+/** Home Assistant mapping from GET /api/ha/devices */
+export interface SmartDevice {
+  id: number;
+  workspace_id: number;
+  name: string;
+  ha_entity_id: string;
+  device_type: string;
+  room_id: number | null;
+  is_active: boolean;
+  config: Record<string, unknown>;
+  state: string;
+  created_at: string;
+}
+
+/** Device fleet activity from GET /api/devices/activity */
+export interface DeviceActivityEvent {
+  id: number;
+  workspace_id: number;
+  occurred_at: string;
+  event_type: string;
+  summary: string;
+  registry_device_id: string | null;
+  smart_device_id: number | null;
+  details: Record<string, unknown>;
 }
 
 export interface DevicePatientLink {
@@ -113,6 +167,22 @@ export interface DeviceRealtimeSnapshot {
   charging: boolean | null;
   velocity_ms: number | null;
   distance_m: number | null;
+  ax: number | null;
+  ay: number | null;
+  az: number | null;
+  gx: number | null;
+  gy: number | null;
+  gz: number | null;
+  accel_ms2: number | null;
+  direction: number | null;
+}
+
+export interface DevicePolarVitals {
+  timestamp: string | null;
+  heart_rate_bpm: number | null;
+  rr_interval_ms: number | null;
+  sensor_battery: number | null;
+  source: string | null;
 }
 
 export interface DeviceLatestPhoto {
@@ -130,6 +200,7 @@ export interface DeviceDetail extends Device {
   caregiver: DeviceCaregiverLink | null;
   latest_photo: DeviceLatestPhoto | null;
   camera_status: Record<string, unknown>;
+  polar_vitals: DevicePolarVitals | null;
 }
 
 // ── Room ────────────────────────────────────────────────────────────────────
@@ -254,21 +325,6 @@ export interface FacilityHierarchy {
       node_device_id: string | null;
     }>;
   }>;
-}
-
-// ── HomeAssistant ───────────────────────────────────────────────────────────
-
-export interface SmartDevice {
-  id: number;
-  workspace_id: number;
-  name: string;
-  ha_entity_id: string;
-  device_type: string;
-  room_id: number | null;
-  is_active: boolean;
-  state: string;
-  config: Record<string, unknown>;
-  created_at: string;
 }
 
 // ── Health Observation ──────────────────────────────────────────────────────

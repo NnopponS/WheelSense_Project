@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import HeadNurseSidebar from "@/components/HeadNurseSidebar";
 import TopBar from "@/components/TopBar";
 import AIChatPopup from "@/components/ai/AIChatPopup";
+import { canAccessAppRole } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/routes";
 
 export default function HeadNurseLayout({
@@ -21,12 +22,7 @@ export default function HeadNurseLayout({
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (
-      !loading &&
-      user &&
-      user.role !== "head_nurse" &&
-      user.role !== "admin"
-    ) {
+    if (!loading && user && !canAccessAppRole(user.role, "/head-nurse")) {
       router.replace(getRoleHome(user.role));
     }
   }, [user, loading, router]);

@@ -13,11 +13,12 @@ import {
   PackageCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import UserAvatar from "@/components/shared/UserAvatar";
 
 export default function PatientSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
 
   function handleLogout() {
@@ -79,6 +80,22 @@ export default function PatientSidebar() {
           );
         })}
       </nav>
+
+      {user && (
+        <div className="px-4 py-3 border-t border-outline-variant/10 bg-surface-container-low">
+          <div className="flex items-center gap-3">
+            <UserAvatar
+              username={user.username}
+              profileImageUrl={user.profile_image_url}
+              sizePx={32}
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-on-surface truncate">{user.username}</p>
+              <p className="text-[11px] text-on-surface-variant capitalize">{user.role}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Logout */}
       <div className="px-3 pb-3 space-y-1">

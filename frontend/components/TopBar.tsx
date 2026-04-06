@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/lib/i18n";
 import { Bell, Search } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import RoleSwitcher from "./RoleSwitcher";
+import ProfileImageEditorModal from "./shared/ProfileImageEditorModal";
+import UserAvatar from "./shared/UserAvatar";
 
 interface TopBarProps {
   title?: string;
@@ -12,6 +16,8 @@ interface TopBarProps {
 
 export default function TopBar({ title, subtitle }: TopBarProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   return (
     <header className="h-[var(--topbar-height)] bg-surface-container-lowest flex items-center justify-between px-6 shrink-0 sticky top-0 z-30">
@@ -57,9 +63,18 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
         {/* User avatar */}
         {user && (
           <div className="flex items-center gap-2 ml-2 pl-3 border-l border-outline-variant/20">
-            <div className="w-8 h-8 rounded-full gradient-cta flex items-center justify-center text-white text-xs font-bold">
-              {user.username?.[0]?.toUpperCase() || "U"}
-            </div>
+            <button
+              type="button"
+              onClick={() => setProfileOpen(true)}
+              className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ring-offset-2 ring-offset-surface-container-lowest"
+              aria-label={t("profile.avatar.changePhoto")}
+            >
+              <UserAvatar
+                username={user.username}
+                profileImageUrl={user.profile_image_url}
+                sizePx={32}
+              />
+            </button>
             <div className="hidden lg:block">
               <p className="text-sm font-medium text-on-surface leading-tight">
                 {user.username}
@@ -71,6 +86,8 @@ export default function TopBar({ title, subtitle }: TopBarProps) {
           </div>
         )}
       </div>
+
+      <ProfileImageEditorModal open={profileOpen} onClose={() => setProfileOpen(false)} />
     </header>
   );
 }

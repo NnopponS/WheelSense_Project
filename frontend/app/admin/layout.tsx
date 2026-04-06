@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import AdminSidebar from "@/components/AdminSidebar";
 import TopBar from "@/components/TopBar";
 import AIChatPopup from "@/components/ai/AIChatPopup";
+import { canAccessAppRole } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/routes";
 
 export default function DashboardLayout({
@@ -23,7 +24,7 @@ export default function DashboardLayout({
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!loading && user && user.role !== "admin") {
+    if (!loading && user && !canAccessAppRole(user.role, "/admin")) {
       router.replace(getRoleHome(user.role));
     }
   }, [user, loading, router]);

@@ -93,9 +93,12 @@ export default function FloorplanCanvas({
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const roomsRef = useRef(rooms);
-  roomsRef.current = rooms;
   const [drag, setDrag] = useState<DragState>(null);
   const [zoom, setZoom] = useState(1);
+
+  useEffect(() => {
+    roomsRef.current = rooms;
+  }, [rooms]);
 
   const toPercent = useCallback((clientX: number, clientY: number) => {
     const el = containerRef.current;

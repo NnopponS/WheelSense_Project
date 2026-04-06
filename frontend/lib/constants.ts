@@ -1,7 +1,7 @@
 /** API base URL — proxied by `app/api/[[...path]]/route.ts` to the FastAPI server */
 export const API_BASE = "/api";
 
-/** Routes — Phase 12R role shells */
+/** Role app route roots and common admin paths */
 export const ROUTES = {
   LOGIN: "/login",
   ADMIN: "/admin",
@@ -13,10 +13,11 @@ export const ROUTES = {
   PATIENT_DETAIL: (id: number) => `/admin/patients/${id}`,
   DEVICES: "/admin/devices",
   MONITORING: "/admin/monitoring",
-  VITALS: "/admin/vitals",
   ALERTS: "/admin/alerts",
   TIMELINE: "/admin/timeline",
   CAREGIVERS: "/admin/caregivers",
+  CAREGIVER_DETAIL: (id: number) => `/admin/caregivers/${id}`,
   FACILITIES: "/admin/facilities",
   PROFILE: "/admin/settings?tab=profile",
+  ACCOUNT_MANAGEMENT: "/admin/account-management",
 } as const;
