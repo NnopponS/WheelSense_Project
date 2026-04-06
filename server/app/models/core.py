@@ -29,6 +29,26 @@ class Device(Base):
     config = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
 
 
+class DeviceActivityEvent(Base):
+    """Admin-facing device fleet activity (registry, HA mappings, commands, pairing)."""
+
+    __tablename__ = "device_activity_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    occurred_at = Column(DateTime(timezone=True), default=utcnow, nullable=False, index=True)
+    event_type = Column(String(32), nullable=False, index=True)
+    summary = Column(String(255), nullable=False, default="")
+    registry_device_id = Column(String(32), nullable=True, index=True)
+    smart_device_id = Column(Integer, nullable=True, index=True)
+    details = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
+
+
 class DeviceCommandDispatch(Base):
     """Audit trail for MQTT commands sent from admin/API (optional device ack)."""
 

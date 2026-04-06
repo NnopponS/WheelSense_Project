@@ -129,9 +129,10 @@ async def stream_copilot(
     *,
     model: str,
     prompt: str,
+    github_token: str | None = None,
 ) -> AsyncIterator[str]:
     try:
-        from copilot import CopilotClient, ExternalServerConfig
+        from copilot import CopilotClient, ExternalServerConfig, SubprocessConfig
         from copilot.session import PermissionHandler
         from copilot.generated.session_events import SessionEventType
     except ImportError:
@@ -139,10 +140,15 @@ async def stream_copilot(
         yield "\n[AI provider is not available right now.]\n"
         return
 
+    config = None
     url = settings.copilot_cli_url.strip()
-    if not url:
-        logger.error("copilot cli url is not configured")
-        yield "\n[AI provider is not configured.]\n"
+    if github_token:
+        config = SubprocessConfig(github_token=github_token)
+    elif url and "copilot-cli" not in url:
+        config = ExternalServerConfig(url=url)
+    else:
+        logger.error("No github token available for Copilot subprocess, and external CLI is unavailable.")
+        yield "\n[GitHub Copilot is not connected for this Workspace. Please go to AI Settings and authenticate to connect.]\n"
         return
 
     chunks: asyncio.Queue[str | None] = asyncio.Queue()
@@ -176,7 +182,7 @@ async def stream_copilot(
             chunks.put_nowait(None)
 
     try:
-        async with CopilotClient(ExternalServerConfig(url=url)) as client:
+        async with CopilotClient(config) as client:
             session = await client.create_session(
                 on_permission_request=PermissionHandler.approve_all,
                 model=model,
@@ -223,9 +229,21 @@ async def stream_chat_response(
         return
 
     # copilot
+    # Get copilot token from workspace settings
+    github_token = None
+    res = await db.execute(
+        select(WorkspaceAISettings).where(
+            WorkspaceAISettings.workspace_id == workspace.id
+        )
+    )
+    ws_settings = res.scalar_one_or_none()
+    if ws_settings and ws_settings.copilot_token_encrypted:
+        from app.core.token_crypto import decrypt_secret
+        github_token = decrypt_secret(ws_settings.copilot_token_encrypted)
+
     prompt = (
         f"SYSTEM INSTRUCTIONS:\n{system_text}\n\nCONVERSATION:\n"
         + _messages_to_copilot_prompt(messages)
     )
-    async for part in stream_copilot(model=model or "gpt-4.1", prompt=prompt):
+    async for part in stream_copilot(model=model or "gpt-4.1", prompt=prompt, github_token=github_token):
         yield part

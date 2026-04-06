@@ -50,10 +50,12 @@ services:
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASSWORD: ${MQTT_PASSWORD:-}
       AI_PROVIDER: ${AI_PROVIDER:-ollama}
-      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gemma3:4b}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gemma4:e4b}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434/v1}
       COPILOT_CLI_URL: ${COPILOT_CLI_URL:-copilot-cli:4321}
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
+      # GitHub OAuth App client_id — needed for Copilot device-flow connect in Admin › Settings › AI
+      GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:-}
       BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-true}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
       # Use a non-empty password; an empty value in host .env overrides the default and skips/wrong-hash admin.
@@ -61,14 +63,22 @@ services:
       # Literal "true" so a blank line in host .env cannot disable (Compose ${VAR:-default} still passes "" if VAR is set empty).
       BOOTSTRAP_ADMIN_SYNC_PASSWORD: "true"
       BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE: "true"
+      PROFILE_IMAGE_STORAGE_DIR: /app/storage/profile_images
+    volumes:
+      - profile_images:/app/storage/profile_images
     depends_on:
       db:
         condition: service_healthy
       mosquitto:
         condition: service_healthy
-      ollama:
-        condition: service_started
+#      ollama:
+#        condition: service_started
 
+  # Next.js is compiled into the image. After changing frontend code:
+  #   docker compose build wheelsense-platform-web && docker compose up -d wheelsense-platform-web
+  # Or from server/: docker compose watch  (rebuilds this service when ../frontend changes)
+  # For local hot reload: docker compose stop wheelsense-platform-web && cd ../frontend && npm run dev
+  #   (or use docker-compose.no-web.yml so `up -d` does not start this container)
   wheelsense-platform-web:
     container_name: wheelsense-platform-web
     build:
@@ -82,16 +92,32 @@ services:
     depends_on:
       wheelsense-platform-server:
         condition: service_started
+    develop:
+      watch:
+        - action: rebuild
+          path: ../frontend
+          ignore:
+            - node_modules/
+            - .next/
+            - "**/.git/"
 
-  ollama:
-    image: ollama/ollama:latest
-    restart: unless-stopped
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
+  # Use a current engine so `ollama pull <model>` does not return HTTP 412 (manifest requires newer Ollama).
+  # If 412 persists: `docker compose pull ollama && docker compose up -d ollama` (or bump the tag below).
+#  ollama:
+#    image: ollama/ollama:latest
+#    pull_policy: always
+#    restart: unless-stopped
+#    ports:
+#      - "11434:11434"
+#    volumes:
+#      - ollama_data:/root/.ollama
 
+  # Optional: GHCR pull often returns "denied" without auth. Not started by default.
+  #   docker compose --profile copilot up -d
+  # Set COPILOT_GITHUB_TOKEN and docker login ghcr.io if you use AI_PROVIDER=copilot.
   copilot-cli:
+    profiles:
+      - copilot
     image: ghcr.io/github/copilot-cli:latest
     restart: unless-stopped
     command: ["--headless", "--port", "4321"]
@@ -114,6 +140,7 @@ services:
     network_mode: bridge
 
 volumes:
+  profile_images:
   pgdata:
   mosquitto_data:
   mosquitto_log:

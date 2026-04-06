@@ -22,6 +22,7 @@ class PatientCreate(BaseModel):
     medical_conditions: list[MedicalConditionEntry] = []
     allergies: list[str] = []
     medications: list[dict[str, Any]] = []
+    past_surgeries: list[dict[str, Any]] = []
     care_level: str = "normal"
     mobility_type: str = "wheelchair"
     notes: str = ""
@@ -32,15 +33,20 @@ class PatientUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     nickname: str | None = None
+    date_of_birth: date | None = None
+    gender: str | None = None
     height_cm: float | None = None
     weight_kg: float | None = None
+    blood_type: str | None = None
     care_level: str | None = None
     mobility_type: str | None = None
     notes: str | None = None
     medical_conditions: list[MedicalConditionEntry] | None = None
     allergies: list[str] | None = None
     medications: list[dict[str, Any]] | None = None
+    past_surgeries: list[dict[str, Any]] | None = None
     room_id: int | None = None
+    is_active: bool | None = None
 
 
 class PatientOut(BaseModel):
@@ -58,6 +64,7 @@ class PatientOut(BaseModel):
     medical_conditions: list[MedicalConditionEntry]
     allergies: list[str]
     medications: list[dict[str, Any]]
+    past_surgeries: list[dict[str, Any]]
     care_level: str
     mobility_type: str
     current_mode: str
@@ -101,6 +108,16 @@ class PatientContactCreate(BaseModel):
     notes: str = ""
 
 
+class PatientContactUpdate(BaseModel):
+    contact_type: str | None = None
+    name: str | None = None
+    relationship: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    is_primary: bool | None = None
+    notes: str | None = None
+
+
 class PatientContactOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -111,3 +128,4 @@ class PatientContactOut(BaseModel):
     phone: str
     email: str
     is_primary: bool
+    notes: str = ""

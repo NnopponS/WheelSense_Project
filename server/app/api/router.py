@@ -5,11 +5,18 @@ from .endpoints import (
     workspaces, devices, rooms, telemetry, localization, motion,
     patients, caregivers, facilities, vitals, timeline, alerts,
     auth, users, homeassistant, retention, cameras, analytics,
-    chat, ai_settings, workflow, future_domains,
+    chat, ai_settings, workflow, future_domains, profile_images,
 )
 from app.localization import is_model_ready
 
 api_router = APIRouter(prefix="/api")
+
+# Public static assets (no JWT — filename is unguessable)
+api_router.include_router(
+    profile_images.router,
+    prefix="/public/profile-images",
+    tags=["public"],
+)
 
 # ── Existing ─────────────────────────────────────────────────────────────────
 api_router.include_router(workspaces.router, prefix="/workspaces", tags=["workspaces"], dependencies=[Depends(get_current_active_user)])

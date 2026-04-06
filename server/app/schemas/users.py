@@ -1,8 +1,33 @@
 """Pydantic schemas for Users and Authentication."""
 
-from typing import Optional
+import re
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Optional
+from urllib.parse import urlparse
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+_HOSTED_RELATIVE = re.compile(r"^/api/public/profile-images/[a-f0-9]{32}\.jpg$")
+
+
+def validate_optional_profile_image_url(v: Optional[str]) -> Optional[str]:
+    """http(s) URL or platform-hosted avatar path; rejects data: / script schemes."""
+    if v is None:
+        return None
+    s = v.strip()
+    if not s:
+        return None
+    low = s.lower()
+    if low.startswith("data:") or low.startswith("javascript:") or low.startswith("vbscript:"):
+        raise ValueError("Data URLs and non-HTTP schemes are not allowed")
+    if _HOSTED_RELATIVE.fullmatch(s):
+        return s
+    parsed = urlparse(s)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError("Profile image must be an http(s) URL or a hosted platform path")
+    if not parsed.netloc:
+        raise ValueError("Invalid profile image URL")
+    return s
 
 
 class Token(BaseModel):
@@ -27,6 +52,13 @@ class UserBase(BaseModel):
     is_active: bool = True
     caregiver_id: Optional[int] = None
     patient_id: Optional[int] = None
+    profile_image_url: str = Field(default="", max_length=8192)
+
+    @field_validator("profile_image_url")
+    @classmethod
+    def validate_profile_image_url(cls, v: str) -> str:
+        normalized = validate_optional_profile_image_url(v)
+        return normalized or ""
 
 
 class UserCreate(UserBase):
@@ -43,6 +75,23 @@ class UserUpdate(BaseModel):
     is_active: Optional[bool] = None
     caregiver_id: Optional[int] = None
     patient_id: Optional[int] = None
+    profile_image_url: Optional[str] = Field(None, max_length=8192)
+
+    @field_validator("profile_image_url")
+    @classmethod
+    def validate_profile_image_url(cls, v: Optional[str]) -> Optional[str]:
+        return validate_optional_profile_image_url(v)
+
+
+class MePatch(BaseModel):
+    """Self-service profile update (PATCH /api/auth/me). Only fields listed here apply."""
+
+    profile_image_url: Optional[str] = Field(None, max_length=8192)
+
+    @field_validator("profile_image_url")
+    @classmethod
+    def validate_profile_image_url(cls, v: Optional[str]) -> Optional[str]:
+        return validate_optional_profile_image_url(v)
 
 
 class UserOut(UserBase):

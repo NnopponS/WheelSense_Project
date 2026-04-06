@@ -3,8 +3,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel
-
 from app.api.dependencies import (
     RequireRole,
     get_current_user_workspace,
@@ -17,20 +15,20 @@ from app.models.users import User
 from app.models.caregivers import CareGiver, CareGiverZone, CareGiverShift
 from app.schemas.caregivers import (
     CareGiverCreate,
+    CareGiverPatch,
     CareGiverOut,
     ZoneAssignCreate,
+    ZoneAssignPatch,
     ZoneAssignOut,
     ShiftCreate,
+    ShiftPatch,
     ShiftOut,
 )
 from app.schemas.devices import CaregiverDeviceAssignmentCreate, CaregiverDeviceAssignmentOut
 from app.services import device_management as caregiver_device_service
 from app.services.base import CRUDBase
 
-# Service instances — CareGiver has simple CRUD, no custom business methods yet
-_UpdatePlaceholder = type("_UpdatePlaceholder", (BaseModel,), {})
-
-caregiver_service = CRUDBase[CareGiver, CareGiverCreate, _UpdatePlaceholder](CareGiver)
+caregiver_service = CRUDBase[CareGiver, CareGiverCreate, CareGiverPatch](CareGiver)
 
 router = APIRouter()
 
@@ -70,6 +68,20 @@ async def get_caregiver(
     if not cg:
         raise HTTPException(404, "Caregiver not found")
     return cg
+
+
+@router.patch("/{caregiver_id}", response_model=CareGiverOut)
+async def update_caregiver(
+    caregiver_id: int,
+    data: CareGiverPatch,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    cg = await caregiver_service.get(db, ws_id=ws.id, id=caregiver_id)
+    if not cg:
+        raise HTTPException(404, "Caregiver not found")
+    return await caregiver_service.update(db, ws_id=ws.id, db_obj=cg, obj_in=data)
 
 
 @router.delete("/{caregiver_id}", status_code=204)
@@ -127,6 +139,62 @@ async def assign_zone(
     await db.commit()
     await db.refresh(zone)
     return zone
+
+
+@router.patch("/{caregiver_id}/zones/{zone_id}", response_model=ZoneAssignOut)
+async def update_zone(
+    caregiver_id: int,
+    zone_id: int,
+    data: ZoneAssignPatch,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    cg = await caregiver_service.get(db, ws_id=ws.id, id=caregiver_id)
+    if not cg:
+        raise HTTPException(404, "Caregiver not found")
+    zone = (
+        await db.execute(
+            select(CareGiverZone).where(
+                CareGiverZone.id == zone_id,
+                CareGiverZone.caregiver_id == caregiver_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not zone:
+        raise HTTPException(404, "Zone assignment not found")
+    patch = data.model_dump(exclude_unset=True)
+    for field, value in patch.items():
+        setattr(zone, field, value)
+    db.add(zone)
+    await db.commit()
+    await db.refresh(zone)
+    return zone
+
+
+@router.delete("/{caregiver_id}/zones/{zone_id}", status_code=204)
+async def delete_zone(
+    caregiver_id: int,
+    zone_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    cg = await caregiver_service.get(db, ws_id=ws.id, id=caregiver_id)
+    if not cg:
+        raise HTTPException(404, "Caregiver not found")
+    zone = (
+        await db.execute(
+            select(CareGiverZone).where(
+                CareGiverZone.id == zone_id,
+                CareGiverZone.caregiver_id == caregiver_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not zone:
+        raise HTTPException(404, "Zone assignment not found")
+    await db.delete(zone)
+    await db.commit()
 
 
 # ── Caregiver device assignments ─────────────────────────────────────────────
@@ -213,3 +281,59 @@ async def create_shift(
     await db.commit()
     await db.refresh(shift)
     return shift
+
+
+@router.patch("/{caregiver_id}/shifts/{shift_id}", response_model=ShiftOut)
+async def update_shift(
+    caregiver_id: int,
+    shift_id: int,
+    data: ShiftPatch,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    cg = await caregiver_service.get(db, ws_id=ws.id, id=caregiver_id)
+    if not cg:
+        raise HTTPException(404, "Caregiver not found")
+    shift = (
+        await db.execute(
+            select(CareGiverShift).where(
+                CareGiverShift.id == shift_id,
+                CareGiverShift.caregiver_id == caregiver_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not shift:
+        raise HTTPException(404, "Shift not found")
+    patch = data.model_dump(exclude_unset=True)
+    for field, value in patch.items():
+        setattr(shift, field, value)
+    db.add(shift)
+    await db.commit()
+    await db.refresh(shift)
+    return shift
+
+
+@router.delete("/{caregiver_id}/shifts/{shift_id}", status_code=204)
+async def delete_shift(
+    caregiver_id: int,
+    shift_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    cg = await caregiver_service.get(db, ws_id=ws.id, id=caregiver_id)
+    if not cg:
+        raise HTTPException(404, "Caregiver not found")
+    shift = (
+        await db.execute(
+            select(CareGiverShift).where(
+                CareGiverShift.id == shift_id,
+                CareGiverShift.caregiver_id == caregiver_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not shift:
+        raise HTTPException(404, "Shift not found")
+    await db.delete(shift)
+    await db.commit()

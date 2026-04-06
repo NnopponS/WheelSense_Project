@@ -5,6 +5,7 @@ from typing import List
 
 from app.api.dependencies import RequireRole, get_current_user_workspace, get_db
 from app.models.core import Room, SmartDevice, Workspace
+from app.services import device_activity as device_activity_service
 from app.schemas.homeassistant import (
     SmartDeviceResponse,
     SmartDeviceCreate,
@@ -50,6 +51,18 @@ async def add_smart_device(
     db.add(new_device)
     await db.commit()
     await db.refresh(new_device)
+    await device_activity_service.log_event(
+        db,
+        ws.id,
+        "smart_created",
+        f"Smart device “{new_device.name}” linked ({new_device.ha_entity_id})",
+        smart_device_id=new_device.id,
+        details={
+            "ha_entity_id": new_device.ha_entity_id,
+            "device_type": new_device.device_type,
+            "room_id": new_device.room_id,
+        },
+    )
     return new_device
 
 
@@ -81,6 +94,14 @@ async def update_smart_device(
     db.add(device)
     await db.commit()
     await db.refresh(device)
+    await device_activity_service.log_event(
+        db,
+        ws.id,
+        "smart_updated",
+        f"Smart device “{device.name}” updated",
+        smart_device_id=device.id,
+        details=patch,
+    )
     return device
 
 
@@ -99,8 +120,21 @@ async def delete_smart_device(
     device = result.scalar_one_or_none()
     if not device:
         raise HTTPException(status_code=404, detail="Smart device not found")
+    snap = {
+        "name": device.name,
+        "ha_entity_id": device.ha_entity_id,
+        "device_type": device.device_type,
+    }
     await db.delete(device)
     await db.commit()
+    await device_activity_service.log_event(
+        db,
+        ws.id,
+        "smart_deleted",
+        f"Smart device “{snap['name']}” removed from workspace",
+        smart_device_id=device_id,
+        details=snap,
+    )
 
 
 @router.post("/devices/{device_id}/control", response_model=HAResponse)

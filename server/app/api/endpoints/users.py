@@ -3,7 +3,13 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import RequireRole, get_current_user_workspace, get_db
+from app.api.dependencies import (
+    RequireRole,
+    ROLE_SUPERVISOR_READ,
+    ROLE_USER_MANAGERS,
+    get_current_user_workspace,
+    get_db,
+)
 from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.users import UserCreate, UserOut, UserUpdate
@@ -17,7 +23,7 @@ async def create_user(
     data: UserCreate,
     session: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin"])),
+    current_user: User = Depends(RequireRole(ROLE_USER_MANAGERS)),
 ):
     """
     Create a new user. Only Admins can perform this action.
@@ -29,7 +35,7 @@ async def create_user(
 async def read_users(
     session: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin", "supervisor"])),
+    current_user: User = Depends(RequireRole(ROLE_SUPERVISOR_READ)),
 ):
     """
     Retrieve users. Admins and Supervisors can view users.
@@ -43,7 +49,7 @@ async def update_user(
     data: UserUpdate,
     session: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin"])),
+    current_user: User = Depends(RequireRole(ROLE_USER_MANAGERS)),
 ):
     """
     Update a user. Only Admins can perform this action.

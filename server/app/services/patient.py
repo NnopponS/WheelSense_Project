@@ -10,6 +10,7 @@ from app.models.core import Device
 from app.schemas.patients import (
     DeviceAssignmentCreate,
     PatientContactCreate,
+    PatientContactUpdate,
     PatientCreate,
     PatientUpdate,
 )
@@ -18,15 +19,11 @@ from pydantic import BaseModel
 from fastapi import HTTPException
 
 
-class ContactServiceUpdatePlaceholder(BaseModel):
-    pass
-
-
 class AssignmentUpdatePlaceholder(BaseModel):
     pass
 
 
-class ContactService(CRUDBase[PatientContact, PatientContactCreate, ContactServiceUpdatePlaceholder]):
+class ContactService(CRUDBase[PatientContact, PatientContactCreate, PatientContactUpdate]):
     async def create_for_patient(
         self, session: AsyncSession, ws_id: int, patient_id: int, obj_in: PatientContactCreate
     ) -> PatientContact:
@@ -41,6 +38,28 @@ class ContactService(CRUDBase[PatientContact, PatientContactCreate, ContactServi
         await session.commit()
         await session.refresh(db_obj)
         return db_obj
+
+    async def update_for_patient(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        patient_id: int,
+        contact_id: int,
+        obj_in: PatientContactUpdate,
+    ) -> PatientContact:
+        patient = await patient_service.get(session, ws_id, patient_id)
+        if patient is None:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        contact = await session.get(PatientContact, contact_id)
+        if contact is None or contact.patient_id != patient_id:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        update_data = obj_in.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(contact, field, value)
+        session.add(contact)
+        await session.commit()
+        await session.refresh(contact)
+        return contact
 
 
 class PatientServiceCls(CRUDBase[Patient, PatientCreate, PatientUpdate]):
@@ -60,6 +79,11 @@ class PatientServiceCls(CRUDBase[Patient, PatientCreate, PatientUpdate]):
     async def assign_device(
         self, session: AsyncSession, ws_id: int, patient_id: int, obj_in: DeviceAssignmentCreate
     ) -> PatientDeviceAssignment:
+        patient_row = await self.get(session, ws_id, patient_id)
+        if patient_row is None:
+            raise HTTPException(
+                status_code=404, detail="Patient not found in current workspace"
+            )
         device_result = await session.execute(
             select(Device).where(
                 Device.workspace_id == ws_id,
@@ -101,6 +125,24 @@ class PatientServiceCls(CRUDBase[Patient, PatientCreate, PatientUpdate]):
         await session.commit()
         await session.refresh(new_assignment)
         return new_assignment
+
+    async def unassign_device(
+        self, session: AsyncSession, ws_id: int, patient_id: int, device_id: str
+    ) -> None:
+        stmt = select(PatientDeviceAssignment).where(
+            PatientDeviceAssignment.workspace_id == ws_id,
+            PatientDeviceAssignment.patient_id == patient_id,
+            PatientDeviceAssignment.device_id == device_id,
+            PatientDeviceAssignment.is_active.is_(True),
+        )
+        result = await session.execute(stmt)
+        assignment = result.scalars().first()
+        if assignment is None:
+            raise HTTPException(status_code=404, detail="Active assignment not found")
+        assignment.is_active = False
+        assignment.unassigned_at = utcnow()
+        session.add(assignment)
+        await session.commit()
 
 
 patient_service = PatientServiceCls(Patient)

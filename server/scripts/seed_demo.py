@@ -537,7 +537,8 @@ async def seed_vitals(
                 spo2=rng.randint(95, 100),
                 skin_temperature=round(rng.uniform(36.1, 37.3), 1),
                 sensor_battery=rng.randint(55, 100),
-                source="sim_seed",
+                # Same source tag as M5 Polar BLE relay so admin Vitals "Polar / Sense" filter matches demo rows.
+                source="ble",
             )
             session.add(row)
             count += 1

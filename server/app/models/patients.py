@@ -51,7 +51,10 @@ class Patient(Base):
     )  # ["penicillin"]
     medications = Column(
         JSON().with_variant(JSONB, "postgresql"), default=list
-    )  # [{name, dosage, frequency}]
+    )  # [{name, dosage, frequency, instructions}]
+    past_surgeries = Column(
+        JSON().with_variant(JSONB, "postgresql"), default=list
+    )  # [{procedure, facility, year}]
 
     # Care level
     care_level = Column(String(16), default="normal")  # normal | special | critical

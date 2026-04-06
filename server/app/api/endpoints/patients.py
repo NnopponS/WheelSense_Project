@@ -3,6 +3,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
@@ -15,6 +16,7 @@ from app.api.dependencies import (
     ROLE_PATIENT_MANAGERS,
 )
 from app.models.core import Workspace
+from app.models.patients import Patient
 from app.models.users import User
 from app.schemas.patients import (
     PatientCreate,
@@ -24,8 +26,10 @@ from app.schemas.patients import (
     DeviceAssignmentOut,
     PatientContactCreate,
     PatientContactOut,
+    PatientContactUpdate,
     ModeSwitchRequest,
 )
+from app.services import device_activity as device_activity_service
 from app.services.patient import patient_service, patient_assignment_service, contact_service
 
 router = APIRouter()
@@ -38,18 +42,32 @@ router = APIRouter()
 async def list_patients(
     is_active: Optional[bool] = None,
     care_level: Optional[str] = None,
+    q: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
     _: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
-    patients = await patient_service.get_multi(db, ws_id=ws.id, skip=skip, limit=limit)
+    stmt = select(Patient).where(Patient.workspace_id == ws.id)
     if is_active is not None:
-        patients = [p for p in patients if p.is_active == is_active]
+        stmt = stmt.where(Patient.is_active == is_active)
     if care_level:
-        patients = [p for p in patients if p.care_level == care_level]
-    return patients
+        stmt = stmt.where(Patient.care_level == care_level)
+    if q:
+        needle = q.strip()
+        if needle:
+            like = f"%{needle}%"
+            conditions = [
+                Patient.first_name.ilike(like),
+                Patient.last_name.ilike(like),
+                Patient.nickname.ilike(like),
+            ]
+            if needle.isdigit():
+                conditions.append(Patient.id == int(needle))
+            stmt = stmt.where(or_(*conditions))
+    stmt = stmt.order_by(Patient.id.desc()).offset(skip).limit(limit)
+    return list((await db.execute(stmt)).scalars().all())
 
 
 @router.post("", response_model=PatientOut, status_code=201)
@@ -146,7 +164,37 @@ async def assign_device(
     ws: Workspace = Depends(get_current_user_workspace),
     _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
 ):
-    return await patient_service.assign_device(db, ws_id=ws.id, patient_id=patient_id, obj_in=data)
+    row = await patient_service.assign_device(
+        db, ws_id=ws.id, patient_id=patient_id, obj_in=data
+    )
+    await device_activity_service.log_event(
+        db,
+        ws.id,
+        "device_paired",
+        f"Patient {patient_id} paired with device {row.device_id} ({row.device_role})",
+        registry_device_id=row.device_id,
+        details={"patient_id": patient_id, "device_role": row.device_role},
+    )
+    return row
+
+
+@router.delete("/{patient_id}/devices/{device_id}", status_code=204)
+async def unassign_device(
+    patient_id: int,
+    device_id: str,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    await patient_service.unassign_device(db, ws_id=ws.id, patient_id=patient_id, device_id=device_id)
+    await device_activity_service.log_event(
+        db,
+        ws.id,
+        "device_unpaired",
+        f"Patient {patient_id} unpaired from device {device_id}",
+        registry_device_id=device_id,
+        details={"patient_id": patient_id},
+    )
 
 
 # ── Contacts ─────────────────────────────────────────────────────────────────
@@ -176,4 +224,18 @@ async def create_contact(
 ):
     return await contact_service.create_for_patient(
         db, ws_id=ws.id, patient_id=patient_id, obj_in=data
+    )
+
+
+@router.patch("/{patient_id}/contacts/{contact_id}", response_model=PatientContactOut)
+async def update_contact(
+    patient_id: int,
+    contact_id: int,
+    data: PatientContactUpdate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    return await contact_service.update_for_patient(
+        db, ws_id=ws.id, patient_id=patient_id, contact_id=contact_id, obj_in=data
     )

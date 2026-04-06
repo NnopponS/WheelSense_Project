@@ -1,9 +1,8 @@
 import pytest
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 
-from app.models.core import Device
+from app.models.core import Device, Workspace
 from app.models.patients import Patient, PatientDeviceAssignment, PatientContact
 from app.schemas.patients import PatientCreate, DeviceAssignmentCreate, PatientContactCreate
 from app.services.patient import patient_service, patient_assignment_service, contact_service
@@ -48,6 +47,30 @@ async def test_assign_device_to_patient(db_session: AsyncSession, _clean_tables)
     assert assignment.device_role == "wheelchair_sensor"
     assert assignment.workspace_id == ws_id
     assert assignment.is_active is True
+
+
+@pytest.mark.asyncio
+async def test_assign_device_rejects_patient_from_other_workspace(
+    db_session: AsyncSession, _clean_tables
+):
+    ws1 = Workspace(name="ws_a", is_active=True)
+    ws2 = Workspace(name="ws_b", is_active=True)
+    db_session.add_all([ws1, ws2])
+    await db_session.flush()
+    db_session.add(Device(workspace_id=ws1.id, device_id="D-WS1", device_type="wheelchair"))
+    await db_session.flush()
+    other = await patient_service.create(
+        db_session, ws_id=ws2.id, obj_in=PatientCreate(first_name="Other", last_name="Ws")
+    )
+    with pytest.raises(HTTPException) as exc:
+        await patient_service.assign_device(
+            db_session,
+            ws1.id,
+            other.id,
+            DeviceAssignmentCreate(device_id="D-WS1", device_role="wheelchair_sensor"),
+        )
+    assert exc.value.status_code == 404
+
 
 @pytest.mark.asyncio
 async def test_assign_device_overrides_existing_role(db_session: AsyncSession, _clean_tables):
@@ -101,3 +124,24 @@ async def test_get_patient_with_contacts(db_session: AsyncSession, _clean_tables
     assert fetched.first_name == "Jane"
     assert len(fetched.contacts) == 1
     assert fetched.contacts[0].name == "John Doe"
+
+
+@pytest.mark.asyncio
+async def test_unassign_device(db_session: AsyncSession, _clean_tables):
+    ws_id = 1
+    db_session.add(Device(workspace_id=ws_id, device_id="UX-1", device_type="wheelchair"))
+    await db_session.flush()
+    patient = await patient_service.create(
+        db_session, ws_id=ws_id, obj_in=PatientCreate(first_name="A", last_name="B")
+    )
+    await patient_service.assign_device(
+        db_session,
+        ws_id,
+        patient.id,
+        DeviceAssignmentCreate(device_id="UX-1", device_role="mobile"),
+    )
+    await patient_service.unassign_device(db_session, ws_id, patient.id, "UX-1")
+    assignments = await patient_assignment_service.get_multi(db_session, ws_id=ws_id)
+    ux = [a for a in assignments if a.device_id == "UX-1"]
+    assert len(ux) == 1
+    assert ux[0].is_active is False

@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Final
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -96,22 +96,79 @@ class RequireRole:
 
 
 # --- Role groups (EaseAI RBAC) -------------------------------------------------
+# Canonical roles
+ROLE_ADMIN: Final[str] = "admin"
+ROLE_HEAD_NURSE: Final[str] = "head_nurse"
+ROLE_SUPERVISOR: Final[str] = "supervisor"
+ROLE_OBSERVER: Final[str] = "observer"
+ROLE_PATIENT: Final[str] = "patient"
+
 # Clinical staff (excludes patient end-users for list/bulk operations)
-ROLE_CLINICAL_STAFF = ["admin", "head_nurse", "supervisor", "observer"]
+ROLE_CLINICAL_STAFF = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_SUPERVISOR, ROLE_OBSERVER]
 # Who may create/update/delete patients and assignments
-ROLE_PATIENT_MANAGERS = ["admin", "head_nurse"]
+ROLE_PATIENT_MANAGERS = [ROLE_ADMIN, ROLE_HEAD_NURSE]
+# Who may create/update credentials and account links
+ROLE_USER_MANAGERS = [ROLE_ADMIN, ROLE_HEAD_NURSE]
 # Read-only facility/caregiver for supervisor
-ROLE_SUPERVISOR_READ = ["admin", "head_nurse", "supervisor"]
+ROLE_SUPERVISOR_READ = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_SUPERVISOR]
 # Vitals/timeline writes (caregiver notes)
-ROLE_CARE_NOTE_WRITERS = ["admin", "head_nurse", "observer"]
+ROLE_CARE_NOTE_WRITERS = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_OBSERVER]
 # All roles that may read vitals/alerts when scoped to self (includes patient)
 ROLE_ALL_AUTHENTICATED = [
-    "admin",
-    "head_nurse",
-    "supervisor",
-    "observer",
-    "patient",
+    ROLE_ADMIN,
+    ROLE_HEAD_NURSE,
+    ROLE_SUPERVISOR,
+    ROLE_OBSERVER,
+    ROLE_PATIENT,
 ]
+
+# Capability map used by endpoints and frontend mirror docs.
+ROLE_CAPABILITIES: Final[dict[str, set[str]]] = {
+    ROLE_ADMIN: {
+        "users.manage",
+        "patients.manage",
+        "caregivers.manage",
+        "caregivers.schedule.manage",
+        "devices.manage",
+        "facilities.manage",
+        "alerts.manage",
+        "audit.read",
+        "reports.manage",
+        "messages.manage",
+    },
+    ROLE_HEAD_NURSE: {
+        "users.manage",
+        "patients.manage",
+        "caregivers.manage",
+        "caregivers.schedule.manage",
+        "devices.manage",
+        "facilities.read",
+        "alerts.manage",
+        "reports.manage",
+        "messages.manage",
+    },
+    ROLE_SUPERVISOR: {
+        "patients.read",
+        "caregivers.read",
+        "devices.read",
+        "alerts.manage",
+        "reports.read",
+        "messages.manage",
+        "facilities.read",
+    },
+    ROLE_OBSERVER: {
+        "patients.read",
+        "devices.read",
+        "alerts.read",
+        "notes.write",
+        "messages.manage",
+    },
+    ROLE_PATIENT: {
+        "self.read",
+        "alerts.read",
+        "messages.manage",
+    },
+}
 
 
 def assert_patient_record_access(user: User, patient_id: int) -> None:

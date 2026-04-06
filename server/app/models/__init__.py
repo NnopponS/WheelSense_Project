@@ -1,5 +1,12 @@
 from .base import Base
-from .core import Workspace, Device, DeviceCommandDispatch, Room, SmartDevice
+from .core import (
+    Workspace,
+    Device,
+    DeviceActivityEvent,
+    DeviceCommandDispatch,
+    Room,
+    SmartDevice,
+)
 from .facility import Facility, Floor
 from .users import User
 from .patients import Patient, PatientDeviceAssignment, PatientContact
@@ -30,6 +37,7 @@ __all__ = [
     # Core
     "Workspace",
     "Device",
+    "DeviceActivityEvent",
     "DeviceCommandDispatch",
     "Room",
     "SmartDevice",

@@ -18,6 +18,7 @@ from app.models.caregivers import CareGiver, CareGiverDeviceAssignment
 from app.models.core import Device, DeviceCommandDispatch, Room
 from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.telemetry import IMUTelemetry, PhotoRecord, RoomPrediction
+from app.models.vitals import VitalReading
 from app.schemas.devices import (
     HARDWARE_TYPES,
     DeviceCommandRequest,
@@ -27,6 +28,27 @@ from app.schemas.devices import (
 
 logger = logging.getLogger("wheelsense.devices")
 settings = config.settings
+
+# Never expose or allow PATCH merge for per-device WiFi/MQTT provisioning (use firmware/ops tooling).
+NON_PUBLIC_DEVICE_CONFIG_KEYS = frozenset(
+    {
+        "wifi_ssid",
+        "wifi_password",
+        "mqtt_broker",
+        "mqtt_user",
+        "mqtt_password",
+        "wifi_scan_results",
+    }
+)
+
+
+def _public_config(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Return a frontend-safe config copy (no credentials or network provisioning)."""
+    return {
+        k: v
+        for k, v in cfg.items()
+        if k not in NON_PUBLIC_DEVICE_CONFIG_KEYS
+    }
 
 
 def _normalize_hardware_type(device_type: str, hardware_type: str | None) -> str:
@@ -99,6 +121,8 @@ async def patch_device(
     if body.config is not None:
         merged = dict(dev.config or {})
         for k, v in body.config.items():
+            if k in NON_PUBLIC_DEVICE_CONFIG_KEYS:
+                continue
             if v is None:
                 merged.pop(k, None)
             else:
@@ -107,6 +131,40 @@ async def patch_device(
     await session.commit()
     await session.refresh(dev)
     return dev
+
+
+async def assign_patient_from_device(
+    session: AsyncSession,
+    ws_id: int,
+    device_id: str,
+    patient_id: int | None,
+    device_role: str,
+) -> PatientDeviceAssignment | None:
+    """Assign/unassign patient for a device from device-side workflow."""
+    await get_device(session, ws_id, device_id)
+    if patient_id is None:
+        q = select(PatientDeviceAssignment).where(
+            PatientDeviceAssignment.workspace_id == ws_id,
+            PatientDeviceAssignment.device_id == device_id,
+            PatientDeviceAssignment.is_active.is_(True),
+        )
+        rows = list((await session.execute(q)).scalars().all())
+        for row in rows:
+            row.is_active = False
+            row.unassigned_at = utcnow()
+            session.add(row)
+        await session.commit()
+        return None
+
+    from app.schemas.patients import DeviceAssignmentCreate
+    from app.services.patient import patient_service
+
+    return await patient_service.assign_device(
+        session,
+        ws_id=ws_id,
+        patient_id=patient_id,
+        obj_in=DeviceAssignmentCreate(device_id=device_id, device_role=device_role),
+    )
 
 
 async def _latest_imu(session: AsyncSession, ws_id: int, device_id: str) -> IMUTelemetry | None:
@@ -200,6 +258,7 @@ async def _active_caregiver_assignment(
 
 def device_summary_dict(dev: Device) -> dict[str, Any]:
     cfg = dev.config or {}
+    public_cfg = _public_config(cfg)
     return {
         "id": dev.id,
         "device_id": dev.device_id,
@@ -209,9 +268,7 @@ def device_summary_dict(dev: Device) -> dict[str, Any]:
         "ip_address": dev.ip_address,
         "firmware": dev.firmware,
         "last_seen": dev.last_seen.isoformat() if dev.last_seen else None,
-        "config": cfg,
-        "wifi_ssid": cfg.get("wifi_ssid"),
-        "mqtt_broker": cfg.get("mqtt_broker"),
+        "config": public_cfg,
     }
 
 
@@ -223,6 +280,17 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
     room = await _room_for_node(session, ws_id, device_id)
     pa, patient = await _active_patient_assignment(session, ws_id, device_id)
     ca, caregiver = await _active_caregiver_assignment(session, ws_id, device_id)
+    vr = (
+        await session.execute(
+            select(VitalReading)
+            .where(
+                VitalReading.workspace_id == ws_id,
+                VitalReading.device_id == device_id,
+            )
+            .order_by(desc(VitalReading.timestamp))
+            .limit(1)
+        )
+    ).scalar_one_or_none()
 
     realtime: dict[str, Any] = {}
     if imu:
@@ -233,6 +301,14 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
             "charging": imu.charging,
             "velocity_ms": imu.velocity_ms,
             "distance_m": imu.distance_m,
+            "ax": imu.ax,
+            "ay": imu.ay,
+            "az": imu.az,
+            "gx": imu.gx,
+            "gy": imu.gy,
+            "gz": imu.gz,
+            "accel_ms2": imu.accel_ms2,
+            "direction": imu.direction,
         }
 
     location = None
@@ -279,6 +355,17 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
 
     cfg = dev.config or {}
     camera_meta = cfg.get("camera_status") if isinstance(cfg.get("camera_status"), dict) else {}
+    polar_vitals = (
+        {
+            "timestamp": vr.timestamp.isoformat() if vr and vr.timestamp else None,
+            "heart_rate_bpm": vr.heart_rate_bpm if vr else None,
+            "rr_interval_ms": vr.rr_interval_ms if vr else None,
+            "sensor_battery": vr.sensor_battery if vr else None,
+            "source": vr.source if vr else None,
+        }
+        if vr
+        else None
+    )
 
     out = {
         **device_summary_dict(dev),
@@ -288,6 +375,7 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
         "caregiver": caregiver_link,
         "latest_photo": latest_photo,
         "camera_status": camera_meta,
+        "polar_vitals": polar_vitals,
     }
     return out
 

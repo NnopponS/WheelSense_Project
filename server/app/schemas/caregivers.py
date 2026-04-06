@@ -10,9 +10,20 @@ from pydantic import BaseModel, ConfigDict
 class CareGiverCreate(BaseModel):
     first_name: str
     last_name: str
-    role: str  # observer | supervisor
+    role: str  # admin | head_nurse | supervisor | observer
     phone: str = ""
     email: str = ""
+
+
+class CareGiverPatch(BaseModel):
+    """Partial update for staff profile."""
+
+    first_name: str | None = None
+    last_name: str | None = None
+    role: str | None = None
+    phone: str | None = None
+    email: str | None = None
+    is_active: bool | None = None
 
 
 class CareGiverOut(BaseModel):
@@ -35,6 +46,12 @@ class ZoneAssignCreate(BaseModel):
     zone_name: str = ""
 
 
+class ZoneAssignPatch(BaseModel):
+    room_id: int | None = None
+    zone_name: str | None = None
+    is_active: bool | None = None
+
+
 class ZoneAssignOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -52,6 +69,14 @@ class ShiftCreate(BaseModel):
     end_time: time
     shift_type: str = "regular"  # regular | overtime | on_call
     notes: str = ""
+
+
+class ShiftPatch(BaseModel):
+    shift_date: date | None = None
+    start_time: time | None = None
+    end_time: time | None = None
+    shift_type: str | None = None
+    notes: str | None = None
 
 
 class ShiftOut(BaseModel):

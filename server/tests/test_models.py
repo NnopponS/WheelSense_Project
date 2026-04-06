@@ -720,6 +720,7 @@ class TestPydanticSchemas:
             medical_conditions=[{"severity": "high", "condition": "diabetes"}],
             allergies=[],
             medications=[],
+            past_surgeries=[],
             care_level="normal",
             mobility_type="wheelchair",
             current_mode="wheelchair",

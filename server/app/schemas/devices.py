@@ -22,6 +22,11 @@ class DevicePatch(BaseModel):
     config: dict[str, Any] | None = None
 
 
+class DevicePatientAssign(BaseModel):
+    patient_id: int | None = None
+    device_role: str = "wheelchair_sensor"
+
+
 class DeviceCommandRequest(BaseModel):
     """Publish JSON to device control topic. Channel picks MQTT topic."""
 

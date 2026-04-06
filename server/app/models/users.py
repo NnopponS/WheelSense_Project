@@ -7,6 +7,8 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Index,
+    text,
 )
 
 from .base import Base, utcnow
@@ -16,6 +18,16 @@ class User(Base):
     """System users with Role-Based Access Control."""
 
     __tablename__ = "users"
+    __table_args__ = (
+        Index(
+            "uq_users_workspace_patient_link",
+            "workspace_id",
+            "patient_id",
+            unique=True,
+            postgresql_where=text("patient_id IS NOT NULL"),
+            sqlite_where=text("patient_id IS NOT NULL"),
+        ),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     workspace_id = Column(
@@ -44,6 +56,9 @@ class User(Base):
     # Optional AI preferences (override workspace defaults when set)
     ai_provider = Column(String(32), nullable=True)
     ai_model = Column(String(128), nullable=True)
+
+    # Avatar / profile image: hosted platform path or external HTTPS URL
+    profile_image_url = Column(String(8192), nullable=False, default="")
 
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

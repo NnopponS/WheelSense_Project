@@ -5,8 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.security import get_password_hash, verify_password, create_access_token
+from app.models.caregivers import CareGiver
+from app.models.patients import Patient
 from app.models.users import User
 from app.schemas.users import UserCreate, Token
+from app.services.profile_image_storage import remove_hosted_profile_file_if_any
 
 
 class UserService:
@@ -39,6 +42,21 @@ class UserService:
                 detail="Username already registered",
             )
 
+        if user_in.patient_id is not None:
+            await UserService._validate_patient_in_workspace(session, ws_id, user_in.patient_id)
+            await UserService._auto_reassign_patient_link(
+                session,
+                ws_id,
+                user_in.patient_id,
+                keep_user_id=None,
+            )
+        if user_in.caregiver_id is not None:
+            await UserService._validate_caregiver_in_workspace(
+                session,
+                ws_id,
+                user_in.caregiver_id,
+            )
+
         hashed_password = get_password_hash(user_in.password)
         db_user = User(
             workspace_id=ws_id,
@@ -48,11 +66,64 @@ class UserService:
             is_active=user_in.is_active,
             caregiver_id=user_in.caregiver_id,
             patient_id=user_in.patient_id,
+            profile_image_url=user_in.profile_image_url or "",
         )
         session.add(db_user)
         await session.commit()
         await session.refresh(db_user)
         return db_user
+
+    @staticmethod
+    async def _validate_patient_in_workspace(
+        session: AsyncSession,
+        ws_id: int,
+        patient_id: int,
+    ) -> None:
+        stmt = select(Patient.id).where(
+            Patient.id == patient_id,
+            Patient.workspace_id == ws_id,
+        )
+        exists = (await session.execute(stmt)).scalar_one_or_none()
+        if exists is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Patient not found in current workspace",
+            )
+
+    @staticmethod
+    async def _validate_caregiver_in_workspace(
+        session: AsyncSession,
+        ws_id: int,
+        caregiver_id: int,
+    ) -> None:
+        stmt = select(CareGiver.id).where(
+            CareGiver.id == caregiver_id,
+            CareGiver.workspace_id == ws_id,
+        )
+        exists = (await session.execute(stmt)).scalar_one_or_none()
+        if exists is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Caregiver not found in current workspace",
+            )
+
+    @staticmethod
+    async def _auto_reassign_patient_link(
+        session: AsyncSession,
+        ws_id: int,
+        patient_id: int,
+        keep_user_id: int | None,
+    ) -> None:
+        stmt = select(User).where(
+            User.workspace_id == ws_id,
+            User.patient_id == patient_id,
+        )
+        rows = list((await session.execute(stmt)).scalars().all())
+        for row in rows:
+            if keep_user_id is not None and row.id == keep_user_id:
+                continue
+            row.patient_id = None
+            session.add(row)
         
     @staticmethod
     async def get_users_by_workspace(session: AsyncSession, ws_id: int) -> list[User]:
@@ -86,6 +157,35 @@ class UserService:
             user_in["hashed_password"] = get_password_hash(user_in.pop("password"))
         elif "password" in user_in:
             user_in.pop("password")
+
+        if "patient_id" in user_in and user_in["patient_id"] is not None:
+            patient_id = int(user_in["patient_id"])
+            await UserService._validate_patient_in_workspace(session, ws_id, patient_id)
+            await UserService._auto_reassign_patient_link(
+                session,
+                ws_id,
+                patient_id,
+                keep_user_id=user.id,
+            )
+        if "caregiver_id" in user_in and user_in["caregiver_id"] is not None:
+            caregiver_id = int(user_in["caregiver_id"])
+            await UserService._validate_caregiver_in_workspace(
+                session,
+                ws_id,
+                caregiver_id,
+            )
+
+        if "profile_image_url" in user_in:
+            old_val = (user.profile_image_url or "").strip()
+            new_val = user_in["profile_image_url"]
+            if new_val is None:
+                remove_hosted_profile_file_if_any(old_val)
+                user_in["profile_image_url"] = ""
+            else:
+                new_s = new_val.strip()
+                if new_s != old_val:
+                    remove_hosted_profile_file_if_any(old_val)
+                user_in["profile_image_url"] = new_s
 
         for field, value in user_in.items():
             setattr(user, field, value)

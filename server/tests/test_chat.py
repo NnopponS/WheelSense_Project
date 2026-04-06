@@ -102,10 +102,10 @@ async def test_ai_settings_get_and_global_update(
 
             u = await client.put(
                 "/api/settings/ai/global",
-                json={"default_provider": "ollama", "default_model": "gemma3:4b"},
+                json={"default_provider": "ollama", "default_model": "gemma4:e4b"},
             )
             assert u.status_code == 200
-            assert u.json()["workspace_default_model"] == "gemma3:4b"
+            assert u.json()["workspace_default_model"] == "gemma4:e4b"
 
         app.dependency_overrides.clear()
 
@@ -116,7 +116,7 @@ async def test_ai_settings_get_and_global_update(
     )
     row = res.scalar_one_or_none()
     assert row is not None
-    assert row.default_model == "gemma3:4b"
+    assert row.default_model == "gemma4:e4b"
 
 
 @pytest.mark.asyncio

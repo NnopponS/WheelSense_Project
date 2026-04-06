@@ -52,12 +52,13 @@ class Settings(BaseSettings):
 
     # AI chat (Ollama + GitHub Copilot CLI)
     ai_provider: str = "ollama"  # ollama | copilot
-    ai_default_model: str = "gemma3:4b"
+    ai_default_model: str = "gemma4:e4b"
     ollama_base_url: str = "http://127.0.0.1:11434/v1"
     copilot_cli_url: str = ""  # e.g. copilot-cli:4321 or http://localhost:4321
     # GitHub OAuth App (Device Flow) — used for Copilot CLI token acquisition
     github_oauth_client_id: str = ""
     floorplan_storage_dir: str = "./storage/floorplans"
+    profile_image_storage_dir: str = "./storage/profile_images"
 
     @property
     def ollama_api_origin(self) -> str:

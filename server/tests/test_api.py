@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import base64
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import get_db
 from app.models.core import Workspace
 from app.models.users import User
 
@@ -54,6 +58,74 @@ async def test_activate_workspace(client: AsyncClient):
     me = await client.get("/api/auth/me")
     assert me.status_code == 200
     assert me.json()["workspace_id"] == ws2_id
+
+
+MINI_JPEG = base64.b64decode(
+    "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAG/AP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//Z"
+)
+
+
+@pytest.mark.asyncio
+async def test_patch_me_updates_profile_image(client: AsyncClient):
+    url = "https://cdn.example/avatars/u1.png"
+    res = await client.patch("/api/auth/me", json={"profile_image_url": url})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["profile_image_url"] == url
+
+    me = await client.get("/api/auth/me")
+    assert me.status_code == 200
+    assert me.json()["profile_image_url"] == url
+
+
+@pytest.mark.asyncio
+async def test_patch_me_rejects_data_url_profile_image(client: AsyncClient):
+    res = await client.patch(
+        "/api/auth/me",
+        json={"profile_image_url": "data:image/png;base64,AAAA"},
+    )
+    assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_upload_profile_image_sets_hosted_url_and_is_public(client: AsyncClient):
+    res = await client.post(
+        "/api/auth/me/profile-image",
+        files={"file": ("a.jpg", MINI_JPEG, "image/jpeg")},
+    )
+    assert res.status_code == 200
+    url = res.json()["profile_image_url"]
+    assert url.startswith("/api/public/profile-images/")
+    assert url.endswith(".jpg")
+
+    pub = await client.get(url)
+    assert pub.status_code == 200
+    assert pub.content[:3] == b"\xff\xd8\xff"
+
+    me = await client.get("/api/auth/me")
+    assert me.status_code == 200
+    assert me.json()["profile_image_url"] == url
+
+
+@pytest.mark.asyncio
+async def test_patch_me_requires_authentication(db_session: AsyncSession):
+    async def _override_db():
+        yield db_session
+
+    with (
+        patch("app.db.session.init_db", new_callable=AsyncMock),
+        patch("app.mqtt_handler.mqtt_listener", new_callable=AsyncMock),
+    ):
+        from app.main import app
+
+        app.dependency_overrides[get_db] = _override_db
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+            res = await ac.patch(
+                "/api/auth/me",
+                json={"profile_image_url": "https://cdn.example/x.png"},
+            )
+            assert res.status_code in (401, 403)
+        app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
