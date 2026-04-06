@@ -17,6 +17,23 @@ export type Locale = "en" | "th";
 
 const STORAGE_KEY = "ws_locale";
 
+function maybeRepairMojibake(input: string): string {
+  if (!input || !/(?:Ã|Â|â|à)/.test(input)) return input;
+  try {
+    const bytes = Uint8Array.from(
+      Array.from(input, (ch) => ch.charCodeAt(0) & 0xff),
+    );
+    const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    if (!decoded || decoded.includes("\uFFFD")) return input;
+    const before = (input.match(/(?:Ã|Â|â|à)/g) ?? []).length;
+    const after = (decoded.match(/(?:Ã|Â|â|à)/g) ?? []).length;
+    if (after >= before && !/[ก-๙…—•·]/.test(decoded)) return input;
+    return decoded;
+  } catch {
+    return input;
+  }
+}
+
 /* ── Translation dictionary ──────────────────────────────────────────────── */
 
 const translations = {
@@ -1117,7 +1134,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     (key: TranslationKey): string => {
       const entry = translations[key];
       if (!entry) return key;
-      return entry[locale] || entry.en || key;
+      return maybeRepairMojibake(entry[locale] || entry.en || key);
     },
     [locale],
   );

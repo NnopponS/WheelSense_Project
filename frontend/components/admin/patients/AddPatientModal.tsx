@@ -108,6 +108,8 @@ export default function AddPatientModal({
     }
     setSubmitting(true);
     setFormError("");
+    let createdPatientId: number | null = null;
+    let needsEmergencyContact = false;
     try {
       const height =
         heightCm.trim() === "" ? null : Number.parseFloat(heightCm.replace(",", "."));
@@ -148,6 +150,8 @@ export default function AddPatientModal({
       };
 
       const created = await api.post<Patient>("/patients", payload);
+      createdPatientId = created.id;
+      needsEmergencyContact = Boolean(ecName.trim() && ecPhone.trim());
       if (ecName.trim() && ecPhone.trim()) {
         await api.post(`/patients/${created.id}/contacts`, {
           contact_type: "emergency",
@@ -168,6 +172,13 @@ export default function AddPatientModal({
           : err instanceof Error
             ? err.message
             : t("patients.createError");
+      if (createdPatientId != null && needsEmergencyContact) {
+        try {
+          await api.delete(`/patients/${createdPatientId}`);
+        } catch {
+          // Best-effort cleanup only; preserve the original error message.
+        }
+      }
       setFormError(msg);
     } finally {
       setSubmitting(false);

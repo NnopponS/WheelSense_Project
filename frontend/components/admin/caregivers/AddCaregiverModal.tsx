@@ -54,6 +54,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
     if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
+    let createdCaregiverId: number | null = null;
     try {
       const cgResponse = await api.post<Caregiver>("/caregivers", {
         first_name: firstName.trim(),
@@ -62,7 +63,8 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
         phone: phone.trim(),
         email: email.trim(),
       });
-      
+      createdCaregiverId = cgResponse.id;
+
       if (createAccount) {
         await api.post("/users", {
           username: username.trim(),
@@ -77,6 +79,13 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
       onCreated();
       onClose();
     } catch (err) {
+      if (createdCaregiverId != null && createAccount) {
+        try {
+          await api.delete(`/caregivers/${createdCaregiverId}`);
+        } catch {
+          // Best-effort cleanup only; preserve the original error message.
+        }
+      }
       setError(err instanceof ApiError ? err.message : "Failed to create staff member");
     } finally {
       setSubmitting(false);

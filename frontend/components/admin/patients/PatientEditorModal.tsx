@@ -101,6 +101,9 @@ export default function PatientEditorModal({
   const [selectedExistingUserId, setSelectedExistingUserId] = useState<number | null>(null);
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [accountMessage, setAccountMessage] = useState<string | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -184,6 +187,8 @@ export default function PatientEditorModal({
     setUserListOpen(false);
     setNewUsername("");
     setNewPassword("");
+    setAccountError(null);
+    setAccountMessage(null);
   }, [patient, primaryContact, t, linkedPortalUsers]);
 
   useEffect(() => {
@@ -230,9 +235,9 @@ export default function PatientEditorModal({
   }, [open]);
 
   const handleClose = useCallback(() => {
-    if (submitting || linkBusy) return;
+    if (submitting || linkBusy || accountSaving) return;
     onClose();
-  }, [submitting, linkBusy, onClose]);
+  }, [submitting, linkBusy, accountSaving, onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -328,6 +333,26 @@ export default function PatientEditorModal({
     }
     setSubmitting(true);
     setFormError("");
+    let rollbackPatient = false;
+    const rollbackPayload: Record<string, unknown> = {
+      first_name: patient.first_name,
+      last_name: patient.last_name,
+      nickname: patient.nickname ?? "",
+      date_of_birth: patient.date_of_birth ?? null,
+      gender: patient.gender ?? "",
+      care_level: patient.care_level ?? "normal",
+      mobility_type: patient.mobility_type ?? "wheelchair",
+      height_cm: patient.height_cm ?? null,
+      weight_kg: patient.weight_kg ?? null,
+      blood_type: patient.blood_type ?? "",
+      medical_conditions: patient.medical_conditions ?? [],
+      allergies: patient.allergies ?? [],
+      medications: patient.medications ?? [],
+      past_surgeries: patient.past_surgeries ?? [],
+      notes: patient.notes ?? "",
+      room_id: patient.room_id ?? null,
+      is_active: patient.is_active !== false,
+    };
     try {
       const height =
         heightCm.trim() === "" ? null : Number.parseFloat(heightCm.replace(",", "."));
@@ -370,6 +395,7 @@ export default function PatientEditorModal({
       };
 
       await api.patch<Patient>(`/patients/${patientId}`, payload);
+      rollbackPatient = true;
 
       if (primaryContactId != null) {
         await api.patch(`/patients/${patientId}/contacts/${primaryContactId}`, {
@@ -392,38 +418,18 @@ export default function PatientEditorModal({
           is_primary: true,
         });
       }
-
-      if (canManageAccounts) {
-        const linked = linkedPortalUsers[0] ?? null;
-        if (accountMode === "none") {
-          if (linked) {
-            await api.put(`/users/${linked.id}`, { patient_id: null });
-          }
-        } else if (accountMode === "existing") {
-          if (!selectedExistingUserId) {
-            throw new Error("Select an existing account");
-          }
-          await api.put(`/users/${selectedExistingUserId}`, {
-            patient_id: Number(patientId),
-            role: "patient",
-          });
-        } else if (accountMode === "new") {
-          if (newUsername.trim().length < 3 || newPassword.trim().length < 6) {
-            throw new Error("Username and password do not meet requirements");
-          }
-          await api.post("/users", {
-            username: newUsername.trim(),
-            password: newPassword.trim(),
-            role: "patient",
-            is_active: true,
-            patient_id: Number(patientId),
-          });
-        }
-      }
+      rollbackPatient = false;
 
       await onSaved();
       onClose();
     } catch (err) {
+      if (rollbackPatient) {
+        try {
+          await api.patch(`/patients/${patientId}`, rollbackPayload);
+        } catch {
+          // Best-effort rollback only; preserve the original error message.
+        }
+      }
       const msg =
         err instanceof ApiError
           ? err.message
@@ -518,7 +524,11 @@ export default function PatientEditorModal({
   const userOptions = useMemo(() => {
     const currentLinkedId = linkedPortalUsers[0]?.id ?? null;
     return allPortalUsers
-      .filter((u) => currentLinkedId === u.id || u.patient_id == null)
+      .filter(
+        (u) =>
+          currentLinkedId === u.id ||
+          (u.role === "patient" && u.patient_id == null),
+      )
       .map((u) => ({
         id: String(u.id),
         title: u.username,
@@ -540,6 +550,61 @@ export default function PatientEditorModal({
     userOptions.length > 0 &&
     filteredUserOptions.length === 0 &&
     userSearch.trim().length > 0;
+
+  const currentLinkedUser = linkedPortalUsers[0] ?? null;
+
+  async function handleSaveAccountLink() {
+    if (!canManageAccounts) return;
+    setAccountSaving(true);
+    setAccountError(null);
+    setAccountMessage(null);
+    try {
+      if (accountMode === "none") {
+        if (currentLinkedUser) {
+          await api.put(`/users/${currentLinkedUser.id}`, { patient_id: null });
+        }
+      } else if (accountMode === "existing") {
+        if (!selectedExistingUserId) {
+          throw new Error("Select an existing patient account");
+        }
+        const selectedUser =
+          allPortalUsers.find((u) => u.id === selectedExistingUserId) ?? null;
+        if (!selectedUser) {
+          throw new Error("Selected account was not found");
+        }
+        if (selectedUser.id !== currentLinkedUser?.id && selectedUser.role !== "patient") {
+          throw new Error("Only patient accounts can be linked here");
+        }
+        await api.put(`/users/${selectedExistingUserId}`, {
+          patient_id: Number(patientId),
+        });
+      } else if (accountMode === "new") {
+        if (newUsername.trim().length < 3 || newPassword.trim().length < 6) {
+          throw new Error("Username and password do not meet requirements");
+        }
+        await api.post("/users", {
+          username: newUsername.trim(),
+          password: newPassword.trim(),
+          role: "patient",
+          is_active: true,
+          patient_id: Number(patientId),
+        });
+      }
+
+      await onSaved();
+      setAccountMessage(t("devicesDetail.saved"));
+    } catch (err) {
+      setAccountError(
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : t("patients.saveError"),
+      );
+    } finally {
+      setAccountSaving(false);
+    }
+  }
 
   if (!open) return null;
 
@@ -812,7 +877,11 @@ export default function PatientEditorModal({
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-outline-variant/30 text-on-surface hover:bg-surface-container-high"
                     }`}
-                    onClick={() => setAccountMode("none")}
+                    onClick={() => {
+                      setAccountMode("none");
+                      setAccountError(null);
+                      setAccountMessage(null);
+                    }}
                   >
                     No linked account
                   </button>
@@ -823,7 +892,11 @@ export default function PatientEditorModal({
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-outline-variant/30 text-on-surface hover:bg-surface-container-high"
                     }`}
-                    onClick={() => setAccountMode("existing")}
+                    onClick={() => {
+                      setAccountMode("existing");
+                      setAccountError(null);
+                      setAccountMessage(null);
+                    }}
                   >
                     Use existing account
                   </button>
@@ -834,7 +907,11 @@ export default function PatientEditorModal({
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-outline-variant/30 text-on-surface hover:bg-surface-container-high"
                     }`}
-                    onClick={() => setAccountMode("new")}
+                    onClick={() => {
+                      setAccountMode("new");
+                      setAccountError(null);
+                      setAccountMessage(null);
+                    }}
                   >
                     Create new account
                   </button>
@@ -859,8 +936,10 @@ export default function PatientEditorModal({
                         setSelectedExistingUserId(Number(id));
                         const u = allPortalUsers.find((x) => x.id === Number(id));
                         setUserSearch(u?.username ?? id);
+                        setAccountError(null);
+                        setAccountMessage(null);
                       }}
-                      disabled={submitting}
+                      disabled={submitting || accountSaving}
                       listboxAriaLabel="Select existing account"
                       noMatchMessage={t("common.noSearchMatches")}
                       emptyNoMatch={userPickerEmptyNoMatch}
@@ -884,9 +963,13 @@ export default function PatientEditorModal({
                       <input
                         className="input-field text-sm w-full"
                         value={newUsername}
-                        onChange={(e) => setNewUsername(e.target.value)}
+                        onChange={(e) => {
+                          setNewUsername(e.target.value);
+                          setAccountError(null);
+                          setAccountMessage(null);
+                        }}
                         placeholder="min 3 chars"
-                        disabled={submitting}
+                        disabled={submitting || accountSaving}
                       />
                     </Field>
                     <Field label={`${t("admin.users.password")} *`}>
@@ -894,13 +977,35 @@ export default function PatientEditorModal({
                         type="password"
                         className="input-field text-sm w-full"
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          setAccountError(null);
+                          setAccountMessage(null);
+                        }}
                         placeholder="min 6 chars"
-                        disabled={submitting}
+                        disabled={submitting || accountSaving}
                       />
                     </Field>
                   </div>
                 ) : null}
+                {accountError ? (
+                  <p className="text-sm text-error" role="alert">
+                    {accountError}
+                  </p>
+                ) : null}
+                {accountMessage ? (
+                  <p className="text-sm text-primary">{accountMessage}</p>
+                ) : null}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    className="rounded-xl px-4 py-2 text-sm font-semibold border border-outline-variant/30 text-on-surface hover:bg-surface-container-high disabled:opacity-50"
+                    onClick={() => void handleSaveAccountLink()}
+                    disabled={submitting || accountSaving}
+                  >
+                    {accountSaving ? t("common.saving") : t("patients.saveChanges")}
+                  </button>
+                </div>
               </div>
             )}
           </FormSection>
