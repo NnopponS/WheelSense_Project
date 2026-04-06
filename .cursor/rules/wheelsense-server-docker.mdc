@@ -1,0 +1,29 @@
+---
+description: Rebuild Docker images after backend or compose changes under server/
+globs:
+  - server/**
+alwaysApply: false
+---
+
+# WheelSense Server And Docker
+
+When you change anything under `server/` that affects runtime behavior, treat the task as incomplete until the relevant Docker service has been rebuilt.
+
+Default verification command:
+
+```bash
+cd server
+docker compose up -d --build wheelsense-platform-server
+```
+
+If the change also affects the Dockerized frontend:
+
+```bash
+cd server
+docker compose up -d --build wheelsense-platform-server wheelsense-platform-web
+```
+
+This rule is aligned with the current Docker guidance in:
+
+- `server/AGENTS.md`
+- `server/docs/RUNBOOK.md`

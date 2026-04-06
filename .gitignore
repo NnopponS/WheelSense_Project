@@ -5,6 +5,8 @@
 Thumbs.db
 *.log
 .env
+debug-*.log
+firmware/**/build_output*.txt
 
 # Python
 __pycache__/
@@ -31,6 +33,8 @@ server/storage/
 
 # Home Assistant runtime (keep configuration.yaml tracked separately if needed)
 server/homeassistant/.storage/
+server/homeassistant/deps/
+server/homeassistant/tts/
 server/homeassistant/*.log
 server/homeassistant/*.log.*
 server/homeassistant/*.fault

@@ -1,1 +1,13 @@
-Generic single-database configuration.
+WheelSense uses a single Alembic migration stream for the FastAPI server.
+
+Key commands:
+
+- `alembic upgrade head`
+- `alembic revision --autogenerate -m "describe change"`
+- `alembic current`
+
+Notes:
+
+- Production schema changes must go through Alembic
+- Tests use `create_all()` and do not validate the full migration path
+- Keep runtime docs in `server/AGENTS.md` in sync when migrations change behavior or public contracts

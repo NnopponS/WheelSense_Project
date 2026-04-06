@@ -1,44 +1,19 @@
-# Phase 12B Change Log - Refactoring & Analytics (2026-04-04)
+# Phase 12B Change Log - Historical Summary
 
-## Overview
-Phase 12B focused on enhancing backend analytics capability, improving user profile management, and refactoring the frontend for better data fetching and robustness.
+Historical note for the 2026-04-04 refactoring wave.
 
-## Backend Changes
+## Main Themes Recorded
 
-### 1. Analytics Service & Engine
-- **New Service**: `AnalyticsService` in `app/services/analytics.py`.
-- **New Endpoints**: `/api/analytics/alerts/summary`, `/api/analytics/vitals/averages`, and `/api/analytics/summary/ward`.
-- **Role-based Access**: Analytics summary is restricted to `admin`, `supervisor`, or `observer` roles.
-- **Aggregations**: Optimized SQL queries for window-based vital averages and alert status counts.
+- analytics service expansion
+- user/profile management improvements
+- frontend refactors around `useQuery`, API access, and error handling
 
-### 2. User Management
-- **Role Updates**: `PUT /api/users/profile/role` — allows admins to update user roles.
-- **Status Updates**: `PUT /api/users/profile/status` — allows admins to activate/deactivate accounts.
-- **Security**: Added role validation in `RequireRole` dependency to prevent elevation of privilege.
+## Interpretation
 
-### 3. Testing
-- Added `tests/test_analytics.py` for comprehensive coverage of the new analytics engine.
-- Verified all 155 test cases pass successfully.
+This file exists to preserve historical context about that delivery wave.
 
-## Frontend Changes
+It should not be treated as the authoritative description of the current frontend/backend implementation. For that, use:
 
-### 1. Unified Data Fetching (`useQuery`)
-- Migrated from ad-hoc `fetch` calls to a centralized `useQuery` hook in `hooks/useQuery.ts`.
-- Standardized error handling, loading states, and response types.
-
-### 2. Robustness & Error Handling
-- Implemented `ErrorBoundary.tsx` to prevent dashboard crashes from isolated component errors.
-- Enhanced API client in `lib/api.ts` to support Bearer token persistence and error normalization.
-
-### 3. Type Safety
-- Refactored `DashboardProps` and `Table` components to use consistent TypeScript interfaces matching backend models.
-- Resolved multiple `any` type warnings in `app/dashboard/page.tsx` and child components.
-
-## Impact
-- **Performance**: Reduced redundant data fetching via hook-based structure.
-- **Security**: Hardened user management with RBAC support.
-- **Reliability**: Isolated frontend failures with error boundaries.
-
-## Next Steps
-- Implement WebSocket real-time updates for high-urgency alerts.
-- Expand analytics to include long-term trend analysis (Phase 13).
+- `server/AGENTS.md`
+- `frontend/README.md`
+- runtime source code in `server/` and `frontend/`

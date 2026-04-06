@@ -1,100 +1,72 @@
-# Parallel execution matrix (Phase 12R)
+# Parallel Execution Matrix
 
-Goal: **maximize safe parallelism** by disjoint directories and clear sequencing.
+This matrix describes safe parallel ownership for the current WheelSense repo layout.
 
-## Wave P0 — Sequential (foundation)
+## Ground Rules
 
-Run **one session** first (or strict order):
+- Runtime truth lives in code, `server/AGENTS.md`, and `.agents/workflows/wheelsense.md`
+- Use one subagent/session per lane
+- Do not overlap writes on hotspot files
+- If an API contract changes, verify frontend mirrors before starting the next wave
 
-| Order | Agent | Why sequential |
-|-------|--------|----------------|
-| 1 | `backend-rbac` | RBAC and auth affect almost every endpoint and the frontend middleware contract. |
+## Wave W0 - Auth / global wiring
 
-*Alternative:* If RBAC is already merged on your branch, skip to P1.
+Use one lane when changing:
 
-## Wave P1 — Parallel (backend vs design vs infra docs)
+- `server/app/api/dependencies.py`
+- `server/app/core/security.py`
+- `server/app/api/endpoints/auth.py`
+- `server/app/mcp_server.py`
+- other files that change global auth or token semantics
 
-These touch **different trees** and can run simultaneously:
+## Wave W1 - Backend lanes
 
-| Agent | Primary paths |
-|-------|----------------|
-| `data-flow` | `server/docker-compose.yml`, `server/app/mqtt_handler.py`, `server/app/main.py`, `server/app/services/ai_chat.py`, env wiring |
-| `design-system` | `frontend/app/globals.css`, `frontend/components/**`, token/CSS only |
-| `docs-sync` *(partial)* | Only ENV stubs / ADR stubs if **no** conflict with active code PRs |
+- `ws-backend-auth-rbac.md`
+  - auth, RBAC, MCP, session boundaries
+- `ws-backend-ingestion.md`
+  - MQTT ingestion, localization, motion, telemetry
+- `ws-backend-rest-domain.md`
+  - devices, patients, caregivers, vitals, alerts, workflow, analytics, HA
+- `ws-backend-clinical-facility.md`
+  - `/api/future`, floorplans, specialists, prescriptions, pharmacy
 
-**Do not** parallelize `design-system` with `rebuild-routes` until tokens are merged (or accept rebase churn).
+Hotspots:
 
-## Wave P2 — Parallel (role UIs, after tokens + API stable)
+- `server/app/api/router.py`
+- `server/app/main.py`
+- shared models/schemas used by multiple lanes
 
-Up to **five parallel** sessions — one per role — **only if** route shells and sidebars are agreed (see `HANDOFF.md`):
+## Wave W2 - Frontend lanes
 
-| Agent | Primary paths |
-|-------|----------------|
-| `admin-screens` | `frontend/app/(admin)/admin/**` |
-| `head-nurse-screens` | `frontend/app/(head-nurse)/head-nurse/**` |
-| `supervisor-screens` | `frontend/app/(supervisor)/supervisor/**` |
-| `observer-screens` | `frontend/app/(observer)/observer/**` |
-| `patient-screens` | `frontend/app/(patient)/patient/**` |
+- `ws-frontend-shared.md`
+  - root app shell, login, shared `lib/`, proxy/auth glue
+- `ws-frontend-admin.md`
+  - `frontend/app/admin/**`
+- `ws-frontend-head-nurse.md`
+  - `frontend/app/head-nurse/**`
+- `ws-frontend-supervisor.md`
+  - `frontend/app/supervisor/**`
+- `ws-frontend-observer.md`
+  - `frontend/app/observer/**`
+- `ws-frontend-patient.md`
+  - `frontend/app/patient/**`
 
-**Conflict hotspots:** shared `TopBar`, `RoleSwitcher`, `lib/constants.ts`. Either:
-- designate **one** “integration” follow-up agent/session after P2, or
-- have **one** session own `components/layout/*` and others only own route folders.
+Hotspots:
 
-## Wave P3 — Sequential integration
+- `frontend/components/TopBar.tsx`
+- `frontend/components/*Sidebar.tsx`
+- `frontend/lib/api.ts`
+- `frontend/lib/constants.ts`
+- `frontend/lib/types.ts`
 
-| Order | Agent |
-|-------|--------|
-| 1 | `frontend-ai-chat` (if not folded into role agents) — `components/ai/**`, chat API wiring |
-| 2 | `test-suite` — full pytest + `npm run build` / lint |
-| 3 | `docs-sync` — AGENTS.md, ENV, workflows, ADRs |
+## Wave W3 - Focused helpers
 
-## Always after each wave
+- `wheelsense-admin-i18n.md`
+- `wheelsense-patient-device-link-ui.md`
+- `wheelsense-frontend-verify.md`
+- `ws-docs-sync.md`
 
-- Run **`test-suite`** agent (or equivalent commands) before starting the next wave.
-- Append results to `HANDOFF.md`.
+## Wave W4 - Integration and verification
 
----
-
-## Wave FD — Clinical & facility extensions (`/api/future`)
-
-Use when extending **floorplans** (assets + layout JSON), **specialists**, **prescriptions**, **pharmacy**. Code lives under `app/**/future_domains*` (legacy package name); APIs are production-grade.
-
-**Coordinator:** `fd-orchestrator.md` — assigns batches and merge order.
-
-### FD batch 1 — up to **4 parallel** (disjoint files if possible)
-
-| Agent | Primary paths |
-|-------|----------------|
-| `fd-floorplan-assets.md` | `future_domains` upload/list/file; `FloorplanService` |
-| `fd-floorplan-layout.md` | `FloorplanLayout`, layout GET/PUT, admin builder UI |
-| `fd-specialists.md` | `Specialist` model/routes, head-nurse specialists page |
-| `fd-models-migrations.md` | Only if a migration is needed — **run alone first** if it blocks others |
-
-**Conflict:** `fd-floorplan-assets` + `fd-floorplan-layout` both touch `future_domains.py` / `future_domains` service — **serialize** edits to `server/app/api/endpoints/future_domains.py` or split by PR (one agent endpoint section at a time).
-
-### FD batch 2 — up to **2 parallel**
-
-| Agent | Primary paths |
-|-------|----------------|
-| `fd-prescriptions.md` | prescriptions routes + supervisor/observer pages |
-| `fd-pharmacy.md` | pharmacy routes + patient pharmacy page |
-
-### FD batch 3 — **1 session** (integration)
-
-| Agent | Primary paths |
-|-------|----------------|
-| `fd-backend-api.md` | Router, RBAC, shared schemas across `/api/future` |
-
-### FD batch 4 — **1 session** (after types stable)
-
-| Agent | Primary paths |
-|-------|----------------|
-| `fd-frontend.md` | Shared `lib/types.ts`, i18n, cross-page fixes |
-
-### FD batch 5 — last
-
-| Agent | Primary paths |
-|-------|----------------|
-| `fd-tests-docs.md` | `pytest`, `AGENTS.md`, workflows, ADR touch-ups, `HANDOFF.md` |
-
-**Cap:** At most **~5 effective parallel** chats if you strictly separate paths; otherwise default to **2–3** parallel to avoid `future_domains.py` merge pain.
+- `ws-quality-gate.md`
+- final docs sync if behavior changed

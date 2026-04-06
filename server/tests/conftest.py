@@ -7,6 +7,7 @@ Each test gets its own transaction that is rolled back for full isolation.
 from __future__ import annotations
 
 import os
+import tempfile
 from unittest.mock import AsyncMock, patch
 
 # ── Must be set BEFORE any app import so Settings() reads them ───────────────
@@ -14,6 +15,7 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["DATABASE_URL_SYNC"] = "sqlite:///:memory:"
 os.environ["SECRET_KEY"] = "test-secret-key"
 os.environ["BOOTSTRAP_ADMIN_ENABLED"] = "false"
+os.environ["PROFILE_IMAGE_STORAGE_DIR"] = tempfile.mkdtemp(prefix="ws_profile_img_")
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -38,13 +40,29 @@ _SessionFactory = async_sessionmaker(_engine, class_=AsyncSession, expire_on_com
 
 
 # ── Create schema once per session ──────────────────────────────────────────
-@pytest_asyncio.fixture(scope="session", autouse=True)
+async def _create_sqlite_schema() -> None:
+    """Create tables one-by-one for the SQLite in-memory test harness."""
+    async with _engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            await conn.run_sync(
+                lambda sync_conn, table=table: table.create(sync_conn, checkfirst=True)
+            )
+
+
+async def _drop_sqlite_schema() -> None:
+    async with _engine.begin() as conn:
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.run_sync(
+                lambda sync_conn, table=table: table.drop(sync_conn, checkfirst=True)
+            )
+
+
+@pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)
 async def _schema():
-    async with _engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await _create_sqlite_schema()
     yield
-    async with _engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    await _drop_sqlite_schema()
+    await _engine.dispose()
 
 
 # ── Truncate all tables between tests for full isolation ─────────────────────
@@ -104,7 +122,6 @@ async def make_token_headers():
 # ── HTTP client fixture — lifespan bypassed, DB overridden ──────────────────
 @pytest_asyncio.fixture()
 async def client(db_session: AsyncSession, admin_token: str):
-
     async def _override_db():
         yield db_session
 
@@ -118,9 +135,9 @@ async def client(db_session: AsyncSession, admin_token: str):
         app.dependency_overrides[get_db] = _override_db
 
         async with AsyncClient(
-            transport=ASGITransport(app=app), 
+            transport=ASGITransport(app=app),
             base_url="http://test",
-            headers={"Authorization": f"Bearer {admin_token}"}
+            headers={"Authorization": f"Bearer {admin_token}"},
         ) as ac:
             yield ac
 

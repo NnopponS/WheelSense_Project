@@ -1,363 +1,159 @@
 ---
-description: WheelSense workflow skill - backend rules, commands, and implementation steps.
+description: WheelSense workflow memory for backend, frontend integration, docs sync, and verification.
 ---
 
-# WheelSense Workflow Skill
+# WheelSense Workflow
 
-Use this file as the step-by-step working guide for the WheelSense project.
+Use this file as the shared workflow memory for contributors and agents working in this repository.
 
-- It explains what each step is for.
-- It explains which commands to run.
-- It explains the correct project patterns.
-- It is not a status log for the latest task.
+## Canonical Sources
 
----
+Read these first:
 
-## 1. Before You Start
+1. `server/AGENTS.md`
+2. `.agents/workflows/wheelsense.md`
+3. `frontend/README.md` when the task touches the web app
 
-### Goal
+Treat `docs/plans/*` and `.agents/changes/*` as historical or planning context, not runtime truth.
 
-Understand the current system first, then change code without breaking the existing patterns.
+## Core Rules
 
-### What to do
+- Protected backend work must scope by `current_user.workspace_id`
+- Never trust client-supplied `workspace_id` for workspace-bound writes
+- MQTT ingestion must resolve a registered device first
+- Keep endpoint handlers thin and move rules into services
+- Add Alembic migrations for schema changes
+- Sync backend contracts to `frontend/lib/types.ts` when API shapes change
 
-1. Read `server/AGENTS.md`
-2. Find the related endpoint, service, model, and schema
-3. Check the tests that already cover the feature
-4. Check migrations if the task touches schema
+## Workflow Before Editing
 
-### Common commands
+1. Read the relevant runtime entrypoints
+2. Find the current endpoint, service, schema, and tests
+3. Check whether the change affects docs, roles, or frontend contract mirrors
+4. If the change touches schema, inspect Alembic revisions first
+
+Useful searches:
 
 ```bash
 cd server
-rg "get_current_user_workspace|get_active_ws|workspace_id" app
+rg "get_current_user_workspace|RequireRole|workspace_id" app tests
 rg "feature_name|endpoint_name" app tests
 ```
 
----
-
-## 2. Designing Workspace Scope
-
-### Rules
-
-- Every protected route must use `current_user.workspace_id`
-- Do not use `Workspace.is_active` as runtime scope
-- Do not trust `workspace_id` from request bodies when the resource should be bound from auth context
+## Backend Patterns
 
 ### Endpoint pattern
 
-```python
-from fastapi import Depends
-from app.api.dependencies import get_current_user_workspace
-from app.models.core import Workspace
+Use:
 
-ws: Workspace = Depends(get_current_user_workspace)
-```
+- `get_db`
+- `get_current_active_user`
+- `get_current_user_workspace`
+- `RequireRole([...])`
 
-### Query pattern
+Protected queries should filter by workspace:
 
 ```python
 select(Model).where(Model.workspace_id == ws.id)
 ```
 
----
+### Service responsibilities
 
-## 3. Adding or Changing Endpoints
+Services should own:
 
-### Step 1: Find the schema
+- workspace ownership checks
+- uniqueness/state transition rules
+- multi-row transactions
+- assignment and reassignment logic
+- MQTT command publication helpers when shared by multiple endpoints
 
-Check whether request and response schemas already exist before creating new ones.
+## MQTT Patterns
 
-Device registry extensions live in `app/schemas/devices.py` (`DeviceCreate`, `DevicePatch`, `DeviceCommandRequest`) and are served from `/api/devices` with workspace scope; caregiver ↔ device assignments use `/api/caregivers/{id}/devices`.
+Expected ingestion flow:
 
-### Step 2: Write or update the service
-
-Business rules should live in the service layer first. Endpoints should call the service.
-
-For **clinical & facility extension** APIs (code lives under `future_domains` — legacy package name; router `/api/future/*`), prefer these boundaries:
-
-- Floorplan assets + layout JSON in `app/services/future_domains.py` (not heavy logic in endpoints)
-- Role checks and patient-scoped access in endpoint dependencies (`RequireRole`, `assert_patient_record_access`)
-- Router prefix `/api/future/*` for floorplans (assets + layout), specialists, prescriptions, pharmacy orders — **first-class production routes** (migrations + tests), not placeholders
-
-### Step 3: Wire the right dependencies
-
-Use:
-
-- `get_db`
-- `get_current_active_user` if the user object itself is needed
-- `get_current_user_workspace` if data must be workspace-scoped
-- `RequireRole([...])` if the route needs role policy
-
-### Step 4: Validate the request body
-
-If a field like `workspace_id` should come from the server, remove it from the schema and inject it from auth context instead.
-
----
-
-## 4. Service Layer Changes
-
-### Rules
-
-- Services are where business logic belongs
-- Endpoints should stay thin
-- Complex rules such as uniqueness, state transitions, and ownership validation should live in services
-
-### Examples of service responsibilities
-
-- validate that a resource belongs to the current workspace
-- deactivate previous assignments
-- enforce business uniqueness
-- compose multiple database operations in one transaction
-
----
-
-## 5. MQTT Handler Work
-
-### Rules
-
-- Do not derive workspace from a global active workspace
-- Resolve the device first
-- Use `device.workspace_id`
-- Unknown devices should be dropped with a warning if that is the current policy
-
-### Typical flow
-
-1. Parse the payload
+1. Parse payload
 2. Extract `device_id`
-3. Query the registered device
-4. If missing, log and return
-5. Use `device.workspace_id` for every database row written
-6. If patient lookup is needed, make it deterministic
+3. Resolve registered `Device`
+4. Abort on unknown devices
+5. Use `device.workspace_id` for all writes
+6. Write derived rows and publish derived MQTT topics only after the device is known
 
-### Risks to watch for
+Do not:
 
-- Auto-creating devices from telemetry usually breaks workspace scope
-- Queries that may return multiple rows need explicit handling
+- auto-create devices from telemetry
+- derive workspace from `Workspace.is_active`
+- expose per-device Wi-Fi or MQTT secrets through the normal device patch API
 
----
+## Frontend Contract Patterns
 
-## 6. Patient Assignment Changes
+When backend changes affect the web app:
 
-### Rules
+- update `frontend/lib/types.ts`
+- verify `frontend/lib/api.ts` call shapes still match
+- verify route guards and role routing in `frontend/proxy.ts`
+- update `frontend/README.md` or `wheelsense_role_breakdown.md` if user-facing structure changed
 
-- The device must already exist in the workspace before assignment
-- Only one active assignment for a device in a workspace is allowed
-- Reassigning must deactivate conflicting active assignments first
+For search-and-link admin screens, follow:
 
-### Work that usually happens together
+- `.cursor/rules/wheelsense-search-link-combobox.mdc`
 
-1. Update service logic
-2. Add a migration if the rule should also be enforced in the database
-3. Add or update tests
+## Docker And Runtime Verification
 
----
-
-## 7. Auth and Security Changes
-
-### Rules
-
-- Secrets must not use insecure default values in production-like runtime
-- Bootstrap credentials must come from environment variables
-- Never log plaintext passwords
-
-### Files to check
-
-- `app/config.py`
-- `app/core/security.py`
-- `app/db/init_db.py`
-
----
-
-## 8. Docker and Startup Changes
-
-### Goal
-
-A fresh database should boot correctly without manually entering the container to run migrations.
-
-### Approach
-
-1. Copy Alembic assets into the image
-2. Run `alembic upgrade head` before `uvicorn`
-3. Do not assume tables already exist before migrations run
-
-### Commands
+After substantive runtime changes under `server/`:
 
 ```bash
 cd server
-docker compose up -d --build
-docker compose logs -f wheelsense-platform-server
+docker compose up -d --build wheelsense-platform-server
 ```
 
-### After editing `frontend/` or `server/` (runtime stack)
-
-Compose serves the API and Next.js app from **built images** (`wheelsense-platform-server`, `wheelsense-platform-web`). Source changes are not picked up until you rebuild those images and recreate the containers.
+If frontend runtime behavior also changed:
 
 ```bash
 cd server
-docker compose build wheelsense-platform-server wheelsense-platform-web
-docker compose up -d wheelsense-platform-server wheelsense-platform-web
+docker compose up -d --build wheelsense-platform-server wheelsense-platform-web
 ```
 
-Equivalent one-liner:
-
-```bash
-cd server && docker compose up -d --build wheelsense-platform-server wheelsense-platform-web
-```
-
----
-
-## 9. CLI Work
-
-### Rules
-
-- The CLI is an operator tool that runs outside Docker
-- Protected requests must carry a bearer token
-- On `401`, the CLI should return to login flow
-
-### Expected flow
-
-1. Login through `/api/auth/login`
-2. Store the token in session memory
-3. Send protected requests through the same session
-4. Show current user and current workspace via `/api/auth/me`
-5. Switch workspace with `/api/workspaces/{ws_id}/activate`
-
----
-
-## 10. Writing Migrations
-
-### When to do it
-
-- Adding or removing tables
-- Adding constraints or indexes
-- Changing schema that production databases must know about
-
-### Commands
+To run backend without the dockerized frontend:
 
 ```bash
 cd server
-alembic revision --autogenerate -m "describe change"
-alembic upgrade head
+docker compose -f docker-compose.yml -f docker-compose.no-web.yml up -d
 ```
 
-### Important cautions
+## Testing
 
-- Tests use `create_all()`, so they do not validate the full production migration path
-- Partial unique indexes often need explicit SQL
-
----
-
-## 11. Running Tests
-
-### Full suite
-
-As of 2026-04-05, `python -m pytest tests/ --ignore=scripts/ -q` reports **189 passed** (in-memory SQLite; no Docker DB required).
+Primary backend suite:
 
 ```bash
 cd server
 python -m pytest tests/ --ignore=scripts/ -q
-pytest -q tests/test_devices_mvp.py
-# Phase 2 implementation: add targeted suites listed in docs/plans/phase2-device-management-execution-plan.md
-pytest --cov=app --cov-report=term-missing
 ```
 
-### Important focused suites
+Additional checks when appropriate:
 
 ```bash
-cd server
-pytest -q tests/test_api.py
-pytest -q tests/test_endpoints_phase3.py
-pytest -q tests/api/test_homeassistant.py
-pytest -q tests/test_camera.py tests/test_feature_engineering.py tests/test_localization.py tests/test_models.py
-pytest -q tests/test_retention.py tests/test_services
-pytest -q tests/test_mqtt_handler.py
-pytest -q tests/test_mqtt_phase4.py
-pytest -q tests/test_mcp_server.py
-pytest -q tests/test_motion_classifier.py
-pytest -q tests/test_analytics.py
-pytest -q tests/test_workflow_domains.py
-pytest -q tests/test_future_domains.py
-pytest -q tests/e2e/test_role_workflow_chat.py
-pytest -q tests/e2e/test_system_flows.py
-```
-
-### If the IDE interrupts tests
-
-Stale `pytest` processes may remain and should be cleaned up before rerunning.
-
-```bash
-Get-Process pytest
-Get-Process pytest | Stop-Process -Force
-```
-
----
-
-## 12. Documentation Updates
-
-### When to update docs
-
-Update documentation whenever backend behavior changes, not only when adding a new feature.
-
-### Files to update
-
-1. `server/AGENTS.md`
-2. `.agents/workflows/wheelsense.md`
-3. `.agents/changes/phase12b-refactoring.md` or the relevant change log
-4. **Phase 2 device program** (when implementing fleet / snapshot jobs / presence): `docs/plans/phase2-device-management-execution-plan.md`, ADRs `docs/adr/0010-*.md` and `docs/adr/0011-*.md`, and `.agents/changes/phase2-device-management.md`
-
-### What to update
-
-- API semantics
-- workspace and auth model
-- MQTT policy
-- startup flow
-- relevant test commands
-
----
-
-## 13. Project Coding Patterns
-
-### Endpoints should stay thin
-
-```python
-@router.get("")
-async def list_items(
-    db: AsyncSession = Depends(get_db),
-    ws: Workspace = Depends(get_current_user_workspace),
-):
-    return await service.get_multi(db, ws_id=ws.id)
-```
-
-### Services should accept `ws_id`
-
-```python
-await service.create(db, ws_id=ws.id, obj_in=payload)
-```
-
-### JSON columns
-
-```python
-Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
-```
-
-### Do not do these things
-
-- Do not use `Workspace.is_active` as runtime scope
-- Do not place heavy business logic in endpoints
-- Do not accept `workspace_id` from clients when the server should determine it
-- Do not auto-create devices from MQTT telemetry
-
----
-
-## 14. Quality Checks Before Closing Work
-
-```bash
-cd server
 mypy .
 ruff check .
 bandit -r app cli.py sim_controller.py
-pytest --cov=app --cov-report=term-missing
 ```
 
-If the task only changes a subsystem, also run the targeted regression suites for that subsystem.
+Frontend verification when web behavior changes:
+
+```bash
+cd frontend
+npm run build
+npm run lint
+```
+
+## Docs Sync
+
+When runtime behavior or contracts change, update the relevant docs in the same workstream:
+
+- `server/AGENTS.md`
+- `server/docs/CONTRIBUTING.md`
+- `server/docs/ENV.md`
+- `server/docs/RUNBOOK.md`
+- `frontend/README.md`
+- `.cursor/agents/README.md`
+
+Do not treat `HANDOFF.md` as canonical documentation; it is session state.
