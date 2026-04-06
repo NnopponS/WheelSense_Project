@@ -32,12 +32,17 @@ Current admin areas under `frontend/app/admin/`:
 - `/admin/profile`
 - `/admin/settings`
 - `/admin/smart-devices`
+- `/admin/users`
 - `/admin/timeline`
 - `/admin/vitals`
 
 Notes:
 
+- `/admin/account-management` is the canonical admin account screen for creating users, editing status, and linking caregiver/patient accounts
+- `/admin/users` is kept as a compatibility redirect to `/admin/account-management`
 - `/admin/smart-devices` is a redirect to the smart-home tab in `/admin/devices`
+- `/admin/devices` owns recent device activity and patient-device linking through the device drawer flow
+- `/admin/vitals` is currently a legacy compatibility page backed by the vitals API
 - admin layout uses `AdminSidebar`, `TopBar`, and `AIChatPopup`
 
 ## Head nurse

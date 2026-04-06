@@ -13,6 +13,11 @@ See also:
 
 ## Latest
 
+- **2026-04-06 - feature bundle verification and compat routes**
+  - **Lanes:** `ws-frontend-admin` + `ws-frontend-shared` + `ws-quality-gate`
+  - **Outcome:** restored legacy admin route compatibility (`/admin/users`, `/admin/smart-devices`, `/admin/vitals`), finished account-management and device-patient linking UI contracts, and aligned docs with `proxy.ts`, profile-image flows, and device activity APIs.
+  - **Verification:** targeted backend API suites passed, `npm run build` passed, `npm run lint` passed.
+
 - **2026-04-06 - docs and verification pass**
   - **Lanes:** `ws-docs-sync` + `ws-quality-gate`
   - **Outcome:** canonical docs refreshed to match current runtime layout; stale generated artifacts removed from the worktree; backend pytest harness fixed so the SQLite test engine shuts down cleanly.

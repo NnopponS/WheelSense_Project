@@ -49,6 +49,7 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 
 Legacy routes that now redirect:
 
+- `/admin/users` -> `/admin/account-management`
 - `/admin/smart-devices` -> `/admin/devices?tab=smart_home`
 - `middleware.ts` has been replaced by `proxy.ts`
 
@@ -61,6 +62,18 @@ Legacy routes that now redirect:
 - `lib/api.ts` - API client
 - `lib/types.ts` - frontend mirror of backend schemas
 - `components/shared/UserAvatar.tsx` and `ProfileImageEditorModal.tsx` - profile image UX
+- `components/shared/SearchableListboxPicker.tsx` - searchable assign/link picker used by admin flows
+
+## Admin Feature Notes
+
+- `/admin/account-management` is the canonical admin UI for creating users, editing active state, and managing patient/caregiver links
+- `/admin/users` is kept only as a compatibility redirect to `/admin/account-management`
+- `/admin/devices` is the canonical device fleet screen for registry edits, recent activity, command history, and patient-device linking
+- `/admin/smart-devices` remains a compatibility redirect to the smart-home tab on `/admin/devices`
+- `DeviceDetailDrawer` and `PatientLinkSection` use `/api/devices/{device_id}/patient` and `/api/devices/activity`
+- Profile image editing uses:
+  - `PATCH /api/auth/me` for direct URL updates/clears
+  - `POST /api/auth/me/profile-image` for platform-hosted JPEG uploads
 
 ## Development
 

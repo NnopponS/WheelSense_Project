@@ -90,10 +90,23 @@ All API routes are under `/api`.
 - `PATCH /api/auth/me`
 - `POST /api/auth/me/profile-image`
 
+Current profile image rules:
+
+- `profile_image_url` may be empty, a platform-hosted path under `/api/public/profile-images/*`, or an external `http(s)` URL
+- data URLs and other schemes are rejected by schema validation
+- clearing a hosted image should also delete the stored file
+
 ### Workspace and user management
 
 - `/api/workspaces`
 - `/api/users`
+
+Important `/api/users` semantics:
+
+- `PUT /api/users/{user_id}` supports `caregiver_id`, `patient_id`, and `profile_image_url`
+- user linking is always workspace-scoped
+- `patient_id` links must obey the unique patient-link-per-workspace rule
+- caregiver and patient references must belong to the same workspace as the edited user
 
 ### Device and telemetry domain
 
@@ -103,6 +116,13 @@ All API routes are under `/api`.
 - `/api/localization`
 - `/api/motion`
 - `/api/rooms`
+
+Important device management additions:
+
+- `GET /api/devices/activity` returns recent workspace-scoped device/admin activity
+- `POST /api/devices/{device_id}/patient` links or unlinks a patient assignment for a device
+- device activity logging is best-effort and should not block the main request path
+- device activity details must sanitize config secrets before persistence
 
 ### Clinical and operations domain
 
@@ -259,6 +279,9 @@ The frontend currently depends on:
 - cookie + localStorage token model
 - `frontend/lib/types.ts` mirroring backend contracts
 - route areas for `admin`, `head_nurse`, `supervisor`, `observer`, `patient`
+- legacy admin compatibility redirects for `/admin/users` and `/admin/smart-devices`
+- account-management flows that call `PUT /api/users/{user_id}` with patient/caregiver link fields
+- device fleet flows that call `GET /api/devices/activity` and `POST /api/devices/{device_id}/patient`
 
 When backend contracts change, update:
 
