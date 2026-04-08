@@ -1,0 +1,14 @@
+---
+description: Git commit messages must not include AI/tool attribution footers
+globs:
+alwaysApply: true
+---
+
+# Git commits — no AI/tool footers
+
+Do **not** add any of the following to commit messages (subject, body, or footer):
+
+- `Co-Authored-By: Claude <noreply@anthropic.com>` or any Co-Authored-By line for assistants
+- `Made-with: Cursor` or similar tool branding lines
+
+Use only conventional subject/body that describe the actual change.
