@@ -14,13 +14,21 @@ from app.api.dependencies import (
     ROLE_PATIENT_MANAGERS,
     ROLE_SUPERVISOR_READ,
 )
-from app.models.core import Workspace
+from app.models.core import Room, Workspace
+from app.models.patients import Patient
 from app.models.users import User
-from app.models.caregivers import CareGiver, CareGiverZone, CareGiverShift
+from app.models.caregivers import (
+    CareGiver,
+    CareGiverPatientAccess,
+    CareGiverZone,
+    CareGiverShift,
+)
 from app.schemas.caregivers import (
     CareGiverCreate,
     CareGiverPatch,
     CareGiverOut,
+    CaregiverPatientAccessOut,
+    CaregiverPatientAccessReplace,
     ZoneAssignCreate,
     ZoneAssignPatch,
     ZoneAssignOut,
@@ -35,6 +43,56 @@ from app.services.base import CRUDBase
 caregiver_service = CRUDBase[CareGiver, CareGiverCreate, CareGiverPatch](CareGiver)
 
 router = APIRouter()
+
+
+async def _require_workspace_room(
+    db: AsyncSession,
+    ws_id: int,
+    room_id: int | None,
+) -> Room | None:
+    if room_id is None:
+        return None
+    room = await db.get(Room, room_id)
+    if not room or room.workspace_id != ws_id:
+        raise HTTPException(status_code=400, detail="Room not found in current workspace")
+    return room
+
+
+async def _require_workspace_caregiver(
+    db: AsyncSession,
+    ws_id: int,
+    caregiver_id: int,
+) -> CareGiver:
+    caregiver = await caregiver_service.get(db, ws_id=ws_id, id=caregiver_id)
+    if not caregiver:
+        raise HTTPException(404, "Caregiver not found")
+    return caregiver
+
+
+async def _require_workspace_patient_ids(
+    db: AsyncSession,
+    ws_id: int,
+    patient_ids: list[int],
+) -> list[int]:
+    unique_ids = sorted({int(patient_id) for patient_id in patient_ids})
+    if not unique_ids:
+        return []
+    rows = (
+        await db.execute(
+            select(Patient.id).where(
+                Patient.workspace_id == ws_id,
+                Patient.id.in_(unique_ids),
+            )
+        )
+    ).scalars().all()
+    found = set(rows)
+    missing = [patient_id for patient_id in unique_ids if patient_id not in found]
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Patients not found in current workspace: {missing}",
+        )
+    return unique_ids
 
 # ── CareGiver CRUD ───────────────────────────────────────────────────────────
 
@@ -56,6 +114,80 @@ async def create_caregiver(
     _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
 ):
     return await caregiver_service.create(db, ws_id=ws.id, obj_in=data)
+
+
+@router.get("/{caregiver_id}/patients", response_model=list[CaregiverPatientAccessOut])
+async def list_caregiver_patient_access(
+    caregiver_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_SUPERVISOR_READ)),
+):
+    await _require_workspace_caregiver(db, ws.id, caregiver_id)
+    result = await db.execute(
+        select(CareGiverPatientAccess)
+        .where(
+            CareGiverPatientAccess.workspace_id == ws.id,
+            CareGiverPatientAccess.caregiver_id == caregiver_id,
+            CareGiverPatientAccess.is_active.is_(True),
+        )
+        .order_by(CareGiverPatientAccess.patient_id.asc())
+    )
+    return list(result.scalars().all())
+
+
+@router.put("/{caregiver_id}/patients", response_model=list[CaregiverPatientAccessOut])
+async def replace_caregiver_patient_access(
+    caregiver_id: int,
+    data: CaregiverPatientAccessReplace,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    await _require_workspace_caregiver(db, ws.id, caregiver_id)
+    next_ids = set(await _require_workspace_patient_ids(db, ws.id, data.patient_ids))
+    existing = list(
+        (
+            await db.execute(
+                select(CareGiverPatientAccess).where(
+                    CareGiverPatientAccess.workspace_id == ws.id,
+                    CareGiverPatientAccess.caregiver_id == caregiver_id,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    by_patient = {row.patient_id: row for row in existing}
+    for row in existing:
+        if row.patient_id not in next_ids and row.is_active:
+            row.is_active = False
+            db.add(row)
+    for patient_id in next_ids:
+        row = by_patient.get(patient_id)
+        if row is None:
+            row = CareGiverPatientAccess(
+                workspace_id=ws.id,
+                caregiver_id=caregiver_id,
+                patient_id=patient_id,
+                assigned_by_user_id=current_user.id,
+                is_active=True,
+            )
+        else:
+            row.is_active = True
+            row.assigned_by_user_id = current_user.id
+        db.add(row)
+    await db.commit()
+    result = await db.execute(
+        select(CareGiverPatientAccess)
+        .where(
+            CareGiverPatientAccess.workspace_id == ws.id,
+            CareGiverPatientAccess.caregiver_id == caregiver_id,
+            CareGiverPatientAccess.is_active.is_(True),
+        )
+        .order_by(CareGiverPatientAccess.patient_id.asc())
+    )
+    return list(result.scalars().all())
 
 @router.get("/{caregiver_id}", response_model=CareGiverOut)
 async def get_caregiver(
@@ -80,7 +212,22 @@ async def update_caregiver(
     cg = await caregiver_service.get(db, ws_id=ws.id, id=caregiver_id)
     if not cg:
         raise HTTPException(404, "Caregiver not found")
-    return await caregiver_service.update(db, ws_id=ws.id, db_obj=cg, obj_in=data)
+    patch = data.model_dump(exclude_unset=True)
+    for field in (
+        "employee_code",
+        "department",
+        "employment_type",
+        "specialty",
+        "license_number",
+        "phone",
+        "email",
+        "emergency_contact_name",
+        "emergency_contact_phone",
+        "photo_url",
+    ):
+        if field in patch and patch[field] is None:
+            patch[field] = ""
+    return await caregiver_service.update(db, ws_id=ws.id, db_obj=cg, obj_in=patch)
 
 @router.delete("/{caregiver_id}", status_code=204)
 async def delete_caregiver(
@@ -122,6 +269,7 @@ async def assign_zone(
     cg = await caregiver_service.get(db, ws_id=ws.id, id=caregiver_id)
     if not cg:
         raise HTTPException(404, "Caregiver not found")
+    await _require_workspace_room(db, ws.id, data.room_id)
     # Manually add caregiver_id since CareGiverZone doesn't store workspace_id
     from app.models.caregivers import CareGiverZone as ZoneModel
 
@@ -158,6 +306,8 @@ async def update_zone(
     if not zone:
         raise HTTPException(404, "Zone assignment not found")
     patch = data.model_dump(exclude_unset=True)
+    if "room_id" in patch:
+        await _require_workspace_room(db, ws.id, patch["room_id"])
     for field, value in patch.items():
         setattr(zone, field, value)
     db.add(zone)
@@ -322,4 +472,3 @@ async def delete_shift(
         raise HTTPException(404, "Shift not found")
     await db.delete(shift)
     await db.commit()
-

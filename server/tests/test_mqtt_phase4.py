@@ -18,7 +18,9 @@ from app.models.core import Workspace, Device
 from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.vitals import VitalReading
 from app.models.activity import ActivityTimeline, Alert
-from tests.conftest import _SessionFactory
+from tests.conftest import _get_session_factory
+
+_SessionFactory = _get_session_factory()
 
 
 @pytest.fixture

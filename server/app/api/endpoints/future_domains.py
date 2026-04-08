@@ -14,10 +14,10 @@ from app.api.dependencies import (
     RequireRole,
     ROLE_ALL_AUTHENTICATED,
     ROLE_CLINICAL_STAFF,
-    assert_patient_record_access,
-    get_current_active_user,
+    assert_patient_record_access_db,
     get_current_user_workspace,
     get_db,
+    get_visible_patient_ids,
 )
 from app.models.core import Device, Workspace
 from app.models.facility import Facility, Floor
@@ -26,8 +26,10 @@ from app.schemas.future_domains import (
     FloorplanAssetOut,
     FloorplanLayoutOut,
     FloorplanLayoutPayload,
+    FloorplanPresenceOut,
     PharmacyOrderCreate,
     PharmacyOrderOut,
+    PharmacyOrderRequest,
     PharmacyOrderUpdate,
     PrescriptionCreate,
     PrescriptionOut,
@@ -38,6 +40,7 @@ from app.schemas.future_domains import (
 )
 from app.services.future_domains import (
     FloorplanLayoutService,
+    floorplan_presence_service,
     floorplan_service,
     pharmacy_order_service,
     prescription_service,
@@ -160,6 +163,23 @@ async def get_floorplan_layout(
         updated_at=row.updated_at,
     )
 
+@router.get("/floorplans/presence", response_model=FloorplanPresenceOut)
+async def get_floorplan_presence(
+    facility_id: int = Query(..., ge=1),
+    floor_id: int = Query(..., ge=1),
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+):
+    """Read-side room presence projection for map-friendly monitoring."""
+    await _assert_facility_floor(db, ws.id, facility_id, floor_id)
+    return await floorplan_presence_service.build_presence(
+        db,
+        ws_id=ws.id,
+        facility_id=facility_id,
+        floor_id=floor_id,
+    )
+
 @router.put("/floorplans/layout", response_model=FloorplanLayoutOut)
 async def save_floorplan_layout(
     payload: FloorplanLayoutPayload,
@@ -209,7 +229,9 @@ async def list_specialists(
     ws: Workspace = Depends(get_current_user_workspace),
     _: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
-    specialists = await specialist_service.get_multi(db, ws_id=ws.id, limit=200)
+    specialists = await specialist_service.list_from_caregivers(db, ws_id=ws.id, limit=200)
+    if not specialists:
+        specialists = await specialist_service.get_multi(db, ws_id=ws.id, limit=200)
     if specialty:
         normalized = specialty.lower()
         specialists = [item for item in specialists if item.specialty.lower() == normalized]
@@ -246,11 +268,17 @@ async def list_prescriptions(
     current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
     if patient_id is not None:
-        assert_patient_record_access(current_user, patient_id)
+        await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
     else:
         patient_id = current_user.patient_id if current_user.role == "patient" else None
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await prescription_service.list_for_patient(
-        db, ws_id=ws.id, patient_id=patient_id, status=status, limit=200
+        db,
+        ws_id=ws.id,
+        patient_id=patient_id,
+        status=status,
+        visible_patient_ids=visible_patient_ids,
+        limit=200,
     )
 
 @router.post("/prescriptions", response_model=PrescriptionOut, status_code=201)
@@ -261,7 +289,7 @@ async def create_prescription(
     current_user: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
 ):
     if payload.patient_id is not None:
-        assert_patient_record_access(current_user, payload.patient_id)
+        await assert_patient_record_access_db(db, ws.id, current_user, payload.patient_id)
     data = payload.model_copy(
         update={"patient_id": payload.patient_id, "specialist_id": payload.specialist_id}
     )
@@ -278,11 +306,13 @@ async def update_prescription(
     payload: PrescriptionUpdate,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
+    current_user: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
 ):
     current = await prescription_service.get(db, ws_id=ws.id, id=prescription_id)
     if not current:
         raise HTTPException(status_code=404, detail="Prescription not found")
+    if current.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, current.patient_id)
     return await prescription_service.update(db, ws_id=ws.id, db_obj=current, obj_in=payload)
 
 @router.get("/pharmacy/orders", response_model=list[PharmacyOrderOut])
@@ -292,18 +322,22 @@ async def list_pharmacy_orders(
     status: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
     if current_user.role == "patient":
         patient_id = current_user.patient_id
+        if patient_id is None:
+            raise HTTPException(403, "Patient account is not linked to a patient record")
     elif patient_id is not None:
-        assert_patient_record_access(current_user, patient_id)
+        await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await pharmacy_order_service.list_orders(
         db,
         ws_id=ws.id,
         patient_id=patient_id,
         prescription_id=prescription_id,
         status=status,
+        visible_patient_ids=visible_patient_ids,
         limit=200,
     )
 
@@ -312,9 +346,34 @@ async def create_pharmacy_order(
     payload: PharmacyOrderCreate,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
+    current_user: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
 ):
+    if payload.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, payload.patient_id)
     return await pharmacy_order_service.create(db, ws_id=ws.id, obj_in=payload)
+
+@router.post("/pharmacy/orders/request", response_model=PharmacyOrderOut, status_code=201)
+async def request_pharmacy_order(
+    payload: PharmacyOrderRequest,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(["patient"])),
+):
+    patient_id = current_user.patient_id
+    if patient_id is None:
+        raise HTTPException(403, "Patient account is not linked to a patient record")
+    try:
+        return await pharmacy_order_service.create_patient_request(
+            db,
+            ws_id=ws.id,
+            patient_id=patient_id,
+            prescription_id=payload.prescription_id,
+            pharmacy_name=payload.pharmacy_name,
+            quantity=payload.quantity,
+            notes=payload.notes,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 @router.patch("/pharmacy/orders/{order_id}", response_model=PharmacyOrderOut)
 async def update_pharmacy_order(
@@ -322,10 +381,12 @@ async def update_pharmacy_order(
     payload: PharmacyOrderUpdate,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
+    current_user: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
 ):
     current = await pharmacy_order_service.get(db, ws_id=ws.id, id=order_id)
     if not current:
         raise HTTPException(status_code=404, detail="Pharmacy order not found")
+    if current.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, current.patient_id)
     return await pharmacy_order_service.update(db, ws_id=ws.id, db_obj=current, obj_in=payload)
 

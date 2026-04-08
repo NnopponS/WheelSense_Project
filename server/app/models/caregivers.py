@@ -34,8 +34,15 @@ class CareGiver(Base):
     first_name = Column(String(64), nullable=False)
     last_name = Column(String(64), nullable=False)
     role = Column(String(16), nullable=False)  # admin | head_nurse | supervisor | observer
+    employee_code = Column(String(32), nullable=False, default="")
+    department = Column(String(64), nullable=False, default="")
+    employment_type = Column(String(32), nullable=False, default="")
+    specialty = Column(String(64), nullable=False, default="")
+    license_number = Column(String(64), nullable=False, default="")
     phone = Column(String(20), default="")
     email = Column(String(128), default="")
+    emergency_contact_name = Column(String(128), nullable=False, default="")
+    emergency_contact_phone = Column(String(32), nullable=False, default="")
     photo_url = Column(String(256), default="")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
@@ -57,6 +64,50 @@ class CareGiverZone(Base):
     )
     zone_name = Column(String(64), default="")  # "Zone A", "East Wing"
     is_active = Column(Boolean, default=True)
+
+class CareGiverPatientAccess(Base):
+    """Explicit caregiver-to-patient visibility assignment."""
+
+    __tablename__ = "caregiver_patient_access"
+    __table_args__ = (
+        Index(
+            "uq_caregiver_patient_access_active",
+            "workspace_id",
+            "caregiver_id",
+            "patient_id",
+            unique=True,
+            postgresql_where=text("is_active = true"),
+            sqlite_where=text("is_active = 1"),
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    caregiver_id = Column(
+        Integer,
+        ForeignKey("caregivers.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    patient_id = Column(
+        Integer,
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    assigned_by_user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 class CareGiverShift(Base):
     """Shift schedule for caregivers."""

@@ -92,6 +92,7 @@ export default function MonitoringClient() {
 
   const facilityId = query.facilityId;
   const floorId = query.floorId;
+  const roomId = query.roomId;
   const view = query.view;
 
   const floorsEndpoint = useMemo(
@@ -132,14 +133,19 @@ export default function MonitoringClient() {
 
   const onFacilityChange = useCallback(
     (id: number | null) => {
-      replaceQuery({ facilityId: id, floorId: null, view: view === "map" ? "map" : "list" });
+      replaceQuery({
+        facilityId: id,
+        floorId: null,
+        roomId: null,
+        view: view === "map" ? "map" : "list",
+      });
     },
     [replaceQuery, view],
   );
 
   const onFloorChange = useCallback(
     (id: number | null) => {
-      replaceQuery({ floorId: id });
+      replaceQuery({ floorId: id, roomId: null });
     },
     [replaceQuery],
   );
@@ -151,9 +157,22 @@ export default function MonitoringClient() {
     [replaceQuery],
   );
 
-  const onMapRoomSelect = useCallback((id: number | null) => {
-    setDetailRoomId(id);
-  }, []);
+  const clearRoomSelection = useCallback(() => {
+    setDetailRoomId(null);
+    replaceQuery({ roomId: null });
+  }, [replaceQuery]);
+
+  const onMapRoomSelect = useCallback(
+    (id: number | null) => {
+      setDetailRoomId(id);
+      if (id === null) {
+        replaceQuery({ roomId: null });
+        return;
+      }
+      replaceQuery({ roomId: id, view: "map" });
+    },
+    [replaceQuery],
+  );
 
   function openCreateRoom() {
     setRoomModalMode("create");
@@ -173,7 +192,7 @@ export default function MonitoringClient() {
       await api.delete<void>(`/rooms/${room.id}`);
       setMessage("Room deleted");
       await refetchRooms();
-      if (detailRoomId === room.id) setDetailRoomId(null);
+      if (detailRoomId === room.id || roomId === room.id) clearRoomSelection();
     } catch (error) {
       setMessage(error instanceof ApiError ? error.message : "Could not delete room");
     }
@@ -188,11 +207,13 @@ export default function MonitoringClient() {
     return t("monitoring.noFloor");
   };
 
+  const activeRoomId = detailRoomId ?? roomId;
+
   const detailRoom: RoomDetailRoom | null = useMemo(() => {
-    if (detailRoomId === null || !rooms?.length) return null;
-    const r = rooms.find((x) => x.id === detailRoomId);
+    if (activeRoomId === null || !rooms?.length) return null;
+    const r = rooms.find((x) => x.id === activeRoomId);
     return r ?? null;
-  }, [detailRoomId, rooms]);
+  }, [activeRoomId, rooms]);
 
   const overviewFloors = floors?.length ?? 0;
   const overviewRoomsOnFloor = rooms?.length ?? 0;
@@ -287,7 +308,10 @@ export default function MonitoringClient() {
                       <button
                         type="button"
                         className="p-2 rounded-lg hover:bg-surface-container-low"
-                        onClick={() => setDetailRoomId(room.id)}
+                        onClick={() => {
+                          setDetailRoomId(room.id);
+                          replaceQuery({ roomId: room.id, view });
+                        }}
                         aria-label="Room details"
                       >
                         <Info className="w-4 h-4 text-on-surface-variant" />
@@ -339,6 +363,7 @@ export default function MonitoringClient() {
         <FloorMapWorkspace
           facilityId={facilityId}
           floorId={floorId}
+          initialRoomId={roomId}
           onRoomSelect={onMapRoomSelect}
         />
       )}
@@ -378,8 +403,8 @@ export default function MonitoringClient() {
 
       <RoomDetailDrawer
         room={detailRoom}
-        open={detailRoomId !== null && detailRoom !== null}
-        onClose={() => setDetailRoomId(null)}
+        open={activeRoomId !== null && detailRoom !== null}
+        onClose={clearRoomSelection}
         onEdit={() => {
           if (!detailRoom) return;
           openEditRoom(detailRoom);

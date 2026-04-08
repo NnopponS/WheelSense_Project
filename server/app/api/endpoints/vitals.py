@@ -9,9 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import (
     RequireRole,
+    assert_patient_record_access_db,
     get_current_active_user,
     get_current_user_workspace,
     get_db,
+    get_visible_patient_ids,
     ROLE_CARE_NOTE_WRITERS,
     ROLE_CLINICAL_STAFF,
 )
@@ -27,11 +29,13 @@ from app.services.vitals import vital_reading_service, health_observation_servic
 
 router = APIRouter()
 
-def _scope_patient_id_for_vitals(
+async def _scope_patient_id_for_vitals(
+    db: AsyncSession,
+    ws_id: int,
     current_user: User,
     patient_id: Optional[int],
 ) -> Optional[int]:
-    """Patients may only query their own patient_id; staff may query any or all."""
+    """Admin may query all; other users are restricted to their visible patient set."""
     if current_user.role == "patient":
         own = getattr(current_user, "patient_id", None)
         if own is None:
@@ -41,7 +45,15 @@ def _scope_patient_id_for_vitals(
         return own
     if current_user.role not in ROLE_CLINICAL_STAFF:
         raise HTTPException(403, "Operation not permitted")
+    if patient_id is not None:
+        await assert_patient_record_access_db(db, ws_id, current_user, patient_id)
     return patient_id
+
+
+def _filter_visible(rows: list, visible_patient_ids: set[int] | None) -> list:
+    if visible_patient_ids is None:
+        return rows
+    return [row for row in rows if row.patient_id in visible_patient_ids]
 
 # ── Vital Readings ───────────────────────────────────────────────────────────
 
@@ -53,20 +65,22 @@ async def list_vital_readings(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(get_current_active_user),
 ):
-    effective_pid = _scope_patient_id_for_vitals(current_user, patient_id)
+    effective_pid = await _scope_patient_id_for_vitals(db, ws.id, current_user, patient_id)
     if effective_pid is not None:
         return await vital_reading_service.get_recent_by_patient(
             db, ws_id=ws.id, patient_id=effective_pid, limit=limit
         )
-    return await vital_reading_service.get_multi(db, ws_id=ws.id, limit=limit)
+    readings = await vital_reading_service.get_multi(db, ws_id=ws.id, limit=limit)
+    return _filter_visible(readings, await get_visible_patient_ids(db, ws.id, current_user))
 
 @router.post("/readings", response_model=VitalReadingOut, status_code=201)
 async def create_vital_reading(
     data: VitalReadingCreate,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_CARE_NOTE_WRITERS)),
+    current_user: User = Depends(RequireRole(ROLE_CARE_NOTE_WRITERS)),
 ):
+    await assert_patient_record_access_db(db, ws.id, current_user, data.patient_id)
     return await vital_reading_service.create(db, ws_id=ws.id, obj_in=data)
 
 @router.get("/readings/{reading_id}", response_model=VitalReadingOut)
@@ -79,7 +93,7 @@ async def get_vital_reading(
     reading = await vital_reading_service.get(db, ws_id=ws.id, id=reading_id)
     if not reading:
         raise HTTPException(404, "Vital reading not found")
-    _scope_patient_id_for_vitals(current_user, reading.patient_id)
+    await _scope_patient_id_for_vitals(db, ws.id, current_user, reading.patient_id)
     return reading
 
 # ── Health Observations ──────────────────────────────────────────────────────
@@ -92,20 +106,22 @@ async def list_observations(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(get_current_active_user),
 ):
-    effective_pid = _scope_patient_id_for_vitals(current_user, patient_id)
+    effective_pid = await _scope_patient_id_for_vitals(db, ws.id, current_user, patient_id)
     if effective_pid is not None:
         return await health_observation_service.get_recent_by_patient(
             db, ws_id=ws.id, patient_id=effective_pid, limit=limit
         )
-    return await health_observation_service.get_multi(db, ws_id=ws.id, limit=limit)
+    observations = await health_observation_service.get_multi(db, ws_id=ws.id, limit=limit)
+    return _filter_visible(observations, await get_visible_patient_ids(db, ws.id, current_user))
 
 @router.post("/observations", response_model=HealthObservationOut, status_code=201)
 async def create_observation(
     data: HealthObservationCreate,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_CARE_NOTE_WRITERS)),
+    current_user: User = Depends(RequireRole(ROLE_CARE_NOTE_WRITERS)),
 ):
+    await assert_patient_record_access_db(db, ws.id, current_user, data.patient_id)
     return await health_observation_service.create(db, ws_id=ws.id, obj_in=data)
 
 @router.get("/observations/{observation_id}", response_model=HealthObservationOut)
@@ -118,6 +134,6 @@ async def get_observation(
     obs = await health_observation_service.get(db, ws_id=ws.id, id=observation_id)
     if not obs:
         raise HTTPException(404, "Observation not found")
-    _scope_patient_id_for_vitals(current_user, obs.patient_id)
+    await _scope_patient_id_for_vitals(db, ws.id, current_user, obs.patient_id)
     return obs
 

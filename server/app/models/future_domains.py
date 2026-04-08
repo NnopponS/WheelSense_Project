@@ -92,6 +92,13 @@ class Prescription(Base):
 
 class PharmacyOrder(Base):
     __tablename__ = "pharmacy_orders"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "order_number",
+            name="uq_pharmacy_orders_workspace_order_number",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)

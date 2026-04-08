@@ -8,6 +8,8 @@ from sqlalchemy.future import select
 
 from app.api.dependencies import RequireRole, get_current_user_workspace, get_db
 from app.models.core import Room, SmartDevice, Workspace
+from app.models.patients import Patient
+from app.models.users import User
 from app.services import device_activity as device_activity_service
 from app.schemas.homeassistant import (
     SmartDeviceResponse,
@@ -20,17 +22,62 @@ from app.services.homeassistant import ha_service
 
 router = APIRouter()
 
+async def _patient_room_id(db: AsyncSession, ws_id: int, current_user: User) -> int:
+    patient_id = getattr(current_user, "patient_id", None)
+    if patient_id is None:
+        raise HTTPException(status_code=403, detail="Patient account is not linked to a patient record")
+    patient = await db.get(Patient, patient_id)
+    if not patient or patient.workspace_id != ws_id:
+        raise HTTPException(status_code=403, detail="Patient account is not linked to this workspace")
+    if patient.room_id is None:
+        raise HTTPException(status_code=404, detail="Patient is not assigned to a room")
+    return patient.room_id
+
+async def _patient_room_id_or_none(db: AsyncSession, ws_id: int, current_user: User) -> int | None:
+    patient_id = getattr(current_user, "patient_id", None)
+    if patient_id is None:
+        raise HTTPException(status_code=403, detail="Patient account is not linked to a patient record")
+    patient = await db.get(Patient, patient_id)
+    if not patient or patient.workspace_id != ws_id:
+        raise HTTPException(status_code=403, detail="Patient account is not linked to this workspace")
+    return patient.room_id
+
+async def _get_smart_device_for_user(
+    db: AsyncSession,
+    ws_id: int,
+    device_id: int,
+    current_user: User,
+) -> SmartDevice:
+    stmt = select(SmartDevice).where(
+        SmartDevice.id == device_id,
+        SmartDevice.workspace_id == ws_id,
+    )
+    result = await db.execute(stmt)
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Smart device not found")
+    if current_user.role == "patient":
+        room_id = await _patient_room_id(db, ws_id, current_user)
+        if device.room_id != room_id:
+            raise HTTPException(status_code=404, detail="Smart device not found")
+    return device
+
 @router.get("/devices", response_model=list[SmartDeviceResponse])
 async def list_smart_devices(
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _=Depends(RequireRole(["admin", "supervisor", "observer", "patient"]))
+    current_user: User = Depends(RequireRole(["admin", "supervisor", "observer", "patient"]))
 ):
     """
     List all smart devices linked to this workspace.
     In a real scenario with auth, we filter by the current user's workspace_id.
     """
     stmt = select(SmartDevice).where(SmartDevice.workspace_id == ws.id)
+    if current_user.role == "patient":
+        room_id = await _patient_room_id_or_none(db, ws.id, current_user)
+        if room_id is None:
+            return []
+        stmt = stmt.where(SmartDevice.room_id == room_id, SmartDevice.is_active.is_(True))
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -143,21 +190,13 @@ async def control_smart_device(
     control: HADeviceControl,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _=Depends(RequireRole(["admin", "supervisor", "patient"]))
+    current_user: User = Depends(RequireRole(["admin", "supervisor", "patient"]))
 ):
     """
     Control a smart device (requires HA API setup).
     Observer role cannot control devices.
     """
-    stmt = select(SmartDevice).where(
-        SmartDevice.id == device_id,
-        SmartDevice.workspace_id == ws.id,
-    )
-    result = await db.execute(stmt)
-    device = result.scalar_one_or_none()
-
-    if not device:
-        raise HTTPException(status_code=404, detail="Smart device not found")
+    device = await _get_smart_device_for_user(db, ws.id, device_id, current_user)
 
     if not device.is_active:
         raise HTTPException(status_code=400, detail="Smart device is marked inactive")
@@ -188,21 +227,13 @@ async def get_device_state(
     device_id: int,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _=Depends(RequireRole(["admin", "supervisor", "observer", "patient"]))
+    current_user: User = Depends(RequireRole(["admin", "supervisor", "observer", "patient"]))
 ):
     """
     Query the direct status from HomeAssistant.
     Anyone can view state.
     """
-    stmt = select(SmartDevice).where(
-        SmartDevice.id == device_id,
-        SmartDevice.workspace_id == ws.id,
-    )
-    result = await db.execute(stmt)
-    device = result.scalar_one_or_none()
-
-    if not device:
-        raise HTTPException(status_code=404, detail="Smart device not found")
+    device = await _get_smart_device_for_user(db, ws.id, device_id, current_user)
 
     ha_state = await ha_service.get_state(device.ha_entity_id)
     if ha_state is None:

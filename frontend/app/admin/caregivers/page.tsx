@@ -99,7 +99,7 @@ export default function CaregiversPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="flex min-w-[160px] flex-col gap-1">
             <label htmlFor="caregiver-role-filter" className="text-xs text-on-surface-variant">
-              Caregiver role
+              {t("caregivers.filterRole")}
             </label>
             <select
               id="caregiver-role-filter"
@@ -108,15 +108,15 @@ export default function CaregiversPage() {
               className="input-field rounded-xl py-2 text-sm"
             >
               <option value="all">{t("devicesDetail.tabAll")}</option>
-              <option value="admin">Admin</option>
-              <option value="head_nurse">Head Nurse</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="observer">Observer</option>
+              <option value="admin">{t("shell.roleAdmin")}</option>
+              <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
+              <option value="supervisor">{t("shell.roleSupervisor")}</option>
+              <option value="observer">{t("shell.roleObserver")}</option>
             </select>
           </div>
           <div className="flex min-w-[160px] flex-col gap-1">
             <label htmlFor="caregiver-active-filter" className="text-xs text-on-surface-variant">
-              Status
+              {t("caregivers.filterStatus")}
             </label>
             <select
               id="caregiver-active-filter"
@@ -125,8 +125,8 @@ export default function CaregiversPage() {
               className="input-field rounded-xl py-2 text-sm"
             >
               <option value="all">{t("alerts.all")}</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="active">{t("common.active")}</option>
+              <option value="inactive">{t("common.inactive")}</option>
             </select>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function CaregiversPage() {
           <div
             className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent"
             role="status"
-            aria-label="Loading"
+            aria-label={t("common.loading")}
           />
         </div>
       ) : !caregivers?.length ? (

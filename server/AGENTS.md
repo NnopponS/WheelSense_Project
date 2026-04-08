@@ -103,10 +103,27 @@ Current profile image rules:
 
 Important `/api/users` semantics:
 
-- `PUT /api/users/{user_id}` supports `caregiver_id`, `patient_id`, and `profile_image_url`
+- `PUT /api/users/{user_id}` supports `username`, `password`, `role`, `is_active`, `caregiver_id`, `patient_id`, and `profile_image_url`
+- `GET /api/users/search?q=&roles=&limit=` returns active, workspace-scoped user assignment options with `display_name`
+- `DELETE /api/users/{user_id}` is a soft delete: it sets `is_active=false`, clears `caregiver_id` and `patient_id`, and rejects deleting the current user
 - user linking is always workspace-scoped
 - `patient_id` links must obey the unique patient-link-per-workspace rule
 - caregiver and patient references must belong to the same workspace as the edited user
+
+### Patient visibility and caregiver assignment
+
+Patient record authorization is centralized in `server/app/api/dependencies.py`:
+
+- `admin` has workspace-wide patient access.
+- `patient` may only see the linked `patient_id`.
+- every other role, including `head_nurse` and `supervisor`, is restricted by explicit `caregiver_patient_access` rows through the current user's `caregiver_id`.
+
+The access assignment API is:
+
+- `GET /api/caregivers/{caregiver_id}/patients` lists active patient access rows.
+- `PUT /api/caregivers/{caregiver_id}/patients` replaces the active access set with `{ "patient_ids": [...] }`.
+
+The current implementation applies this patient visibility policy to `/api/patients` list/get plus patient-linked workflow list/create/update paths. Alerts, vitals, timeline, and future-domain patient-linked reads should use the same helper when those endpoint files are touched.
 
 ### Device and telemetry domain
 
@@ -135,6 +152,14 @@ Important device management additions:
 - `/api/workflow`
 - `/api/analytics`
 
+Important `/api/workflow` semantics:
+
+- task and schedule assignment targets must use either `assigned_role` or `assigned_user_id`, not both
+- directive and message targets must use either role or user targeting, not both
+- target roles must be canonical: `admin`, `head_nurse`, `supervisor`, `observer`, or `patient`
+- target users and patient links are validated inside the current workspace
+- patient-linked workflow reads are filtered through the current user's patient visibility policy
+
 ### Integrations and extended domains
 
 - `/api/ha`
@@ -142,6 +167,10 @@ Important device management additions:
 - `/api/settings/ai`
 - `/api/future`
 - `/api/retention`
+
+Important `/api/future` semantics:
+
+- `GET /api/future/specialists` syncs supervisor caregivers into specialist rows and returns those caregiver-backed specialists before falling back to standalone specialist records, so head-nurse specialist workflows share the staff directory instead of a separate demo island.
 
 Current AI settings/runtime notes:
 

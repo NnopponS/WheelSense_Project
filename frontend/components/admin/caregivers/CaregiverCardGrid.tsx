@@ -2,15 +2,9 @@
 
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
+import { formatStaffRoleLabel } from "@/lib/staffRoleLabel";
 import type { Caregiver, User } from "@/lib/types";
 import { ChevronRight } from "lucide-react";
-
-function formatRole(role: string): string {
-  const r = role.trim().toLowerCase();
-  if (r === "head_nurse") return "Head nurse";
-  if (r === "observer" || r === "supervisor") return r.charAt(0).toUpperCase() + r.slice(1);
-  return role || "—";
-}
 
 function linkedCount(users: User[] | null | undefined, caregiverId: number): number {
   if (!users?.length) return 0;
@@ -42,8 +36,8 @@ export default function CaregiverCardGrid({ caregivers, users, basePath }: Props
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate font-semibold text-on-surface">{fullName}</p>
-              <p className="mt-0.5 text-xs capitalize text-on-surface-variant">
-                {formatRole(c.role)}
+              <p className="mt-0.5 text-xs text-on-surface-variant">
+                {formatStaffRoleLabel(c.role, t)}
               </p>
               <p className="mt-1 text-[11px] text-outline">
                 {nLinked > 0

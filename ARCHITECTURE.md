@@ -48,6 +48,31 @@ For architecture and implementation truth, read in this order:
 5. `docs/adr/*`
 6. `docs/plans/*` and `.agents/changes/*`
 
+## Role Workflow Matrix
+
+Backend authorization is the source of truth for workflow scope. Frontend role pages expose the permitted actions but must not rely on client-only filtering for ownership or workspace isolation.
+
+| Role | Main workflow UI | Read | Create | Update / acknowledge | Scope rule |
+|---|---|---|---|---|---|
+| Admin | `/admin/workflow`, `/admin/alerts`, `/admin/devices` | patients, alerts, devices, workflow, audit | tasks, schedules, directives, patients, users, devices | alert acknowledge/resolve, workflow updates, device commands | workspace-wide |
+| Head nurse | `/head-nurse/alerts`, `/head-nurse/staff` | assigned patients, alerts, workflow, caregivers | tasks, schedules | alert acknowledge/resolve, task status, schedule status | explicit caregiver-patient access through linked caregiver profile |
+| Supervisor | `/supervisor/directives` | assigned patients, directives, tasks, schedules, audit | tasks, schedules | directive acknowledge, task status, schedule status | explicit caregiver-patient access through linked caregiver profile; directive creation remains admin/head-nurse only |
+| Observer | `/observer/alerts`, `/observer/patients`, `/observer/devices` | assigned patients, devices, notes/handovers/messages where permitted | notes/messages/handovers through workflow endpoints | no alert acknowledge/resolve UI | explicit caregiver-patient access through linked caregiver profile |
+| Patient | `/patient`, `/patient/pharmacy`, `/patient/messages` | own vitals, alerts, prescriptions, pharmacy orders, room smart devices | own alerts/SOS, pharmacy refill requests, messages | smart-device control for own room only | patient id and room derived from current user on the backend |
+
+Current backend APIs added or hardened for this matrix:
+
+- `POST /api/alerts`: patient-created alerts are forced to the current user's linked patient record.
+- `POST /api/alerts/{id}/acknowledge` and `POST /api/alerts/{id}/resolve`: staff triage remains role-gated.
+- `/api/devices/*` mutation and command endpoints have explicit device manager/commander role guards.
+- `/api/ha/devices`: patient reads/control are scoped to the linked patient's room.
+- `GET /api/future/floorplans/presence`: read-side room presence projection for map and monitoring UIs.
+- `POST /api/future/pharmacy/orders/request`: patient-only refill/order request derived from the linked patient record.
+- `GET/PUT /api/caregivers/{caregiver_id}/patients`: explicit patient access assignment for non-admin staff.
+- `GET /api/users/search`: workspace-scoped person search for assignment controls.
+- `DELETE /api/users/{user_id}`: soft-delete account by deactivating and clearing caregiver/patient links.
+- `/api/workflow/*`: validates canonical role/person targets and applies patient access filtering to patient-linked workflow rows.
+
 ## Notes
 
 - `server/AGENTS.md` is the canonical backend memory for this repo.

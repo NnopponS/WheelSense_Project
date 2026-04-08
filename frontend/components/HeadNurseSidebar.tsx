@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   LayoutDashboard,
   Users,
@@ -49,7 +50,20 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-export default function HeadNurseSidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
+}
+
+const ROLE_LABEL_KEYS: Record<string, TranslationKey> = {
+  admin: "shell.roleAdmin",
+  head_nurse: "shell.roleHeadNurse",
+  supervisor: "shell.roleSupervisor",
+  observer: "shell.roleObserver",
+  patient: "shell.rolePatient",
+};
+
+export default function HeadNurseSidebar({ mobileOpen = false, onMobileOpenChange }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -60,75 +74,105 @@ export default function HeadNurseSidebar() {
     return pathname.startsWith(href);
   }
 
+  function handleLogout() {
+    logout();
+    router.push("/login");
+  }
+
+  function closeMobileNav() {
+    onMobileOpenChange?.(false);
+  }
+
+  function renderContent(isMobile = false) {
+    return (
+      <>
+        <div className="flex h-[var(--topbar-height)] items-center gap-3 px-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+            <Activity className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-bold leading-tight text-on-surface">WheelSense</h1>
+            <p className="text-[11px] text-on-surface-variant">{t("shell.platformSubtitle")}</p>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
+          {GROUPS.map((group) => (
+            <div key={group.categoryKey}>
+              <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-outline">
+                {t(group.categoryKey)}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={isMobile ? closeMobileNav : undefined}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-smooth ${
+                      isActive(item.href)
+                        ? "bg-primary text-on-primary"
+                        : "text-on-surface-variant hover:bg-surface-container"
+                    }`}
+                  >
+                    <item.icon className="h-[18px] w-[18px] shrink-0" />
+                    <span className="flex-1">{t(item.labelKey)}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {user ? (
+          <div className="border-t border-outline-variant/10 bg-surface-container-low px-4 py-3">
+            <div className="flex items-center gap-3">
+              <UserAvatar
+                username={user.username}
+                profileImageUrl={user.profile_image_url}
+                sizePx={32}
+              />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-on-surface">{user.username}</p>
+                <p className="text-[11px] text-on-surface-variant">
+                  {t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="border-t border-outline-variant/10 p-3">
+          <button
+            type="button"
+            onClick={() => {
+              handleLogout();
+              closeMobileNav();
+            }}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-on-surface-variant transition-smooth hover:bg-error-container hover:text-error"
+          >
+            <LogOut className="h-[18px] w-[18px] shrink-0" />
+            <span className="flex-1 text-left">{t("auth.logout")}</span>
+          </button>
+        </div>
+      </>
+    );
+  }
+
   return (
-    <aside className="w-[var(--sidebar-width)] bg-surface-container-lowest flex flex-col shrink-0 fixed inset-y-0 left-0 z-40 border-r border-outline-variant/10">
-      <div className="h-[var(--topbar-height)] flex items-center gap-3 px-5">
-        <div className="w-9 h-9 gradient-cta rounded-lg flex items-center justify-center">
-          <Activity className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-on-surface font-bold text-base leading-tight">WheelSense</h1>
-          <p className="text-on-surface-variant text-[11px] uppercase tracking-wide">
-            Head Nurse
-          </p>
-        </div>
-      </div>
+    <>
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-width)] shrink-0 flex-col border-r border-outline-variant/10 bg-surface-container-lowest lg:flex">
+        {renderContent(false)}
+      </aside>
 
-      <nav className="flex-1 py-4 px-3 space-y-6 overflow-y-auto">
-        {GROUPS.map((group) => (
-          <div key={group.categoryKey}>
-            <p className="px-3 mb-2 text-[10px] font-semibold tracking-widest text-outline uppercase">
-              {t(group.categoryKey)}
-            </p>
-            <div className="space-y-1">
-              {group.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-smooth ${
-                    isActive(item.href)
-                      ? "bg-primary text-on-primary"
-                      : "text-on-surface-variant hover:bg-surface-container"
-                  }`}
-                >
-                  <item.icon className="w-[18px] h-[18px] shrink-0" />
-                  {t(item.labelKey)}
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {user && (
-        <div className="px-4 py-3 border-t border-outline-variant/10 bg-surface-container-low">
-          <div className="flex items-center gap-3">
-            <UserAvatar
-              username={user.username}
-              profileImageUrl={user.profile_image_url}
-              sizePx={32}
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-on-surface truncate">{user.username}</p>
-              <p className="text-[11px] text-on-surface-variant capitalize">{user.role}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="p-3 border-t border-outline-variant/10">
-        <button
-          type="button"
-          onClick={() => {
-            logout();
-            router.push("/login");
-          }}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-critical hover:bg-critical-bg transition-smooth"
-        >
-          <LogOut className="w-[18px] h-[18px]" />
-          {t("auth.logout")}
-        </button>
-      </div>
-    </aside>
+      <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
+        <SheetContent side="left" className="w-[min(18rem,85vw)] p-0 sm:max-w-none">
+          <SheetHeader className="sr-only">
+            <SheetTitle>{t("shell.navigation")}</SheetTitle>
+            <SheetDescription>{t("shell.navigationSheetDescription")}</SheetDescription>
+          </SheetHeader>
+          <div className="flex h-full flex-col">{renderContent(true)}</div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

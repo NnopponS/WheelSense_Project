@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@/hooks/useQuery";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -39,12 +39,14 @@ function newRoom(): FloorplanRoomShape {
 export interface FloorMapWorkspaceProps {
   facilityId: number;
   floorId: number;
+  initialRoomId?: number | null;
   onRoomSelect?: (roomId: number | null) => void;
 }
 
 export default function FloorMapWorkspace({
   facilityId,
   floorId,
+  initialRoomId = null,
   onRoomSelect,
 }: FloorMapWorkspaceProps) {
   const { t } = useTranslation();
@@ -86,6 +88,7 @@ export default function FloorMapWorkspace({
   const [fromDbBootstrap, setFromDbBootstrap] = useState(false);
   const [nodeHardwareTab, setNodeHardwareTab] = useState<HardwareType | "all">("all");
   const [nodeDeviceSearch, setNodeDeviceSearch] = useState("");
+  const appliedInitialRoomIdRef = useRef<number | null>(null);
 
   const geometryLoading =
     !!layoutRes &&
@@ -120,12 +123,26 @@ export default function FloorMapWorkspace({
   useEffect(() => {
     if (!onRoomSelect) return;
     if (!selectedId) {
+      if (initialRoomId != null && appliedInitialRoomIdRef.current !== initialRoomId) return;
       onRoomSelect(null);
       return;
     }
     const n = floorplanRoomIdToNumeric(selectedId);
     onRoomSelect(n);
-  }, [selectedId, onRoomSelect]);
+  }, [initialRoomId, selectedId, onRoomSelect]);
+
+  useEffect(() => {
+    if (initialRoomId == null) {
+      appliedInitialRoomIdRef.current = null;
+      return;
+    }
+    if (appliedInitialRoomIdRef.current === initialRoomId) return;
+    const targetId = `room-${initialRoomId}`;
+    if (rooms.some((room) => room.id === targetId)) {
+      setSelectedId(targetId);
+      appliedInitialRoomIdRef.current = initialRoomId;
+    }
+  }, [initialRoomId, rooms]);
 
   const selected = rooms.find((r) => r.id === selectedId) ?? null;
 

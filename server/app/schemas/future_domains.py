@@ -119,6 +119,47 @@ class PharmacyOrderOut(PharmacyOrderBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+class PharmacyOrderRequest(BaseModel):
+    prescription_id: int
+    pharmacy_name: str = Field(default="Preferred pharmacy", min_length=1, max_length=128)
+    quantity: int = Field(default=30, ge=1)
+    notes: str = ""
+
+class FloorplanPresencePatientHint(BaseModel):
+    patient_id: int
+    first_name: str
+    last_name: str
+    nickname: str = ""
+    source: str
+
+class FloorplanPresencePredictionHint(BaseModel):
+    device_id: str
+    patient_id: Optional[int] = None
+    predicted_room_id: Optional[int] = None
+    predicted_room_name: str = ""
+    confidence: float = 0.0
+    computed_at: datetime
+    staleness_seconds: int
+
+class FloorplanPresenceRoomOut(BaseModel):
+    room_id: int
+    room_name: str
+    floor_id: Optional[int] = None
+    node_device_id: Optional[str] = None
+    node_status: str = "unmapped"
+    patient_hint: Optional[FloorplanPresencePatientHint] = None
+    prediction_hint: Optional[FloorplanPresencePredictionHint] = None
+    confidence: float = 0.0
+    computed_at: datetime
+    staleness_seconds: Optional[int] = None
+    sources: list[str] = Field(default_factory=list)
+
+class FloorplanPresenceOut(BaseModel):
+    facility_id: int
+    floor_id: int
+    computed_at: datetime
+    rooms: list[FloorplanPresenceRoomOut]
+
 # ── Floorplan builder (interactive layout JSON) ───────────────────────────────
 
 class FloorplanRoomShape(BaseModel):

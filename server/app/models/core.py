@@ -1,5 +1,15 @@
 from __future__ import annotations
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, JSON
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Text,
+    ForeignKey,
+    DateTime,
+    Boolean,
+    JSON,
+    UniqueConstraint,
+)
 
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -16,6 +26,9 @@ class Workspace(Base):
 
 class Device(Base):
     __tablename__ = "devices"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "device_id", name="uq_devices_workspace_device_id"),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -73,13 +86,16 @@ class DeviceCommandDispatch(Base):
 class Room(Base):
     """Room / ห้อง — maps 1:1 to a T-SIMCam Node."""
     __tablename__ = "rooms"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "node_device_id", name="uq_rooms_workspace_node_device_id"),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
     floor_id = Column(Integer, ForeignKey("floors.id", ondelete="SET NULL"), nullable=True, index=True)
     name = Column(String(64), nullable=False)
     description = Column(Text, default="")
-    node_device_id = Column(String(32), nullable=True, unique=True)  # T-SIMCam device_id (1:1 mapping)
+    node_device_id = Column(String(32), nullable=True)  # T-SIMCam device_id (1:1 mapping per workspace)
     room_type = Column(String(32), default="general")  # general|bedroom|bathroom|dining|therapy|outdoor
     adjacent_rooms = Column(JSON().with_variant(JSONB, "postgresql"), default=list)  # [room_id, ...]
     config = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)  # HA device IDs, etc.
@@ -88,13 +104,16 @@ class Room(Base):
 class SmartDevice(Base):
     """Smart Device mapped to HomeAssistant entities."""
     __tablename__ = "smart_devices"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "ha_entity_id", name="uq_smart_devices_workspace_ha_entity_id"),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
     room_id = Column(Integer, ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True, index=True)
 
     name = Column(String(128), nullable=False)
-    ha_entity_id = Column(String(128), nullable=False, unique=True, index=True)  # e.g., light.bedroom_1
+    ha_entity_id = Column(String(128), nullable=False, index=True)  # e.g., light.bedroom_1
     device_type = Column(String(32), nullable=False)  # 'light', 'switch', 'climate', 'fan'
 
     is_active = Column(Boolean, default=True)
@@ -102,4 +121,3 @@ class SmartDevice(Base):
     config = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)  # Features, capabilities
 
     created_at = Column(DateTime(timezone=True), default=utcnow)
-

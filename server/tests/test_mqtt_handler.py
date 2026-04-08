@@ -5,7 +5,9 @@ from datetime import datetime, UTC
 
 from app.models.core import Workspace, Device
 from app.models.telemetry import IMUTelemetry, MotionTrainingData, RSSIReading, RoomPrediction
-from tests.conftest import _SessionFactory
+from tests.conftest import _get_session_factory
+
+_SessionFactory = _get_session_factory()
 
 # Import handlers
 from app.mqtt_handler import (

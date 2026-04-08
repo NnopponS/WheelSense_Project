@@ -186,15 +186,7 @@ async def copilot_list_models(
             connected=False,
             message="GitHub Copilot is not connected for this workspace",
         )
-    try:
-        models = await ai_chat.list_copilot_models(github_token=github_token)
-    except Exception as e:
-        logger.warning("Copilot model list failed: %s", e)
-        return CopilotModelsOut(
-            models=[],
-            connected=connected,
-            message="GitHub Copilot could not return models for this workspace",
-        )
+    models = ai_chat.fallback_copilot_models()
 
     return CopilotModelsOut(
         models=[

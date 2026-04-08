@@ -173,8 +173,8 @@ async def test_copilot_models_endpoint_mocked(
         app.dependency_overrides.clear()
 
     assert r.status_code == 200
-    assert r.json()["models"][0]["id"] == "gpt-4o"
-    assert r.json()["models"][1]["supports_reasoning_effort"] is True
+    assert [model["id"] for model in r.json()["models"]] == ["gpt-4o", "gpt-4.1"]
+    assert r.json()["models"][0]["supports_vision"] is True
     assert r.json()["connected"] is True
 
 

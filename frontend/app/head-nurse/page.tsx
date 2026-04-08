@@ -1,17 +1,15 @@
-﻿"use client";
-"use no memo";
+"use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, type QueryKey } from "@tanstack/react-query";
-import { type ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, Bell, CalendarClock, ClipboardList, Stethoscope, Users } from "lucide-react";
-import { DataTableCard } from "@/components/supervisor/DataTableCard";
-import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, Bell, CalendarClock, Clock3, Users } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   CareDirectiveOut,
   CareScheduleOut,
@@ -25,47 +23,9 @@ import type {
   ListTimelineEventsResponse,
 } from "@/lib/api/task-scope-types";
 
-type AlertRow = {
-  id: number;
-  title: string;
-  description: string;
-  severity: string;
-  patientId: number | null;
-  patientName: string;
-  timestamp: string;
-};
+type ViewMode = "today" | "alerts" | "tasks" | "timeline";
 
-type TaskRow = {
-  id: number;
-  title: string;
-  priority: string;
-  status: string;
-  patientId: number | null;
-  patientName: string;
-  dueAt: string | null;
-};
-
-type ScheduleRow = {
-  id: number;
-  title: string;
-  scheduleType: string;
-  status: string;
-  patientId: number | null;
-  patientName: string;
-  startsAt: string;
-};
-
-type TimelineRow = {
-  id: number;
-  eventType: string;
-  description: string;
-  patientId: number | null;
-  patientName: string;
-  roomName: string;
-  timestamp: string;
-};
-
-const dashboardKeys = {
+const keys = {
   ward: ["head-nurse", "dashboard", "ward-summary"] as QueryKey,
   alertSummary: ["head-nurse", "dashboard", "alert-summary"] as QueryKey,
   vitalsAverage: ["head-nurse", "dashboard", "vitals-average"] as QueryKey,
@@ -78,494 +38,407 @@ const dashboardKeys = {
   directives: ["head-nurse", "dashboard", "directives"] as QueryKey,
 };
 
+function StatusPill({ children, severity }: { children: string; severity?: "success" | "warning" | "critical" }) {
+  return (
+    <Badge
+      variant={
+        severity === "critical" ? "destructive" : severity === "warning" ? "warning" : "outline"
+      }
+    >
+      {children}
+    </Badge>
+  );
+}
+
 export default function HeadNurseHomePage() {
+  const { t } = useTranslation();
+  const [view, setView] = useState<ViewMode>("today");
+
   const wardSummaryQuery = useQuery({
-    queryKey: dashboardKeys.ward,
+    queryKey: keys.ward,
     queryFn: () => api.getWardSummary(),
   });
-
   const alertSummaryQuery = useQuery({
-    queryKey: dashboardKeys.alertSummary,
+    queryKey: keys.alertSummary,
     queryFn: () => api.getAlertSummary(),
   });
-
   const vitalsAverageQuery = useQuery({
-    queryKey: dashboardKeys.vitalsAverage,
+    queryKey: keys.vitalsAverage,
     queryFn: () => api.getVitalsAverages(24),
   });
-
   const alertsQuery = useQuery({
-    queryKey: dashboardKeys.alerts,
-    queryFn: () => api.listAlerts({ status: "active", limit: 180 }),
+    queryKey: keys.alerts,
+    queryFn: () => api.listAlerts({ status: "active", limit: 160 }),
   });
-
   const caregiversQuery = useQuery({
-    queryKey: dashboardKeys.caregivers,
+    queryKey: keys.caregivers,
     queryFn: () => api.listCaregivers({ limit: 300 }),
   });
-
   const patientsQuery = useQuery({
-    queryKey: dashboardKeys.patients,
+    queryKey: keys.patients,
     queryFn: () => api.listPatients({ limit: 300 }),
   });
-
   const tasksQuery = useQuery({
-    queryKey: dashboardKeys.tasks,
+    queryKey: keys.tasks,
     queryFn: () => api.listWorkflowTasks({ limit: 200 }),
   });
-
   const directivesQuery = useQuery({
-    queryKey: dashboardKeys.directives,
+    queryKey: keys.directives,
     queryFn: () => api.listWorkflowDirectives({ status: "active", limit: 200 }),
   });
-
   const schedulesQuery = useQuery({
-    queryKey: dashboardKeys.schedules,
+    queryKey: keys.schedules,
     queryFn: () => api.listWorkflowSchedules({ status: "scheduled", limit: 200 }),
   });
-
   const timelineQuery = useQuery({
-    queryKey: dashboardKeys.timeline,
+    queryKey: keys.timeline,
     queryFn: () => api.listTimelineEvents({ limit: 80 }),
     refetchInterval: 30_000,
   });
 
-  const wardSummary = useMemo(
-    () => (wardSummaryQuery.data ?? null) as GetWardSummaryResponse | null,
-    [wardSummaryQuery.data],
-  );
-  const alertSummary = useMemo(
-    () => (alertSummaryQuery.data ?? null) as GetAlertSummaryResponse | null,
-    [alertSummaryQuery.data],
-  );
-  const vitalsAverage = useMemo(
-    () => (vitalsAverageQuery.data ?? null) as GetVitalsAveragesResponse | null,
-    [vitalsAverageQuery.data],
-  );
-  const alerts = useMemo(
-    () => (alertsQuery.data ?? []) as ListAlertsResponse,
-    [alertsQuery.data],
-  );
-  const caregivers = useMemo(
-    () => (caregiversQuery.data ?? []) as ListCaregiversResponse,
-    [caregiversQuery.data],
-  );
-  const patients = useMemo(
-    () => (patientsQuery.data ?? []) as ListPatientsResponse,
-    [patientsQuery.data],
-  );
-  const tasks = useMemo(
-    () => (tasksQuery.data ?? []) as CareTaskOut[],
-    [tasksQuery.data],
-  );
-  const directives = useMemo(
-    () => (directivesQuery.data ?? []) as CareDirectiveOut[],
-    [directivesQuery.data],
-  );
-  const schedules = useMemo(
-    () => (schedulesQuery.data ?? []) as CareScheduleOut[],
-    [schedulesQuery.data],
-  );
-  const timeline = useMemo(
-    () => (timelineQuery.data ?? []) as ListTimelineEventsResponse,
-    [timelineQuery.data],
-  );
+  const wardSummary = useMemo(() => (wardSummaryQuery.data ?? null) as GetWardSummaryResponse | null, [wardSummaryQuery.data]);
+  const alertSummary = useMemo(() => (alertSummaryQuery.data ?? null) as GetAlertSummaryResponse | null, [alertSummaryQuery.data]);
+  const vitalsAverage = useMemo(() => (vitalsAverageQuery.data ?? null) as GetVitalsAveragesResponse | null, [vitalsAverageQuery.data]);
+  const alerts = useMemo(() => (alertsQuery.data ?? []) as ListAlertsResponse, [alertsQuery.data]);
+  const caregivers = useMemo(() => (caregiversQuery.data ?? []) as ListCaregiversResponse, [caregiversQuery.data]);
+  const patients = useMemo(() => (patientsQuery.data ?? []) as ListPatientsResponse, [patientsQuery.data]);
+  const tasks = useMemo(() => (tasksQuery.data ?? []) as CareTaskOut[], [tasksQuery.data]);
+  const directives = useMemo(() => (directivesQuery.data ?? []) as CareDirectiveOut[], [directivesQuery.data]);
+  const schedules = useMemo(() => (schedulesQuery.data ?? []) as CareScheduleOut[], [schedulesQuery.data]);
+  const timeline = useMemo(() => (timelineQuery.data ?? []) as ListTimelineEventsResponse, [timelineQuery.data]);
 
   const patientMap = useMemo(
     () => new Map(patients.map((patient) => [patient.id, patient])),
     [patients],
   );
-
   const activeAlerts = useMemo(
     () => alerts.filter((item) => item.status === "active"),
     [alerts],
   );
-
   const criticalAlerts = useMemo(
     () => activeAlerts.filter((item) => item.severity === "critical"),
     [activeAlerts],
   );
-
-  const onDutyStaffCount = useMemo(
-    () => caregivers.filter((item) => item.is_active).length,
-    [caregivers],
-  );
-
   const openTasks = useMemo(
     () => tasks.filter((item) => item.status === "pending" || item.status === "in_progress"),
     [tasks],
   );
-
-  const activeDirectivesCount = useMemo(
-    () => directives.filter((item) => item.status === "active").length,
+  const activeDirectives = useMemo(
+    () => directives.filter((item) => item.status === "active"),
     [directives],
   );
-
   const upcomingSchedules = useMemo(
     () =>
-      schedules
+      [...schedules]
         .filter((item) => item.status === "scheduled")
         .sort((left, right) => left.starts_at.localeCompare(right.starts_at)),
     [schedules],
   );
-
-  const alertRows = useMemo<AlertRow[]>(() => {
-    return [...activeAlerts]
-      .sort((left, right) => {
-        if (left.severity === right.severity) {
-          return right.timestamp.localeCompare(left.timestamp);
+  const sortedAlerts = useMemo(
+    () =>
+      [...activeAlerts].sort((left, right) => {
+        if (left.severity !== right.severity) {
+          const order = { critical: 0, warning: 1, low: 2 };
+          return (order[left.severity as keyof typeof order] ?? 3) - (order[right.severity as keyof typeof order] ?? 3);
         }
-        if (left.severity === "critical") return -1;
-        if (right.severity === "critical") return 1;
-        if (left.severity === "warning") return -1;
-        if (right.severity === "warning") return 1;
-        return 0;
-      })
-      .slice(0, 16)
-      .map((item) => {
-        const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
-        return {
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          severity: item.severity,
-          patientId: item.patient_id,
-          patientName: patient
-            ? `${patient.first_name} ${patient.last_name}`.trim()
-            : "Unlinked patient",
-          timestamp: item.timestamp,
-        };
-      });
-  }, [activeAlerts, patientMap]);
-
-  const taskRows = useMemo<TaskRow[]>(() => {
-    return [...openTasks]
-      .sort((left, right) => {
+        return right.timestamp.localeCompare(left.timestamp);
+      }),
+    [activeAlerts],
+  );
+  const sortedTasks = useMemo(
+    () =>
+      [...openTasks].sort((left, right) => {
+        const order = { critical: 0, high: 1, normal: 2, low: 3 };
+        const leftRank = order[left.priority as keyof typeof order] ?? 4;
+        const rightRank = order[right.priority as keyof typeof order] ?? 4;
+        if (leftRank !== rightRank) return leftRank - rightRank;
         if (!left.due_at) return 1;
         if (!right.due_at) return -1;
         return left.due_at.localeCompare(right.due_at);
-      })
-      .slice(0, 18)
-      .map((item) => {
-        const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
-        return {
-          id: item.id,
-          title: item.title,
-          priority: item.priority,
-          status: item.status,
-          patientId: item.patient_id,
-          patientName: patient ? `${patient.first_name} ${patient.last_name}`.trim() : "Unit-wide",
-          dueAt: item.due_at,
-        };
-      });
-  }, [openTasks, patientMap]);
-
-  const scheduleRows = useMemo<ScheduleRow[]>(() => {
-    return upcomingSchedules.slice(0, 18).map((item) => {
-      const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
-      return {
-        id: item.id,
-        title: item.title,
-        scheduleType: item.schedule_type,
-        status: item.status,
-        patientId: item.patient_id,
-        patientName: patient ? `${patient.first_name} ${patient.last_name}`.trim() : "Unit-wide",
-        startsAt: item.starts_at,
-      };
-    });
-  }, [patientMap, upcomingSchedules]);
-
-  const timelineRows = useMemo<TimelineRow[]>(() => {
-    return [...timeline]
-      .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
-      .slice(0, 20)
-      .map((item) => {
-        const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
-        return {
-          id: item.id,
-          eventType: item.event_type,
-          description: item.description,
-          patientId: item.patient_id,
-          patientName: patient ? `${patient.first_name} ${patient.last_name}`.trim() : "Patient N/A",
-          roomName: item.room_name,
-          timestamp: item.timestamp,
-        };
-      });
-  }, [patientMap, timeline]);
-
-  const alertsColumns = useMemo<ColumnDef<AlertRow>[]>(
-    () => [
-      {
-        accessorKey: "title",
-        header: "Alert",
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
-          </div>
-        ),
-      },
-      { accessorKey: "patientName", header: "Patient" },
-      {
-        accessorKey: "severity",
-        header: "Severity",
-        cell: ({ row }) => {
-          const severity = row.original.severity;
-          const variant =
-            severity === "critical"
-              ? "destructive"
-              : severity === "warning"
-                ? "warning"
-                : "secondary";
-          return <Badge variant={variant}>{severity}</Badge>;
-        },
-      },
-      {
-        accessorKey: "timestamp",
-        header: "Time",
-        cell: ({ row }) => (
-          <div className="space-y-1 text-sm">
-            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
-          </div>
-        ),
-      },
-      {
-        id: "actions",
-        header: "",
-        cell: ({ row }) => {
-          const href = row.original.patientId
-            ? `/head-nurse/patients/${row.original.patientId}`
-            : "/head-nurse/patients";
-          return (
-            <Button asChild size="sm" variant="outline">
-              <Link href={href}>Open patient</Link>
-            </Button>
-          );
-        },
-      },
-    ],
-    [],
+      }),
+    [openTasks],
+  );
+  const sortedTimeline = useMemo(
+    () =>
+      [...timeline].sort((left, right) => right.timestamp.localeCompare(left.timestamp)),
+    [timeline],
+  );
+  const recentCaregivers = useMemo(
+    () => caregivers.filter((item) => item.is_active).slice(0, 4),
+    [caregivers],
   );
 
-  const tasksColumns = useMemo<ColumnDef<TaskRow>[]>(
-    () => [
-      {
-        accessorKey: "title",
-        header: "Task",
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="text-xs text-muted-foreground">{row.original.patientName}</p>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "priority",
-        header: "Priority",
-        cell: ({ row }) => {
-          const priority = row.original.priority;
-          const variant =
-            priority === "critical"
-              ? "destructive"
-              : priority === "high"
-                ? "warning"
-                : priority === "normal"
-                  ? "secondary"
-                  : "outline";
-          return <Badge variant={variant}>{priority}</Badge>;
-        },
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
-      },
-      {
-        accessorKey: "dueAt",
-        header: "Due",
-        cell: ({ row }) => (
-          <div className="space-y-1 text-sm">
-            <p className="text-foreground">{formatDateTime(row.original.dueAt)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.dueAt)}</p>
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
+  const topAlerts = sortedAlerts.slice(0, view === "today" ? 3 : 8);
+  const topTasks = sortedTasks.slice(0, view === "today" ? 3 : 8);
+  const topTimeline = sortedTimeline.slice(0, view === "today" ? 4 : 10);
+  const topSchedules = upcomingSchedules.slice(0, view === "today" ? 3 : 6);
 
-  const schedulesColumns = useMemo<ColumnDef<ScheduleRow>[]>(
-    () => [
-      {
-        accessorKey: "title",
-        header: "Schedule",
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="text-xs text-muted-foreground">{row.original.patientName}</p>
-          </div>
-        ),
-      },
-      { accessorKey: "scheduleType", header: "Type" },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
-      },
-      {
-        accessorKey: "startsAt",
-        header: "Starts",
-        cell: ({ row }) => (
-          <div className="space-y-1 text-sm">
-            <p className="text-foreground">{formatDateTime(row.original.startsAt)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.startsAt)}</p>
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
-
-  const timelineColumns = useMemo<ColumnDef<TimelineRow>[]>(
-    () => [
-      {
-        accessorKey: "eventType",
-        header: "Event",
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.eventType}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
-          </div>
-        ),
-      },
-      { accessorKey: "patientName", header: "Patient" },
-      { accessorKey: "roomName", header: "Room" },
-      {
-        accessorKey: "timestamp",
-        header: "Time",
-        cell: ({ row }) => (
-          <div className="space-y-1 text-sm">
-            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
-
-  const isLoadingAny =
-    wardSummaryQuery.isLoading ||
-    alertSummaryQuery.isLoading ||
-    vitalsAverageQuery.isLoading ||
-    alertsQuery.isLoading ||
-    caregiversQuery.isLoading ||
-    patientsQuery.isLoading ||
-    tasksQuery.isLoading ||
-    schedulesQuery.isLoading ||
-    timelineQuery.isLoading ||
-    directivesQuery.isLoading;
+  const nav = [
+    { key: "today" as const, label: t("headNurse.today") },
+    { key: "alerts" as const, label: t("headNurse.alerts") },
+    { key: "tasks" as const, label: t("headNurse.tasks") },
+    { key: "timeline" as const, label: t("headNurse.timeline") },
+  ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Head Nurse Ward Operations</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Centralize alert pressure, staffing readiness, and ward workflow execution.
-        </p>
+    <div className="space-y-6 pb-6 animate-fade-in">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold text-foreground">{t("headNurse.title")}</h2>
+        <p className="max-w-3xl text-sm text-muted-foreground">{t("headNurse.subtitle")}</p>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <SummaryStatCard icon={Users} label="Patients" value={wardSummary?.total_patients ?? patients.length} tone="info" />
-        <SummaryStatCard
-          icon={Bell}
-          label="Active alerts"
-          value={wardSummary?.active_alerts ?? alertSummary?.total_active ?? activeAlerts.length}
-          tone={activeAlerts.length > 0 ? "warning" : "success"}
-        />
-        <SummaryStatCard
-          icon={AlertTriangle}
-          label="Critical alerts"
-          value={criticalAlerts.length}
-          tone={criticalAlerts.length > 0 ? "critical" : "success"}
-        />
-        <SummaryStatCard icon={Stethoscope} label="On-duty staff" value={onDutyStaffCount} tone="info" />
-        <SummaryStatCard icon={ClipboardList} label="Open tasks" value={openTasks.length} tone="warning" />
-        <SummaryStatCard icon={CalendarClock} label="Upcoming schedules" value={upcomingSchedules.length} tone="info" />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-border/70">
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("headNurse.totalPatients")}
+              </p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                {wardSummary?.total_patients ?? patients.length}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {recentCaregivers.length} {t("headNurse.onDutyHint")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70">
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/12 text-red-600">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("headNurse.activeAlerts")}
+              </p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                {wardSummary?.active_alerts ?? alertSummary?.total_active ?? activeAlerts.length}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {criticalAlerts.length} {t("headNurse.criticalAlerts")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70">
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/12 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("headNurse.openTasks")}
+              </p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{openTasks.length}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {activeDirectives.length} {t("headNurse.activeDirectives")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70">
+          <CardContent className="flex items-start gap-3 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600">
+              <CalendarClock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t("headNurse.upcomingSchedules")}
+              </p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                {upcomingSchedules.length}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {vitalsAverage?.spo2_avg != null
+                  ? `${vitalsAverage.spo2_avg.toFixed(1)}% SpO2`
+                  : t("headNurse.noVitals")}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">24h heart rate avg</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">
-            {vitalsAverage?.heart_rate_bpm_avg != null
-              ? `${vitalsAverage.heart_rate_bpm_avg.toFixed(1)} bpm`
-              : "No data"}
-          </p>
+      <Card className="border-border/70">
+        <CardContent className="flex flex-wrap gap-2 p-3">
+          {nav.map((item) => (
+            <Button
+              key={item.key}
+              type="button"
+              variant={view === item.key ? "default" : "outline"}
+              size="sm"
+              onClick={() => setView(item.key)}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </CardContent>
+      </Card>
+
+      {view === "today" ? (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Card className="border-border/70">
+            <CardHeader className="space-y-2 pb-3">
+              <CardTitle className="text-base">{t("headNurse.priorityAlerts")}</CardTitle>
+              <CardDescription>{t("headNurse.priorityAlertsHint")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {topAlerts.length ? topAlerts.map((alert) => (
+                <Link
+                  key={alert.id}
+                  href={alert.patient_id ? `/head-nurse/patients/${alert.patient_id}` : "/head-nurse/alerts"}
+                  className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{alert.title}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{alert.description}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {alert.patient_id ? (patientMap.get(alert.patient_id)?.first_name ?? "") : t("headNurse.unitWide")}
+                    </p>
+                  </div>
+                  <StatusPill severity={alert.severity as "warning" | "critical"}>{alert.severity}</StatusPill>
+                </Link>
+              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("headNurse.noAlerts")}</p>}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70">
+            <CardHeader className="space-y-2 pb-3">
+              <CardTitle className="text-base">{t("headNurse.priorityTasks")}</CardTitle>
+              <CardDescription>{t("headNurse.priorityTasksHint")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {topTasks.length ? topTasks.map((task) => (
+                <div key={task.id} className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{task.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{task.patient_id ? (patientMap.get(task.patient_id)?.first_name ?? "") : t("headNurse.unitWide")}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{task.due_at ? `${formatDateTime(task.due_at)} - ${formatRelativeTime(task.due_at)}` : t("headNurse.noDueDate")}</p>
+                  </div>
+                  <StatusPill severity={task.priority === "critical" ? "critical" : task.priority === "high" ? "warning" : undefined}>{task.priority}</StatusPill>
+                </div>
+              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("headNurse.noTasks")}</p>}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70">
+            <CardHeader className="space-y-2 pb-3">
+              <CardTitle className="text-base">{t("headNurse.scheduleSnapshot")}</CardTitle>
+              <CardDescription>{t("headNurse.scheduleSnapshotHint")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {topSchedules.length ? topSchedules.map((schedule) => (
+                <div key={schedule.id} className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{schedule.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{schedule.patient_id ? (patientMap.get(schedule.patient_id)?.first_name ?? "") : t("headNurse.unitWide")}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(schedule.starts_at)}</p>
+                  </div>
+                  <StatusPill>{schedule.schedule_type}</StatusPill>
+                </div>
+              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("headNurse.noSchedules")}</p>}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70">
+            <CardHeader className="space-y-2 pb-3">
+              <CardTitle className="text-base">{t("headNurse.timelineSnapshot")}</CardTitle>
+              <CardDescription>{t("headNurse.timelineSnapshotHint")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {topTimeline.length ? topTimeline.map((event) => (
+                <div key={event.id} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3">
+                  <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <Clock3 className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-foreground">{event.event_type}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{formatRelativeTime(event.timestamp)}</p>
+                  </div>
+                </div>
+              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("headNurse.noTimeline")}</p>}
+            </CardContent>
+          </Card>
         </div>
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">24h SpO2 avg</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">
-            {vitalsAverage?.spo2_avg != null ? `${vitalsAverage.spo2_avg.toFixed(1)} %` : "No data"}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Active directives</p>
-          <p className="mt-1 text-2xl font-bold text-foreground">{activeDirectivesCount}</p>
-        </div>
-      </section>
+      ) : null}
 
-      <DataTableCard
-        title="Escalation Alerts"
-        description="Active alerts prioritized by severity and recency."
-        data={alertRows}
-        columns={alertsColumns}
-        isLoading={isLoadingAny}
-        emptyText="No active alerts in this workspace."
-        rightSlot={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/head-nurse/alerts">Open alerts board</Link>
-          </Button>
-        }
-      />
+      {view === "alerts" ? (
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3">
+            <CardTitle className="text-base">{t("headNurse.alerts")}</CardTitle>
+            <CardDescription>{t("headNurse.alertsHint")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {topAlerts.map((alert) => (
+              <div key={alert.id} className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-foreground">{alert.title}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{alert.description}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(alert.timestamp)} · {formatRelativeTime(alert.timestamp)}</p>
+                </div>
+                <StatusPill severity={alert.severity as "warning" | "critical"}>{alert.severity}</StatusPill>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <DataTableCard
-        title="Task Queue"
-        description="Open tasks sorted by due time and operational priority."
-        data={taskRows}
-        columns={tasksColumns}
-        isLoading={isLoadingAny}
-        emptyText="No open tasks currently assigned."
-        rightSlot={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/head-nurse/staff">Open staff operations</Link>
-          </Button>
-        }
-      />
+      {view === "tasks" ? (
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3">
+            <CardTitle className="text-base">{t("headNurse.tasks")}</CardTitle>
+            <CardDescription>{t("headNurse.tasksHint")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {topTasks.map((task) => (
+              <div key={task.id} className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-foreground">{task.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{task.description || t("headNurse.noDetails")}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{task.due_at ? `${formatDateTime(task.due_at)} - ${formatRelativeTime(task.due_at)}` : t("headNurse.noDueDate")}</p>
+                </div>
+                <StatusPill severity={task.priority === "critical" ? "critical" : task.priority === "high" ? "warning" : undefined}>{task.priority}</StatusPill>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <DataTableCard
-        title="Upcoming Schedules"
-        description="Scheduled rounds and activities queued for this ward."
-        data={scheduleRows}
-        columns={schedulesColumns}
-        isLoading={isLoadingAny}
-        emptyText="No scheduled rounds found."
-      />
+      {view === "timeline" ? (
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3">
+            <CardTitle className="text-base">{t("headNurse.timeline")}</CardTitle>
+            <CardDescription>{t("headNurse.timelineHint")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {topTimeline.map((event) => (
+              <div key={event.id} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3">
+                <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <Clock3 className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-foreground">{event.event_type}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {(event.patient_id ? (patientMap.get(event.patient_id)?.first_name ?? "") : (event.room_name || t("headNurse.unitWide")))} - {formatRelativeTime(event.timestamp)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <DataTableCard
-        title="Recent Timeline Feed"
-        description="Latest patient timeline events captured across the ward."
-        data={timelineRows}
-        columns={timelineColumns}
-        isLoading={isLoadingAny}
-        emptyText="No timeline events available."
-        rightSlot={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/head-nurse/reports">Open reports</Link>
-          </Button>
-        }
-      />
+      {!alerts.length && !tasks.length && !timeline.length ? (
+        <p className="text-sm text-muted-foreground">{t("headNurse.loadingFallback")}</p>
+      ) : null}
     </div>
   );
 }
+
+
+

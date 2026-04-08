@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Bell, Filter } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
 
@@ -36,10 +36,19 @@ type AlertRow = {
 type AlertStatusFilter = "all" | "active" | "acknowledged" | "resolved";
 type AlertSeverityFilter = "all" | "critical" | "warning" | "info";
 
+function parseRequestError(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Request failed.";
+}
+
 export default function HeadNurseAlertsPage() {
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<AlertStatusFilter>("all");
   const [severity, setSeverity] = useState<AlertSeverityFilter>("all");
   const [search, setSearch] = useState("");
+  const [pendingAlertId, setPendingAlertId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const alertsQuery = useQuery({
     queryKey: ["head-nurse", "alerts", "list"],
@@ -65,6 +74,29 @@ export default function HeadNurseAlertsPage() {
     () => new Map(patients.map((patient) => [patient.id, patient])),
     [patients],
   );
+
+  const updateAlertMutation = useMutation({
+    mutationFn: async (variables: { id: number; status: "acknowledged" | "resolved" }) => {
+      if (variables.status === "acknowledged") {
+        await api.acknowledgeAlert(variables.id, { caregiver_id: null });
+        return;
+      }
+
+      await api.post<void>(`/alerts/${encodeURIComponent(String(variables.id))}/resolve`, {
+        resolution_note: "",
+      });
+    },
+    onSuccess: async () => {
+      setActionError(null);
+      await queryClient.invalidateQueries({ queryKey: ["head-nurse", "alerts"] });
+    },
+    onError: (error) => {
+      setActionError(parseRequestError(error));
+    },
+    onSettled: () => {
+      setPendingAlertId(null);
+    },
+  });
 
   const rows = useMemo<AlertRow[]>(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -149,14 +181,51 @@ export default function HeadNurseAlertsPage() {
             ? `/head-nurse/patients/${row.original.patientId}`
             : "/head-nurse/patients";
           return (
-            <Button asChild size="sm" variant="outline">
-              <Link href={href}>Open patient</Link>
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              {row.original.status === "active" || row.original.status === "acknowledged" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id}
+                  onClick={() => {
+                    setPendingAlertId(row.original.id);
+                    setActionError(null);
+                    updateAlertMutation.mutate({
+                      id: row.original.id,
+                      status: "acknowledged",
+                    });
+                  }}
+                >
+                  Acknowledge
+                </Button>
+              ) : null}
+              {row.original.status !== "resolved" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id}
+                  onClick={() => {
+                    setPendingAlertId(row.original.id);
+                    setActionError(null);
+                    updateAlertMutation.mutate({
+                      id: row.original.id,
+                      status: "resolved",
+                    });
+                  }}
+                >
+                  Resolve
+                </Button>
+              ) : null}
+              <Button asChild size="sm" variant="outline">
+                <Link href={href}>Open patient</Link>
+              </Button>
+            </div>
           );
         },
       },
     ],
-    [],
+    [pendingAlertId, updateAlertMutation],
   );
 
   return (
@@ -209,6 +278,12 @@ export default function HeadNurseAlertsPage() {
         emptyText="No alerts match this filter."
         rightSlot={<Filter className="h-4 w-4 text-muted-foreground" />}
       />
+
+      {actionError ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {actionError}
+        </div>
+      ) : null}
 
       <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
         <div className="inline-flex items-center gap-2">

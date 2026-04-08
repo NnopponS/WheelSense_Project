@@ -11,7 +11,13 @@ from .core import (
 from .facility import Facility, Floor
 from .users import User
 from .patients import Patient, PatientDeviceAssignment, PatientContact
-from .caregivers import CareGiver, CareGiverZone, CareGiverShift, CareGiverDeviceAssignment
+from .caregivers import (
+    CareGiver,
+    CareGiverZone,
+    CareGiverShift,
+    CareGiverDeviceAssignment,
+    CareGiverPatientAccess,
+)
 from .vitals import VitalReading, HealthObservation
 from .activity import ActivityTimeline, Alert
 from .telemetry import IMUTelemetry, RSSIReading, RoomPrediction, RSSITrainingData, MotionTrainingData, PhotoRecord
@@ -53,6 +59,7 @@ __all__ = [
     "CareGiverZone",
     "CareGiverShift",
     "CareGiverDeviceAssignment",
+    "CareGiverPatientAccess",
     # Health
     "VitalReading",
     "HealthObservation",

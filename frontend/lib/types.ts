@@ -284,6 +284,14 @@ export interface Caregiver {
   phone: string;
   email: string;
   is_active: boolean;
+  employee_code?: string | null;
+  department?: string | null;
+  employment_type?: string | null;
+  specialty?: string | null;
+  license_number?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  photo_url?: string | null;
   created_at: string;
 }
 

@@ -64,6 +64,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """Attributes when updating a user."""
+    username: Optional[str] = Field(None, min_length=3, max_length=128)
     password: Optional[str] = Field(None, min_length=6, max_length=128)
     role: Optional[str] = Field(
         None, pattern="^(admin|supervisor|head_nurse|observer|patient)$"
@@ -96,3 +97,12 @@ class UserOut(UserBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class UserSearchOut(BaseModel):
+    """Search result shape for person-target assignment controls."""
+    id: int
+    username: str
+    role: str
+    caregiver_id: Optional[int] = None
+    patient_id: Optional[int] = None
+    display_name: str

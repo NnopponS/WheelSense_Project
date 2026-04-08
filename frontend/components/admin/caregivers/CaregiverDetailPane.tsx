@@ -1,12 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@/hooks/useQuery";
-import type { Caregiver, Patient, User } from "@/lib/types";
+import type { Caregiver, Patient, Room, User } from "@/lib/types";
 import { ageYears } from "@/lib/age";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+import SearchableListboxPicker, {
+  type SearchableListboxOption,
+} from "@/components/shared/SearchableListboxPicker";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Calendar,
   ChevronRight,
@@ -18,10 +36,10 @@ import {
   UserCircle2,
   Users,
 } from "lucide-react";
-import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { hasCapability } from "@/lib/permissions";
+import { formatStaffRoleLabel } from "@/lib/staffRoleLabel";
 
 type Props = {
   caregiver: Caregiver;
@@ -49,16 +67,34 @@ type ZoneOut = {
   is_active: boolean;
 };
 
-/* ── Helpers ──────────────────────────────────────────────────────────── */
+type ZoneDraft = {
+  zoneId: number | null;
+  zoneName: string;
+  roomId: number | null;
+  isActive: boolean;
+};
 
-function formatStaffRole(role: string): string {
-  const r = role.trim().toLowerCase();
-  if (r === "head_nurse") return "Head Nurse";
-  if (r === "observer" || r === "supervisor") {
-    return r.charAt(0).toUpperCase() + r.slice(1);
-  }
-  return role || "—";
-}
+type CaregiverPatientAccessResponse =
+  | Array<{ patient_id?: number; id?: number }>
+  | { patient_ids?: number[]; patients?: Array<{ patient_id?: number; id?: number }> };
+
+type ShiftDraft = {
+  shiftId: number | null;
+  shiftDate: string;
+  startTime: string;
+  endTime: string;
+  shiftType: string;
+  notes: string;
+};
+
+const ROOM_NONE_ID = "__none";
+const SHIFT_TYPE_OPTIONS = [
+  { value: "regular", label: "Regular" },
+  { value: "overtime", label: "Overtime" },
+  { value: "on_call", label: "On call" },
+] as const;
+
+/* ── Helpers ──────────────────────────────────────────────────────────── */
 
 function formatDate(iso: string): string {
   try {
@@ -79,11 +115,411 @@ function formatTime(t: string): string {
   return t.slice(0, 5);
 }
 
+function formatRoomLabel(room: Room | null | undefined): string {
+  if (!room) return "No room";
+  return room.name?.trim() || `Room #${room.id}`;
+}
+
+function formatRoomContext(room: Room | null | undefined): string {
+  if (!room) return "No room";
+  const parts = [
+    room.facility_name?.trim() || null,
+    room.floor_name?.trim() ||
+      (typeof room.floor_number === "number" && !Number.isNaN(room.floor_number)
+        ? `Floor ${room.floor_number}`
+        : null),
+    formatRoomLabel(room),
+  ].filter(Boolean);
+  return parts.join(" · ");
+}
+
+function formatPatientLabel(patient: Patient): string {
+  const name = `${patient.first_name} ${patient.last_name}`.trim();
+  return name || `Patient #${patient.id}`;
+}
+
+function patientSearchText(patient: Patient): string {
+  return [
+    formatPatientLabel(patient),
+    `#${patient.id}`,
+    patient.room_id != null ? `room ${patient.room_id}` : null,
+    patient.care_level,
+  ]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .map((value) => value.trim().toLowerCase())
+    .join(" ");
+}
+
+function extractPatientAccessIds(response: CaregiverPatientAccessResponse | null | undefined): number[] {
+  if (!response) return [];
+  if (!Array.isArray(response) && Array.isArray(response.patient_ids)) {
+    return response.patient_ids.filter((id): id is number => typeof id === "number");
+  }
+  const rows = Array.isArray(response) ? response : response.patients ?? [];
+  return rows
+    .map((row) => (typeof row.patient_id === "number" ? row.patient_id : row.id))
+    .filter((id): id is number => typeof id === "number");
+}
+
+function roomSearchText(room: Room): string {
+  return [
+    room.facility_name,
+    room.floor_name,
+    room.floor_number != null ? String(room.floor_number) : null,
+    room.name,
+    `#${room.id}`,
+    room.node_device_id,
+  ]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .map((value) => value.trim().toLowerCase())
+    .join(" ");
+}
+
+function formatShiftType(value: string): string {
+  const found = SHIFT_TYPE_OPTIONS.find((option) => option.value === value);
+  if (found) return found.label;
+  return value || "-";
+}
+
 const SHIFT_BADGE: Record<string, string> = {
   regular: "bg-primary-fixed/60 text-primary",
   overtime: "bg-tertiary-fixed/60 text-tertiary",
   on_call: "bg-secondary-fixed/60 text-secondary",
 };
+
+function ZoneDialog({
+  open,
+  mode,
+  draft,
+  setDraft,
+  roomSearch,
+  setRoomSearch,
+  roomOptions,
+  roomLoading,
+  roomEmptyNoMatch,
+  roomEmptyPool,
+  submitting,
+  error,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  mode: "create" | "edit";
+  draft: ZoneDraft;
+  setDraft: (updater: (prev: ZoneDraft) => ZoneDraft) => void;
+  roomSearch: string;
+  setRoomSearch: (value: string) => void;
+  roomOptions: SearchableListboxOption[];
+  roomLoading: boolean;
+  roomEmptyNoMatch: boolean;
+  roomEmptyPool: boolean;
+  submitting: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  const zoneNameInputId = useId();
+  const roomLabelId = useId();
+  const roomInputId = useId();
+  const roomListboxId = useId();
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="w-[min(100%-1.5rem,42rem)] max-h-[92vh] overflow-y-auto rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>{mode === "create" ? "Add zone" : "Edit zone"}</DialogTitle>
+          <DialogDescription>
+            Assign the zone to a room and keep the ward map aligned.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 px-6 pb-2 pt-1">
+          <div>
+            <label htmlFor={zoneNameInputId} className="text-xs font-medium text-on-surface-variant">
+              Zone name
+            </label>
+            <input
+              id={zoneNameInputId}
+              className="input-field mt-1 w-full text-sm"
+              value={draft.zoneName}
+              onChange={(e) =>
+                setDraft((prev) => ({ ...prev, zoneName: e.target.value }))
+              }
+              placeholder="Ward A / Night round / Mobility watch"
+            />
+          </div>
+
+          <div>
+            <label
+              id={roomLabelId}
+              htmlFor={roomInputId}
+              className="text-xs font-medium text-on-surface-variant"
+            >
+              Room
+            </label>
+            <div className="mt-1">
+              <SearchableListboxPicker
+                inputId={roomInputId}
+                listboxId={roomListboxId}
+                ariaLabelledBy={roomLabelId}
+                options={roomOptions}
+                search={roomSearch}
+                onSearchChange={setRoomSearch}
+                searchPlaceholder="Search by facility, floor, room, id, node"
+                selectedOptionId={
+                  draft.roomId === null ? ROOM_NONE_ID : String(draft.roomId)
+                }
+                onSelectOption={(id) => {
+                  if (id === ROOM_NONE_ID) {
+                    setDraft((prev) => ({ ...prev, roomId: null }));
+                    setRoomSearch("No room");
+                    return;
+                  }
+                  const selected = roomOptions.find((opt) => opt.id === id);
+                  const selectedTitle = selected?.title ?? `Room #${id}`;
+                  setDraft((prev) => ({
+                    ...prev,
+                    roomId: Number(id),
+                    zoneName: prev.zoneName.trim() ? prev.zoneName : selectedTitle,
+                  }));
+                  setRoomSearch(selectedTitle);
+                }}
+                disabled={roomLoading}
+                listboxAriaLabel="Select room"
+                noMatchMessage="No matching rooms"
+                emptyStateMessage="No rooms available in this workspace"
+                emptyNoMatch={roomEmptyNoMatch}
+                listPresentation="portal"
+                listboxZIndex={170}
+              />
+            </div>
+            {roomEmptyPool ? (
+              <p className="mt-1 text-xs text-on-surface-variant">
+                No rooms are available yet. You can still leave this zone unassigned.
+              </p>
+            ) : null}
+          </div>
+
+          {mode === "edit" ? (
+            <div>
+              <label className="text-xs font-medium text-on-surface-variant">
+                Active status
+              </label>
+              <Select
+                value={draft.isActive ? "active" : "inactive"}
+                onValueChange={(value) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    isActive: value === "active",
+                  }))
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <p className="text-xs text-on-surface-variant">
+              New zones are created as active assignments.
+            </p>
+          )}
+
+          {error ? <p className="text-sm text-error">{error}</p> : null}
+        </div>
+
+        <DialogFooter className="px-6 pb-6">
+          <button
+            type="button"
+            className="rounded-xl border border-outline-variant/40 px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-low"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="gradient-cta rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            onClick={onSubmit}
+            disabled={submitting}
+          >
+            {submitting ? "Saving..." : mode === "create" ? "Add zone" : "Save changes"}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ShiftDialog({
+  open,
+  mode,
+  draft,
+  setDraft,
+  submitting,
+  error,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean;
+  mode: "create" | "edit";
+  draft: ShiftDraft;
+  setDraft: (updater: (prev: ShiftDraft) => ShiftDraft) => void;
+  submitting: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  const shiftDateInputId = useId();
+  const startTimeInputId = useId();
+  const endTimeInputId = useId();
+  const notesInputId = useId();
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="w-[min(100%-1.5rem,42rem)] max-h-[92vh] overflow-y-auto rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>{mode === "create" ? "Add shift" : "Edit shift"}</DialogTitle>
+          <DialogDescription>
+            Keep the shift schedule consistent with structured date and time fields.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 px-6 pb-2 pt-1">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor={shiftDateInputId}
+                className="text-xs font-medium text-on-surface-variant"
+              >
+                Shift date
+              </label>
+              <input
+                id={shiftDateInputId}
+                type="date"
+                className="input-field mt-1 w-full text-sm"
+                value={draft.shiftDate}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, shiftDate: e.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-on-surface-variant">
+                Shift type
+              </label>
+              <Select
+                value={draft.shiftType}
+                onValueChange={(value) =>
+                  setDraft((prev) => ({ ...prev, shiftType: value }))
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SHIFT_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor={startTimeInputId}
+                className="text-xs font-medium text-on-surface-variant"
+              >
+                Start time
+              </label>
+              <input
+                id={startTimeInputId}
+                type="time"
+                className="input-field mt-1 w-full text-sm"
+                value={draft.startTime}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, startTime: e.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label
+                htmlFor={endTimeInputId}
+                className="text-xs font-medium text-on-surface-variant"
+              >
+                End time
+              </label>
+              <input
+                id={endTimeInputId}
+                type="time"
+                className="input-field mt-1 w-full text-sm"
+                value={draft.endTime}
+                onChange={(e) =>
+                  setDraft((prev) => ({ ...prev, endTime: e.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor={notesInputId}
+              className="text-xs font-medium text-on-surface-variant"
+            >
+              Notes
+            </label>
+            <textarea
+              id={notesInputId}
+              className="input-field mt-1 min-h-[96px] w-full resize-y text-sm"
+              value={draft.notes}
+              onChange={(e) => setDraft((prev) => ({ ...prev, notes: e.target.value }))}
+              placeholder="Optional handoff or schedule notes"
+            />
+          </div>
+
+          {error ? <p className="text-sm text-error">{error}</p> : null}
+        </div>
+
+        <DialogFooter className="px-6 pb-6">
+          <button
+            type="button"
+            className="rounded-xl border border-outline-variant/40 px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-low"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="gradient-cta rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            onClick={onSubmit}
+            disabled={submitting}
+          >
+            {submitting ? "Saving..." : mode === "create" ? "Add shift" : "Save changes"}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 /* ── User Account Item ────────────────────────────────────────────────── */
 
@@ -241,6 +677,9 @@ export default function CaregiverDetailPane({
   );
   const canManageAccounts = Boolean(user && hasCapability(user.role, "users.manage"));
 
+  const { data: rooms, isLoading: roomsLoading } = useQuery<Room[]>(
+    `/rooms`,
+  );
   const { data: shifts, isLoading: shiftsLoading, refetch: refetchShifts } = useQuery<ShiftOut[]>(
     `/caregivers/${caregiver.id}/shifts`,
   );
@@ -248,14 +687,94 @@ export default function CaregiverDetailPane({
     `/caregivers/${caregiver.id}/zones`,
   );
   const { data: patients } = useQuery<Patient[]>("/patients");
-  const [zoneNameDraft, setZoneNameDraft] = useState("");
-  const [zoneRoomIdDraft, setZoneRoomIdDraft] = useState("");
-  const [shiftDateDraft, setShiftDateDraft] = useState("");
-  const [shiftStartDraft, setShiftStartDraft] = useState("08:00");
-  const [shiftEndDraft, setShiftEndDraft] = useState("16:00");
-  const [shiftTypeDraft, setShiftTypeDraft] = useState("regular");
-  const [shiftNotesDraft, setShiftNotesDraft] = useState("");
+  const {
+    data: patientAccess,
+    isLoading: patientAccessLoading,
+    refetch: refetchPatientAccess,
+  } = useQuery<CaregiverPatientAccessResponse>(`/caregivers/${caregiver.id}/patients`);
+  const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
+  const [zoneDialogMode, setZoneDialogMode] = useState<"create" | "edit">("create");
+  const [zoneDraft, setZoneDraft] = useState<ZoneDraft>({
+    zoneId: null,
+    zoneName: "",
+    roomId: null,
+    isActive: true,
+  });
+  const [zoneRoomSearch, setZoneRoomSearch] = useState("");
+  const [shiftDialogOpen, setShiftDialogOpen] = useState(false);
+  const [shiftDialogMode, setShiftDialogMode] = useState<"create" | "edit">("create");
+  const [shiftDraft, setShiftDraft] = useState<ShiftDraft>({
+    shiftId: null,
+    shiftDate: "",
+    startTime: "08:00",
+    endTime: "16:00",
+    shiftType: "regular",
+    notes: "",
+  });
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [zoneSubmitting, setZoneSubmitting] = useState(false);
+  const [shiftSubmitting, setShiftSubmitting] = useState(false);
+  const [patientAccessSearch, setPatientAccessSearch] = useState("");
+  const [patientAccessDraftIds, setPatientAccessDraftIds] = useState<number[]>([]);
+  const [patientAccessSaving, setPatientAccessSaving] = useState(false);
+  const [patientAccessError, setPatientAccessError] = useState<string | null>(null);
+  const patientAccessInputId = useId();
+  const patientAccessListboxId = useId();
+
+  useEffect(() => {
+    setPatientAccessDraftIds(extractPatientAccessIds(patientAccess));
+  }, [patientAccess]);
+
+  const roomsById = useMemo(
+    () => new Map((rooms ?? []).map((room) => [room.id, room] as const)),
+    [rooms],
+  );
+
+  const roomOptions = useMemo<SearchableListboxOption[]>(() => {
+    const q = zoneRoomSearch.trim().toLowerCase();
+    const list = rooms ?? [];
+    const filtered = !q
+      ? list
+      : list.filter((room) => roomSearchText(room).includes(q));
+    const options: SearchableListboxOption[] = [];
+    if (!q || "no room".includes(q)) {
+      options.push({
+        id: ROOM_NONE_ID,
+        title: "No room",
+      });
+    }
+    options.push(
+      ...filtered.map((room) => ({
+        id: String(room.id),
+        title: room.name?.trim() || `Room #${room.id}`,
+        subtitle: [
+          room.facility_name?.trim() || "No facility",
+          room.floor_name?.trim() ||
+            (typeof room.floor_number === "number" && !Number.isNaN(room.floor_number)
+              ? `Floor ${room.floor_number}`
+              : "No floor"),
+          room.node_device_id ? `node ${room.node_device_id}` : null,
+          `#${room.id}`,
+        ]
+          .filter((part): part is string => Boolean(part))
+          .join(" · "),
+      })),
+    );
+    return options;
+  }, [rooms, zoneRoomSearch]);
+
+  const roomEmptyPool = !roomsLoading && (rooms?.length ?? 0) === 0;
+  const roomEmptyNoMatch =
+    !roomsLoading && !roomEmptyPool && zoneRoomSearch.trim().length > 0 && roomOptions.length === 0;
+
+  const patientCountByRoomId = useMemo(() => {
+    const counts = new Map<number, number>();
+    (patients ?? []).forEach((patient) => {
+      if (patient.room_id == null) return;
+      counts.set(patient.room_id, (counts.get(patient.room_id) ?? 0) + 1);
+    });
+    return counts;
+  }, [patients]);
 
   const linkedPatients = useMemo(() => {
     if (!patients?.length || !zones?.length) return [];
@@ -265,39 +784,100 @@ export default function CaregiverDetailPane({
     return patients.filter((p) => p.room_id != null && roomIds.has(p.room_id));
   }, [patients, zones]);
 
-  async function handleAddZone() {
+  const patientAccessDraftSet = useMemo(
+    () => new Set(patientAccessDraftIds),
+    [patientAccessDraftIds],
+  );
+
+  const patientAccessSelectedPatients = useMemo(() => {
+    if (!patients?.length) return [];
+    return patientAccessDraftIds
+      .map((id) => patients.find((patient) => patient.id === id))
+      .filter((patient): patient is Patient => Boolean(patient));
+  }, [patientAccessDraftIds, patients]);
+
+  const patientAccessOptions = useMemo<SearchableListboxOption[]>(() => {
+    const q = patientAccessSearch.trim().toLowerCase();
+    return (patients ?? [])
+      .filter((patient) => !patientAccessDraftSet.has(patient.id))
+      .filter((patient) => !q || patientSearchText(patient).includes(q))
+      .slice(0, 80)
+      .map((patient) => ({
+        id: String(patient.id),
+        title: formatPatientLabel(patient),
+        subtitle: patient.room_id != null ? `Room #${patient.room_id}` : `Patient #${patient.id}`,
+      }));
+  }, [patientAccessDraftSet, patientAccessSearch, patients]);
+
+  async function handleSavePatientAccess() {
     if (!canManageSchedule) return;
-    setScheduleError(null);
+    setPatientAccessSaving(true);
+    setPatientAccessError(null);
     try {
-      await api.post(`/caregivers/${caregiver.id}/zones`, {
-        room_id: zoneRoomIdDraft.trim() ? Number(zoneRoomIdDraft) : null,
-        zone_name: zoneNameDraft.trim(),
+      await api.put(`/caregivers/${caregiver.id}/patients`, {
+        patient_ids: patientAccessDraftIds,
       });
-      setZoneNameDraft("");
-      setZoneRoomIdDraft("");
-      await refetchZones();
+      await refetchPatientAccess();
     } catch (e) {
-      setScheduleError(e instanceof ApiError ? e.message : "Failed to add zone");
+      setPatientAccessError(e instanceof ApiError ? e.message : "Failed to save patient access");
+    } finally {
+      setPatientAccessSaving(false);
     }
   }
 
-  async function handleEditZone(zone: ZoneOut) {
-    if (!canManageSchedule) return;
-    const zoneName = window.prompt("Zone name", zone.zone_name ?? "");
-    if (zoneName == null) return;
-    const roomRaw = window.prompt("Room ID (blank for none)", zone.room_id?.toString() ?? "");
-    if (roomRaw == null) return;
-    const active = window.confirm("Should this zone remain active?");
+  const openCreateZone = useCallback(() => {
+    setZoneDialogMode("create");
+    setZoneDraft({
+      zoneId: null,
+      zoneName: "",
+      roomId: null,
+      isActive: true,
+    });
+    setZoneRoomSearch("");
     setScheduleError(null);
+    setZoneDialogOpen(true);
+  }, []);
+
+  const openEditZone = useCallback((zone: ZoneOut) => {
+    setZoneDialogMode("edit");
+    setZoneDraft({
+      zoneId: zone.id,
+      zoneName: zone.zone_name ?? "",
+      roomId: zone.room_id,
+      isActive: zone.is_active,
+    });
+    setZoneRoomSearch(zone.room_id != null ? formatRoomContext(roomsById.get(zone.room_id)) : "");
+    setScheduleError(null);
+    setZoneDialogOpen(true);
+  }, [roomsById]);
+
+  async function handleSubmitZone() {
+    if (!canManageSchedule) return;
+    const payload = {
+      zone_name: zoneDraft.zoneName.trim(),
+      room_id: zoneDraft.roomId,
+    };
+    if (!payload.zone_name) {
+      setScheduleError("Zone name is required");
+      return;
+    }
+    setScheduleError(null);
+    setZoneSubmitting(true);
     try {
-      await api.patch(`/caregivers/${caregiver.id}/zones/${zone.id}`, {
-        zone_name: zoneName.trim(),
-        room_id: roomRaw.trim() ? Number(roomRaw) : null,
-        is_active: active,
-      });
+      if (zoneDialogMode === "create") {
+        await api.post(`/caregivers/${caregiver.id}/zones`, payload);
+      } else if (zoneDraft.zoneId != null) {
+        await api.patch(`/caregivers/${caregiver.id}/zones/${zoneDraft.zoneId}`, {
+          ...payload,
+          is_active: zoneDraft.isActive,
+        });
+      }
+      setZoneDialogOpen(false);
       await refetchZones();
     } catch (e) {
-      setScheduleError(e instanceof ApiError ? e.message : "Failed to update zone");
+      setScheduleError(e instanceof ApiError ? e.message : "Failed to save zone");
+    } finally {
+      setZoneSubmitting(false);
     }
   }
 
@@ -313,49 +893,57 @@ export default function CaregiverDetailPane({
     }
   }
 
-  async function handleAddShift() {
-    if (!canManageSchedule || !shiftDateDraft) return;
+  const openCreateShift = useCallback(() => {
+    setShiftDialogMode("create");
+    setShiftDraft({
+      shiftId: null,
+      shiftDate: "",
+      startTime: "08:00",
+      endTime: "16:00",
+      shiftType: "regular",
+      notes: "",
+    });
     setScheduleError(null);
-    try {
-      await api.post(`/caregivers/${caregiver.id}/shifts`, {
-        shift_date: shiftDateDraft,
-        start_time: `${shiftStartDraft}:00`,
-        end_time: `${shiftEndDraft}:00`,
-        shift_type: shiftTypeDraft,
-        notes: shiftNotesDraft.trim(),
-      });
-      setShiftDateDraft("");
-      setShiftNotesDraft("");
-      await refetchShifts();
-    } catch (e) {
-      setScheduleError(e instanceof ApiError ? e.message : "Failed to add shift");
-    }
-  }
+    setShiftDialogOpen(true);
+  }, []);
 
-  async function handleEditShift(shift: ShiftOut) {
-    if (!canManageSchedule) return;
-    const shiftDate = window.prompt("Shift date (YYYY-MM-DD)", String(shift.shift_date));
-    if (shiftDate == null) return;
-    const startTime = window.prompt("Start time (HH:MM)", formatTime(String(shift.start_time)));
-    if (startTime == null) return;
-    const endTime = window.prompt("End time (HH:MM)", formatTime(String(shift.end_time)));
-    if (endTime == null) return;
-    const shiftType = window.prompt("Shift type (regular/overtime/on_call)", shift.shift_type);
-    if (shiftType == null) return;
-    const notes = window.prompt("Notes", shift.notes ?? "");
-    if (notes == null) return;
+  const openEditShift = useCallback((shift: ShiftOut) => {
+    setShiftDialogMode("edit");
+    setShiftDraft({
+      shiftId: shift.id,
+      shiftDate: String(shift.shift_date),
+      startTime: formatTime(String(shift.start_time)),
+      endTime: formatTime(String(shift.end_time)),
+      shiftType: shift.shift_type,
+      notes: shift.notes ?? "",
+    });
     setScheduleError(null);
+    setShiftDialogOpen(true);
+  }, []);
+
+  async function handleSubmitShift() {
+    if (!canManageSchedule || !shiftDraft.shiftDate) return;
+    setScheduleError(null);
+    const payload = {
+      shift_date: shiftDraft.shiftDate,
+      start_time: `${shiftDraft.startTime}:00`,
+      end_time: `${shiftDraft.endTime}:00`,
+      shift_type: shiftDraft.shiftType,
+      notes: shiftDraft.notes.trim(),
+    };
+    setShiftSubmitting(true);
     try {
-      await api.patch(`/caregivers/${caregiver.id}/shifts/${shift.id}`, {
-        shift_date: shiftDate,
-        start_time: `${startTime}:00`,
-        end_time: `${endTime}:00`,
-        shift_type: shiftType,
-        notes,
-      });
+      if (shiftDialogMode === "create") {
+        await api.post(`/caregivers/${caregiver.id}/shifts`, payload);
+      } else if (shiftDraft.shiftId != null) {
+        await api.patch(`/caregivers/${caregiver.id}/shifts/${shiftDraft.shiftId}`, payload);
+      }
+      setShiftDialogOpen(false);
       await refetchShifts();
     } catch (e) {
-      setScheduleError(e instanceof ApiError ? e.message : "Failed to update shift");
+      setScheduleError(e instanceof ApiError ? e.message : "Failed to save shift");
+    } finally {
+      setShiftSubmitting(false);
     }
   }
 
@@ -398,7 +986,7 @@ export default function CaregiverDetailPane({
                 <p className="mt-1 text-sm text-on-surface-variant">
                   {t("admin.users.role")}:{" "}
                   <span className="font-medium text-on-surface">
-                    {formatStaffRole(caregiver.role)}
+                    {formatStaffRoleLabel(caregiver.role, t)}
                   </span>
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -414,29 +1002,17 @@ export default function CaregiverDetailPane({
             </div>
           </section>
 
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
+                    <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
             <h2 className="mb-4 flex items-center gap-2 font-semibold text-on-surface">
               <MapPin className="h-5 w-5 text-primary" aria-hidden />
               {t("caregivers.sectionZones")}
             </h2>
             {canManageSchedule ? (
-              <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-[1fr,140px,auto]">
-                <input
-                  className="input-field text-sm"
-                  placeholder="Zone name"
-                  value={zoneNameDraft}
-                  onChange={(e) => setZoneNameDraft(e.target.value)}
-                />
-                <input
-                  className="input-field text-sm"
-                  placeholder="Room ID"
-                  value={zoneRoomIdDraft}
-                  onChange={(e) => setZoneRoomIdDraft(e.target.value)}
-                />
+              <div className="mb-4 flex items-center justify-end">
                 <button
                   type="button"
-                  className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-on-primary"
-                  onClick={() => void handleAddZone()}
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90"
+                  onClick={openCreateZone}
                 >
                   Add zone
                 </button>
@@ -453,35 +1029,160 @@ export default function CaregiverDetailPane({
                 {zones.map((z) => (
                   <li
                     key={z.id}
-                    className="flex items-center justify-between rounded-xl bg-surface-container-low px-4 py-3 text-sm"
+                    className="rounded-xl border border-outline-variant/15 bg-surface-container-low px-4 py-4 text-sm"
                   >
-                    <span className="font-medium text-on-surface">
-                      {z.zone_name || (z.room_id != null ? `Room #${z.room_id}` : "—")}
-                    </span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                        z.is_active ? "care-normal" : "bg-surface-container text-outline"
-                      }`}
-                    >
-                      {z.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
-                    </span>
+                    {(() => {
+                      const room = z.room_id != null ? roomsById.get(z.room_id) ?? null : null;
+                      const patientCount =
+                        z.room_id != null ? patientCountByRoomId.get(z.room_id) ?? 0 : 0;
+                      const mapHref =
+                        room && room.facility_id != null && room.floor_id != null
+                          ? `/admin/monitoring?facility=${room.facility_id}&floor=${room.floor_id}&view=map&room=${room.id}`
+                          : null;
+                      return (
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 space-y-1">
+                            <p className="font-semibold text-on-surface">
+                              {z.zone_name || formatRoomLabel(room) || "—"}
+                            </p>
+                            <p className="text-xs text-on-surface-variant">
+                              {formatRoomContext(room)}
+                            </p>
+                            <p className="text-xs text-on-surface-variant">
+                              Linked patients: {patientCount}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${
+                                z.is_active ? "care-normal" : "bg-surface-container text-outline"
+                              }`}
+                            >
+                              {z.is_active
+                                ? t("patients.statusActive")
+                                : t("patients.statusInactive")}
+                            </span>
+                            {mapHref ? (
+                              <Link
+                                href={mapHref}
+                                className="rounded-full border border-outline-variant/25 px-2.5 py-1 text-[10px] font-semibold uppercase text-primary hover:bg-primary/5"
+                              >
+                                Open map
+                              </Link>
+                            ) : null}
+                            {canManageSchedule ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="text-xs font-semibold text-primary hover:underline"
+                                  onClick={() => openEditZone(z)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="text-xs font-semibold text-critical hover:underline"
+                                  onClick={() => void handleDeleteZone(z.id)}
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 font-semibold text-on-surface">
+                  <Shield className="h-5 w-5 text-primary" aria-hidden />
+                  Patient access
+                </h2>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  {patientAccessDraftIds.length} assigned patient{patientAccessDraftIds.length === 1 ? "" : "s"}
+                </p>
+              </div>
+              {canManageSchedule ? (
+                <button
+                  type="button"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50"
+                  onClick={() => void handleSavePatientAccess()}
+                  disabled={patientAccessSaving}
+                >
+                  {patientAccessSaving ? "Saving..." : "Save access"}
+                </button>
+              ) : null}
+            </div>
+
+            {canManageSchedule ? (
+              <div className="mb-4">
+                <SearchableListboxPicker
+                  inputId={patientAccessInputId}
+                  listboxId={patientAccessListboxId}
+                  options={patientAccessOptions}
+                  search={patientAccessSearch}
+                  onSearchChange={setPatientAccessSearch}
+                  searchPlaceholder="Search patients by name, id, or room"
+                  selectedOptionId={null}
+                  onSelectOption={(id) => {
+                    const patientId = Number(id);
+                    if (!Number.isFinite(patientId)) return;
+                    setPatientAccessDraftIds((prev) =>
+                      prev.includes(patientId) ? prev : [...prev, patientId],
+                    );
+                    setPatientAccessSearch("");
+                  }}
+                  disabled={patientAccessLoading}
+                  listboxAriaLabel="Add patient access"
+                  noMatchMessage="No matching patients"
+                  emptyStateMessage={patientAccessOptions.length === 0 ? "No patients available" : null}
+                  emptyNoMatch={patientAccessSearch.trim().length > 0}
+                />
+              </div>
+            ) : null}
+
+            {patientAccessError ? (
+              <p className="mb-3 text-sm text-critical">{patientAccessError}</p>
+            ) : null}
+
+            {patientAccessLoading ? (
+              <div className="flex justify-center py-6">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            ) : patientAccessSelectedPatients.length === 0 ? (
+              <p className="text-sm text-on-surface-variant">No explicit patient access assigned.</p>
+            ) : (
+              <ul className="space-y-2">
+                {patientAccessSelectedPatients.map((patient) => (
+                  <li
+                    key={patient.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4"
+                  >
+                    <Link href={`/admin/patients/${patient.id}`} className="min-w-0">
+                      <p className="font-semibold text-on-surface">{formatPatientLabel(patient)}</p>
+                      <p className="text-xs text-on-surface-variant">
+                        {patient.room_id != null ? `Room #${patient.room_id}` : `Patient #${patient.id}`} ·{" "}
+                        {patient.care_level}
+                      </p>
+                    </Link>
                     {canManageSchedule ? (
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="text-xs font-semibold text-primary hover:underline"
-                          onClick={() => void handleEditZone(z)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="text-xs font-semibold text-critical hover:underline"
-                          onClick={() => void handleDeleteZone(z.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        className="shrink-0 text-xs font-semibold text-critical hover:underline"
+                        onClick={() =>
+                          setPatientAccessDraftIds((prev) => prev.filter((id) => id !== patient.id))
+                        }
+                      >
+                        Remove
+                      </button>
                     ) : null}
                   </li>
                 ))}
@@ -521,50 +1222,17 @@ export default function CaregiverDetailPane({
             )}
           </section>
 
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
+                    <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
             <h2 className="mb-4 flex items-center gap-2 font-semibold text-on-surface">
               <Clock className="h-5 w-5 text-primary" aria-hidden />
               Shift schedule
             </h2>
             {canManageSchedule ? (
-              <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-[150px,110px,110px,140px,1fr,auto]">
-                <input
-                  type="date"
-                  className="input-field text-sm"
-                  value={shiftDateDraft}
-                  onChange={(e) => setShiftDateDraft(e.target.value)}
-                />
-                <input
-                  type="time"
-                  className="input-field text-sm"
-                  value={shiftStartDraft}
-                  onChange={(e) => setShiftStartDraft(e.target.value)}
-                />
-                <input
-                  type="time"
-                  className="input-field text-sm"
-                  value={shiftEndDraft}
-                  onChange={(e) => setShiftEndDraft(e.target.value)}
-                />
-                <select
-                  className="input-field text-sm"
-                  value={shiftTypeDraft}
-                  onChange={(e) => setShiftTypeDraft(e.target.value)}
-                >
-                  <option value="regular">regular</option>
-                  <option value="overtime">overtime</option>
-                  <option value="on_call">on_call</option>
-                </select>
-                <input
-                  className="input-field text-sm"
-                  placeholder="Notes"
-                  value={shiftNotesDraft}
-                  onChange={(e) => setShiftNotesDraft(e.target.value)}
-                />
+              <div className="mb-4 flex items-center justify-end">
                 <button
                   type="button"
-                  className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-on-primary"
-                  onClick={() => void handleAddShift()}
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90"
+                  onClick={openCreateShift}
                 >
                   Add shift
                 </button>
@@ -581,40 +1249,44 @@ export default function CaregiverDetailPane({
                 {shifts.map((s) => (
                   <li
                     key={s.id}
-                    className="flex items-center gap-3 rounded-xl bg-surface-container-low px-3 py-2 text-sm"
+                    className="rounded-xl border border-outline-variant/15 bg-surface-container-low px-4 py-3 text-sm"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-on-surface">{formatDate(s.shift_date)}</p>
-                      <p className="text-xs text-on-surface-variant">
-                        {formatTime(s.start_time)} – {formatTime(s.end_time)}
-                        {s.notes ? ` · ${s.notes}` : ""}
-                      </p>
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                        SHIFT_BADGE[s.shift_type] ?? "bg-surface-container text-outline"
-                      }`}
-                    >
-                      {s.shift_type}
-                    </span>
-                    {canManageSchedule ? (
-                      <div className="ml-auto flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="text-xs font-semibold text-primary hover:underline"
-                          onClick={() => void handleEditShift(s)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="text-xs font-semibold text-critical hover:underline"
-                          onClick={() => void handleDeleteShift(s.id)}
-                        >
-                          Delete
-                        </button>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 space-y-1">
+                        <p className="font-medium text-on-surface">{formatDate(s.shift_date)}</p>
+                        <p className="text-xs text-on-surface-variant">
+                          {formatTime(s.start_time)} – {formatTime(s.end_time)}
+                          {s.notes ? ` · ${s.notes}` : ""}
+                        </p>
                       </div>
-                    ) : null}
+                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                            SHIFT_BADGE[s.shift_type] ?? "bg-surface-container text-outline"
+                          }`}
+                        >
+                          {formatShiftType(s.shift_type)}
+                        </span>
+                        {canManageSchedule ? (
+                          <>
+                            <button
+                              type="button"
+                              className="text-xs font-semibold text-primary hover:underline"
+                              onClick={() => openEditShift(s)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="text-xs font-semibold text-critical hover:underline"
+                              onClick={() => void handleDeleteShift(s.id)}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -676,6 +1348,34 @@ export default function CaregiverDetailPane({
             </ul>
           </section>
         </aside>
+
+        <ZoneDialog
+          open={zoneDialogOpen}
+          mode={zoneDialogMode}
+          draft={zoneDraft}
+          setDraft={setZoneDraft}
+          roomSearch={zoneRoomSearch}
+          setRoomSearch={setZoneRoomSearch}
+          roomOptions={roomOptions}
+          roomLoading={roomsLoading}
+          roomEmptyNoMatch={roomEmptyNoMatch}
+          roomEmptyPool={roomEmptyPool}
+          submitting={zoneSubmitting}
+          error={scheduleError}
+          onClose={() => setZoneDialogOpen(false)}
+          onSubmit={() => void handleSubmitZone()}
+        />
+
+        <ShiftDialog
+          open={shiftDialogOpen}
+          mode={shiftDialogMode}
+          draft={shiftDraft}
+          setDraft={setShiftDraft}
+          submitting={shiftSubmitting}
+          error={scheduleError}
+          onClose={() => setShiftDialogOpen(false)}
+          onSubmit={() => void handleSubmitShift()}
+        />
       </div>
     </div>
   );

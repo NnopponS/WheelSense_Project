@@ -1,49 +1,65 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo } from "react";
-import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useQuery } from "@/hooks/useQuery";
 import { useAuth } from "@/hooks/useAuth";
+import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
-import EmptyState from "@/components/EmptyState";
-import {
-  Users,
-  Tablet,
-  Bell,
-  ArrowRight,
-  AlertTriangle,
-  Clock,
-  History,
-} from "lucide-react";
-import type { Patient, Alert, Device, HardwareType, SmartDevice, DeviceActivityEvent } from "@/lib/types";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { ageYears } from "@/lib/age";
 import { isDeviceOnline } from "@/lib/deviceOnline";
 import { isSmartDeviceOnline } from "@/lib/smartDeviceOnline";
-import Link from "next/link";
-import { ageYears } from "@/lib/age";
-import { useFixedNowMs } from "@/hooks/useFixedNowMs";
-import { fleetTabToQuery, type DeviceFleetTab } from "@/lib/deviceHardwareTabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  Bot,
+  CircleAlert,
+  Clock3,
+  Gauge,
+  ShieldCheck,
+  Tablet,
+  Users,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react";
+import type { Alert, Device, HardwareType, Patient, SmartDevice, User } from "@/lib/types";
+import type {
+  CareDirectiveOut,
+  CareScheduleOut,
+  CareTaskOut,
+  DeviceActivityEventOut,
+  GetAlertSummaryResponse,
+  GetWardSummaryResponse,
+} from "@/lib/api/task-scope-types";
 
-const FLEET_ROWS: Array<{ hardware: HardwareType; labelKey: TranslationKey }> = [
+type CopilotModelsResponse = {
+  models: { id: string; name: string }[];
+  connected: boolean;
+  message?: string | null;
+};
+
+const HARDWARE_ROWS: Array<{ hardware: HardwareType; labelKey: TranslationKey }> = [
   { hardware: "wheelchair", labelKey: "devicesDetail.tabWheelchair" },
   { hardware: "node", labelKey: "devicesDetail.tabNode" },
   { hardware: "polar_sense", labelKey: "devicesDetail.tabPolar" },
   { hardware: "mobile_phone", labelKey: "devicesDetail.tabMobile" },
 ];
 
-function devicesFleetHref(tab: DeviceFleetTab): string {
-  const q = fleetTabToQuery(tab);
-  return q === "all" ? "/admin/devices" : `/admin/devices?tab=${q}`;
-}
-
-const ACTIVITY_TYPE_LABELS: Partial<Record<string, TranslationKey>> = {
-  registry_created: "dash.activity.registry_created",
-  registry_updated: "dash.activity.registry_updated",
-  command_dispatched: "dash.activity.command_dispatched",
-  smart_created: "dash.activity.smart_created",
-  smart_updated: "dash.activity.smart_updated",
-  smart_deleted: "dash.activity.smart_deleted",
-  device_paired: "dash.activity.device_paired",
+const SEVERITY_ICON: Record<string, LucideIcon> = {
+  critical: CircleAlert,
+  warning: AlertTriangle,
 };
+
+function severityRank(value: string): number {
+  if (value === "critical") return 0;
+  if (value === "warning") return 1;
+  return 2;
+}
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -51,23 +67,55 @@ export default function DashboardPage() {
   const nowMs = useFixedNowMs();
 
   const patientsEndpoint = useMemo(
-    () => withWorkspaceScope("/patients", user?.workspace_id),
+    () => withWorkspaceScope("/patients?limit=200", user?.workspace_id),
     [user?.workspace_id],
   );
   const alertsEndpoint = useMemo(
-    () => withWorkspaceScope("/alerts", user?.workspace_id),
+    () => withWorkspaceScope("/alerts?status=active&limit=40", user?.workspace_id),
     [user?.workspace_id],
   );
   const devicesEndpoint = useMemo(
-    () => withWorkspaceScope("/devices", user?.workspace_id),
+    () => withWorkspaceScope("/devices?limit=200", user?.workspace_id),
     [user?.workspace_id],
   );
   const smartEndpoint = useMemo(
     () => withWorkspaceScope("/ha/devices", user?.workspace_id),
     [user?.workspace_id],
   );
+  const usersEndpoint = useMemo(
+    () => withWorkspaceScope("/users", user?.workspace_id),
+    [user?.workspace_id],
+  );
+  const tasksEndpoint = useMemo(
+    () => withWorkspaceScope("/workflow/tasks?status=pending&limit=24", user?.workspace_id),
+    [user?.workspace_id],
+  );
+  const directivesEndpoint = useMemo(
+    () => withWorkspaceScope("/workflow/directives?status=active&limit=24", user?.workspace_id),
+    [user?.workspace_id],
+  );
+  const schedulesEndpoint = useMemo(
+    () => withWorkspaceScope("/workflow/schedules?status=scheduled&limit=24", user?.workspace_id),
+    [user?.workspace_id],
+  );
   const activityEndpoint = useMemo(
-    () => withWorkspaceScope("/devices/activity?limit=28", user?.workspace_id),
+    () => withWorkspaceScope("/devices/activity?limit=12", user?.workspace_id),
+    [user?.workspace_id],
+  );
+  const copilotStatusEndpoint = useMemo(
+    () => withWorkspaceScope("/settings/ai/copilot/status", user?.workspace_id),
+    [user?.workspace_id],
+  );
+  const copilotModelsEndpoint = useMemo(
+    () => withWorkspaceScope("/settings/ai/copilot/models", user?.workspace_id),
+    [user?.workspace_id],
+  );
+  const wardSummaryEndpoint = useMemo(
+    () => withWorkspaceScope("/analytics/wards/summary", user?.workspace_id),
+    [user?.workspace_id],
+  );
+  const alertSummaryEndpoint = useMemo(
+    () => withWorkspaceScope("/analytics/alerts/summary", user?.workspace_id),
     [user?.workspace_id],
   );
 
@@ -75,338 +123,294 @@ export default function DashboardPage() {
   const { data: alerts } = useQuery<Alert[]>(alertsEndpoint);
   const { data: devices } = useQuery<Device[]>(devicesEndpoint);
   const { data: smartDevices } = useQuery<SmartDevice[]>(smartEndpoint);
-  const { data: activity } = useQuery<DeviceActivityEvent[]>(activityEndpoint);
+  const { data: users } = useQuery<User[]>(usersEndpoint);
+  const { data: tasks } = useQuery<CareTaskOut[]>(tasksEndpoint);
+  const { data: directives } = useQuery<CareDirectiveOut[]>(directivesEndpoint);
+  const { data: schedules } = useQuery<CareScheduleOut[]>(schedulesEndpoint);
+  const { data: activity } = useQuery<DeviceActivityEventOut[]>(activityEndpoint);
+  const { data: wardSummary } = useQuery<GetWardSummaryResponse>(wardSummaryEndpoint);
+  const { data: alertSummary } = useQuery<GetAlertSummaryResponse>(alertSummaryEndpoint);
+  const { data: copilotStatus } = useQuery<{ connected: boolean }>(copilotStatusEndpoint);
+  const { data: copilotModels } = useQuery<CopilotModelsResponse>(copilotModelsEndpoint);
 
-  const activeAlerts = alerts?.filter((a) => a.status === "active") || [];
+  const activeAlerts = useMemo(
+    () => (alerts ?? []).filter((item) => item.status === "active"),
+    [alerts],
+  );
+  const urgentAlerts = useMemo(
+    () =>
+      [...activeAlerts]
+        .sort((left, right) => {
+          const rank = severityRank(left.severity) - severityRank(right.severity);
+          return rank !== 0 ? rank : right.timestamp.localeCompare(left.timestamp);
+        })
+        .slice(0, 4),
+    [activeAlerts],
+  );
+  const openTasks = useMemo(
+    () =>
+      [...(tasks ?? [])]
+        .filter((item) => item.status === "pending" || item.status === "in_progress")
+        .sort((left, right) => {
+          const priorityOrder = { critical: 0, high: 1, normal: 2, low: 3 } as const;
+          const leftRank = priorityOrder[left.priority as keyof typeof priorityOrder] ?? 4;
+          const rightRank = priorityOrder[right.priority as keyof typeof priorityOrder] ?? 4;
+          if (leftRank !== rightRank) return leftRank - rightRank;
+          if (!left.due_at) return 1;
+          if (!right.due_at) return -1;
+          return left.due_at.localeCompare(right.due_at);
+        })
+        .slice(0, 4),
+    [tasks],
+  );
+  const activeDirectives = useMemo(
+    () => (directives ?? []).filter((item) => item.status === "active").slice(0, 4),
+    [directives],
+  );
+  const upcomingSchedules = useMemo(
+    () =>
+      [...(schedules ?? [])]
+        .filter((item) => item.status === "scheduled")
+        .sort((left, right) => left.starts_at.localeCompare(right.starts_at))
+        .slice(0, 4),
+    [schedules],
+  );
+  const recentPatients = useMemo(() => (patients ?? []).slice(0, 5), [patients]);
+  const latestActivity = useMemo(
+    () =>
+      [...(activity ?? [])]
+        .sort((left, right) => right.occurred_at.localeCompare(left.occurred_at))
+        .slice(0, 4),
+    [activity],
+  );
 
-  const fleetByHardware = useMemo(() => {
-    if (!devices) return null;
-    return FLEET_ROWS.map(({ hardware }) => {
-      const list = devices.filter((d) => d.hardware_type === hardware);
-      const online = list.filter((d) => isDeviceOnline(d.last_seen, nowMs)).length;
-      const total = list.length;
-      return { hardware, total, online, offline: total - online };
-    });
-  }, [devices, nowMs]);
-
+  const patientMap = useMemo(
+    () => new Map((patients ?? []).map((patient) => [patient.id, patient])),
+    [patients],
+  );
+  const fleetByType = useMemo(
+    () =>
+      HARDWARE_ROWS.map(({ hardware, labelKey }) => {
+        const rows = (devices ?? []).filter((device) => device.hardware_type === hardware);
+        const online = rows.filter((device) => isDeviceOnline(device.last_seen, nowMs)).length;
+        return { hardware, labelKey, total: rows.length, online, offline: rows.length - online };
+      }),
+    [devices, nowMs],
+  );
   const smartStats = useMemo(() => {
     const list = smartDevices ?? [];
-    const online = list.filter((d) => isSmartDeviceOnline(d)).length;
+    const online = list.filter((device) => isSmartDeviceOnline(device)).length;
     return { total: list.length, online, offline: list.length - online };
   }, [smartDevices]);
-
-  function activityTypeLabel(eventType: string): string {
-    const key = ACTIVITY_TYPE_LABELS[eventType];
-    return key ? t(key) : t("dash.activity.other");
-  }
+  const activeUsers = useMemo(() => (users ?? []).filter((item) => item.is_active), [users]);
+  const linkedUsers = useMemo(
+    () => activeUsers.filter((item) => item.caregiver_id != null || item.patient_id != null),
+    [activeUsers],
+  );
+  const copilotModelCount = copilotModels?.models?.length ?? 0;
+  const copilotHealthy = Boolean(copilotStatus?.connected) && copilotModelCount > 0;
+  const copilotLimited = Boolean(copilotStatus?.connected) && copilotModelCount === 0;
+  const workflowItems = useMemo(
+    () => [
+      ...openTasks.map((item) => ({
+        key: `task-${item.id}`,
+        title: item.title,
+        subtitle: item.description || t("admin.noDescription"),
+        badge: item.priority,
+        variant: item.priority === "critical" ? ("destructive" as const) : item.priority === "high" ? ("warning" as const) : ("outline" as const),
+        icon: Workflow,
+      })),
+      ...activeDirectives.map((item) => ({
+        key: `directive-${item.id}`,
+        title: item.title,
+        subtitle: item.directive_text || t("admin.noDescription"),
+        badge: item.status,
+        variant: "secondary" as const,
+        icon: ShieldCheck,
+      })),
+      ...upcomingSchedules.map((item) => ({
+        key: `schedule-${item.id}`,
+        title: item.title,
+        subtitle: item.notes || t("admin.noDescription"),
+        badge: item.schedule_type,
+        variant: "outline" as const,
+        icon: Clock3,
+      })),
+    ],
+    [activeDirectives, openTasks, upcomingSchedules, t],
+  );
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-on-surface">{t("dash.title")}</h2>
-        <p className="text-sm text-on-surface-variant mt-1">{t("dash.subtitle")}</p>
-      </div>
-
-      {/* Merged Patients | Devices + fleet + smart */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-        <section className="surface-card p-6 flex flex-col min-h-[320px]">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-outline-variant/15 pb-5 mb-5">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary-fixed text-primary shrink-0">
-                <Users className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-on-surface-variant">
-                  {t("dash.totalPatients")}
-                </p>
-                <p className="text-3xl font-bold text-on-surface tabular-nums mt-1">
-                  {patients?.length ?? "—"}
-                </p>
-                <p className="text-xs text-outline mt-2 max-w-xs leading-relaxed">
-                  {t("dash.patientsCardHint")}
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/admin/patients"
-              className="text-xs font-semibold text-primary flex items-center gap-1 hover:underline shrink-0"
-            >
-              {t("dash.viewAll")} <ArrowRight className="w-3 h-3" />
-            </Link>
+    <div className="space-y-6 pb-6 animate-fade-in">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <Gauge className="h-3.5 w-3.5" />
+            {t("admin.dashboardBadge")}
           </div>
-          <div className="flex-1 min-h-0">
-            <p className="text-[11px] font-semibold text-outline uppercase tracking-widest mb-3">
-              {t("dash.recentPatients")}
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
+              {t("admin.dashboardTitle")}
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+              {t("admin.dashboardSubtitle")}
             </p>
-            {!patients || patients.length === 0 ? (
-              <EmptyState icon={Users} message={t("dash.noPatients")} />
-            ) : (
-              <div className="space-y-1 max-h-[240px] overflow-y-auto pr-1">
-                {patients.slice(0, 6).map((patient) => (
-                  <Link
-                    key={patient.id}
-                    href={`/admin/patients/${patient.id}`}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-smooth hover:bg-surface-container-low"
-                  >
-                    <div className="w-9 h-9 rounded-full gradient-cta flex items-center justify-center text-white text-xs font-bold shrink-0">
-                      {(patient.first_name?.[0] || "P").toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-on-surface truncate">
-                        {patient.first_name} {patient.last_name}
-                      </p>
-                      <p className="text-xs text-on-surface-variant">
-                        {t("patients.age")}:{" "}
-                        {ageYears(patient.date_of_birth, nowMs) ?? "—"} {t("patients.years")}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
-                        patient.care_level === "critical"
-                          ? "care-critical"
-                          : patient.care_level === "special"
-                            ? "care-special"
-                            : "care-normal"
-                      }`}
-                    >
-                      {patient.care_level || "normal"}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
-        </section>
-
-        <section className="surface-card p-6 flex flex-col">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-outline-variant/15 pb-5 mb-5">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-info-bg text-info shrink-0">
-                <Tablet className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-on-surface-variant">
-                  {t("dash.totalDevices")}
-                </p>
-                <p className="text-3xl font-bold text-on-surface tabular-nums mt-1">
-                  {devices?.length ?? "—"}
-                </p>
-                {smartStats.total > 0 ? (
-                  <p className="text-xs text-on-surface-variant mt-1.5 tabular-nums">
-                    + {smartStats.total}{" "}
-                    <Link
-                      href={devicesFleetHref("smart_ha")}
-                      className="text-primary font-medium hover:underline"
-                    >
-                      {t("devicesDetail.tabSmartDevice")}
-                    </Link>
-                  </p>
-                ) : null}
-                <p className="text-xs text-outline mt-2 max-w-sm leading-relaxed">
-                  {t("dash.devicesCardHint")}
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/admin/devices"
-              className="text-xs font-semibold text-primary flex items-center gap-1 hover:underline shrink-0"
-            >
-              {t("dash.viewAll")} <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          <p className="text-[11px] font-semibold text-outline uppercase tracking-widest mb-3">
-            {t("dash.deviceFleetByType")}
-          </p>
-          <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider bg-surface-container-low/25 border-b border-outline-variant/10">
-                    <th className="px-3 py-2.5 pr-4">{t("devicesDetail.hardware")}</th>
-                    <th className="px-3 py-2.5 px-2 text-right tabular-nums">{t("dash.fleetTotal")}</th>
-                    <th className="px-3 py-2.5 px-2 text-right tabular-nums">{t("devices.online")}</th>
-                    <th className="px-3 py-2.5 pl-2 text-right tabular-nums">{t("devices.offline")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {FLEET_ROWS.map(({ hardware, labelKey }) => {
-                    const row = fleetByHardware?.find((r) => r.hardware === hardware);
-                    const href = devicesFleetHref(hardware);
-                    return (
-                      <tr
-                        key={hardware}
-                        className="border-b border-outline-variant/10 last:border-b-0 hover:bg-surface-container-low/50 transition-smooth"
-                      >
-                        <td className="p-0">
-                          <Link
-                            href={href}
-                            className="block px-3 py-2.5 pr-4 font-medium text-on-surface hover:underline"
-                          >
-                            {t(labelKey)}
-                          </Link>
-                        </td>
-                        <td className="p-0 text-right tabular-nums">
-                          <Link href={href} className="block px-3 py-2.5 text-on-surface">
-                            {row ? row.total : "—"}
-                          </Link>
-                        </td>
-                        <td className="p-0 text-right tabular-nums">
-                          <Link href={href} className="block px-3 py-2.5 text-success">
-                            {row ? row.online : "—"}
-                          </Link>
-                        </td>
-                        <td className="p-0 text-right tabular-nums">
-                          <Link href={href} className="block px-3 py-2.5 text-on-surface-variant">
-                            {row ? row.offline : "—"}
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  <tr className="hover:bg-surface-container-low/50 transition-smooth bg-surface-container-low/10">
-                    <td className="p-0">
-                      <Link
-                        href={devicesFleetHref("smart_ha")}
-                        className="block px-3 py-2.5 pr-4 font-medium text-on-surface hover:underline"
-                      >
-                        {t("devicesDetail.tabSmartDevice")}
-                      </Link>
-                    </td>
-                    <td className="p-0 text-right tabular-nums">
-                      <Link
-                        href={devicesFleetHref("smart_ha")}
-                        className="block px-3 py-2.5 text-on-surface"
-                      >
-                        {smartDevices ? smartStats.total : "—"}
-                      </Link>
-                    </td>
-                    <td className="p-0 text-right tabular-nums">
-                      <Link
-                        href={devicesFleetHref("smart_ha")}
-                        className="block px-3 py-2.5 text-success"
-                      >
-                        {smartDevices ? smartStats.online : "—"}
-                      </Link>
-                    </td>
-                    <td className="p-0 text-right tabular-nums">
-                      <Link
-                        href={devicesFleetHref("smart_ha")}
-                        className="block px-3 py-2.5 text-on-surface-variant"
-                      >
-                        {smartDevices ? smartStats.offline : "—"}
-                      </Link>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/patients">{t("admin.openPatients")}</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/devices">{t("admin.openDevices")}</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/workflow">{t("admin.openWorkflow")}</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/admin/settings">{t("admin.openSettings")}</Link>
+          </Button>
+        </div>
       </div>
 
-      {/* Activity + alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <section className="lg:col-span-3 surface-card p-6">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">
-              <History className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-on-surface uppercase tracking-wide">
-                {t("dash.deviceActivity")}
-              </h3>
-              <p className="text-xs text-on-surface-variant mt-1 leading-relaxed max-w-xl">
-                {t("dash.deviceActivityHint")}
-              </p>
-            </div>
-          </div>
-          {!activity || activity.length === 0 ? (
-            <EmptyState icon={History} message={t("dash.deviceActivityEmpty")} />
-          ) : (
-            <ul className="space-y-0 border-l-2 border-primary/25 ml-2 pl-5">
-              {activity.map((ev) => {
-                const when = new Date(ev.occurred_at);
-                return (
-                  <li key={ev.id} className="relative pb-6 last:pb-0">
-                    <span
-                      className="absolute -left-[1.4rem] top-1.5 w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-surface-container-lowest"
-                      aria-hidden
-                    />
-                    <div className="flex flex-wrap items-baseline gap-2 gap-y-1">
-                      <time
-                        className="text-sm font-semibold text-on-surface tabular-nums"
-                        dateTime={ev.occurred_at}
-                      >
-                        {when.toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </time>
-                      <span className="text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md bg-primary-fixed/40 text-primary">
-                        {activityTypeLabel(ev.event_type)}
-                      </span>
-                    </div>
-                    <p className="text-base text-on-surface mt-2 leading-snug">{ev.summary}</p>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card><CardContent className="flex items-start gap-4 p-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/12 text-red-600"><AlertTriangle className="h-5 w-5" /></div>
+          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.urgentAlerts")}</p><p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{activeAlerts.length}</p><p className="mt-1 text-xs text-muted-foreground">{wardSummary ? `${wardSummary.critical_patients} ${t("admin.criticalPatients")}` : t("admin.urgentAlertsHint")}</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="flex items-start gap-4 p-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600"><Users className="h-5 w-5" /></div>
+          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.patientCoverage")}</p><p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{wardSummary?.total_patients ?? patients?.length ?? "—"}</p><p className="mt-1 text-xs text-muted-foreground">{patients ? `${patients.filter((p) => p.room_id != null).length} ${t("admin.roomLinkedPatients")}` : t("admin.coverageHint")}</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="flex items-start gap-4 p-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600"><Tablet className="h-5 w-5" /></div>
+          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.fleetHealth")}</p><p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{devices?.length ?? "—"}</p><p className="mt-1 text-xs text-muted-foreground">{fleetByType.reduce((sum, row) => sum + row.online, 0)} {t("admin.devicesOnline")}</p></div>
+        </CardContent></Card>
+        <Card><CardContent className="flex items-start gap-4 p-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/12 text-violet-600"><Bot className="h-5 w-5" /></div>
+          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.copilotStatus")}</p><p className="mt-1 text-2xl font-semibold text-foreground">{copilotStatus?.connected ? t("admin.connected") : t("admin.notConnected")}</p><p className="mt-1 text-xs text-muted-foreground">{copilotLimited ? t("admin.connectedButModelsUnavailable") : copilotModels?.message || `${copilotModelCount} ${t("admin.copilotModels")}`}</p></div>
+        </CardContent></Card>
+      </div>
 
-        <section className="lg:col-span-2 surface-card p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-sm font-semibold text-on-surface uppercase tracking-wide">
-              {t("dash.recentAlerts")}
-            </h3>
-            <Link
-              href="/admin/alerts"
-              className="text-xs font-medium text-primary flex items-center gap-1 hover:underline"
-            >
-              {t("dash.viewAll")} <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          {activeAlerts.length === 0 ? (
-            <EmptyState icon={Bell} message={t("dash.noAlerts")} />
-          ) : (
-            <div className="space-y-2">
-              {activeAlerts.slice(0, 5).map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-surface-container-low transition-smooth hover:bg-surface-container"
-                >
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      alert.severity === "critical"
-                        ? "bg-critical-bg text-critical"
-                        : alert.severity === "warning"
-                          ? "bg-warning-bg text-warning"
-                          : "bg-info-bg text-info"
-                    }`}
-                  >
-                    <AlertTriangle className="w-4 h-4" />
+      <div className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
+        <Card className="border-border/70">
+          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+            <div>
+              <CardTitle className="text-base">{t("admin.urgentAlerts")}</CardTitle>
+              <CardDescription>{t("admin.urgentAlertsHint")}</CardDescription>
+            </div>
+            <Button asChild size="sm" variant="outline"><Link href="/admin/alerts">{t("admin.openAlerts")}<ArrowRight className="h-4 w-4" /></Link></Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {urgentAlerts.length ? urgentAlerts.map((alert) => {
+              const patient = alert.patient_id ? patientMap.get(alert.patient_id) : null;
+              const Icon = SEVERITY_ICON[alert.severity] ?? Clock3;
+              return (
+                <Link key={alert.id} href={alert.patient_id ? `/admin/patients/${alert.patient_id}` : "/admin/alerts"} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40">
+                  <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Icon className="h-4 w-4" /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium text-foreground">{alert.title}</p><Badge variant={alert.severity === "critical" ? "destructive" : alert.severity === "warning" ? "warning" : "secondary"}>{alert.severity}</Badge></div>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{alert.description}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{patient ? `${patient.first_name} ${patient.last_name}` : t("admin.unlinkedPatient")}</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-on-surface truncate">{alert.alert_type}</p>
-                    <p className="text-xs text-on-surface-variant truncate">{alert.description}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-outline shrink-0">
-                    <Clock className="w-3 h-3" />
-                    {new Date(alert.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                </Link>
+              );
+            }) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("admin.noUrgentAlerts")}</p>}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70">
+          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+            <div>
+              <CardTitle className="text-base">{t("admin.workflowQueue")}</CardTitle>
+              <CardDescription>{t("admin.workflowQueueHint")}</CardDescription>
+            </div>
+            <Button asChild size="sm" variant="outline"><Link href="/admin/workflow">{t("admin.openWorkflow")}<ArrowRight className="h-4 w-4" /></Link></Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {workflowItems.length ? workflowItems.slice(0, 8).map((item) => (
+                <div key={item.key} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3">
+                  <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><item.icon className="h-4 w-4" /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium text-foreground">{item.title}</p><Badge variant={item.variant}>{item.badge}</Badge></div>
+                    <p className="mt-1 text-sm text-muted-foreground">{item.subtitle}</p>
                   </div>
                 </div>
-              ))}
+              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("admin.noWorkflowItems")}</p>}          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3"><CardTitle className="text-base">{t("admin.fleetHealth")}</CardTitle><CardDescription>{t("admin.fleetHealthHint")}</CardDescription></CardHeader>
+          <CardContent className="space-y-2">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.devicesOnline")}</p><p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{fleetByType.reduce((sum, row) => sum + row.online, 0)}</p></div>
+              <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.devicesOffline")}</p><p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{fleetByType.reduce((sum, row) => sum + row.offline, 0)}</p></div>
+              <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.smartFleet")}</p><p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{smartStats.online}/{smartStats.total}</p></div>
             </div>
-          )}
-        </section>
+            {fleetByType.map((row) => (
+              <Link key={row.hardware} href={`/admin/devices?tab=${row.hardware}`} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40">
+                <div><p className="font-medium text-foreground">{t(row.labelKey)}</p><p className="text-xs text-muted-foreground">{row.online} {t("devices.online")} / {row.offline} {t("devices.offline")}</p></div>
+                <Badge variant={row.offline > 0 ? "warning" : "success"}>{row.total}</Badge>
+              </Link>
+            ))}
+            <div className="flex items-center justify-between rounded-xl border border-border/70 px-3 py-3"><div><p className="font-medium text-foreground">{t("devicesDetail.tabSmartDevice")}</p><p className="text-xs text-muted-foreground">{smartStats.online} {t("devices.online")} / {smartStats.offline} {t("devices.offline")}</p></div><Badge variant={smartStats.offline > 0 ? "warning" : "success"}>{smartStats.total}</Badge></div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3"><CardTitle className="text-base">{t("admin.accountLinkStatus")}</CardTitle><CardDescription>{t("admin.accountLinkStatusHint")}</CardDescription></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.activeAccounts")}</p><p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{activeUsers.length}</p></div>
+              <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.unlinkedAccounts")}</p><p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{Math.max(activeUsers.length - linkedUsers.length, 0)}</p></div>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-border/70 px-3 py-3"><div><p className="font-medium text-foreground">{t("admin.caregiverLinkedAccounts")}</p><p className="text-xs text-muted-foreground">{t("admin.caregiverAccessSnapshot")}</p></div><Badge variant="outline">{activeUsers.filter((item) => item.caregiver_id != null).length}</Badge></div>
+            <div className="flex items-center justify-between rounded-xl border border-border/70 px-3 py-3"><div><p className="font-medium text-foreground">{t("admin.patientLinkedAccounts")}</p><p className="text-xs text-muted-foreground">{t("admin.patientLinkSnapshot")}</p></div><Badge variant="outline">{activeUsers.filter((item) => item.patient_id != null).length}</Badge></div>
+            <div className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{alertSummary ? `${alertSummary.total_active} ${t("admin.alertsActive")} · ${alertSummary.total_resolved} ${t("admin.alertsResolved")}` : t("admin.accountLinkFallback")}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3"><CardTitle className="text-base">{t("admin.aiShortcutTitle")}</CardTitle><CardDescription>{t("admin.aiShortcutHint")}</CardDescription></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between rounded-xl border border-border/70 px-3 py-3"><div><p className="font-medium text-foreground">{t("admin.copilotStatus")}</p><p className="text-xs text-muted-foreground">{copilotModels?.message || t("admin.copilotModelHint")}</p></div><Badge variant={copilotHealthy ? "success" : copilotLimited ? "warning" : "destructive"}>{copilotStatus?.connected ? t("admin.connected") : t("admin.notConnected")}</Badge></div>
+            <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.copilotModels")}</p><p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{copilotModelCount}</p><p className="mt-1 text-xs text-muted-foreground">{copilotLimited ? t("admin.connectedButModelsUnavailable") : t("admin.copilotModelCountHint")}</p></div>
+            <Button asChild variant="outline" className="w-full justify-between"><Link href="/admin/settings"><span className="inline-flex items-center gap-2"><Bot className="h-4 w-4" />{t("admin.openAiSettings")}</span><ArrowRight className="h-4 w-4" /></Link></Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3"><CardTitle className="text-base">{t("admin.recentPatients")}</CardTitle><CardDescription>{t("admin.recentPatientsHint")}</CardDescription></CardHeader>
+          <CardContent className="space-y-2">
+            {recentPatients.length ? recentPatients.map((patient) => (
+              <Link key={patient.id} href={`/admin/patients/${patient.id}`} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40">
+                <div className="min-w-0"><p className="truncate font-medium text-foreground">{patient.first_name} {patient.last_name}</p><p className="text-xs text-muted-foreground">{t("patients.age")}: {ageYears(patient.date_of_birth, nowMs) ?? "—"} {t("patients.years")}{patient.room_id != null ? ` · ${t("admin.roomLinked")}` : ""}</p></div>
+                <Badge variant={patient.care_level === "critical" ? "destructive" : patient.care_level === "special" ? "warning" : "outline"}>{patient.care_level}</Badge>
+              </Link>
+            )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("admin.noPatients")}</p>}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3"><CardTitle className="text-base">{t("admin.activityFeed")}</CardTitle><CardDescription>{t("admin.activityFeedHint")}</CardDescription></CardHeader>
+          <CardContent className="space-y-2">
+            {latestActivity.length ? latestActivity.map((entry) => (
+              <div key={entry.id} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3">
+                <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Activity className="h-4 w-4" /></div>
+                <div className="min-w-0 flex-1"><p className="truncate font-medium text-foreground">{entry.event_type}</p><p className="mt-1 text-xs text-muted-foreground">{entry.summary || t("admin.noDescription")}</p></div>
+              </div>
+            )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("admin.noActivity")}</p>}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
+
+
+
+

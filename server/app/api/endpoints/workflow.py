@@ -11,8 +11,10 @@ from app.api.dependencies import (
     RequireRole,
     ROLE_ALL_AUTHENTICATED,
     ROLE_CLINICAL_STAFF,
+    assert_patient_record_access_db,
     get_current_user_workspace,
     get_db,
+    get_visible_patient_ids,
 )
 from app.models.core import Workspace
 from app.models.users import User
@@ -55,10 +57,18 @@ async def list_schedules(
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+    current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
+    if patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await schedule_service.list_schedules(
-        db, ws_id=ws.id, status=status, patient_id=patient_id, limit=limit
+        db,
+        ws_id=ws.id,
+        status=status,
+        patient_id=patient_id,
+        visible_patient_ids=visible_patient_ids,
+        limit=limit,
     )
 
 @router.post("/schedules", response_model=CareScheduleOut, status_code=201)
@@ -68,6 +78,8 @@ async def create_schedule(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
 ):
+    if data.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, data.patient_id)
     return await schedule_service.create_schedule(db, ws_id=ws.id, actor_user_id=current_user.id, obj_in=data)
 
 @router.patch("/schedules/{schedule_id}", response_model=CareScheduleOut)
@@ -87,6 +99,8 @@ async def update_schedule(
             status_code=422,
             detail="Patch status separately from other schedule fields",
         )
+    if schedule.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, schedule.patient_id)
     if data.status is not None:
         return await schedule_service.set_status(db, ws_id=ws.id, actor_user_id=current_user.id, schedule_id=schedule_id, status=data.status)
     updated = await schedule_service.update(db, ws_id=ws.id, db_obj=schedule, obj_in=data)
@@ -113,12 +127,14 @@ async def list_tasks(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await care_task_service.list_visible_tasks(
         db,
         ws_id=ws.id,
         user_id=current_user.id,
         user_role=current_user.role,
         status=status,
+        visible_patient_ids=visible_patient_ids,
         limit=limit,
     )
 
@@ -129,6 +145,8 @@ async def create_task(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
 ):
+    if data.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, data.patient_id)
     return await care_task_service.create_task(db, ws_id=ws.id, actor_user_id=current_user.id, obj_in=data)
 
 @router.patch("/tasks/{task_id}", response_model=CareTaskOut)
@@ -142,6 +160,8 @@ async def update_task(
     task = await care_task_service.get(db, ws_id=ws.id, id=task_id)
     if not task:
         raise HTTPException(404, "Task not found")
+    if task.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, task.patient_id)
     can_access = await care_task_service.can_user_access_task(
         db,
         ws_id=ws.id,
@@ -182,6 +202,8 @@ async def send_message(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
+    if data.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, data.patient_id)
     return await role_message_service.send_message(db, ws_id=ws.id, sender_user_id=current_user.id, obj_in=data)
 
 @router.post("/messages/{message_id}/read", response_model=RoleMessageOut)
@@ -210,8 +232,16 @@ async def list_handover_notes(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
+    if patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await handover_note_service.list_notes(
-        db, ws_id=ws.id, role=current_user.role, patient_id=patient_id, limit=limit
+        db,
+        ws_id=ws.id,
+        role=current_user.role,
+        patient_id=patient_id,
+        visible_patient_ids=visible_patient_ids,
+        limit=limit,
     )
 
 @router.post("/handovers", response_model=HandoverNoteOut, status_code=201)
@@ -221,6 +251,8 @@ async def create_handover_note(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
+    if data.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, data.patient_id)
     return await handover_note_service.create_note(db, ws_id=ws.id, actor_user_id=current_user.id, obj_in=data)
 
 @router.get("/directives", response_model=list[CareDirectiveOut])
@@ -231,12 +263,14 @@ async def list_directives(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await care_directive_service.list_visible(
         db,
         ws_id=ws.id,
         user_id=current_user.id,
         user_role=current_user.role,
         status=status,
+        visible_patient_ids=visible_patient_ids,
         limit=limit,
     )
 
@@ -247,6 +281,8 @@ async def create_directive(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_DIRECTIVE_WRITE)),
 ):
+    if data.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, data.patient_id)
     return await care_directive_service.create_directive(
         db, ws_id=ws.id, actor_user_id=current_user.id, obj_in=data
     )
@@ -262,6 +298,8 @@ async def update_directive(
     directive = await care_directive_service.get(db, ws_id=ws.id, id=directive_id)
     if not directive:
         raise HTTPException(404, "Directive not found")
+    if directive.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, directive.patient_id)
     updated = await care_directive_service.update(db, ws_id=ws.id, db_obj=directive, obj_in=data)
     await audit_trail_service.log_event(
         db,
@@ -286,6 +324,9 @@ async def acknowledge_directive(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
+    directive_row = await care_directive_service.get(db, ws_id=ws.id, id=directive_id)
+    if directive_row and directive_row.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, directive_row.patient_id)
     directive = await care_directive_service.acknowledge(
         db,
         ws_id=ws.id,
@@ -307,8 +348,11 @@ async def query_audit_trail(
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_AUDIT_QUERY)),
+    current_user: User = Depends(RequireRole(ROLE_AUDIT_QUERY)),
 ):
+    if patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await audit_trail_service.query_events(
         db,
         ws_id=ws.id,
@@ -316,6 +360,7 @@ async def query_audit_trail(
         action=action,
         entity_type=entity_type,
         patient_id=patient_id,
+        visible_patient_ids=visible_patient_ids,
         limit=limit,
     )
 

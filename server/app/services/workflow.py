@@ -9,6 +9,8 @@ from fastapi import HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.patients import Patient
+from app.models.users import User
 from app.models.workflow import (
     AuditTrailEvent,
     CareDirective,
@@ -29,8 +31,132 @@ from app.schemas.workflow import (
 )
 from app.services.base import CRUDBase
 
+CANONICAL_WORKFLOW_ROLES = {"admin", "head_nurse", "supervisor", "observer", "patient"}
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+def _patient_scope_condition(model, visible_patient_ids: set[int] | None):
+    if visible_patient_ids is None:
+        return None
+    if not visible_patient_ids:
+        return model.patient_id.is_(None)
+    return or_(model.patient_id.is_(None), model.patient_id.in_(visible_patient_ids))
+
+def _validate_role(role: str | None, field_name: str) -> None:
+    if role is None:
+        return
+    if role not in CANONICAL_WORKFLOW_ROLES:
+        raise HTTPException(status_code=422, detail=f"Invalid {field_name}")
+
+def _validate_role_user_pair(
+    *,
+    role: str | None,
+    user_id: int | None,
+    role_field: str,
+    user_field: str,
+) -> None:
+    _validate_role(role, role_field)
+    if role is not None and user_id is not None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Set either {role_field} or {user_field}, not both",
+        )
+
+async def _validate_workspace_user(
+    session: AsyncSession,
+    ws_id: int,
+    user_id: int | None,
+    field_name: str,
+) -> None:
+    if user_id is None:
+        return
+    exists = (
+        await session.execute(
+            select(User.id).where(
+                User.workspace_id == ws_id,
+                User.id == user_id,
+                User.is_active.is_(True),
+            )
+        )
+    ).scalar_one_or_none()
+    if exists is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{field_name} not found in current workspace",
+        )
+
+async def _validate_workspace_patient(
+    session: AsyncSession,
+    ws_id: int,
+    patient_id: int | None,
+) -> None:
+    if patient_id is None:
+        return
+    exists = (
+        await session.execute(
+            select(Patient.id).where(
+                Patient.workspace_id == ws_id,
+                Patient.id == patient_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if exists is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Patient not found in current workspace",
+        )
+
+async def _validate_schedule_target(
+    session: AsyncSession,
+    ws_id: int,
+    *,
+    assigned_role: str | None,
+    assigned_user_id: int | None,
+    patient_id: int | None,
+) -> None:
+    _validate_role_user_pair(
+        role=assigned_role,
+        user_id=assigned_user_id,
+        role_field="assigned_role",
+        user_field="assigned_user_id",
+    )
+    await _validate_workspace_user(session, ws_id, assigned_user_id, "assigned_user_id")
+    await _validate_workspace_patient(session, ws_id, patient_id)
+
+async def _validate_task_target(
+    session: AsyncSession,
+    ws_id: int,
+    *,
+    assigned_role: str | None,
+    assigned_user_id: int | None,
+    patient_id: int | None,
+) -> None:
+    _validate_role_user_pair(
+        role=assigned_role,
+        user_id=assigned_user_id,
+        role_field="assigned_role",
+        user_field="assigned_user_id",
+    )
+    await _validate_workspace_user(session, ws_id, assigned_user_id, "assigned_user_id")
+    await _validate_workspace_patient(session, ws_id, patient_id)
+
+async def _validate_directive_target(
+    session: AsyncSession,
+    ws_id: int,
+    *,
+    target_role: str | None,
+    target_user_id: int | None,
+    patient_id: int | None,
+) -> None:
+    _validate_role_user_pair(
+        role=target_role,
+        user_id=target_user_id,
+        role_field="target_role",
+        user_field="target_user_id",
+    )
+    await _validate_workspace_user(session, ws_id, target_user_id, "target_user_id")
+    await _validate_workspace_patient(session, ws_id, patient_id)
 
 class AuditTrailService(CRUDBase[AuditTrailEvent, AuditTrailEvent, AuditTrailEvent]):
     async def log_event(
@@ -69,9 +195,13 @@ class AuditTrailService(CRUDBase[AuditTrailEvent, AuditTrailEvent, AuditTrailEve
         action: Optional[str] = None,
         entity_type: Optional[str] = None,
         patient_id: Optional[int] = None,
+        visible_patient_ids: set[int] | None = None,
         limit: int = 100,
     ) -> list[AuditTrailEvent]:
         stmt = select(AuditTrailEvent).where(AuditTrailEvent.workspace_id == ws_id)
+        patient_scope = _patient_scope_condition(AuditTrailEvent, visible_patient_ids)
+        if patient_scope is not None:
+            stmt = stmt.where(patient_scope)
         if domain:
             stmt = stmt.where(AuditTrailEvent.domain == domain)
         if action:
@@ -92,9 +222,13 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
         *,
         status: Optional[str] = None,
         patient_id: Optional[int] = None,
+        visible_patient_ids: set[int] | None = None,
         limit: int = 100,
     ) -> list[CareSchedule]:
         stmt = select(CareSchedule).where(CareSchedule.workspace_id == ws_id)
+        patient_scope = _patient_scope_condition(CareSchedule, visible_patient_ids)
+        if patient_scope is not None:
+            stmt = stmt.where(patient_scope)
         if patient_id is not None:
             stmt = stmt.where(CareSchedule.patient_id == patient_id)
         if status:
@@ -106,6 +240,13 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
     async def create_schedule(
         self, session: AsyncSession, ws_id: int, actor_user_id: int, obj_in: CareScheduleCreate
     ) -> CareSchedule:
+        await _validate_schedule_target(
+            session,
+            ws_id,
+            assigned_role=obj_in.assigned_role,
+            assigned_user_id=obj_in.assigned_user_id,
+            patient_id=obj_in.patient_id,
+        )
         db_obj = CareSchedule(**obj_in.model_dump(), workspace_id=ws_id, created_by_user_id=actor_user_id)
         session.add(db_obj)
         await session.flush()
@@ -147,6 +288,28 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
         await session.refresh(schedule)
         return schedule
 
+    async def update(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        db_obj: CareSchedule,
+        obj_in: CareScheduleUpdate | dict,
+    ) -> CareSchedule:
+        patch = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
+        if (
+            "assigned_role" in patch
+            or "assigned_user_id" in patch
+            or "patient_id" in patch
+        ):
+            await _validate_schedule_target(
+                session,
+                ws_id,
+                assigned_role=patch.get("assigned_role", db_obj.assigned_role),
+                assigned_user_id=patch.get("assigned_user_id", db_obj.assigned_user_id),
+                patient_id=patch.get("patient_id", db_obj.patient_id),
+            )
+        return await super().update(session, ws_id=ws_id, db_obj=db_obj, obj_in=patch)
+
 class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
     @staticmethod
     def _is_task_visible(task: CareTask, *, user_id: int, user_role: str) -> bool:
@@ -157,6 +320,13 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
     async def create_task(
         self, session: AsyncSession, ws_id: int, actor_user_id: int, obj_in: CareTaskCreate
     ) -> CareTask:
+        await _validate_task_target(
+            session,
+            ws_id,
+            assigned_role=obj_in.assigned_role,
+            assigned_user_id=obj_in.assigned_user_id,
+            patient_id=obj_in.patient_id,
+        )
         db_obj = CareTask(**obj_in.model_dump(), workspace_id=ws_id, created_by_user_id=actor_user_id)
         session.add(db_obj)
         await session.flush()
@@ -182,6 +352,18 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         if not task:
             return None
         patch = obj_in.model_dump(exclude_unset=True)
+        if (
+            "assigned_role" in patch
+            or "assigned_user_id" in patch
+            or "patient_id" in patch
+        ):
+            await _validate_task_target(
+                session,
+                ws_id,
+                assigned_role=patch.get("assigned_role", task.assigned_role),
+                assigned_user_id=patch.get("assigned_user_id", task.assigned_user_id),
+                patient_id=patch.get("patient_id", task.patient_id),
+            )
         for key, value in patch.items():
             setattr(task, key, value)
         if "status" in patch:
@@ -213,9 +395,13 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         user_id: int,
         user_role: str,
         status: Optional[str] = None,
+        visible_patient_ids: set[int] | None = None,
         limit: int = 100,
     ) -> list[CareTask]:
         stmt = select(CareTask).where(CareTask.workspace_id == ws_id)
+        patient_scope = _patient_scope_condition(CareTask, visible_patient_ids)
+        if patient_scope is not None:
+            stmt = stmt.where(patient_scope)
         if user_role not in {"admin", "head_nurse", "supervisor"}:
             stmt = stmt.where(
                 or_(CareTask.assigned_user_id == user_id, CareTask.assigned_role == user_role)
@@ -238,6 +424,24 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
     async def send_message(
         self, session: AsyncSession, ws_id: int, sender_user_id: int, obj_in: RoleMessageCreate
     ) -> RoleMessage:
+        _validate_role_user_pair(
+            role=obj_in.recipient_role,
+            user_id=obj_in.recipient_user_id,
+            role_field="recipient_role",
+            user_field="recipient_user_id",
+        )
+        if obj_in.recipient_role is None and obj_in.recipient_user_id is None:
+            raise HTTPException(
+                status_code=422,
+                detail="recipient_role or recipient_user_id is required",
+            )
+        await _validate_workspace_user(
+            session,
+            ws_id,
+            obj_in.recipient_user_id,
+            "recipient_user_id",
+        )
+        await _validate_workspace_patient(session, ws_id, obj_in.patient_id)
         db_obj = RoleMessage(
             workspace_id=ws_id,
             sender_user_id=sender_user_id,
@@ -322,6 +526,8 @@ class HandoverNoteService(CRUDBase[HandoverNote, HandoverNoteCreate, HandoverNot
     async def create_note(
         self, session: AsyncSession, ws_id: int, actor_user_id: int, obj_in: HandoverNoteCreate
     ) -> HandoverNote:
+        _validate_role(obj_in.target_role, "target_role")
+        await _validate_workspace_patient(session, ws_id, obj_in.patient_id)
         db_obj = HandoverNote(**obj_in.model_dump(), workspace_id=ws_id, author_user_id=actor_user_id)
         session.add(db_obj)
         await session.flush()
@@ -341,9 +547,19 @@ class HandoverNoteService(CRUDBase[HandoverNote, HandoverNoteCreate, HandoverNot
         return db_obj
 
     async def list_notes(
-        self, session: AsyncSession, ws_id: int, *, role: str, patient_id: Optional[int] = None, limit: int = 100
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        role: str,
+        patient_id: Optional[int] = None,
+        visible_patient_ids: set[int] | None = None,
+        limit: int = 100,
     ) -> list[HandoverNote]:
         stmt = select(HandoverNote).where(HandoverNote.workspace_id == ws_id)
+        patient_scope = _patient_scope_condition(HandoverNote, visible_patient_ids)
+        if patient_scope is not None:
+            stmt = stmt.where(patient_scope)
         if patient_id is not None:
             stmt = stmt.where(HandoverNote.patient_id == patient_id)
         if role not in {"admin", "head_nurse", "supervisor"}:
@@ -367,6 +583,13 @@ class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDire
     async def create_directive(
         self, session: AsyncSession, ws_id: int, actor_user_id: int, obj_in: CareDirectiveCreate
     ) -> CareDirective:
+        await _validate_directive_target(
+            session,
+            ws_id,
+            target_role=obj_in.target_role,
+            target_user_id=obj_in.target_user_id,
+            patient_id=obj_in.patient_id,
+        )
         data = obj_in.model_dump()
         if data.get("effective_from") is None:
             data["effective_from"] = utcnow()
@@ -396,9 +619,13 @@ class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDire
         user_id: int,
         user_role: str,
         status: Optional[str] = None,
+        visible_patient_ids: set[int] | None = None,
         limit: int = 100,
     ) -> list[CareDirective]:
         stmt = select(CareDirective).where(CareDirective.workspace_id == ws_id)
+        patient_scope = _patient_scope_condition(CareDirective, visible_patient_ids)
+        if patient_scope is not None:
+            stmt = stmt.where(patient_scope)
         if user_role not in {"admin", "head_nurse", "supervisor"}:
             stmt = stmt.where(
                 or_(
@@ -417,6 +644,28 @@ class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDire
         stmt = stmt.order_by(CareDirective.created_at.desc()).limit(limit)
         res = await session.execute(stmt)
         return list(res.scalars().all())
+
+    async def update(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        db_obj: CareDirective,
+        obj_in: CareDirectiveUpdate | dict,
+    ) -> CareDirective:
+        patch = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
+        if (
+            "target_role" in patch
+            or "target_user_id" in patch
+            or "patient_id" in patch
+        ):
+            await _validate_directive_target(
+                session,
+                ws_id,
+                target_role=patch.get("target_role", db_obj.target_role),
+                target_user_id=patch.get("target_user_id", db_obj.target_user_id),
+                patient_id=patch.get("patient_id", db_obj.patient_id),
+            )
+        return await super().update(session, ws_id=ws_id, db_obj=db_obj, obj_in=patch)
 
     async def acknowledge(
         self,

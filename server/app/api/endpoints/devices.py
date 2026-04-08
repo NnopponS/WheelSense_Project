@@ -28,6 +28,9 @@ from app.services.device_management import NON_PUBLIC_DEVICE_CONFIG_KEYS
 
 router = APIRouter()
 
+ROLE_DEVICE_MANAGERS = ["admin", "head_nurse"]
+ROLE_DEVICE_COMMANDERS = ["admin", "head_nurse", "supervisor"]
+
 def _sanitize_activity_details(payload: dict[str, Any]) -> dict[str, Any]:
     """Remove secrets and network-provisioning keys before persisting activity log details."""
     details = dict(payload)
@@ -151,6 +154,7 @@ async def create_device(
     body: DeviceCreate,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    _: object = Depends(RequireRole(ROLE_DEVICE_MANAGERS)),
 ):
     dev = await dm.create_device(db, ws.id, body)
     await device_activity_service.log_event(
@@ -169,6 +173,7 @@ async def patch_device(
     body: DevicePatch,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    _: object = Depends(RequireRole(ROLE_DEVICE_MANAGERS)),
 ):
     dev = await dm.patch_device(db, ws.id, device_id, body)
     await device_activity_service.log_event(
@@ -187,6 +192,7 @@ async def send_device_command(
     body: DeviceCommandRequest,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    _: object = Depends(RequireRole(ROLE_DEVICE_COMMANDERS)),
 ):
     row = await dm.dispatch_command(db, ws.id, device_id, body)
     await device_activity_service.log_event(
@@ -209,6 +215,7 @@ async def camera_check(
     device_id: str,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    _: object = Depends(RequireRole(ROLE_DEVICE_COMMANDERS)),
 ):
     result = await dm.camera_check_snapshot(db, ws.id, device_id)
     await device_activity_service.log_event(
@@ -227,6 +234,7 @@ async def send_camera_command(
     body: CameraCommand,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    _: object = Depends(RequireRole(ROLE_DEVICE_COMMANDERS)),
 ):
     payload: dict[str, Any] = {"command": body.command}
     if body.command == "start_stream":
@@ -248,4 +256,3 @@ async def send_camera_command(
         "topic": row.topic,
         "command_id": row.id,
     }
-

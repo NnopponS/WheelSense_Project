@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import PatientSidebar from "@/components/PatientSidebar";
 import TopBar from "@/components/TopBar";
 import AIChatPopup from "@/components/ai/AIChatPopup";
@@ -16,6 +16,7 @@ export default function PatientLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -43,10 +44,10 @@ export default function PatientLayout({
 
   return (
     <div className="min-h-screen bg-surface flex">
-      <PatientSidebar />
-      <div className="flex-1 ml-[var(--sidebar-width)] flex flex-col min-h-screen">
-        <TopBar />
-        <main className="flex-1 p-6 md:p-8 lg:p-12 overflow-y-auto max-w-5xl mx-auto w-full">
+      <PatientSidebar mobileOpen={mobileNavOpen} onMobileOpenChange={setMobileNavOpen} />
+      <div className="flex min-h-screen flex-1 flex-col lg:ml-[var(--sidebar-width)]">
+        <TopBar onMenuClick={() => setMobileNavOpen(true)} />
+        <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-12 max-w-5xl mx-auto w-full">
           {children}
         </main>
       </div>

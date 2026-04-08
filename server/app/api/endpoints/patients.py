@@ -10,10 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import (
     RequireRole,
-    assert_patient_record_access,
+    assert_patient_record_access_db,
     get_current_active_user,
     get_current_user_workspace,
     get_db,
+    get_visible_patient_ids,
     ROLE_CLINICAL_STAFF,
     ROLE_PATIENT_MANAGERS,
 )
@@ -47,9 +48,14 @@ async def list_patients(
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+    current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
     stmt = select(Patient).where(Patient.workspace_id == ws.id)
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    if visible_patient_ids is not None:
+        if not visible_patient_ids:
+            return []
+        stmt = stmt.where(Patient.id.in_(visible_patient_ids))
     if is_active is not None:
         stmt = stmt.where(Patient.is_active == is_active)
     if care_level:
@@ -85,7 +91,7 @@ async def get_patient(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(get_current_active_user),
 ):
-    assert_patient_record_access(current_user, patient_id)
+    await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
     patient = await patient_service.get(db, ws_id=ws.id, id=patient_id)
     if not patient:
         raise HTTPException(404, "Patient not found")
@@ -143,7 +149,7 @@ async def list_device_assignments(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(get_current_active_user),
 ):
-    assert_patient_record_access(current_user, patient_id)
+    await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
     all_assignments = await patient_assignment_service.get_multi(db, ws_id=ws.id)
     return [a for a in all_assignments if a.patient_id == patient_id]
 
@@ -195,7 +201,7 @@ async def list_contacts(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(get_current_active_user),
 ):
-    assert_patient_record_access(current_user, patient_id)
+    await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
     patient = await patient_service.get_with_contacts(db, ws_id=ws.id, id=patient_id)
     if not patient:
         raise HTTPException(404, "Patient not found")
@@ -237,4 +243,3 @@ async def delete_contact(
     await contact_service.delete_for_patient(
         db, ws_id=ws.id, patient_id=patient_id, contact_id=contact_id
     )
-

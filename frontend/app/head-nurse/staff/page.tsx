@@ -1,22 +1,62 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { CalendarClock, ClipboardList, Search, UserCog } from "lucide-react";
+import { z } from "zod";
+import { CalendarClock, ClipboardList, Plus, Search, UserCog } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { api } from "@/lib/api";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ApiError, api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
   CareTaskOut,
   CareScheduleOut,
+  CreateWorkflowScheduleRequest,
+  CreateWorkflowTaskRequest,
   ListCaregiversResponse,
 } from "@/lib/api/task-scope-types";
+
+const EMPTY_SELECT = "__empty__";
+const TASK_PRIORITY_OPTIONS = ["normal", "high", "critical"] as const;
+const SCHEDULE_TYPE_OPTIONS = ["round", "check_in", "medication", "handoff"] as const;
+
+const taskFormSchema = z.object({
+  title: z.string().trim().min(1, "Title is required"),
+  description: z.string().trim().min(1, "Description is required"),
+  priority: z.enum(TASK_PRIORITY_OPTIONS),
+  dueAt: z.string(),
+  scheduleId: z.string(),
+  assignedUserId: z.string(),
+});
+
+const scheduleFormSchema = z.object({
+  title: z.string().trim().min(1, "Title is required"),
+  scheduleType: z.enum(SCHEDULE_TYPE_OPTIONS),
+  startsAt: z.string().min(1, "Start time is required"),
+  recurrenceRule: z.string().trim(),
+  notes: z.string().trim(),
+  assignedUserId: z.string(),
+});
+
+type TaskFormValues = z.infer<typeof taskFormSchema>;
+type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 
 type CaregiverRow = {
   id: number;
@@ -48,10 +88,22 @@ type TaskRow = {
   assignedUserId: number | null;
 };
 
+function parseRequestError(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Request failed.";
+}
+
+function toIsoDateTime(value: string): string {
+  return new Date(value).toISOString();
+}
+
 export default function HeadNurseStaffPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
+  const [taskError, setTaskError] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   const caregiversQuery = useQuery({
     queryKey: ["head-nurse", "staff", "caregivers"],
@@ -66,6 +118,94 @@ export default function HeadNurseStaffPage() {
   const tasksQuery = useQuery({
     queryKey: ["head-nurse", "staff", "tasks"],
     queryFn: () => api.listWorkflowTasks({ limit: 240 }),
+  });
+
+  const taskForm = useForm<TaskFormValues>({
+    resolver: zodResolver(taskFormSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      priority: "normal",
+      dueAt: "",
+      scheduleId: EMPTY_SELECT,
+      assignedUserId: EMPTY_SELECT,
+    },
+  });
+
+  const scheduleForm = useForm<ScheduleFormValues>({
+    resolver: zodResolver(scheduleFormSchema),
+    defaultValues: {
+      title: "",
+      scheduleType: "round",
+      startsAt: "",
+      recurrenceRule: "RRULE:FREQ=DAILY",
+      notes: "",
+      assignedUserId: EMPTY_SELECT,
+    },
+  });
+
+  const createTaskMutation = useMutation({
+    mutationFn: async (values: TaskFormValues) => {
+      const payload = {
+        title: values.title.trim(),
+        description: values.description.trim(),
+        priority: values.priority,
+        due_at: values.dueAt ? toIsoDateTime(values.dueAt) : null,
+        schedule_id: values.scheduleId === EMPTY_SELECT ? null : Number(values.scheduleId),
+        assigned_user_id: values.assignedUserId === EMPTY_SELECT ? null : Number(values.assignedUserId),
+        assigned_role: null,
+      } satisfies CreateWorkflowTaskRequest;
+
+      await api.createWorkflowTask(payload);
+    },
+    onSuccess: async () => {
+      setTaskError(null);
+      taskForm.reset({
+        title: "",
+        description: "",
+        priority: "normal",
+        dueAt: "",
+        scheduleId: EMPTY_SELECT,
+        assignedUserId: EMPTY_SELECT,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["head-nurse", "staff", "tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["head-nurse", "dashboard", "tasks"] });
+    },
+    onError: (error) => {
+      setTaskError(parseRequestError(error));
+    },
+  });
+
+  const createScheduleMutation = useMutation({
+    mutationFn: async (values: ScheduleFormValues) => {
+      const payload = {
+        title: values.title.trim(),
+        schedule_type: values.scheduleType,
+        starts_at: toIsoDateTime(values.startsAt),
+        ends_at: null,
+        recurrence_rule: values.recurrenceRule.trim() || "RRULE:FREQ=DAILY",
+        assigned_role: null,
+        assigned_user_id: values.assignedUserId === EMPTY_SELECT ? null : Number(values.assignedUserId),
+        notes: values.notes.trim(),
+      } satisfies CreateWorkflowScheduleRequest;
+
+      await api.createWorkflowSchedule(payload);
+    },
+    onSuccess: async () => {
+      setScheduleError(null);
+      scheduleForm.reset({
+        title: "",
+        scheduleType: "round",
+        startsAt: "",
+        recurrenceRule: "RRULE:FREQ=DAILY",
+        notes: "",
+        assignedUserId: EMPTY_SELECT,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["head-nurse", "staff", "schedules"] });
+    },
+    onError: (error) => {
+      setScheduleError(parseRequestError(error));
+    },
   });
 
   const updateTaskMutation = useMutation({
@@ -307,6 +447,10 @@ export default function HeadNurseStaffPage() {
 
   const isLoadingAny = caregiversQuery.isLoading || schedulesQuery.isLoading || tasksQuery.isLoading;
 
+  const taskSaveError = taskError ?? (createTaskMutation.error ? parseRequestError(createTaskMutation.error) : null);
+  const scheduleSaveError =
+    scheduleError ?? (createScheduleMutation.error ? parseRequestError(createScheduleMutation.error) : null);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -332,6 +476,226 @@ export default function HeadNurseStaffPage() {
           className="pl-9"
         />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Quick Create</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <form
+              className="space-y-4"
+              onSubmit={taskForm.handleSubmit((values) => {
+                setTaskError(null);
+                createTaskMutation.mutate(values);
+              })}
+            >
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Create task</p>
+                <p className="text-xs text-muted-foreground">Queue a ward action and assign it to a caregiver.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input {...taskForm.register("title")} placeholder="Patient check-in" />
+                {taskForm.formState.errors.title ? (
+                  <p className="text-xs text-destructive">{taskForm.formState.errors.title.message}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea rows={3} {...taskForm.register("description")} placeholder="Short execution note" />
+                {taskForm.formState.errors.description ? (
+                  <p className="text-xs text-destructive">{taskForm.formState.errors.description.message}</p>
+                ) : null}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <Controller
+                    control={taskForm.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TASK_PRIORITY_OPTIONS.map((priority) => (
+                            <SelectItem key={priority} value={priority}>
+                              {priority}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Due at</Label>
+                  <Input type="datetime-local" {...taskForm.register("dueAt")} />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Schedule</Label>
+                  <Controller
+                    control={taskForm.control}
+                    name="scheduleId"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Optional schedule" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>No schedule</SelectItem>
+                          {scheduleRows.map((schedule) => (
+                            <SelectItem key={schedule.id} value={String(schedule.id)}>
+                              #{schedule.id} {schedule.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Assigned caregiver</Label>
+                  <Controller
+                    control={taskForm.control}
+                    name="assignedUserId"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Optional caregiver" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>Unassigned</SelectItem>
+                          {caregivers.map((caregiver) => (
+                            <SelectItem key={caregiver.id} value={String(caregiver.id)}>
+                              {caregiver.first_name} {caregiver.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {taskSaveError ? <p className="text-sm text-destructive">{taskSaveError}</p> : null}
+
+              <Button type="submit" disabled={createTaskMutation.isPending}>
+                <Plus className="h-4 w-4" />
+                {createTaskMutation.isPending ? "Creating..." : "Create task"}
+              </Button>
+            </form>
+
+            <form
+              className="space-y-4"
+              onSubmit={scheduleForm.handleSubmit((values) => {
+                setScheduleError(null);
+                createScheduleMutation.mutate(values);
+              })}
+            >
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Create schedule</p>
+                <p className="text-xs text-muted-foreground">
+                  Publish a recurring ward schedule and optionally assign it to a caregiver.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input {...scheduleForm.register("title")} placeholder="Evening rounds" />
+                {scheduleForm.formState.errors.title ? (
+                  <p className="text-xs text-destructive">{scheduleForm.formState.errors.title.message}</p>
+                ) : null}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Controller
+                    control={scheduleForm.control}
+                    name="scheduleType"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCHEDULE_TYPE_OPTIONS.map((scheduleType) => (
+                            <SelectItem key={scheduleType} value={scheduleType}>
+                              {scheduleType}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Starts at</Label>
+                  <Input type="datetime-local" {...scheduleForm.register("startsAt")} />
+                  {scheduleForm.formState.errors.startsAt ? (
+                    <p className="text-xs text-destructive">{scheduleForm.formState.errors.startsAt.message}</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Recurrence rule</Label>
+                <Input
+                  {...scheduleForm.register("recurrenceRule")}
+                  placeholder="RRULE:FREQ=DAILY"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Notes</Label>
+                <Textarea rows={3} {...scheduleForm.register("notes")} placeholder="Optional schedule notes" />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Assigned caregiver</Label>
+                <Controller
+                  control={scheduleForm.control}
+                  name="assignedUserId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Optional caregiver" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={EMPTY_SELECT}>Unassigned</SelectItem>
+                        {caregivers.map((caregiver) => (
+                          <SelectItem key={caregiver.id} value={String(caregiver.id)}>
+                            {caregiver.first_name} {caregiver.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              {scheduleSaveError ? <p className="text-sm text-destructive">{scheduleSaveError}</p> : null}
+
+              <Button type="submit" disabled={createScheduleMutation.isPending}>
+                <Plus className="h-4 w-4" />
+                {createScheduleMutation.isPending ? "Creating..." : "Create schedule"}
+              </Button>
+            </form>
+          </div>
+        </CardContent>
+      </Card>
 
       <DataTableCard
         title="Caregiver Roster"

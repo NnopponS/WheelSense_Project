@@ -12,8 +12,16 @@ class CareGiverCreate(BaseModel):
     first_name: str
     last_name: str
     role: str  # admin | head_nurse | supervisor | observer
+    employee_code: str = ""
+    department: str = ""
+    employment_type: str = ""
+    specialty: str = ""
+    license_number: str = ""
     phone: str = ""
     email: str = ""
+    emergency_contact_name: str = ""
+    emergency_contact_phone: str = ""
+    photo_url: str = ""
 
 class CareGiverPatch(BaseModel):
     """Partial update for staff profile."""
@@ -21,8 +29,16 @@ class CareGiverPatch(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     role: str | None = None
+    employee_code: str | None = None
+    department: str | None = None
+    employment_type: str | None = None
+    specialty: str | None = None
+    license_number: str | None = None
     phone: str | None = None
     email: str | None = None
+    emergency_contact_name: str | None = None
+    emergency_contact_phone: str | None = None
+    photo_url: str | None = None
     is_active: bool | None = None
 
 class CareGiverOut(BaseModel):
@@ -32,8 +48,16 @@ class CareGiverOut(BaseModel):
     first_name: str
     last_name: str
     role: str
+    employee_code: str
+    department: str
+    employment_type: str
+    specialty: str
+    license_number: str
     phone: str
     email: str
+    emergency_contact_name: str
+    emergency_contact_phone: str
+    photo_url: str
     is_active: bool
     created_at: datetime
 
@@ -55,6 +79,20 @@ class ZoneAssignOut(BaseModel):
     room_id: int | None
     zone_name: str
     is_active: bool
+
+class CaregiverPatientAccessReplace(BaseModel):
+    patient_ids: list[int]
+
+class CaregiverPatientAccessOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    workspace_id: int
+    caregiver_id: int
+    patient_id: int
+    assigned_by_user_id: int | None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
 
 # ── Shift ─────────────────────────────────────────────────────────────────────
 

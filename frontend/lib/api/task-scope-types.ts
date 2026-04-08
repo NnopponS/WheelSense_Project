@@ -50,11 +50,16 @@ export type RoleMessageOut = components["schemas"]["RoleMessageOut"];
 export type RoleMessageCreateInput = components["schemas"]["RoleMessageCreate"];
 export type HandoverNoteOut = components["schemas"]["HandoverNoteOut"];
 export type PharmacyOrderOut = components["schemas"]["PharmacyOrderOut"];
+export type PharmacyOrderRequestInput = components["schemas"]["PharmacyOrderRequest"];
+export type FloorplanPresenceOut = components["schemas"]["FloorplanPresenceOut"];
 export type SmartDeviceResponse = components["schemas"]["SmartDeviceResponse"];
 export type HADeviceControlInput = components["schemas"]["HADeviceControl"];
 export type HAResponse = components["schemas"]["HAResponse"];
 export type AlertCreateInput = components["schemas"]["AlertCreate"];
 export type AlertAcknowledgeInput = components["schemas"]["AlertAcknowledge"];
+export type CareScheduleCreateInput = components["schemas"]["CareScheduleCreate"];
+export type CareTaskCreateInput = components["schemas"]["CareTaskCreate"];
+export type CareDirectiveCreateInput = components["schemas"]["CareDirectiveCreate"];
 
 export type GetPatientResponse = JsonResponse<
   operations["get_patient_api_patients__patient_id__get"]
@@ -120,6 +125,9 @@ export type ListSmartDevicesResponse = JsonResponse<
 export type ListPharmacyOrdersResponse = JsonResponse<
   operations["list_pharmacy_orders_api_future_pharmacy_orders_get"]
 >;
+export type GetFloorplanPresenceResponse = JsonResponse<
+  operations["get_floorplan_presence_api_future_floorplans_presence_get"]
+>;
 
 export type UpdatePatientRequest = JsonRequest<
   operations["update_patient_api_patients__patient_id__patch"]
@@ -135,11 +143,20 @@ export type UpdateUserRequest = JsonRequest<operations["update_user_api_users__u
 export type UpdateWorkflowTaskRequest = JsonRequest<
   operations["update_task_api_workflow_tasks__task_id__patch"]
 >;
+export type CreateWorkflowTaskRequest = JsonRequest<
+  operations["create_task_api_workflow_tasks_post"]
+>;
 export type UpdateWorkflowScheduleRequest = JsonRequest<
   operations["update_schedule_api_workflow_schedules__schedule_id__patch"]
 >;
+export type CreateWorkflowScheduleRequest = JsonRequest<
+  operations["create_schedule_api_workflow_schedules_post"]
+>;
 export type AcknowledgeWorkflowDirectiveRequest = JsonRequest<
   operations["acknowledge_directive_api_workflow_directives__directive_id__acknowledge_post"]
+>;
+export type CreateWorkflowDirectiveRequest = JsonRequest<
+  operations["create_directive_api_workflow_directives_post"]
 >;
 export type CreateFuturePrescriptionRequest = JsonRequest<
   operations["create_prescription_api_future_prescriptions_post"]
@@ -163,6 +180,9 @@ export type AcknowledgeAlertRequest = JsonRequest<
 export type ControlSmartDeviceRequest = JsonRequest<
   operations["control_smart_device_api_ha_devices__device_id__control_post"]
 >;
+export type RequestPharmacyOrderRequest = JsonRequest<
+  operations["request_pharmacy_order_api_future_pharmacy_orders_request_post"]
+>;
 
 export type DeviceActivityEventOut = components["schemas"]["DeviceActivityEventOut"];
 export type DevicePatientAssignInput = components["schemas"]["DevicePatientAssign"];
@@ -181,11 +201,20 @@ export type UpdateRoomRequest = JsonRequest<operations["update_room_api_rooms__r
 export type UpdateWorkflowTaskResponse = JsonResponse<
   operations["update_task_api_workflow_tasks__task_id__patch"]
 >;
+export type CreateWorkflowTaskResponse = JsonResponseCreated<
+  operations["create_task_api_workflow_tasks_post"]
+>;
 export type UpdateWorkflowScheduleResponse = JsonResponse<
   operations["update_schedule_api_workflow_schedules__schedule_id__patch"]
 >;
+export type CreateWorkflowScheduleResponse = JsonResponseCreated<
+  operations["create_schedule_api_workflow_schedules_post"]
+>;
 export type AcknowledgeWorkflowDirectiveResponse = JsonResponse<
   operations["acknowledge_directive_api_workflow_directives__directive_id__acknowledge_post"]
+>;
+export type CreateWorkflowDirectiveResponse = JsonResponseCreated<
+  operations["create_directive_api_workflow_directives_post"]
 >;
 export type CreateFuturePrescriptionResponse = JsonResponseCreated<
   operations["create_prescription_api_future_prescriptions_post"]
@@ -205,4 +234,7 @@ export type AcknowledgeAlertResponse = JsonResponse<
 >;
 export type ControlSmartDeviceResponse = JsonResponse<
   operations["control_smart_device_api_ha_devices__device_id__control_post"]
+>;
+export type RequestPharmacyOrderResponse = JsonResponseCreated<
+  operations["request_pharmacy_order_api_future_pharmacy_orders_request_post"]
 >;

@@ -9,9 +9,11 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import (
     RequireRole,
+    assert_patient_record_access_db,
     get_current_active_user,
     get_current_user_workspace,
     get_db,
+    get_visible_patient_ids,
     ROLE_CLINICAL_STAFF,
 )
 from app.models.core import Workspace
@@ -33,23 +35,23 @@ async def list_alerts(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(get_current_active_user),
 ):
-    if current_user.role == "patient":
-        own = getattr(current_user, "patient_id", None)
-        if own is None:
-            raise HTTPException(403, "Patient account is not linked to a patient record")
-        if patient_id is not None and patient_id != own:
-            raise HTTPException(403, "Cannot view other patients' alerts")
-        patient_id = own
-    elif current_user.role not in ROLE_CLINICAL_STAFF:
+    if current_user.role not in [*ROLE_CLINICAL_STAFF, "patient"]:
         raise HTTPException(403, "Operation not permitted")
+    if patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
 
     if status == "active":
-        return await alert_service.get_active_alerts(db, ws_id=ws.id, patient_id=patient_id)
-    alerts = await alert_service.get_multi(db, ws_id=ws.id, limit=limit)
-    if patient_id:
-        alerts = [a for a in alerts if a.patient_id == patient_id]
-    if status:
-        alerts = [a for a in alerts if a.status == status]
+        alerts = await alert_service.get_active_alerts(db, ws_id=ws.id, patient_id=patient_id)
+    else:
+        alerts = await alert_service.get_multi(db, ws_id=ws.id, limit=limit)
+        if patient_id:
+            alerts = [a for a in alerts if a.patient_id == patient_id]
+        if status:
+            alerts = [a for a in alerts if a.status == status]
+    if patient_id is None:
+        visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+        if visible_patient_ids is not None:
+            alerts = [a for a in alerts if a.patient_id in visible_patient_ids]
     return alerts
 
 @router.post("", response_model=AlertOut, status_code=201)
@@ -57,8 +59,17 @@ async def create_alert(
     data: AlertCreate,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_ALERT_CREATE)),
+    current_user: User = Depends(RequireRole(ROLE_ALERT_CREATE)),
 ):
+    if current_user.role == "patient":
+        own = getattr(current_user, "patient_id", None)
+        if own is None:
+            raise HTTPException(403, "Patient account is not linked to a patient record")
+        if data.patient_id is not None and data.patient_id != own:
+            raise HTTPException(403, "Cannot create alerts for another patient")
+        data = data.model_copy(update={"patient_id": own})
+    elif data.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, data.patient_id)
     return await alert_service.create(db, ws_id=ws.id, obj_in=data)
 
 @router.get("/{alert_id}", response_model=AlertOut)
@@ -71,12 +82,10 @@ async def get_alert(
     alert = await alert_service.get(db, ws_id=ws.id, id=alert_id)
     if not alert:
         raise HTTPException(404, "Alert not found")
-    if current_user.role == "patient":
-        own = getattr(current_user, "patient_id", None)
-        if own is None or alert.patient_id != own:
-            raise HTTPException(403, "Cannot view this alert")
-    elif current_user.role not in ROLE_CLINICAL_STAFF:
+    if current_user.role not in [*ROLE_CLINICAL_STAFF, "patient"]:
         raise HTTPException(403, "Operation not permitted")
+    if alert.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, alert.patient_id)
     return alert
 
 @router.post("/{alert_id}/acknowledge", response_model=AlertOut)
@@ -87,6 +96,11 @@ async def acknowledge_alert(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_ALERT_ACK)),
 ):
+    existing = await alert_service.get(db, ws_id=ws.id, id=alert_id)
+    if not existing:
+        raise HTTPException(404, "Alert not found")
+    if existing.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, existing.patient_id)
     effective_caregiver_id = data.caregiver_id
     if effective_caregiver_id is None:
         effective_caregiver_id = getattr(current_user, "caregiver_id", None)
@@ -103,8 +117,13 @@ async def resolve_alert(
     data: AlertResolve,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_ALERT_ACK)),
+    current_user: User = Depends(RequireRole(ROLE_ALERT_ACK)),
 ):
+    existing = await alert_service.get(db, ws_id=ws.id, id=alert_id)
+    if not existing:
+        raise HTTPException(404, "Alert not found")
+    if existing.patient_id is not None:
+        await assert_patient_record_access_db(db, ws.id, current_user, existing.patient_id)
     alert = await alert_service.resolve(
         db, ws_id=ws.id, alert_id=alert_id, resolution_note=data.resolution_note
     )

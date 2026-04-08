@@ -346,8 +346,16 @@ class TestCareGiver:
             first_name="นภา",
             last_name="สุขสบาย",
             role="supervisor",
+            employee_code="SV-009",
+            department="Care Operations",
+            employment_type="full_time",
+            specialty="fall_response",
+            license_number="TH-SV-9999",
             phone="089-999-9999",
             email="napa@example.com",
+            emergency_contact_name="Emergency Person",
+            emergency_contact_phone="081-000-0000",
+            photo_url="https://example.com/photo.jpg",
         )
         db_session.add(cg)
         await db_session.commit()
@@ -355,6 +363,14 @@ class TestCareGiver:
 
         assert cg.id is not None
         assert cg.role == "supervisor"
+        assert cg.employee_code == "SV-009"
+        assert cg.department == "Care Operations"
+        assert cg.employment_type == "full_time"
+        assert cg.specialty == "fall_response"
+        assert cg.license_number == "TH-SV-9999"
+        assert cg.emergency_contact_name == "Emergency Person"
+        assert cg.emergency_contact_phone == "081-000-0000"
+        assert cg.photo_url == "https://example.com/photo.jpg"
         assert cg.is_active is True
 
     @pytest.mark.asyncio
@@ -364,8 +380,15 @@ class TestCareGiver:
         await db_session.commit()
         await db_session.refresh(cg)
 
+        assert cg.employee_code == ""
+        assert cg.department == ""
+        assert cg.employment_type == ""
+        assert cg.specialty == ""
+        assert cg.license_number == ""
         assert cg.phone == ""
         assert cg.email == ""
+        assert cg.emergency_contact_name == ""
+        assert cg.emergency_contact_phone == ""
         assert cg.photo_url == ""
 
 
@@ -784,7 +807,15 @@ class TestPydanticSchemas:
         from app.schemas.caregivers import CareGiverCreate
 
         data = CareGiverCreate(first_name="A", last_name="B", role="observer")
+        assert data.employee_code == ""
+        assert data.department == ""
+        assert data.employment_type == ""
+        assert data.specialty == ""
+        assert data.license_number == ""
         assert data.phone == ""
+        assert data.emergency_contact_name == ""
+        assert data.emergency_contact_phone == ""
+        assert data.photo_url == ""
 
     def test_shift_create(self) -> None:
         from app.schemas.caregivers import ShiftCreate

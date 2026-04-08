@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import AsyncIterator
+from types import SimpleNamespace
 
 from openai import AsyncOpenAI
 from sqlalchemy import select
@@ -17,6 +18,19 @@ from app.models.users import User
 from app.schemas.chat import ChatMessagePart
 
 logger = logging.getLogger("wheelsense.ai_chat")
+
+COPILOT_ALLOWED_MODELS = {
+    "gpt-4o": {
+        "name": "GPT-4o",
+        "supports_reasoning_effort": False,
+        "supports_vision": True,
+    },
+    "gpt-4.1": {
+        "name": "GPT-4.1",
+        "supports_reasoning_effort": False,
+        "supports_vision": True,
+    },
+}
 
 # Role-specific system prompts (EaseAI)
 ROLE_SYSTEM_PROMPTS: dict[str, str] = {
@@ -136,6 +150,30 @@ def build_copilot_client_config(
         return ExternalServerConfig(url=url)
     return None
 
+def _copilot_model_id(model: object) -> str | None:
+    model_id = getattr(model, "id", None)
+    return model_id if isinstance(model_id, str) else None
+
+def allowed_copilot_models_from(models: list[object]) -> list[object]:
+    return [
+        model
+        for model in models
+        if _copilot_model_id(model) in COPILOT_ALLOWED_MODELS
+    ]
+
+def fallback_copilot_models() -> list[object]:
+    return [
+        SimpleNamespace(
+            id=model_id,
+            name=metadata["name"],
+            capabilities=SimpleNamespace(
+                reasoning_effort=metadata["supports_reasoning_effort"],
+                vision=metadata["supports_vision"],
+            ),
+        )
+        for model_id, metadata in COPILOT_ALLOWED_MODELS.items()
+    ]
+
 async def list_copilot_models(
     *,
     github_token: str | None = None,
@@ -233,7 +271,7 @@ async def stream_copilot(
 
     try:
         async with CopilotClient(config) as client:
-            available_models = await client.list_models()
+            available_models = fallback_copilot_models()
             available_model_ids = {m.id for m in available_models}
             if model and model not in available_model_ids:
                 available = ", ".join(sorted(available_model_ids)) or "none"

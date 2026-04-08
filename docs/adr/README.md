@@ -18,4 +18,4 @@ details in code, `server/AGENTS.md`, and `.agents/workflows/wheelsense.md`.
 | [0008](0008-workflow-domains-for-role-operations.md) | Workflow Domains for Role Operations | accepted | 2026-04-04 |
 | [0009](0009-future-domains-floorplan-prescription-pharmacy.md) | Future Domains for Floorplan, Prescription, and Pharmacy | accepted | 2026-04-04 |
 | [0010](0010-phase2-device-fleet-control-plane.md) | Phase 2 Device Fleet Control Plane | proposed | 2026-04-05 |
-| [0011](0011-phase2-map-person-presence-projection.md) | Phase 2 Map-Room-Person Presence Projection | proposed | 2026-04-05 |
+| [0011](0011-phase2-map-person-presence-projection.md) | Phase 2 Map-Room-Person Presence Projection | accepted | 2026-04-05 |

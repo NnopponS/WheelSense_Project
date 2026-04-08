@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import { useState } from "react";
@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 import {
   Table,
   TableBody,
@@ -38,12 +39,13 @@ export function DataTableCard<TData>({
   data,
   columns,
   isLoading = false,
-  emptyText = "No rows.",
+  emptyText,
   description,
   rightSlot,
   pageSize = 10,
 }: Props<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const { t } = useTranslation();
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table is the standardized table engine for role surfaces.
   const table = useReactTable({
@@ -63,15 +65,15 @@ export function DataTableCard<TData>({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <CardTitle>{title}</CardTitle>
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {rightSlot}
           <p className="text-sm text-muted-foreground">
-            {data.length} {data.length === 1 ? "row" : "rows"}
+            {data.length} {data.length === 1 ? t("table.row") : t("table.rows")}
           </p>
         </div>
       </CardHeader>
@@ -82,8 +84,8 @@ export function DataTableCard<TData>({
           </div>
         ) : (
           <>
-            <div className="overflow-hidden rounded-2xl border border-border/70">
-              <Table>
+            <div className="overflow-x-auto rounded-2xl border border-border/70">
+              <Table className="min-w-[720px]">
                 <TableHeader className="bg-muted/55">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
@@ -110,8 +112,11 @@ export function DataTableCard<TData>({
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={columns.length} className="h-28 text-center text-muted-foreground">
-                        {emptyText}
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-28 text-center text-muted-foreground"
+                      >
+                        {emptyText ?? t("table.noRows")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -119,11 +124,11 @@ export function DataTableCard<TData>({
               </Table>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
                 Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -131,7 +136,7 @@ export function DataTableCard<TData>({
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
                 >
-                  Previous
+                  {t("table.previous")}
                 </Button>
                 <Button
                   type="button"
@@ -140,7 +145,7 @@ export function DataTableCard<TData>({
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
                 >
-                  Next
+                  {t("table.next")}
                 </Button>
               </div>
             </div>
@@ -150,4 +155,3 @@ export function DataTableCard<TData>({
     </Card>
   );
 }
-

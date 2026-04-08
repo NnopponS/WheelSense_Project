@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bot,
   Check,
@@ -66,6 +66,27 @@ type CopilotModelsResponse = {
   message?: string | null;
 };
 
+type CopilotDeviceFlow = {
+  device_code: string;
+  user_code: string;
+  verification_uri: string;
+  expires_at: number;
+  interval: number;
+};
+
+type CopilotFlowStatus =
+  | "idle"
+  | "pending"
+  | "slow_down"
+  | "expired"
+  | "denied"
+  | "backend_error"
+  | "success"
+  | "connected_unavailable";
+
+const COPILOT_FLOW_KEY = "copilot_device_flow";
+const COPILOT_CLOSE_DELAY_MS = 2500;
+
 const PULL_PRESETS = ["gemma4:e4b"] as const;
 const PULL_OTHER = "__pull_other__";
 
@@ -99,6 +120,49 @@ function formatBytes(bytes?: number) {
 
 function providerLabel(provider: "ollama" | "copilot") {
   return provider === "ollama" ? "Ollama" : "GitHub Copilot";
+}
+
+function readStoredCopilotFlow(): CopilotDeviceFlow | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(COPILOT_FLOW_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<CopilotDeviceFlow>;
+    if (
+      typeof parsed.device_code === "string" &&
+      typeof parsed.user_code === "string" &&
+      typeof parsed.verification_uri === "string" &&
+      typeof parsed.expires_at === "number" &&
+      typeof parsed.interval === "number"
+    ) {
+      return parsed as CopilotDeviceFlow;
+    }
+  } catch {
+    // ignore stale storage
+  }
+  return null;
+}
+
+function writeStoredCopilotFlow(flow: CopilotDeviceFlow | null): void {
+  if (typeof window === "undefined") return;
+  if (!flow) {
+    sessionStorage.removeItem(COPILOT_FLOW_KEY);
+    return;
+  }
+  sessionStorage.setItem(COPILOT_FLOW_KEY, JSON.stringify(flow));
+}
+
+function classifyCopilotError(error: unknown): CopilotFlowStatus {
+  const message =
+    error instanceof ApiError
+      ? error.message
+      : error instanceof Error
+        ? error.message
+        : String(error ?? "");
+  const lower = message.toLowerCase();
+  if (lower.includes("expired") || lower.includes("device code expired")) return "expired";
+  if (lower.includes("access_denied") || lower.includes("denied")) return "denied";
+  return "backend_error";
 }
 
 function StatusRow({
@@ -271,23 +335,33 @@ export default function AiSettingsPanel() {
   const [workspaceModel, setWorkspaceModel] = useState("");
   const [saving, setSaving] = useState(false);
   const [copilotBusy, setCopilotBusy] = useState(false);
-  const [copilotError, setCopilotError] = useState<string | null>(null);
+  const [copilotFlow, setCopilotFlow] = useState<CopilotDeviceFlow | null>(() => readStoredCopilotFlow());
   const [copilotOpen, setCopilotOpen] = useState(false);
-  const [copilotSuccess, setCopilotSuccess] = useState(false);
-  const [userCode, setUserCode] = useState<string | null>(null);
-  const [verificationUri, setVerificationUri] = useState<string | null>(null);
-  const [pollDc, setPollDc] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return sessionStorage.getItem("copilot_poll_dc");
-  });
+  const [copilotFlowStatus, setCopilotFlowStatus] = useState<CopilotFlowStatus>(
+    () => (readStoredCopilotFlow() ? "pending" : "idle"),
+  );
+  const [copilotFlowMessage, setCopilotFlowMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [pullName, setPullName] = useState("gemma4:e4b");
   const [pulling, setPulling] = useState(false);
   const [pullLog, setPullLog] = useState<string | null>(null);
   const [pullProgress, setPullProgress] = useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const pollTimeoutRef = useRef<number | null>(null);
+  const closeTimeoutRef = useRef<number | null>(null);
+  const flowRef = useRef<CopilotDeviceFlow | null>(copilotFlow);
+  const copilotPollRef = useRef({
+    refetchAi,
+    refetchCopilotModels,
+    refetchCopilotStatus,
+    t,
+  });
 
-  const availableCopilotModels = copilotModels?.models ?? [];
+  const sanitizedCopilotModels =
+    copilotStatus?.connected && copilotModels?.message === "GitHub Copilot is not connected for this workspace"
+      ? { ...copilotModels, connected: true, message: null }
+      : copilotModels;
+  const availableCopilotModels = sanitizedCopilotModels?.models ?? [];
   const availableOllamaModels = ollamaModels?.models ?? [];
 
   useEffect(() => {
@@ -299,39 +373,139 @@ export default function AiSettingsPanel() {
   }, [aiSettings]);
 
   useEffect(() => {
-    if (pollDc) {
-      sessionStorage.setItem("copilot_poll_dc", pollDc);
-      setCopilotOpen(true);
-    } else {
-      sessionStorage.removeItem("copilot_poll_dc");
-    }
-  }, [pollDc]);
+    copilotPollRef.current = {
+      refetchAi,
+      refetchCopilotModels,
+      refetchCopilotStatus,
+      t,
+    };
+  });
 
   useEffect(() => {
-    if (!pollDc) return;
-    const timer = window.setInterval(async () => {
-      try {
-        const response = await api.post<{ status: string }>("/settings/ai/copilot/poll-token", {
-          device_code: pollDc,
-        });
-        if (response.status === "success") {
-          setPollDc(null);
-          setCopilotSuccess(true);
-          await refetchCopilotStatus();
-          await refetchCopilotModels();
-          await refetchAi();
-          setTimeout(() => {
-            setCopilotSuccess(false);
-            setCopilotOpen(false);
-          }, 2500);
-        }
-      } catch {
-        // pending or temporarily unavailable
-      }
-    }, 5000);
+    flowRef.current = copilotFlow;
+    writeStoredCopilotFlow(copilotFlow);
+    if (copilotFlow) {
+      setCopilotOpen(true);
+    }
+  }, [copilotFlow]);
 
-    return () => window.clearInterval(timer);
-  }, [pollDc, refetchAi, refetchCopilotModels, refetchCopilotStatus]);
+  useEffect(() => {
+    if (pollTimeoutRef.current) {
+      window.clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+    if (!flowRef.current) return;
+
+    let cancelled = false;
+
+    const finish = (status: CopilotFlowStatus, message?: string | null) => {
+      if (cancelled) return;
+      setCopilotFlowStatus(status);
+      setCopilotFlowMessage(message ?? null);
+      if (status === "success" || status === "connected_unavailable") {
+        if (closeTimeoutRef.current) {
+          window.clearTimeout(closeTimeoutRef.current);
+        }
+        closeTimeoutRef.current = window.setTimeout(() => {
+          setCopilotOpen(false);
+          setCopilotFlow(null);
+        }, COPILOT_CLOSE_DELAY_MS);
+      }
+    };
+
+    const scheduleNext = (delay: number) => {
+      if (cancelled) return;
+      pollTimeoutRef.current = window.setTimeout(() => {
+        void poll();
+      }, delay);
+    };
+
+    const poll = async () => {
+      const current = flowRef.current;
+      if (!current || cancelled) return;
+      if (Date.now() >= current.expires_at) {
+        finish("expired", copilotPollRef.current.t("settings.ai.copilotExpired"));
+        return;
+      }
+
+      try {
+        const response = await api.post<{ status: string; access_token?: string | null }>(
+          "/settings/ai/copilot/poll-token",
+          { device_code: current.device_code },
+        );
+        if (cancelled) return;
+        if (response.status === "success") {
+          const { refetchAi, refetchCopilotModels, refetchCopilotStatus, t } = copilotPollRef.current;
+          void refetchCopilotModels();
+          void refetchCopilotStatus();
+          void refetchAi();
+          finish("success", t("settings.ai.copilotSuccess"));
+          return;
+        }
+        if (response.status === "slow_down") {
+          const nextInterval = Math.min(current.interval + 5000, 30_000);
+          setCopilotFlow({ ...current, interval: nextInterval });
+          finish("slow_down", copilotPollRef.current.t("settings.ai.copilotSlowDown"));
+          scheduleNext(nextInterval);
+          return;
+        }
+        setCopilotFlowStatus("pending");
+        setCopilotFlowMessage(copilotPollRef.current.t("settings.ai.copilotPending"));
+        scheduleNext(current.interval);
+      } catch (error) {
+        const status = classifyCopilotError(error);
+        const { t } = copilotPollRef.current;
+        if (status === "backend_error") {
+          finish(status, error instanceof ApiError ? error.message : t("settings.ai.copilotBackendError"));
+        } else if (status === "expired") {
+          finish(status, t("settings.ai.copilotExpired"));
+        } else {
+          finish(status, t("settings.ai.copilotDenied"));
+        }
+      }
+    };
+
+    setCopilotFlowStatus("pending");
+    setCopilotFlowMessage(copilotPollRef.current.t("settings.ai.copilotPending"));
+    void poll();
+
+    return () => {
+      cancelled = true;
+      if (pollTimeoutRef.current) {
+        window.clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
+      }
+    };
+  }, [copilotFlow?.device_code]);
+
+  useEffect(
+    () => () => {
+      if (pollTimeoutRef.current) {
+        window.clearTimeout(pollTimeoutRef.current);
+      }
+      if (closeTimeoutRef.current) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  function handleCopilotOpenChange(open: boolean) {
+    setCopilotOpen(open);
+    if (open) return;
+    if (pollTimeoutRef.current) {
+      window.clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setCopilotFlow(null);
+    setCopilotFlowStatus("idle");
+    setCopilotFlowMessage(null);
+    setCopiedCode(false);
+  }
 
   async function saveUserAi() {
     setSaving(true);
@@ -361,30 +535,45 @@ export default function AiSettingsPanel() {
 
   async function startCopilotDeviceFlow() {
     setCopilotBusy(true);
-    setCopilotError(null);
-    setCopilotSuccess(false);
-    setUserCode(null);
-    setVerificationUri(null);
-    setPollDc(null);
+    setCopilotFlowStatus("pending");
+    setCopilotFlowMessage(null);
+    if (closeTimeoutRef.current) {
+      window.clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    if (pollTimeoutRef.current) {
+      window.clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+    setCopilotFlow(null);
 
     try {
       const response = await api.post<{
         device_code: string;
         user_code: string;
         verification_uri: string;
+        expires_in: number;
+        interval: number;
       }>("/settings/ai/copilot/device-code", {});
-      setUserCode(response.user_code);
-      setVerificationUri(response.verification_uri);
-      setPollDc(response.device_code);
+      const flow: CopilotDeviceFlow = {
+        device_code: response.device_code,
+        user_code: response.user_code,
+        verification_uri: response.verification_uri,
+        expires_at: Date.now() + response.expires_in * 1000,
+        interval: response.interval * 1000,
+      };
+      setCopilotFlow(flow);
       setCopilotOpen(true);
     } catch (error) {
-      setCopilotError(
+      setCopilotFlowStatus("backend_error");
+      setCopilotFlowMessage(
         error instanceof ApiError
           ? error.message
           : error instanceof Error
             ? error.message
-            : "Copilot device flow failed",
+            : t("settings.ai.copilotBackendError"),
       );
+      setCopilotOpen(true);
     } finally {
       setCopilotBusy(false);
     }
@@ -517,7 +706,7 @@ export default function AiSettingsPanel() {
                 {copilotStatus?.connected ? "Connected" : "Unavailable"}
               </Badge>
             }
-            hint={copilotModels?.message || "Model list comes from the backend bridge."}
+            hint={sanitizedCopilotModels?.message || "Model list comes from the backend bridge."}
           />
           <StatusRow
             label="Ollama origin"
@@ -546,7 +735,7 @@ export default function AiSettingsPanel() {
         model={userModel}
         onModelChange={setUserModel}
         ollamaModels={ollamaModels}
-        copilotModels={copilotModels}
+        copilotModels={sanitizedCopilotModels}
         disabled={saving}
         saveLabel={t("settings.ai.saveUser")}
         onSave={saveUserAi}
@@ -567,7 +756,7 @@ export default function AiSettingsPanel() {
         model={workspaceModel}
         onModelChange={setWorkspaceModel}
         ollamaModels={ollamaModels}
-        copilotModels={copilotModels}
+        copilotModels={sanitizedCopilotModels}
         disabled={saving}
         saveLabel={t("settings.ai.saveWorkspace")}
         onSave={saveWorkspaceAi}
@@ -577,13 +766,15 @@ export default function AiSettingsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Bot className="h-4 w-4" />
-            Copilot connection and models
+            {t("settings.ai.copilotSectionTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Badge variant={copilotStatus?.connected ? "success" : "warning"}>
-              {copilotStatus?.connected ? "Connected" : "Not connected"}
+              {copilotStatus?.connected
+                ? t("settings.ai.copilotConnected")
+                : t("settings.ai.copilotDisconnected")}
             </Badge>
             <Button
               type="button"
@@ -592,18 +783,32 @@ export default function AiSettingsPanel() {
               disabled={copilotBusy}
             >
               {copilotBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {copilotStatus?.connected ? "Re-authenticate" : t("settings.ai.copilotConnect")}
+              {copilotStatus?.connected
+                ? t("settings.ai.copilotReconnect")
+                : t("settings.ai.copilotConnect")}
             </Button>
           </div>
 
           <p className="text-sm text-muted-foreground">
-            Copilot model choices should come from the backend bridge, not from a hardcoded frontend list.
+            {t("settings.ai.copilotModelsHint")}
           </p>
 
-          {copilotModels?.message ? (
-            <SectionMessage tone="warning">{copilotModels.message}</SectionMessage>
+          {sanitizedCopilotModels?.message ? (
+            <SectionMessage tone="warning">{sanitizedCopilotModels.message}</SectionMessage>
           ) : null}
-          {copilotError ? <SectionMessage tone="error">{copilotError}</SectionMessage> : null}
+          {copilotFlowStatus !== "idle" && copilotFlowMessage ? (
+            <SectionMessage
+              tone={
+                copilotFlowStatus === "success" || copilotFlowStatus === "connected_unavailable"
+                  ? "success"
+                  : copilotFlowStatus === "backend_error" || copilotFlowStatus === "denied" || copilotFlowStatus === "expired"
+                    ? "error"
+                    : "warning"
+              }
+            >
+              {copilotFlowMessage}
+            </SectionMessage>
+          ) : null}
 
           <div className="flex flex-wrap gap-2">
             {availableCopilotModels.length > 0 ? (
@@ -613,7 +818,7 @@ export default function AiSettingsPanel() {
                 </Badge>
               ))
             ) : (
-              <Badge variant="warning">No Copilot models available</Badge>
+              <Badge variant="warning">{t("settings.ai.noCopilotModelsAvailable")}</Badge>
             )}
           </div>
         </CardContent>
@@ -623,14 +828,14 @@ export default function AiSettingsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <HardDrive className="h-4 w-4" />
-            Host-native Ollama library
+            {t("settings.ai.ollamaSectionTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <SectionMessage tone={ollamaModels?.reachable === false ? "warning" : "success"}>
             {ollamaModels?.reachable === false
-              ? ollamaModels.message || "Ollama is not reachable."
-              : `This workspace is configured for host-native Ollama at ${ollamaModels?.origin || "http://host.docker.internal:11434"}.`}
+              ? ollamaModels.message || t("settings.ai.ollamaNotReachable")
+              : `workspace นี้ตั้งค่าให้ใช้ Ollama บนเครื่องโฮสต์ที่ ${ollamaModels?.origin || "http://host.docker.internal:11434"}.`}
           </SectionMessage>
 
           <p className="text-sm text-muted-foreground">
@@ -737,60 +942,113 @@ export default function AiSettingsPanel() {
         </CardContent>
       </Card>
 
-      <Dialog open={copilotOpen} onOpenChange={setCopilotOpen}>
+      <Dialog open={copilotOpen} onOpenChange={handleCopilotOpenChange}>
         <DialogContent className="w-[min(100%-2rem,32rem)]">
           <DialogHeader>
             <DialogTitle>{t("settings.ai.enterCode")}</DialogTitle>
             <DialogDescription>
-              Finish the GitHub device flow to attach Copilot models to this workspace.
+              {t("settings.ai.copilotDialogDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 px-6 pb-6">
-            {userCode ? (
+            {!copilotFlow && copilotFlowStatus !== "idle" && copilotFlowMessage ? (
+              <SectionMessage
+                tone={
+                  copilotFlowStatus === "success" || copilotFlowStatus === "connected_unavailable"
+                    ? "success"
+                    : copilotFlowStatus === "backend_error" ||
+                        copilotFlowStatus === "denied" ||
+                        copilotFlowStatus === "expired"
+                      ? "error"
+                      : "warning"
+                }
+              >
+                {copilotFlowMessage}
+              </SectionMessage>
+            ) : null}
+
+            {copilotFlow ? (
               <div className="rounded-3xl border border-border bg-muted/30 p-6 text-center">
-                <p className="text-4xl font-extrabold tracking-[0.35em] text-primary">{userCode}</p>
+                <p className="text-4xl font-extrabold tracking-[0.35em] text-primary">
+                  {copilotFlow.user_code}
+                </p>
               </div>
             ) : null}
 
-            {userCode ? (
-              <Button type="button" variant="outline" className="w-full" onClick={() => copyToClipboard(userCode)}>
+            {copilotFlow ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => copyToClipboard(copilotFlow.user_code)}
+              >
                 {copiedCode ? (
                   <>
                     <CheckCheck className="h-4 w-4" />
-                    Copied
+                    {t("settings.ai.copied")}
                   </>
                 ) : (
                   <>
                     <Copy className="h-4 w-4" />
-                    Copy code
+                    {t("settings.ai.copyCode")}
                   </>
                 )}
               </Button>
             ) : null}
 
-            {verificationUri ? (
+            {copilotFlow ? (
               <a
-                href={verificationUri}
+                href={copilotFlow.verification_uri}
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-center gap-2 text-sm font-medium text-primary underline"
               >
                 <ExternalLink className="h-4 w-4" />
-                Open GitHub to enter code
+                {t("settings.ai.openGitHub")}
               </a>
             ) : null}
 
-            {copilotSuccess ? (
+            {copilotFlow ? (
+              <div className="grid gap-3 sm:grid-cols-3">
+                <StatusRow
+                  label={t("settings.ai.expiresAt")}
+                  value={new Date(copilotFlow.expires_at).toLocaleTimeString()}
+                  hint={t("settings.ai.expiresAtHint")}
+                />
+                <StatusRow
+                  label={t("settings.ai.intervalSeconds")}
+                  value={Math.max(1, Math.round(copilotFlow.interval / 1000))}
+                  hint={t("settings.ai.intervalHint")}
+                />
+                <StatusRow
+                  label={t("settings.ai.deviceCode")}
+                  value={copilotFlowStatus}
+                  hint={t("settings.ai.deviceCodeHint")}
+                />
+              </div>
+            ) : null}
+
+            {copilotFlowStatus === "success" ? (
               <SectionMessage tone="success">
                 <span className="inline-flex items-center gap-2">
                   <Check className="h-4 w-4" />
-                  Copilot connected successfully.
+                  {t("settings.ai.copilotSuccess")}
                 </span>
               </SectionMessage>
+            ) : copilotFlowStatus === "connected_unavailable" ? (
+              <SectionMessage tone="warning">{t("settings.ai.copilotConnectedButModelsUnavailable")}</SectionMessage>
+            ) : copilotFlowStatus === "expired" ? (
+              <SectionMessage tone="error">{t("settings.ai.copilotExpired")}</SectionMessage>
+            ) : copilotFlowStatus === "denied" ? (
+              <SectionMessage tone="error">{t("settings.ai.copilotDenied")}</SectionMessage>
+            ) : copilotFlowStatus === "slow_down" ? (
+              <SectionMessage tone="warning">{t("settings.ai.copilotSlowDown")}</SectionMessage>
+            ) : copilotFlowStatus === "backend_error" ? (
+              <SectionMessage tone="error">{copilotFlowMessage || t("settings.ai.copilotBackendError")}</SectionMessage>
             ) : (
               <p className="text-center text-sm text-muted-foreground">
-                Waiting for authorization...
+                {t("settings.ai.copilotPending")}
               </p>
             )}
           </div>
@@ -799,3 +1057,4 @@ export default function AiSettingsPanel() {
     </div>
   );
 }
+

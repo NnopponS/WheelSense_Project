@@ -231,30 +231,116 @@ async def test_caregiver_crud(client: AsyncClient):
     ws_id = ws_resp.json()["id"]
     await client.post(f"/api/workspaces/{ws_id}/activate")
 
-    resp = await client.post("/api/caregivers", json={
+    create_payload = {
         "first_name": "Nurse",
         "last_name": "Joy",
         "role": "observer",
-    })
+        "employee_code": "OBS-101",
+        "department": "Nursing",
+        "employment_type": "full_time",
+        "specialty": "night_watch",
+        "license_number": "TH-NA-12345",
+        "phone": "555-0001",
+        "email": "nurse.joy@example.com",
+        "emergency_contact_name": "Joy Contact",
+        "emergency_contact_phone": "555-0002",
+        "photo_url": "https://example.com/caregiver-joy.jpg",
+    }
+    resp = await client.post("/api/caregivers", json=create_payload)
     assert resp.status_code == 201
-    cg_id = resp.json()["id"]
+    created = resp.json()
+    cg_id = created["id"]
+    assert created["employee_code"] == "OBS-101"
+    assert created["department"] == "Nursing"
+    assert created["employment_type"] == "full_time"
+    assert created["specialty"] == "night_watch"
+    assert created["license_number"] == "TH-NA-12345"
+    assert created["emergency_contact_name"] == "Joy Contact"
+    assert created["emergency_contact_phone"] == "555-0002"
+    assert created["photo_url"] == "https://example.com/caregiver-joy.jpg"
 
     resp = await client.get("/api/caregivers")
     assert resp.status_code == 200
-    assert len(resp.json()) >= 1
+    caregivers = resp.json()
+    assert len(caregivers) >= 1
+    row = next((item for item in caregivers if item["id"] == cg_id), None)
+    assert row is not None
+    assert row["employee_code"] == "OBS-101"
+    assert row["department"] == "Nursing"
+    assert row["employment_type"] == "full_time"
+    assert row["specialty"] == "night_watch"
+    assert row["license_number"] == "TH-NA-12345"
+    assert row["emergency_contact_name"] == "Joy Contact"
+    assert row["emergency_contact_phone"] == "555-0002"
+    assert row["photo_url"] == "https://example.com/caregiver-joy.jpg"
 
     resp = await client.get(f"/api/caregivers/{cg_id}")
     assert resp.status_code == 200
-    assert resp.json()["first_name"] == "Nurse"
+    fetched = resp.json()
+    assert fetched["first_name"] == "Nurse"
+    assert fetched["employee_code"] == "OBS-101"
+    assert fetched["department"] == "Nursing"
+    assert fetched["employment_type"] == "full_time"
+    assert fetched["specialty"] == "night_watch"
+    assert fetched["license_number"] == "TH-NA-12345"
+    assert fetched["emergency_contact_name"] == "Joy Contact"
+    assert fetched["emergency_contact_phone"] == "555-0002"
+    assert fetched["photo_url"] == "https://example.com/caregiver-joy.jpg"
 
     resp = await client.patch(
         f"/api/caregivers/{cg_id}",
-        json={"first_name": "Nurse", "last_name": "Updated", "phone": "555-0100"},
+        json={
+            "first_name": "Nurse",
+            "last_name": "Updated",
+            "employee_code": "OBS-102",
+            "department": "Rehab",
+            "employment_type": "contract",
+            "specialty": "mobility_support",
+            "license_number": "TH-NA-54321",
+            "phone": "555-0100",
+            "email": "nurse.updated@example.com",
+            "emergency_contact_name": "Updated Contact",
+            "emergency_contact_phone": "555-0101",
+            "photo_url": "https://example.com/caregiver-updated.jpg",
+        },
     )
     assert resp.status_code == 200
     body = resp.json()
     assert body["last_name"] == "Updated"
+    assert body["employee_code"] == "OBS-102"
+    assert body["department"] == "Rehab"
+    assert body["employment_type"] == "contract"
+    assert body["specialty"] == "mobility_support"
+    assert body["license_number"] == "TH-NA-54321"
     assert body["phone"] == "555-0100"
+    assert body["email"] == "nurse.updated@example.com"
+    assert body["emergency_contact_name"] == "Updated Contact"
+    assert body["emergency_contact_phone"] == "555-0101"
+    assert body["photo_url"] == "https://example.com/caregiver-updated.jpg"
+
+    resp = await client.patch(
+        f"/api/caregivers/{cg_id}",
+        json={
+            "employee_code": None,
+            "department": None,
+            "employment_type": None,
+            "specialty": None,
+            "license_number": None,
+            "emergency_contact_name": None,
+            "emergency_contact_phone": None,
+            "photo_url": None,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["employee_code"] == ""
+    assert body["department"] == ""
+    assert body["employment_type"] == ""
+    assert body["specialty"] == ""
+    assert body["license_number"] == ""
+    assert body["emergency_contact_name"] == ""
+    assert body["emergency_contact_phone"] == ""
+    assert body["photo_url"] == ""
 
 
 @pytest.mark.asyncio
@@ -438,7 +524,7 @@ async def test_create_user_rejects_cross_workspace_caregiver_link(
         },
     )
     assert res.status_code == 400
-    assert res.json()["detail"] == "Caregiver not found in current workspace"
+    assert res.json()["error"]["message"] == "Caregiver not found in current workspace"
 
 
 @pytest.mark.asyncio
@@ -484,14 +570,14 @@ async def test_update_user_rejects_cross_workspace_patient_and_caregiver_links(
         json={"patient_id": patient.id},
     )
     assert patient_update.status_code == 400
-    assert patient_update.json()["detail"] == "Patient not found in current workspace"
+    assert patient_update.json()["error"]["message"] == "Patient not found in current workspace"
 
     caregiver_update = await client.put(
         f"/api/users/{user_id}",
         json={"caregiver_id": caregiver.id},
     )
     assert caregiver_update.status_code == 400
-    assert caregiver_update.json()["detail"] == "Caregiver not found in current workspace"
+    assert caregiver_update.json()["error"]["message"] == "Caregiver not found in current workspace"
 
 
 @pytest.mark.asyncio
@@ -617,3 +703,60 @@ async def test_alert_lifecycle(client: AsyncClient):
     resp = await client.get("/api/alerts?status=active")
     assert resp.status_code == 200
     assert len(resp.json()) == 0
+
+
+@pytest.mark.asyncio
+async def test_patient_alert_create_is_self_scoped(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    make_token_headers,
+):
+    own_resp = await client.post(
+        "/api/patients",
+        json={"first_name": "Alert", "last_name": "Owner"},
+    )
+    assert own_resp.status_code == 201
+    own_patient = own_resp.json()
+    other_resp = await client.post(
+        "/api/patients",
+        json={"first_name": "Alert", "last_name": "Other"},
+    )
+    assert other_resp.status_code == 201
+    other_patient = other_resp.json()
+
+    patient_user = User(
+        workspace_id=own_patient["workspace_id"],
+        username="patient_alert_scope",
+        hashed_password=get_password_hash("password123"),
+        role="patient",
+        patient_id=own_patient["id"],
+        is_active=True,
+    )
+    db_session.add(patient_user)
+    await db_session.commit()
+    await db_session.refresh(patient_user)
+    headers = make_token_headers(patient_user)
+
+    blocked = await client.post(
+        "/api/alerts",
+        json={
+            "patient_id": other_patient["id"],
+            "alert_type": "patient_assistance",
+            "severity": "warning",
+            "title": "Help request",
+        },
+        headers=headers,
+    )
+    assert blocked.status_code == 403
+
+    created = await client.post(
+        "/api/alerts",
+        json={
+            "alert_type": "patient_assistance",
+            "severity": "warning",
+            "title": "Help request",
+        },
+        headers=headers,
+    )
+    assert created.status_code == 201
+    assert created.json()["patient_id"] == own_patient["id"]

@@ -21,6 +21,12 @@ async def test_mcp_sse_mount():
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
+        root_response = await client.get("/")
+        if root_response.json()["mcp"] is None:
+            response = await client.get("/mcp/sse")
+            assert response.status_code == 404
+            return
+
         # The SSE endpoint is mounted at /mcp/messages /mcp/sse etc.
         # FastMCP provides an SSE transport natively.
         # Use anyio timeout to prevent hanging — SSE is a long-lived connection.

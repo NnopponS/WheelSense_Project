@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -27,7 +28,10 @@ def build_error(
     details: Any | None = None,
 ) -> dict[str, Any]:
     payload = APIErrorEnvelope(error=APIError(code=code, message=message, details=details))
-    return payload.model_dump(exclude_none=True)
+    return jsonable_encoder(
+        payload.model_dump(exclude_none=True),
+        custom_encoder={BaseException: str},
+    )
 
 
 def raise_api_error(

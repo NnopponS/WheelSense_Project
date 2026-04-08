@@ -8,6 +8,7 @@ export type MonitoringViewMode = "list" | "map";
 export interface MonitoringWorkspaceQuery {
   facilityId: number | null;
   floorId: number | null;
+  roomId: number | null;
   view: MonitoringViewMode;
 }
 
@@ -35,6 +36,7 @@ export function parseMonitoringQuery(
   return {
     facilityId: parsePositiveInt(firstString(sp.facility)),
     floorId: parsePositiveInt(firstString(sp.floor)),
+    roomId: parsePositiveInt(firstString(sp.room)),
     view: parseView(firstString(sp.view)),
   };
 }
@@ -57,10 +59,12 @@ export function legacyMonitoringTabRedirect(
   const base = new URLSearchParams();
   const facility = firstString(sp.facility);
   const floor = firstString(sp.floor);
+  const room = firstString(sp.room);
   const view = firstString(sp.view);
 
   if (facility) base.set("facility", facility);
   if (floor) base.set("floor", floor);
+  if (room) base.set("room", room);
 
   if (tab === "floorplans") {
     base.set("view", "map");
@@ -90,6 +94,7 @@ export function buildMonitoringSearchParams(
     if (q.facilityId === null) {
       out.delete("facility");
       out.delete("floor");
+      out.delete("room");
     } else {
       out.set("facility", String(q.facilityId));
     }
@@ -98,8 +103,17 @@ export function buildMonitoringSearchParams(
   if (q.floorId !== undefined) {
     if (q.floorId === null) {
       out.delete("floor");
+      out.delete("room");
     } else {
       out.set("floor", String(q.floorId));
+    }
+  }
+
+  if (q.roomId !== undefined) {
+    if (q.roomId === null) {
+      out.delete("room");
+    } else {
+      out.set("room", String(q.roomId));
     }
   }
 

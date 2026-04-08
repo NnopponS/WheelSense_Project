@@ -622,6 +622,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/caregivers/{caregiver_id}/patients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Caregiver Patient Access */
+        get: operations["list_caregiver_patient_access_api_caregivers__caregiver_id__patients_get"];
+        /** Replace Caregiver Patient Access */
+        put: operations["replace_caregiver_patient_access_api_caregivers__caregiver_id__patients_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/caregivers/{caregiver_id}": {
         parameters: {
             query?: never;
@@ -1128,6 +1146,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Users
+         * @description Search active workspace users for role/person assignment controls.
+         */
+        get: operations["search_users_api_users_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{user_id}": {
         parameters: {
             query?: never;
@@ -1142,7 +1180,11 @@ export interface paths {
          */
         put: operations["update_user_api_users__user_id__put"];
         post?: never;
-        delete?: never;
+        /**
+         * Delete User
+         * @description Soft-delete a user by deactivating it and clearing caregiver/patient links.
+         */
+        delete: operations["delete_user_api_users__user_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1866,6 +1908,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/future/floorplans/presence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Floorplan Presence
+         * @description Read-side room presence projection for map-friendly monitoring.
+         */
+        get: operations["get_floorplan_presence_api_future_floorplans_presence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/future/specialists": {
         parameters: {
             query?: never;
@@ -1948,6 +2010,23 @@ export interface paths {
         put?: never;
         /** Create Pharmacy Order */
         post: operations["create_pharmacy_order_api_future_pharmacy_orders_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/future/pharmacy/orders/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Pharmacy Order */
+        post: operations["request_pharmacy_order_api_future_pharmacy_orders_request_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2314,6 +2393,31 @@ export interface components {
             /** Role */
             role: string;
             /**
+             * Employee Code
+             * @default
+             */
+            employee_code: string;
+            /**
+             * Department
+             * @default
+             */
+            department: string;
+            /**
+             * Employment Type
+             * @default
+             */
+            employment_type: string;
+            /**
+             * Specialty
+             * @default
+             */
+            specialty: string;
+            /**
+             * License Number
+             * @default
+             */
+            license_number: string;
+            /**
              * Phone
              * @default
              */
@@ -2323,6 +2427,21 @@ export interface components {
              * @default
              */
             email: string;
+            /**
+             * Emergency Contact Name
+             * @default
+             */
+            emergency_contact_name: string;
+            /**
+             * Emergency Contact Phone
+             * @default
+             */
+            emergency_contact_phone: string;
+            /**
+             * Photo Url
+             * @default
+             */
+            photo_url: string;
         };
         /** CareGiverOut */
         CareGiverOut: {
@@ -2336,10 +2455,26 @@ export interface components {
             last_name: string;
             /** Role */
             role: string;
+            /** Employee Code */
+            employee_code: string;
+            /** Department */
+            department: string;
+            /** Employment Type */
+            employment_type: string;
+            /** Specialty */
+            specialty: string;
+            /** License Number */
+            license_number: string;
             /** Phone */
             phone: string;
             /** Email */
             email: string;
+            /** Emergency Contact Name */
+            emergency_contact_name: string;
+            /** Emergency Contact Phone */
+            emergency_contact_phone: string;
+            /** Photo Url */
+            photo_url: string;
             /** Is Active */
             is_active: boolean;
             /**
@@ -2359,10 +2494,26 @@ export interface components {
             last_name?: string | null;
             /** Role */
             role?: string | null;
+            /** Employee Code */
+            employee_code?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Employment Type */
+            employment_type?: string | null;
+            /** Specialty */
+            specialty?: string | null;
+            /** License Number */
+            license_number?: string | null;
             /** Phone */
             phone?: string | null;
             /** Email */
             email?: string | null;
+            /** Emergency Contact Name */
+            emergency_contact_name?: string | null;
+            /** Emergency Contact Phone */
+            emergency_contact_phone?: string | null;
+            /** Photo Url */
+            photo_url?: string | null;
             /** Is Active */
             is_active?: boolean | null;
         };
@@ -2571,6 +2722,36 @@ export interface components {
             assigned_at: string;
             /** Is Active */
             is_active: boolean;
+        };
+        /** CaregiverPatientAccessOut */
+        CaregiverPatientAccessOut: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /** Caregiver Id */
+            caregiver_id: number;
+            /** Patient Id */
+            patient_id: number;
+            /** Assigned By User Id */
+            assigned_by_user_id: number | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CaregiverPatientAccessReplace */
+        CaregiverPatientAccessReplace: {
+            /** Patient Ids */
+            patient_ids: number[];
         };
         /** ChatConversationCreate */
         ChatConversationCreate: {
@@ -2980,6 +3161,94 @@ export interface components {
              * @default 1
              */
             version: number;
+        };
+        /** FloorplanPresenceOut */
+        FloorplanPresenceOut: {
+            /** Facility Id */
+            facility_id: number;
+            /** Floor Id */
+            floor_id: number;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Rooms */
+            rooms: components["schemas"]["FloorplanPresenceRoomOut"][];
+        };
+        /** FloorplanPresencePatientHint */
+        FloorplanPresencePatientHint: {
+            /** Patient Id */
+            patient_id: number;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Nickname
+             * @default
+             */
+            nickname: string;
+            /** Source */
+            source: string;
+        };
+        /** FloorplanPresencePredictionHint */
+        FloorplanPresencePredictionHint: {
+            /** Device Id */
+            device_id: string;
+            /** Patient Id */
+            patient_id?: number | null;
+            /** Predicted Room Id */
+            predicted_room_id?: number | null;
+            /**
+             * Predicted Room Name
+             * @default
+             */
+            predicted_room_name: string;
+            /**
+             * Confidence
+             * @default 0
+             */
+            confidence: number;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Staleness Seconds */
+            staleness_seconds: number;
+        };
+        /** FloorplanPresenceRoomOut */
+        FloorplanPresenceRoomOut: {
+            /** Room Id */
+            room_id: number;
+            /** Room Name */
+            room_name: string;
+            /** Floor Id */
+            floor_id?: number | null;
+            /** Node Device Id */
+            node_device_id?: string | null;
+            /**
+             * Node Status
+             * @default unmapped
+             */
+            node_status: string;
+            patient_hint?: components["schemas"]["FloorplanPresencePatientHint"] | null;
+            prediction_hint?: components["schemas"]["FloorplanPresencePredictionHint"] | null;
+            /**
+             * Confidence
+             * @default 0
+             */
+            confidence: number;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Staleness Seconds */
+            staleness_seconds?: number | null;
+            /** Sources */
+            sources?: string[];
         };
         /**
          * FloorplanRoomShape
@@ -3581,6 +3850,26 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** PharmacyOrderRequest */
+        PharmacyOrderRequest: {
+            /** Prescription Id */
+            prescription_id: number;
+            /**
+             * Pharmacy Name
+             * @default Preferred pharmacy
+             */
+            pharmacy_name: string;
+            /**
+             * Quantity
+             * @default 30
+             */
+            quantity: number;
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
         };
         /** PharmacyOrderUpdate */
         PharmacyOrderUpdate: {
@@ -4276,10 +4565,30 @@ export interface components {
             updated_at: string;
         };
         /**
+         * UserSearchOut
+         * @description Search result shape for person-target assignment controls.
+         */
+        UserSearchOut: {
+            /** Id */
+            id: number;
+            /** Username */
+            username: string;
+            /** Role */
+            role: string;
+            /** Caregiver Id */
+            caregiver_id?: number | null;
+            /** Patient Id */
+            patient_id?: number | null;
+            /** Display Name */
+            display_name: string;
+        };
+        /**
          * UserUpdate
          * @description Attributes when updating a user.
          */
         UserUpdate: {
+            /** Username */
+            username?: string | null;
             /** Password */
             password?: string | null;
             /** Role */
@@ -5945,6 +6254,72 @@ export interface operations {
             };
         };
     };
+    list_caregiver_patient_access_api_caregivers__caregiver_id__patients_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caregiver_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaregiverPatientAccessOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_caregiver_patient_access_api_caregivers__caregiver_id__patients_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                caregiver_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaregiverPatientAccessReplace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaregiverPatientAccessOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_caregiver_api_caregivers__caregiver_id__get: {
         parameters: {
             query?: never;
@@ -7361,6 +7736,39 @@ export interface operations {
             };
         };
     };
+    search_users_api_users_search_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                roles?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSearchOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_user_api_users__user_id__put: {
         parameters: {
             query?: never;
@@ -7384,6 +7792,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_user_api_users__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -8855,6 +9292,38 @@ export interface operations {
             };
         };
     };
+    get_floorplan_presence_api_future_floorplans_presence_get: {
+        parameters: {
+            query: {
+                facility_id: number;
+                floor_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FloorplanPresenceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_specialists_api_future_specialists_get: {
         parameters: {
             query?: {
@@ -9097,6 +9566,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PharmacyOrderCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PharmacyOrderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_pharmacy_order_api_future_pharmacy_orders_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PharmacyOrderRequest"];
             };
         };
         responses: {

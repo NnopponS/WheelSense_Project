@@ -161,7 +161,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
               htmlFor="cg-role"
               className="block text-xs font-medium text-on-surface-variant"
             >
-              Role
+              {t("profile.role")}
             </label>
             <select
               id="cg-role"
@@ -169,10 +169,10 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
               value={role}
               onChange={(e) => setRole(e.target.value as CaregiverRole)}
             >
-              <option value="admin">Admin</option>
-              <option value="head_nurse">Head Nurse</option>
-              <option value="supervisor">Supervisor</option>
-              <option value="observer">Observer</option>
+              <option value="admin">{t("shell.roleAdmin")}</option>
+              <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
+              <option value="supervisor">{t("shell.roleSupervisor")}</option>
+              <option value="observer">{t("shell.roleObserver")}</option>
             </select>
           </div>
 

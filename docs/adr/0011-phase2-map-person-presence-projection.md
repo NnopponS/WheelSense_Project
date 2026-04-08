@@ -1,7 +1,7 @@
 # ADR-0011: Phase 2 Map–Room–Person Presence Projection
 
 **Date**: 2026-04-05  
-**Status**: proposed  
+**Status**: accepted
 **Deciders**: Engineering (WheelSense)
 
 ## Context
@@ -38,6 +38,10 @@ Treat **room presence** as a **read-side projection**:
 3. **Conflicts**: When signals conflict, return **multiple hints** or a single `primary` + `alternates` with lower confidence — exact shape fixed in OpenAPI/schema during implementation.
 
 4. **Caching** (optional): Short TTL in-memory or `room_presence_snapshots` table for heavy floors; not required for MVP of the endpoint.
+
+Implementation note:
+
+- The MVP is implemented as `GET /api/future/floorplans/presence` with service-layer projection logic under the future domains service. It returns room-level node status, optional patient and prediction hints, confidence, staleness, computed timestamp, and source tags. It does not mutate patient assignment or prediction tables.
 
 ## Alternatives Considered
 

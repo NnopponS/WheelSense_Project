@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,8 +29,13 @@ from seed_device_extras import seed_additional_sim_devices
 from app.models import (
     ActivityTimeline,
     Alert,
+    AuditTrailEvent,
     CareDirective,
     CareGiver,
+    HandoverNote,
+    PharmacyOrder,
+    Prescription,
+    RoleMessage,
     CareSchedule,
     CareTask,
     Device,
@@ -40,6 +45,8 @@ from app.models import (
     Patient,
     PatientDeviceAssignment,
     Room,
+    SmartDevice,
+    Specialist,
     User,
     VitalReading,
     Workspace,
@@ -205,7 +212,21 @@ async def ensure_workspace(
 
 
 async def clear_workspace_event_data(session: AsyncSession, workspace_id: int) -> None:
-    for model in (CareTask, CareSchedule, CareDirective, Alert, ActivityTimeline, VitalReading):
+    for model in (
+        PharmacyOrder,
+        Prescription,
+        Specialist,
+        RoleMessage,
+        HandoverNote,
+        AuditTrailEvent,
+        CareTask,
+        CareSchedule,
+        CareDirective,
+        Alert,
+        ActivityTimeline,
+        VitalReading,
+        SmartDevice,
+    ):
         await session.execute(delete(model).where(model.workspace_id == workspace_id))
     await session.commit()
 
@@ -347,6 +368,94 @@ async def seed_floorplan_layouts(
     await session.commit()
 
 
+async def seed_room_node_mappings(
+    session: AsyncSession,
+    workspace_id: int,
+    rooms: list[Room],
+) -> int:
+    """Bind a subset of rooms to demo node devices for monitoring/presence workflows."""
+    node_ids = ["SIM_NODE_01", "SIM_NODE_02", "SIM_NODE_03"]
+    mapped = 0
+    for idx, node_id in enumerate(node_ids):
+        if idx >= len(rooms):
+            break
+        room = rooms[idx]
+
+        dq = await session.execute(
+            select(Device).where(
+                Device.workspace_id == workspace_id,
+                Device.device_id == node_id,
+            )
+        )
+        device = dq.scalar_one_or_none()
+        if device is None:
+            continue
+
+        # Keep 1:1 room-node mapping deterministic within the workspace.
+        await session.execute(
+            update(Room)
+            .where(Room.workspace_id == workspace_id, Room.node_device_id == node_id)
+            .values(node_device_id=None)
+        )
+        room.node_device_id = node_id
+        mapped += 1
+
+    await session.commit()
+    return mapped
+
+
+async def seed_smart_devices(
+    session: AsyncSession,
+    workspace_id: int,
+    rooms: list[Room],
+) -> int:
+    """Seed deterministic smart-home entities per workspace/room."""
+    seeded = 0
+    specs = [
+        ("Bedside Light 1", "light", "off", 0),
+        ("Bedside Fan 1", "fan", "off", 0),
+        ("Bedside Light 2", "light", "on", 1),
+        ("Nurse Station Switch", "switch", "off", 10),
+        ("Dining AC", "climate", "cool", 11),
+        ("Garden Light", "light", "off", 13),
+    ]
+    for name, device_type, state, room_idx in specs:
+        if room_idx >= len(rooms):
+            continue
+        room = rooms[room_idx]
+        entity = f"{device_type}.ws{workspace_id}_room{room.id}_{name.lower().replace(' ', '_')}"
+        q = await session.execute(
+            select(SmartDevice).where(
+                SmartDevice.workspace_id == workspace_id,
+                SmartDevice.ha_entity_id == entity,
+            )
+        )
+        row = q.scalar_one_or_none()
+        if row is None:
+            row = SmartDevice(
+                workspace_id=workspace_id,
+                room_id=room.id,
+                name=name,
+                ha_entity_id=entity,
+                device_type=device_type,
+                is_active=True,
+                state=state,
+                config={"seed": True, "room_name": room.name},
+            )
+            session.add(row)
+        else:
+            row.room_id = room.id
+            row.name = name
+            row.device_type = device_type
+            row.is_active = True
+            row.state = state
+            row.config = {"seed": True, "room_name": room.name}
+        seeded += 1
+
+    await session.commit()
+    return seeded
+
+
 async def seed_caregivers_and_users(
     session: AsyncSession, workspace_id: int
 ) -> tuple[dict[str, CareGiver], dict[str, User]]:
@@ -357,11 +466,62 @@ async def seed_caregivers_and_users(
         ("observer", "demo_observer2", "วิมล", "รักษ์ไทย"),
     ]
     hashed = get_password_hash(DEMO_PASSWORD)
+    profile_by_username = {
+        "demo_headnurse": {
+            "employee_code": "HN-001",
+            "department": "Nursing",
+            "employment_type": "full_time",
+            "specialty": "geriatric_care",
+            "license_number": "TH-RN-88001",
+            "phone": "081-100-1001",
+            "email": "headnurse.demo@wheelsense.local",
+            "emergency_contact_name": "Somkorn Ward",
+            "emergency_contact_phone": "081-900-1001",
+            "photo_url": "https://images.wheelsense.local/staff/head-nurse-01.jpg",
+        },
+        "demo_supervisor": {
+            "employee_code": "SV-001",
+            "department": "Care Operations",
+            "employment_type": "full_time",
+            "specialty": "fall_response",
+            "license_number": "TH-SV-24001",
+            "phone": "081-100-1002",
+            "email": "supervisor.demo@wheelsense.local",
+            "emergency_contact_name": "Malinee Vejkit",
+            "emergency_contact_phone": "081-900-1002",
+            "photo_url": "https://images.wheelsense.local/staff/supervisor-01.jpg",
+        },
+        "demo_observer": {
+            "employee_code": "OB-001",
+            "department": "Nursing",
+            "employment_type": "full_time",
+            "specialty": "night_watch",
+            "license_number": "TH-NA-55001",
+            "phone": "081-100-1003",
+            "email": "observer1.demo@wheelsense.local",
+            "emergency_contact_name": "Thongbai Jaidee",
+            "emergency_contact_phone": "081-900-1003",
+            "photo_url": "https://images.wheelsense.local/staff/observer-01.jpg",
+        },
+        "demo_observer2": {
+            "employee_code": "OB-002",
+            "department": "Nursing",
+            "employment_type": "part_time",
+            "specialty": "mobility_support",
+            "license_number": "TH-NA-55002",
+            "phone": "081-100-1004",
+            "email": "observer2.demo@wheelsense.local",
+            "emergency_contact_name": "Prasert Rukthai",
+            "emergency_contact_phone": "081-900-1004",
+            "photo_url": "https://images.wheelsense.local/staff/observer-02.jpg",
+        },
+    }
 
     caregivers_by_role: dict[str, CareGiver] = {}
     users_by_role: dict[str, User] = {}
 
     for role, username, first_name, last_name in users_cfg:
+        profile = profile_by_username[username]
         cq = await session.execute(
             select(CareGiver).where(
                 CareGiver.workspace_id == workspace_id,
@@ -376,12 +536,33 @@ async def seed_caregivers_and_users(
                 first_name=first_name,
                 last_name=last_name,
                 role=role,
+                employee_code=profile["employee_code"],
+                department=profile["department"],
+                employment_type=profile["employment_type"],
+                specialty=profile["specialty"],
+                license_number=profile["license_number"],
                 is_active=True,
-                phone="",
-                email="",
+                phone=profile["phone"],
+                email=profile["email"],
+                emergency_contact_name=profile["emergency_contact_name"],
+                emergency_contact_phone=profile["emergency_contact_phone"],
+                photo_url=profile["photo_url"],
             )
             session.add(caregiver)
             await session.flush()
+        else:
+            caregiver.role = role
+            caregiver.employee_code = profile["employee_code"]
+            caregiver.department = profile["department"]
+            caregiver.employment_type = profile["employment_type"]
+            caregiver.specialty = profile["specialty"]
+            caregiver.license_number = profile["license_number"]
+            caregiver.phone = profile["phone"]
+            caregiver.email = profile["email"]
+            caregiver.emergency_contact_name = profile["emergency_contact_name"]
+            caregiver.emergency_contact_phone = profile["emergency_contact_phone"]
+            caregiver.photo_url = profile["photo_url"]
+            caregiver.is_active = True
 
         uq = await session.execute(select(User).where(User.username == username))
         user = uq.scalar_one_or_none()
@@ -698,6 +879,188 @@ async def seed_workflow(
     return schedule_count, task_count, directive_count
 
 
+async def seed_messages_and_handovers(
+    session: AsyncSession,
+    workspace_id: int,
+    users_by_role: dict[str, User],
+    patients: list[Patient],
+) -> tuple[int, int]:
+    """Seed role messaging inboxes and handover notes for operational routes."""
+    now = datetime.now(timezone.utc)
+    head_nurse = users_by_role["head_nurse"]
+    supervisor = users_by_role["supervisor"]
+    observer = users_by_role["observer"]
+    patient_user = users_by_role.get("patient")
+
+    message_count = 0
+    handover_count = 0
+
+    message_specs: list[dict[str, object]] = [
+        {
+            "sender_user_id": head_nurse.id,
+            "recipient_role": "observer",
+            "recipient_user_id": None,
+            "subject": "Shift kickoff",
+            "body": "Start morning checks and escalate any warning vitals.",
+            "patient_id": patients[0].id,
+            "is_read": True,
+        },
+        {
+            "sender_user_id": observer.id,
+            "recipient_role": "head_nurse",
+            "recipient_user_id": head_nurse.id,
+            "subject": "Room follow-up",
+            "body": "Patient requested posture adjustment after medication round.",
+            "patient_id": patients[1].id,
+            "is_read": False,
+        },
+        {
+            "sender_user_id": supervisor.id,
+            "recipient_role": "head_nurse",
+            "recipient_user_id": head_nurse.id,
+            "subject": "Directive context",
+            "body": "Keep observer cadence at two-hour intervals for mobility risk patients.",
+            "patient_id": patients[2].id,
+            "is_read": False,
+        },
+    ]
+    if patient_user:
+        message_specs.append(
+            {
+                "sender_user_id": patient_user.id,
+                "recipient_role": "head_nurse",
+                "recipient_user_id": head_nurse.id,
+                "subject": "Medication question",
+                "body": "Can the evening dose be shifted by 30 minutes?",
+                "patient_id": patients[0].id,
+                "is_read": False,
+            }
+        )
+
+    for idx, spec in enumerate(message_specs):
+        row = RoleMessage(
+            workspace_id=workspace_id,
+            sender_user_id=int(spec["sender_user_id"]),
+            recipient_role=spec["recipient_role"],  # type: ignore[arg-type]
+            recipient_user_id=spec["recipient_user_id"],  # type: ignore[arg-type]
+            patient_id=int(spec["patient_id"]),
+            subject=str(spec["subject"]),
+            body=str(spec["body"]),
+            is_read=bool(spec["is_read"]),
+            created_at=now - timedelta(hours=idx + 1),
+        )
+        if row.is_read:
+            row.read_at = row.created_at + timedelta(minutes=15)
+        session.add(row)
+        message_count += 1
+
+    for idx in range(4):
+        row = HandoverNote(
+            workspace_id=workspace_id,
+            patient_id=patients[idx].id,
+            author_user_id=observer.id if idx % 2 == 0 else head_nurse.id,
+            target_role="head_nurse" if idx % 2 == 0 else "supervisor",
+            shift_date=(now - timedelta(days=idx)).date(),
+            shift_label="morning" if idx % 2 == 0 else "night",
+            priority="routine" if idx < 2 else "urgent",
+            note=f"Seed handover note #{idx + 1} for patient monitoring continuity.",
+            created_at=now - timedelta(hours=idx * 3),
+        )
+        session.add(row)
+        handover_count += 1
+
+    await session.commit()
+    return message_count, handover_count
+
+
+async def seed_future_domains(
+    session: AsyncSession,
+    workspace_id: int,
+    users_by_role: dict[str, User],
+    patients: list[Patient],
+) -> tuple[int, int, int]:
+    """Seed specialists, prescriptions, and pharmacy orders for role routes."""
+    now = datetime.now(timezone.utc)
+    supervisor = users_by_role["supervisor"]
+    specialist_count = 0
+    prescription_count = 0
+    pharmacy_order_count = 0
+
+    specialist_specs = [
+        ("Krit", "Sawang", "neurology", "NEU-1001"),
+        ("Napat", "Raksa", "geriatrics", "GER-2204"),
+        ("Ploy", "Anan", "cardiology", "CAR-3310"),
+    ]
+    specialists: list[Specialist] = []
+    for first_name, last_name, specialty, license_number in specialist_specs:
+        row = Specialist(
+            workspace_id=workspace_id,
+            first_name=first_name,
+            last_name=last_name,
+            specialty=specialty,
+            license_number=license_number,
+            phone="",
+            email=f"{first_name.lower()}.{last_name.lower()}@demo.local",
+            notes="Seeded specialist profile",
+            is_active=True,
+        )
+        session.add(row)
+        await session.flush()
+        specialists.append(row)
+        specialist_count += 1
+
+    prescriptions: list[Prescription] = []
+    for idx, patient in enumerate(patients[:6]):
+        specialist = specialists[idx % len(specialists)]
+        row = Prescription(
+            workspace_id=workspace_id,
+            patient_id=patient.id,
+            specialist_id=specialist.id,
+            prescribed_by_user_id=supervisor.id,
+            medication_name=f"Medication {idx + 1}",
+            dosage="1 tablet",
+            frequency="BID",
+            route="oral",
+            instructions="Take after meals.",
+            status="active" if idx < 4 else "paused",
+            start_date=(now - timedelta(days=7 + idx)).date(),
+            end_date=(now + timedelta(days=21)).date(),
+        )
+        session.add(row)
+        await session.flush()
+        prescriptions.append(row)
+        prescription_count += 1
+
+    for idx, prescription in enumerate(prescriptions):
+        requested_at = now - timedelta(hours=idx * 6)
+        status = "pending"
+        fulfilled_at = None
+        if idx % 3 == 1:
+            status = "verified"
+        elif idx % 3 == 2:
+            status = "dispensed"
+            fulfilled_at = requested_at + timedelta(hours=4)
+
+        row = PharmacyOrder(
+            workspace_id=workspace_id,
+            prescription_id=prescription.id,
+            patient_id=prescription.patient_id,
+            order_number=f"WS{workspace_id:03d}-RX{idx + 1:04d}",
+            pharmacy_name="Bang Khae Demo Pharmacy",
+            quantity=30,
+            refills_remaining=max(0, 2 - idx % 3),
+            status=status,
+            requested_at=requested_at,
+            fulfilled_at=fulfilled_at,
+            notes="Seeded pharmacy workflow order",
+        )
+        session.add(row)
+        pharmacy_order_count += 1
+
+    await session.commit()
+    return specialist_count, prescription_count, pharmacy_order_count
+
+
 async def attach_bootstrap_admin_to_workspace(
     session: AsyncSession, workspace_id: int
 ) -> None:
@@ -727,6 +1090,8 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
         patients, devices = await seed_patients_and_devices(session, ws.id, rooms)
         extra_devices = await seed_additional_sim_devices(session, ws.id)
         devices.extend(extra_devices)
+        room_node_mappings = await seed_room_node_mappings(session, ws.id, rooms)
+        smart_devices_count = await seed_smart_devices(session, ws.id, rooms)
         patient_user = await seed_patient_user(session, ws.id, patients[0])
         users_by_role["patient"] = patient_user
 
@@ -735,6 +1100,12 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
         alerts_count = await seed_alerts(session, ws.id, patients, caregivers_by_role, devices)
         schedules, tasks, directives = await seed_workflow(
             session, ws.id, users_by_role, patients, rooms
+        )
+        messages, handovers = await seed_messages_and_handovers(
+            session, ws.id, users_by_role, patients
+        )
+        specialists, prescriptions, pharmacy_orders = await seed_future_domains(
+            session, ws.id, users_by_role, patients
         )
 
         await attach_bootstrap_admin_to_workspace(session, ws.id)
@@ -747,7 +1118,17 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
     print(
         f"Vitals: {vitals_count} | Timeline events: {timeline_count} | Alerts: {alerts_count}"
     )
-    print(f"CareSchedules: {schedules} | CareTasks: {tasks} | Directives: {directives}\n")
+    print(
+        "CareSchedules: "
+        f"{schedules} | CareTasks: {tasks} | Directives: {directives} | "
+        f"Messages: {messages} | Handovers: {handovers}"
+    )
+    print(
+        "Smart devices: "
+        f"{smart_devices_count} | Room-node mappings: {room_node_mappings} | "
+        f"Specialists: {specialists} | Prescriptions: {prescriptions} | "
+        f"Pharmacy orders: {pharmacy_orders}\n"
+    )
     print("Demo credentials:")
     print("- admin        : BOOTSTRAP_ADMIN_USERNAME / BOOTSTRAP_ADMIN_PASSWORD (from env)")
     print("- head_nurse   : demo_headnurse / demo1234")

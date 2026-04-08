@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import HTTPException, status
 
+from sqlalchemy import or_
 from sqlalchemy.future import select
 
 from app.core.security import get_password_hash, verify_password, create_access_token
@@ -136,6 +137,74 @@ class UserService:
         return list(result.scalars().all())
 
     @staticmethod
+    async def search_users(
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        q: str | None = None,
+        roles: list[str] | None = None,
+        limit: int = 20,
+    ) -> list[dict]:
+        """Search workspace users for assign-to-person controls."""
+        stmt = select(User).where(User.workspace_id == ws_id, User.is_active.is_(True))
+        if roles:
+            stmt = stmt.where(User.role.in_(roles))
+        needle = (q or "").strip()
+        if needle:
+            like = f"%{needle}%"
+            conditions = [User.username.ilike(like)]
+            if needle.isdigit():
+                conditions.append(User.id == int(needle))
+            stmt = stmt.where(or_(*conditions))
+        stmt = stmt.order_by(User.username.asc()).limit(limit)
+        users = list((await session.execute(stmt)).scalars().all())
+        caregiver_ids = {user.caregiver_id for user in users if user.caregiver_id is not None}
+        patient_ids = {user.patient_id for user in users if user.patient_id is not None}
+
+        caregivers: dict[int, str] = {}
+        if caregiver_ids:
+            rows = (
+                await session.execute(
+                    select(CareGiver).where(
+                        CareGiver.workspace_id == ws_id,
+                        CareGiver.id.in_(caregiver_ids),
+                    )
+                )
+            ).scalars().all()
+            caregivers = {row.id: f"{row.first_name} {row.last_name}".strip() for row in rows}
+
+        patients: dict[int, str] = {}
+        if patient_ids:
+            rows = (
+                await session.execute(
+                    select(Patient).where(
+                        Patient.workspace_id == ws_id,
+                        Patient.id.in_(patient_ids),
+                    )
+                )
+            ).scalars().all()
+            patients = {row.id: f"{row.first_name} {row.last_name}".strip() for row in rows}
+
+        results = []
+        for user in users:
+            display_name = (
+                caregivers.get(user.caregiver_id or -1)
+                or patients.get(user.patient_id or -1)
+                or user.username
+            )
+            results.append(
+                {
+                    "id": user.id,
+                    "username": user.username,
+                    "role": user.role,
+                    "caregiver_id": user.caregiver_id,
+                    "patient_id": user.patient_id,
+                    "display_name": display_name,
+                }
+            )
+        return results
+
+    @staticmethod
     async def update_user(
         session: AsyncSession, user_id: int, ws_id: int, user_in: dict
     ) -> User:
@@ -198,6 +267,35 @@ class UserService:
         await session.refresh(user)
         return user
 
+    @staticmethod
+    async def soft_delete_user(
+        session: AsyncSession,
+        user_id: int,
+        ws_id: int,
+        actor_user_id: int,
+    ) -> None:
+        """Deactivate a user and clear identity links while preserving the audit row."""
+        if user_id == actor_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete the current user",
+            )
+        user = await UserService.get_user(session, user_id)
+        if not user or user.workspace_id != ws_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        old_profile_image_url = (user.profile_image_url or "").strip()
+        user.is_active = False
+        user.caregiver_id = None
+        user.patient_id = None
+        if old_profile_image_url:
+            remove_hosted_profile_file_if_any(old_profile_image_url)
+            user.profile_image_url = ""
+        session.add(user)
+        await session.commit()
+
 class AuthService:
     """Business logic for Authentication."""
 
@@ -235,5 +333,3 @@ class AuthService:
             role=user.role,
         )
         return Token(access_token=access_token, token_type="bearer")
-
-    from sqlalchemy.ext.asyncio import AsyncSession

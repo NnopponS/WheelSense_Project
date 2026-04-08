@@ -18,12 +18,19 @@ import type {
   CameraCheckResponse,
   CreateTimelineEventRequest,
   CreateTimelineEventResponse,
+  CreateWorkflowDirectiveRequest,
+  CreateWorkflowDirectiveResponse,
   CreateWorkflowHandoverRequest,
+  CreateWorkflowScheduleRequest,
+  CreateWorkflowScheduleResponse,
+  CreateWorkflowTaskRequest,
+  CreateWorkflowTaskResponse,
   CreateFuturePrescriptionRequest,
   CreateFuturePrescriptionResponse,
   CreatePatientContactRequest,
   CreateUserRequest,
   GetAlertSummaryResponse,
+  GetFloorplanPresenceResponse,
   GetVitalsAveragesResponse,
   GetWardSummaryResponse,
   ListCaregiversResponse,
@@ -48,6 +55,8 @@ import type {
   ListWorkflowDirectivesResponse,
   ListWorkflowSchedulesResponse,
   ListWorkflowTasksResponse,
+  RequestPharmacyOrderRequest,
+  RequestPharmacyOrderResponse,
   SendWorkflowMessageRequest,
   SendWorkflowMessageResponse,
   UpdateRoomRequest,
@@ -131,7 +140,10 @@ async function request<T>(
     const raw = await res.text();
     let msg = res.statusText || "Error";
     try {
-      const j = JSON.parse(raw) as { detail?: unknown };
+      const j = JSON.parse(raw) as {
+        detail?: unknown;
+        error?: { message?: unknown; details?: unknown };
+      };
       if (j.detail !== undefined) {
         msg =
           typeof j.detail === "string"
@@ -145,6 +157,8 @@ async function request<T>(
                   )
                   .join("; ")
               : JSON.stringify(j.detail);
+      } else if (typeof j.error?.message === "string") {
+        msg = j.error.message;
       }
     } catch {
       if (raw.trim()) msg = raw.slice(0, 200);
@@ -410,6 +424,12 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  createWorkflowTask: (payload: CreateWorkflowTaskRequest) =>
+    request<CreateWorkflowTaskResponse>("/workflow/tasks", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
   listWorkflowDirectives: (params?: { status?: string; limit?: number }) => {
     const query = new URLSearchParams();
     if (params?.status) query.set("status", params.status);
@@ -432,6 +452,12 @@ export const api = {
       },
     ),
 
+  createWorkflowDirective: (payload: CreateWorkflowDirectiveRequest) =>
+    request<CreateWorkflowDirectiveResponse>("/workflow/directives", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
   listWorkflowSchedules: (params?: { status?: string; patient_id?: number; limit?: number }) => {
     const query = new URLSearchParams();
     if (params?.status) query.set("status", params.status);
@@ -451,6 +477,12 @@ export const api = {
         body: JSON.stringify(payload),
       },
     ),
+
+  createWorkflowSchedule: (payload: CreateWorkflowScheduleRequest) =>
+    request<CreateWorkflowScheduleResponse>("/workflow/schedules", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   listWorkflowAudit: (params?: {
     domain?: string;
@@ -491,6 +523,12 @@ export const api = {
       suffix ? `/future/pharmacy/orders?${suffix}` : "/future/pharmacy/orders",
     );
   },
+
+  requestPharmacyOrder: (payload: RequestPharmacyOrderRequest) =>
+    request<RequestPharmacyOrderResponse>("/future/pharmacy/orders/request", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   createFuturePrescription: (payload: CreateFuturePrescriptionRequest) =>
     request<CreateFuturePrescriptionResponse>("/future/prescriptions", {
@@ -561,6 +599,13 @@ export const api = {
     return request<ListLocalizationPredictionsResponse>(
       suffix ? `/localization/predictions?${suffix}` : "/localization/predictions",
     );
+  },
+
+  getFloorplanPresence: (params: { facility_id: number; floor_id: number }) => {
+    const query = new URLSearchParams();
+    query.set("facility_id", String(params.facility_id));
+    query.set("floor_id", String(params.floor_id));
+    return request<GetFloorplanPresenceResponse>(`/future/floorplans/presence?${query.toString()}`);
   },
 };
 

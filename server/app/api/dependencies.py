@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db.session import get_session
+from app.models.caregivers import CareGiverPatientAccess
 from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.users import TokenData
@@ -186,3 +187,44 @@ def assert_patient_record_access(user: User, patient_id: int) -> None:
             detail="Operation not permitted",
         )
 
+
+async def get_visible_patient_ids(
+    db: AsyncSession,
+    ws_id: int,
+    user: User,
+) -> set[int] | None:
+    """Return None for admin-wide access, otherwise the explicit visible patient ids."""
+    if user.role == ROLE_ADMIN:
+        return None
+    if user.role == ROLE_PATIENT:
+        patient_id = getattr(user, "patient_id", None)
+        return {int(patient_id)} if patient_id is not None else set()
+    caregiver_id = getattr(user, "caregiver_id", None)
+    if caregiver_id is None:
+        return set()
+    rows = (
+        await db.execute(
+            select(CareGiverPatientAccess.patient_id).where(
+                CareGiverPatientAccess.workspace_id == ws_id,
+                CareGiverPatientAccess.caregiver_id == caregiver_id,
+                CareGiverPatientAccess.is_active.is_(True),
+            )
+        )
+    ).scalars().all()
+    return {int(patient_id) for patient_id in rows}
+
+
+async def assert_patient_record_access_db(
+    db: AsyncSession,
+    ws_id: int,
+    user: User,
+    patient_id: int,
+) -> None:
+    visible_patient_ids = await get_visible_patient_ids(db, ws_id, user)
+    if visible_patient_ids is None:
+        return
+    if patient_id not in visible_patient_ids:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot access this patient's records",
+        )
