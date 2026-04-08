@@ -1,154 +1,215 @@
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   WheelSense Design System — Clinical Clarity (Stitch)
-   Material 3–style tonal palette
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-@theme inline {
-  /* ── Primary (Deep Navy → Blue) ─────────────────────────────────────── */
-  --color-primary: #003178;
-  --color-primary-container: #0d47a1;
-  --color-primary-fixed: #d9e2ff;
-  --color-primary-fixed-dim: #b0c6ff;
-  --color-on-primary: #ffffff;
-  --color-on-primary-container: #a1bbff;
-
-  /* ── Secondary ──────────────────────────────────────────────────────── */
-  --color-secondary: #4c56af;
-  --color-secondary-container: #959efd;
-
-  /* ── Tertiary (Critical/SOS) ────────────────────────────────────────── */
-  --color-tertiary: #720006;
-  --color-tertiary-container: #9d000c;
-
-  /* ── Error ──────────────────────────────────────────────────────────── */
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-
-  /* ── Surface System (Tonal Layering) ────────────────────────────────── */
-  --color-surface: #f3faff;
-  --color-surface-bright: #f3faff;
-  --color-surface-dim: #c7dde9;
-  --color-surface-container: #dbf1fe;
-  --color-surface-container-high: #d5ecf8;
-  --color-surface-container-highest: #cfe6f2;
-  --color-surface-container-low: #e6f6ff;
-  --color-surface-container-lowest: #ffffff;
-
-  /* ── On-Surface (Text) ──────────────────────────────────────────────── */
-  --color-on-surface: #071e27;
-  --color-on-surface-variant: #434652;
-  --color-inverse-surface: #1e333c;
-  --color-inverse-on-surface: #dff4ff;
-
-  /* ── Outline ────────────────────────────────────────────────────────── */
-  --color-outline: #737783;
-  --color-outline-variant: #c3c6d4;
-
-  /* ── Semantic Status ────────────────────────────────────────────────── */
-  --color-success: #059669;
-  --color-success-bg: #ecfdf5;
-  --color-warning: #d97706;
-  --color-warning-bg: #fffbeb;
-  --color-critical: #dc2626;
-  --color-critical-bg: #fef2f2;
-  --color-info: #2563eb;
-  --color-info-bg: #eff6ff;
-
-  /* ── Typography ─────────────────────────────────────────────────────── */
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
-
-  /* ── Spacing ────────────────────────────────────────────────────────── */
-  --spacing-page: 1.5rem;
-
-  /* ── Radius ─────────────────────────────────────────────────────────── */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.25rem;
-
-  /* ── Shadows (Ambient, not "dirty") ─────────────────────────────────── */
-  --shadow-card: 0 1px 3px 0 rgb(7 30 39 / 0.04), 0 1px 2px -1px rgb(7 30 39 / 0.03);
-  --shadow-elevated: 0 4px 6px -1px rgb(7 30 39 / 0.06), 0 2px 4px -2px rgb(7 30 39 / 0.04);
-  --shadow-ambient: 0 0 24px 0 rgb(7 30 39 / 0.06);
-  --shadow-modal: 0 20px 25px -5px rgb(7 30 39 / 0.1), 0 8px 10px -6px rgb(7 30 39 / 0.08);
-
-  /* ── Layout ─────────────────────────────────────────────────────────── */
+:root {
+  --background: #eff6ff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #0f5cc0;
+  --primary-foreground: #f8fbff;
+  --primary-container: #d9e8ff;
+  --primary-container-foreground: #0b3b80;
+  --secondary: #0e7490;
+  --secondary-foreground: #f0fdff;
+  --muted: #e2eef9;
+  --muted-soft: #f6fbff;
+  --muted-foreground: #516173;
+  --accent: #d8edf7;
+  --accent-foreground: #164e63;
+  --destructive: #c63f3f;
+  --destructive-foreground: #fff7f7;
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+  --critical: #dc2626;
+  --critical-soft: #fee2e2;
+  --border: #c9d7e6;
+  --border-strong: #b3c4d8;
+  --input: #f8fbff;
+  --ring: #2563eb;
+  --shadow-card: 0 12px 30px -18px rgb(15 23 42 / 0.16);
+  --shadow-elevated: 0 24px 40px -20px rgb(15 23 42 / 0.24);
   --sidebar-width: 260px;
   --sidebar-collapsed: 72px;
   --topbar-height: 64px;
+  --radius: 1rem;
 }
 
-/* ── Global Resets ───────────────────────────────────────────────────────── */
+.dark {
+  --background: #09111f;
+  --foreground: #edf5ff;
+  --card: #0d1728;
+  --card-foreground: #edf5ff;
+  --popover: #101c30;
+  --popover-foreground: #edf5ff;
+  --primary: #8ab8ff;
+  --primary-foreground: #082452;
+  --primary-container: #123a7a;
+  --primary-container-foreground: #dbeafe;
+  --secondary: #67e8f9;
+  --secondary-foreground: #0a3442;
+  --muted: #122033;
+  --muted-soft: #0f1a2b;
+  --muted-foreground: #98abc2;
+  --accent: #152538;
+  --accent-foreground: #dbeafe;
+  --destructive: #f87171;
+  --destructive-foreground: #210909;
+  --success: #4ade80;
+  --success-soft: rgb(74 222 128 / 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgb(251 191 36 / 0.14);
+  --info: #60a5fa;
+  --info-soft: rgb(96 165 250 / 0.14);
+  --critical: #f87171;
+  --critical-soft: rgb(248 113 113 / 0.14);
+  --border: #223247;
+  --border-strong: #314861;
+  --input: #122033;
+  --ring: #8ab8ff;
+  --shadow-card: 0 16px 32px -24px rgb(2 6 23 / 0.9);
+  --shadow-elevated: 0 30px 60px -32px rgb(2 6 23 / 0.95);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-critical: var(--critical);
+
+  --color-surface: var(--background);
+  --color-surface-bright: var(--background);
+  --color-surface-dim: color-mix(in srgb, var(--background) 82%, #000 18%);
+  --color-surface-container: color-mix(in srgb, var(--card) 72%, var(--muted) 28%);
+  --color-surface-container-high: color-mix(in srgb, var(--card) 58%, var(--muted) 42%);
+  --color-surface-container-highest: color-mix(in srgb, var(--card) 45%, var(--muted) 55%);
+  --color-surface-container-low: var(--muted-soft);
+  --color-surface-container-lowest: var(--card);
+  --color-on-surface: var(--foreground);
+  --color-on-surface-variant: var(--muted-foreground);
+  --color-inverse-surface: var(--foreground);
+  --color-inverse-on-surface: var(--background);
+  --color-outline: var(--muted-foreground);
+  --color-outline-variant: var(--border-strong);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--primary-foreground);
+  --color-on-primary-container: var(--primary-container-foreground);
+  --color-secondary-container: color-mix(in srgb, var(--secondary) 18%, white 82%);
+  --color-error: var(--destructive);
+  --color-error-container: color-mix(in srgb, var(--destructive) 15%, white 85%);
+  --color-success-bg: var(--success-soft);
+  --color-warning-bg: var(--warning-soft);
+  --color-critical-bg: var(--critical-soft);
+  --color-info-bg: var(--info-soft);
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --radius-sm: calc(var(--radius) - 0.5rem);
+  --radius-md: calc(var(--radius) - 0.35rem);
+  --radius-lg: calc(var(--radius) - 0.15rem);
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 0.35rem);
+  --shadow-card: var(--shadow-card);
+  --shadow-elevated: var(--shadow-elevated);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
 
 body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgb(15 92 192 / 0.12), transparent 32%),
+    linear-gradient(180deg, var(--background), color-mix(in srgb, var(--background) 88%, var(--muted) 12%));
+  color: var(--foreground);
   font-family: var(--font-sans);
-  color: var(--color-on-surface);
-  background-color: var(--color-surface);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Care Level Badges ──────────────────────────────────────────────────── */
-
 .care-normal {
-  background-color: var(--color-success-bg);
-  color: var(--color-success);
-}
-.care-special {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
-}
-.care-critical {
-  background-color: var(--color-critical-bg);
-  color: var(--color-critical);
+  background-color: var(--success-soft);
+  color: var(--success);
 }
 
-/* ── Alert Severity ─────────────────────────────────────────────────────── */
+.care-special {
+  background-color: var(--warning-soft);
+  color: var(--warning);
+}
+
+.care-critical {
+  background-color: var(--critical-soft);
+  color: var(--critical);
+}
 
 .severity-info {
-  background-color: var(--color-info-bg);
-  color: var(--color-info);
-}
-.severity-warning {
-  background-color: var(--color-warning-bg);
-  color: var(--color-warning);
-}
-.severity-critical {
-  background-color: var(--color-critical-bg);
-  color: var(--color-critical);
+  background-color: var(--info-soft);
+  color: var(--info);
 }
 
-/* ── Gradient CTA (135deg, primary → primary-container) ─────────────────── */
+.severity-warning {
+  background-color: var(--warning-soft);
+  color: var(--warning);
+}
+
+.severity-critical {
+  background-color: var(--critical-soft);
+  color: var(--critical);
+}
 
 .gradient-cta {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-container));
-  color: var(--color-on-primary);
+  background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 74%, #fff 26%));
+  color: var(--primary-foreground);
 }
-
-/* ── Ghost Border (outline-variant at 20% opacity) ──────────────────────── */
 
 .ghost-border {
-  border: 1px solid rgb(195 198 212 / 0.2);
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
 }
-
-/* ── Glass Effect (frosted glass modals) ────────────────────────────────── */
 
 .glass {
-  background: rgb(243 250 255 / 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
-/* ── Tonal Surface Utilities ────────────────────────────────────────────── */
-
 .surface-card {
-  background-color: var(--color-surface-container-lowest);
-  border-radius: var(--radius-xl);
+  background-color: var(--card);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: var(--radius);
   box-shadow: var(--shadow-card);
 }
 
@@ -157,80 +218,83 @@ body {
 }
 
 .surface-section {
-  background-color: var(--color-surface-container-low);
-  border-radius: var(--radius-xl);
+  background-color: var(--muted-soft);
+  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  border-radius: var(--radius);
 }
 
-/* ── Input Fields (Minimalist, fill-based) ──────────────────────────────── */
-
-/* Longhand padding (no shorthand) so Tailwind pl-/pr-/py-* utilities are not reset */
 .input-field {
   width: 100%;
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface-container-low);
-  color: var(--color-on-surface);
-  border: none;
-  font-size: 1rem;
-  line-height: 1.5;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  padding: 0.75rem 1rem;
+  border-radius: calc(var(--radius) - 0.15rem);
+  background-color: var(--input);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .input-field::placeholder {
-  color: var(--color-outline);
+  color: var(--muted-foreground);
 }
 
 .input-field:focus {
   outline: none;
-  background-color: var(--color-surface-container-highest);
-  box-shadow: inset 0 -2px 0 0 var(--color-primary-container);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent);
 }
 
-/* Left search icon: use this instead of Tailwind pl-* — utilities can lose to `.input-field` in build order */
 .input-field.input-field--leading-icon {
   padding-inline-start: 2.75rem;
 }
 
-/* ── Scrollbar Styling ──────────────────────────────────────────────────── */
-
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--color-outline-variant);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-outline);
+  background: color-mix(in srgb, var(--border-strong) 88%, transparent);
+  border-radius: 999px;
 }
 
-/* ── Smooth Transitions ─────────────────────────────────────────────────── */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
 
 .transition-smooth {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ── Animations ─────────────────────────────────────────────────────────── */
-
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .animate-slide-in {

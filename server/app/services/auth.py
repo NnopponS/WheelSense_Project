@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
 """Service layer for authentication and user management."""
 
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy.future import select
 
 from app.core.security import get_password_hash, verify_password, create_access_token
@@ -10,7 +14,6 @@ from app.models.patients import Patient
 from app.models.users import User
 from app.schemas.users import UserCreate, Token
 from app.services.profile_image_storage import remove_hosted_profile_file_if_any
-
 
 class UserService:
     """Business logic for User management."""
@@ -124,7 +127,7 @@ class UserService:
                 continue
             row.patient_id = None
             session.add(row)
-        
+
     @staticmethod
     async def get_users_by_workspace(session: AsyncSession, ws_id: int) -> list[User]:
         """Get all users for a workspace."""
@@ -143,7 +146,7 @@ class UserService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
-        
+
         # Prevent taking someone else's username
         if "username" in user_in and user_in["username"] != user.username:
             existing = await UserService.get_user_by_username(session, user_in["username"])
@@ -195,7 +198,6 @@ class UserService:
         await session.refresh(user)
         return user
 
-
 class AuthService:
     """Business logic for Authentication."""
 
@@ -227,9 +229,11 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
             )
-            
+
         access_token = create_access_token(
             subject=user.id,
             role=user.role,
         )
         return Token(access_token=access_token, token_type="bearer")
+
+    from sqlalchemy.ext.asyncio import AsyncSession

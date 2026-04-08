@@ -1,6 +1,6 @@
-"""Business logic for workflow domains (Phase 12R Wave P1)."""
-
 from __future__ import annotations
+
+"""Business logic for workflow domains (Phase 12R Wave P1)."""
 
 from datetime import datetime, timezone
 from typing import Optional
@@ -29,10 +29,8 @@ from app.schemas.workflow import (
 )
 from app.services.base import CRUDBase
 
-
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
-
 
 class AuditTrailService(CRUDBase[AuditTrailEvent, AuditTrailEvent, AuditTrailEvent]):
     async def log_event(
@@ -85,7 +83,6 @@ class AuditTrailService(CRUDBase[AuditTrailEvent, AuditTrailEvent, AuditTrailEve
         stmt = stmt.order_by(AuditTrailEvent.created_at.desc()).limit(limit)
         res = await session.execute(stmt)
         return list(res.scalars().all())
-
 
 class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareScheduleUpdate]):
     async def list_schedules(
@@ -149,7 +146,6 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
         await session.commit()
         await session.refresh(schedule)
         return schedule
-
 
 class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
     @staticmethod
@@ -238,7 +234,6 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
             return False
         return self._is_task_visible(task, user_id=user_id, user_role=user_role)
 
-
 class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCreate]):
     async def send_message(
         self, session: AsyncSession, ws_id: int, sender_user_id: int, obj_in: RoleMessageCreate
@@ -323,7 +318,6 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
         await session.refresh(message)
         return message
 
-
 class HandoverNoteService(CRUDBase[HandoverNote, HandoverNoteCreate, HandoverNoteCreate]):
     async def create_note(
         self, session: AsyncSession, ws_id: int, actor_user_id: int, obj_in: HandoverNoteCreate
@@ -357,7 +351,6 @@ class HandoverNoteService(CRUDBase[HandoverNote, HandoverNoteCreate, HandoverNot
         stmt = stmt.order_by(HandoverNote.created_at.desc()).limit(limit)
         res = await session.execute(stmt)
         return list(res.scalars().all())
-
 
 class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDirectiveUpdate]):
     @staticmethod
@@ -459,7 +452,6 @@ class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDire
         await session.commit()
         await session.refresh(directive)
         return directive
-
 
 audit_trail_service = AuditTrailService(AuditTrailEvent)
 schedule_service = CareScheduleService(CareSchedule)

@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, desc
-from sqlalchemy.ext.asyncio import AsyncSession
+from __future__ import annotations
+
 from typing import Optional
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import get_current_user_workspace, get_db
 from app.models.core import Workspace
@@ -18,7 +21,7 @@ async def localization_info(ws: Workspace = Depends(get_current_user_workspace))
 
 @router.post("/train")
 async def train_localization(
-    body: TrainRequest, 
+    body: TrainRequest,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
 ):
@@ -105,3 +108,4 @@ async def list_predictions(
         }
         for r in rows
     ]
+

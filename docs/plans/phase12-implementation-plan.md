@@ -9,6 +9,13 @@ This file is kept as a historical planning artifact.
   - `frontend/README.md`
   - `wheelsense_role_breakdown.md`
   - `frontend/` source code
+- As of `2026-04-07`, the frontend also has a newer standardization layer beyond the original Phase 12 model:
+  - root app providers for theme/query/auth wiring
+  - reusable `components/ui/*` primitives
+  - TanStack Query-backed `useQuery`
+  - admin patients standardized with TanStack Table plus React Hook Form + Zod
+  - admin alerts standardized with shared summary cards and TanStack Table
+  - admin devices standardized with the shared card/filter shell
 
 ## What Phase 12 Represented
 
@@ -20,6 +27,7 @@ It established the direction for:
 - backend-driven UI scope
 - dashboard-first web workflows
 - shared frontend data-fetching patterns
+- the first generation of custom page-level components later replaced or wrapped by the current standardization layer
 
 ## What To Use Instead Today
 

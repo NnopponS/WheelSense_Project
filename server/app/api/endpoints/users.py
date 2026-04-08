@@ -1,7 +1,10 @@
+from __future__ import annotations
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
 """User endpoints: Management and CRUD for system users."""
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
     RequireRole,
@@ -17,7 +20,6 @@ from app.services.auth import UserService
 
 router = APIRouter(tags=["Users"])
 
-
 @router.post("", response_model=UserOut)
 async def create_user(
     data: UserCreate,
@@ -30,7 +32,6 @@ async def create_user(
     """
     return await UserService.create_user(session, ws.id, data)
 
-
 @router.get("", response_model=list[UserOut])
 async def read_users(
     session: AsyncSession = Depends(get_db),
@@ -41,7 +42,6 @@ async def read_users(
     Retrieve users. Admins and Supervisors can view users.
     """
     return await UserService.get_users_by_workspace(session, ws.id)
-
 
 @router.put("/{user_id}", response_model=UserOut)
 async def update_user(
@@ -56,3 +56,4 @@ async def update_user(
     """
     update_data = data.model_dump(exclude_unset=True)
     return await UserService.update_user(session, user_id, ws.id, update_data)
+

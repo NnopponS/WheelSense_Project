@@ -61,7 +61,6 @@ export default function PatientDetailPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
-  const [allPortalUsers, setAllPortalUsers] = useState<PortalUser[]>([]);
   const [linkedPortalUsers, setLinkedPortalUsers] = useState<PortalUser[]>([]);
 
   const fetchData = useCallback(async () => {
@@ -70,7 +69,7 @@ export default function PatientDetailPage({
       const p = await api.get<Patient>(`/patients/${id}`);
       setPatient(p);
 
-      const [c, v, a, tl, d, allUsers] = await Promise.all([
+      const [c, v, a, tl, d, users] = await Promise.all([
         api.get<PatientContact[]>(`/patients/${id}/contacts`).catch(() => []),
         api
           .get<VitalReading[]>(`/vitals/readings?patient_id=${id}&limit=20`)
@@ -85,9 +84,8 @@ export default function PatientDetailPage({
       setAlerts(a);
       setTimeline(tl);
       setAssignments(d);
-      setAllPortalUsers(Array.isArray(allUsers) ? allUsers : []);
       setLinkedPortalUsers(
-        Array.isArray(allUsers) ? allUsers.filter((u) => u.patient_id === pid) : [],
+        Array.isArray(users) ? users.filter((u) => u.patient_id === pid) : [],
       );
 
       if (p.room_id != null) {
@@ -205,12 +203,7 @@ export default function PatientDetailPage({
 
       <PatientEditorModal
         open={editorOpen}
-        patientId={id}
-        patient={patient}
-        primaryContact={primaryContact}
-        activeAssignments={activeAssignments}
-        allPortalUsers={allPortalUsers}
-        linkedPortalUsers={linkedPortalUsers}
+        patientId={Number(id)}
         onClose={closeEditor}
         onSaved={fetchData}
       />

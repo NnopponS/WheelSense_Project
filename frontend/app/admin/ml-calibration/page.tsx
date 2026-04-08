@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import MlCalibrationClient from "./MlCalibrationClient";
 
-export default function MlCalibrationRedirectPage() {
-  redirect("/admin/settings?tab=ml");
+export default function MlCalibrationPage() {
+  return <MlCalibrationClient />;
 }

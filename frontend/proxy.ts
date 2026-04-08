@@ -30,9 +30,9 @@ function pathAllowedForRole(pathname: string, role: string): boolean {
   return !!prefix;
 }
 
-function redirectToLogin(request: NextRequest, pathname: string, clearToken = false) {
+function redirectToLogin(request: NextRequest, targetPath: string, clearToken = false) {
   const login = new URL("/login", request.url);
-  login.searchParams.set("next", pathname);
+  login.searchParams.set("next", targetPath);
   const response = NextResponse.redirect(login);
   if (clearToken) {
     response.cookies.set("ws_token", "", {
@@ -45,6 +45,7 @@ function redirectToLogin(request: NextRequest, pathname: string, clearToken = fa
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const nextPath = `${pathname}${request.nextUrl.search}`;
 
   if (
     pathname.startsWith("/_next") ||
@@ -57,12 +58,12 @@ export function proxy(request: NextRequest) {
 
   const token = request.cookies.get("ws_token")?.value;
   if (!token) {
-    return redirectToLogin(request, pathname);
+    return redirectToLogin(request, nextPath);
   }
 
   const role = decodeJwtRole(token);
   if (!role || !(role in ROLE_HOME)) {
-    return redirectToLogin(request, pathname, true);
+    return redirectToLogin(request, nextPath, true);
   }
 
   if (!pathAllowedForRole(pathname, role)) {

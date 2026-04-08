@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Service layer for business logic and database abstractions"""
 from .base import CRUDBase  # noqa: F401
 from .patient import patient_service, patient_assignment_service, contact_service  # noqa: F401
@@ -11,4 +12,3 @@ from .workflow import (  # noqa: F401
     care_directive_service,
     audit_trail_service,
 )
-from . import ai_chat  # noqa: F401

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """Device activity log (admin dashboard)."""
 
 from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
-
 
 class DeviceActivityEventOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

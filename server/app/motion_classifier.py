@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """WheelSense — XGBoost motion classifier.
 
 Thread-safe wrapper around XGBClassifier for multi-class action
@@ -6,8 +8,6 @@ classification from IMU feature vectors. State is isolated per workspace_id.
 Canonical labels:
     idle, straight, turn_left, turn_right, reverse, fall, stand_up
 """
-
-from __future__ import annotations
 
 import json
 import logging
@@ -26,21 +26,17 @@ _lock = threading.Lock()
 
 _DEFAULT_MODEL_DIR = Path("data/models")
 
-
 @dataclass
 class _WorkspaceMotionState:
     model: Any
     label_encoder: LabelEncoder
     model_info: dict[str, Any] = field(default_factory=dict)
 
-
 _ws_motion: dict[int, _WorkspaceMotionState] = {}
-
 
 def _default_paths(workspace_id: int) -> tuple[Path, Path]:
     d = _DEFAULT_MODEL_DIR / f"ws_{workspace_id}"
     return d / "motion_model.json", d / "motion_labels.json"
-
 
 def is_motion_model_ready(workspace_id: int | None = None) -> bool:
     """Return True if a trained model is loaded (optionally for one workspace)."""
@@ -48,7 +44,6 @@ def is_motion_model_ready(workspace_id: int | None = None) -> bool:
         if workspace_id is not None:
             return workspace_id in _ws_motion
         return len(_ws_motion) > 0
-
 
 def get_motion_model_info(workspace_id: int | None = None) -> dict[str, Any]:
     """Return metadata about the current model."""
@@ -62,7 +57,6 @@ def get_motion_model_info(workspace_id: int | None = None) -> dict[str, Any]:
             return {"trained": False}
         wids = sorted(_ws_motion.keys())
         return {"trained": True, "workspaces_trained": wids, "workspace_count": len(wids)}
-
 
 def train_motion_model(
     feature_dicts: list[dict[str, float]],
@@ -153,7 +147,6 @@ def train_motion_model(
     )
     return info
 
-
 def predict_motion(
     feature_dict: dict[str, float],
     workspace_id: int,
@@ -182,7 +175,6 @@ def predict_motion(
         },
     }
 
-
 def save_model(
     workspace_id: int,
     model_path: str | Path | None = None,
@@ -208,7 +200,6 @@ def save_model(
 
     logger.info("Motion model saved for workspace %s to %s", workspace_id, mp)
     return {"model_path": str(mp), "encoder_path": str(ep), "workspace_id": str(workspace_id)}
-
 
 def load_model(
     workspace_id: int,

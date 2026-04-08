@@ -1,13 +1,22 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useState } from "react";
+import { Plus, Search } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@/hooks/useQuery";
-import { Plus } from "lucide-react";
 import type { Patient } from "@/lib/types";
-import PatientList from "@/components/shared/PatientList";
 import AddPatientModal from "@/components/admin/patients/AddPatientModal";
-import AdminPatientsQuickFind from "@/components/admin/patients/AdminPatientsQuickFind";
+import { PatientsDataTable } from "@/components/admin/patients/PatientsDataTable";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function PatientsPage() {
   const { t } = useTranslation();
@@ -22,49 +31,81 @@ export default function PatientsPage() {
     await refetch();
   }, [refetch]);
 
-  const adminFilterProps = useMemo(
-    () => ({
-      careLevel: careLevelFilter,
-      onCareLevelChange: setCareLevelFilter,
-      activeStatus: activeStatusFilter,
-      onActiveStatusChange: setActiveStatusFilter,
-      room: roomFilter,
-      onRoomChange: setRoomFilter,
-    }),
-    [careLevelFilter, activeStatusFilter, roomFilter],
-  );
-
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-on-surface">{t("patients.title")}</h2>
+          <h2 className="text-2xl font-bold text-foreground">{t("patients.title")}</h2>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Standardized registry view with shared filters, sortable columns, and validated intake.
+          </p>
         </div>
-        <button
-          type="button"
-          className="gradient-cta flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-smooth hover:opacity-90"
-          onClick={() => setModalOpen(true)}
-        >
+        <Button type="button" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4" />
           {t("patients.addNew")}
-        </button>
+        </Button>
       </div>
 
-      <AdminPatientsQuickFind search={sharedSearch} onSearchChange={setSharedSearch} />
+      <Card>
+        <CardContent className="grid gap-4 pt-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="relative xl:col-span-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder={t("patients.search")}
+              value={sharedSearch}
+              onChange={(event) => setSharedSearch(event.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <FilterSelect
+            value={careLevelFilter}
+            onValueChange={(value) =>
+              setCareLevelFilter(value as "all" | Patient["care_level"])
+            }
+            placeholder={t("patients.careLevel")}
+            options={[
+              { value: "all", label: t("devicesDetail.tabAll") },
+              { value: "normal", label: "normal" },
+              { value: "special", label: "special" },
+              { value: "critical", label: "critical" },
+            ]}
+          />
+          <FilterSelect
+            value={activeStatusFilter}
+            onValueChange={(value) =>
+              setActiveStatusFilter(value as "all" | "active" | "inactive")
+            }
+            placeholder={t("patients.accountStatus")}
+            options={[
+              { value: "all", label: t("devicesDetail.tabAll") },
+              { value: "active", label: t("patients.statusActive") },
+              { value: "inactive", label: t("patients.statusInactive") },
+            ]}
+          />
+          <FilterSelect
+            value={roomFilter}
+            onValueChange={(value) =>
+              setRoomFilter(value as "all" | "assigned" | "unassigned")
+            }
+            placeholder={t("patients.room")}
+            options={[
+              { value: "all", label: t("devicesDetail.tabAll") },
+              { value: "assigned", label: "Room assigned" },
+              { value: "unassigned", label: t("patients.noRoom") },
+            ]}
+          />
+        </CardContent>
+      </Card>
 
-      <div>
-        <h3 className="mb-3 text-sm font-semibold text-on-surface-variant">
-          {t("patients.allPatients")}
-        </h3>
-        <PatientList
-          patients={patients}
-          isLoading={isLoading}
-          basePath="/admin/patients"
-          showSearchInput={false}
-          textFilter={sharedSearch}
-          adminFilters={adminFilterProps}
-        />
-      </div>
+      <PatientsDataTable
+        patients={patients}
+        isLoading={isLoading}
+        search={sharedSearch}
+        careLevel={careLevelFilter}
+        activeStatus={activeStatusFilter}
+        room={roomFilter}
+      />
 
       <AddPatientModal
         open={modalOpen}
@@ -72,5 +113,32 @@ export default function PatientsPage() {
         onCreated={onCreated}
       />
     </div>
+  );
+}
+
+function FilterSelect({
+  value,
+  onValueChange,
+  placeholder,
+  options,
+}: {
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={`${placeholder}-${option.value}`} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

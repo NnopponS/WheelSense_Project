@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """WheelSense Server — Room localization using KNN.
 
 The model is trained on labeled RSSI fingerprint data and predicts rooms
@@ -5,21 +7,19 @@ from incoming RSSI vectors. Models are isolated per workspace_id.
 Thread-safe for use from async MQTT handler.
 """
 
-from __future__ import annotations
-
 import logging
 import threading
 from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import LabelEncoder
 
 logger = logging.getLogger("wheelsense.localization")
 
 _model_lock = threading.Lock()
-
 
 @dataclass
 class _WorkspaceKnnState:
@@ -28,10 +28,8 @@ class _WorkspaceKnnState:
     node_order: list[str]
     room_id_map: dict[int, dict]
 
-
 # Per-workspace KNN state (workspace_id -> trained model bundle)
 _ws_models: dict[int, _WorkspaceKnnState] = {}
-
 
 def train_model(training_data: list[dict], workspace_id: int) -> dict:
     """Train KNN model on labeled RSSI data for a workspace.
@@ -115,7 +113,6 @@ def train_model(training_data: list[dict], workspace_id: int) -> dict:
     logger.info("KNN model trained for workspace %s: %s", workspace_id, stats)
     return stats
 
-
 def predict_room(rssi_vector: dict[str, int], workspace_id: int) -> dict[str, Any] | None:
     """Predict room from an RSSI vector for the given workspace.
 
@@ -132,7 +129,6 @@ def predict_room(rssi_vector: dict[str, int], workspace_id: int) -> dict[str, An
         if state is None:
             return None
         model = state.model
-        le = state.label_encoder
         node_order = state.node_order
         id_map = state.room_id_map
 
@@ -154,14 +150,12 @@ def predict_room(rssi_vector: dict[str, int], workspace_id: int) -> dict[str, An
         "model_type": "knn",
     }
 
-
 def is_model_ready(workspace_id: int | None = None) -> bool:
     """Return True if a trained KNN model exists (optionally for one workspace)."""
     with _model_lock:
         if workspace_id is not None:
             return workspace_id in _ws_models
         return len(_ws_models) > 0
-
 
 def get_model_info(workspace_id: int | None = None) -> dict:
     """Return model metadata; if workspace_id is set, scope to that workspace."""

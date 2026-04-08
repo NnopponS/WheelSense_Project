@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """Pydantic schemas for VitalReading and HealthObservation."""
 
 from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
-
 
 # ── VitalReading ──────────────────────────────────────────────────────────────
 
@@ -17,7 +18,6 @@ class VitalReadingCreate(BaseModel):
     skin_temperature: float | None = None
     sensor_battery: int | None = None
     source: str = "ble"  # ble | polar_sdk | manual
-
 
 class VitalReadingOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -32,7 +32,6 @@ class VitalReadingOut(BaseModel):
     skin_temperature: float | None
     sensor_battery: int | None
     source: str
-
 
 # ── HealthObservation ─────────────────────────────────────────────────────────
 
@@ -50,7 +49,6 @@ class HealthObservationCreate(BaseModel):
     meal_type: str | None = None
     meal_portion: str | None = None
     water_ml: int | None = None
-
 
 class HealthObservationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

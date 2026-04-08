@@ -1,6 +1,6 @@
-"""Public profile image files (unguessable names; no auth on GET for <img src>)."""
-
 from __future__ import annotations
+
+"""Public profile image files (unguessable names; no auth on GET for <img src>)."""
 
 import re
 from pathlib import Path
@@ -14,7 +14,6 @@ router = APIRouter()
 
 _FILENAME_RE = re.compile(r"^[a-f0-9]{32}\.jpg$")
 
-
 def _resolved_file_path(filename: str) -> Path:
     if not _FILENAME_RE.fullmatch(filename):
         raise HTTPException(status_code=404, detail="Not found")
@@ -25,7 +24,6 @@ def _resolved_file_path(filename: str) -> Path:
     except (OSError, ValueError):
         raise HTTPException(status_code=404, detail="Not found")
     return path
-
 
 @router.get("/{filename}")
 async def get_profile_image(filename: str):

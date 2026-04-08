@@ -16,6 +16,7 @@ os.environ["DATABASE_URL_SYNC"] = "sqlite:///:memory:"
 os.environ["SECRET_KEY"] = "test-secret-key"
 os.environ["BOOTSTRAP_ADMIN_ENABLED"] = "false"
 os.environ["PROFILE_IMAGE_STORAGE_DIR"] = tempfile.mkdtemp(prefix="ws_profile_img_")
+os.environ["WHEELSENSE_ENABLE_MCP"] = "0"
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -30,19 +31,35 @@ from app.models.core import Workspace
 from app.models.users import User
 
 # ── Shared in-memory engine (StaticPool keeps same connection across tests) ──
-_engine = create_async_engine(
-    "sqlite+aiosqlite:///:memory:",
-    echo=False,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
-_SessionFactory = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
+_engine = None
+_SessionFactory = None
+
+
+def _get_engine():
+    global _engine
+    if _engine is None:
+        _engine = create_async_engine(
+            "sqlite+aiosqlite:///:memory:",
+            echo=False,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    return _engine
+
+
+def _get_session_factory():
+    global _SessionFactory
+    if _SessionFactory is None:
+        _SessionFactory = async_sessionmaker(
+            _get_engine(), class_=AsyncSession, expire_on_commit=False
+        )
+    return _SessionFactory
 
 
 # ── Create schema once per session ──────────────────────────────────────────
 async def _create_sqlite_schema() -> None:
     """Create tables one-by-one for the SQLite in-memory test harness."""
-    async with _engine.begin() as conn:
+    async with _get_engine().begin() as conn:
         for table in Base.metadata.sorted_tables:
             await conn.run_sync(
                 lambda sync_conn, table=table: table.create(sync_conn, checkfirst=True)
@@ -50,7 +67,7 @@ async def _create_sqlite_schema() -> None:
 
 
 async def _drop_sqlite_schema() -> None:
-    async with _engine.begin() as conn:
+    async with _get_engine().begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
             await conn.run_sync(
                 lambda sync_conn, table=table: table.drop(sync_conn, checkfirst=True)
@@ -62,7 +79,7 @@ async def _schema():
     await _create_sqlite_schema()
     yield
     await _drop_sqlite_schema()
-    await _engine.dispose()
+    await _get_engine().dispose()
 
 
 # ── Truncate all tables between tests for full isolation ─────────────────────
@@ -70,7 +87,7 @@ async def _schema():
 async def _clean_tables():
     """Delete all rows before each test."""
     yield
-    async with _SessionFactory() as session:
+    async with _get_session_factory()() as session:
         for table in reversed(Base.metadata.sorted_tables):
             await session.execute(table.delete())
         await session.commit()
@@ -79,7 +96,7 @@ async def _clean_tables():
 # ── DB session fixture ───────────────────────────────────────────────────────
 @pytest_asyncio.fixture()
 async def db_session():
-    async with _SessionFactory() as session:
+    async with _get_session_factory()() as session:
         yield session
 
 

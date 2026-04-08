@@ -1,12 +1,13 @@
+from __future__ import annotations
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
 """Retention API endpoints (Phase 6).
 
 Provides stats, config view, and manual cleanup trigger.
 """
 
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user_workspace, get_db
 from app.config import settings
@@ -15,7 +16,6 @@ from app.schemas.retention import RetentionConfig, RetentionReport, RetentionSta
 from app.services.retention import RetentionService
 
 router = APIRouter()
-
 
 @router.get("/config", response_model=RetentionConfig)
 async def get_retention_config():
@@ -28,7 +28,6 @@ async def get_retention_config():
         retention_interval_hours=settings.retention_interval_hours,
     )
 
-
 @router.get("/stats", response_model=RetentionStats)
 async def get_retention_stats(
     db: AsyncSession = Depends(get_db),
@@ -36,7 +35,6 @@ async def get_retention_stats(
 ):
     """Return row counts and age ranges for retained tables."""
     return await RetentionService.get_retention_stats(db, ws_id=ws.id)
-
 
 @router.post("/run", response_model=RetentionReport)
 async def run_retention_cleanup(
@@ -52,3 +50,4 @@ async def run_retention_cleanup(
         predictions_days=settings.retention_predictions_days,
         triggered_by="manual",
     )
+

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """Pydantic schemas for ActivityTimeline and Alert."""
 
 from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
-
 
 # ── ActivityTimeline ──────────────────────────────────────────────────────────
 
@@ -17,7 +18,6 @@ class TimelineEventCreate(BaseModel):
     data: dict[str, Any] = {}
     source: str = "auto"  # auto | caregiver | system
     caregiver_id: int | None = None
-
 
 class TimelineEventOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -33,7 +33,6 @@ class TimelineEventOut(BaseModel):
     source: str
     caregiver_id: int | None
 
-
 # ── Alert ─────────────────────────────────────────────────────────────────────
 
 class AlertCreate(BaseModel):
@@ -44,7 +43,6 @@ class AlertCreate(BaseModel):
     title: str
     description: str = ""
     data: dict[str, Any] = {}
-
 
 class AlertOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -63,11 +61,9 @@ class AlertOut(BaseModel):
     acknowledged_at: datetime | None
     resolved_at: datetime | None
 
-
 class AlertAcknowledge(BaseModel):
     """Omit or null caregiver_id to use the current user's linked caregiver, or acknowledge with no caregiver FK."""
     caregiver_id: int | None = None
-
 
 class AlertResolve(BaseModel):
     resolution_note: str = ""

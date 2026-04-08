@@ -1,158 +1,277 @@
-"use client";
+﻿"use client";
+"use no memo";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@/hooks/useQuery";
+import { useQuery } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Activity, Bell, ClipboardCheck, FileText, ShieldAlert } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import {
-  Activity,
-  Bell,
-  ClipboardCheck,
-  FileText,
-  HeartPulse,
-  ShieldAlert,
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { api } from "@/lib/api";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type {
+  AuditTrailEventOut,
+  GetAlertSummaryResponse,
+  GetVitalsAveragesResponse,
+  GetWardSummaryResponse,
+  ListWorkflowHandoversResponse,
+} from "@/lib/api/task-scope-types";
 
-interface AlertSummary {
-  total_active: number;
-  total_resolved: number;
-  by_type: Record<string, number>;
-}
+type AlertTypeRow = {
+  alertType: string;
+  activeCount: number;
+};
 
-interface VitalsAverage {
-  heart_rate_bpm_avg: number | null;
-  rr_interval_ms_avg: number | null;
-  spo2_avg: number | null;
-  skin_temperature_avg: number | null;
-}
-
-interface WardSummary {
-  total_patients: number;
-  active_alerts: number;
-  critical_patients: number;
-}
-
-interface HandoverNote {
+type HandoverRow = {
   id: number;
-  patient_id: number | null;
-  target_role: string | null;
-  shift_label: string;
+  shiftLabel: string;
   priority: string;
+  targetRole: string | null;
+  patientId: number | null;
   note: string;
-  created_at: string;
-}
+  createdAt: string;
+};
 
-interface AuditEvent {
+type AuditRow = {
   id: number;
-  actor_user_id: number | null;
-  patient_id: number | null;
   domain: string;
   action: string;
-  entity_type: string;
-  entity_id: number | null;
-  created_at: string;
-}
+  entityType: string;
+  entityId: number | null;
+  actorUserId: number | null;
+  patientId: number | null;
+  createdAt: string;
+};
 
 export default function HeadNurseReportsPage() {
-  const [hours, setHours] = useState(24);
+  const [hours, setHours] = useState("24");
   const [auditDomain, setAuditDomain] = useState("all");
 
-  const { data: alertSummary } = useQuery<AlertSummary>("/analytics/alerts/summary");
-  const { data: wardSummary } = useQuery<WardSummary>("/analytics/wards/summary");
-  const { data: vitalsAverage } = useQuery<VitalsAverage>(
-    `/analytics/vitals/averages?hours=${hours}`,
-  );
-  const { data: handovers, isLoading: handoversLoading } =
-    useQuery<HandoverNote[]>("/workflow/handovers?limit=40");
-  const { data: auditEvents, isLoading: auditLoading } =
-    useQuery<AuditEvent[]>("/workflow/audit?limit=80");
+  const alertSummaryQuery = useQuery({
+    queryKey: ["head-nurse", "reports", "alert-summary"],
+    queryFn: () => api.getAlertSummary(),
+  });
 
-  const filteredAudit = useMemo(() => {
-    const source = auditEvents ?? [];
-    if (auditDomain === "all") return source;
-    return source.filter((event) => event.domain === auditDomain);
+  const wardSummaryQuery = useQuery({
+    queryKey: ["head-nurse", "reports", "ward-summary"],
+    queryFn: () => api.getWardSummary(),
+  });
+
+  const vitalsAverageQuery = useQuery({
+    queryKey: ["head-nurse", "reports", "vitals-average", hours],
+    queryFn: () => api.getVitalsAverages(Number(hours)),
+  });
+
+  const handoversQuery = useQuery({
+    queryKey: ["head-nurse", "reports", "handovers"],
+    queryFn: () => api.listWorkflowHandovers({ limit: 80 }),
+  });
+
+  const auditQuery = useQuery({
+    queryKey: ["head-nurse", "reports", "audit"],
+    queryFn: () => api.listWorkflowAudit({ limit: 120 }),
+  });
+
+  const alertSummary = useMemo(
+    () => (alertSummaryQuery.data ?? null) as GetAlertSummaryResponse | null,
+    [alertSummaryQuery.data],
+  );
+  const wardSummary = useMemo(
+    () => (wardSummaryQuery.data ?? null) as GetWardSummaryResponse | null,
+    [wardSummaryQuery.data],
+  );
+  const vitalsAverage = useMemo(
+    () => (vitalsAverageQuery.data ?? null) as GetVitalsAveragesResponse | null,
+    [vitalsAverageQuery.data],
+  );
+  const handovers = useMemo(
+    () => (handoversQuery.data ?? []) as ListWorkflowHandoversResponse,
+    [handoversQuery.data],
+  );
+  const auditEvents = useMemo(
+    () => (auditQuery.data ?? []) as AuditTrailEventOut[],
+    [auditQuery.data],
+  );
+
+  const alertTypeRows = useMemo<AlertTypeRow[]>(() => {
+    const byType = alertSummary?.by_type ?? {};
+    return Object.entries(byType)
+      .map(([alertType, activeCount]) => ({ alertType, activeCount }))
+      .sort((left, right) => right.activeCount - left.activeCount);
+  }, [alertSummary]);
+
+  const handoverRows = useMemo<HandoverRow[]>(() => {
+    return [...handovers]
+      .sort((left, right) => right.created_at.localeCompare(left.created_at))
+      .map((item) => ({
+        id: item.id,
+        shiftLabel: item.shift_label,
+        priority: item.priority,
+        targetRole: item.target_role,
+        patientId: item.patient_id,
+        note: item.note,
+        createdAt: item.created_at,
+      }));
+  }, [handovers]);
+
+  const availableDomains = useMemo(() => {
+    return Array.from(new Set(auditEvents.map((event) => event.domain))).sort();
+  }, [auditEvents]);
+
+  const auditRows = useMemo<AuditRow[]>(() => {
+    return auditEvents
+      .filter((event) => (auditDomain === "all" ? true : event.domain === auditDomain))
+      .sort((left, right) => right.created_at.localeCompare(left.created_at))
+      .map((event) => ({
+        id: event.id,
+        domain: event.domain,
+        action: event.action,
+        entityType: event.entity_type,
+        entityId: event.entity_id,
+        actorUserId: event.actor_user_id,
+        patientId: event.patient_id,
+        createdAt: event.created_at,
+      }));
   }, [auditDomain, auditEvents]);
 
-  const domains = useMemo(() => {
-    const unique = new Set<string>();
-    (auditEvents ?? []).forEach((event) => unique.add(event.domain));
-    return Array.from(unique).sort();
-  }, [auditEvents]);
+  const alertTypeColumns = useMemo<ColumnDef<AlertTypeRow>[]>(
+    () => [
+      { accessorKey: "alertType", header: "Alert type" },
+      { accessorKey: "activeCount", header: "Active count" },
+    ],
+    [],
+  );
+
+  const handoverColumns = useMemo<ColumnDef<HandoverRow>[]>(
+    () => [
+      {
+        accessorKey: "shiftLabel",
+        header: "Shift",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.shiftLabel || "General"}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.note}</p>
+          </div>
+        ),
+      },
+      { accessorKey: "priority", header: "Priority" },
+      {
+        accessorKey: "targetRole",
+        header: "Target role",
+        cell: ({ row }) => row.original.targetRole || "All staff",
+      },
+      {
+        accessorKey: "patientId",
+        header: "Patient",
+        cell: ({ row }) => (row.original.patientId ? `#${row.original.patientId}` : "-") ,
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.createdAt)}</p>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const auditColumns = useMemo<ColumnDef<AuditRow>[]>(
+    () => [
+      {
+        accessorKey: "domain",
+        header: "Domain",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.domain}</p>
+            <p className="text-xs text-muted-foreground">{row.original.action}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "entityType",
+        header: "Entity",
+        cell: ({ row }) =>
+          row.original.entityId != null
+            ? `${row.original.entityType} #${row.original.entityId}`
+            : row.original.entityType,
+      },
+      {
+        accessorKey: "actorUserId",
+        header: "Actor",
+        cell: ({ row }) => (row.original.actorUserId != null ? `#${row.original.actorUserId}` : "system"),
+      },
+      {
+        accessorKey: "patientId",
+        header: "Patient",
+        cell: ({ row }) => (row.original.patientId != null ? `#${row.original.patientId}` : "-"),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Time",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.createdAt)}</p>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const isLoadingAny =
+    alertSummaryQuery.isLoading ||
+    wardSummaryQuery.isLoading ||
+    vitalsAverageQuery.isLoading ||
+    handoversQuery.isLoading ||
+    auditQuery.isLoading;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-on-surface">Clinical reports</h2>
-        <p className="text-sm text-on-surface-variant mt-1">
-          Live operational analytics, handovers, and workflow audit trail.
+        <h2 className="text-2xl font-bold text-foreground">Clinical Reports</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Operational analytics, handover context, and auditable workflow actions.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Stat
-          icon={Bell}
-          label="Active alerts"
-          value={wardSummary?.active_alerts ?? alertSummary?.total_active ?? 0}
-          tone="text-warning"
-        />
-        <Stat
-          icon={ShieldAlert}
-          label="Critical patients"
-          value={wardSummary?.critical_patients ?? 0}
-          tone="text-critical"
-        />
-        <Stat
-          icon={FileText}
-          label="Resolved alerts"
-          value={alertSummary?.total_resolved ?? 0}
-          tone="text-success"
-        />
-        <Stat
-          icon={ClipboardCheck}
-          label="Audit events"
-          value={auditEvents?.length ?? 0}
-          tone="text-info"
-        />
-      </div>
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryStatCard icon={Bell} label="Active alerts" value={wardSummary?.active_alerts ?? alertSummary?.total_active ?? 0} tone="warning" />
+        <SummaryStatCard icon={ShieldAlert} label="Critical patients" value={wardSummary?.critical_patients ?? 0} tone="critical" />
+        <SummaryStatCard icon={FileText} label="Resolved alerts" value={alertSummary?.total_resolved ?? 0} tone="success" />
+        <SummaryStatCard icon={ClipboardCheck} label="Audit events" value={auditEvents.length} tone="info" />
+      </section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <section className="surface-card p-5 xl:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-              <Activity className="w-4 h-4 text-info" />
-              Alert distribution by type
-            </h3>
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        <div className="rounded-xl border bg-card p-4 lg:col-span-1">
+          <div className="mb-3">
+            <p className="text-sm text-muted-foreground">Vitals average window</p>
+            <Select value={hours} onValueChange={setHours}>
+              <SelectTrigger className="mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="6">6 hours</SelectItem>
+                <SelectItem value="12">12 hours</SelectItem>
+                <SelectItem value="24">24 hours</SelectItem>
+                <SelectItem value="72">72 hours</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {Object.entries(alertSummary?.by_type ?? {}).map(([type, count]) => (
-              <div key={type} className="rounded-xl bg-surface-container-low px-3 py-2 text-sm">
-                <p className="font-medium text-on-surface">{type}</p>
-                <p className="text-xs text-on-surface-variant mt-1">{count} active</p>
-              </div>
-            ))}
-            {Object.keys(alertSummary?.by_type ?? {}).length === 0 && (
-              <p className="text-sm text-on-surface-variant">No alert types to report.</p>
-            )}
-          </div>
-        </section>
 
-        <section className="surface-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-              <HeartPulse className="w-4 h-4 text-primary" />
-              Vitals average window
-            </h3>
-            <select
-              value={hours}
-              onChange={(e) => setHours(Number(e.target.value))}
-              className="input-field py-1.5 text-xs max-w-[100px]"
-            >
-              <option value={6}>6h</option>
-              <option value={12}>12h</option>
-              <option value={24}>24h</option>
-              <option value={72}>72h</option>
-            </select>
-          </div>
           <div className="space-y-2 text-sm">
-            <Metric
+            <MetricRow
               label="Heart rate"
               value={
                 vitalsAverage?.heart_rate_bpm_avg != null
@@ -160,15 +279,11 @@ export default function HeadNurseReportsPage() {
                   : "No data"
               }
             />
-            <Metric
+            <MetricRow
               label="SpO2"
-              value={
-                vitalsAverage?.spo2_avg != null
-                  ? `${vitalsAverage.spo2_avg.toFixed(1)} %`
-                  : "No data"
-              }
+              value={vitalsAverage?.spo2_avg != null ? `${vitalsAverage.spo2_avg.toFixed(1)} %` : "No data"}
             />
-            <Metric
+            <MetricRow
               label="RR interval"
               value={
                 vitalsAverage?.rr_interval_ms_avg != null
@@ -176,8 +291,8 @@ export default function HeadNurseReportsPage() {
                   : "No data"
               }
             />
-            <Metric
-              label="Skin temperature"
+            <MetricRow
+              label="Skin temp"
               value={
                 vitalsAverage?.skin_temperature_avg != null
                   ? `${vitalsAverage.skin_temperature_avg.toFixed(1)} C`
@@ -185,125 +300,63 @@ export default function HeadNurseReportsPage() {
               }
             />
           </div>
-        </section>
-      </div>
+        </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <section className="surface-card p-5">
-          <h3 className="text-sm font-semibold text-on-surface mb-3">Recent handovers</h3>
-          {handoversLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
-              {(handovers ?? []).slice(0, 20).map((note) => (
-                <div key={note.id} className="rounded-xl bg-surface-container-low px-3 py-2 text-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-on-surface">
-                      {note.shift_label || "General handover"}
-                    </p>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-surface text-on-surface-variant uppercase font-semibold">
-                      {note.priority}
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant mt-1">{note.note}</p>
-                  <p className="text-xs text-outline mt-1">
-                    {new Date(note.created_at).toLocaleString()} · target:{" "}
-                    {note.target_role || "all staff"}
-                  </p>
-                </div>
-              ))}
-              {(handovers ?? []).length === 0 && (
-                <p className="text-sm text-on-surface-variant py-2">No handover notes yet.</p>
-              )}
-            </div>
-          )}
-        </section>
+        <div className="lg:col-span-3">
+          <DataTableCard
+            title="Alert Distribution by Type"
+            description="Active alert count by alert category."
+            data={alertTypeRows}
+            columns={alertTypeColumns}
+            isLoading={isLoadingAny}
+            emptyText="No alert type data available."
+            rightSlot={<Activity className="h-4 w-4 text-muted-foreground" />}
+            pageSize={8}
+          />
+        </div>
+      </section>
 
-        <section className="surface-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-on-surface">Workflow audit trail</h3>
-            <select
-              value={auditDomain}
-              onChange={(e) => setAuditDomain(e.target.value)}
-              className="input-field py-1.5 text-xs max-w-[160px]"
-            >
-              <option value="all">All domains</option>
-              {domains.map((domain) => (
-                <option key={domain} value={domain}>
+      <DataTableCard
+        title="Recent Handover Notes"
+        description="Shift handover context shared across clinical roles."
+        data={handoverRows}
+        columns={handoverColumns}
+        isLoading={isLoadingAny}
+        emptyText="No handover notes available."
+      />
+
+      <DataTableCard
+        title="Workflow Audit Trail"
+        description="Recent audited workflow actions in this workspace."
+        data={auditRows}
+        columns={auditColumns}
+        isLoading={isLoadingAny}
+        emptyText="No audit events found for this filter."
+        rightSlot={
+          <Select value={auditDomain} onValueChange={setAuditDomain}>
+            <SelectTrigger className="h-8 w-44">
+              <SelectValue placeholder="Filter domain" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All domains</SelectItem>
+              {availableDomains.map((domain) => (
+                <SelectItem key={domain} value={domain}>
                   {domain}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </div>
-          {auditLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
-              {filteredAudit.slice(0, 30).map((event) => (
-                <div key={event.id} className="rounded-xl bg-surface-container-low px-3 py-2 text-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-on-surface">
-                      {event.domain} · {event.action}
-                    </p>
-                    <span className="text-xs text-outline">
-                      {new Date(event.created_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    {event.entity_type}
-                    {event.entity_id ? ` #${event.entity_id}` : ""} · actor{" "}
-                    {event.actor_user_id ?? "system"}
-                    {event.patient_id ? ` · patient ${event.patient_id}` : ""}
-                  </p>
-                </div>
-              ))}
-              {filteredAudit.length === 0 && (
-                <p className="text-sm text-on-surface-variant py-2">
-                  No audit events for this filter.
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-      </div>
+            </SelectContent>
+          </Select>
+        }
+      />
     </div>
   );
 }
 
-function Stat({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-  tone: string;
-}) {
-  return (
-    <div className="surface-card p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs uppercase tracking-wide text-on-surface-variant">{label}</p>
-        <Icon className={`w-4 h-4 ${tone}`} />
-      </div>
-      <p className="text-2xl font-bold text-on-surface mt-2">{value}</p>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
+function MetricRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
-      <p className="text-on-surface-variant">{label}</p>
-      <p className="font-semibold text-on-surface">{value}</p>
+      <p className="text-muted-foreground">{label}</p>
+      <p className="font-semibold text-foreground">{value}</p>
     </div>
   );
 }

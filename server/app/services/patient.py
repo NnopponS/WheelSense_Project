@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from typing import Optional
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from app.models.patients import Patient, PatientDeviceAssignment, PatientContact
@@ -18,10 +20,8 @@ from app.services.base import CRUDBase
 from pydantic import BaseModel
 from fastapi import HTTPException
 
-
 class AssignmentUpdatePlaceholder(BaseModel):
     pass
-
 
 class ContactService(CRUDBase[PatientContact, PatientContactCreate, PatientContactUpdate]):
     async def create_for_patient(
@@ -61,6 +61,21 @@ class ContactService(CRUDBase[PatientContact, PatientContactCreate, PatientConta
         await session.refresh(contact)
         return contact
 
+    async def delete_for_patient(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        patient_id: int,
+        contact_id: int,
+    ) -> None:
+        patient = await patient_service.get(session, ws_id, patient_id)
+        if patient is None:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        contact = await session.get(PatientContact, contact_id)
+        if contact is None or contact.patient_id != patient_id:
+            raise HTTPException(status_code=404, detail="Contact not found")
+        await session.delete(contact)
+        await session.commit()
 
 class PatientServiceCls(CRUDBase[Patient, PatientCreate, PatientUpdate]):
     async def get_with_contacts(
@@ -143,7 +158,6 @@ class PatientServiceCls(CRUDBase[Patient, PatientCreate, PatientUpdate]):
         assignment.unassigned_at = utcnow()
         session.add(assignment)
         await session.commit()
-
 
 patient_service = PatientServiceCls(Patient)
 patient_assignment_service = CRUDBase[PatientDeviceAssignment, DeviceAssignmentCreate, AssignmentUpdatePlaceholder](PatientDeviceAssignment)

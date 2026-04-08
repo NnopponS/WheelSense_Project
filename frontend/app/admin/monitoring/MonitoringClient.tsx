@@ -51,14 +51,10 @@ const FloorMapWorkspace = dynamic(
 
 export default function MonitoringClient() {
   const { t } = useTranslation();
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    void refreshUser();
-  }, [refreshUser]);
 
   const query = useMemo(() => {
     const o: Record<string, string | string[] | undefined> = {};

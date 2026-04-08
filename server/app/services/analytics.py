@@ -1,15 +1,17 @@
+from __future__ import annotations
+
+from sqlalchemy import func
+
 """Service layer for Analytics computations."""
 
 import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy.future import select
-from sqlalchemy import func
 
 from app.models.activity import Alert
 from app.models.vitals import VitalReading
 from app.models.patients import Patient
 from app.schemas.analytics import AlertSummaryOut, VitalsAverageOut, WardSummaryOut
-
 
 class AnalyticsService:
     @staticmethod
@@ -85,3 +87,6 @@ class AnalyticsService:
             active_alerts=active_alerts,
             critical_patients=0,  # to be defined with acuity scores
         )
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy import func

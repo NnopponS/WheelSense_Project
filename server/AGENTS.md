@@ -143,6 +143,12 @@ Important device management additions:
 - `/api/future`
 - `/api/retention`
 
+Current AI settings/runtime notes:
+
+- `GET /api/settings/ai/copilot/models` returns the live Copilot model list from the backend SDK, not a hardcoded frontend list
+- `DELETE /api/settings/ai/ollama/models/{name}` deletes a local Ollama model through the Ollama HTTP API
+- chat runtime answers about provider/model should come from backend-provided runtime metadata rather than model self-reporting
+
 ## MQTT Topic Map
 
 Topics currently used by runtime code:
@@ -222,6 +228,13 @@ The camera firmware also listens to:
 - `server/app/api/endpoints/chat.py`
 - `server/app/api/endpoints/ai_settings.py`
 
+Current AI provider behavior:
+
+- provider choices remain `ollama` and `copilot`
+- Copilot model validation now happens on the backend against the SDK-reported model list before session creation
+- the backend queries the active Copilot session model and injects runtime metadata so EaseAI does not claim a different provider/model than the one actually configured
+- frontend admin AI settings should treat backend model lists as source of truth
+
 ### Data/domain layers
 
 - `server/app/models/` - SQLAlchemy models
@@ -253,6 +266,11 @@ Compose includes:
 
 The old Ollama service block is commented out in the current compose file.
 
+Current recommended AI runtime topology:
+
+- default containerized backend -> host-native Ollama via `OLLAMA_BASE_URL=http://host.docker.internal:11434/v1`
+- if the optional Compose Ollama service is restored/enabled, switch `OLLAMA_BASE_URL` to `http://ollama:11434/v1`
+
 ## Testing Guidance
 
 Primary command:
@@ -277,15 +295,22 @@ The frontend currently depends on:
 
 - `/api/*` proxying through `frontend/app/api/[[...path]]/route.ts`
 - cookie + localStorage token model
+- root providers in `frontend/components/providers/AppProviders.tsx`
+- Zustand auth state in `frontend/lib/stores/auth-store.ts`
+- TanStack Query-backed reads through `frontend/hooks/useQuery.ts`
 - `frontend/lib/types.ts` mirroring backend contracts
+- generated OpenAPI schema output in `frontend/lib/api/generated/schema.ts`
 - route areas for `admin`, `head_nurse`, `supervisor`, `observer`, `patient`
 - legacy admin compatibility redirects for `/admin/users` and `/admin/smart-devices`
 - account-management flows that call `PUT /api/users/{user_id}` with patient/caregiver link fields
 - device fleet flows that call `GET /api/devices/activity` and `POST /api/devices/{device_id}/patient`
+- standardized admin patient create flow using `React Hook Form + Zod` in `frontend/components/admin/patients/AddPatientModal.tsx`
+- AI settings model discovery endpoints that soft-fail with `200` plus status metadata instead of surfacing provider bootstrap errors as hard HTTP failures
 
 When backend contracts change, update:
 
 - `frontend/lib/types.ts`
+- `frontend/lib/api/generated/schema.ts` via `cd frontend && npm run openapi:types`
 - `frontend/README.md`
 - `.cursor/agents/README.md` if orchestration or prompt ownership changes
 

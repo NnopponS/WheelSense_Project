@@ -51,7 +51,7 @@ services:
       MQTT_PASSWORD: ${MQTT_PASSWORD:-}
       AI_PROVIDER: ${AI_PROVIDER:-ollama}
       AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gemma4:e4b}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434/v1}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       COPILOT_CLI_URL: ${COPILOT_CLI_URL:-copilot-cli:4321}
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
       # GitHub OAuth App client_id — needed for Copilot device-flow connect in Admin › Settings › AI
@@ -101,6 +101,9 @@ services:
             - .next/
             - "**/.git/"
 
+  # Optional local Ollama container.
+  # The default backend setting points to Native Ollama on the host via host.docker.internal.
+  # If you enable this service, also set OLLAMA_BASE_URL=http://ollama:11434/v1 in server/.env.
   # Use a current engine so `ollama pull <model>` does not return HTTP 412 (manifest requires newer Ollama).
   # If 412 persists: `docker compose pull ollama && docker compose up -d ollama` (or bump the tag below).
 #  ollama:

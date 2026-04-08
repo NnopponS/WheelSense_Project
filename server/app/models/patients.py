@@ -1,24 +1,25 @@
+from __future__ import annotations
+
 """Patient domain models: Patient profiles, device assignments, and contacts."""
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    Index,
-    String,
-    Text,
-    Float,
     Boolean,
+    Column,
     Date,
     DateTime,
+    Float,
     ForeignKey,
+    Index,
+    Integer,
     JSON,
+    String,
+    Text,
     text,
 )
-from sqlalchemy import orm
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship as orm_relationship
 
 from .base import Base, utcnow
-
 
 class Patient(Base):
     """Nursing home resident profile."""
@@ -73,9 +74,12 @@ class Patient(Base):
     room_id = Column(Integer, ForeignKey("rooms.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    
-    contacts = orm.relationship("PatientContact", back_populates="patient", cascade="all, delete-orphan")
 
+    contacts = orm_relationship(
+        "PatientContact",
+        back_populates="patient",
+        cascade="all, delete-orphan",
+    )
 
 class PatientDeviceAssignment(Base):
     """Patient ↔ Device binding (wheelchair sensor, Polar HR, mobile)."""
@@ -114,9 +118,8 @@ class PatientDeviceAssignment(Base):
     assigned_at = Column(DateTime(timezone=True), default=utcnow)
     unassigned_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
-    
-    patient = orm.relationship("Patient", backref="assignments")
 
+    patient = orm_relationship("Patient", backref="assignments")
 
 class PatientContact(Base):
     """Emergency contacts, doctors, family for a patient."""
@@ -139,5 +142,6 @@ class PatientContact(Base):
     email = Column(String(128), default="")
     is_primary = Column(Boolean, default=False)
     notes = Column(Text, default="")
-    
-    patient = orm.relationship("Patient", back_populates="contacts")
+
+    patient = orm_relationship("Patient", back_populates="contacts")
+

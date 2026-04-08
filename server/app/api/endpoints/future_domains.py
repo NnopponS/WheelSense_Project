@@ -1,13 +1,14 @@
-"""Future-domain endpoints for floorplans, specialists, prescriptions, and pharmacy."""
-
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+
+"""Future-domain endpoints for floorplans, specialists, prescriptions, and pharmacy."""
+
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
     RequireRole,
@@ -47,7 +48,6 @@ router = APIRouter()
 
 ROLE_FUTURE_MANAGERS = ["admin", "head_nurse", "supervisor"]
 
-
 def _to_floorplan_out(asset) -> FloorplanAssetOut:
     return FloorplanAssetOut(
         id=asset.id,
@@ -64,7 +64,6 @@ def _to_floorplan_out(asset) -> FloorplanAssetOut:
         created_at=asset.created_at,
     )
 
-
 @router.get("/floorplans", response_model=list[FloorplanAssetOut])
 async def list_floorplans(
     floor_id: Optional[int] = None,
@@ -76,7 +75,6 @@ async def list_floorplans(
     if floor_id is not None:
         assets = [asset for asset in assets if asset.floor_id == floor_id]
     return [_to_floorplan_out(asset) for asset in assets]
-
 
 @router.post("/floorplans/upload", response_model=FloorplanAssetOut, status_code=201)
 async def upload_floorplan(
@@ -109,7 +107,6 @@ async def upload_floorplan(
     )
     return _to_floorplan_out(asset)
 
-
 @router.get("/floorplans/{asset_id}/file")
 async def get_floorplan_file(
     asset_id: int,
@@ -125,7 +122,6 @@ async def get_floorplan_file(
         raise HTTPException(status_code=404, detail="Floorplan file missing from storage")
     return FileResponse(path=path, media_type=asset.mime_type, filename=path.name)
 
-
 async def _assert_facility_floor(
     db: AsyncSession,
     ws_id: int,
@@ -138,7 +134,6 @@ async def _assert_facility_floor(
     fl = await db.get(Floor, floor_id)
     if not fl or fl.workspace_id != ws_id or fl.facility_id != facility_id:
         raise HTTPException(status_code=404, detail="Floor not found for this facility")
-
 
 @router.get("/floorplans/layout", response_model=FloorplanLayoutOut)
 async def get_floorplan_layout(
@@ -164,7 +159,6 @@ async def get_floorplan_layout(
         layout_json=row.layout_json,
         updated_at=row.updated_at,
     )
-
 
 @router.put("/floorplans/layout", response_model=FloorplanLayoutOut)
 async def save_floorplan_layout(
@@ -208,7 +202,6 @@ async def save_floorplan_layout(
         updated_at=row.updated_at,
     )
 
-
 @router.get("/specialists", response_model=list[SpecialistOut])
 async def list_specialists(
     specialty: Optional[str] = None,
@@ -222,7 +215,6 @@ async def list_specialists(
         specialists = [item for item in specialists if item.specialty.lower() == normalized]
     return specialists
 
-
 @router.post("/specialists", response_model=SpecialistOut, status_code=201)
 async def create_specialist(
     payload: SpecialistCreate,
@@ -231,7 +223,6 @@ async def create_specialist(
     _: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
 ):
     return await specialist_service.create(db, ws_id=ws.id, obj_in=payload)
-
 
 @router.patch("/specialists/{specialist_id}", response_model=SpecialistOut)
 async def update_specialist(
@@ -245,7 +236,6 @@ async def update_specialist(
     if not current:
         raise HTTPException(status_code=404, detail="Specialist not found")
     return await specialist_service.update(db, ws_id=ws.id, db_obj=current, obj_in=payload)
-
 
 @router.get("/prescriptions", response_model=list[PrescriptionOut])
 async def list_prescriptions(
@@ -262,7 +252,6 @@ async def list_prescriptions(
     return await prescription_service.list_for_patient(
         db, ws_id=ws.id, patient_id=patient_id, status=status, limit=200
     )
-
 
 @router.post("/prescriptions", response_model=PrescriptionOut, status_code=201)
 async def create_prescription(
@@ -283,7 +272,6 @@ async def create_prescription(
     await db.refresh(created)
     return created
 
-
 @router.patch("/prescriptions/{prescription_id}", response_model=PrescriptionOut)
 async def update_prescription(
     prescription_id: int,
@@ -296,7 +284,6 @@ async def update_prescription(
     if not current:
         raise HTTPException(status_code=404, detail="Prescription not found")
     return await prescription_service.update(db, ws_id=ws.id, db_obj=current, obj_in=payload)
-
 
 @router.get("/pharmacy/orders", response_model=list[PharmacyOrderOut])
 async def list_pharmacy_orders(
@@ -320,7 +307,6 @@ async def list_pharmacy_orders(
         limit=200,
     )
 
-
 @router.post("/pharmacy/orders", response_model=PharmacyOrderOut, status_code=201)
 async def create_pharmacy_order(
     payload: PharmacyOrderCreate,
@@ -329,7 +315,6 @@ async def create_pharmacy_order(
     _: User = Depends(RequireRole(ROLE_FUTURE_MANAGERS)),
 ):
     return await pharmacy_order_service.create(db, ws_id=ws.id, obj_in=payload)
-
 
 @router.patch("/pharmacy/orders/{order_id}", response_model=PharmacyOrderOut)
 async def update_pharmacy_order(
@@ -343,3 +328,4 @@ async def update_pharmacy_order(
     if not current:
         raise HTTPException(status_code=404, detail="Pharmacy order not found")
     return await pharmacy_order_service.update(db, ws_id=ws.id, db_obj=current, obj_in=payload)
+

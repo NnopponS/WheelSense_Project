@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from __future__ import annotations
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import (
     RequireRole,
@@ -15,7 +18,6 @@ from app.schemas.core import RoomCreate, RoomUpdate
 
 router = APIRouter()
 
-
 async def _room_detail_row(
     db: AsyncSession,
     ws: Workspace,
@@ -28,7 +30,6 @@ async def _room_detail_row(
         .where(Room.workspace_id == ws.id, Room.id == room_id),
     )
     return result.first()
-
 
 def _serialize_room(room: Room, floor: Floor | None, facility: Facility | None) -> dict:
     return {
@@ -45,7 +46,6 @@ def _serialize_room(room: Room, floor: Floor | None, facility: Facility | None) 
         "adjacent_rooms": room.adjacent_rooms or [],
         "config": room.config or {},
     }
-
 
 @router.get("")
 async def list_rooms(
@@ -71,7 +71,6 @@ async def list_rooms(
     rows = result.all()
     return [_serialize_room(room, floor, facility) for room, floor, facility in rows]
 
-
 @router.get("/{room_id}")
 async def get_room(
     room_id: int,
@@ -84,7 +83,6 @@ async def get_room(
         raise HTTPException(status_code=404, detail="Room not found")
     room, floor, facility = row
     return _serialize_room(room, floor, facility)
-
 
 @router.post("")
 async def create_room(
@@ -115,7 +113,6 @@ async def create_room(
     r, fl, fac = row
     return _serialize_room(r, fl, fac)
 
-
 @router.patch("/{room_id}")
 async def update_room(
     room_id: int,
@@ -145,7 +142,6 @@ async def update_room(
     r, fl, fac = row
     return _serialize_room(r, fl, fac)
 
-
 @router.delete("/{room_id}", status_code=204)
 async def delete_room(
     room_id: int,
@@ -158,3 +154,4 @@ async def delete_room(
         raise HTTPException(status_code=404, detail="Room not found")
     await db.delete(room)
     await db.commit()
+

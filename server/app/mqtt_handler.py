@@ -1,3 +1,6 @@
+from __future__ import annotations
+from sqlalchemy import select
+
 """WheelSense Server — MQTT message handler.
 
 Subscribes to device telemetry, ingests data into PostgreSQL,
@@ -11,8 +14,6 @@ Phase 4 enhancements:
 - Vitals/Alert broadcast over MQTT
 """
 
-from __future__ import annotations
-
 import asyncio
 import base64
 import json
@@ -22,7 +23,6 @@ from contextlib import suppress
 from datetime import datetime
 
 import aiomqtt
-from sqlalchemy import select
 
 from .config import settings
 from app.db.session import AsyncSessionLocal
@@ -51,7 +51,6 @@ FALL_COOLDOWN_SECONDS = 30.0
 FALL_AZ_THRESHOLD = 3.0  # g-force on Z-axis
 FALL_VELOCITY_THRESHOLD = 0.05  # m/s — near-zero velocity after impact
 
-
 async def _get_registered_device(session, device_id: str) -> Device | None:
     result = await session.execute(select(Device).where(Device.device_id == device_id))
     devices = list(result.scalars().all())
@@ -61,7 +60,6 @@ async def _get_registered_device(session, device_id: str) -> Device | None:
             "MQTT device resolution is ambiguous."
         )
     return devices[0] if devices else None
-
 
 async def _lookup_patient_for_device(session, ws_id: int, device_id: str) -> int | None:
     """Find patient_id assigned to this device in the workspace."""
@@ -81,7 +79,6 @@ async def _lookup_patient_for_device(session, ws_id: int, device_id: str) -> int
     if not assignments:
         return None
     return assignments[0].patient_id
-
 
 async def mqtt_listener():
     """Long-running task: connect to MQTT, subscribe, handle messages."""
@@ -135,7 +132,6 @@ async def mqtt_listener():
             logger.exception("MQTT unexpected error, reconnecting in %ds...", reconnect_interval)
 
         await asyncio.sleep(reconnect_interval)
-
 
 async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
     """Parse M5StickC telemetry JSON, store in DB, run prediction.
@@ -325,7 +321,6 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
             })
             await client.publish(f"WheelSense/room/{device_id}", result_payload)
 
-
 async def _maybe_create_fall_alert(
     session, ws_id: int, device_id: str, patient_id: int | None,
     ts, az: float, velocity: float
@@ -356,7 +351,6 @@ async def _maybe_create_fall_alert(
     session.add(alert)
     logger.warning("FALL DETECTED: device=%s patient=%s az=%.2fg vel=%.3fm/s", device_id, patient_id, az, velocity)
     return True
-
 
 async def _track_room_transition(
     session, ws_id: int, device_id: str, patient_id: int,
@@ -411,11 +405,9 @@ async def _track_room_transition(
             patient_id, prev["room_name"], new_room_name
         )
 
-
 # ── Photo Chunking ───────────────────────────────────────────────────────────
 
 PHOTO_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "photos")
-
 
 async def _handle_photo_chunk(payload: bytes, save_dir: str | None = None):
     """Reassemble chunked photo uploads from T-SIMCam."""
@@ -481,9 +473,7 @@ async def _handle_photo_chunk(payload: bytes, save_dir: str | None = None):
 
         del _photo_buffers[photo_id]
 
-
 # ── Camera Handlers (unchanged) ─────────────────────────────────────────────
-
 
 async def _handle_device_ack(payload: bytes):
     """Optional command acknowledgements from firmware (WheelSense/.../ack)."""
@@ -499,7 +489,6 @@ async def _handle_device_ack(payload: bytes):
 
     async with AsyncSessionLocal() as session:
         await apply_command_ack(session, str(command_id), data)
-
 
 async def _handle_camera_registration(payload: bytes):
     """Handle camera node registration."""
@@ -530,7 +519,6 @@ async def _handle_camera_registration(payload: bytes):
             data.get("ip_address", "?"),
         )
 
-
 async def _handle_camera_status(payload: bytes):
     """Handle camera status updates."""
     data = json.loads(payload)
@@ -553,3 +541,4 @@ async def _handle_camera_status(payload: bytes):
             }
             device.config = cfg  # type: ignore[assignment]
             await session.commit()
+

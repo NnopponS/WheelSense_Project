@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
 """Authentication endpoints: Login and Token generation."""
 
 import secrets
@@ -5,7 +9,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db, get_current_active_user
 from app.config import settings
@@ -15,7 +18,6 @@ from app.services.auth import AuthService
 from app.services.profile_image_storage import remove_hosted_profile_file_if_any
 
 router = APIRouter(tags=["Authentication"])
-
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(
@@ -29,7 +31,6 @@ async def login_for_access_token(
         session, form_data.username, form_data.password
     )
 
-
 @router.get("/me", response_model=UserOut)
 async def read_users_me(
     current_user: User = Depends(get_current_active_user),
@@ -38,7 +39,6 @@ async def read_users_me(
     Get current user information based on the JWT token.
     """
     return current_user
-
 
 @router.patch("/me", response_model=UserOut)
 async def patch_users_me(
@@ -68,9 +68,7 @@ async def patch_users_me(
         await session.refresh(current_user)
     return current_user
 
-
 _PROFILE_UPLOAD_MAX_BYTES = 600 * 1024
-
 
 @router.post("/me/profile-image", response_model=UserOut)
 async def upload_profile_image(
@@ -98,3 +96,4 @@ async def upload_profile_image(
     await session.commit()
     await session.refresh(current_user)
     return current_user
+

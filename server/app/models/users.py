@@ -1,18 +1,10 @@
+from __future__ import annotations
+
 """User authentication and Role-Based Access Control models."""
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Boolean,
-    DateTime,
-    ForeignKey,
-    Index,
-    text,
-)
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, text
 
 from .base import Base, utcnow
-
 
 class User(Base):
     """System users with Role-Based Access Control."""
@@ -36,15 +28,15 @@ class User(Base):
         nullable=False,
         index=True,
     )
-    
+
     username = Column(String(128), unique=True, index=True, nullable=False)
     hashed_password = Column(String(256), nullable=False)
-    
+
     # admin, supervisor, head_nurse, observer, patient
     role = Column(String(32), nullable=False, default="observer")
-    
+
     is_active = Column(Boolean, default=True)
-    
+
     # Links to domain models (nullable because Admin might not be a Caregiver or Patient)
     caregiver_id = Column(
         Integer, ForeignKey("caregivers.id", ondelete="SET NULL"), nullable=True
@@ -62,3 +54,4 @@ class User(Base):
 
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+

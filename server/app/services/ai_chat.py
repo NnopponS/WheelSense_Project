@@ -1,11 +1,10 @@
-"""AI chat streaming — Ollama (OpenAI-compatible) and GitHub Copilot CLI SDK."""
+"""AI chat streaming - Ollama (OpenAI-compatible) and GitHub Copilot CLI SDK."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING
 
 from openai import AsyncOpenAI
 from sqlalchemy import select
@@ -16,9 +15,6 @@ from app.models.chat import WorkspaceAISettings
 from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.chat import ChatMessagePart
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger("wheelsense.ai_chat")
 
@@ -47,10 +43,25 @@ ROLE_SYSTEM_PROMPTS: dict[str, str] = {
     ),
 }
 
-
 def _system_prompt_for_role(role: str) -> str:
     return ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS["observer"])
 
+def _runtime_prompt_metadata(
+    *,
+    provider: str,
+    configured_model: str,
+    active_model: str | None = None,
+) -> str:
+    resolved_model = active_model or configured_model
+    return (
+        "\n\nRuntime metadata:\n"
+        "- assistant name: EaseAI for WheelSense\n"
+        f"- provider: {provider}\n"
+        f"- configured model: {configured_model}\n"
+        f"- active model: {resolved_model}\n"
+        "- If the user asks which provider/model is running, answer from this metadata exactly.\n"
+        "- Do not guess, switch providers in your answer, or claim a different model."
+    )
 
 async def get_workspace_ai_defaults(
     db: AsyncSession, workspace_id: int
@@ -66,6 +77,21 @@ async def get_workspace_ai_defaults(
         return row.default_provider, row.default_model
     return settings.ai_provider, settings.ai_default_model
 
+async def get_workspace_copilot_token(
+    db: AsyncSession, workspace_id: int
+) -> str | None:
+    res = await db.execute(
+        select(WorkspaceAISettings).where(
+            WorkspaceAISettings.workspace_id == workspace_id
+        )
+    )
+    row = res.scalar_one_or_none()
+    if not row or not row.copilot_token_encrypted:
+        return None
+
+    from app.core.token_crypto import decrypt_secret
+
+    return decrypt_secret(row.copilot_token_encrypted)
 
 async def resolve_effective_ai(
     db: AsyncSession,
@@ -83,7 +109,6 @@ async def resolve_effective_ai(
         provider = "ollama"
     return provider, model
 
-
 def _messages_to_openai(
     messages: list[ChatMessagePart], system_text: str
 ) -> list[dict[str, str]]:
@@ -92,7 +117,6 @@ def _messages_to_openai(
         out.append({"role": m.role, "content": m.content})
     return out
 
-
 def _messages_to_copilot_prompt(messages: list[ChatMessagePart]) -> str:
     """Copilot CLI session uses a single prompt per turn for our integration."""
     lines: list[str] = []
@@ -100,6 +124,32 @@ def _messages_to_copilot_prompt(messages: list[ChatMessagePart]) -> str:
         lines.append(f"{m.role.upper()}: {m.content}")
     return "\n\n".join(lines)
 
+def build_copilot_client_config(
+    github_token: str | None,
+) -> object | None:
+    from copilot import ExternalServerConfig, SubprocessConfig
+
+    url = settings.copilot_cli_url.strip()
+    if github_token:
+        return SubprocessConfig(github_token=github_token)
+    if url and "copilot-cli" not in url:
+        return ExternalServerConfig(url=url)
+    return None
+
+async def list_copilot_models(
+    *,
+    github_token: str | None = None,
+) -> list[object]:
+    from copilot import CopilotClient
+
+    config = build_copilot_client_config(github_token)
+    if config is None:
+        raise RuntimeError(
+            "GitHub Copilot is not connected for this workspace. Please authenticate first."
+        )
+
+    async with CopilotClient(config) as client:
+        return await client.list_models()
 
 async def stream_ollama(
     *,
@@ -124,7 +174,6 @@ async def stream_ollama(
         logger.exception("ollama stream failed")
         yield "\n[AI service temporarily unavailable. Please try again.]\n"
 
-
 async def stream_copilot(
     *,
     model: str,
@@ -132,28 +181,26 @@ async def stream_copilot(
     github_token: str | None = None,
 ) -> AsyncIterator[str]:
     try:
-        from copilot import CopilotClient, ExternalServerConfig, SubprocessConfig
-        from copilot.session import PermissionHandler
+        from copilot import CopilotClient
         from copilot.generated.session_events import SessionEventType
+        from copilot.session import PermissionHandler
     except ImportError:
         logger.exception("copilot sdk import failed")
         yield "\n[AI provider is not available right now.]\n"
         return
 
-    config = None
-    url = settings.copilot_cli_url.strip()
-    if github_token:
-        config = SubprocessConfig(github_token=github_token)
-    elif url and "copilot-cli" not in url:
-        config = ExternalServerConfig(url=url)
-    else:
-        logger.error("No github token available for Copilot subprocess, and external CLI is unavailable.")
+    config = build_copilot_client_config(github_token)
+    if config is None:
+        logger.error(
+            "No github token available for Copilot subprocess, and external CLI is unavailable."
+        )
         yield "\n[GitHub Copilot is not connected for this Workspace. Please go to AI Settings and authenticate to connect.]\n"
         return
 
     chunks: asyncio.Queue[str | None] = asyncio.Queue()
     error_holder: list[str] = []
     got_delta = False
+    active_model = model or "default"
 
     def on_event(event: object) -> None:
         nonlocal got_delta
@@ -161,7 +208,10 @@ async def stream_copilot(
             et = getattr(event, "type", None)
             et_s = getattr(et, "value", et)
             data = getattr(event, "data", None)
-            if et == SessionEventType.ASSISTANT_MESSAGE_DELTA or et_s == "assistant.message_delta":
+            if (
+                et == SessionEventType.ASSISTANT_MESSAGE_DELTA
+                or et_s == "assistant.message_delta"
+            ):
                 dc = getattr(data, "delta_content", None) if data else None
                 if dc:
                     got_delta = True
@@ -183,13 +233,51 @@ async def stream_copilot(
 
     try:
         async with CopilotClient(config) as client:
+            available_models = await client.list_models()
+            available_model_ids = {m.id for m in available_models}
+            if model and model not in available_model_ids:
+                available = ", ".join(sorted(available_model_ids)) or "none"
+                logger.warning(
+                    "copilot model %s not available; available=%s",
+                    model,
+                    available,
+                )
+                yield (
+                    f"\n[Requested Copilot model '{model}' is not available for this workspace. "
+                    f"Available models: {available}]\n"
+                )
+                return
+
             session = await client.create_session(
                 on_permission_request=PermissionHandler.approve_all,
                 model=model,
                 streaming=True,
             )
+            try:
+                current = await session.rpc.model.get_current()
+                if current.model_id:
+                    active_model = current.model_id
+            except Exception:
+                logger.exception("copilot get_current_model failed")
+
+            if model and active_model != model:
+                logger.warning(
+                    "copilot session active model differs from requested model: requested=%s active=%s",
+                    model,
+                    active_model,
+                )
+
+            runtime_prompt = (
+                f"{prompt}\n\n"
+                "Runtime metadata (validated by the backend):\n"
+                "- provider: copilot\n"
+                f"- configured model: {model or 'default'}\n"
+                f"- active model: {active_model}\n"
+                "- If asked about your runtime or model, answer from this metadata exactly."
+            )
+
             session.on(on_event)
-            await session.send(prompt)
+            await session.send(runtime_prompt)
             while True:
                 item = await chunks.get()
                 if item is None:
@@ -201,7 +289,6 @@ async def stream_copilot(
     except Exception:
         logger.exception("copilot stream failed")
         yield "\n[AI service temporarily unavailable. Please try again.]\n"
-
 
 async def stream_chat_response(
     *,
@@ -223,27 +310,25 @@ async def stream_chat_response(
     system_text = _system_prompt_for_role(user.role)
 
     if provider == "ollama":
-        oai_messages = _messages_to_openai(messages, system_text)
+        ollama_system_text = system_text + _runtime_prompt_metadata(
+            provider=provider,
+            configured_model=model,
+        )
+        oai_messages = _messages_to_openai(messages, ollama_system_text)
         async for part in stream_ollama(model=model, oai_messages=oai_messages):
             yield part
         return
 
-    # copilot
-    # Get copilot token from workspace settings
-    github_token = None
-    res = await db.execute(
-        select(WorkspaceAISettings).where(
-            WorkspaceAISettings.workspace_id == workspace.id
-        )
+    github_token = await get_workspace_copilot_token(db, workspace.id)
+    prompt = system_text + _runtime_prompt_metadata(
+        provider=provider,
+        configured_model=model or "gpt-4.1",
     )
-    ws_settings = res.scalar_one_or_none()
-    if ws_settings and ws_settings.copilot_token_encrypted:
-        from app.core.token_crypto import decrypt_secret
-        github_token = decrypt_secret(ws_settings.copilot_token_encrypted)
-
-    prompt = (
-        f"SYSTEM INSTRUCTIONS:\n{system_text}\n\nCONVERSATION:\n"
-        + _messages_to_copilot_prompt(messages)
-    )
-    async for part in stream_copilot(model=model or "gpt-4.1", prompt=prompt, github_token=github_token):
+    prompt += "\n\nCONVERSATION:\n" + _messages_to_copilot_prompt(messages)
+    async for part in stream_copilot(
+        model=model or "gpt-4.1",
+        prompt=prompt,
+        github_token=github_token,
+    ):
         yield part
+

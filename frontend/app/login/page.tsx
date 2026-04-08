@@ -8,6 +8,20 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Eye, EyeOff, Activity, ArrowRight } from "lucide-react";
 import { getRoleHome } from "@/lib/routes";
 
+function getSafePostLoginPath(next: string | null, role: string): string {
+  const roleHome = getRoleHome(role);
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return roleHome;
+
+  try {
+    const parsed = new URL(next, "http://wheelsense.local");
+    const path = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    if (role === "admin") return path;
+    return path === roleHome || path.startsWith(`${roleHome}/`) ? path : roleHome;
+  } catch {
+    return roleHome;
+  }
+}
+
 export default function LoginPage() {
   const { login, user, loading } = useAuth();
   const router = useRouter();
@@ -21,7 +35,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.replace(getRoleHome(user.role));
+      const next =
+        typeof window === "undefined"
+          ? null
+          : new URLSearchParams(window.location.search).get("next");
+      router.replace(getSafePostLoginPath(next, user.role));
     }
   }, [user, router]);
 

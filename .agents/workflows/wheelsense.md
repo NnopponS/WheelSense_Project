@@ -57,6 +57,13 @@ Protected queries should filter by workspace:
 select(Model).where(Model.workspace_id == ws.id)
 ```
 
+### AI settings and provider pattern
+
+- treat backend AI settings endpoints as runtime truth for provider/model state
+- do not hardcode Copilot model IDs in frontend settings UIs; load them from `/api/settings/ai/copilot/models`
+- when AI runtime behavior changes, sync `server/docs/ENV.md`, `server/docs/RUNBOOK.md`, and `frontend/README.md` in the same workstream
+- for Dockerized backend + native host Ollama, prefer `OLLAMA_BASE_URL=http://host.docker.internal:11434/v1`
+
 ### Service responsibilities
 
 Services should own:
@@ -96,6 +103,13 @@ When backend changes affect the web app:
 For search-and-link admin screens, follow:
 
 - `.cursor/rules/wheelsense-search-link-combobox.mdc`
+
+For current frontend standardization work, prefer:
+
+- `frontend/components/ui/*` for shared button/input/dialog/table primitives
+- `frontend/hooks/useQuery.ts` instead of ad hoc `fetch` in pages
+- `frontend/lib/forms/*` for form schema + payload mapping
+- `npm run openapi:types` after backend contract changes that need regenerated schema output
 
 ## Docker And Runtime Verification
 
@@ -143,6 +157,7 @@ Frontend verification when web behavior changes:
 cd frontend
 npm run build
 npm run lint
+npm run openapi:types
 ```
 
 ## Docs Sync
@@ -155,5 +170,15 @@ When runtime behavior or contracts change, update the relevant docs in the same 
 - `server/docs/RUNBOOK.md`
 - `frontend/README.md`
 - `.cursor/agents/README.md`
+
+When frontend stack behavior changes, also verify:
+
+- `frontend/components.json`
+- generated schema output under `frontend/lib/api/generated/`
+
+For AI/provider changes also verify:
+
+- admin AI settings copy matches the current backend provider/model rules
+- generated OpenAPI schema includes any new `/api/settings/ai/*` endpoints
 
 Do not treat `HANDOFF.md` as canonical documentation; it is session state.

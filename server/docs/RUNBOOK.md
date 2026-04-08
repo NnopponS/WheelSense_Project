@@ -35,6 +35,8 @@ docker compose logs -f homeassistant
 | `GET /api/auth/me` | JWT auth works |
 | `GET /api/workspaces` | DB + auth + workspace reads |
 | `GET /api/settings/ai/health` | AI settings service responds |
+| `GET /api/settings/ai/copilot/models` | Copilot bridge returns the current workspace-visible model list |
+| `GET /api/settings/ai/ollama/models` | Ollama host is reachable and returns installed models |
 | `GET /api/public/profile-images/{filename}` | Hosted profile image serving path |
 
 `model_ready: false` is expected until RSSI training data has been collected and the localization model has been trained.
@@ -91,6 +93,44 @@ The backend does not auto-register devices. Register the device first through th
 
 Collect RSSI training data, then retrain the localization model through the CLI or the localization endpoints.
 
+### Admin selects `gpt-4o` but chat answers as another model
+
+Check the backend model list first:
+
+```bash
+cd server
+curl http://127.0.0.1:8000/api/settings/ai/copilot/models
+```
+
+Current expected behavior:
+
+- frontend Copilot model choices come from the backend SDK model list
+- the backend validates the requested model before creating the Copilot session
+- if the requested model is unavailable, chat should return an explicit error instead of silently falling back
+
+### Ollama is running natively but the API cannot see models
+
+For the default Dockerized backend on Windows/macOS hosts, set:
+
+```env
+OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
+```
+
+Then restart:
+
+```bash
+cd server
+docker compose up -d --build wheelsense-platform-server
+```
+
+Verify:
+
+```bash
+curl http://127.0.0.1:8000/api/settings/ai/ollama/models
+```
+
+If you switch back to a Compose-managed Ollama service, use `http://ollama:11434/v1` instead.
+
 ## Backup And Rollback
 
 ### Database backup
@@ -119,4 +159,4 @@ docker compose exec wheelsense-platform-server alembic history
 
 - `copilot-cli` is opt-in via the `copilot` profile
 - `homeassistant` is part of the default Compose stack
-- the old Ollama service block is currently commented out in `docker-compose.yml`; use a host or external Ollama service unless that block is restored
+- the old Ollama service block is currently commented out in `docker-compose.yml`; the current default is host-native Ollama via `host.docker.internal` unless that block is restored

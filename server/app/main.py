@@ -1,19 +1,19 @@
-"""WheelSense Server — FastAPI application entry point."""
-
 from __future__ import annotations
+
+"""WheelSense Server — FastAPI application entry point."""
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from .config import settings
+from app.api.errors import register_error_handlers
 from app.core.security import validate_runtime_settings
-from app.db.session import init_db
 from .mqtt_handler import mqtt_listener
 from app.api.router import api_router as router
-from app.mcp_server import mcp
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,13 +21,14 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger("wheelsense")
-
+MCP_ENABLED = os.getenv("WHEELSENSE_ENABLE_MCP", "1") == "1"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: create tables & launch MQTT listener. Shutdown: cancel tasks."""
     logger.info("Starting %s", settings.app_name)
     validate_runtime_settings()
+    from app.db.session import init_db
 
     from app.db.init_db import (
         init_admin_user,
@@ -64,7 +65,6 @@ async def lifespan(app: FastAPI):
         pass
     logger.info("Shutdown complete")
 
-
 app = FastAPI(
     title=settings.app_name,
     version="3.2.0",
@@ -72,8 +72,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+register_error_handlers(app)
 app.include_router(router)
-
 
 @app.get("/")
 async def root():
@@ -82,10 +82,13 @@ async def root():
         "version": "3.2.0",
         "docs": "/docs",
         "health": "/api/health",
-        "mcp": "/mcp",
+        "mcp": "/mcp" if MCP_ENABLED else None,
     }
 
-# Mount the MCP server's SSE ASGI app under /mcp
-# This enables agents like Claude Desktop or GitHub Copilot (via MCP adapters)
-# to discover and connect to the WheelSense MCP AI tools.
-app.mount("/mcp", mcp.sse_app())
+# Mount MCP only when enabled so tests and local tooling can run without MCP side-effects.
+if MCP_ENABLED:
+    from app.mcp_server import mcp
+
+    app.mount("/mcp", mcp.sse_app())
+else:
+    logger.info("MCP server mount disabled via WHEELSENSE_ENABLE_MCP=0")

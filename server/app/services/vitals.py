@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from typing import List
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 from app.models.vitals import VitalReading, HealthObservation
 from app.schemas.vitals import VitalReadingCreate, HealthObservationCreate

@@ -1,18 +1,17 @@
-"""Append and list workspace device activity events (best-effort logging)."""
-
 from __future__ import annotations
 
-import logging
 from typing import Any
-
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+"""Append and list workspace device activity events (best-effort logging)."""
+
+import logging
 
 from app.models.base import utcnow
 from app.models.core import DeviceActivityEvent
 
 logger = logging.getLogger("wheelsense.device_activity")
-
 
 async def log_event(
     session: AsyncSession,
@@ -46,7 +45,6 @@ async def log_event(
         except Exception:
             pass
 
-
 async def list_recent(
     session: AsyncSession, workspace_id: int, limit: int = 30
 ) -> list[DeviceActivityEvent]:
@@ -59,3 +57,4 @@ async def list_recent(
     )
     result = await session.execute(q)
     return list(result.scalars().all())
+

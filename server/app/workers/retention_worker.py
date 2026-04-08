@@ -1,3 +1,6 @@
+from __future__ import annotations
+from sqlalchemy import select
+
 """Background retention worker (Phase 6).
 
 Uses APScheduler to periodically clean up old telemetry data
@@ -6,12 +9,9 @@ across all workspaces.
 Lifecycle managed via FastAPI's lifespan in main.py.
 """
 
-from __future__ import annotations
-
 import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import select
 
 from app.config import settings
 from app.db.session import AsyncSessionLocal
@@ -21,7 +21,6 @@ from app.services.retention import RetentionService
 logger = logging.getLogger("wheelsense.retention_worker")
 
 _scheduler: AsyncIOScheduler | None = None
-
 
 async def _run_retention_cycle() -> None:
     """Execute retention cleanup for ALL workspaces."""
@@ -53,7 +52,6 @@ async def _run_retention_cycle() -> None:
     logger.info("Retention cycle complete: %d rows deleted across %d workspaces",
                 total_deleted, len(workspaces))
 
-
 def start_retention_scheduler() -> AsyncIOScheduler:
     """Create and start the APScheduler for retention."""
     global _scheduler
@@ -79,7 +77,6 @@ def start_retention_scheduler() -> AsyncIOScheduler:
     )
     return scheduler
 
-
 def stop_retention_scheduler() -> None:
     """Gracefully shut down the scheduler."""
     global _scheduler
@@ -87,3 +84,4 @@ def stop_retention_scheduler() -> None:
         _scheduler.shutdown(wait=False)
         _scheduler = None
         logger.info("Retention scheduler stopped")
+

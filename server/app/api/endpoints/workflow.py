@@ -1,9 +1,11 @@
-"""Workflow domain endpoints (Wave P1)."""
+from __future__ import annotations
 
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+
+"""Workflow domain endpoints (Wave P1)."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
     RequireRole,
@@ -46,7 +48,6 @@ ROLE_WORKFLOW_WRITE = ["admin", "head_nurse", "supervisor"]
 ROLE_DIRECTIVE_WRITE = ["admin", "head_nurse"]
 ROLE_AUDIT_QUERY = ["admin", "head_nurse", "supervisor"]
 
-
 @router.get("/schedules", response_model=list[CareScheduleOut])
 async def list_schedules(
     status: Optional[str] = None,
@@ -60,7 +61,6 @@ async def list_schedules(
         db, ws_id=ws.id, status=status, patient_id=patient_id, limit=limit
     )
 
-
 @router.post("/schedules", response_model=CareScheduleOut, status_code=201)
 async def create_schedule(
     data: CareScheduleCreate,
@@ -69,7 +69,6 @@ async def create_schedule(
     current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
 ):
     return await schedule_service.create_schedule(db, ws_id=ws.id, actor_user_id=current_user.id, obj_in=data)
-
 
 @router.patch("/schedules/{schedule_id}", response_model=CareScheduleOut)
 async def update_schedule(
@@ -106,7 +105,6 @@ async def update_schedule(
     await db.refresh(updated)
     return updated
 
-
 @router.get("/tasks", response_model=list[CareTaskOut])
 async def list_tasks(
     status: Optional[str] = None,
@@ -124,7 +122,6 @@ async def list_tasks(
         limit=limit,
     )
 
-
 @router.post("/tasks", response_model=CareTaskOut, status_code=201)
 async def create_task(
     data: CareTaskCreate,
@@ -133,7 +130,6 @@ async def create_task(
     current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
 ):
     return await care_task_service.create_task(db, ws_id=ws.id, actor_user_id=current_user.id, obj_in=data)
-
 
 @router.patch("/tasks/{task_id}", response_model=CareTaskOut)
 async def update_task(
@@ -162,7 +158,6 @@ async def update_task(
         raise HTTPException(404, "Task not found")
     return updated
 
-
 @router.get("/messages", response_model=list[RoleMessageOut])
 async def list_messages(
     inbox_only: bool = True,
@@ -180,7 +175,6 @@ async def list_messages(
         limit=limit,
     )
 
-
 @router.post("/messages", response_model=RoleMessageOut, status_code=201)
 async def send_message(
     data: RoleMessageCreate,
@@ -189,7 +183,6 @@ async def send_message(
     current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
     return await role_message_service.send_message(db, ws_id=ws.id, sender_user_id=current_user.id, obj_in=data)
-
 
 @router.post("/messages/{message_id}/read", response_model=RoleMessageOut)
 async def mark_message_read(
@@ -209,7 +202,6 @@ async def mark_message_read(
         raise HTTPException(404, "Message not found")
     return message
 
-
 @router.get("/handovers", response_model=list[HandoverNoteOut])
 async def list_handover_notes(
     patient_id: Optional[int] = None,
@@ -222,7 +214,6 @@ async def list_handover_notes(
         db, ws_id=ws.id, role=current_user.role, patient_id=patient_id, limit=limit
     )
 
-
 @router.post("/handovers", response_model=HandoverNoteOut, status_code=201)
 async def create_handover_note(
     data: HandoverNoteCreate,
@@ -231,7 +222,6 @@ async def create_handover_note(
     current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
     return await handover_note_service.create_note(db, ws_id=ws.id, actor_user_id=current_user.id, obj_in=data)
-
 
 @router.get("/directives", response_model=list[CareDirectiveOut])
 async def list_directives(
@@ -250,7 +240,6 @@ async def list_directives(
         limit=limit,
     )
 
-
 @router.post("/directives", response_model=CareDirectiveOut, status_code=201)
 async def create_directive(
     data: CareDirectiveCreate,
@@ -261,7 +250,6 @@ async def create_directive(
     return await care_directive_service.create_directive(
         db, ws_id=ws.id, actor_user_id=current_user.id, obj_in=data
     )
-
 
 @router.patch("/directives/{directive_id}", response_model=CareDirectiveOut)
 async def update_directive(
@@ -290,7 +278,6 @@ async def update_directive(
     await db.refresh(updated)
     return updated
 
-
 @router.post("/directives/{directive_id}/acknowledge", response_model=CareDirectiveOut)
 async def acknowledge_directive(
     directive_id: int,
@@ -310,7 +297,6 @@ async def acknowledge_directive(
     if not directive:
         raise HTTPException(404, "Directive not found")
     return directive
-
 
 @router.get("/audit", response_model=list[AuditTrailEventOut])
 async def query_audit_trail(
@@ -332,3 +318,4 @@ async def query_audit_trail(
         patient_id=patient_id,
         limit=limit,
     )
+

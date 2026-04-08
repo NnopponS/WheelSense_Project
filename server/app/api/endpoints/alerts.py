@@ -1,9 +1,11 @@
-"""Alert endpoints with full lifecycle (active → acknowledged → resolved)."""
+from __future__ import annotations
 
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+
+"""Alert endpoints with full lifecycle (active → acknowledged → resolved)."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
     RequireRole,
@@ -21,7 +23,6 @@ router = APIRouter()
 
 ROLE_ALERT_CREATE = ["admin", "head_nurse", "supervisor", "observer", "patient"]
 ROLE_ALERT_ACK = ["admin", "head_nurse"]
-
 
 @router.get("", response_model=list[AlertOut])
 async def list_alerts(
@@ -51,7 +52,6 @@ async def list_alerts(
         alerts = [a for a in alerts if a.status == status]
     return alerts
 
-
 @router.post("", response_model=AlertOut, status_code=201)
 async def create_alert(
     data: AlertCreate,
@@ -60,7 +60,6 @@ async def create_alert(
     _: User = Depends(RequireRole(ROLE_ALERT_CREATE)),
 ):
     return await alert_service.create(db, ws_id=ws.id, obj_in=data)
-
 
 @router.get("/{alert_id}", response_model=AlertOut)
 async def get_alert(
@@ -80,7 +79,6 @@ async def get_alert(
         raise HTTPException(403, "Operation not permitted")
     return alert
 
-
 @router.post("/{alert_id}/acknowledge", response_model=AlertOut)
 async def acknowledge_alert(
     alert_id: int,
@@ -99,7 +97,6 @@ async def acknowledge_alert(
         raise HTTPException(404, "Alert not found")
     return alert
 
-
 @router.post("/{alert_id}/resolve", response_model=AlertOut)
 async def resolve_alert(
     alert_id: int,
@@ -114,3 +111,4 @@ async def resolve_alert(
     if not alert:
         raise HTTPException(404, "Alert not found")
     return alert
+

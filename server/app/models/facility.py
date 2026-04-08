@@ -1,14 +1,15 @@
+from __future__ import annotations
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, JSON
+
 """Facility hierarchy: Facility (Building) → Floor → Room.
 
 Each Room maps 1:1 to a T-SIMCam Node. Floors store approximate
 room positions for future map visualization.
 """
 
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, utcnow
-
 
 class Facility(Base):
     """Building / อาคาร."""
@@ -27,7 +28,6 @@ class Facility(Base):
     description = Column(Text, default="")
     config = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
     created_at = Column(DateTime(timezone=True), default=utcnow)
-
 
 class Floor(Base):
     """Floor / ชั้น within a Facility."""
@@ -51,3 +51,4 @@ class Floor(Base):
     name = Column(String(64), default="")
     map_data = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
     created_at = Column(DateTime(timezone=True), default=utcnow)
+

@@ -1,80 +1,176 @@
-"use client";
+﻿"use client";
+"use no memo";
 
 import Link from "next/link";
-import { useMemo, useState, type ComponentType } from "react";
-import { api } from "@/lib/api";
-import { useQuery } from "@/hooks/useQuery";
-import type { Alert, Device, Patient, VitalReading } from "@/lib/types";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, ClipboardList, Siren, Stethoscope } from "lucide-react";
 import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+import type {
+  CareDirectiveOut,
+  CareTaskOut,
+  CareScheduleOut,
+  ListAlertsResponse,
+  ListPatientsResponse,
+  ListVitalReadingsResponse,
+} from "@/lib/api/task-scope-types";
 
-interface CareTask {
+type TaskRow = {
   id: number;
-  patient_id: number | null;
   title: string;
-  priority: "low" | "normal" | "high" | "critical";
-  due_at: string | null;
-  status: "pending" | "in_progress" | "completed" | "cancelled";
-}
+  patientId: number | null;
+  patientName: string;
+  priority: string;
+  dueAt: string | null;
+  status: string;
+};
 
-interface CareDirective {
+type DirectiveRow = {
   id: number;
-  patient_id: number | null;
   title: string;
-  directive_text: string;
-  status: "active" | "acknowledged" | "closed";
-  target_role: string | null;
-}
+  patientId: number | null;
+  patientName: string;
+  targetRole: string | null;
+  status: string;
+  text: string;
+};
 
-interface CareSchedule {
-  id: number;
-  patient_id: number | null;
-  title: string;
-  starts_at: string;
-  status: "scheduled" | "completed" | "cancelled";
-}
+type PatientAttentionRow = {
+  patientId: number;
+  patientName: string;
+  careLevel: string;
+  alertCount: number;
+  criticalCount: number;
+  latestHeartRate: number | null;
+  latestSpo2: number | null;
+  lastVitalAt: string | null;
+};
+
+const dashboardKeys = {
+  patients: ["supervisor", "dashboard", "patients"] as QueryKey,
+  alerts: ["supervisor", "dashboard", "alerts"] as QueryKey,
+  vitals: ["supervisor", "dashboard", "vitals"] as QueryKey,
+  tasks: ["supervisor", "dashboard", "tasks"] as QueryKey,
+  directives: ["supervisor", "dashboard", "directives"] as QueryKey,
+  schedules: ["supervisor", "dashboard", "schedules"] as QueryKey,
+};
 
 export default function SupervisorDashboardPage() {
-  const [updatingTaskId, setUpdatingTaskId] = useState<number | null>(null);
-  const [acknowledgingDirectiveId, setAcknowledgingDirectiveId] = useState<number | null>(null);
+  const nowMs = useFixedNowMs();
+  const queryClient = useQueryClient();
+  const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
+  const [pendingDirectiveId, setPendingDirectiveId] = useState<number | null>(null);
 
-  const { data: patients } = useQuery<Patient[]>("/patients");
-  const { data: alerts } = useQuery<Alert[]>("/alerts");
-  const { data: vitals } = useQuery<VitalReading[]>("/vitals/readings?limit=120");
-  const { data: devices } = useQuery<Device[]>("/devices");
-  const { data: tasks, refetch: refetchTasks } = useQuery<CareTask[]>("/workflow/tasks?limit=80");
-  const { data: directives, refetch: refetchDirectives } = useQuery<CareDirective[]>(
-    "/workflow/directives?limit=80",
+  const patientsQuery = useQuery({
+    queryKey: dashboardKeys.patients,
+    queryFn: () => api.listPatients({ limit: 300 }),
+  });
+
+  const alertsQuery = useQuery({
+    queryKey: dashboardKeys.alerts,
+    queryFn: () => api.listAlerts({ status: "active", limit: 200 }),
+  });
+
+  const vitalsQuery = useQuery({
+    queryKey: dashboardKeys.vitals,
+    queryFn: () => api.listVitalReadings({ limit: 240 }),
+    refetchInterval: 30_000,
+  });
+
+  const tasksQuery = useQuery({
+    queryKey: dashboardKeys.tasks,
+    queryFn: () => api.listWorkflowTasks({ limit: 120 }),
+  });
+
+  const directivesQuery = useQuery({
+    queryKey: dashboardKeys.directives,
+    queryFn: () => api.listWorkflowDirectives({ status: "active", limit: 120 }),
+  });
+
+  const schedulesQuery = useQuery({
+    queryKey: dashboardKeys.schedules,
+    queryFn: () => api.listWorkflowSchedules({ status: "scheduled", limit: 120 }),
+  });
+
+  const completeTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      await api.updateWorkflowTask(taskId, { status: "completed" });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: dashboardKeys.tasks });
+      await queryClient.invalidateQueries({ queryKey: ["supervisor", "directives"] });
+    },
+    onSettled: () => {
+      setPendingTaskId(null);
+    },
+  });
+
+  const acknowledgeDirectiveMutation = useMutation({
+    mutationFn: async (directiveId: number) => {
+      await api.acknowledgeWorkflowDirective(directiveId, {
+        note: "Supervisor acknowledged from command center",
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: dashboardKeys.directives });
+      await queryClient.invalidateQueries({ queryKey: ["supervisor", "directives"] });
+    },
+    onSettled: () => {
+      setPendingDirectiveId(null);
+    },
+  });
+
+  const patients = useMemo(
+    () => (patientsQuery.data ?? []) as ListPatientsResponse,
+    [patientsQuery.data],
   );
-  const { data: schedules } = useQuery<CareSchedule[]>("/workflow/schedules?status=scheduled&limit=80");
+  const alerts = useMemo(
+    () => (alertsQuery.data ?? []) as ListAlertsResponse,
+    [alertsQuery.data],
+  );
+  const vitals = useMemo(
+    () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
+    [vitalsQuery.data],
+  );
+  const tasks = useMemo(
+    () => (tasksQuery.data ?? []) as CareTaskOut[],
+    [tasksQuery.data],
+  );
+  const directives = useMemo(
+    () => (directivesQuery.data ?? []) as CareDirectiveOut[],
+    [directivesQuery.data],
+  );
+  const schedules = useMemo(
+    () => (schedulesQuery.data ?? []) as CareScheduleOut[],
+    [schedulesQuery.data],
+  );
 
   const patientById = useMemo(
-    () => new Map((patients ?? []).map((patient) => [patient.id, patient])),
+    () => new Map(patients.map((patient) => [patient.id, patient])),
     [patients],
   );
 
   const latestVitalsByPatient = useMemo(() => {
-    const map = new Map<number, VitalReading>();
-    for (const reading of vitals ?? []) {
-      if (!map.has(reading.patient_id)) {
+    const map = new Map<number, ListVitalReadingsResponse[number]>();
+    for (const reading of vitals) {
+      const current = map.get(reading.patient_id);
+      if (!current || reading.timestamp > current.timestamp) {
         map.set(reading.patient_id, reading);
       }
     }
     return map;
   }, [vitals]);
-  const fleetHealth = useMemo(() => {
-    const list = devices ?? [];
-    const now = Date.now();
-    const online = list.filter((d) => {
-      if (!d.last_seen) return false;
-      return now - new Date(d.last_seen).getTime() <= 5 * 60 * 1000;
-    }).length;
-    const polarSensors = list.filter((d) => d.hardware_type === "polar_sense").length;
-    return { total: list.length, online, polarSensors };
-  }, [devices]);
 
   const activeAlerts = useMemo(
-    () => (alerts ?? []).filter((alert) => alert.status === "active"),
+    () => alerts.filter((alert) => alert.status === "active"),
     [alerts],
   );
 
@@ -85,294 +181,336 @@ export default function SupervisorDashboardPage() {
 
   const openTasks = useMemo(
     () =>
-      (tasks ?? [])
-        .filter((task) => task.status !== "completed" && task.status !== "cancelled")
-        .sort((a, b) => {
-          if (!a.due_at) return 1;
-          if (!b.due_at) return -1;
-          return a.due_at.localeCompare(b.due_at);
+      tasks
+        .filter((task) => task.status === "pending" || task.status === "in_progress")
+        .sort((left, right) => {
+          if (!left.due_at) return 1;
+          if (!right.due_at) return -1;
+          return left.due_at.localeCompare(right.due_at);
         }),
     [tasks],
   );
 
   const activeDirectives = useMemo(
-    () => (directives ?? []).filter((directive) => directive.status === "active"),
+    () => directives.filter((directive) => directive.status === "active"),
     [directives],
   );
 
   const nextSchedules = useMemo(() => {
-    const now = Date.now();
-    const twelveHoursAhead = now + 12 * 60 * 60 * 1000;
-    return (schedules ?? [])
+    const twelveHoursAhead = nowMs + 12 * 60 * 60 * 1000;
+    return schedules
       .filter((schedule) => {
         if (schedule.status !== "scheduled") return false;
         const startsAt = new Date(schedule.starts_at).getTime();
-        return startsAt >= now && startsAt <= twelveHoursAhead;
+        return startsAt >= nowMs && startsAt <= twelveHoursAhead;
       })
-      .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-  }, [schedules]);
+      .sort((left, right) => left.starts_at.localeCompare(right.starts_at));
+  }, [nowMs, schedules]);
 
-  const patientAttentionRows = useMemo(() => {
-    return (patients ?? [])
+  const patientAttentionRows = useMemo<PatientAttentionRow[]>(() => {
+    return patients
       .map((patient) => {
         const alertCount = activeAlerts.filter((alert) => alert.patient_id === patient.id).length;
         const criticalCount = criticalAlerts.filter((alert) => alert.patient_id === patient.id).length;
         const latestVitals = latestVitalsByPatient.get(patient.id);
-        const hasVitalRisk =
-          (latestVitals?.spo2 ?? 100) < 92 || (latestVitals?.heart_rate_bpm ?? 0) > 120;
-        return { patient, alertCount, criticalCount, latestVitals, hasVitalRisk };
+        return {
+          patientId: patient.id,
+          patientName: `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`,
+          careLevel: patient.care_level,
+          alertCount,
+          criticalCount,
+          latestHeartRate: latestVitals?.heart_rate_bpm ?? null,
+          latestSpo2: latestVitals?.spo2 ?? null,
+          lastVitalAt: latestVitals?.timestamp ?? null,
+        };
       })
-      .filter((row) => row.alertCount > 0 || row.hasVitalRisk)
-      .sort((a, b) => b.criticalCount - a.criticalCount || b.alertCount - a.alertCount)
-      .slice(0, 6);
-  }, [patients, activeAlerts, criticalAlerts, latestVitalsByPatient]);
+      .filter((row) => row.alertCount > 0 || row.criticalCount > 0 || row.latestSpo2 != null || row.latestHeartRate != null)
+      .sort((left, right) => {
+        if (left.criticalCount !== right.criticalCount) return right.criticalCount - left.criticalCount;
+        return right.alertCount - left.alertCount;
+      })
+      .slice(0, 12);
+  }, [activeAlerts, criticalAlerts, latestVitalsByPatient, patients]);
 
-  async function completeTask(taskId: number) {
-    try {
-      setUpdatingTaskId(taskId);
-      await api.patch(`/workflow/tasks/${taskId}`, { status: "completed" });
-      await refetchTasks();
-    } finally {
-      setUpdatingTaskId(null);
-    }
-  }
+  const taskRows = useMemo<TaskRow[]>(() => {
+    return openTasks.map((task) => {
+      const patient = task.patient_id ? patientById.get(task.patient_id) : null;
+      return {
+        id: task.id,
+        title: task.title,
+        patientId: task.patient_id,
+        patientName: patient
+          ? `${patient.first_name} ${patient.last_name}`.trim()
+          : "Unit-wide",
+        priority: task.priority,
+        dueAt: task.due_at,
+        status: task.status,
+      };
+    });
+  }, [openTasks, patientById]);
 
-  async function acknowledgeDirective(directiveId: number) {
-    try {
-      setAcknowledgingDirectiveId(directiveId);
-      await api.post(`/workflow/directives/${directiveId}/acknowledge`, {
-        note: "Supervisor acknowledged from dashboard",
-      });
-      await refetchDirectives();
-    } finally {
-      setAcknowledgingDirectiveId(null);
-    }
-  }
+  const directiveRows = useMemo<DirectiveRow[]>(() => {
+    return activeDirectives.map((directive) => {
+      const patient = directive.patient_id ? patientById.get(directive.patient_id) : null;
+      return {
+        id: directive.id,
+        title: directive.title,
+        patientId: directive.patient_id,
+        patientName: patient
+          ? `${patient.first_name} ${patient.last_name}`.trim()
+          : "Unit-wide",
+        targetRole: directive.target_role,
+        status: directive.status,
+        text: directive.directive_text,
+      };
+    });
+  }, [activeDirectives, patientById]);
+
+  const taskColumns = useMemo<ColumnDef<TaskRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Task",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.patientName}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "priority",
+        header: "Priority",
+        cell: ({ row }) => {
+          const priority = row.original.priority;
+          const variant =
+            priority === "critical"
+              ? "destructive"
+              : priority === "high"
+                ? "warning"
+                : priority === "normal"
+                  ? "secondary"
+                  : "outline";
+          return <Badge variant={variant}>{priority}</Badge>;
+        },
+      },
+      {
+        accessorKey: "dueAt",
+        header: "Due",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.dueAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.dueAt)}</p>
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <Button
+            type="button"
+            size="sm"
+            disabled={completeTaskMutation.isPending && pendingTaskId === row.original.id}
+            onClick={() => {
+              setPendingTaskId(row.original.id);
+              completeTaskMutation.mutate(row.original.id);
+            }}
+          >
+            Mark completed
+          </Button>
+        ),
+      },
+    ],
+    [completeTaskMutation, pendingTaskId],
+  );
+
+  const directiveColumns = useMemo<ColumnDef<DirectiveRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Directive",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.text}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "patientName",
+        header: "Patient",
+      },
+      {
+        accessorKey: "targetRole",
+        header: "Target role",
+        cell: ({ row }) => row.original.targetRole || "Any role",
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={acknowledgeDirectiveMutation.isPending && pendingDirectiveId === row.original.id}
+            onClick={() => {
+              setPendingDirectiveId(row.original.id);
+              acknowledgeDirectiveMutation.mutate(row.original.id);
+            }}
+          >
+            Acknowledge
+          </Button>
+        ),
+      },
+    ],
+    [acknowledgeDirectiveMutation, pendingDirectiveId],
+  );
+
+  const patientAttentionColumns = useMemo<ColumnDef<PatientAttentionRow>[]>(
+    () => [
+      {
+        accessorKey: "patientName",
+        header: "Patient",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.patientName}</p>
+            <Badge
+              variant={
+                row.original.careLevel === "critical"
+                  ? "destructive"
+                  : row.original.careLevel === "special"
+                    ? "warning"
+                    : "success"
+              }
+            >
+              {row.original.careLevel}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "criticalCount",
+        header: "Critical alerts",
+      },
+      {
+        accessorKey: "alertCount",
+        header: "Active alerts",
+      },
+      {
+        accessorKey: "latestHeartRate",
+        header: "HR",
+        cell: ({ row }) => row.original.latestHeartRate ?? "-",
+      },
+      {
+        accessorKey: "latestSpo2",
+        header: "SpO2",
+        cell: ({ row }) => row.original.latestSpo2 ?? "-",
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/supervisor/patients/${row.original.patientId}`}>Open detail</Link>
+          </Button>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const isLoadingAny =
+    patientsQuery.isLoading ||
+    alertsQuery.isLoading ||
+    tasksQuery.isLoading ||
+    directivesQuery.isLoading ||
+    schedulesQuery.isLoading ||
+    vitalsQuery.isLoading;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-on-surface">Supervisor Command Center</h2>
-        <p className="text-sm text-on-surface-variant mt-1">
-          Prioritize active risks, close care tasks, and track care directives in one workflow.
+        <h2 className="text-2xl font-bold text-foreground">Supervisor Command Center</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Prioritize active risks, close care tasks, and monitor directives in one operational view.
         </p>
       </div>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <DashboardStat
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryStatCard
           icon={Siren}
           label="Critical alerts"
           value={criticalAlerts.length}
-          accent={criticalAlerts.length > 0 ? "critical" : "success"}
-          href="/supervisor/emergency"
+          tone={criticalAlerts.length > 0 ? "critical" : "success"}
         />
-        <DashboardStat
+        <SummaryStatCard
           icon={ClipboardList}
           label="Open care tasks"
           value={openTasks.length}
-          accent={openTasks.length > 0 ? "warning" : "success"}
-          href="/supervisor/directives"
+          tone={openTasks.length > 0 ? "warning" : "success"}
         />
-        <DashboardStat
+        <SummaryStatCard
           icon={Stethoscope}
           label="Patients needing review"
           value={patientAttentionRows.length}
-          accent={patientAttentionRows.length > 0 ? "warning" : "info"}
-          href="/supervisor/patients"
+          tone={patientAttentionRows.length > 0 ? "warning" : "info"}
         />
-        <DashboardStat
+        <SummaryStatCard
           icon={CheckCircle2}
           label="Next 12h schedules"
           value={nextSchedules.length}
-          accent="info"
-          href="/supervisor/directives"
+          tone="info"
         />
-      </section>
-
-      <section className="surface-card p-4">
-        <h3 className="text-xs uppercase tracking-wide text-on-surface-variant mb-2">
-          Device health snapshot
-        </h3>
-        <p className="text-sm text-on-surface">
-          {fleetHealth.online}/{fleetHealth.total} online · Polar sensors {fleetHealth.polarSensors}
-        </p>
       </section>
 
       <FloorplanRoleViewer />
 
-      <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="surface-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-on-surface uppercase tracking-wide">
-              Immediate Task Queue
-            </h3>
-            <Link className="text-xs text-primary hover:underline" href="/supervisor/directives">
-              Manage all tasks
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {openTasks.slice(0, 6).map((task) => {
-              const patient = task.patient_id ? patientById.get(task.patient_id) : null;
-              return (
-                <div key={task.id} className="rounded-xl bg-surface-container-low p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-on-surface">{task.title}</p>
-                      <p className="text-xs text-on-surface-variant mt-1">
-                        {patient
-                          ? `${patient.first_name} ${patient.last_name}`
-                          : "Unassigned patient"}
-                        {task.due_at
-                          ? ` · due ${new Date(task.due_at).toLocaleString()}`
-                          : " · no due time"}
-                      </p>
-                    </div>
-                    <span className="text-[10px] uppercase px-2 py-1 rounded-full bg-warning-bg text-warning font-semibold">
-                      {task.priority}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-end">
-                    <button
-                      type="button"
-                      disabled={updatingTaskId === task.id}
-                      onClick={() => void completeTask(task.id)}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-success-bg text-success font-medium hover:opacity-80 disabled:opacity-60 cursor-pointer"
-                    >
-                      Mark completed
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            {openTasks.length === 0 && (
-              <p className="text-sm text-on-surface-variant py-2">
-                No open tasks. The care queue is clear right now.
-              </p>
-            )}
-          </div>
-        </div>
+      <DataTableCard
+        title="Immediate Task Queue"
+        description="Pending and in-progress tasks sorted by due time."
+        data={taskRows}
+        columns={taskColumns}
+        isLoading={isLoadingAny}
+        emptyText="No open tasks."
+        rightSlot={
+          <Button asChild size="sm" variant="outline">
+            <Link href="/supervisor/directives">Manage all tasks</Link>
+          </Button>
+        }
+      />
 
-        <div className="surface-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-on-surface uppercase tracking-wide">
-              Directives Awaiting Acknowledgement
-            </h3>
-            <Link className="text-xs text-primary hover:underline" href="/supervisor/directives">
-              Open directives board
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {activeDirectives.slice(0, 5).map((directive) => {
-              const patient = directive.patient_id ? patientById.get(directive.patient_id) : null;
-              return (
-                <div key={directive.id} className="rounded-xl bg-surface-container-low p-3">
-                  <p className="text-sm font-semibold text-on-surface">{directive.title}</p>
-                  <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">
-                    {directive.directive_text}
-                  </p>
-                  <p className="text-xs text-on-surface-variant mt-2">
-                    {patient
-                      ? `${patient.first_name} ${patient.last_name}`
-                      : "Applies across unit"}
-                    {directive.target_role ? ` · target ${directive.target_role}` : ""}
-                  </p>
-                  <div className="mt-3 flex items-center justify-end">
-                    <button
-                      type="button"
-                      disabled={acknowledgingDirectiveId === directive.id}
-                      onClick={() => void acknowledgeDirective(directive.id)}
-                      className="px-3 py-1.5 text-xs rounded-lg bg-primary/15 text-primary font-medium hover:opacity-80 disabled:opacity-60 cursor-pointer"
-                    >
-                      Acknowledge
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            {activeDirectives.length === 0 && (
-              <p className="text-sm text-on-surface-variant py-2">
-                All directives are acknowledged.
-              </p>
-            )}
-          </div>
-        </div>
-      </section>
+      <DataTableCard
+        title="Directives Awaiting Acknowledgement"
+        description="Active directives that still require supervisor acknowledgement."
+        data={directiveRows}
+        columns={directiveColumns}
+        isLoading={isLoadingAny}
+        emptyText="All directives are acknowledged."
+        rightSlot={
+          <Button asChild size="sm" variant="outline">
+            <Link href="/supervisor/directives">Open directives board</Link>
+          </Button>
+        }
+      />
 
-      <section className="surface-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-on-surface uppercase tracking-wide">
-            Patient Insight Priority List
-          </h3>
-          <Link className="text-xs text-primary hover:underline" href="/supervisor/patients">
-            View full patient list
-          </Link>
-        </div>
-        {patientAttentionRows.length === 0 ? (
-          <p className="text-sm text-on-surface-variant">
-            No patient currently meets alert or vital-risk escalation criteria.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {patientAttentionRows.map(({ patient, alertCount, criticalCount, latestVitals }) => (
-              <Link
-                key={patient.id}
-                href={`/supervisor/patients/${patient.id}`}
-                className="flex items-center justify-between rounded-xl px-4 py-3 bg-surface-container-low hover:bg-surface-container transition-smooth"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-on-surface">
-                    {patient.first_name} {patient.last_name}
-                  </p>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    {criticalCount > 0 ? `${criticalCount} critical alert(s)` : `${alertCount} active alert(s)`}
-                    {latestVitals
-                      ? ` · HR ${latestVitals.heart_rate_bpm ?? "—"} · SpO2 ${latestVitals.spo2 ?? "—"}`
-                      : ""}
-                  </p>
-                </div>
-                <span className="text-xs text-primary font-medium">Open detail</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      <DataTableCard
+        title="Patient Insight Priority"
+        description="Patients ranked by critical/active alerts and latest vital risk signals."
+        data={patientAttentionRows}
+        columns={patientAttentionColumns}
+        isLoading={isLoadingAny}
+        emptyText="No patients currently match escalation criteria."
+        rightSlot={
+          <Button asChild size="sm" variant="outline">
+            <Link href="/supervisor/patients">View full patient list</Link>
+          </Button>
+        }
+      />
     </div>
   );
 }
 
-function DashboardStat({
-  icon: Icon,
-  label,
-  value,
-  accent,
-  href,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-  accent: "critical" | "warning" | "success" | "info";
-  href: string;
-}) {
-  const accentClass =
-    accent === "critical"
-      ? "bg-critical-bg text-critical"
-      : accent === "warning"
-      ? "bg-warning-bg text-warning"
-      : accent === "success"
-      ? "bg-success-bg text-success"
-      : "bg-info-bg text-info";
-
-  return (
-    <Link href={href} className="surface-card p-4 hover:shadow-sm transition-smooth">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-on-surface-variant">{label}</p>
-          <p className="text-2xl font-bold text-on-surface mt-1">{value}</p>
-        </div>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accentClass}`}>
-          <Icon className="w-5 h-5" />
-        </div>
-      </div>
-    </Link>
-  );
-}

@@ -1,9 +1,11 @@
-"""VitalReading and HealthObservation endpoints."""
+from __future__ import annotations
 
 from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+
+"""VitalReading and HealthObservation endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
     RequireRole,
@@ -25,7 +27,6 @@ from app.services.vitals import vital_reading_service, health_observation_servic
 
 router = APIRouter()
 
-
 def _scope_patient_id_for_vitals(
     current_user: User,
     patient_id: Optional[int],
@@ -42,9 +43,7 @@ def _scope_patient_id_for_vitals(
         raise HTTPException(403, "Operation not permitted")
     return patient_id
 
-
 # ── Vital Readings ───────────────────────────────────────────────────────────
-
 
 @router.get("/readings", response_model=list[VitalReadingOut])
 async def list_vital_readings(
@@ -61,7 +60,6 @@ async def list_vital_readings(
         )
     return await vital_reading_service.get_multi(db, ws_id=ws.id, limit=limit)
 
-
 @router.post("/readings", response_model=VitalReadingOut, status_code=201)
 async def create_vital_reading(
     data: VitalReadingCreate,
@@ -70,7 +68,6 @@ async def create_vital_reading(
     _: User = Depends(RequireRole(ROLE_CARE_NOTE_WRITERS)),
 ):
     return await vital_reading_service.create(db, ws_id=ws.id, obj_in=data)
-
 
 @router.get("/readings/{reading_id}", response_model=VitalReadingOut)
 async def get_vital_reading(
@@ -85,9 +82,7 @@ async def get_vital_reading(
     _scope_patient_id_for_vitals(current_user, reading.patient_id)
     return reading
 
-
 # ── Health Observations ──────────────────────────────────────────────────────
-
 
 @router.get("/observations", response_model=list[HealthObservationOut])
 async def list_observations(
@@ -104,7 +99,6 @@ async def list_observations(
         )
     return await health_observation_service.get_multi(db, ws_id=ws.id, limit=limit)
 
-
 @router.post("/observations", response_model=HealthObservationOut, status_code=201)
 async def create_observation(
     data: HealthObservationCreate,
@@ -113,7 +107,6 @@ async def create_observation(
     _: User = Depends(RequireRole(ROLE_CARE_NOTE_WRITERS)),
 ):
     return await health_observation_service.create(db, ws_id=ws.id, obj_in=data)
-
 
 @router.get("/observations/{observation_id}", response_model=HealthObservationOut)
 async def get_observation(
@@ -127,3 +120,4 @@ async def get_observation(
         raise HTTPException(404, "Observation not found")
     _scope_patient_id_for_vitals(current_user, obs.patient_id)
     return obs
+

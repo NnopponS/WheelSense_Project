@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Security utilities for WheelSense."""
 
 from datetime import datetime, timedelta, timezone
@@ -8,7 +10,6 @@ import bcrypt
 
 from app.config import settings
 
-
 def validate_runtime_settings() -> None:
     """Block unsafe runtime startup outside debug/local flows."""
     if not settings.has_secure_secret_key and not settings.debug:
@@ -16,7 +17,6 @@ def validate_runtime_settings() -> None:
             "SECRET_KEY is using the default insecure value. "
             "Set SECRET_KEY before starting the server."
         )
-
 
 def create_access_token(
     subject: Union[str, Any], role: str, expires_delta: timedelta | None = None
@@ -28,13 +28,12 @@ def create_access_token(
         expire = datetime.now(timezone.utc) + timedelta(
             minutes=settings.access_token_expire_minutes
         )
-        
+
     to_encode = {"exp": expire, "sub": str(subject), "role": role}
     encoded_jwt = jwt.encode(
         to_encode, settings.secret_key, algorithm=settings.algorithm
     )
     return encoded_jwt
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify plain password against hashed password."""
@@ -44,7 +43,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         )
     except Exception:
         return False
-
 
 def get_password_hash(password: str) -> str:
     """Generate bcrypt hash from plain password."""

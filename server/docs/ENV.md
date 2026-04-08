@@ -87,6 +87,8 @@ MQTT_BROKER=localhost
 ## Compose Notes
 
 - `server/docker-compose.yml` overrides several defaults for containerized runs
+- Recommended for native Ollama on the host with the backend in Docker: `OLLAMA_BASE_URL=http://host.docker.internal:11434/v1`
+- If you enable the optional `ollama` service in Compose instead, set `OLLAMA_BASE_URL=http://ollama:11434/v1`
 - `PROFILE_IMAGE_STORAGE_DIR` is mounted to `/app/storage/profile_images` via the `profile_images` named volume
 - `BOOTSTRAP_ADMIN_SYNC_PASSWORD` and `BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE` are enabled in Compose
 

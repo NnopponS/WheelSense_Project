@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from __future__ import annotations
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies import RequireRole, get_db
 from app.models.core import Workspace
@@ -10,8 +12,7 @@ from app.schemas.core import WorkspaceCreate, WorkspaceOut
 
 router = APIRouter()
 
-
-@router.get("", response_model=List[WorkspaceOut])
+@router.get("", response_model=list[WorkspaceOut])
 async def list_workspaces(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(RequireRole(["admin"])),
@@ -53,3 +54,4 @@ async def activate_workspace(
     await db.commit()
     await db.refresh(workspace)
     return workspace
+

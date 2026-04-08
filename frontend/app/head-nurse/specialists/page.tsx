@@ -1,110 +1,275 @@
-"use client";
+﻿"use client";
+"use no memo";
 
-import { useState } from "react";
-import { api } from "@/lib/api";
-import { useQuery } from "@/hooks/useQuery";
-import { type Specialist } from "@/lib/types";
-import { Stethoscope, Plus } from "lucide-react";
+import { useMemo } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { z } from "zod";
+import { Plus, Stethoscope } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { api, ApiError } from "@/lib/api";
+import type {
+  CreateFutureSpecialistRequest,
+  ListFutureSpecialistsResponse,
+} from "@/lib/api/task-scope-types";
+
+const specialistSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required"),
+  lastName: z.string().trim().min(1, "Last name is required"),
+  specialty: z.string().trim().min(1, "Specialty is required"),
+  licenseNumber: z.string().trim(),
+  phone: z.string().trim(),
+  email: z.string().trim().email("Email is invalid").or(z.literal("")),
+  notes: z.string().trim(),
+  isActive: z.enum(["true", "false"]),
+});
+
+type SpecialistFormValues = z.infer<typeof specialistSchema>;
+
+type SpecialistRow = {
+  id: number;
+  fullName: string;
+  specialty: string;
+  licenseNumber: string | null;
+  phone: string | null;
+  email: string | null;
+  status: "active" | "inactive";
+};
+
+function errorText(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Failed to create specialist.";
+}
 
 export default function HeadNurseSpecialistsPage() {
-  const { data, isLoading, refetch } = useQuery<Specialist[]>("/future/specialists");
-  const [form, setForm] = useState({
-    first_name: "",
-    last_name: "",
-    specialty: "",
-    license_number: "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  async function createSpecialist() {
-    if (!form.first_name || !form.last_name || !form.specialty) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await api.post("/future/specialists", form);
-      setForm({ first_name: "", last_name: "", specialty: "", license_number: "" });
-      await refetch();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create specialist");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const specialistsQuery = useQuery({
+    queryKey: ["head-nurse", "specialists", "list"],
+    queryFn: () => api.listFutureSpecialists(),
+  });
+
+  const form = useForm<SpecialistFormValues>({
+    resolver: zodResolver(specialistSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      specialty: "",
+      licenseNumber: "",
+      phone: "",
+      email: "",
+      notes: "",
+      isActive: "true",
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (values: SpecialistFormValues) => {
+      const payload = {
+        first_name: values.firstName.trim(),
+        last_name: values.lastName.trim(),
+        specialty: values.specialty.trim(),
+        license_number: values.licenseNumber.trim() || null,
+        phone: values.phone.trim() || null,
+        email: values.email.trim() || null,
+        notes: values.notes.trim(),
+        is_active: values.isActive === "true",
+      } satisfies CreateFutureSpecialistRequest;
+
+      await api.createFutureSpecialist(payload);
+    },
+    onSuccess: async () => {
+      form.reset({
+        firstName: "",
+        lastName: "",
+        specialty: "",
+        licenseNumber: "",
+        phone: "",
+        email: "",
+        notes: "",
+        isActive: "true",
+      });
+      await queryClient.invalidateQueries({ queryKey: ["head-nurse", "specialists"] });
+    },
+  });
+
+  const specialists = useMemo(
+    () => (specialistsQuery.data ?? []) as ListFutureSpecialistsResponse,
+    [specialistsQuery.data],
+  );
+
+  const rows = useMemo<SpecialistRow[]>(() => {
+    return specialists.map((item) => ({
+      id: item.id,
+      fullName: `${item.first_name} ${item.last_name}`.trim(),
+      specialty: item.specialty,
+      licenseNumber: item.license_number ?? null,
+      phone: item.phone ?? null,
+      email: item.email ?? null,
+      status: item.is_active ? "active" : "inactive",
+    }));
+  }, [specialists]);
+
+  const columns = useMemo<ColumnDef<SpecialistRow>[]>(
+    () => [
+      {
+        accessorKey: "fullName",
+        header: "Specialist",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.fullName}</p>
+            <p className="text-xs text-muted-foreground">{row.original.specialty}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "licenseNumber",
+        header: "License",
+        cell: ({ row }) => row.original.licenseNumber || "-",
+      },
+      {
+        accessorKey: "phone",
+        header: "Phone",
+        cell: ({ row }) => row.original.phone || "-",
+      },
+      {
+        accessorKey: "email",
+        header: "Email",
+        cell: ({ row }) => row.original.email || "-",
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge variant={row.original.status === "active" ? "success" : "outline"}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const saveError = createMutation.error ? errorText(createMutation.error) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-on-surface">Specialist Directory</h2>
-        <p className="text-sm text-on-surface-variant">
-          Maintain specialist records used by prescription and referral workflows.
+        <h2 className="text-2xl font-bold text-foreground">Specialist Directory</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Maintain specialists used by prescription and referral workflows.
         </p>
       </div>
 
-      <div className="surface-card p-4 space-y-3">
-        <div className="grid md:grid-cols-4 gap-3">
-          <input
-            className="input-field"
-            placeholder="First name"
-            value={form.first_name}
-            onChange={(event) => setForm((prev) => ({ ...prev, first_name: event.target.value }))}
-          />
-          <input
-            className="input-field"
-            placeholder="Last name"
-            value={form.last_name}
-            onChange={(event) => setForm((prev) => ({ ...prev, last_name: event.target.value }))}
-          />
-          <input
-            className="input-field"
-            placeholder="Specialty"
-            value={form.specialty}
-            onChange={(event) => setForm((prev) => ({ ...prev, specialty: event.target.value }))}
-          />
-          <input
-            className="input-field"
-            placeholder="License #"
-            value={form.license_number}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, license_number: event.target.value }))
-            }
-          />
-        </div>
-        {error && <p className="text-sm text-error">{error}</p>}
-        <button
-          type="button"
-          className="gradient-cta px-4 py-2 rounded-lg text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50"
-          disabled={saving}
-          onClick={() => {
-            void createSpecialist();
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          {saving ? "Saving..." : "Add specialist"}
-        </button>
-      </div>
-
-      <div className="surface-card p-4">
-        {isLoading ? (
-          <p className="text-sm text-on-surface-variant">Loading specialists...</p>
-        ) : !data || data.length === 0 ? (
-          <p className="text-sm text-on-surface-variant">No specialists available.</p>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-3">
-            {data.map((item) => (
-              <div key={item.id} className="rounded-lg border border-outline-variant/20 p-3">
-                <p className="font-medium text-on-surface inline-flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4 text-primary" />
-                  {item.first_name} {item.last_name}
-                </p>
-                <p className="text-sm text-on-surface-variant mt-1">
-                  {item.specialty} {item.license_number ? `• ${item.license_number}` : ""}
-                </p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Add Specialist</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form className="space-y-4" onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="space-y-2">
+                <Label>First name</Label>
+                <Input {...form.register("firstName")} placeholder="First name" />
+                {form.formState.errors.firstName ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>
+                ) : null}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              <div className="space-y-2">
+                <Label>Last name</Label>
+                <Input {...form.register("lastName")} placeholder="Last name" />
+                {form.formState.errors.lastName ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Specialty</Label>
+                <Input {...form.register("specialty")} placeholder="Specialty" />
+                {form.formState.errors.specialty ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.specialty.message}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Controller
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Active</SelectItem>
+                        <SelectItem value="false">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>License number</Label>
+                <Input {...form.register("licenseNumber")} placeholder="License #" />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input {...form.register("phone")} placeholder="Phone" />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label>Email</Label>
+                <Input {...form.register("email")} placeholder="Email" />
+                {form.formState.errors.email ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea rows={3} {...form.register("notes")} placeholder="Optional notes" />
+            </div>
+
+            {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
+
+            <Button type="submit" disabled={createMutation.isPending}>
+              <Plus className="h-4 w-4" />
+              {createMutation.isPending ? "Saving..." : "Add specialist"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <DataTableCard
+        title="Specialist List"
+        description="Specialists available for referrals and prescriptions."
+        data={rows}
+        columns={columns}
+        isLoading={specialistsQuery.isLoading}
+        emptyText="No specialists available."
+        rightSlot={<Stethoscope className="h-4 w-4 text-muted-foreground" />}
+      />
     </div>
   );
 }

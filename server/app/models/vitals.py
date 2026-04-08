@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Vital signs and health observation models.
 
 VitalReading stores continuous data from Polar Verity Sense (via BLE or SDK).
@@ -6,19 +8,18 @@ HealthObservation stores manual entries by caregivers.
 
 from sqlalchemy import (
     Column,
+    DateTime,
+    Float,
+    ForeignKey,
     Integer,
+    JSON,
+    SmallInteger,
     String,
     Text,
-    Float,
-    SmallInteger,
-    DateTime,
-    ForeignKey,
-    JSON,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, utcnow
-
 
 class VitalReading(Base):
     """Continuous vital signs from Polar Verity Sense."""
@@ -53,7 +54,6 @@ class VitalReading(Base):
     sensor_battery = Column(SmallInteger, nullable=True)
 
     source = Column(String(16), default="ble")  # ble | polar_sdk | manual
-
 
 class HealthObservation(Base):
     """Manual health observations recorded by caregivers."""
@@ -104,3 +104,4 @@ class HealthObservation(Base):
         String(16), nullable=True
     )  # full | half | quarter | refused
     water_ml = Column(Integer, nullable=True)
+

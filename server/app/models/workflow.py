@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Workflow domain models for schedules, tasks, messaging, handovers, directives, and audit."""
 
 from sqlalchemy import (
@@ -6,16 +8,15 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     JSON,
     String,
     Text,
-    Index,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, utcnow
-
 
 class CareSchedule(Base):
     __tablename__ = "care_schedules"
@@ -37,7 +38,6 @@ class CareSchedule(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
-
 class CareTask(Base):
     __tablename__ = "care_tasks"
 
@@ -57,7 +57,6 @@ class CareTask(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
-
 class RoleMessage(Base):
     __tablename__ = "role_messages"
 
@@ -73,7 +72,6 @@ class RoleMessage(Base):
     read_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, index=True)
 
-
 class HandoverNote(Base):
     __tablename__ = "handover_notes"
 
@@ -87,7 +85,6 @@ class HandoverNote(Base):
     priority = Column(String(16), default="routine")
     note = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utcnow, index=True)
-
 
 class CareDirective(Base):
     __tablename__ = "care_directives"
@@ -108,7 +105,6 @@ class CareDirective(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
-
 class AuditTrailEvent(Base):
     __tablename__ = "audit_trail_events"
     __table_args__ = (
@@ -125,3 +121,4 @@ class AuditTrailEvent(Base):
     entity_id = Column(Integer, nullable=True, index=True)
     details = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
     created_at = Column(DateTime(timezone=True), default=utcnow, index=True)
+

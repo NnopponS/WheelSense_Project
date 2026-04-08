@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import httpx
 import logging
 from typing import Dict, Any, Optional
@@ -20,7 +22,7 @@ class HomeAssistantService:
         if not self.token:
             logger.warning("HomeAssistant integration is incomplete (no access token).")
             return None
-            
+
         url = f"{self.base_url}/api/states/{entity_id}"
         try:
             async with httpx.AsyncClient() as client:

@@ -13,6 +13,23 @@ See also:
 
 ## Latest
 
+- **2026-04-08 - admin monitoring/patient runtime fixes**
+  - **Lanes:** `ws-frontend-admin` + `ws-frontend-shared` + `ws-docs-sync`
+  - **Outcome:** fixed `/admin/monitoring` auth loading loop by removing page-mount `refreshUser()`, hardened login `next` redirects, adjusted the Next `/api/*` proxy for Docker standalone runtime, and fixed patient editor Zod schemas by deriving `.pick()`/`.extend()` sections from unrefined base objects.
+  - **Verification:** targeted ESLint, `cd frontend && npx tsc --noEmit`, `cd frontend && npm run build`, Docker rebuild/recreate of `wheelsense-platform-web`, and HTTP smoke checks for `/admin/monitoring`, `/admin/patients`, and `/patient` passed.
+  - **Notes:** browser tabs may need hard refresh after web container rebuild because stale JS chunks can keep old runtime errors.
+
+- **2026-04-07 - role surfaces modernization completed (Step A/B/C)**
+  - **Lanes:** `ws-frontend-supervisor` + `ws-frontend-head-nurse` + `ws-frontend-observer` + `ws-frontend-patient`
+  - **Outcome:** migrated `/supervisor/*`, `/head-nurse/*`, `/observer/*`, and `/patient/*` to standardized React Query + typed API helpers + shadcn/TanStack table baseline; removed legacy `@/hooks/useQuery` usage in those role surfaces; extended task-scope OpenAPI aliases and typed API methods for workflow/analytics/HA/pharmacy coverage.
+  - **Verification:** `cd frontend && npm run lint`, `cd frontend && npx tsc --noEmit`, and `cd frontend && npm run build` passed.
+  - **Notes:** layout auth/redirect `useEffect` remains by design; no `workspace_id` is sent from migrated role pages.
+
+- **2026-04-07 - admin frontend standardization wave**
+  - **Lanes:** `ws-frontend-admin` + `ws-docs-sync`
+  - **Outcome:** canonical docs updated for the new frontend foundation; `/admin/patients` kept as the validated baseline; `/admin/alerts` moved to shared summary + table UI; `/admin/devices` moved to the shared filter/card shell; local OpenAPI export/generation command documented.
+  - **Verification:** `cd frontend && npm run lint`, `cd frontend && npm run build`, and `cd frontend && npm run openapi:types` passed.
+
 - **2026-04-06 - feature bundle verification and compat routes**
   - **Lanes:** `ws-frontend-admin` + `ws-frontend-shared` + `ws-quality-gate`
   - **Outcome:** restored legacy admin route compatibility (`/admin/users`, `/admin/smart-devices`, `/admin/vitals`), finished account-management and device-patient linking UI contracts, and aligned docs with `proxy.ts`, profile-image flows, and device activity APIs.

@@ -1,10 +1,11 @@
-"""Service-layer helpers for floorplans, specialists, prescriptions, and pharmacy."""
-
 from __future__ import annotations
+
+from typing import Optional
+
+"""Service-layer helpers for floorplans, specialists, prescriptions, and pharmacy."""
 
 import secrets
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -28,10 +29,8 @@ from app.schemas.future_domains import (
 )
 from app.services.base import CRUDBase
 
-
 class SpecialistService(CRUDBase[Specialist, SpecialistCreate, SpecialistUpdate]):
     pass
-
 
 class PrescriptionService(CRUDBase[Prescription, PrescriptionCreate, PrescriptionUpdate]):
     async def list_for_patient(
@@ -51,7 +50,6 @@ class PrescriptionService(CRUDBase[Prescription, PrescriptionCreate, Prescriptio
         stmt = stmt.order_by(Prescription.created_at.desc()).limit(limit)
         result = await session.execute(stmt)
         return list(result.scalars().all())
-
 
 class PharmacyOrderService(CRUDBase[PharmacyOrder, PharmacyOrderCreate, PharmacyOrderUpdate]):
     async def list_orders(
@@ -75,14 +73,11 @@ class PharmacyOrderService(CRUDBase[PharmacyOrder, PharmacyOrderCreate, Pharmacy
         result = await session.execute(stmt)
         return list(result.scalars().all())
 
-
 class _FloorplanCreate(BaseModel):
     pass
 
-
 class _FloorplanUpdate(BaseModel):
     pass
-
 
 class FloorplanService(CRUDBase[FloorplanAsset, _FloorplanCreate, _FloorplanUpdate]):
     @staticmethod
@@ -133,7 +128,6 @@ class FloorplanService(CRUDBase[FloorplanAsset, _FloorplanCreate, _FloorplanUpda
         await session.refresh(db_obj)
         return db_obj
 
-
 class FloorplanLayoutService:
     """Persist interactive floorplan JSON per facility floor."""
 
@@ -179,7 +173,6 @@ class FloorplanLayoutService:
         await session.commit()
         await session.refresh(row)
         return row
-
 
 specialist_service = SpecialistService(Specialist)
 prescription_service = PrescriptionService(Prescription)

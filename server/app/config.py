@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 """WheelSense Server — Configuration."""
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 DEFAULT_SECRET_KEY = "your-super-secret-key-that-should-be-replaced-in-prod"
-
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -91,6 +91,5 @@ class Settings(BaseSettings):
     @property
     def has_secure_secret_key(self) -> bool:
         return bool(self.secret_key and self.secret_key != DEFAULT_SECRET_KEY)
-
 
 settings = Settings()

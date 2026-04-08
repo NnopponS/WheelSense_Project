@@ -1,265 +1,369 @@
-"use client";
+﻿"use client";
+"use no memo";
 
-import { FormEvent, useMemo, useState } from "react";
-import { useQuery } from "@/hooks/useQuery";
+import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { z } from "zod";
+import { Mail, Send, UserRoundCheck } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
-import { api } from "@/lib/api";
-import { Mail, MessageSquare, Send, UserRoundCheck } from "lucide-react";
+import { api, ApiError } from "@/lib/api";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type {
+  ListPatientsResponse,
+  ListWorkflowMessagesResponse,
+  SendWorkflowMessageRequest,
+} from "@/lib/api/task-scope-types";
 
-interface RoleMessage {
+const EMPTY_SELECT = "__empty__";
+const ROLE_OPTIONS = ["admin", "head_nurse", "supervisor", "observer", "patient"] as const;
+
+const composeSchema = z.object({
+  recipientRole: z.string(),
+  patientId: z.string(),
+  subject: z.string().trim().min(1, "Subject is required"),
+  body: z.string().trim().min(1, "Message body is required"),
+});
+
+type ComposeValues = z.infer<typeof composeSchema>;
+
+type MessageRow = {
   id: number;
-  sender_user_id: number;
-  recipient_role: string | null;
-  recipient_user_id: number | null;
-  patient_id: number | null;
   subject: string;
   body: string;
-  is_read: boolean;
-  read_at: string | null;
-  created_at: string;
-}
+  senderUserId: number;
+  recipientRole: string | null;
+  recipientUserId: number | null;
+  patientId: number | null;
+  patientName: string;
+  isRead: boolean;
+  createdAt: string;
+};
 
-const ROLE_OPTIONS = ["admin", "head_nurse", "supervisor", "observer", "patient"];
+function parseError(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Request failed.";
+}
 
 export default function HeadNurseMessagesPage() {
   const { user } = useAuth();
-  const { data: messages, isLoading, refetch } =
-    useQuery<RoleMessage[]>("/workflow/messages?inbox_only=false&limit=120");
-
-  const [recipientRole, setRecipientRole] = useState("supervisor");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [patientId, setPatientId] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"inbox" | "sent">("inbox");
-  const [notice, setNotice] = useState<string | null>(null);
+  const [pendingReadId, setPendingReadId] = useState<number | null>(null);
 
-  const inbox = useMemo(() => {
-    const uid = user?.id;
-    return (messages ?? []).filter((item) => {
-      if (uid == null) return item.sender_user_id !== uid;
-      return item.sender_user_id !== uid;
-    });
-  }, [messages, user?.id]);
+  const messagesQuery = useQuery({
+    queryKey: ["head-nurse", "messages", "list"],
+    queryFn: () => api.listWorkflowMessages({ inbox_only: false, limit: 200 }),
+    refetchInterval: 20_000,
+  });
 
-  const sent = useMemo(() => {
-    const uid = user?.id;
-    return (messages ?? []).filter((item) => item.sender_user_id === uid);
-  }, [messages, user?.id]);
+  const patientsQuery = useQuery({
+    queryKey: ["head-nurse", "messages", "patients"],
+    queryFn: () => api.listPatients({ limit: 300 }),
+  });
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!body.trim()) return;
-    setIsSubmitting(true);
-    setNotice(null);
-    try {
-      await api.post<RoleMessage>("/workflow/messages", {
-        recipient_role: recipientRole,
-        subject: subject.trim(),
-        body: body.trim(),
-        patient_id: patientId ? Number(patientId) : undefined,
+  const form = useForm<ComposeValues>({
+    resolver: zodResolver(composeSchema),
+    defaultValues: {
+      recipientRole: "supervisor",
+      patientId: EMPTY_SELECT,
+      subject: "",
+      body: "",
+    },
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (values: ComposeValues) => {
+      const payload = {
+        recipient_role: values.recipientRole === EMPTY_SELECT ? null : values.recipientRole,
+        patient_id: values.patientId === EMPTY_SELECT ? null : Number(values.patientId),
+        subject: values.subject.trim(),
+        body: values.body.trim(),
+      } satisfies SendWorkflowMessageRequest;
+
+      await api.sendWorkflowMessage(payload);
+    },
+    onSuccess: async () => {
+      form.reset({
+        recipientRole: "supervisor",
+        patientId: EMPTY_SELECT,
+        subject: "",
+        body: "",
       });
-      setSubject("");
-      setBody("");
-      setPatientId("");
       setActiveTab("sent");
-      setNotice("Message sent.");
-      await refetch();
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Failed to send message.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+      await queryClient.invalidateQueries({ queryKey: ["head-nurse", "messages"] });
+    },
+  });
 
-  async function markRead(messageId: number) {
-    try {
-      await api.post<RoleMessage>(`/workflow/messages/${messageId}/read`);
-      await refetch();
-    } catch {
-      // Keep page responsive even if read receipt fails.
-    }
-  }
+  const markReadMutation = useMutation({
+    mutationFn: async (messageId: number) => {
+      await api.markWorkflowMessageRead(messageId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["head-nurse", "messages"] });
+    },
+    onSettled: () => {
+      setPendingReadId(null);
+    },
+  });
 
-  const list = activeTab === "inbox" ? inbox : sent;
+  const messages = useMemo(
+    () => (messagesQuery.data ?? []) as ListWorkflowMessagesResponse,
+    [messagesQuery.data],
+  );
+  const patients = useMemo(
+    () => (patientsQuery.data ?? []) as ListPatientsResponse,
+    [patientsQuery.data],
+  );
+
+  const patientMap = useMemo(
+    () => new Map(patients.map((patient) => [patient.id, patient])),
+    [patients],
+  );
+
+  const rows = useMemo<MessageRow[]>(() => {
+    return messages
+      .map((item) => {
+        const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
+        return {
+          id: item.id,
+          subject: item.subject || "(No subject)",
+          body: item.body,
+          senderUserId: item.sender_user_id,
+          recipientRole: item.recipient_role,
+          recipientUserId: item.recipient_user_id,
+          patientId: item.patient_id,
+          patientName: patient ? `${patient.first_name} ${patient.last_name}`.trim() : "-",
+          isRead: item.is_read,
+          createdAt: item.created_at,
+        };
+      })
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }, [messages, patientMap]);
+
+  const inboxRows = useMemo(
+    () => rows.filter((item) => item.senderUserId !== user?.id),
+    [rows, user?.id],
+  );
+
+  const sentRows = useMemo(
+    () => rows.filter((item) => item.senderUserId === user?.id),
+    [rows, user?.id],
+  );
+
+  const tableRows = activeTab === "inbox" ? inboxRows : sentRows;
+
+  const columns = useMemo<ColumnDef<MessageRow>[]>(
+    () => [
+      {
+        accessorKey: "subject",
+        header: "Message",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.subject}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.body}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "recipientRole",
+        header: "Routing",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <p>From user #{row.original.senderUserId}</p>
+            <p>{row.original.recipientRole ? `Role: ${row.original.recipientRole}` : "Direct message"}</p>
+            {row.original.recipientUserId ? <p>User #{row.original.recipientUserId}</p> : null}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "patientName",
+        header: "Patient",
+      },
+      {
+        accessorKey: "isRead",
+        header: "Read",
+        cell: ({ row }) => (
+          <Badge variant={row.original.isRead ? "success" : "warning"}>
+            {row.original.isRead ? "read" : "unread"}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.createdAt)}</p>
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          if (activeTab !== "inbox" || row.original.isRead) return null;
+          return (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={markReadMutation.isPending && pendingReadId === row.original.id}
+              onClick={() => {
+                setPendingReadId(row.original.id);
+                markReadMutation.mutate(row.original.id);
+              }}
+            >
+              <UserRoundCheck className="h-4 w-4" />
+              Mark read
+            </Button>
+          );
+        },
+      },
+    ],
+    [activeTab, markReadMutation, pendingReadId],
+  );
+
+  const sendError = sendMessageMutation.error ? parseError(sendMessageMutation.error) : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-on-surface">Clinical messages</h2>
-        <p className="text-sm text-on-surface-variant mt-1">
-          Send role-targeted updates and track read status across teams.
+        <h2 className="text-2xl font-bold text-foreground">Clinical Messages</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Coordinate with role-based messaging and track acknowledgement state.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <section className="surface-card p-5 xl:col-span-1">
-          <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2 mb-3">
-            <Send className="w-4 h-4 text-primary" />
-            Compose message
-          </h3>
-          <form className="space-y-3" onSubmit={onSubmit}>
-            <div>
-              <label className="block text-xs text-on-surface-variant mb-1">Recipient role</label>
-              <select
-                value={recipientRole}
-                onChange={(e) => setRecipientRole(e.target.value)}
-                className="input-field py-2.5 text-sm"
-              >
-                {ROLE_OPTIONS.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-on-surface-variant mb-1">Subject</label>
-              <input
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="input-field py-2.5 text-sm"
-                placeholder="Shift coordination update"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-on-surface-variant mb-1">
-                Patient ID (optional)
-              </label>
-              <input
-                type="number"
-                min={1}
-                value={patientId}
-                onChange={(e) => setPatientId(e.target.value)}
-                className="input-field py-2.5 text-sm"
-                placeholder="e.g. 12"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-on-surface-variant mb-1">Message</label>
-              <textarea
-                rows={6}
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                className="input-field py-2.5 text-sm resize-y"
-                placeholder="Provide concise operational instructions for the next shift."
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isSubmitting || !body.trim()}
-              className="w-full gradient-cta py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50"
-            >
-              {isSubmitting ? "Sending..." : "Send message"}
-            </button>
-          </form>
-          {notice && (
-            <p className="text-xs text-on-surface-variant mt-3 rounded-lg bg-surface-container-low px-3 py-2">
-              {notice}
-            </p>
-          )}
-        </section>
-
-        <section className="surface-card p-5 xl:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-              <Mail className="w-4 h-4 text-info" />
-              Message center
-            </h3>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab("inbox")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                  activeTab === "inbox"
-                    ? "bg-primary-fixed text-primary"
-                    : "bg-surface-container-low text-on-surface-variant"
-                }`}
-              >
-                Inbox ({inbox.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("sent")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                  activeTab === "sent"
-                    ? "bg-primary-fixed text-primary"
-                    : "bg-surface-container-low text-on-surface-variant"
-                }`}
-              >
-                Sent ({sent.length})
-              </button>
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="flex justify-center py-14">
-              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : list.length === 0 ? (
-            <div className="rounded-xl bg-surface-container-low px-4 py-8 text-center">
-              <MessageSquare className="w-8 h-8 text-outline mx-auto mb-2" />
-              <p className="text-sm text-on-surface-variant">
-                {activeTab === "inbox"
-                  ? "No messages in inbox."
-                  : "No sent messages yet."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
-              {list.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-xl bg-surface-container-low px-3 py-2 text-sm"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-on-surface truncate">
-                        {item.subject || "(No subject)"}
-                      </p>
-                      <p className="text-xs text-outline mt-0.5">
-                        From user #{item.sender_user_id}
-                        {item.recipient_role ? ` · to role ${item.recipient_role}` : ""}
-                        {item.patient_id ? ` · patient ${item.patient_id}` : ""}
-                      </p>
-                    </div>
-                    <span className="text-xs text-outline shrink-0">
-                      {new Date(item.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  <p className="text-sm text-on-surface-variant mt-2 whitespace-pre-wrap">
-                    {item.body}
-                  </p>
-                  {activeTab === "inbox" && (
-                    <div className="mt-2 flex items-center gap-2">
-                      <span
-                        className={`text-[10px] px-2 py-1 rounded-full uppercase font-semibold ${
-                          item.is_read
-                            ? "bg-success-bg text-success"
-                            : "bg-warning-bg text-warning"
-                        }`}
-                      >
-                        {item.is_read ? "read" : "unread"}
-                      </span>
-                      {!item.is_read && (
-                        <button
-                          type="button"
-                          onClick={() => void markRead(item.id)}
-                          className="px-2.5 py-1 rounded-md text-xs font-medium bg-info-bg text-info hover:opacity-80 transition-smooth inline-flex items-center gap-1"
-                        >
-                          <UserRoundCheck className="w-3 h-3" />
-                          Mark read
-                        </button>
-                      )}
-                    </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Compose Message</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="space-y-4"
+            onSubmit={form.handleSubmit((values) => sendMessageMutation.mutate(values))}
+          >
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="space-y-2">
+                <Label>Recipient role</Label>
+                <Controller
+                  control={form.control}
+                  name="recipientRole"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={EMPTY_SELECT}>No role target</SelectItem>
+                        {ROLE_OPTIONS.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
-                </div>
-              ))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Patient (optional)</Label>
+                <Controller
+                  control={form.control}
+                  name="patientId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select patient" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={EMPTY_SELECT}>No patient</SelectItem>
+                        {patients.map((patient) => (
+                          <SelectItem key={patient.id} value={String(patient.id)}>
+                            {patient.first_name} {patient.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label>Subject</Label>
+                <Input {...form.register("subject")} placeholder="Shift coordination update" />
+                {form.formState.errors.subject ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.subject.message}</p>
+                ) : null}
+              </div>
             </div>
-          )}
-        </section>
+
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Textarea rows={5} {...form.register("body")} placeholder="Operational update for next handoff" />
+              {form.formState.errors.body ? (
+                <p className="text-xs text-destructive">{form.formState.errors.body.message}</p>
+              ) : null}
+            </div>
+
+            {sendError ? <p className="text-sm text-destructive">{sendError}</p> : null}
+
+            <Button type="submit" disabled={sendMessageMutation.isPending}>
+              <Send className="h-4 w-4" />
+              {sendMessageMutation.isPending ? "Sending..." : "Send message"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={activeTab === "inbox" ? "default" : "outline"}
+          onClick={() => setActiveTab("inbox")}
+        >
+          Inbox ({inboxRows.length})
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={activeTab === "sent" ? "default" : "outline"}
+          onClick={() => setActiveTab("sent")}
+        >
+          Sent ({sentRows.length})
+        </Button>
       </div>
+
+      <DataTableCard
+        title={activeTab === "inbox" ? "Inbox" : "Sent Messages"}
+        description="Role-based communication stream for current workspace."
+        data={tableRows}
+        columns={columns}
+        isLoading={messagesQuery.isLoading || patientsQuery.isLoading}
+        emptyText={activeTab === "inbox" ? "No inbox messages." : "No sent messages."}
+        rightSlot={<Mail className="h-4 w-4 text-muted-foreground" />}
+      />
     </div>
   );
 }

@@ -58,6 +58,7 @@ export default function AIChatPopup() {
   const [provider, setProvider] = useState<"ollama" | "copilot" | "">("");
   const [model, setModel] = useState("");
   const [error, setError] = useState("");
+  const [historyNotice, setHistoryNotice] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -106,10 +107,18 @@ export default function AIChatPopup() {
       if (!res.ok) return;
       const data = (await res.json()) as Conversation[];
       setConversations(data);
+      if (
+        conversationId != null &&
+        !data.some((conversation) => conversation.id === conversationId)
+      ) {
+        setConversationId(null);
+        setMessages([]);
+        setHistoryNotice("This conversation is no longer available.");
+      }
     } catch {
       // keep chat usable even if history endpoint fails
     }
-  }, [authHeaders]);
+  }, [authHeaders, conversationId]);
 
   const loadConversationMessages = useCallback(
     async (id: number) => {
@@ -117,6 +126,16 @@ export default function AIChatPopup() {
         const res = await fetch(`${API_BASE}/chat/conversations/${id}/messages`, {
           headers: authHeaders(),
         });
+        if (res.status === 404) {
+          setConversations((prev) => prev.filter((conversation) => conversation.id !== id));
+          if (conversationId === id) {
+            setConversationId(null);
+            setMessages([]);
+          }
+          setShowHistory(false);
+          setHistoryNotice("This conversation is no longer available.");
+          return;
+        }
         if (!res.ok) return;
         const data = (await res.json()) as Array<{ role: string; content: string }>;
         const filtered = data
@@ -125,11 +144,12 @@ export default function AIChatPopup() {
         setMessages(filtered);
         setConversationId(id);
         setShowHistory(false);
+        setHistoryNotice("");
       } catch {
         // non-fatal
       }
     },
-    [authHeaders],
+    [authHeaders, conversationId],
   );
 
   const loadSettings = useCallback(async () => {
@@ -158,6 +178,7 @@ export default function AIChatPopup() {
     setConversationId(null);
     setMessages([]);
     setError("");
+    setHistoryNotice("");
     setShowHistory(false);
   }
 
@@ -165,13 +186,15 @@ export default function AIChatPopup() {
 
   async function handleDeleteConversation(id: number) {
     try {
-      await fetch(`${API_BASE}/chat/conversations/${id}`, {
+      const res = await fetch(`${API_BASE}/chat/conversations/${id}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
+      if (!res.ok && res.status !== 404) return;
       setConversations((prev) => prev.filter((c) => c.id !== id));
       if (conversationId === id) {
         handleNewChat();
+        setHistoryNotice("Conversation removed.");
       }
     } catch {
       // non-fatal
@@ -221,6 +244,10 @@ export default function AIChatPopup() {
         }),
       });
       if (!res.ok || !res.body) {
+        if (res.status === 404) {
+          setConversationId(null);
+          setHistoryNotice("The previous conversation was removed. Start a new chat.");
+        }
         setError(`Error: ${res.status}`);
         return;
       }
@@ -424,6 +451,11 @@ export default function AIChatPopup() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-3 text-sm text-on-surface space-y-2">
+              {historyNotice ? (
+                <div className="rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+                  {historyNotice}
+                </div>
+              ) : null}
               {messages.length === 0 && !loading && (
                 <p className="text-on-surface-variant">
                   Ask about patients, alerts, workflows, or ward operations.
@@ -452,7 +484,7 @@ export default function AIChatPopup() {
                   )}
                 </div>
               ))}
-              {error && <p className="text-critical text-xs">{error}</p>}
+              {error ? <p className="text-critical text-xs">{error}</p> : null}
               <div ref={messagesEndRef} />
             </div>
 

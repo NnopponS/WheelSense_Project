@@ -1,14 +1,15 @@
-"""AI provider settings — per-user overrides and admin workspace defaults."""
-
 from __future__ import annotations
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+"""AI provider settings — per-user overrides and admin workspace defaults."""
 
 import logging
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
     RequireRole,
@@ -25,6 +26,8 @@ from app.schemas.ai_settings import (
     AISettingsOut,
     AIUserSettingsUpdate,
     CopilotDeviceCodeOut,
+    CopilotModelInfo,
+    CopilotModelsOut,
     CopilotPollIn,
     CopilotPollOut,
     CopilotStatusOut,
@@ -38,7 +41,6 @@ from app.services import ai_chat
 logger = logging.getLogger("wheelsense.ai_settings")
 
 router = APIRouter()
-
 
 @router.get("", response_model=AISettingsOut)
 async def get_ai_settings(
@@ -58,7 +60,6 @@ async def get_ai_settings(
         user_provider_override=user.ai_provider,  # type: ignore[arg-type]
         user_model_override=user.ai_model,
     )
-
 
 @router.put("", response_model=AISettingsOut)
 async def update_user_ai_settings(
@@ -86,7 +87,6 @@ async def update_user_ai_settings(
         user_provider_override=user.ai_provider,  # type: ignore[arg-type]
         user_model_override=user.ai_model,
     )
-
 
 @router.put("/global", response_model=AISettingsOut)
 async def update_global_ai_settings(
@@ -128,7 +128,6 @@ async def update_global_ai_settings(
         user_model_override=user.ai_model,
     )
 
-
 async def _get_or_create_ws_ai_row(
     db: AsyncSession, workspace_id: int
 ) -> WorkspaceAISettings:
@@ -150,7 +149,6 @@ async def _get_or_create_ws_ai_row(
     await db.refresh(row)
     return row
 
-
 @router.get("/copilot/status", response_model=CopilotStatusOut)
 async def copilot_connection_status(
     db: AsyncSession = Depends(get_db),
@@ -163,9 +161,54 @@ async def copilot_connection_status(
         )
     )
     ws = row.scalar_one_or_none()
-    connected = bool(ws and ws.copilot_token_encrypted)
+    external_cli_configured = bool(
+        settings.copilot_cli_url.strip()
+        and "copilot-cli" not in settings.copilot_cli_url.strip()
+    )
+    connected = bool((ws and ws.copilot_token_encrypted) or external_cli_configured)
     return CopilotStatusOut(connected=connected)
 
+@router.get("/copilot/models", response_model=CopilotModelsOut)
+async def copilot_list_models(
+    db: AsyncSession = Depends(get_db),
+    workspace: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(get_current_active_user),
+):
+    github_token = await ai_chat.get_workspace_copilot_token(db, workspace.id)
+    external_cli_configured = bool(
+        settings.copilot_cli_url.strip()
+        and "copilot-cli" not in settings.copilot_cli_url.strip()
+    )
+    connected = bool(github_token or external_cli_configured)
+    if not connected:
+        return CopilotModelsOut(
+            models=[],
+            connected=False,
+            message="GitHub Copilot is not connected for this workspace",
+        )
+    try:
+        models = await ai_chat.list_copilot_models(github_token=github_token)
+    except Exception as e:
+        logger.warning("Copilot model list failed: %s", e)
+        return CopilotModelsOut(
+            models=[],
+            connected=connected,
+            message="GitHub Copilot could not return models for this workspace",
+        )
+
+    return CopilotModelsOut(
+        models=[
+            CopilotModelInfo(
+                id=m.id,
+                name=m.name,
+                supports_reasoning_effort=m.capabilities.reasoning_effort,
+                supports_vision=m.capabilities.vision,
+            )
+            for m in models
+        ],
+        connected=True,
+        message=None,
+    )
 
 @router.post("/copilot/device-code", response_model=CopilotDeviceCodeOut)
 async def copilot_request_device_code(
@@ -196,7 +239,6 @@ async def copilot_request_device_code(
         expires_in=int(data.get("expires_in", 900)),
         interval=int(data.get("interval", 5)),
     )
-
 
 @router.post("/copilot/poll-token", response_model=CopilotPollOut)
 async def copilot_poll_token(
@@ -241,7 +283,6 @@ async def copilot_poll_token(
         scope=data.get("scope"),
     )
 
-
 @router.get("/ollama/models", response_model=OllamaModelsOut)
 async def ollama_list_models(
     _: User = Depends(get_current_active_user),
@@ -254,7 +295,12 @@ async def ollama_list_models(
         payload = r.json()
     except Exception as e:
         logger.warning("Ollama tags failed: %s", e)
-        raise HTTPException(502, f"Could not reach Ollama at {origin}") from e
+        return OllamaModelsOut(
+            models=[],
+            reachable=False,
+            origin=origin,
+            message=f"Could not reach Ollama at {origin}",
+        )
     models_raw = payload.get("models") or []
     models: list[OllamaModelInfo] = []
     for m in models_raw:
@@ -268,8 +314,12 @@ async def ollama_list_models(
                 digest=m.get("digest"),
             )
         )
-    return OllamaModelsOut(models=models)
-
+    return OllamaModelsOut(
+        models=models,
+        reachable=True,
+        origin=origin,
+        message=None,
+    )
 
 @router.post("/ollama/pull")
 async def ollama_pull_model(
@@ -295,6 +345,25 @@ async def ollama_pull_model(
 
     return StreamingResponse(stream_pull(), media_type="application/x-ndjson")
 
+@router.delete("/ollama/models/{name:path}")
+async def ollama_delete_model(
+    name: str,
+    _: User = Depends(RequireRole(["admin"])),
+):
+    origin = settings.ollama_api_origin
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.request(
+                "DELETE",
+                f"{origin}/api/delete",
+                json={"model": name},
+            )
+        r.raise_for_status()
+    except Exception as e:
+        logger.warning("Ollama delete failed for %s: %s", name, e)
+        raise HTTPException(502, f"Could not delete Ollama model '{name}'") from e
+
+    return {"deleted": name}
 
 # mypy: get_ai_settings is reused — fix circular import by duplicating minimal assemble
 @router.get("/health")
@@ -307,3 +376,4 @@ async def ai_backend_health():
         "ollama_configured": bool(settings.ollama_base_url),
         "copilot_configured": bool(settings.copilot_cli_url),
     }
+

@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, desc
-from sqlalchemy.ext.asyncio import AsyncSession
+from __future__ import annotations
+
 from typing import Optional
+from sqlalchemy import desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_current_user_workspace, get_db
 from app.models.core import Workspace
@@ -66,3 +69,4 @@ async def query_rssi(
         }
         for r in rows
     ]
+

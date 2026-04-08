@@ -1,16 +1,17 @@
-"""Device registry detail, MQTT command dispatch, and workspace-safe updates."""
-
 from __future__ import annotations
+
+from typing import Any
+from sqlalchemy import and_, desc, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+"""Device registry detail, MQTT command dispatch, and workspace-safe updates."""
 
 import json
 import logging
 import uuid
-from typing import Any
 
 import aiomqtt
 from fastapi import HTTPException
-from sqlalchemy import and_, desc, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.config as config
 from app.models.base import utcnow
@@ -41,7 +42,6 @@ NON_PUBLIC_DEVICE_CONFIG_KEYS = frozenset(
     }
 )
 
-
 def _public_config(cfg: dict[str, Any]) -> dict[str, Any]:
     """Return a frontend-safe config copy (no credentials or network provisioning)."""
     return {
@@ -49,7 +49,6 @@ def _public_config(cfg: dict[str, Any]) -> dict[str, Any]:
         for k, v in cfg.items()
         if k not in NON_PUBLIC_DEVICE_CONFIG_KEYS
     }
-
 
 def _normalize_hardware_type(device_type: str, hardware_type: str | None) -> str:
     if hardware_type:
@@ -65,13 +64,11 @@ def _normalize_hardware_type(device_type: str, hardware_type: str | None) -> str
         return device_type
     return "wheelchair"
 
-
 def _legacy_device_type_for_storage(hardware_type: str) -> str:
     """Keep MQTT/camera paths working: nodes still use device_type 'camera' in DB when applicable."""
     if hardware_type == "node":
         return "camera"
     return hardware_type
-
 
 async def create_device(
     session: AsyncSession, ws_id: int, body: DeviceCreate
@@ -98,7 +95,6 @@ async def create_device(
     await session.refresh(dev)
     return dev
 
-
 async def get_device(session: AsyncSession, ws_id: int, device_id: str) -> Device:
     result = await session.execute(
         select(Device).where(
@@ -110,7 +106,6 @@ async def get_device(session: AsyncSession, ws_id: int, device_id: str) -> Devic
     if not dev:
         raise HTTPException(404, "Device not found in current workspace")
     return dev
-
 
 async def patch_device(
     session: AsyncSession, ws_id: int, device_id: str, body: DevicePatch
@@ -131,7 +126,6 @@ async def patch_device(
     await session.commit()
     await session.refresh(dev)
     return dev
-
 
 async def assign_patient_from_device(
     session: AsyncSession,
@@ -166,7 +160,6 @@ async def assign_patient_from_device(
         obj_in=DeviceAssignmentCreate(device_id=device_id, device_role=device_role),
     )
 
-
 async def _latest_imu(session: AsyncSession, ws_id: int, device_id: str) -> IMUTelemetry | None:
     q = (
         select(IMUTelemetry)
@@ -178,7 +171,6 @@ async def _latest_imu(session: AsyncSession, ws_id: int, device_id: str) -> IMUT
         .limit(1)
     )
     return (await session.execute(q)).scalar_one_or_none()
-
 
 async def _latest_prediction(
     session: AsyncSession, ws_id: int, device_id: str
@@ -194,7 +186,6 @@ async def _latest_prediction(
     )
     return (await session.execute(q)).scalar_one_or_none()
 
-
 async def _latest_photo(session: AsyncSession, ws_id: int, device_id: str) -> PhotoRecord | None:
     q = (
         select(PhotoRecord)
@@ -207,14 +198,12 @@ async def _latest_photo(session: AsyncSession, ws_id: int, device_id: str) -> Ph
     )
     return (await session.execute(q)).scalar_one_or_none()
 
-
 async def _room_for_node(session: AsyncSession, ws_id: int, device_id: str) -> Room | None:
     q = select(Room).where(
         Room.workspace_id == ws_id,
         Room.node_device_id == device_id,
     )
     return (await session.execute(q)).scalar_one_or_none()
-
 
 async def _active_patient_assignment(
     session: AsyncSession, ws_id: int, device_id: str
@@ -235,7 +224,6 @@ async def _active_patient_assignment(
     p = await session.get(Patient, assign.patient_id)
     return assign, p
 
-
 async def _active_caregiver_assignment(
     session: AsyncSession, ws_id: int, device_id: str
 ) -> tuple[CareGiverDeviceAssignment | None, CareGiver | None]:
@@ -255,7 +243,6 @@ async def _active_caregiver_assignment(
     cg = await session.get(CareGiver, assign.caregiver_id)
     return assign, cg
 
-
 def device_summary_dict(dev: Device) -> dict[str, Any]:
     cfg = dev.config or {}
     public_cfg = _public_config(cfg)
@@ -270,7 +257,6 @@ def device_summary_dict(dev: Device) -> dict[str, Any]:
         "last_seen": dev.last_seen.isoformat() if dev.last_seen else None,
         "config": public_cfg,
     }
-
 
 async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str) -> dict[str, Any]:
     dev = await get_device(session, ws_id, device_id)
@@ -379,7 +365,6 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
     }
     return out
 
-
 async def publish_mqtt(topic: str, payload: dict[str, Any]) -> None:
     connect_kwargs: dict[str, Any] = {
         "hostname": settings.mqtt_broker,
@@ -396,7 +381,6 @@ async def publish_mqtt(topic: str, payload: dict[str, Any]) -> None:
         )
     async with aiomqtt.Client(**connect_kwargs) as client:
         await client.publish(topic, json.dumps(payload))
-
 
 async def dispatch_command(
     session: AsyncSession,
@@ -437,7 +421,6 @@ async def dispatch_command(
     await session.refresh(row)
     return row
 
-
 async def camera_check_snapshot(
     session: AsyncSession,
     ws_id: int,
@@ -456,8 +439,6 @@ async def camera_check_snapshot(
         "message": "Capture requested; refresh device detail for latest photo",
         "dispatched_at": row.dispatched_at.isoformat() if row.dispatched_at else None,
     }
-
-
 
 async def assign_caregiver_device(
     session: AsyncSession,
@@ -501,7 +482,6 @@ async def assign_caregiver_device(
     await session.refresh(new_a)
     return new_a
 
-
 async def list_caregiver_device_assignments(
     session: AsyncSession, ws_id: int, caregiver_id: int
 ) -> list[CareGiverDeviceAssignment]:
@@ -512,7 +492,6 @@ async def list_caregiver_device_assignments(
         CareGiverDeviceAssignment.caregiver_id == caregiver_id
     )
     return list((await session.execute(q)).scalars().all())
-
 
 async def apply_command_ack(session: AsyncSession, command_id: str, ack_payload: dict[str, Any]) -> bool:
     """Mark dispatch row acked if UUID matches and workspace consistent."""

@@ -1,8 +1,12 @@
+from __future__ import annotations
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 """CareGiver CRUD, zone assignment, and shift endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.dependencies import (
     RequireRole,
     get_current_user_workspace,
@@ -32,9 +36,7 @@ caregiver_service = CRUDBase[CareGiver, CareGiverCreate, CareGiverPatch](CareGiv
 
 router = APIRouter()
 
-
 # ── CareGiver CRUD ───────────────────────────────────────────────────────────
-
 
 @router.get("", response_model=list[CareGiverOut])
 async def list_caregivers(
@@ -46,7 +48,6 @@ async def list_caregivers(
 ):
     return await caregiver_service.get_multi(db, ws_id=ws.id, skip=skip, limit=limit)
 
-
 @router.post("", response_model=CareGiverOut, status_code=201)
 async def create_caregiver(
     data: CareGiverCreate,
@@ -55,7 +56,6 @@ async def create_caregiver(
     _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
 ):
     return await caregiver_service.create(db, ws_id=ws.id, obj_in=data)
-
 
 @router.get("/{caregiver_id}", response_model=CareGiverOut)
 async def get_caregiver(
@@ -68,7 +68,6 @@ async def get_caregiver(
     if not cg:
         raise HTTPException(404, "Caregiver not found")
     return cg
-
 
 @router.patch("/{caregiver_id}", response_model=CareGiverOut)
 async def update_caregiver(
@@ -83,7 +82,6 @@ async def update_caregiver(
         raise HTTPException(404, "Caregiver not found")
     return await caregiver_service.update(db, ws_id=ws.id, db_obj=cg, obj_in=data)
 
-
 @router.delete("/{caregiver_id}", status_code=204)
 async def delete_caregiver(
     caregiver_id: int,
@@ -95,9 +93,7 @@ async def delete_caregiver(
     if not deleted:
         raise HTTPException(404, "Caregiver not found")
 
-
 # ── Zone Assignments ─────────────────────────────────────────────────────────
-
 
 @router.get("/{caregiver_id}/zones", response_model=list[ZoneAssignOut])
 async def list_zones(
@@ -114,7 +110,6 @@ async def list_zones(
         select(CareGiverZone).where(CareGiverZone.caregiver_id == caregiver_id)
     )
     return list(result.scalars().all())
-
 
 @router.post("/{caregiver_id}/zones", response_model=ZoneAssignOut, status_code=201)
 async def assign_zone(
@@ -139,7 +134,6 @@ async def assign_zone(
     await db.commit()
     await db.refresh(zone)
     return zone
-
 
 @router.patch("/{caregiver_id}/zones/{zone_id}", response_model=ZoneAssignOut)
 async def update_zone(
@@ -171,7 +165,6 @@ async def update_zone(
     await db.refresh(zone)
     return zone
 
-
 @router.delete("/{caregiver_id}/zones/{zone_id}", status_code=204)
 async def delete_zone(
     caregiver_id: int,
@@ -196,9 +189,7 @@ async def delete_zone(
     await db.delete(zone)
     await db.commit()
 
-
 # ── Caregiver device assignments ─────────────────────────────────────────────
-
 
 @router.get(
     "/{caregiver_id}/devices",
@@ -214,7 +205,6 @@ async def list_caregiver_devices(
         db, ws.id, caregiver_id
     )
     return rows
-
 
 @router.post(
     "/{caregiver_id}/devices",
@@ -236,9 +226,7 @@ async def assign_caregiver_device(
         data.device_role,
     )
 
-
 # ── Shifts ───────────────────────────────────────────────────────────────────
-
 
 @router.get("/{caregiver_id}/shifts", response_model=list[ShiftOut])
 async def list_shifts(
@@ -254,7 +242,6 @@ async def list_shifts(
         select(CareGiverShift).where(CareGiverShift.caregiver_id == caregiver_id)
     )
     return list(result.scalars().all())
-
 
 @router.post("/{caregiver_id}/shifts", response_model=ShiftOut, status_code=201)
 async def create_shift(
@@ -281,7 +268,6 @@ async def create_shift(
     await db.commit()
     await db.refresh(shift)
     return shift
-
 
 @router.patch("/{caregiver_id}/shifts/{shift_id}", response_model=ShiftOut)
 async def update_shift(
@@ -313,7 +299,6 @@ async def update_shift(
     await db.refresh(shift)
     return shift
 
-
 @router.delete("/{caregiver_id}/shifts/{shift_id}", status_code=204)
 async def delete_shift(
     caregiver_id: int,
@@ -337,3 +322,4 @@ async def delete_shift(
         raise HTTPException(404, "Shift not found")
     await db.delete(shift)
     await db.commit()
+

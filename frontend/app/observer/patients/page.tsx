@@ -1,190 +1,221 @@
-"use client";
+﻿"use client";
+"use no memo";
 
-import { useMemo, useState, type ComponentType } from "react";
-import { useQuery } from "@/hooks/useQuery";
-import type { Patient } from "@/lib/types";
 import Link from "next/link";
-import { ClipboardList, MessageSquare, NotebookPen, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { ClipboardList, MessageSquare, NotebookPen, Search, Users } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { api } from "@/lib/api";
+import type {
+  CareTaskOut,
+  ListPatientsResponse,
+  ListWorkflowHandoversResponse,
+  ListWorkflowMessagesResponse,
+} from "@/lib/api/task-scope-types";
 
-type CareTask = {
+type PatientRow = {
   id: number;
-  patient_id: number | null;
-  title: string;
-  priority: string;
-  due_at: string | null;
-  status: string;
-};
-
-type RoleMessage = {
-  id: number;
-  patient_id: number | null;
-  subject: string;
-  body: string;
-  is_read: boolean;
-  created_at: string;
-};
-
-type HandoverNote = {
-  id: number;
-  patient_id: number | null;
-  priority: string;
-  note: string;
-  created_at: string;
+  fullName: string;
+  nickname: string;
+  careLevel: string;
+  roomId: number | null;
+  openTaskCount: number;
+  unreadMessageCount: number;
+  handoverCount: number;
 };
 
 export default function ObserverPatientsPage() {
   const [search, setSearch] = useState("");
-  const { data: patients, isLoading } = useQuery<Patient[]>("/patients");
-  const { data: tasks } = useQuery<CareTask[]>("/workflow/tasks?limit=100");
-  const { data: messages } = useQuery<RoleMessage[]>("/workflow/messages?limit=100");
-  const { data: handovers } = useQuery<HandoverNote[]>(
-    "/workflow/handovers?limit=100",
+
+  const patientsQuery = useQuery({
+    queryKey: ["observer", "patients", "list"],
+    queryFn: () => api.listPatients({ limit: 500 }),
+  });
+
+  const tasksQuery = useQuery({
+    queryKey: ["observer", "patients", "tasks"],
+    queryFn: () => api.listWorkflowTasks({ limit: 300 }),
+  });
+
+  const messagesQuery = useQuery({
+    queryKey: ["observer", "patients", "messages"],
+    queryFn: () => api.listWorkflowMessages({ inbox_only: false, limit: 300 }),
+  });
+
+  const handoversQuery = useQuery({
+    queryKey: ["observer", "patients", "handovers"],
+    queryFn: () => api.listWorkflowHandovers({ limit: 300 }),
+  });
+
+  const patients = useMemo(
+    () => (patientsQuery.data ?? []) as ListPatientsResponse,
+    [patientsQuery.data],
+  );
+  const tasks = useMemo(
+    () => (tasksQuery.data ?? []) as CareTaskOut[],
+    [tasksQuery.data],
+  );
+  const messages = useMemo(
+    () => (messagesQuery.data ?? []) as ListWorkflowMessagesResponse,
+    [messagesQuery.data],
+  );
+  const handovers = useMemo(
+    () => (handoversQuery.data ?? []) as ListWorkflowHandoversResponse,
+    [handoversQuery.data],
   );
 
-  const patientList = patients ?? [];
-  const taskList = tasks ?? [];
-  const messageList = messages ?? [];
-  const handoverList = handovers ?? [];
-  const filteredPatients = useMemo(() => {
-    const base = patients ?? [];
-    const query = search.trim().toLowerCase();
-    if (!query) return base;
-    return base.filter((patient) => {
-      const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
-      const nickname = patient.nickname.toLowerCase();
-      return fullName.includes(query) || nickname.includes(query);
-    });
-  }, [patients, search]);
+  const rows = useMemo<PatientRow[]>(() => {
+    const q = search.trim().toLowerCase();
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+    return patients
+      .filter((patient) => {
+        if (!q) return true;
+        const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
+        return (
+          fullName.includes(q) ||
+          patient.nickname.toLowerCase().includes(q) ||
+          String(patient.id).includes(q)
+        );
+      })
+      .map((patient) => {
+        const openTaskCount = tasks.filter(
+          (task) =>
+            task.patient_id === patient.id &&
+            task.status !== "completed" &&
+            task.status !== "cancelled",
+        ).length;
+        const unreadMessageCount = messages.filter(
+          (message) => message.patient_id === patient.id && !message.is_read,
+        ).length;
+        const handoverCount = handovers.filter(
+          (handover) => handover.patient_id === patient.id,
+        ).length;
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-on-surface">My patients</h2>
-          <p className="text-sm text-on-surface-variant mt-1">
-            Track notes, tasks, and role messages for assigned patient care.
-          </p>
-        </div>
-        <div className="relative w-full md:w-80">
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search patient"
-            className="w-full bg-surface-container-low rounded-xl px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-      </div>
+        return {
+          id: patient.id,
+          fullName: `${patient.first_name} ${patient.last_name}`.trim(),
+          nickname: patient.nickname,
+          careLevel: patient.care_level,
+          roomId: patient.room_id,
+          openTaskCount,
+          unreadMessageCount,
+          handoverCount,
+        };
+      });
+  }, [handovers, messages, patients, search, tasks]);
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard icon={Users} label="Assigned patients" value={patientList.length} />
-        <SummaryCard
-          icon={ClipboardList}
-          label="Open tasks"
-          value={taskList.filter((task) => task.status !== "completed").length}
-        />
-        <SummaryCard
-          icon={MessageSquare}
-          label="Unread messages"
-          value={messageList.filter((message) => !message.is_read).length}
-        />
-        <SummaryCard
-          icon={NotebookPen}
-          label="Recent handovers"
-          value={handoverList.length}
-        />
-      </div>
-
-      {filteredPatients.length === 0 ? (
-        <div className="surface-card p-6 text-center text-on-surface-variant text-sm">
-          No patients match your search.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredPatients.map((patient) => {
-            const patientTasks = taskList.filter((task) => task.patient_id === patient.id);
-            const unreadMessages = messageList.filter(
-              (message) => message.patient_id === patient.id && !message.is_read,
-            );
-            const patientHandovers = handoverList.filter(
-              (handover) => handover.patient_id === patient.id,
-            );
-
-            return (
-              <Link
-                key={patient.id}
-                href={`/observer/patients/${patient.id}`}
-                className="block surface-card p-4 hover:bg-surface-container-low transition-smooth"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-base font-semibold text-on-surface truncate">
-                      {patient.first_name} {patient.last_name}
-                    </p>
-                    <p className="text-xs text-on-surface-variant mt-0.5 truncate">
-                      {patient.nickname || "No nickname"} · Care level {patient.care_level}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                      patient.care_level === "critical"
-                        ? "care-critical"
-                        : patient.care_level === "special"
-                          ? "care-special"
-                          : "care-normal"
-                    }`}
-                  >
-                    {patient.care_level}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 mt-4 text-xs">
-                  <MetricBadge label="Tasks" value={patientTasks.length} />
-                  <MetricBadge label="Unread msgs" value={unreadMessages.length} />
-                  <MetricBadge label="Handovers" value={patientHandovers.length} />
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
+  const columns = useMemo<ColumnDef<PatientRow>[]>(
+    () => [
+      {
+        accessorKey: "fullName",
+        header: "Patient",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.fullName}</p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.nickname || "No nickname"} • ID #{row.original.id}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "careLevel",
+        header: "Care level",
+        cell: ({ row }) => (
+          <Badge
+            variant={
+              row.original.careLevel === "critical"
+                ? "destructive"
+                : row.original.careLevel === "special"
+                  ? "warning"
+                  : "success"
+            }
+          >
+            {row.original.careLevel}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "roomId",
+        header: "Room",
+        cell: ({ row }) => (row.original.roomId != null ? `Room #${row.original.roomId}` : "Unassigned"),
+      },
+      {
+        accessorKey: "openTaskCount",
+        header: "Open tasks",
+      },
+      {
+        accessorKey: "unreadMessageCount",
+        header: "Unread messages",
+      },
+      {
+        accessorKey: "handoverCount",
+        header: "Handovers",
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/observer/patients/${row.original.id}`}>Open detail</Link>
+          </Button>
+        ),
+      },
+    ],
+    [],
   );
-}
 
-function SummaryCard({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: number;
-}) {
+  const openTaskTotal = tasks.filter(
+    (task) => task.status !== "completed" && task.status !== "cancelled",
+  ).length;
+  const unreadTotal = messages.filter((message) => !message.is_read).length;
+
+  const isLoadingAny =
+    patientsQuery.isLoading ||
+    tasksQuery.isLoading ||
+    messagesQuery.isLoading ||
+    handoversQuery.isLoading;
+
   return (
-    <div className="surface-card p-4">
-      <div className="flex items-center gap-2 text-on-surface-variant text-sm">
-        <Icon className="w-4 h-4" />
-        {label}
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">My Patients</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Track patient-level tasks, unread role messages, and handover context.
+        </p>
       </div>
-      <p className="text-2xl font-bold text-on-surface mt-2">{value}</p>
-    </div>
-  );
-}
 
-function MetricBadge({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg bg-surface-container-low px-3 py-2">
-      <p className="text-on-surface-variant">{label}</p>
-      <p className="text-sm font-semibold text-on-surface mt-0.5">{value}</p>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryStatCard icon={Users} label="Assigned patients" value={patients.length} tone="info" />
+        <SummaryStatCard icon={ClipboardList} label="Open tasks" value={openTaskTotal} tone="warning" />
+        <SummaryStatCard icon={MessageSquare} label="Unread messages" value={unreadTotal} tone="warning" />
+        <SummaryStatCard icon={NotebookPen} label="Recent handovers" value={handovers.length} tone="info" />
+      </section>
+
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search patient by name, nickname, or ID"
+          className="pl-9"
+        />
+      </div>
+
+      <DataTableCard
+        title="Patient Coverage"
+        description="Observer patient list with operational message and task indicators."
+        data={rows}
+        columns={columns}
+        isLoading={isLoadingAny}
+        emptyText="No patients match your search."
+      />
     </div>
   );
 }

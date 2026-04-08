@@ -1,22 +1,23 @@
+from __future__ import annotations
+
 """CareGiver domain models: staff profiles, zone assignments, and shifts."""
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    Index,
-    String,
-    Text,
     Boolean,
+    Column,
     Date,
-    Time,
     DateTime,
     ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    Time,
     text,
 )
-from sqlalchemy import orm
+from sqlalchemy.orm import relationship
 
 from .base import Base, utcnow
-
 
 class CareGiver(Base):
     """Nursing home staff member (Observer or Supervisor role)."""
@@ -39,7 +40,6 @@ class CareGiver(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
 
-
 class CareGiverZone(Base):
     """Which rooms/zones a caregiver covers."""
 
@@ -58,7 +58,6 @@ class CareGiverZone(Base):
     zone_name = Column(String(64), default="")  # "Zone A", "East Wing"
     is_active = Column(Boolean, default=True)
 
-
 class CareGiverShift(Base):
     """Shift schedule for caregivers."""
 
@@ -76,7 +75,6 @@ class CareGiverShift(Base):
     end_time = Column(Time, nullable=False)
     shift_type = Column(String(16), default="regular")  # regular | overtime | on_call
     notes = Column(Text, default="")
-
 
 class CareGiverDeviceAssignment(Base):
     """Caregiver ↔ Device binding (e.g. mobile handset, Polar gateway)."""
@@ -112,4 +110,5 @@ class CareGiverDeviceAssignment(Base):
     unassigned_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
 
-    caregiver = orm.relationship("CareGiver", backref="device_assignments")
+    caregiver = relationship("CareGiver", backref="device_assignments")
+

@@ -1,170 +1,324 @@
-"use client";
+﻿"use client";
+"use no memo";
 
-import { useMemo, useState } from "react";
-import { api } from "@/lib/api";
-import { useQuery } from "@/hooks/useQuery";
-import { type Patient, type Prescription, type Specialist } from "@/lib/types";
+import { useMemo } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { z } from "zod";
 import { Pill, Plus } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { api, ApiError } from "@/lib/api";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type {
+  CreateFuturePrescriptionRequest,
+  ListFuturePrescriptionsResponse,
+  ListFutureSpecialistsResponse,
+  ListPatientsResponse,
+} from "@/lib/api/task-scope-types";
+
+const EMPTY_SELECT = "__empty__";
+
+const prescriptionFormSchema = z.object({
+  patientId: z.string().refine((value) => value !== EMPTY_SELECT, {
+    message: "Select a patient",
+  }),
+  specialistId: z.string(),
+  medicationName: z.string().trim().min(1, "Medication name is required"),
+  dosage: z.string().trim().min(1, "Dosage is required"),
+  frequency: z.string().trim().min(1, "Frequency is required"),
+  instructions: z.string().trim(),
+});
+
+type PrescriptionFormValues = z.infer<typeof prescriptionFormSchema>;
+
+type PrescriptionRow = {
+  id: number;
+  medicationName: string;
+  dosage: string;
+  frequency: string;
+  patientName: string;
+  specialistId: number | null;
+  status: string;
+  createdAt: string;
+};
+
+function errorText(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Failed to save prescription.";
+}
 
 export default function SupervisorPrescriptionsPage() {
-  const { data: prescriptions, isLoading, refetch } = useQuery<Prescription[]>(
-    "/future/prescriptions",
-  );
-  const { data: patients } = useQuery<Patient[]>("/patients");
-  const { data: specialists } = useQuery<Specialist[]>("/future/specialists");
+  const queryClient = useQueryClient();
 
-  const [form, setForm] = useState({
-    patient_id: "",
-    specialist_id: "",
-    medication_name: "",
-    dosage: "",
-    frequency: "",
-    instructions: "",
+  const prescriptionsQuery = useQuery({
+    queryKey: ["supervisor", "prescriptions", "list"],
+    queryFn: () => api.listFuturePrescriptions(),
   });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const patientMap = useMemo(
-    () => new Map((patients ?? []).map((patient) => [patient.id, patient])),
-    [patients],
-  );
+  const patientsQuery = useQuery({
+    queryKey: ["supervisor", "prescriptions", "patients"],
+    queryFn: () => api.listPatients({ limit: 300 }),
+  });
 
-  async function createPrescription() {
-    if (!form.patient_id || !form.medication_name || !form.dosage || !form.frequency) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await api.post("/future/prescriptions", {
-        patient_id: Number(form.patient_id),
-        specialist_id: form.specialist_id ? Number(form.specialist_id) : null,
-        medication_name: form.medication_name,
-        dosage: form.dosage,
-        frequency: form.frequency,
-        instructions: form.instructions,
-      });
-      setForm({
-        patient_id: "",
-        specialist_id: "",
-        medication_name: "",
+  const specialistsQuery = useQuery({
+    queryKey: ["supervisor", "prescriptions", "specialists"],
+    queryFn: () => api.listFutureSpecialists(),
+  });
+
+  const form = useForm<PrescriptionFormValues>({
+    resolver: zodResolver(prescriptionFormSchema),
+    defaultValues: {
+      patientId: EMPTY_SELECT,
+      specialistId: EMPTY_SELECT,
+      medicationName: "",
+      dosage: "",
+      frequency: "",
+      instructions: "",
+    },
+  });
+
+  const createPrescriptionMutation = useMutation({
+    mutationFn: async (values: PrescriptionFormValues) => {
+      const payload = {
+        patient_id: Number(values.patientId),
+        specialist_id: values.specialistId === EMPTY_SELECT ? null : Number(values.specialistId),
+        medication_name: values.medicationName.trim(),
+        dosage: values.dosage.trim(),
+        frequency: values.frequency.trim(),
+        route: "oral",
+        instructions: values.instructions.trim(),
+        status: "active",
+      } satisfies CreateFuturePrescriptionRequest;
+
+      await api.createFuturePrescription(payload);
+    },
+    onSuccess: async () => {
+      form.reset({
+        patientId: EMPTY_SELECT,
+        specialistId: EMPTY_SELECT,
+        medicationName: "",
         dosage: "",
         frequency: "",
         instructions: "",
       });
-      await refetch();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create prescription");
-    } finally {
-      setSaving(false);
-    }
-  }
+      await queryClient.invalidateQueries({ queryKey: ["supervisor", "prescriptions", "list"] });
+    },
+  });
+
+  const patients = useMemo(
+    () => (patientsQuery.data ?? []) as ListPatientsResponse,
+    [patientsQuery.data],
+  );
+  const specialists = useMemo(
+    () => (specialistsQuery.data ?? []) as ListFutureSpecialistsResponse,
+    [specialistsQuery.data],
+  );
+  const prescriptions = useMemo(
+    () => (prescriptionsQuery.data ?? []) as ListFuturePrescriptionsResponse,
+    [prescriptionsQuery.data],
+  );
+
+  const patientMap = useMemo(
+    () => new Map(patients.map((patient) => [patient.id, patient])),
+    [patients],
+  );
+
+  const rows = useMemo<PrescriptionRow[]>(() => {
+    return prescriptions
+      .map((item) => ({
+        id: item.id,
+        medicationName: item.medication_name,
+        dosage: item.dosage,
+        frequency: item.frequency,
+        patientName: item.patient_id
+          ? `${patientMap.get(item.patient_id)?.first_name ?? ""} ${patientMap.get(item.patient_id)?.last_name ?? ""}`.trim() || `Patient #${item.patient_id}`
+          : "No linked patient",
+        specialistId: item.specialist_id ?? null,
+        status: item.status,
+        createdAt: item.created_at,
+      }))
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }, [patientMap, prescriptions]);
+
+  const columns = useMemo<ColumnDef<PrescriptionRow>[]>(
+    () => [
+      {
+        accessorKey: "medicationName",
+        header: "Medication",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.medicationName}</p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.dosage} • {row.original.frequency}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "patientName",
+        header: "Patient",
+      },
+      {
+        accessorKey: "specialistId",
+        header: "Specialist",
+        cell: ({ row }) =>
+          row.original.specialistId != null ? `#${row.original.specialistId}` : "-",
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.createdAt)}</p>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const saveError = createPrescriptionMutation.error
+    ? errorText(createPrescriptionMutation.error)
+    : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-on-surface">Prescription Management</h2>
-        <p className="text-sm text-on-surface-variant">
+        <h2 className="text-2xl font-bold text-foreground">Prescription Management</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Create and monitor medication plans linked to specialists and patients.
         </p>
       </div>
 
-      <div className="surface-card p-4 space-y-3">
-        <div className="grid md:grid-cols-3 gap-3">
-          <select
-            className="input-field"
-            value={form.patient_id}
-            onChange={(event) => setForm((prev) => ({ ...prev, patient_id: event.target.value }))}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Create Prescription</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="space-y-4"
+            onSubmit={form.handleSubmit((values) => createPrescriptionMutation.mutate(values))}
           >
-            <option value="">Select patient</option>
-            {(patients ?? []).map((patient) => (
-              <option key={patient.id} value={patient.id}>
-                {patient.first_name} {patient.last_name}
-              </option>
-            ))}
-          </select>
-          <select
-            className="input-field"
-            value={form.specialist_id}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, specialist_id: event.target.value }))
-            }
-          >
-            <option value="">Select specialist</option>
-            {(specialists ?? []).map((specialist) => (
-              <option key={specialist.id} value={specialist.id}>
-                {specialist.first_name} {specialist.last_name} ({specialist.specialty})
-              </option>
-            ))}
-          </select>
-          <input
-            className="input-field"
-            placeholder="Medication"
-            value={form.medication_name}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, medication_name: event.target.value }))
-            }
-          />
-          <input
-            className="input-field"
-            placeholder="Dosage"
-            value={form.dosage}
-            onChange={(event) => setForm((prev) => ({ ...prev, dosage: event.target.value }))}
-          />
-          <input
-            className="input-field"
-            placeholder="Frequency"
-            value={form.frequency}
-            onChange={(event) => setForm((prev) => ({ ...prev, frequency: event.target.value }))}
-          />
-          <input
-            className="input-field"
-            placeholder="Instructions"
-            value={form.instructions}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, instructions: event.target.value }))
-            }
-          />
-        </div>
-        {error && <p className="text-sm text-error">{error}</p>}
-        <button
-          type="button"
-          className="gradient-cta px-4 py-2 rounded-lg text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50"
-          disabled={saving}
-          onClick={() => {
-            void createPrescription();
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          {saving ? "Saving..." : "Create prescription"}
-        </button>
-      </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Patient</Label>
+                <Controller
+                  control={form.control}
+                  name="patientId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select patient" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={EMPTY_SELECT}>Select patient</SelectItem>
+                        {patients.map((patient) => (
+                          <SelectItem key={patient.id} value={String(patient.id)}>
+                            {patient.first_name} {patient.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {form.formState.errors.patientId ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.patientId.message}</p>
+                ) : null}
+              </div>
 
-      <div className="surface-card p-4">
-        {isLoading ? (
-          <p className="text-sm text-on-surface-variant">Loading prescriptions...</p>
-        ) : !prescriptions || prescriptions.length === 0 ? (
-          <p className="text-sm text-on-surface-variant">No prescriptions found.</p>
-        ) : (
-          <div className="space-y-2">
-            {prescriptions.map((item) => {
-              const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
-              return (
-                <div key={item.id} className="rounded-lg border border-outline-variant/20 p-3">
-                  <p className="font-medium text-on-surface inline-flex items-center gap-2">
-                    <Pill className="w-4 h-4 text-primary" />
-                    {item.medication_name} ({item.dosage})
-                  </p>
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    {patient
-                      ? `${patient.first_name} ${patient.last_name}`
-                      : "No linked patient"}{" "}
-                    • {item.frequency} • {item.status}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+              <div className="space-y-2">
+                <Label>Specialist</Label>
+                <Controller
+                  control={form.control}
+                  name="specialistId"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select specialist" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={EMPTY_SELECT}>Select specialist</SelectItem>
+                        {specialists.map((specialist) => (
+                          <SelectItem key={specialist.id} value={String(specialist.id)}>
+                            {specialist.first_name} {specialist.last_name} ({specialist.specialty})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Medication</Label>
+                <Input {...form.register("medicationName")} placeholder="Medication name" />
+                {form.formState.errors.medicationName ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.medicationName.message}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Dosage</Label>
+                <Input {...form.register("dosage")} placeholder="Dosage" />
+                {form.formState.errors.dosage ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.dosage.message}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Frequency</Label>
+                <Input {...form.register("frequency")} placeholder="Frequency" />
+                {form.formState.errors.frequency ? (
+                  <p className="text-xs text-destructive">{form.formState.errors.frequency.message}</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Instructions</Label>
+              <Textarea rows={3} {...form.register("instructions")} placeholder="Optional instructions" />
+            </div>
+
+            {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}
+
+            <Button type="submit" disabled={createPrescriptionMutation.isPending}>
+              <Plus className="h-4 w-4" />
+              {createPrescriptionMutation.isPending ? "Saving..." : "Create prescription"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <DataTableCard
+        title="Prescription List"
+        description="Recent medication orders for supervisor review."
+        data={rows}
+        columns={columns}
+        isLoading={prescriptionsQuery.isLoading || patientsQuery.isLoading || specialistsQuery.isLoading}
+        emptyText="No prescriptions found."
+        rightSlot={<Pill className="h-4 w-4 text-muted-foreground" />}
+      />
     </div>
   );
 }
+

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """WheelSense — IMU feature engineering for motion classification.
 
 Transforms raw IMU time-series windows into feature vectors
@@ -8,13 +10,10 @@ IMU Rate: 20 Hz (50ms interval) — see firmware Config.h
 Default window: 40 samples = 2 seconds
 """
 
-from __future__ import annotations
-
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-
 
 # Canonical axis names expected in the IMU data dicts
 _IMU_AXES = ("ax", "ay", "az", "gx", "gy", "gz")
@@ -22,7 +21,6 @@ _IMU_AXES = ("ax", "ay", "az", "gx", "gy", "gz")
 # Default window/overlap tuned for 20 Hz firmware sampling rate
 DEFAULT_WINDOW_SIZE = 40   # 2 sec @ 20 Hz
 DEFAULT_OVERLAP = 0.5      # 50 % overlap → stride of 20 samples
-
 
 def extract_features(samples: list[dict[str, Any]]) -> dict[str, float]:
     """Extract features from a single window of IMU samples.
@@ -88,7 +86,6 @@ def extract_features(samples: list[dict[str, Any]]) -> dict[str, float]:
 
     return features
 
-
 def create_sliding_windows(
     samples: list[dict[str, Any]],
     window_size: int = DEFAULT_WINDOW_SIZE,
@@ -116,7 +113,6 @@ def create_sliding_windows(
         windows.append(samples[start : start + window_size])
 
     return windows
-
 
 def extract_dataset(
     samples: list[dict[str, Any]],

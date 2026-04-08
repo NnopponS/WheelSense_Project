@@ -1,11 +1,12 @@
-"""AI chat — streaming and conversation CRUD."""
-
 from __future__ import annotations
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+"""AI chat — streaming and conversation CRUD."""
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_active_user, get_current_user_workspace, get_db
 from app.models.chat import ChatConversation, ChatMessage
@@ -20,7 +21,6 @@ from app.schemas.chat import (
 from app.services import ai_chat
 
 router = APIRouter()
-
 
 @router.post("/stream")
 async def chat_stream(
@@ -80,7 +80,6 @@ async def chat_stream(
 
     return StreamingResponse(gen(), media_type="text/plain; charset=utf-8")
 
-
 @router.get("/conversations", response_model=list[ChatConversationOut])
 async def list_conversations(
     db: AsyncSession = Depends(get_db),
@@ -96,7 +95,6 @@ async def list_conversations(
         .order_by(ChatConversation.updated_at.desc())
     )
     return list(res.scalars().all())
-
 
 @router.post("/conversations", response_model=ChatConversationOut)
 async def create_conversation(
@@ -114,7 +112,6 @@ async def create_conversation(
     await db.commit()
     await db.refresh(conv)
     return conv
-
 
 @router.get(
     "/conversations/{conversation_id}/messages",
@@ -135,3 +132,18 @@ async def list_messages(
         .order_by(ChatMessage.created_at.asc())
     )
     return list(res.scalars().all())
+
+@router.delete("/conversations/{conversation_id}", status_code=204)
+async def delete_conversation(
+    conversation_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_active_user),
+    workspace: Workspace = Depends(get_current_user_workspace),
+):
+    conv = await db.get(ChatConversation, conversation_id)
+    if not conv or conv.user_id != user.id or conv.workspace_id != workspace.id:
+        raise HTTPException(404, "Conversation not found")
+
+    await db.delete(conv)
+    await db.commit()
+

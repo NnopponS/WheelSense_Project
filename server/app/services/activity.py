@@ -1,7 +1,13 @@
-from typing import List, Optional
+from __future__ import annotations
+
+from typing import List
+
+from typing import Optional
+
 from datetime import datetime, timezone
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 from app.models.activity import ActivityTimeline, Alert
 from app.schemas.activity import TimelineEventCreate, AlertCreate
@@ -33,7 +39,7 @@ class AlertService(CRUDBase[Alert, AlertCreate, AlertCreate]):
         filters = [self.model.workspace_id == ws_id, self.model.status == "active"]
         if patient_id is not None:
             filters.append(self.model.patient_id == patient_id)
-            
+
         query = select(self.model).filter(*filters).order_by(self.model.timestamp.desc())
         result = await session.execute(query)
         return list(result.scalars().all())

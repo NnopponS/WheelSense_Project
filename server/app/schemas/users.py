@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Pydantic schemas for Users and Authentication."""
 
 import re
@@ -8,7 +10,6 @@ from urllib.parse import urlparse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 _HOSTED_RELATIVE = re.compile(r"^/api/public/profile-images/[a-f0-9]{32}\.jpg$")
-
 
 def validate_optional_profile_image_url(v: Optional[str]) -> Optional[str]:
     """http(s) URL or platform-hosted avatar path; rejects data: / script schemes."""
@@ -29,18 +30,15 @@ def validate_optional_profile_image_url(v: Optional[str]) -> Optional[str]:
         raise ValueError("Invalid profile image URL")
     return s
 
-
 class Token(BaseModel):
     """JWT Token response."""
     access_token: str
     token_type: str
 
-
 class TokenData(BaseModel):
     """Data extracted from JWT."""
     username: Optional[str] = None
     role: Optional[str] = None
-
 
 class UserBase(BaseModel):
     """Base user attributes."""
@@ -60,11 +58,9 @@ class UserBase(BaseModel):
         normalized = validate_optional_profile_image_url(v)
         return normalized or ""
 
-
 class UserCreate(UserBase):
     """Attributes when creating a new user."""
     password: str = Field(min_length=6, max_length=128)
-
 
 class UserUpdate(BaseModel):
     """Attributes when updating a user."""
@@ -82,7 +78,6 @@ class UserUpdate(BaseModel):
     def validate_profile_image_url(cls, v: Optional[str]) -> Optional[str]:
         return validate_optional_profile_image_url(v)
 
-
 class MePatch(BaseModel):
     """Self-service profile update (PATCH /api/auth/me). Only fields listed here apply."""
 
@@ -93,12 +88,11 @@ class MePatch(BaseModel):
     def validate_profile_image_url(cls, v: Optional[str]) -> Optional[str]:
         return validate_optional_profile_image_url(v)
 
-
 class UserOut(UserBase):
     """User response model."""
     id: int
     workspace_id: int
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)

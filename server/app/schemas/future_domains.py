@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """Pydantic schemas for future-facing domains."""
 
 from datetime import date, datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
-
 
 class FloorplanAssetOut(BaseModel):
     id: int
@@ -22,7 +23,6 @@ class FloorplanAssetOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
 class SpecialistBase(BaseModel):
     first_name: str = Field(min_length=1, max_length=64)
     last_name: str = Field(min_length=1, max_length=64)
@@ -33,10 +33,8 @@ class SpecialistBase(BaseModel):
     notes: str = ""
     is_active: bool = True
 
-
 class SpecialistCreate(SpecialistBase):
     pass
-
 
 class SpecialistUpdate(BaseModel):
     first_name: Optional[str] = Field(default=None, min_length=1, max_length=64)
@@ -48,7 +46,6 @@ class SpecialistUpdate(BaseModel):
     notes: Optional[str] = None
     is_active: Optional[bool] = None
 
-
 class SpecialistOut(SpecialistBase):
     id: int
     workspace_id: int
@@ -56,7 +53,6 @@ class SpecialistOut(SpecialistBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
 
 class PrescriptionBase(BaseModel):
     patient_id: Optional[int] = None
@@ -70,10 +66,8 @@ class PrescriptionBase(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
 
-
 class PrescriptionCreate(PrescriptionBase):
     pass
-
 
 class PrescriptionUpdate(BaseModel):
     specialist_id: Optional[int] = None
@@ -86,7 +80,6 @@ class PrescriptionUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
 
-
 class PrescriptionOut(PrescriptionBase):
     id: int
     workspace_id: int
@@ -95,7 +88,6 @@ class PrescriptionOut(PrescriptionBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
 
 class PharmacyOrderBase(BaseModel):
     prescription_id: Optional[int] = None
@@ -107,10 +99,8 @@ class PharmacyOrderBase(BaseModel):
     status: str = Field(default="pending", pattern="^(pending|verified|dispensed|cancelled)$")
     notes: str = ""
 
-
 class PharmacyOrderCreate(PharmacyOrderBase):
     pass
-
 
 class PharmacyOrderUpdate(BaseModel):
     quantity: Optional[int] = Field(default=None, ge=0)
@@ -118,7 +108,6 @@ class PharmacyOrderUpdate(BaseModel):
     status: Optional[str] = Field(default=None, pattern="^(pending|verified|dispensed|cancelled)$")
     notes: Optional[str] = None
     fulfilled_at: Optional[datetime] = None
-
 
 class PharmacyOrderOut(PharmacyOrderBase):
     id: int
@@ -130,9 +119,7 @@ class PharmacyOrderOut(PharmacyOrderBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-
 # ── Floorplan builder (interactive layout JSON) ───────────────────────────────
-
 
 class FloorplanRoomShape(BaseModel):
     """One resizable room on the canvas (percent-based 0–100)."""
@@ -146,7 +133,6 @@ class FloorplanRoomShape(BaseModel):
     device_id: Optional[int] = None  # devices.id — one node per room
     power_kw: Optional[float] = Field(default=None, ge=0)
 
-
 class FloorplanLayoutPayload(BaseModel):
     """Body for saving builder state."""
 
@@ -154,7 +140,6 @@ class FloorplanLayoutPayload(BaseModel):
     floor_id: int
     rooms: list[FloorplanRoomShape] = Field(default_factory=list)
     version: int = 1
-
 
 class FloorplanLayoutOut(BaseModel):
     facility_id: int

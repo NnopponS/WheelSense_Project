@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from sqlalchemy import delete, func, select
+
 """Data Retention Service (Phase 6).
 
 Cleans up old telemetry data to prevent unbounded database growth.
@@ -14,14 +18,9 @@ PURGED tables (configurable retention):
   - room_predictions     (default: 30 days)
 """
 
-from __future__ import annotations
-
 import datetime as _dt
 import logging
 import time
-
-from sqlalchemy import delete, select, func
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.telemetry import IMUTelemetry, RSSIReading, RoomPrediction
 from app.schemas.retention import (
@@ -32,7 +31,6 @@ from app.schemas.retention import (
 )
 
 logger = logging.getLogger("wheelsense.retention")
-
 
 class RetentionService:
     """Workspace-scoped data retention operations."""
@@ -186,3 +184,6 @@ class RetentionService:
             duration_seconds=round(duration, 3),
             triggered_by=triggered_by,
         )
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy import delete, select, func

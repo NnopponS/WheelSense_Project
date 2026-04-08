@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from __future__ import annotations
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from fastapi import APIRouter, Depends, HTTPException
+
 from sqlalchemy.future import select
-from typing import List
 
 from app.api.dependencies import RequireRole, get_current_user_workspace, get_db
 from app.models.core import Room, SmartDevice, Workspace
@@ -17,7 +20,7 @@ from app.services.homeassistant import ha_service
 
 router = APIRouter()
 
-@router.get("/devices", response_model=List[SmartDeviceResponse])
+@router.get("/devices", response_model=list[SmartDeviceResponse])
 async def list_smart_devices(
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
@@ -65,7 +68,6 @@ async def add_smart_device(
     )
     return new_device
 
-
 @router.patch("/devices/{device_id}", response_model=SmartDeviceResponse)
 async def update_smart_device(
     device_id: int,
@@ -104,7 +106,6 @@ async def update_smart_device(
     )
     return device
 
-
 @router.delete("/devices/{device_id}", status_code=204)
 async def delete_smart_device(
     device_id: int,
@@ -136,7 +137,6 @@ async def delete_smart_device(
         details=snap,
     )
 
-
 @router.post("/devices/{device_id}/control", response_model=HAResponse)
 async def control_smart_device(
     device_id: int,
@@ -158,7 +158,7 @@ async def control_smart_device(
 
     if not device:
         raise HTTPException(status_code=404, detail="Smart device not found")
-        
+
     if not device.is_active:
         raise HTTPException(status_code=400, detail="Smart device is marked inactive")
 
@@ -172,7 +172,7 @@ async def control_smart_device(
     if not success:
         # It could fail because HA is offline, or no token configured
         raise HTTPException(
-            status_code=502, 
+            status_code=502,
             detail=f"Failed to communicate with HomeAssistant for {device.ha_entity_id}. Check HA token."
         )
 
@@ -220,3 +220,4 @@ async def get_device_state(
         message="State fetched",
         data=ha_state
     )
+

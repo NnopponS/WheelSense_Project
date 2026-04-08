@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Future-facing domain models: floorplans, specialists, prescriptions, pharmacy."""
 
 from sqlalchemy import (
@@ -16,7 +18,6 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, utcnow
 
-
 class FloorplanAsset(Base):
     __tablename__ = "floorplan_assets"
 
@@ -33,7 +34,6 @@ class FloorplanAsset(Base):
     extra = Column("metadata", JSON().with_variant(JSONB, "postgresql"), default=dict)
     uploaded_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
-
 
 class FloorplanLayout(Base):
     """Interactive floorplan builder state (rooms, positions, node mapping) per facility floor."""
@@ -55,7 +55,6 @@ class FloorplanLayout(Base):
     layout_json = Column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
-
 class Specialist(Base):
     __tablename__ = "specialists"
 
@@ -71,7 +70,6 @@ class Specialist(Base):
     is_active = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-
 
 class Prescription(Base):
     __tablename__ = "prescriptions"
@@ -92,7 +90,6 @@ class Prescription(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
-
 class PharmacyOrder(Base):
     __tablename__ = "pharmacy_orders"
 
@@ -110,3 +107,4 @@ class PharmacyOrder(Base):
     notes = Column(Text, default="")
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+

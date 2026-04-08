@@ -1,3 +1,4 @@
+from __future__ import annotations
 from . import workspaces, devices, rooms, telemetry, localization, motion
 from . import patients, caregivers, facilities, vitals, timeline, alerts
 from . import auth, users

@@ -1,22 +1,15 @@
+from __future__ import annotations
+
 """Activity timeline and alert models.
 
 ActivityTimeline stores auto-generated events (room transitions, fall)
 and manual entries by caregivers. Alert manages actionable notifications.
 """
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Text,
-    DateTime,
-    ForeignKey,
-    JSON,
-)
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, utcnow
-
 
 class ActivityTimeline(Base):
     """Event log per patient — auto-generated and manual entries."""
@@ -52,7 +45,6 @@ class ActivityTimeline(Base):
     )  # event-specific data
     source = Column(String(16), default="auto")  # auto | caregiver | system
     caregiver_id = Column(Integer, ForeignKey("caregivers.id"), nullable=True)
-
 
 class Alert(Base):
     """Actionable alerts — fall, abnormal HR, device offline, etc."""
@@ -94,3 +86,4 @@ class Alert(Base):
     acknowledged_at = Column(DateTime(timezone=True), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     resolution_note = Column(Text, default="")
+

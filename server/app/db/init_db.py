@@ -1,7 +1,9 @@
+from __future__ import annotations
+from sqlalchemy import select
+
 """Initialize the database with default data (e.g., admin user)."""
 
 import logging
-from sqlalchemy import select
 
 from app.config import settings
 from app.core.security import get_password_hash
@@ -10,7 +12,6 @@ from app.models.core import Workspace
 from app.models.users import User
 
 logger = logging.getLogger("wheelsense")
-
 
 async def init_admin_user() -> None:
     """Create the initial admin workspace and user if configured."""
@@ -63,7 +64,6 @@ async def init_admin_user() -> None:
         await session.commit()
         logger.info("Created initial admin user '%s'.", settings.bootstrap_admin_username)
 
-
 async def try_attach_bootstrap_admin_to_demo_workspace() -> None:
     """If the demo workspace from seed_demo exists, move bootstrap admin onto it (Docker / dev UX)."""
     if not settings.bootstrap_admin_attach_demo_workspace:
@@ -97,3 +97,4 @@ async def try_attach_bootstrap_admin_to_demo_workspace() -> None:
             name,
             demo.id,
         )
+

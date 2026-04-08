@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 """Pydantic schemas for CareGiver, CareGiverZone, CareGiverShift."""
 
 from datetime import date, time, datetime
 
 from pydantic import BaseModel, ConfigDict
-
 
 # ── CareGiver ─────────────────────────────────────────────────────────────────
 
@@ -14,7 +15,6 @@ class CareGiverCreate(BaseModel):
     phone: str = ""
     email: str = ""
 
-
 class CareGiverPatch(BaseModel):
     """Partial update for staff profile."""
 
@@ -24,7 +24,6 @@ class CareGiverPatch(BaseModel):
     phone: str | None = None
     email: str | None = None
     is_active: bool | None = None
-
 
 class CareGiverOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -38,19 +37,16 @@ class CareGiverOut(BaseModel):
     is_active: bool
     created_at: datetime
 
-
 # ── Zone ──────────────────────────────────────────────────────────────────────
 
 class ZoneAssignCreate(BaseModel):
     room_id: int | None = None
     zone_name: str = ""
 
-
 class ZoneAssignPatch(BaseModel):
     room_id: int | None = None
     zone_name: str | None = None
     is_active: bool | None = None
-
 
 class ZoneAssignOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -59,7 +55,6 @@ class ZoneAssignOut(BaseModel):
     room_id: int | None
     zone_name: str
     is_active: bool
-
 
 # ── Shift ─────────────────────────────────────────────────────────────────────
 
@@ -70,14 +65,12 @@ class ShiftCreate(BaseModel):
     shift_type: str = "regular"  # regular | overtime | on_call
     notes: str = ""
 
-
 class ShiftPatch(BaseModel):
     shift_date: date | None = None
     start_time: time | None = None
     end_time: time | None = None
     shift_type: str | None = None
     notes: str | None = None
-
 
 class ShiftOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

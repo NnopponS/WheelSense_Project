@@ -1,4 +1,7 @@
-from typing import AsyncGenerator, Final
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
+from typing import Final
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -37,12 +40,12 @@ async def get_current_user(
 
         token_data = TokenData(username=user_id, role=payload.get("role"))
         user_id_int = int(token_data.username)
-    except (JWTError, ValidationError, ValueError):
+    except (JWTError, ValidationError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from exc
 
     user = await UserService.get_user(db, user_id=user_id_int)
     if not user:
@@ -90,10 +93,9 @@ class RequireRole:
         if user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=403,
-                detail="Operation not permitted"
+                detail="Operation not permitted",
             )
         return user
-
 
 # --- Role groups (EaseAI RBAC) -------------------------------------------------
 # Canonical roles
@@ -170,7 +172,6 @@ ROLE_CAPABILITIES: Final[dict[str, set[str]]] = {
     },
 }
 
-
 def assert_patient_record_access(user: User, patient_id: int) -> None:
     """Staff may access any patient in workspace; patients only their own row."""
     if user.role == "patient":
@@ -184,3 +185,4 @@ def assert_patient_record_access(user: User, patient_id: int) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Operation not permitted",
         )
+

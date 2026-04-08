@@ -1,461 +1,724 @@
-"use client";
+﻿"use client";
+"use no memo";
 
-import { useMemo, useState, type ComponentType, type FormEvent } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useQuery } from "@/hooks/useQuery";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Activity, Bell, ClipboardList, HeartPulse, MessageSquare, NotebookPen } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/lib/api";
-import type { Patient } from "@/lib/types";
-import { Bell, ClipboardList, MessageSquare, NotebookPen } from "lucide-react";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type {
+  CareTaskOut,
+  CreateTimelineEventRequest,
+  CreateWorkflowHandoverRequest,
+  GetPatientResponse,
+  ListAlertsResponse,
+  ListTimelineEventsResponse,
+  ListVitalReadingsResponse,
+  ListWorkflowHandoversResponse,
+  ListWorkflowMessagesResponse,
+  SendWorkflowMessageRequest,
+} from "@/lib/api/task-scope-types";
 
-type TimelineEvent = {
+type VitalsRow = {
   id: number;
-  event_type: string;
-  description: string;
-  room_name: string;
   timestamp: string;
+  heartRate: number | null;
+  spo2: number | null;
+  rrInterval: number | null;
+  battery: number | null;
+  source: string;
 };
 
-type CareTask = {
+type TaskRow = {
   id: number;
-  patient_id: number | null;
   title: string;
   description: string;
   priority: string;
-  due_at: string | null;
   status: string;
+  dueAt: string | null;
 };
 
-type RoleMessage = {
+type TimelineRow = {
   id: number;
-  patient_id: number | null;
+  eventType: string;
+  description: string;
+  roomName: string;
+  source: string;
+  timestamp: string;
+};
+
+type MessageRow = {
+  id: number;
   subject: string;
   body: string;
-  is_read: boolean;
-  created_at: string;
+  isRead: boolean;
+  createdAt: string;
 };
 
-type HandoverNote = {
+type HandoverRow = {
   id: number;
-  patient_id: number | null;
-  target_role: string | null;
-  priority: string;
   note: string;
-  created_at: string;
+  priority: string;
+  targetRole: string | null;
+  createdAt: string;
 };
 
-type AlertLite = {
-  id: number;
-  title: string;
-  description: string;
-  severity: "info" | "warning" | "critical";
-  timestamp: string;
-};
-
-export default function ObserverPatientDetailPage() {
-  const params = useParams();
-  const id = Number(params.id);
-  const { data: patient, isLoading } = useQuery<Patient>(
-    Number.isFinite(id) ? `/patients/${id}` : null,
-  );
-  const { data: timeline, refetch: refetchTimeline } = useQuery<TimelineEvent[]>(
-    Number.isFinite(id) ? `/timeline?patient_id=${id}&limit=25` : null,
-  );
-  const { data: tasks, refetch: refetchTasks } = useQuery<CareTask[]>(
-    Number.isFinite(id) ? "/workflow/tasks?limit=100" : null,
-  );
-  const { data: messages, refetch: refetchMessages } = useQuery<RoleMessage[]>(
-    Number.isFinite(id) ? "/workflow/messages?limit=100" : null,
-  );
-  const { data: handovers, refetch: refetchHandovers } = useQuery<HandoverNote[]>(
-    Number.isFinite(id) ? `/workflow/handovers?patient_id=${id}&limit=25` : null,
-  );
-  const { data: alerts } = useQuery<AlertLite[]>(
-    Number.isFinite(id) ? `/alerts?status=active&patient_id=${id}&limit=20` : null,
-  );
-
-  const [noteText, setNoteText] = useState("");
-  const [messageText, setMessageText] = useState("");
-  const [handoverText, setHandoverText] = useState("");
-  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
-  const [isSubmittingMessage, setIsSubmittingMessage] = useState(false);
-  const [isSubmittingHandover, setIsSubmittingHandover] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const patientId = Number.isFinite(id) ? id : null;
-  const patientTasks = useMemo(
-    () =>
-      patientId == null
-        ? []
-        : (tasks ?? []).filter((task) => task.patient_id === patientId),
-    [patientId, tasks],
-  );
-  const patientMessages = useMemo(
-    () =>
-      patientId == null
-        ? []
-        : (messages ?? []).filter((message) => message.patient_id === patientId),
-    [messages, patientId],
-  );
-  const activeAlerts = alerts ?? [];
-  const patientTimeline = timeline ?? [];
-  const patientHandovers = handovers ?? [];
-
-  if (isLoading || !patient) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  const submitTimelineNote = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!noteText.trim()) return;
-
-    setActionError("");
-    setIsSubmittingNote(true);
-    try {
-      await api.post<TimelineEvent>("/timeline", {
-        patient_id: patient.id,
-        event_type: "observation",
-        description: noteText.trim(),
-        source: "caregiver",
-        data: { channel: "observer_note" },
-      });
-      setNoteText("");
-      await refetchTimeline();
-    } catch (error) {
-      setActionError(getActionError(error, "Failed to save observation note"));
-    } finally {
-      setIsSubmittingNote(false);
-    }
-  };
-
-  const submitMessage = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!messageText.trim()) return;
-
-    setActionError("");
-    setIsSubmittingMessage(true);
-    try {
-      await api.post<RoleMessage>("/workflow/messages", {
-        recipient_role: "head_nurse",
-        patient_id: patient.id,
-        subject: `Patient update: ${patient.first_name} ${patient.last_name}`,
-        body: messageText.trim(),
-      });
-      setMessageText("");
-      await refetchMessages();
-    } catch (error) {
-      setActionError(getActionError(error, "Failed to send workflow message"));
-    } finally {
-      setIsSubmittingMessage(false);
-    }
-  };
-
-  const submitHandover = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!handoverText.trim()) return;
-
-    setActionError("");
-    setIsSubmittingHandover(true);
-    try {
-      await api.post<HandoverNote>("/workflow/handovers", {
-        patient_id: patient.id,
-        target_role: "head_nurse",
-        priority: "routine",
-        note: handoverText.trim(),
-      });
-      setHandoverText("");
-      await refetchHandovers();
-    } catch (error) {
-      setActionError(getActionError(error, "Failed to submit handover note"));
-    } finally {
-      setIsSubmittingHandover(false);
-    }
-  };
-
-  const updateTaskStatus = async (taskId: number, status: string) => {
-    setActionError("");
-    try {
-      await api.patch<CareTask>(`/workflow/tasks/${taskId}`, { status });
-      await refetchTasks();
-    } catch (error) {
-      setActionError(getActionError(error, "Failed to update task status"));
-    }
-  };
-
-  const markMessageRead = async (messageId: number) => {
-    setActionError("");
-    try {
-      await api.post<RoleMessage>(`/workflow/messages/${messageId}/read`, {});
-      await refetchMessages();
-    } catch (error) {
-      setActionError(getActionError(error, "Failed to mark message as read"));
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="surface-card p-5">
-        <h2 className="text-2xl font-bold text-on-surface">
-          {patient.first_name} {patient.last_name}
-        </h2>
-        <p className="text-sm text-on-surface-variant mt-1">
-          {patient.nickname || "No nickname"} · Care level {patient.care_level} ·
-          Mode {patient.current_mode}
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-4">
-          <QuickStat label="Active alerts" value={activeAlerts.length} icon={Bell} />
-          <QuickStat
-            label="Open tasks"
-            value={patientTasks.filter((task) => task.status !== "completed").length}
-            icon={ClipboardList}
-          />
-          <QuickStat
-            label="Unread messages"
-            value={patientMessages.filter((message) => !message.is_read).length}
-            icon={MessageSquare}
-          />
-          <QuickStat label="Handovers" value={patientHandovers.length} icon={NotebookPen} />
-        </div>
-      </div>
-
-      {actionError && (
-        <div className="rounded-xl bg-critical-bg text-critical px-4 py-3 text-sm">
-          {actionError}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <section className="surface-card p-5">
-          <h3 className="text-base font-semibold text-on-surface mb-3">
-            Add observation note
-          </h3>
-          <form onSubmit={submitTimelineNote} className="space-y-3">
-            <textarea
-              value={noteText}
-              onChange={(event) => setNoteText(event.target.value)}
-              className="w-full min-h-28 rounded-xl bg-surface-container-low p-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Record what you observed during rounds"
-            />
-            <button
-              type="submit"
-              disabled={isSubmittingNote || !noteText.trim()}
-              className="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-medium disabled:opacity-60"
-            >
-              {isSubmittingNote ? "Saving..." : "Save note to timeline"}
-            </button>
-          </form>
-        </section>
-
-        <section className="surface-card p-5">
-          <h3 className="text-base font-semibold text-on-surface mb-3">
-            Send role message
-          </h3>
-          <form onSubmit={submitMessage} className="space-y-3">
-            <textarea
-              value={messageText}
-              onChange={(event) => setMessageText(event.target.value)}
-              className="w-full min-h-28 rounded-xl bg-surface-container-low p-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Send update to head nurse or supervisor"
-            />
-            <button
-              type="submit"
-              disabled={isSubmittingMessage || !messageText.trim()}
-              className="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-medium disabled:opacity-60"
-            >
-              {isSubmittingMessage ? "Sending..." : "Send message"}
-            </button>
-          </form>
-        </section>
-      </div>
-
-      <section className="surface-card p-5">
-        <h3 className="text-base font-semibold text-on-surface mb-3">Task workflow</h3>
-        {patientTasks.length === 0 ? (
-          <p className="text-sm text-on-surface-variant">No tasks assigned to this patient.</p>
-        ) : (
-          <div className="space-y-3">
-            {patientTasks.map((task) => (
-              <div
-                key={task.id}
-                className="rounded-xl bg-surface-container-low px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-on-surface truncate">
-                    {task.title}
-                  </p>
-                  <p className="text-xs text-on-surface-variant truncate mt-0.5">
-                    {task.description || "No description"}
-                  </p>
-                  <p className="text-[11px] text-on-surface-variant mt-1">
-                    {task.priority} priority · {task.status}
-                    {task.due_at ? ` · due ${new Date(task.due_at).toLocaleString()}` : ""}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {task.status !== "in_progress" && (
-                    <button
-                      type="button"
-                      onClick={() => updateTaskStatus(task.id, "in_progress")}
-                      className="px-2.5 py-1.5 rounded-md bg-surface text-on-surface text-xs"
-                    >
-                      Start
-                    </button>
-                  )}
-                  {task.status !== "completed" && (
-                    <button
-                      type="button"
-                      onClick={() => updateTaskStatus(task.id, "completed")}
-                      className="px-2.5 py-1.5 rounded-md bg-success-bg text-success text-xs"
-                    >
-                      Complete
-                    </button>
-                  )}
-                  {task.status === "completed" && (
-                    <button
-                      type="button"
-                      onClick={() => updateTaskStatus(task.id, "pending")}
-                      className="px-2.5 py-1.5 rounded-md bg-surface text-on-surface text-xs"
-                    >
-                      Reopen
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <section className="surface-card p-5">
-          <h3 className="text-base font-semibold text-on-surface mb-3">Timeline</h3>
-          {patientTimeline.length === 0 ? (
-            <p className="text-sm text-on-surface-variant">No timeline events recorded yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {patientTimeline.map((event) => (
-                <div
-                  key={event.id}
-                  className="rounded-lg bg-surface-container-low px-3 py-2.5 text-sm"
-                >
-                  <p className="font-medium text-on-surface">{event.event_type}</p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">
-                    {event.description}
-                  </p>
-                  <p className="text-[11px] text-on-surface-variant mt-1">
-                    {new Date(event.timestamp).toLocaleString()}
-                    {event.room_name ? ` · ${event.room_name}` : ""}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="surface-card p-5">
-          <h3 className="text-base font-semibold text-on-surface mb-3">
-            Messages for this patient
-          </h3>
-          {patientMessages.length === 0 ? (
-            <p className="text-sm text-on-surface-variant">No workflow messages yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {patientMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className="rounded-lg bg-surface-container-low px-3 py-2.5 text-sm"
-                >
-                  <p className="font-medium text-on-surface">
-                    {message.subject || "Care coordination message"}
-                  </p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">{message.body}</p>
-                  <div className="flex items-center justify-between gap-2 mt-2">
-                    <p className="text-[11px] text-on-surface-variant">
-                      {new Date(message.created_at).toLocaleString()}
-                    </p>
-                    {!message.is_read && (
-                      <button
-                        type="button"
-                        onClick={() => markMessageRead(message.id)}
-                        className="text-xs px-2 py-1 rounded-md bg-surface text-on-surface"
-                      >
-                        Mark read
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-
-      <section className="surface-card p-5 space-y-4">
-        <h3 className="text-base font-semibold text-on-surface">Handover notes</h3>
-        <form onSubmit={submitHandover} className="space-y-3">
-          <textarea
-            value={handoverText}
-            onChange={(event) => setHandoverText(event.target.value)}
-            className="w-full min-h-24 rounded-xl bg-surface-container-low p-3 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Record concise handover for the next shift"
-          />
-          <button
-            type="submit"
-            disabled={isSubmittingHandover || !handoverText.trim()}
-            className="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-medium disabled:opacity-60"
-          >
-            {isSubmittingHandover ? "Submitting..." : "Add handover note"}
-          </button>
-        </form>
-        {patientHandovers.length > 0 && (
-          <div className="space-y-2">
-            {patientHandovers.map((handover) => (
-              <div
-                key={handover.id}
-                className="rounded-lg bg-surface-container-low px-3 py-2.5 text-sm"
-              >
-                <p className="text-on-surface">{handover.note}</p>
-                <p className="text-[11px] text-on-surface-variant mt-1">
-                  {handover.priority}
-                  {handover.target_role ? ` · for ${handover.target_role}` : ""}
-                  {` · ${new Date(handover.created_at).toLocaleString()}`}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function QuickStat({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: number;
-  icon: ComponentType<{ className?: string }>;
-}) {
-  return (
-    <div className="rounded-xl bg-surface-container-low px-3 py-2.5">
-      <p className="text-xs text-on-surface-variant flex items-center gap-1.5">
-        <Icon className="w-3.5 h-3.5" />
-        {label}
-      </p>
-      <p className="text-lg font-semibold text-on-surface mt-1">{value}</p>
-    </div>
-  );
-}
-
-function getActionError(error: unknown, fallback: string): string {
-  if (error instanceof ApiError) {
-    if (error.status === 403) return "You do not have permission for this action.";
-    return error.message || fallback;
+function errorText(error: unknown, fallback: string): string {
+  if (error instanceof ApiError && error.status === 403) {
+    return "You do not have permission for this action.";
   }
   if (error instanceof Error) return error.message;
   return fallback;
+}
+
+export default function ObserverPatientDetailPage() {
+  const params = useParams();
+  const queryClient = useQueryClient();
+
+  const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const patientId = Number(rawId);
+  const hasValidPatientId = Number.isFinite(patientId) && patientId > 0;
+
+  const [noteText, setNoteText] = useState("");
+  const [messageSubject, setMessageSubject] = useState("");
+  const [messageText, setMessageText] = useState("");
+  const [handoverText, setHandoverText] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const patientQuery = useQuery({
+    queryKey: ["observer", "patient-detail", patientId, "patient"],
+    enabled: hasValidPatientId,
+    queryFn: () => api.getPatient(patientId),
+  });
+
+  const vitalsQuery = useQuery({
+    queryKey: ["observer", "patient-detail", patientId, "vitals"],
+    enabled: hasValidPatientId,
+    queryFn: () => api.listVitalReadings({ patient_id: patientId, limit: 120 }),
+  });
+
+  const alertsQuery = useQuery({
+    queryKey: ["observer", "patient-detail", patientId, "alerts"],
+    enabled: hasValidPatientId,
+    queryFn: () => api.listAlerts({ patient_id: patientId, limit: 120 }),
+  });
+
+  const timelineQuery = useQuery({
+    queryKey: ["observer", "patient-detail", patientId, "timeline"],
+    enabled: hasValidPatientId,
+    queryFn: () => api.listTimelineEvents({ patient_id: patientId, limit: 120 }),
+  });
+
+  const tasksQuery = useQuery({
+    queryKey: ["observer", "patient-detail", patientId, "tasks"],
+    enabled: hasValidPatientId,
+    queryFn: () => api.listWorkflowTasks({ limit: 300 }),
+  });
+
+  const messagesQuery = useQuery({
+    queryKey: ["observer", "patient-detail", patientId, "messages"],
+    enabled: hasValidPatientId,
+    queryFn: () => api.listWorkflowMessages({ inbox_only: false, limit: 300 }),
+  });
+
+  const handoversQuery = useQuery({
+    queryKey: ["observer", "patient-detail", patientId, "handovers"],
+    enabled: hasValidPatientId,
+    queryFn: () => api.listWorkflowHandovers({ patient_id: patientId, limit: 120 }),
+  });
+
+  const createTimelineMutation = useMutation({
+    mutationFn: async (description: string) => {
+      const payload = {
+        patient_id: patientId,
+        event_type: "observation",
+        description,
+        room_name: "",
+        source: "observer",
+        data: { channel: "observer_note" },
+      } satisfies CreateTimelineEventRequest;
+
+      await api.createTimelineEvent(payload);
+    },
+    onSuccess: async () => {
+      setNoteText("");
+      setActionError(null);
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patient-detail", patientId, "timeline"] });
+      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard"] });
+    },
+    onError: (error) => setActionError(errorText(error, "Failed to save observation note.")),
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (values: { subject: string; body: string }) => {
+      const payload = {
+        recipient_role: "head_nurse",
+        patient_id: patientId,
+        subject: values.subject,
+        body: values.body,
+      } satisfies SendWorkflowMessageRequest;
+
+      await api.sendWorkflowMessage(payload);
+    },
+    onSuccess: async () => {
+      setMessageSubject("");
+      setMessageText("");
+      setActionError(null);
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patient-detail", patientId, "messages"] });
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
+    },
+    onError: (error) => setActionError(errorText(error, "Failed to send workflow message.")),
+  });
+
+  const createHandoverMutation = useMutation({
+    mutationFn: async (note: string) => {
+      const payload = {
+        patient_id: patientId,
+        target_role: "head_nurse",
+        shift_label: "observer_update",
+        priority: "routine",
+        note,
+      } satisfies CreateWorkflowHandoverRequest;
+
+      await api.createWorkflowHandover(payload);
+    },
+    onSuccess: async () => {
+      setHandoverText("");
+      setActionError(null);
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patient-detail", patientId, "handovers"] });
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
+    },
+    onError: (error) => setActionError(errorText(error, "Failed to submit handover note.")),
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async (variables: { taskId: number; status: "pending" | "in_progress" | "completed" }) => {
+      await api.updateWorkflowTask(variables.taskId, { status: variables.status });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patient-detail", patientId, "tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
+      setActionError(null);
+    },
+    onError: (error) => setActionError(errorText(error, "Failed to update task status.")),
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: async (messageId: number) => {
+      await api.markWorkflowMessageRead(messageId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patient-detail", patientId, "messages"] });
+      await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
+      setActionError(null);
+    },
+    onError: (error) => setActionError(errorText(error, "Failed to mark message as read.")),
+  });
+
+  const patient = useMemo(
+    () => (patientQuery.data ?? null) as GetPatientResponse | null,
+    [patientQuery.data],
+  );
+  const vitals = useMemo(
+    () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
+    [vitalsQuery.data],
+  );
+  const alerts = useMemo(
+    () => (alertsQuery.data ?? []) as ListAlertsResponse,
+    [alertsQuery.data],
+  );
+  const timeline = useMemo(
+    () => (timelineQuery.data ?? []) as ListTimelineEventsResponse,
+    [timelineQuery.data],
+  );
+  const tasks = useMemo(
+    () => (tasksQuery.data ?? []) as CareTaskOut[],
+    [tasksQuery.data],
+  );
+  const messages = useMemo(
+    () => (messagesQuery.data ?? []) as ListWorkflowMessagesResponse,
+    [messagesQuery.data],
+  );
+  const handovers = useMemo(
+    () => (handoversQuery.data ?? []) as ListWorkflowHandoversResponse,
+    [handoversQuery.data],
+  );
+
+  const patientTasks = useMemo(
+    () => tasks.filter((task) => task.patient_id === patientId),
+    [patientId, tasks],
+  );
+
+  const patientMessages = useMemo(
+    () => messages.filter((message) => message.patient_id === patientId),
+    [messages, patientId],
+  );
+
+  const activeAlerts = useMemo(
+    () => alerts.filter((alert) => alert.status === "active"),
+    [alerts],
+  );
+
+  const vitalsRows = useMemo<VitalsRow[]>(() => {
+    return [...vitals]
+      .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
+      .map((item) => ({
+        id: item.id,
+        timestamp: item.timestamp,
+        heartRate: item.heart_rate_bpm,
+        spo2: item.spo2,
+        rrInterval: item.rr_interval_ms,
+        battery: item.sensor_battery,
+        source: item.source,
+      }));
+  }, [vitals]);
+
+  const taskRows = useMemo<TaskRow[]>(() => {
+    return patientTasks
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        status: task.status,
+        dueAt: task.due_at,
+      }))
+      .sort((left, right) => {
+        if (!left.dueAt) return 1;
+        if (!right.dueAt) return -1;
+        return left.dueAt.localeCompare(right.dueAt);
+      });
+  }, [patientTasks]);
+
+  const timelineRows = useMemo<TimelineRow[]>(() => {
+    return [...timeline]
+      .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
+      .map((item) => ({
+        id: item.id,
+        eventType: item.event_type,
+        description: item.description,
+        roomName: item.room_name,
+        source: item.source,
+        timestamp: item.timestamp,
+      }));
+  }, [timeline]);
+
+  const messageRows = useMemo<MessageRow[]>(() => {
+    return [...patientMessages]
+      .sort((left, right) => right.created_at.localeCompare(left.created_at))
+      .map((message) => ({
+        id: message.id,
+        subject: message.subject || "Care coordination message",
+        body: message.body,
+        isRead: message.is_read,
+        createdAt: message.created_at,
+      }));
+  }, [patientMessages]);
+
+  const handoverRows = useMemo<HandoverRow[]>(() => {
+    return [...handovers]
+      .sort((left, right) => right.created_at.localeCompare(left.created_at))
+      .map((item) => ({
+        id: item.id,
+        note: item.note,
+        priority: item.priority,
+        targetRole: item.target_role,
+        createdAt: item.created_at,
+      }));
+  }, [handovers]);
+
+  const vitalsColumns = useMemo<ColumnDef<VitalsRow>[]>(
+    () => [
+      {
+        accessorKey: "timestamp",
+        header: "Time",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
+          </div>
+        ),
+      },
+      { accessorKey: "heartRate", header: "HR", cell: ({ row }) => row.original.heartRate ?? "-" },
+      { accessorKey: "spo2", header: "SpO2", cell: ({ row }) => row.original.spo2 ?? "-" },
+      {
+        accessorKey: "rrInterval",
+        header: "RR interval",
+        cell: ({ row }) => (row.original.rrInterval != null ? `${row.original.rrInterval} ms` : "-"),
+      },
+      {
+        accessorKey: "battery",
+        header: "Battery",
+        cell: ({ row }) => (row.original.battery != null ? `${row.original.battery}%` : "-"),
+      },
+      { accessorKey: "source", header: "Source" },
+    ],
+    [],
+  );
+
+  const taskColumns = useMemo<ColumnDef<TaskRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Task",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description || "No description"}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "priority",
+        header: "Priority",
+        cell: ({ row }) => {
+          const priority = row.original.priority;
+          const variant =
+            priority === "critical"
+              ? "destructive"
+              : priority === "high"
+                ? "warning"
+                : priority === "normal"
+                  ? "secondary"
+                  : "outline";
+          return <Badge variant={variant}>{priority}</Badge>;
+        },
+      },
+      { accessorKey: "status", header: "Status", cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge> },
+      {
+        accessorKey: "dueAt",
+        header: "Due",
+        cell: ({ row }) => formatDateTime(row.original.dueAt),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex gap-2">
+            {row.original.status !== "in_progress" ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  updateTaskMutation.mutate({ taskId: row.original.id, status: "in_progress" })
+                }
+              >
+                Start
+              </Button>
+            ) : null}
+            {row.original.status !== "completed" ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => updateTaskMutation.mutate({ taskId: row.original.id, status: "completed" })}
+              >
+                Complete
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => updateTaskMutation.mutate({ taskId: row.original.id, status: "pending" })}
+              >
+                Reopen
+              </Button>
+            )}
+          </div>
+        ),
+      },
+    ],
+    [updateTaskMutation],
+  );
+
+  const timelineColumns = useMemo<ColumnDef<TimelineRow>[]>(
+    () => [
+      {
+        accessorKey: "eventType",
+        header: "Event",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.eventType}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
+          </div>
+        ),
+      },
+      { accessorKey: "roomName", header: "Room" },
+      { accessorKey: "source", header: "Source" },
+      {
+        accessorKey: "timestamp",
+        header: "Time",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const messagesColumns = useMemo<ColumnDef<MessageRow>[]>(
+    () => [
+      {
+        accessorKey: "subject",
+        header: "Message",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.subject}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.body}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "isRead",
+        header: "Read",
+        cell: ({ row }) => (
+          <Badge variant={row.original.isRead ? "success" : "warning"}>
+            {row.original.isRead ? "read" : "unread"}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.createdAt)}</p>
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) =>
+          row.original.isRead ? null : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => markReadMutation.mutate(row.original.id)}
+            >
+              Mark read
+            </Button>
+          ),
+      },
+    ],
+    [markReadMutation],
+  );
+
+  const handoversColumns = useMemo<ColumnDef<HandoverRow>[]>(
+    () => [
+      {
+        accessorKey: "note",
+        header: "Handover note",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="line-clamp-3 text-sm text-foreground">{row.original.note}</p>
+            <p className="text-xs text-muted-foreground">{row.original.targetRole || "all roles"}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "priority",
+        header: "Priority",
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.createdAt)}</p>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  if (!hasValidPatientId) {
+    return (
+      <Card>
+        <CardContent className="space-y-3 pt-6">
+          <h2 className="text-xl font-semibold text-foreground">Invalid patient ID</h2>
+          <p className="text-sm text-muted-foreground">
+            The route parameter is invalid. Return to the patient roster and select a patient.
+          </p>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/observer/patients">Back to patients</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const isLoadingAny =
+    patientQuery.isLoading ||
+    vitalsQuery.isLoading ||
+    alertsQuery.isLoading ||
+    timelineQuery.isLoading ||
+    tasksQuery.isLoading ||
+    messagesQuery.isLoading ||
+    handoversQuery.isLoading;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">
+          {patient ? `${patient.first_name} ${patient.last_name}` : "Patient detail"}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Observer care coordination workspace for notes, tasks, messages, and handovers.
+        </p>
+      </div>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryStatCard icon={Bell} label="Active alerts" value={activeAlerts.length} tone={activeAlerts.length > 0 ? "warning" : "success"} />
+        <SummaryStatCard icon={HeartPulse} label="Recent vitals" value={vitalsRows.length} tone="info" />
+        <SummaryStatCard icon={ClipboardList} label="Open tasks" value={taskRows.filter((row) => row.status !== "completed").length} tone="warning" />
+        <SummaryStatCard icon={MessageSquare} label="Unread messages" value={messageRows.filter((row) => !row.isRead).length} tone="warning" />
+      </section>
+
+      {actionError ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {actionError}
+        </div>
+      ) : null}
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <h3 className="text-sm font-semibold text-foreground">Add Observation Note</h3>
+            <Textarea
+              value={noteText}
+              onChange={(event) => setNoteText(event.target.value)}
+              rows={4}
+              placeholder="Record what you observed during rounds"
+            />
+            <Button
+              type="button"
+              disabled={createTimelineMutation.isPending || !noteText.trim()}
+              onClick={() => createTimelineMutation.mutate(noteText.trim())}
+            >
+              {createTimelineMutation.isPending ? "Saving..." : "Save to timeline"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <h3 className="text-sm font-semibold text-foreground">Send Role Message</h3>
+            <div className="space-y-2">
+              <Label htmlFor="observer-message-subject">Subject</Label>
+              <Input
+                id="observer-message-subject"
+                value={messageSubject}
+                onChange={(event) => setMessageSubject(event.target.value)}
+                placeholder="Patient update"
+              />
+            </div>
+            <Textarea
+              value={messageText}
+              onChange={(event) => setMessageText(event.target.value)}
+              rows={4}
+              placeholder="Send update to head nurse"
+            />
+            <Button
+              type="button"
+              disabled={sendMessageMutation.isPending || !messageText.trim()}
+              onClick={() =>
+                sendMessageMutation.mutate({
+                  subject: messageSubject.trim() || "Patient update",
+                  body: messageText.trim(),
+                })
+              }
+            >
+              {sendMessageMutation.isPending ? "Sending..." : "Send message"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <h3 className="text-sm font-semibold text-foreground">Submit Handover</h3>
+            <Textarea
+              value={handoverText}
+              onChange={(event) => setHandoverText(event.target.value)}
+              rows={4}
+              placeholder="Record concise handover for next shift"
+            />
+            <Button
+              type="button"
+              disabled={createHandoverMutation.isPending || !handoverText.trim()}
+              onClick={() => createHandoverMutation.mutate(handoverText.trim())}
+            >
+              {createHandoverMutation.isPending ? "Submitting..." : "Add handover"}
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+
+      <DataTableCard
+        title="Recent Vitals"
+        description="Latest patient vitals records."
+        data={vitalsRows}
+        columns={vitalsColumns}
+        isLoading={isLoadingAny}
+        emptyText="No vitals captured for this patient."
+      />
+
+      <DataTableCard
+        title="Task Workflow"
+        description="Patient-linked tasks with inline status actions."
+        data={taskRows}
+        columns={taskColumns}
+        isLoading={isLoadingAny}
+        emptyText="No tasks assigned to this patient."
+        rightSlot={<Activity className="h-4 w-4 text-muted-foreground" />}
+      />
+
+      <DataTableCard
+        title="Timeline"
+        description="Recent timeline events and observer notes."
+        data={timelineRows}
+        columns={timelineColumns}
+        isLoading={isLoadingAny}
+        emptyText="No timeline events recorded yet."
+      />
+
+      <DataTableCard
+        title="Workflow Messages"
+        description="Messages linked to this patient case."
+        data={messageRows}
+        columns={messagesColumns}
+        isLoading={isLoadingAny}
+        emptyText="No messages for this patient yet."
+      />
+
+      <DataTableCard
+        title="Handover Notes"
+        description="Shift handover notes for this patient."
+        data={handoverRows}
+        columns={handoversColumns}
+        isLoading={isLoadingAny}
+        emptyText="No handover notes submitted yet."
+        rightSlot={<NotebookPen className="h-4 w-4 text-muted-foreground" />}
+      />
+    </div>
+  );
 }

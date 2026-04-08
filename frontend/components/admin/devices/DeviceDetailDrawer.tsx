@@ -1,437 +1,704 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@/hooks/useQuery";
-import { api } from "@/lib/api";
-import { withWorkspaceScope } from "@/lib/workspaceQuery";
-import type { TranslationKey } from "@/lib/i18n";
-import type { DeviceAssignment, DeviceDetail, HardwareType } from "@/lib/types";
+import { useEffect, useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Camera, Clock3, Link2, Link2Off, Loader2, MapPin, RefreshCw, UserRound } from "lucide-react";
+import { z } from "zod";
+import { api, ApiError } from "@/lib/api";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { isDeviceOnline } from "@/lib/deviceOnline";
+import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+import type {
+  DeviceActivityEventOut,
+  ListPatientsResponse,
+} from "@/lib/api/task-scope-types";
+import type { TranslationKey } from "@/lib/i18n";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import {
-  X,
-  Camera,
-  Radio,
-  Save,
-  RefreshCw,
-  User,
-  Smartphone,
-  HeartPulse,
-} from "lucide-react";
-import PatientLinkSection from "@/components/admin/devices/PatientLinkSection";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
+const EMPTY_SELECT_VALUE = "__empty__";
+
+const hardwareTypeSchema = z.enum(["node", "wheelchair", "mobile_phone", "polar_sense"]);
+
+type HardwareType = z.infer<typeof hardwareTypeSchema>;
 
 type TFn = (key: TranslationKey) => string;
 
+const roomOptionSchema = z
+  .object({
+    id: z.number(),
+    name: z.string(),
+    floor_name: z.string().nullish(),
+    node_device_id: z.string().nullish(),
+  })
+  .passthrough();
+
+type RoomOption = z.infer<typeof roomOptionSchema>;
+
+const deviceDetailSchema = z
+  .object({
+    id: z.number().optional(),
+    device_id: z.string(),
+    device_type: z.string().nullish(),
+    hardware_type: z.string().nullish(),
+    display_name: z.string().nullish(),
+    firmware: z.string().nullish(),
+    last_seen: z.string().nullable().optional(),
+    patient: z
+      .object({
+        patient_id: z.number(),
+        patient_name: z.string().nullish(),
+        device_role: z.string().nullish(),
+        assigned_at: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    location: z
+      .object({
+        room_id: z.number().nullable().optional(),
+        room_name: z.string().nullish(),
+        predicted_room_name: z.string().nullish(),
+        prediction_confidence: z.number().nullable().optional(),
+        prediction_at: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    realtime: z
+      .object({
+        timestamp: z.string().nullable().optional(),
+        battery_pct: z.number().nullable().optional(),
+        battery_v: z.number().nullable().optional(),
+        velocity_ms: z.number().nullable().optional(),
+        distance_m: z.number().nullable().optional(),
+        accel_ms2: z.number().nullable().optional(),
+      })
+      .optional(),
+    latest_photo: z
+      .object({
+        url: z.string(),
+        timestamp: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+
+const patientAssignmentSchema = z.object({
+  patientId: z.string().refine((value) => value !== EMPTY_SELECT_VALUE, {
+    message: "Select a patient",
+  }),
+});
+
+type PatientAssignmentValues = z.infer<typeof patientAssignmentSchema>;
+
+const roomAssignmentSchema = z.object({
+  roomId: z.string().refine((value) => value !== EMPTY_SELECT_VALUE, {
+    message: "Select a room",
+  }),
+});
+
+type RoomAssignmentValues = z.infer<typeof roomAssignmentSchema>;
+
 export interface DeviceDetailDrawerProps {
   deviceId: string | null;
-  workspaceId: number | undefined;
   onClose: () => void;
   t: TFn;
   onMutate: () => void;
 }
 
-export default function DeviceDetailDrawer({
-  deviceId,
-  workspaceId,
-  onClose,
-  t,
-  onMutate,
-}: DeviceDetailDrawerProps) {
-  const detailPath = deviceId
-    ? withWorkspaceScope(
-        `/devices/${encodeURIComponent(deviceId)}`,
-        workspaceId,
-      )
-    : null;
-  const { data: detail, isLoading, error, refetch } = useQuery<DeviceDetail>(
-    detailPath,
-  );
+function resolveHardwareType(raw: string | null | undefined): HardwareType {
+  const parsed = hardwareTypeSchema.safeParse(raw);
+  return parsed.success ? parsed.data : "wheelchair";
+}
 
-  const [displayName, setDisplayName] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [actionMsg, setActionMsg] = useState<string | null>(null);
-  const [actionErr, setActionErr] = useState<string | null>(null);
+function defaultDeviceRole(hardwareType: HardwareType): string {
+  if (hardwareType === "polar_sense") return "polar_hr";
+  if (hardwareType === "mobile_phone") return "mobile";
+  return "wheelchair_sensor";
+}
+
+function mapApiError(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Unexpected error";
+}
+
+function roomLabel(room: RoomOption): string {
+  return room.floor_name ? `${room.name} - ${room.floor_name}` : room.name;
+}
+
+function EventItem({ event }: { event: DeviceActivityEventOut }) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">{event.summary}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{event.event_type}</p>
+        </div>
+        <p className="text-xs text-muted-foreground">{formatRelativeTime(event.occurred_at)}</p>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{formatDateTime(event.occurred_at)}</p>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
+    </div>
+  );
+}
+
+export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: DeviceDetailDrawerProps) {
+  const queryClient = useQueryClient();
+  const nowMs = useFixedNowMs();
+  const [feedback, setFeedback] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+
+  const deviceQuery = useQuery({
+    queryKey: ["device-detail-drawer", "detail", deviceId],
+    enabled: Boolean(deviceId),
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const raw = await api.getDeviceDetailRaw(deviceId as string);
+      return deviceDetailSchema.parse(raw);
+    },
+  });
+
+  const detail = deviceQuery.data ?? null;
+  const hardwareType = resolveHardwareType(detail?.hardware_type);
+  const isNodeDevice = hardwareType === "node";
+  const isPatientAssignable =
+    hardwareType === "wheelchair" || hardwareType === "mobile_phone" || hardwareType === "polar_sense";
+
+  const activityQuery = useQuery({
+    queryKey: ["device-detail-drawer", "activity", deviceId],
+    enabled: Boolean(deviceId),
+    queryFn: async () => {
+      const rows = await api.listDeviceActivity(80);
+      return rows.filter((row) => row.registry_device_id === deviceId).slice(0, 20);
+    },
+  });
+
+  const patientsQuery = useQuery({
+    queryKey: ["device-detail-drawer", "patients"],
+    enabled: Boolean(deviceId) && isPatientAssignable,
+    queryFn: () => api.listPatients({ is_active: true, limit: 200 }),
+  });
+
+  const roomsQuery = useQuery({
+    queryKey: ["device-detail-drawer", "rooms"],
+    enabled: Boolean(deviceId) && isNodeDevice,
+    queryFn: async () => {
+      const raw = await api.listRooms();
+      if (!Array.isArray(raw)) return [] as RoomOption[];
+      return raw
+        .map((item) => roomOptionSchema.safeParse(item))
+        .filter((item) => item.success)
+        .map((item) => item.data)
+        .sort((left, right) => left.name.localeCompare(right.name));
+    },
+  });
+
+  const patientForm = useForm<PatientAssignmentValues>({
+    resolver: zodResolver(patientAssignmentSchema),
+    defaultValues: {
+      patientId: EMPTY_SELECT_VALUE,
+    },
+  });
+
+  const roomForm = useForm<RoomAssignmentValues>({
+    resolver: zodResolver(roomAssignmentSchema),
+    defaultValues: {
+      roomId: EMPTY_SELECT_VALUE,
+    },
+  });
+
+  const patientOptions = useMemo(() => {
+    const rows = (patientsQuery.data ?? []) as ListPatientsResponse;
+    return rows
+      .map((row) => ({
+        id: row.id,
+        name: `${row.first_name} ${row.last_name}`.trim() || `Patient #${row.id}`,
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }, [patientsQuery.data]);
+
+  const currentRoom = useMemo(() => {
+    const rooms = roomsQuery.data ?? [];
+    if (!detail) return null;
+
+    const byNode = rooms.find((room) => room.node_device_id === detail.device_id);
+    if (byNode) return byNode;
+
+    const detailRoomId = detail.location?.room_id;
+    if (typeof detailRoomId === "number") {
+      return rooms.find((room) => room.id === detailRoomId) ?? null;
+    }
+
+    return null;
+  }, [detail, roomsQuery.data]);
 
   useEffect(() => {
     if (!detail) return;
-    setDisplayName(detail.display_name || "");
-  }, [detail]);
 
-  const patientAssignmentsEndpoint =
-    detail?.hardware_type === "mobile_phone" && detail?.patient?.patient_id
-      ? withWorkspaceScope(
-          `/patients/${detail.patient.patient_id}/devices`,
-          workspaceId,
-        )
-      : null;
-  const { data: patientAssignments } = useQuery<DeviceAssignment[]>(
-    patientAssignmentsEndpoint,
-  );
+    patientForm.reset({
+      patientId: detail.patient?.patient_id ? String(detail.patient.patient_id) : EMPTY_SELECT_VALUE,
+    });
 
-  const linkedPolar = useMemo(() => {
-    const rows = patientAssignments ?? [];
-    return rows.find((r) => r.device_role === "polar_hr" && r.is_active);
-  }, [patientAssignments]);
+    roomForm.reset({
+      roomId: currentRoom ? String(currentRoom.id) : EMPTY_SELECT_VALUE,
+    });
+  }, [currentRoom, detail, patientForm, roomForm]);
 
-  const doSave = useCallback(async () => {
-    if (!deviceId || workspaceId == null) return;
-    setSaving(true);
-    setActionErr(null);
-    setActionMsg(null);
-    try {
-      const path = withWorkspaceScope(
-        `/devices/${encodeURIComponent(deviceId)}`,
-        workspaceId,
-      );
-      if (!path) return;
-      await api.patch(path, {
-        display_name: displayName,
+  const refreshAfterMutation = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["api"] }),
+      queryClient.invalidateQueries({ queryKey: ["device-detail-drawer"] }),
+    ]);
+    onMutate();
+  };
+
+  const assignPatientMutation = useMutation({
+    mutationFn: async (form: PatientAssignmentValues) => {
+      if (!detail) throw new Error("Device detail unavailable");
+      const patientId = Number(form.patientId);
+      await api.assignPatientFromDevice(detail.device_id, {
+        patient_id: patientId,
+        device_role: detail.patient?.device_role ?? defaultDeviceRole(hardwareType),
       });
-      setActionMsg(t("devicesDetail.saved"));
-      await refetch();
-      onMutate();
-    } catch (e: unknown) {
-      setActionErr(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSaving(false);
-    }
-  }, [
-    deviceId,
-    workspaceId,
-    displayName,
-    refetch,
-    onMutate,
-    t,
-  ]);
+    },
+    onSuccess: async () => {
+      setFeedback({ tone: "success", text: "Patient assignment updated." });
+      await refreshAfterMutation();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
 
-  const cameraCheck = useCallback(async () => {
-    if (!deviceId || workspaceId == null) return;
-    setActionErr(null);
-    setActionMsg(null);
-    try {
-      const path = withWorkspaceScope(
-        `/devices/${encodeURIComponent(deviceId)}/camera/check`,
-        workspaceId,
-      );
-      if (!path) return;
-      await api.post(path);
-      setActionMsg(t("devicesDetail.cameraCheckSent"));
-      setTimeout(() => void refetch(), 2500);
-    } catch (e: unknown) {
-      setActionErr(e instanceof Error ? e.message : String(e));
-    }
-  }, [deviceId, workspaceId, refetch, t]);
+  const unlinkPatientMutation = useMutation({
+    mutationFn: async () => {
+      if (!detail) throw new Error("Device detail unavailable");
+      await api.assignPatientFromDevice(detail.device_id, {
+        patient_id: null,
+        device_role: detail.patient?.device_role ?? defaultDeviceRole(hardwareType),
+      });
+    },
+    onSuccess: async () => {
+      setFeedback({ tone: "success", text: "Patient unlinked." });
+      await refreshAfterMutation();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
+
+  const assignRoomMutation = useMutation({
+    mutationFn: async (form: RoomAssignmentValues) => {
+      if (!detail) throw new Error("Device detail unavailable");
+      const nextRoomId = Number(form.roomId);
+      const currentRoomId = currentRoom?.id ?? detail.location?.room_id ?? null;
+
+      if (typeof currentRoomId === "number" && currentRoomId !== nextRoomId) {
+        await api.patchRoom(currentRoomId, { node_device_id: null });
+      }
+
+      await api.patchRoom(nextRoomId, { node_device_id: detail.device_id });
+    },
+    onSuccess: async () => {
+      setFeedback({ tone: "success", text: "Room assignment updated." });
+      await refreshAfterMutation();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
+
+  const unlinkRoomMutation = useMutation({
+    mutationFn: async () => {
+      if (!detail) throw new Error("Device detail unavailable");
+      const currentRoomId = currentRoom?.id ?? detail.location?.room_id ?? null;
+      if (typeof currentRoomId !== "number") return;
+      await api.patchRoom(currentRoomId, { node_device_id: null });
+    },
+    onSuccess: async () => {
+      setFeedback({ tone: "success", text: "Room unlinked." });
+      await refreshAfterMutation();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
+
+  const snapshotMutation = useMutation({
+    mutationFn: async () => {
+      if (!detail) throw new Error("Device detail unavailable");
+      await api.cameraCheckSnapshot(detail.device_id);
+    },
+    onSuccess: async () => {
+      setFeedback({ tone: "success", text: t("devicesDetail.cameraCheckSent") });
+      await refreshAfterMutation();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
+
+  const busy =
+    assignPatientMutation.isPending ||
+    unlinkPatientMutation.isPending ||
+    assignRoomMutation.isPending ||
+    unlinkRoomMutation.isPending ||
+    snapshotMutation.isPending;
+
+  const online = detail ? isDeviceOnline(detail.last_seen ?? null, nowMs) : false;
 
   if (!deviceId) return null;
 
-  const nowMs = Date.now();
-  const online = detail ? isDeviceOnline(detail.last_seen, nowMs) : false;
-  const hw = (detail?.hardware_type || "wheelchair") as HardwareType;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/40"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="device-detail-title"
-    >
-      <button
-        type="button"
-        className="flex-1 h-full cursor-default border-0 bg-transparent"
-        aria-label="Close"
-        onClick={onClose}
-      />
-      <aside className="surface-card h-full w-full max-w-md overflow-y-auto border-l border-outline-variant/30 shadow-xl animate-fade-in">
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-outline-variant/25 bg-surface-container-low px-4 py-3">
-          <h3
-            id="device-detail-title"
-            className="text-lg font-semibold text-on-surface truncate"
-          >
-            {detail?.display_name?.trim() || detail?.device_id || deviceId}
-          </h3>
-          <button
-            type="button"
-            className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant"
-            onClick={onClose}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Sheet open={Boolean(deviceId)} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="p-0">
+        <div className="flex h-full flex-col">
+          <SheetHeader>
+            <SheetTitle>{detail?.display_name?.trim() || detail?.device_id || deviceId}</SheetTitle>
+            <SheetDescription>
+              Device assignment and recent IoT activity.
+            </SheetDescription>
+          </SheetHeader>
 
-        <div className="p-4 space-y-5">
-          {isLoading && (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-          {error && (
-            <p className="text-sm text-error">
-              {error instanceof Error ? error.message : String(error)}
-            </p>
-          )}
-          {detail && !isLoading && (
-            <>
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    online ? "care-normal" : "severity-warning"
-                  }`}
-                >
-                  {online ? t("devices.online") : t("devices.offline")}
-                </span>
-                <span className="text-xs text-on-surface-variant font-mono">
-                  {detail.device_id}
-                </span>
+          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+            {deviceQuery.isLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-              <p className="text-xs text-on-surface-variant">
-                {t("devicesDetail.hardware")}:{" "}
-                <span className="font-medium text-on-surface">{hw}</span>
-                {" · "}
-                {t("devicesDetail.legacyType")}: {detail.device_type}
-              </p>
+            ) : null}
 
-              <section className="space-y-2">
-                <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  {t("devicesDetail.identity")}
-                </h4>
-                <label className="text-xs text-on-surface-variant block">
-                  {t("devicesDetail.displayName")}
-                </label>
-                <input
-                  className="input-field text-sm w-full"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    disabled={saving}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold gradient-cta disabled:opacity-50"
-                    onClick={() => void doSave()}
-                  >
-                    <Save className="w-4 h-4" />
-                    {t("devicesDetail.save")}
-                  </button>
+            {deviceQuery.error ? (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {mapApiError(deviceQuery.error)}
+              </div>
+            ) : null}
+
+            {detail ? (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={online ? "success" : "warning"}>
+                    {online ? t("devices.online") : t("devices.offline")}
+                  </Badge>
+                  <Badge variant="outline">{detail.device_id}</Badge>
+                  <Badge variant="outline">{hardwareType}</Badge>
                 </div>
-              </section>
 
-              <section className="space-y-2">
-                <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                  <Radio className="w-4 h-4" />
-                  {t("devicesDetail.realtime")}
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-on-surface-variant">
-                      {t("devicesDetail.battery")}
-                    </span>
-                    <p className="font-medium text-on-surface">
-                      {detail.realtime?.battery_pct != null
-                        ? `${detail.realtime.battery_pct}%`
-                        : "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-on-surface-variant">
-                      {t("devices.lastSeen")}
-                    </span>
-                    <p className="font-medium text-on-surface text-[11px]">
-                      {detail.last_seen
-                        ? new Date(detail.last_seen).toLocaleString()
-                        : "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-on-surface-variant">V</span>
-                    <p className="font-medium text-on-surface">
-                      {detail.realtime?.velocity_ms != null
-                        ? `${detail.realtime.velocity_ms.toFixed(2)} m/s`
-                        : "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-on-surface-variant">d</span>
-                    <p className="font-medium text-on-surface">
-                      {detail.realtime?.distance_m != null
-                        ? `${detail.realtime.distance_m.toFixed(2)} m`
-                        : "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-on-surface-variant">accel</span>
-                    <p className="font-medium text-on-surface">
-                      {detail.realtime?.accel_ms2 != null
-                        ? `${detail.realtime.accel_ms2.toFixed(2)} m/s²`
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-                {(hw === "wheelchair" || hw === "mobile_phone") && (
-                  <div className="grid grid-cols-3 gap-2 text-[11px] text-on-surface-variant">
-                    <div>
-                      IMU ax/ay/az:
-                      <p className="text-on-surface">
-                        {detail.realtime?.ax ?? "—"} / {detail.realtime?.ay ?? "—"} /{" "}
-                        {detail.realtime?.az ?? "—"}
-                      </p>
-                    </div>
-                    <div>
-                      IMU gx/gy/gz:
-                      <p className="text-on-surface">
-                        {detail.realtime?.gx ?? "—"} / {detail.realtime?.gy ?? "—"} /{" "}
-                        {detail.realtime?.gz ?? "—"}
-                      </p>
-                    </div>
-                    <div>
-                      {t("devicesDetail.battery")}:
-                      <p className="text-on-surface">
-                        {detail.realtime?.battery_v != null
-                          ? `${detail.realtime.battery_v.toFixed(2)}V`
-                          : "—"}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </section>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">{t("devicesDetail.identity")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 sm:grid-cols-2">
+                    <Metric
+                      label={t("devicesDetail.displayName")}
+                      value={detail.display_name?.trim() || detail.device_id}
+                    />
+                    <Metric label={t("devicesDetail.hardware")} value={hardwareType} />
+                    <Metric
+                      label={t("devices.lastSeen")}
+                      value={detail.last_seen ? formatDateTime(detail.last_seen) : "-"}
+                    />
+                    <Metric
+                      label="Relative"
+                      value={detail.last_seen ? formatRelativeTime(detail.last_seen) : "-"}
+                    />
+                  </CardContent>
+                </Card>
 
-              {(hw === "wheelchair" || hw === "polar_sense" || hw === "mobile_phone") && (
-                <PatientLinkSection
-                  deviceId={detail.device_id}
-                  workspaceId={workspaceId}
-                  linkedPatient={detail.patient}
-                  defaultDeviceRole={
-                    hw === "polar_sense"
-                      ? "polar_hr"
-                      : hw === "mobile_phone"
-                        ? "mobile"
-                        : "wheelchair_sensor"
-                  }
-                  t={t}
-                  onMutate={async () => {
-                    await refetch();
-                    onMutate();
-                  }}
-                />
-              )}
-
-              {hw === "polar_sense" && (
-                <section className="space-y-2 rounded-xl border border-outline-variant/20 p-3">
-                  <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                    <HeartPulse className="w-4 h-4" />
-                    Polar BLE
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-on-surface-variant">Battery (0x180F)</span>
-                      <p className="font-medium text-on-surface">
-                        {detail.polar_vitals?.sensor_battery != null
-                          ? `${detail.polar_vitals.sensor_battery}%`
-                          : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-on-surface-variant">Heart rate (0x180D)</span>
-                      <p className="font-medium text-on-surface">
-                        {detail.polar_vitals?.heart_rate_bpm != null
-                          ? `${detail.polar_vitals.heart_rate_bpm} bpm`
-                          : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-on-surface-variant">RR interval</span>
-                      <p className="font-medium text-on-surface">
-                        {detail.polar_vitals?.rr_interval_ms != null
-                          ? `${detail.polar_vitals.rr_interval_ms} ms`
-                          : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-on-surface-variant">Last reading</span>
-                      <p className="font-medium text-on-surface">
-                        {detail.polar_vitals?.timestamp
-                          ? new Date(detail.polar_vitals.timestamp).toLocaleString()
-                          : "—"}
-                      </p>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {hw === "mobile_phone" && (
-                <section className="space-y-2 rounded-xl border border-outline-variant/20 p-3">
-                  <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                    <Smartphone className="w-4 h-4" />
-                    {t("devicesDetail.mobileWalk")}
-                  </h4>
-                  <p className="text-xs text-on-surface-variant">
-                    {t("devicesDetail.mobileWalkHint")}
-                  </p>
-                  <p className="text-sm text-on-surface">
-                    {detail.realtime?.velocity_ms != null
-                      ? `${detail.realtime.velocity_ms.toFixed(2)} m/s · ${detail.realtime.distance_m?.toFixed(2) ?? "0.00"} m`
-                      : "—"}
-                  </p>
-                  <p className="text-xs text-on-surface-variant">
-                    {t("devicesDetail.linkedPolar")}:{" "}
-                    <span className="text-on-surface">
-                      {linkedPolar?.device_id ?? "—"}
-                    </span>
-                  </p>
-                </section>
-              )}
-
-              {hw === "node" && (
-                <section className="space-y-2 rounded-xl border border-outline-variant/20 p-3">
-                  <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    {t("devicesDetail.camera")}
-                  </h4>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border border-primary/40 text-primary"
-                    onClick={() => void cameraCheck()}
-                  >
-                    <Camera className="w-4 h-4" />
-                    {t("devicesDetail.cameraCheck")}
-                  </button>
-                  {detail.latest_photo?.url && (
-                    <div className="mt-2 space-y-1">
-                      <p className="text-xs text-on-surface-variant">
-                        {t("devicesDetail.latestSnapshot")}
-                      </p>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={detail.latest_photo.url}
-                        alt="Camera snapshot"
-                        className="w-full rounded-lg border border-outline-variant/30 max-h-48 object-contain bg-black/20"
+                {detail.realtime ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">{t("devicesDetail.realtime")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 sm:grid-cols-2">
+                      <Metric
+                        label={t("devicesDetail.battery")}
+                        value={
+                          detail.realtime.battery_pct != null
+                            ? `${detail.realtime.battery_pct}%`
+                            : "-"
+                        }
                       />
-                    </div>
-                  )}
-                </section>
-              )}
+                      <Metric
+                        label="Voltage"
+                        value={
+                          detail.realtime.battery_v != null
+                            ? `${detail.realtime.battery_v.toFixed(2)} V`
+                            : "-"
+                        }
+                      />
+                      <Metric
+                        label="Velocity"
+                        value={
+                          detail.realtime.velocity_ms != null
+                            ? `${detail.realtime.velocity_ms.toFixed(2)} m/s`
+                            : "-"
+                        }
+                      />
+                      <Metric
+                        label="Distance"
+                        value={
+                          detail.realtime.distance_m != null
+                            ? `${detail.realtime.distance_m.toFixed(2)} m`
+                            : "-"
+                        }
+                      />
+                    </CardContent>
+                  </Card>
+                ) : null}
 
-              {(actionMsg || actionErr) && (
-                <p
-                  className={`text-sm ${actionErr ? "text-error" : "text-primary"}`}
-                >
-                  {actionErr || actionMsg}
-                </p>
-              )}
+                {isNodeDevice ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <MapPin className="h-4 w-4" />
+                        Room Assignment
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Current room: {currentRoom ? roomLabel(currentRoom) : t("devicesDetail.noRoom")}
+                      </p>
 
-              <div className="pt-2">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 bg-surface-container-low"
-                  onClick={() => void refetch()}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  {t("devicesDetail.refresh")}
-                </button>
-              </div>
-            </>
-          )}
+                      <form
+                        className="space-y-2"
+                        onSubmit={roomForm.handleSubmit((values) => assignRoomMutation.mutate(values))}
+                      >
+                        <Label>{t("devicesDetail.selectRoom")}</Label>
+                        <Controller
+                          control={roomForm.control}
+                          name="roomId"
+                          render={({ field }) => (
+                            <Select
+                              value={field.value || EMPTY_SELECT_VALUE}
+                              onValueChange={field.onChange}
+                              disabled={busy || roomsQuery.isLoading}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={t("devicesDetail.selectRoom")} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={EMPTY_SELECT_VALUE}>Select room</SelectItem>
+                                {(roomsQuery.data ?? []).map((room) => (
+                                  <SelectItem key={room.id} value={String(room.id)}>
+                                    {roomLabel(room)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {roomForm.formState.errors.roomId ? (
+                          <p className="text-xs text-destructive">{roomForm.formState.errors.roomId.message}</p>
+                        ) : null}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <Button type="submit" disabled={busy}>
+                            {assignRoomMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Link2 className="h-4 w-4" />
+                            )}
+                            Link room
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={busy || !currentRoom}
+                            onClick={() => unlinkRoomMutation.mutate()}
+                          >
+                            {unlinkRoomMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Link2Off className="h-4 w-4" />
+                            )}
+                            Unlink room
+                          </Button>
+                        </div>
+                      </form>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => snapshotMutation.mutate()}
+                      >
+                        {snapshotMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Camera className="h-4 w-4" />
+                        )}
+                        Capture Snapshot
+                      </Button>
+
+                      {detail.latest_photo?.url ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">{t("devicesDetail.latestSnapshot")}</p>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={detail.latest_photo.url}
+                            alt="Latest camera snapshot"
+                            className="w-full rounded-xl border border-border object-contain"
+                          />
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                {isPatientAssignable ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <UserRound className="h-4 w-4" />
+                        Patient Assignment
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        {detail.patient
+                          ? `${detail.patient.patient_name || `Patient #${detail.patient.patient_id}`} (${detail.patient.device_role || defaultDeviceRole(hardwareType)})`
+                          : t("devicesDetail.noPatient")}
+                      </p>
+
+                      <form
+                        className="space-y-2"
+                        onSubmit={patientForm.handleSubmit((values) => assignPatientMutation.mutate(values))}
+                      >
+                        <Label>{t("devicesDetail.selectPatient")}</Label>
+                        <Controller
+                          control={patientForm.control}
+                          name="patientId"
+                          render={({ field }) => (
+                            <Select
+                              value={field.value || EMPTY_SELECT_VALUE}
+                              onValueChange={field.onChange}
+                              disabled={busy || patientsQuery.isLoading}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={t("devicesDetail.selectPatient")} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={EMPTY_SELECT_VALUE}>Select patient</SelectItem>
+                                {patientOptions.map((patient) => (
+                                  <SelectItem key={patient.id} value={String(patient.id)}>
+                                    {patient.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {patientForm.formState.errors.patientId ? (
+                          <p className="text-xs text-destructive">{patientForm.formState.errors.patientId.message}</p>
+                        ) : null}
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <Button type="submit" disabled={busy}>
+                            {assignPatientMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Link2 className="h-4 w-4" />
+                            )}
+                            Link patient
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={busy || !detail.patient}
+                            onClick={() => unlinkPatientMutation.mutate()}
+                          >
+                            {unlinkPatientMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Link2Off className="h-4 w-4" />
+                            )}
+                            Unlink patient
+                          </Button>
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Clock3 className="h-4 w-4" />
+                      Activity Log
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {activityQuery.isLoading ? (
+                      <div className="flex justify-center py-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : null}
+
+                    {!activityQuery.isLoading && (activityQuery.data?.length ?? 0) === 0 ? (
+                      <p className="text-sm text-muted-foreground">No recent activity for this device.</p>
+                    ) : null}
+
+                    {(activityQuery.data ?? []).map((event) => (
+                      <EventItem key={event.id} event={event} />
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {feedback ? (
+                  <div
+                    className={`rounded-xl border px-4 py-3 text-sm ${
+                      feedback.tone === "error"
+                        ? "border-destructive/40 bg-destructive/10 text-destructive"
+                        : "border-emerald-300/50 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+                    }`}
+                  >
+                    {feedback.text}
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+
+          <div className="border-t px-6 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deviceQuery.isFetching || activityQuery.isFetching || busy}
+              onClick={() => {
+                void deviceQuery.refetch();
+                void activityQuery.refetch();
+              }}
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t("devicesDetail.refresh")}
+            </Button>
+          </div>
         </div>
-      </aside>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

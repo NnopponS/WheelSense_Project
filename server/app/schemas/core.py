@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict
 from typing import Dict, List
-
 
 class WorkspaceCreate(BaseModel):
     name: str
     mode: str = "simulation"
-
 
 class WorkspaceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -21,7 +21,6 @@ class RoomCreate(BaseModel):
     room_type: str | None = None
     node_device_id: str | None = None
 
-
 class RoomUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
@@ -30,7 +29,6 @@ class RoomUpdate(BaseModel):
     node_device_id: str | None = None
     adjacent_rooms: List[int] | None = None
     config: Dict[str, object] | None = None
-
 
 class TrainingDataItem(BaseModel):
     room_id: int

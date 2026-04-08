@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Pydantic schemas for Patient, PatientDeviceAssignment, PatientContact."""
 
 from datetime import date, datetime
@@ -28,7 +30,6 @@ class PatientCreate(BaseModel):
     notes: str = ""
     room_id: int | None = None
 
-
 class PatientUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
@@ -47,7 +48,6 @@ class PatientUpdate(BaseModel):
     past_surgeries: list[dict[str, Any]] | None = None
     room_id: int | None = None
     is_active: bool | None = None
-
 
 class PatientOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -74,17 +74,14 @@ class PatientOut(BaseModel):
     room_id: int | None
     created_at: datetime
 
-
 class ModeSwitchRequest(BaseModel):
     mode: str  # "wheelchair" | "walking"
-
 
 # ── Device Assignment ─────────────────────────────────────────────────────────
 
 class DeviceAssignmentCreate(BaseModel):
     device_id: str
     device_role: str  # wheelchair_sensor | polar_hr | mobile
-
 
 class DeviceAssignmentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -94,7 +91,6 @@ class DeviceAssignmentOut(BaseModel):
     device_role: str
     assigned_at: datetime
     is_active: bool
-
 
 # ── Patient Contact ───────────────────────────────────────────────────────────
 
@@ -107,7 +103,6 @@ class PatientContactCreate(BaseModel):
     is_primary: bool = False
     notes: str = ""
 
-
 class PatientContactUpdate(BaseModel):
     contact_type: str | None = None
     name: str | None = None
@@ -116,7 +111,6 @@ class PatientContactUpdate(BaseModel):
     email: str | None = None
     is_primary: bool | None = None
     notes: str | None = None
-
 
 class PatientContactOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

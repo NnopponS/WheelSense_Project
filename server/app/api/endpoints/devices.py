@@ -1,8 +1,10 @@
-from typing import Any, Optional
+from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from typing import Any, Optional
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from fastapi import APIRouter, Depends
 
 from app.api.dependencies import (
     ROLE_PATIENT_MANAGERS,
@@ -26,7 +28,6 @@ from app.services.device_management import NON_PUBLIC_DEVICE_CONFIG_KEYS
 
 router = APIRouter()
 
-
 def _sanitize_activity_details(payload: dict[str, Any]) -> dict[str, Any]:
     """Remove secrets and network-provisioning keys before persisting activity log details."""
     details = dict(payload)
@@ -38,7 +39,6 @@ def _sanitize_activity_details(payload: dict[str, Any]) -> dict[str, Any]:
         details["config"] = safe_cfg
     return details
 
-
 @router.get("/activity", response_model=list[DeviceActivityEventOut])
 async def list_device_activity(
     limit: int = 30,
@@ -48,7 +48,6 @@ async def list_device_activity(
 ):
     rows = await device_activity_service.list_recent(db, ws.id, limit=limit)
     return rows
-
 
 @router.get("")
 async def list_devices(
@@ -65,7 +64,6 @@ async def list_devices(
     result = await db.execute(query)
     devices = result.scalars().all()
     return [dm.device_summary_dict(d) for d in devices]
-
 
 @router.get("/{device_id}/commands")
 async def list_device_commands(
@@ -100,7 +98,6 @@ async def list_device_commands(
         for r in rows
     ]
 
-
 @router.get("/{device_id}")
 async def get_device_detail(
     device_id: str,
@@ -108,7 +105,6 @@ async def get_device_detail(
     ws: Workspace = Depends(get_current_user_workspace),
 ):
     return await dm.build_device_detail(db, ws.id, device_id)
-
 
 @router.post("/{device_id}/patient")
 async def assign_patient_from_device(
@@ -150,7 +146,6 @@ async def assign_patient_from_device(
         "assigned_at": row.assigned_at.isoformat() if row.assigned_at else None,
     }
 
-
 @router.post("")
 async def create_device(
     body: DeviceCreate,
@@ -167,7 +162,6 @@ async def create_device(
         details={"hardware_type": dev.hardware_type, "display_name": dev.display_name},
     )
     return {"id": dev.id, "device_id": dev.device_id, "hardware_type": dev.hardware_type}
-
 
 @router.patch("/{device_id}")
 async def patch_device(
@@ -186,7 +180,6 @@ async def patch_device(
         details=_sanitize_activity_details(body.model_dump(exclude_unset=True)),
     )
     return dm.device_summary_dict(dev)
-
 
 @router.post("/{device_id}/commands", response_model=DeviceCommandOut)
 async def send_device_command(
@@ -211,7 +204,6 @@ async def send_device_command(
         dispatched_at=row.dispatched_at,
     )
 
-
 @router.post("/{device_id}/camera/check")
 async def camera_check(
     device_id: str,
@@ -228,7 +220,6 @@ async def camera_check(
         details={"command_id": result.get("command_id"), "topic": result.get("topic")},
     )
     return result
-
 
 @router.post("/cameras/{device_id}/command")
 async def send_camera_command(
@@ -257,3 +248,4 @@ async def send_camera_command(
         "topic": row.topic,
         "command_id": row.id,
     }
+

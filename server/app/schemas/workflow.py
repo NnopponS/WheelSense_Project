@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """Schemas for workflow domains in Phase 12R Wave P1."""
 
 from datetime import date, datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, model_validator
-
 
 class CareScheduleCreate(BaseModel):
     patient_id: Optional[int] = None
@@ -18,7 +19,6 @@ class CareScheduleCreate(BaseModel):
     assigned_user_id: Optional[int] = None
     notes: str = ""
 
-
 class CareScheduleUpdate(BaseModel):
     title: Optional[str] = None
     schedule_type: Optional[str] = None
@@ -29,7 +29,6 @@ class CareScheduleUpdate(BaseModel):
     assigned_user_id: Optional[int] = None
     notes: Optional[str] = None
     status: Optional[str] = None
-
 
 class CareScheduleOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -50,7 +49,6 @@ class CareScheduleOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-
 class CareTaskCreate(BaseModel):
     schedule_id: Optional[int] = None
     patient_id: Optional[int] = None
@@ -61,7 +59,6 @@ class CareTaskCreate(BaseModel):
     assigned_role: Optional[str] = None
     assigned_user_id: Optional[int] = None
 
-
 class CareTaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
@@ -70,7 +67,6 @@ class CareTaskUpdate(BaseModel):
     status: Optional[str] = None
     assigned_role: Optional[str] = None
     assigned_user_id: Optional[int] = None
-
 
 class CareTaskOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -90,7 +86,6 @@ class CareTaskOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-
 class RoleMessageCreate(BaseModel):
     recipient_role: Optional[str] = None
     recipient_user_id: Optional[int] = None
@@ -103,7 +98,6 @@ class RoleMessageCreate(BaseModel):
         if self.recipient_role is None and self.recipient_user_id is None:
             raise ValueError("recipient_role or recipient_user_id is required")
         return self
-
 
 class RoleMessageOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -119,7 +113,6 @@ class RoleMessageOut(BaseModel):
     read_at: Optional[datetime]
     created_at: datetime
 
-
 class HandoverNoteCreate(BaseModel):
     patient_id: Optional[int] = None
     target_role: Optional[str] = None
@@ -127,7 +120,6 @@ class HandoverNoteCreate(BaseModel):
     shift_label: str = ""
     priority: str = "routine"
     note: str
-
 
 class HandoverNoteOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -142,7 +134,6 @@ class HandoverNoteOut(BaseModel):
     note: str
     created_at: datetime
 
-
 class CareDirectiveCreate(BaseModel):
     patient_id: Optional[int] = None
     target_role: Optional[str] = None
@@ -151,7 +142,6 @@ class CareDirectiveCreate(BaseModel):
     directive_text: str
     effective_from: Optional[datetime] = None
     effective_until: Optional[datetime] = None
-
 
 class CareDirectiveUpdate(BaseModel):
     title: Optional[str] = None
@@ -162,10 +152,8 @@ class CareDirectiveUpdate(BaseModel):
     effective_until: Optional[datetime] = None
     status: Optional[str] = None
 
-
 class CareDirectiveAcknowledge(BaseModel):
     note: str = ""
-
 
 class CareDirectiveOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -184,7 +172,6 @@ class CareDirectiveOut(BaseModel):
     acknowledged_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
-
 
 class AuditTrailEventOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 """Pydantic schemas for Facility, Floor, and enhanced Room."""
 
 from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
-
 
 # ── Facility ──────────────────────────────────────────────────────────────────
 
@@ -14,13 +15,11 @@ class FacilityCreate(BaseModel):
     description: str = ""
     config: dict[str, Any] = {}
 
-
 class FacilityUpdate(BaseModel):
     name: str | None = None
     address: str | None = None
     description: str | None = None
     config: dict[str, Any] | None = None
-
 
 class FacilityOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -32,7 +31,6 @@ class FacilityOut(BaseModel):
     config: dict[str, Any]
     created_at: datetime
 
-
 # ── Floor ─────────────────────────────────────────────────────────────────────
 
 class FloorCreate(BaseModel):
@@ -41,12 +39,10 @@ class FloorCreate(BaseModel):
     name: str = ""
     map_data: dict[str, Any] = {}
 
-
 class FloorUpdate(BaseModel):
     floor_number: int | None = None
     name: str | None = None
     map_data: dict[str, Any] | None = None
-
 
 class FloorOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -57,7 +53,6 @@ class FloorOut(BaseModel):
     name: str
     map_data: dict[str, Any]
     created_at: datetime
-
 
 # ── Room (enhanced) ──────────────────────────────────────────────────────────
 
@@ -70,7 +65,6 @@ class RoomCreateV2(BaseModel):
     room_type: str = "general"
     adjacent_rooms: list[int] = []
     config: dict[str, Any] = {}
-
 
 class RoomOutV2(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -85,7 +79,6 @@ class RoomOutV2(BaseModel):
     config: dict[str, Any]
     created_at: datetime
 
-
 # ── Facility Hierarchy (nested view) ─────────────────────────────────────────
 
 class RoomSummary(BaseModel):
@@ -95,14 +88,12 @@ class RoomSummary(BaseModel):
     room_type: str
     node_device_id: str | None
 
-
 class FloorWithRooms(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     floor_number: int
     name: str
     rooms: list[RoomSummary] = []
-
 
 class FacilityHierarchy(BaseModel):
     model_config = ConfigDict(from_attributes=True)

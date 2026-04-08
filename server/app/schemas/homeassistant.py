@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
@@ -10,7 +12,6 @@ class SmartDeviceBase(BaseModel):
     room_id: Optional[int] = None
     is_active: bool = True
     config: Dict[str, Any] = Field(default_factory=dict)
-
 
 class SmartDeviceCreate(SmartDeviceBase):
     pass

@@ -1,8 +1,9 @@
+from __future__ import annotations
 from sqlalchemy import Column, Integer, String, Float, SmallInteger, Boolean, DateTime, ForeignKey, JSON
+
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, utcnow
-
 
 class IMUTelemetry(Base):
     __tablename__ = "imu_telemetry"
@@ -26,7 +27,6 @@ class IMUTelemetry(Base):
     battery_v = Column(Float)
     charging = Column(Boolean, default=False)
 
-
 class RSSIReading(Base):
     __tablename__ = "rssi_readings"
 
@@ -37,7 +37,6 @@ class RSSIReading(Base):
     node_id = Column(String(32), nullable=False)
     rssi = Column(SmallInteger, nullable=False)
     mac = Column(String(17), default="")
-
 
 class RoomPrediction(Base):
     __tablename__ = "room_predictions"
@@ -52,7 +51,6 @@ class RoomPrediction(Base):
     model_type = Column(String(16), default="knn")
     rssi_vector = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
 
-
 class RSSITrainingData(Base):
     __tablename__ = "rssi_training_data"
 
@@ -62,7 +60,6 @@ class RSSITrainingData(Base):
     room_name = Column(String(64), default="")
     rssi_vector = Column(JSON().with_variant(JSONB, "postgresql"), nullable=False)
     collected_at = Column(DateTime(timezone=True), default=utcnow)
-
 
 class MotionTrainingData(Base):
     __tablename__ = "motion_training_data"
@@ -82,7 +79,6 @@ class MotionTrainingData(Base):
     distance_m = Column(Float)
     velocity_ms = Column(Float)
     accel_ms2 = Column(Float)
-
 
 class PhotoRecord(Base):
     __tablename__ = "photo_records"

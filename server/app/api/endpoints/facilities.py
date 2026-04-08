@@ -1,8 +1,11 @@
+from __future__ import annotations
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 """Facility and Floor CRUD endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
     RequireRole,
@@ -30,9 +33,7 @@ floor_service = CRUDBase[Floor, FloorCreate, FloorUpdate](Floor)
 
 router = APIRouter()
 
-
 # ── Facility CRUD ────────────────────────────────────────────────────────────
-
 
 @router.get("", response_model=list[FacilityOut])
 async def list_facilities(
@@ -44,7 +45,6 @@ async def list_facilities(
 ):
     return await facility_service.get_multi(db, ws_id=ws.id, skip=skip, limit=limit)
 
-
 @router.post("", response_model=FacilityOut, status_code=201)
 async def create_facility(
     data: FacilityCreate,
@@ -53,7 +53,6 @@ async def create_facility(
     _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
 ):
     return await facility_service.create(db, ws_id=ws.id, obj_in=data)
-
 
 @router.get("/{facility_id}", response_model=FacilityOut)
 async def get_facility(
@@ -67,7 +66,6 @@ async def get_facility(
         raise HTTPException(404, "Facility not found")
     return fac
 
-
 @router.delete("/{facility_id}", status_code=204)
 async def delete_facility(
     facility_id: int,
@@ -78,7 +76,6 @@ async def delete_facility(
     deleted = await facility_service.delete(db, ws_id=ws.id, id=facility_id)
     if not deleted:
         raise HTTPException(404, "Facility not found")
-
 
 @router.patch("/{facility_id}", response_model=FacilityOut)
 async def update_facility(
@@ -93,9 +90,7 @@ async def update_facility(
         raise HTTPException(404, "Facility not found")
     return await facility_service.update(db, ws_id=ws.id, db_obj=fac, obj_in=data)
 
-
 # ── Floor CRUD ───────────────────────────────────────────────────────────────
-
 
 @router.get("/{facility_id}/floors", response_model=list[FloorOut])
 async def list_floors(
@@ -106,7 +101,6 @@ async def list_floors(
 ):
     all_floors = await floor_service.get_multi(db, ws_id=ws.id)
     return [f for f in all_floors if f.facility_id == facility_id]
-
 
 @router.post("/{facility_id}/floors", response_model=FloorOut, status_code=201)
 async def create_floor(
@@ -124,7 +118,6 @@ async def create_floor(
     floor_data = data.model_copy(update={"facility_id": facility_id})
     return await floor_service.create(db, ws_id=ws.id, obj_in=floor_data)
 
-
 @router.patch("/{facility_id}/floors/{floor_id}", response_model=FloorOut)
 async def update_floor(
     facility_id: int,
@@ -141,7 +134,6 @@ async def update_floor(
     if not floor or floor.facility_id != facility_id:
         raise HTTPException(404, "Floor not found")
     return await floor_service.update(db, ws_id=ws.id, db_obj=floor, obj_in=data)
-
 
 @router.delete("/{facility_id}/floors/{floor_id}", status_code=204)
 async def delete_floor(
@@ -170,3 +162,4 @@ async def delete_floor(
 
     await db.delete(floor)
     await db.commit()
+

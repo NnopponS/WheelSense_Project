@@ -1,3 +1,9 @@
+from __future__ import annotations
+
+from typing import Any
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 """WheelSense — Motion recording and classification endpoints.
 
 Endpoints:
@@ -11,12 +17,9 @@ Endpoints:
 """
 
 import json
-from typing import Any
 
 import aiomqtt
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.config as config
 from app.api.dependencies import get_current_user_workspace, get_db
@@ -41,9 +44,7 @@ from app.schemas.core import (
 router = APIRouter()
 settings = config.settings
 
-
 # ── Recording control (existing, unchanged) ───────────────────────
-
 
 @router.post("/record/start")
 async def start_motion_recording(
@@ -75,7 +76,6 @@ async def start_motion_recording(
         raise HTTPException(502, f"Failed to send MQTT command: {e}")
     return {"message": f"Start record command sent for {body.label}", "label": body.label}
 
-
 @router.post("/record/stop")
 async def stop_motion_recording(
     body: MotionRecordStopRequest,
@@ -106,9 +106,7 @@ async def stop_motion_recording(
         raise HTTPException(502, f"Failed to send MQTT command: {e}")
     return {"message": "Stop record command sent."}
 
-
 # ── ML: Train / Predict / Model management ────────────────────────
-
 
 @router.post("/train")
 async def train_motion(
@@ -179,7 +177,6 @@ async def train_motion(
     )
     return {"message": "Motion model trained", **stats}
 
-
 @router.post("/predict")
 async def predict_motion_action(
     body: MotionPredictRequest,
@@ -198,12 +195,10 @@ async def predict_motion_action(
         raise HTTPException(500, "Prediction failed")
     return result
 
-
 @router.get("/model")
 async def motion_model_info(ws: Workspace = Depends(get_current_user_workspace)) -> dict[str, Any]:
     """Get current motion model status and metadata."""
     return get_motion_model_info(ws.id)
-
 
 @router.post("/model/save")
 async def save_motion_model(ws: Workspace = Depends(get_current_user_workspace)) -> dict[str, str]:
@@ -212,7 +207,6 @@ async def save_motion_model(ws: Workspace = Depends(get_current_user_workspace))
         raise HTTPException(400, "No trained model to save")
     return save_model(workspace_id=ws.id)
 
-
 @router.post("/model/load")
 async def load_motion_model(ws: Workspace = Depends(get_current_user_workspace)) -> dict[str, Any]:
     """Load persisted model from disk."""
@@ -220,3 +214,4 @@ async def load_motion_model(ws: Workspace = Depends(get_current_user_workspace))
         return load_model(workspace_id=ws.id)
     except FileNotFoundError as e:
         raise HTTPException(404, str(e))
+

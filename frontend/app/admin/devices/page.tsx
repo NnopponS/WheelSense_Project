@@ -1,7 +1,8 @@
 "use client";
 
 import { Suspense, useCallback, useMemo, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Search, Tablet, Wifi, WifiOff } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@/hooks/useQuery";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,7 +23,11 @@ import {
   registryDeviceCardPresentation,
   SMART_DEVICE_CARD_VISUAL,
 } from "@/lib/deviceFleetCardIcon";
-import { Tablet, Search, Wifi, WifiOff } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 
 function DevicesPageContent() {
   const { t } = useTranslation();
@@ -33,10 +38,7 @@ function DevicesPageContent() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const nowMs = useFixedNowMs();
 
-  const tab = useMemo(
-    () => fleetTabFromQuery(searchParams.get("tab")),
-    [searchParams],
-  );
+  const tab = useMemo(() => fleetTabFromQuery(searchParams.get("tab")), [searchParams]);
 
   const setTab = useCallback(
     (next: DeviceFleetTab) => {
@@ -51,18 +53,12 @@ function DevicesPageContent() {
 
   const registryEndpoint = useMemo(() => {
     if (tab === "smart_ha") return null;
-    const base =
-      tab === "all"
-        ? "/devices"
-        : `/devices?hardware_type=${encodeURIComponent(tab)}`;
+    const base = tab === "all" ? "/devices" : `/devices?hardware_type=${encodeURIComponent(tab)}`;
     return withWorkspaceScope(base, user?.workspace_id);
   }, [tab, user?.workspace_id]);
 
   const smartEndpoint = useMemo(
-    () =>
-      tab === "smart_ha"
-        ? withWorkspaceScope("/ha/devices", user?.workspace_id)
-        : null,
+    () => (tab === "smart_ha" ? withWorkspaceScope("/ha/devices", user?.workspace_id) : null),
     [tab, user?.workspace_id],
   );
 
@@ -78,10 +74,10 @@ function DevicesPageContent() {
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter(
-      (d) =>
-        d.device_id.toLowerCase().includes(q) ||
-        (d.display_name || "").toLowerCase().includes(q) ||
-        d.hardware_type.toLowerCase().includes(q),
+      (device) =>
+        device.device_id.toLowerCase().includes(q) ||
+        (device.display_name || "").toLowerCase().includes(q) ||
+        device.hardware_type.toLowerCase().includes(q),
     );
   }, [devices, search]);
 
@@ -90,10 +86,10 @@ function DevicesPageContent() {
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter(
-      (d) =>
-        d.name.toLowerCase().includes(q) ||
-        d.ha_entity_id.toLowerCase().includes(q) ||
-        d.device_type.toLowerCase().includes(q),
+      (device) =>
+        device.name.toLowerCase().includes(q) ||
+        device.ha_entity_id.toLowerCase().includes(q) ||
+        device.device_type.toLowerCase().includes(q),
     );
   }, [smartDevices, search]);
 
@@ -102,107 +98,128 @@ function DevicesPageContent() {
     void refetchSmart();
   }, [refetchRegistry, refetchSmart]);
 
+  const registryStats = useMemo(() => {
+    const source = devices ?? [];
+    const online = source.filter((device) => isDeviceOnline(device.last_seen, nowMs)).length;
+    return {
+      total: source.length,
+      online,
+      offline: Math.max(source.length - online, 0),
+    };
+  }, [devices, nowMs]);
+
+  const smartStats = useMemo(() => {
+    const source = smartDevices ?? [];
+    const reachable = source.filter((device) => isSmartDeviceOnline(device)).length;
+    return {
+      total: source.length,
+      reachable,
+      inactive: source.filter((device) => !device.is_active).length,
+    };
+  }, [smartDevices]);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-on-surface">{t("devices.title")}</h2>
-        <p className="text-sm text-on-surface-variant mt-1 max-w-2xl">
-          {t("devices.subtitle")}
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("devices.title")}</h2>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("devices.subtitle")}</p>
       </div>
 
-      <div
-        className="flex flex-wrap gap-2"
-        role="tablist"
-        aria-label={t("devices.title")}
-      >
-        {DEVICE_FLEET_TABS.map(({ key, labelKey }) => {
-          const selected = tab === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              onClick={() => setTab(key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                selected
-                  ? "border-primary bg-primary/15 text-primary"
-                  : "border-outline-variant/30 bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-              }`}
-            >
-              {t(labelKey)}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-outline pointer-events-none" />
-        <input
-          type="search"
-          autoComplete="off"
-          placeholder={
-            tab === "smart_ha" ? t("devices.searchSmartDevice") : t("devices.search")
-          }
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="input-field input-field--leading-icon py-2.5 text-sm w-full"
-          aria-label={tab === "smart_ha" ? t("devices.searchSmartDevice") : t("devices.search")}
+      <div className="grid gap-4 md:grid-cols-3">
+        <SummaryCard label="Registry devices" value={registryStats.total} />
+        <SummaryCard label="Online registry" value={registryStats.online} />
+        <SummaryCard
+          label={tab === "smart_ha" ? "Reachable smart devices" : "Offline registry"}
+          value={tab === "smart_ha" ? smartStats.reachable : registryStats.offline}
         />
       </div>
 
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label={t("devices.title")}>
+            {DEVICE_FLEET_TABS.map(({ key, labelKey }) => {
+              const selected = tab === key;
+              return (
+                <Button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  variant={selected ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setTab(key)}
+                >
+                  {t(labelKey)}
+                </Button>
+              );
+            })}
+          </div>
+
+          <div className="relative max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              autoComplete="off"
+              placeholder={tab === "smart_ha" ? t("devices.searchSmartDevice") : t("devices.search")}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="pl-9"
+              aria-label={tab === "smart_ha" ? t("devices.searchSmartDevice") : t("devices.search")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
+        <Card>
+          <CardContent className="flex min-h-72 items-center justify-center pt-6">
+            <div className="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </CardContent>
+        </Card>
       ) : tab === "smart_ha" ? (
         filteredSmart.length === 0 ? (
-          <EmptyState
-            icon={SMART_DEVICE_CARD_VISUAL.Icon}
-            message={t("smartDevices.empty")}
-          />
+          <EmptyState icon={SMART_DEVICE_CARD_VISUAL.Icon} message={t("smartDevices.empty")} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredSmart.map((d) => {
-              const ok = isSmartDeviceOnline(d);
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredSmart.map((device) => {
+              const ok = isSmartDeviceOnline(device);
               const SmartIcon = SMART_DEVICE_CARD_VISUAL.Icon;
               return (
-                <div
-                  key={d.id}
-                  className="surface-card p-5 rounded-xl border border-outline-variant/15"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3 min-w-0">
+                <Card key={device.id} className="overflow-hidden">
+                  <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+                    <div className="flex min-w-0 items-center gap-3">
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${SMART_DEVICE_CARD_VISUAL.wrapClass}`}
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${SMART_DEVICE_CARD_VISUAL.wrapClass}`}
                       >
-                        <SmartIcon className={`w-5 h-5 ${SMART_DEVICE_CARD_VISUAL.iconClass}`} />
+                        <SmartIcon className={`h-5 w-5 ${SMART_DEVICE_CARD_VISUAL.iconClass}`} />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-on-surface text-sm truncate">
-                          {d.name}
+                        <CardTitle className="truncate text-base">{device.name}</CardTitle>
+                        <p className="truncate font-mono text-xs text-muted-foreground">
+                          {device.ha_entity_id}
                         </p>
-                        <p className="text-xs text-on-surface-variant truncate font-mono">
-                          {d.ha_entity_id}
-                        </p>
-                        <p className="text-[11px] text-outline truncate">{d.device_type}</p>
                       </div>
                     </div>
-                    <span
-                      className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
-                        ok ? "care-normal" : "severity-warning"
-                      }`}
-                    >
-                      {ok ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                    <Badge variant={ok ? "success" : "warning"}>
                       {ok ? t("dash.smartDevicesReachable") : t("dash.smartDevicesNotReachable")}
-                    </span>
-                  </div>
-                  <p className="text-xs text-outline">
-                    {d.is_active ? t("smartDevices.active") : t("smartDevices.inactive")}
-                    {d.state ? ` · ${d.state}` : ""}
-                  </p>
-                </div>
+                    </Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <p className="text-muted-foreground">{device.device_type}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">State</span>
+                      <span className="font-medium text-foreground">
+                        {device.state || (device.is_active ? t("smartDevices.active") : t("smartDevices.inactive"))}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Status</span>
+                      <Badge variant={device.is_active ? "success" : "outline"}>
+                        {device.is_active ? t("smartDevices.active") : t("smartDevices.inactive")}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
@@ -210,82 +227,108 @@ function DevicesPageContent() {
       ) : filteredRegistry.length === 0 ? (
         <EmptyState icon={Tablet} message={t("devices.empty")} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredRegistry.map((device) => {
             const online = isDeviceOnline(device.last_seen, nowMs);
             const title = device.display_name?.trim() || device.device_id;
-            const vis = registryDeviceCardPresentation(device.hardware_type);
-            const HwIcon = vis.Icon;
+            const visual = registryDeviceCardPresentation(device.hardware_type);
+            const DeviceIcon = visual.Icon;
+
             return (
-              <button
+              <Card
                 key={device.id}
-                type="button"
+                className="cursor-pointer transition-colors hover:border-primary/45"
                 onClick={() => setSelectedId(device.device_id)}
-                className="text-left surface-card p-5 rounded-xl border border-transparent hover:border-primary/25 transition-colors"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3 min-w-0">
+                <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${vis.wrapClass}`}
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${visual.wrapClass}`}
                     >
-                      <HwIcon className={`w-5 h-5 ${vis.iconClass}`} />
+                      <DeviceIcon className={`h-5 w-5 ${visual.iconClass}`} />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-on-surface text-sm truncate">{title}</p>
-                      <p className="text-xs text-on-surface-variant truncate font-mono">
+                      <CardTitle className="truncate text-base">{title}</CardTitle>
+                      <p className="truncate font-mono text-xs text-muted-foreground">
                         {device.device_id}
                       </p>
-                      <p className="text-[11px] text-outline truncate">{device.hardware_type}</p>
                     </div>
                   </div>
-                  <span
-                    className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
-                      online ? "care-normal" : "severity-warning"
-                    }`}
-                  >
-                    {online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                    {online ? t("devices.online") : t("devices.offline")}
-                  </span>
-                </div>
-                {device.firmware ? (
-                  <p className="text-xs text-outline">FW: {device.firmware}</p>
-                ) : null}
-                {device.last_seen && (
-                  <p className="text-xs text-outline mt-1">
-                    {t("devices.lastSeen")}: {new Date(device.last_seen).toLocaleString()}
-                  </p>
-                )}
-              </button>
+                  <Badge variant={online ? "success" : "warning"}>
+                    {online ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Wifi className="h-3 w-3" />
+                        {t("devices.online")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1">
+                        <WifiOff className="h-3 w-3" />
+                        {t("devices.offline")}
+                      </span>
+                    )}
+                  </Badge>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Hardware</span>
+                    <span className="font-medium text-foreground">{device.hardware_type}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Firmware</span>
+                    <span className="font-medium text-foreground">{device.firmware || "-"}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground">{t("devices.lastSeen")}</p>
+                    <p className="text-foreground">
+                      {device.last_seen ? formatDateTime(device.last_seen) : "-"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {device.last_seen ? formatRelativeTime(device.last_seen) : "-"}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
       )}
 
-      {selectedId && tab !== "smart_ha" && (
+      {selectedId && tab !== "smart_ha" ? (
         <DeviceDetailDrawer
           deviceId={selectedId}
-          workspaceId={user?.workspace_id}
           onClose={() => setSelectedId(null)}
           t={t}
           onMutate={onMutate}
         />
-      )}
+      ) : null}
     </div>
   );
 }
 
 export default function DevicesPage() {
   const { t } = useTranslation();
+
   return (
     <Suspense
       fallback={
         <div className="flex justify-center py-24">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <span className="sr-only">{t("common.loading")}</span>
         </div>
       }
     >
       <DevicesPageContent />
     </Suspense>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: number }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="mt-1 text-3xl font-semibold text-foreground">{value}</p>
+      </CardContent>
+    </Card>
   );
 }

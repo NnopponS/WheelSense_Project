@@ -1,3 +1,8 @@
+from __future__ import annotations
+from typing import Any
+
+from sqlalchemy import select
+
 """FastMCP tool surface for WheelSense (AI assistants, internal orchestration).
 
 Tools take an explicit ``workspace_id``; callers MUST ensure it matches the authenticated
@@ -6,11 +11,9 @@ user's workspace (enforced by the AI chat layer / trusted clients).
 
 import json
 import logging
-from typing import Any
 
 import aiomqtt
 from mcp.server.fastmcp import FastMCP
-from sqlalchemy import select
 
 import app.config as config
 from app.db.session import AsyncSessionLocal
@@ -24,12 +27,10 @@ settings = config.settings
 
 mcp = FastMCP("WheelSense")
 
-
 @mcp.tool()
 async def get_system_health():
     """Checks if the WheelSense platform backend is healthy."""
     return "WheelSense Platform is running and healthy."
-
 
 @mcp.tool()
 async def list_workspaces():
@@ -38,7 +39,6 @@ async def list_workspaces():
         result = await db.execute(select(Workspace).order_by(Workspace.id))
         workspaces = result.scalars().all()
         return json.dumps([{"id": w.id, "name": w.name} for w in workspaces])
-
 
 @mcp.tool()
 async def list_patients(workspace_id: int):
@@ -60,7 +60,6 @@ async def list_patients(workspace_id: int):
             ],
             default=str,
         )
-
 
 @mcp.tool()
 async def get_patient_details(workspace_id: int, patient_id: int):
@@ -87,7 +86,6 @@ async def get_patient_details(workspace_id: int, patient_id: int):
             default=str,
         )
 
-
 @mcp.tool()
 async def list_devices(workspace_id: int):
     """List all devices in the workspace (wheelchair / camera nodes)."""
@@ -112,7 +110,6 @@ async def list_devices(workspace_id: int):
             ],
             default=str,
         )
-
 
 @mcp.tool()
 async def list_active_alerts(workspace_id: int):
@@ -141,7 +138,6 @@ async def list_active_alerts(workspace_id: int):
             default=str,
         )
 
-
 @mcp.tool()
 async def acknowledge_alert(workspace_id: int, alert_id: int, caregiver_id: int):
     """Acknowledge an alert (active → acknowledged)."""
@@ -159,7 +155,6 @@ async def acknowledge_alert(workspace_id: int, alert_id: int, caregiver_id: int)
         except Exception as e:
             logger.exception("acknowledge_alert")
             return f"Failed to acknowledge alert: {str(e)}"
-
 
 @mcp.tool()
 async def resolve_alert(workspace_id: int, alert_id: int, note: str = ""):
@@ -179,7 +174,6 @@ async def resolve_alert(workspace_id: int, alert_id: int, note: str = ""):
             logger.exception("resolve_alert")
             return f"Failed to resolve alert: {str(e)}"
 
-
 @mcp.tool()
 async def list_rooms(workspace_id: int):
     """List rooms in the workspace (localization / floor plan)."""
@@ -198,7 +192,6 @@ async def list_rooms(workspace_id: int):
             default=str,
         )
 
-
 async def _publish_camera_command(device_id_str: str, payload: dict[str, Any]) -> None:
     topic = f"WheelSense/camera/{device_id_str}/control"
     async with aiomqtt.Client(
@@ -208,7 +201,6 @@ async def _publish_camera_command(device_id_str: str, payload: dict[str, Any]) -
         password=settings.mqtt_password or None,
     ) as client:
         await client.publish(topic, json.dumps(payload))
-
 
 @mcp.tool()
 async def trigger_camera_photo(workspace_id: int, device_pk: int):
@@ -233,3 +225,4 @@ async def trigger_camera_photo(workspace_id: int, device_pk: int):
         except Exception as e:
             logger.exception("trigger_camera_photo")
             return f"Failed to trigger camera: {str(e)}"
+

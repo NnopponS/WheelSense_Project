@@ -1,124 +1,227 @@
-"use client";
+﻿"use client";
+"use no memo";
 
-import { useState } from "react";
-import { useQuery } from "@/hooks/useQuery";
-import type { Alert } from "@/lib/types";
-import { ApiError, api } from "@/lib/api";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Bell } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { AlertTriangle, Bell } from "lucide-react";
+import { api, ApiError } from "@/lib/api";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type {
+  ListAlertsResponse,
+  ListPatientsResponse,
+} from "@/lib/api/task-scope-types";
+
+type AlertRow = {
+  id: number;
+  title: string;
+  description: string;
+  alertType: string;
+  severity: string;
+  status: string;
+  patientId: number | null;
+  patientName: string;
+  timestamp: string;
+};
+
+function toErrorText(error: unknown): string {
+  if (error instanceof ApiError && error.status === 403) {
+    return "Your current role is not allowed to acknowledge alerts.";
+  }
+  if (error instanceof Error) return error.message;
+  return "Failed to acknowledge alert.";
+}
 
 export default function ObserverAlertsPage() {
   const { user } = useAuth();
-  const { data: alerts, isLoading, refetch } = useQuery<Alert[]>(
-    "/alerts?status=active",
-  );
-  const [actionError, setActionError] = useState("");
+  const queryClient = useQueryClient();
   const [pendingAlertId, setPendingAlertId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const alertsQuery = useQuery({
+    queryKey: ["observer", "alerts", "list"],
+    queryFn: () => api.listAlerts({ status: "active", limit: 300 }),
+    refetchInterval: 20_000,
+  });
 
-  const alertList = alerts ?? [];
+  const patientsQuery = useQuery({
+    queryKey: ["observer", "alerts", "patients"],
+    queryFn: () => api.listPatients({ limit: 400 }),
+  });
 
-  const acknowledgeAlert = async (alertId: number) => {
-    if (!user?.caregiver_id) {
-      setActionError("Cannot acknowledge alert because your account has no caregiver link.");
-      return;
-    }
-
-    setActionError("");
-    setPendingAlertId(alertId);
-    try {
-      await api.post<Alert>(`/alerts/${alertId}/acknowledge`, {
-        caregiver_id: user.caregiver_id,
+  const acknowledgeMutation = useMutation({
+    mutationFn: async (alertId: number) => {
+      await api.acknowledgeAlert(alertId, {
+        caregiver_id: user?.caregiver_id ?? null,
       });
-      await refetch();
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 403) {
-        setActionError("Your current role is not allowed to acknowledge alerts.");
-      } else {
-        setActionError(error instanceof Error ? error.message : "Failed to acknowledge alert.");
-      }
-    } finally {
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["observer", "alerts"] });
+      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard"] });
+      setActionError(null);
+    },
+    onError: (error) => {
+      setActionError(toErrorText(error));
+    },
+    onSettled: () => {
       setPendingAlertId(null);
-    }
-  };
+    },
+  });
+
+  const alerts = useMemo(
+    () => (alertsQuery.data ?? []) as ListAlertsResponse,
+    [alertsQuery.data],
+  );
+
+  const patients = useMemo(
+    () => (patientsQuery.data ?? []) as ListPatientsResponse,
+    [patientsQuery.data],
+  );
+
+  const patientMap = useMemo(
+    () => new Map(patients.map((patient) => [patient.id, patient])),
+    [patients],
+  );
+
+  const rows = useMemo<AlertRow[]>(() => {
+    return [...alerts]
+      .sort((left, right) => {
+        if (left.severity === right.severity) {
+          return right.timestamp.localeCompare(left.timestamp);
+        }
+        if (left.severity === "critical") return -1;
+        if (right.severity === "critical") return 1;
+        if (left.severity === "warning") return -1;
+        if (right.severity === "warning") return 1;
+        return 0;
+      })
+      .map((alert) => {
+        const patient = alert.patient_id ? patientMap.get(alert.patient_id) : null;
+        return {
+          id: alert.id,
+          title: alert.title,
+          description: alert.description,
+          alertType: alert.alert_type,
+          severity: alert.severity,
+          status: alert.status,
+          patientId: alert.patient_id,
+          patientName: patient
+            ? `${patient.first_name} ${patient.last_name}`.trim()
+            : "Unlinked patient",
+          timestamp: alert.timestamp,
+        };
+      });
+  }, [alerts, patientMap]);
+
+  const columns = useMemo<ColumnDef<AlertRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Alert",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <p className="text-xs text-muted-foreground">{row.original.alertType}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "patientName",
+        header: "Patient",
+      },
+      {
+        accessorKey: "severity",
+        header: "Severity",
+        cell: ({ row }) => {
+          const severity = row.original.severity;
+          const variant =
+            severity === "critical"
+              ? "destructive"
+              : severity === "warning"
+                ? "warning"
+                : "secondary";
+          return <Badge variant={variant}>{severity}</Badge>;
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge variant={row.original.status === "active" ? "destructive" : "outline"}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "timestamp",
+        header: "Time",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href={row.original.patientId ? `/observer/patients/${row.original.patientId}` : "/observer/patients"}>
+                Open patient
+              </Link>
+            </Button>
+            {row.original.status === "active" ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={acknowledgeMutation.isPending && pendingAlertId === row.original.id}
+                onClick={() => {
+                  setPendingAlertId(row.original.id);
+                  acknowledgeMutation.mutate(row.original.id);
+                }}
+              >
+                Acknowledge
+              </Button>
+            ) : null}
+          </div>
+        ),
+      },
+    ],
+    [acknowledgeMutation, pendingAlertId],
+  );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-on-surface">Active alerts</h2>
-        <p className="text-sm text-on-surface-variant mt-1">
-          Monitor severity and acknowledge alerts when role permissions allow.
+        <h2 className="text-2xl font-bold text-foreground">Active Alerts</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Monitor and acknowledge active alerts when role permissions allow.
         </p>
       </div>
 
-      {actionError && (
-        <div className="rounded-xl bg-critical-bg text-critical px-4 py-3 text-sm">
+      {actionError ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {actionError}
         </div>
-      )}
+      ) : null}
 
-      {alertList.length === 0 ? (
-        <div className="surface-card p-6 text-center">
-          <Bell className="w-8 h-8 mx-auto text-on-surface-variant mb-2" />
-          <p className="text-sm text-on-surface-variant">No active alerts right now.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {alertList.map((alert) => (
-            <div key={alert.id} className="surface-card p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-on-surface truncate">
-                    {alert.title || alert.alert_type}
-                  </p>
-                  <p className="text-xs text-on-surface-variant mt-0.5">
-                    {alert.description}
-                  </p>
-                  <p className="text-[11px] text-on-surface-variant mt-1">
-                    {new Date(alert.timestamp).toLocaleString()}
-                  </p>
-                </div>
-                <span
-                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                    alert.severity === "critical"
-                      ? "bg-critical-bg text-critical"
-                      : alert.severity === "warning"
-                        ? "bg-warning-bg text-warning"
-                        : "bg-info-bg text-info"
-                  }`}
-                >
-                  {alert.severity}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between mt-3">
-                <p className="text-xs text-on-surface-variant flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  {alert.alert_type}
-                  {alert.patient_id ? ` · patient #${alert.patient_id}` : ""}
-                </p>
-                {alert.status === "active" && (
-                  <button
-                    type="button"
-                    onClick={() => acknowledgeAlert(alert.id)}
-                    disabled={pendingAlertId === alert.id}
-                    className="text-xs px-3 py-1.5 rounded-md bg-surface-container-low text-on-surface disabled:opacity-60"
-                  >
-                    {pendingAlertId === alert.id ? "Acknowledging..." : "Acknowledge"}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <DataTableCard
+        title="Alert Queue"
+        description="Current active alerts with severity and patient context."
+        data={rows}
+        columns={columns}
+        isLoading={alertsQuery.isLoading || patientsQuery.isLoading}
+        emptyText="No active alerts right now."
+        rightSlot={<Bell className="h-4 w-4 text-muted-foreground" />}
+      />
     </div>
   );
 }

@@ -1,507 +1,611 @@
-"use client";
+﻿"use client";
+"use no memo";
 
-import { useAuth } from "@/hooks/useAuth";
-import { api } from "@/lib/api";
-import type { Alert, Patient, SmartDevice, VitalReading } from "@/lib/types";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, Heart, MessageCircle, Siren, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useTranslation } from "@/lib/i18n";
+import { useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Bell, Heart, MessageCircle, Siren, Sparkles } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
+import { api, ApiError } from "@/lib/api";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type {
+  CareTaskOut,
+  CreateAlertRequest,
+  GetPatientResponse,
+  ListAlertsResponse,
+  ListPatientsResponse,
+  ListSmartDevicesResponse,
+  ListVitalReadingsResponse,
+  ListWorkflowMessagesResponse,
+} from "@/lib/api/task-scope-types";
 
-type CareTask = {
+type AssistanceKind = "assistance" | "sos";
+
+type AlertRow = {
   id: number;
   title: string;
   description: string;
-  status: string;
-  priority: string;
-  due_at: string | null;
+  severity: string;
+  timestamp: string;
 };
 
-type RoleMessage = {
+type TaskRow = {
+  id: number;
+  title: string;
+  status: string;
+  priority: string;
+  dueAt: string | null;
+};
+
+type MessageRow = {
   id: number;
   subject: string;
   body: string;
-  is_read: boolean;
-  created_at: string;
+  isRead: boolean;
+  createdAt: string;
 };
 
-type AssistanceKind = "assistance" | "sos";
+function parseError(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Request failed.";
+}
 
 export default function PatientDashboard() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { t } = useTranslation();
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [vitals, setVitals] = useState<VitalReading[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [devices, setDevices] = useState<SmartDevice[]>([]);
-  const [messages, setMessages] = useState<RoleMessage[]>([]);
-  const [tasks, setTasks] = useState<CareTask[]>([]);
-  const [tasksRestricted, setTasksRestricted] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [submittingAlert, setSubmittingAlert] = useState<AssistanceKind | null>(null);
-  const [controllingDeviceId, setControllingDeviceId] = useState<number | null>(null);
-  const [adminPickerPatients, setAdminPickerPatients] = useState<Patient[] | null>(null);
+  const queryClient = useQueryClient();
 
   const previewRaw = searchParams.get("previewAs");
   const previewNum = previewRaw != null && previewRaw !== "" ? Number(previewRaw) : NaN;
-  const hasValidPreview = Number.isFinite(previewNum) && previewNum > 0;
-  const previewPatientId = hasValidPreview ? Math.floor(previewNum) : null;
+  const previewPatientId = Number.isFinite(previewNum) && previewNum > 0 ? Math.floor(previewNum) : null;
 
-  const isAdminPreview =
-    user?.role === "admin" && previewPatientId != null && previewPatientId > 0;
+  const isAdminPreview = user?.role === "admin" && previewPatientId != null;
+  const showAdminPatientPicker = user?.role === "admin" && user.patient_id == null && previewPatientId == null;
 
   const effectivePatientId = useMemo(() => {
-    if (user?.role === "admin" && previewPatientId != null) return previewPatientId;
+    if (isAdminPreview) return previewPatientId;
     return user?.patient_id ?? null;
-  }, [user?.role, user?.patient_id, previewPatientId]);
+  }, [isAdminPreview, previewPatientId, user?.patient_id]);
 
-  const showAdminPatientPicker =
-    user?.role === "admin" && user.patient_id == null && !hasValidPreview;
+  const adminPatientsQuery = useQuery({
+    queryKey: ["patient", "admin-picker", "patients"],
+    enabled: showAdminPatientPicker,
+    queryFn: () => api.listPatients({ limit: 500 }),
+  });
 
-  useEffect(() => {
-    if (!showAdminPatientPicker) {
-      setAdminPickerPatients(null);
-      return;
-    }
-    let cancelled = false;
-    api
-      .get<Patient[]>("/patients")
-      .then((list) => {
-        if (!cancelled) setAdminPickerPatients(list);
-      })
-      .catch(() => {
-        if (!cancelled) setAdminPickerPatients([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [showAdminPatientPicker]);
+  const patientQuery = useQuery({
+    queryKey: ["patient", "dashboard", "patient", effectivePatientId],
+    enabled: effectivePatientId != null,
+    queryFn: () => api.getPatient(Number(effectivePatientId)),
+  });
 
-  const fetchDashboard = useCallback(async () => {
-    if (showAdminPatientPicker) {
-      setLoading(false);
-      setError(null);
-      setPatient(null);
-      return;
-    }
+  const vitalsQuery = useQuery({
+    queryKey: ["patient", "dashboard", "vitals", effectivePatientId],
+    enabled: effectivePatientId != null,
+    queryFn: () => api.listVitalReadings({ patient_id: Number(effectivePatientId), limit: 24 }),
+    refetchInterval: 30_000,
+  });
 
-    if (!effectivePatientId) {
-      setError("Your account is not linked to a patient record.");
-      setLoading(false);
-      return;
-    }
+  const alertsQuery = useQuery({
+    queryKey: ["patient", "dashboard", "alerts", effectivePatientId],
+    enabled: effectivePatientId != null,
+    queryFn: () =>
+      api.listAlerts({ status: "active", patient_id: Number(effectivePatientId), limit: 20 }),
+    refetchInterval: 20_000,
+  });
 
-    setLoading(true);
-    try {
-      const pid = effectivePatientId;
-      const [patientData, vitalsData, alertsData, messagesData, devicesData] =
-        await Promise.all([
-          api.get<Patient>(`/patients/${pid}`),
-          api.get<VitalReading[]>(`/vitals/readings?patient_id=${pid}&limit=24`),
-          api.get<Alert[]>(`/alerts?status=active&limit=8&patient_id=${pid}`),
-          api.get<RoleMessage[]>("/workflow/messages?inbox_only=true&limit=5"),
-          api.get<SmartDevice[]>("/ha/devices"),
-        ]);
+  const messagesQuery = useQuery({
+    queryKey: ["patient", "dashboard", "messages", effectivePatientId],
+    enabled: effectivePatientId != null,
+    queryFn: () => api.listWorkflowMessages({ inbox_only: true, limit: 80 }),
+  });
 
-      let taskData: CareTask[] = [];
-      let restricted = false;
+  const smartDevicesQuery = useQuery({
+    queryKey: ["patient", "dashboard", "smart-devices"],
+    enabled: effectivePatientId != null,
+    queryFn: () => api.listSmartDevices(),
+  });
+
+  const tasksQuery = useQuery({
+    queryKey: ["patient", "dashboard", "tasks", effectivePatientId],
+    enabled: effectivePatientId != null,
+    retry: false,
+    queryFn: async () => {
       try {
-        taskData = await api.get<CareTask[]>("/workflow/tasks?limit=5");
-      } catch {
-        restricted = true;
+        const items = await api.listWorkflowTasks({ limit: 80 });
+        return { items, restricted: false };
+      } catch (error) {
+        if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
+          return { items: [] as CareTaskOut[], restricted: true };
+        }
+        throw error;
       }
+    },
+  });
 
-      setPatient(patientData);
-      setVitals(vitalsData);
-      setAlerts(alertsData);
-      setMessages(messagesData);
-      setDevices(devicesData);
-      setTasks(taskData);
-      setTasksRestricted(restricted);
-      setError(null);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Unable to load your dashboard.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [effectivePatientId, showAdminPatientPicker]);
-
-  useEffect(() => {
-    void fetchDashboard();
-  }, [fetchDashboard]);
-
-  const latest = vitals[0] ?? null;
-  const heartRateTrend = useMemo(
-    () =>
-      vitals
-        .slice(0, 8)
-        .map((reading) => reading.heart_rate_bpm)
-        .filter((value): value is number => value != null)
-        .reverse(),
-    [vitals],
-  );
-
-  const roomDevices = useMemo(() => {
-    if (!patient?.room_id) return [];
-    return devices.filter(
-      (device) => device.room_id === patient.room_id && device.is_active,
-    );
-  }, [devices, patient?.room_id]);
-
-  if (showAdminPatientPicker) {
-    if (adminPickerPatients === null) {
-      return (
-        <div className="flex justify-center py-20">
-          <div className="w-10 h-10 animate-spin rounded-full border-3 border-primary border-t-transparent" />
-        </div>
-      );
-    }
-    return (
-      <div className="surface-card mx-auto max-w-lg space-y-4 rounded-2xl border border-outline-variant/20 p-6">
-        <h2 className="text-xl font-bold text-on-surface">{t("patientPortal.choosePatient")}</h2>
-        <p className="text-sm text-on-surface-variant">{t("patientPortal.adminPickHint")}</p>
-        <select
-          className="input-field w-full rounded-xl py-2.5 text-sm"
-          defaultValue=""
-          aria-label={t("patientPortal.choosePatient")}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v) router.push(`/patient?previewAs=${v}`);
-          }}
-        >
-          <option value="" disabled>
-            —
-          </option>
-          {adminPickerPatients.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.first_name} {p.last_name} (#{p.id})
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
-
-  async function raiseAssistance(kind: AssistanceKind) {
-    if (!patient) return;
-    const isEmergency = kind === "sos";
-    const confirmed = window.confirm(
-      isEmergency
-        ? "Confirm emergency SOS alert to care staff?"
-        : "Confirm assistance request to care staff?",
-    );
-    if (!confirmed) return;
-
-    setSubmittingAlert(kind);
-    try {
-      await api.post<Alert>("/alerts", {
-        patient_id: patient.id,
-        alert_type: isEmergency ? "fall" : "zone_violation",
-        severity: isEmergency ? "critical" : "warning",
-        title: isEmergency ? "Emergency SOS from patient" : "Patient assistance request",
-        description: isEmergency
-          ? "Patient pressed emergency SOS from patient dashboard."
-          : "Patient requested non-emergency assistance from patient dashboard.",
+  const raiseAssistanceMutation = useMutation({
+    mutationFn: async (kind: AssistanceKind) => {
+      if (!effectivePatientId) return;
+      const payload = {
+        patient_id: Number(effectivePatientId),
+        alert_type: kind === "sos" ? "emergency_sos" : "patient_assistance",
+        severity: kind === "sos" ? "critical" : "warning",
+        title: kind === "sos" ? "Emergency SOS from patient" : "Patient assistance request",
+        description:
+          kind === "sos"
+            ? "Patient pressed emergency SOS from patient dashboard."
+            : "Patient requested non-emergency assistance from patient dashboard.",
         data: {
           source: "patient_dashboard",
           kind,
         },
+      } satisfies CreateAlertRequest;
+
+      await api.createAlert(payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["patient", "dashboard", "alerts"] });
+      await queryClient.invalidateQueries({ queryKey: ["patient", "dashboard"] });
+    },
+  });
+
+  const controlDeviceMutation = useMutation({
+    mutationFn: async (variables: { deviceId: number; action: "turn_on" | "turn_off" | "toggle" }) => {
+      await api.controlSmartDevice(variables.deviceId, {
+        action: variables.action,
+        parameters: {},
       });
-      await fetchDashboard();
-    } finally {
-      setSubmittingAlert(null);
-    }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["patient", "dashboard", "smart-devices"] });
+    },
+  });
+
+  const patient = useMemo(
+    () => (patientQuery.data ?? null) as GetPatientResponse | null,
+    [patientQuery.data],
+  );
+
+  const adminPatients = useMemo(
+    () => (adminPatientsQuery.data ?? []) as ListPatientsResponse,
+    [adminPatientsQuery.data],
+  );
+
+  const vitals = useMemo(
+    () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
+    [vitalsQuery.data],
+  );
+
+  const alerts = useMemo(
+    () => (alertsQuery.data ?? []) as ListAlertsResponse,
+    [alertsQuery.data],
+  );
+
+  const messages = useMemo(
+    () => (messagesQuery.data ?? []) as ListWorkflowMessagesResponse,
+    [messagesQuery.data],
+  );
+
+  const smartDevices = useMemo(
+    () => (smartDevicesQuery.data ?? []) as ListSmartDevicesResponse,
+    [smartDevicesQuery.data],
+  );
+
+  const tasksData = useMemo(
+    () => tasksQuery.data ?? { items: [] as CareTaskOut[], restricted: false },
+    [tasksQuery.data],
+  );
+
+  const patientTasks = useMemo(
+    () =>
+      tasksData.items.filter(
+        (task) => task.patient_id === effectivePatientId || task.patient_id == null,
+      ),
+    [effectivePatientId, tasksData.items],
+  );
+
+  const patientMessages = useMemo(
+    () =>
+      messages.filter(
+        (message) => message.patient_id === effectivePatientId || message.patient_id == null,
+      ),
+    [effectivePatientId, messages],
+  );
+
+  const roomDevices = useMemo(() => {
+    if (!patient?.room_id) return [] as ListSmartDevicesResponse;
+    return smartDevices.filter((device) => device.room_id === patient.room_id && device.is_active);
+  }, [patient, smartDevices]);
+
+  const latestVitals = vitals[0] ?? null;
+
+  const alertRows = useMemo<AlertRow[]>(() => {
+    return alerts
+      .map((alert) => ({
+        id: alert.id,
+        title: alert.title,
+        description: alert.description,
+        severity: alert.severity,
+        timestamp: alert.timestamp,
+      }))
+      .sort((left, right) => right.timestamp.localeCompare(left.timestamp));
+  }, [alerts]);
+
+  const taskRows = useMemo<TaskRow[]>(() => {
+    return patientTasks
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        dueAt: task.due_at,
+      }))
+      .sort((left, right) => {
+        if (!left.dueAt) return 1;
+        if (!right.dueAt) return -1;
+        return left.dueAt.localeCompare(right.dueAt);
+      })
+      .slice(0, 20);
+  }, [patientTasks]);
+
+  const messageRows = useMemo<MessageRow[]>(() => {
+    return patientMessages
+      .map((message) => ({
+        id: message.id,
+        subject: message.subject || "Care team update",
+        body: message.body,
+        isRead: message.is_read,
+        createdAt: message.created_at,
+      }))
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+      .slice(0, 20);
+  }, [patientMessages]);
+
+  const alertColumns = useMemo<ColumnDef<AlertRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Alert",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "severity",
+        header: "Severity",
+        cell: ({ row }) => {
+          const severity = row.original.severity;
+          const variant =
+            severity === "critical"
+              ? "destructive"
+              : severity === "warning"
+                ? "warning"
+                : "secondary";
+          return <Badge variant={variant}>{severity}</Badge>;
+        },
+      },
+      {
+        accessorKey: "timestamp",
+        header: "Time",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const taskColumns = useMemo<ColumnDef<TaskRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Task",
+      },
+      {
+        accessorKey: "priority",
+        header: "Priority",
+        cell: ({ row }) => <Badge variant="outline">{row.original.priority}</Badge>,
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
+      },
+      {
+        accessorKey: "dueAt",
+        header: "Due",
+        cell: ({ row }) => formatDateTime(row.original.dueAt),
+      },
+    ],
+    [],
+  );
+
+  const messageColumns = useMemo<ColumnDef<MessageRow>[]>(
+    () => [
+      {
+        accessorKey: "subject",
+        header: "Message",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.subject}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.body}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "isRead",
+        header: "Read",
+        cell: ({ row }) => (
+          <Badge variant={row.original.isRead ? "success" : "warning"}>
+            {row.original.isRead ? "read" : "unread"}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.createdAt)}</p>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  if (showAdminPatientPicker) {
+    return (
+      <Card className="mx-auto max-w-lg">
+        <CardContent className="space-y-4 pt-6">
+          <h2 className="text-xl font-bold text-foreground">Choose Patient Preview</h2>
+          <p className="text-sm text-muted-foreground">
+            Select a patient to preview patient portal as admin.
+          </p>
+          <Select
+            onValueChange={(value) => {
+              router.push(`/patient?previewAs=${value}`);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select patient" />
+            </SelectTrigger>
+            <SelectContent>
+              {adminPatients.map((patientOption) => (
+                <SelectItem key={patientOption.id} value={String(patientOption.id)}>
+                  {patientOption.first_name} {patientOption.last_name} (#{patientOption.id})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+    );
   }
 
-  async function controlDevice(deviceId: number, action: "turn_on" | "turn_off" | "toggle") {
-    setControllingDeviceId(deviceId);
-    try {
-      await api.post(`/ha/devices/${deviceId}/control`, { action, parameters: {} });
-      await fetchDashboard();
-    } finally {
-      setControllingDeviceId(null);
-    }
+  if (!effectivePatientId) {
+    return (
+      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-destructive">
+        Your account is not linked to a patient record.
+      </div>
+    );
   }
 
-  if (loading) {
+  const isLoadingAny =
+    patientQuery.isLoading ||
+    vitalsQuery.isLoading ||
+    alertsQuery.isLoading ||
+    messagesQuery.isLoading ||
+    smartDevicesQuery.isLoading ||
+    tasksQuery.isLoading;
+
+  if (isLoadingAny && !patient) {
     return (
       <div className="flex justify-center py-20">
-        <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
-  if (error || !patient) {
+  if (!patient) {
     return (
-      <div className="bg-error-container/40 border border-error/20 rounded-2xl p-6 text-error">
-        {error ?? "Unable to load patient dashboard."}
+      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-destructive">
+        Unable to load patient dashboard.
       </div>
     );
   }
+
+  const assistanceError = raiseAssistanceMutation.error
+    ? parseError(raiseAssistanceMutation.error)
+    : null;
+  const deviceError = controlDeviceMutation.error ? parseError(controlDeviceMutation.error) : null;
 
   return (
     <div className="space-y-8 animate-fade-in">
       {isAdminPreview ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
-          <p className="text-on-surface">{t("patientPortal.previewBanner")}</p>
-          <Link
-            href="/patient"
-            className="shrink-0 font-semibold text-primary hover:underline"
-          >
-            {t("patientPortal.previewClear")}
+          <p className="text-foreground">Preview mode: patient portal</p>
+          <Link href="/patient" className="font-semibold text-primary hover:underline">
+            Clear preview
           </Link>
         </div>
       ) : null}
+
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-bold text-on-surface">
+          <h2 className="text-3xl font-bold text-foreground">
             Welcome, {patient.nickname || patient.first_name}
           </h2>
-          <p className="text-on-surface-variant mt-2 text-sm">
-            Room {patient.room_id ?? "Unassigned"} - Care level {patient.care_level}
+          <p className="mt-2 text-sm text-muted-foreground">
+            Room {patient.room_id ?? "Unassigned"} • Care level {patient.care_level}
           </p>
         </div>
-        <button
-          onClick={() => void fetchDashboard()}
-          className="px-4 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface text-sm font-medium transition-smooth"
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            void queryClient.invalidateQueries({ queryKey: ["patient", "dashboard"] });
+          }}
         >
           Refresh
-        </button>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <MetricCard
-          title="Heart Rate"
-          value={latest?.heart_rate_bpm != null ? `${latest.heart_rate_bpm}` : "--"}
-          unit="bpm"
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <SummaryStatCard
           icon={Heart}
+          label="Heart rate"
+          value={latestVitals?.heart_rate_bpm ?? 0}
+          tone={latestVitals?.heart_rate_bpm ? "info" : "warning"}
         />
-        <MetricCard
-          title="SpO2"
-          value={latest?.spo2 != null ? `${latest.spo2}` : "--"}
-          unit="%"
+        <SummaryStatCard
           icon={Sparkles}
+          label="SpO2"
+          value={latestVitals?.spo2 ?? 0}
+          tone={latestVitals?.spo2 ? "info" : "warning"}
         />
-        <MetricCard
-          title="Skin Temp"
-          value={
-            latest?.skin_temperature != null ? `${latest.skin_temperature.toFixed(1)}` : "--"
-          }
-          unit="C"
+        <SummaryStatCard
           icon={Bell}
+          label="Skin temp"
+          value={latestVitals?.skin_temperature != null ? Number(latestVitals.skin_temperature.toFixed(1)) : 0}
+          tone={latestVitals?.skin_temperature != null ? "info" : "warning"}
         />
-      </div>
-
-      <section className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-6">
-        <h3 className="text-lg font-semibold text-on-surface mb-2">Device health</h3>
-        <p className="text-sm text-on-surface-variant">
-          Polar battery: {latest?.sensor_battery ?? "--"}% · Room smart devices:{" "}
-          {roomDevices.length}
-        </p>
       </section>
 
-      <section className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-6">
-        <h3 className="text-lg font-semibold text-on-surface mb-3">My Vitals Trend</h3>
-        {heartRateTrend.length > 0 ? (
-          <div className="flex items-end gap-2 h-28">
-            {heartRateTrend.map((value, index) => (
-              <div
-                key={`${value}-${index}`}
-                className="flex-1 rounded-md bg-primary/20 relative overflow-hidden"
-                title={`${value} bpm`}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <h3 className="text-lg font-semibold text-foreground">Assistance & SOS</h3>
+            <p className="text-sm text-muted-foreground">
+              Send assistance request directly to your care team.
+            </p>
+            {assistanceError ? <p className="text-sm text-destructive">{assistanceError}</p> : null}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                disabled={raiseAssistanceMutation.isPending}
+                onClick={() => raiseAssistanceMutation.mutate("assistance")}
               >
-                <div
-                  className="absolute bottom-0 inset-x-0 bg-primary rounded-md"
-                  style={{ height: `${Math.min(Math.max(value, 40), 130) - 35}%` }}
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-on-surface-variant">No heart-rate readings available yet.</p>
-        )}
+                {raiseAssistanceMutation.isPending ? "Sending..." : "Request Assistance"}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={raiseAssistanceMutation.isPending}
+                onClick={() => raiseAssistanceMutation.mutate("sos")}
+              >
+                <Siren className="h-4 w-4" />
+                {raiseAssistanceMutation.isPending ? "Sending SOS..." : "Emergency SOS"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <h3 className="text-lg font-semibold text-foreground">Room Device Control</h3>
+            <p className="text-sm text-muted-foreground">
+              Smart devices currently mapped to your room.
+            </p>
+            {deviceError ? <p className="text-sm text-destructive">{deviceError}</p> : null}
+            <div className="space-y-3">
+              {roomDevices.length > 0 ? (
+                roomDevices.map((device) => (
+                  <div key={device.id} className="rounded-xl border bg-card p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-foreground">{device.name}</p>
+                        <p className="text-xs text-muted-foreground">State: {device.state}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={controlDeviceMutation.isPending}
+                          onClick={() => controlDeviceMutation.mutate({ deviceId: device.id, action: "turn_on" })}
+                        >
+                          On
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={controlDeviceMutation.isPending}
+                          onClick={() => controlDeviceMutation.mutate({ deviceId: device.id, action: "turn_off" })}
+                        >
+                          Off
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No active smart-home devices are mapped to your room.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <section className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-6 space-y-3">
-          <h3 className="text-lg font-semibold text-on-surface">Assistance and SOS</h3>
-          <p className="text-sm text-on-surface-variant">
-            Send a request directly to your care team.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              onClick={() => void raiseAssistance("assistance")}
-              disabled={submittingAlert !== null}
-              className="py-4 rounded-xl bg-primary text-white font-semibold hover:opacity-90 disabled:opacity-60 transition-smooth"
-            >
-              {submittingAlert === "assistance"
-                ? "Sending request..."
-                : "Request Assistance"}
-            </button>
-            <button
-              onClick={() => void raiseAssistance("sos")}
-              disabled={submittingAlert !== null}
-              className="py-4 rounded-xl bg-error text-white font-semibold hover:opacity-90 disabled:opacity-60 transition-smooth flex items-center justify-center gap-2"
-            >
-              <Siren className="w-5 h-5" />
-              {submittingAlert === "sos" ? "Sending SOS..." : "Emergency SOS"}
-            </button>
-          </div>
-        </section>
+      <DataTableCard
+        title="Active Alerts"
+        description="Current patient alerts that require awareness."
+        data={alertRows}
+        columns={alertColumns}
+        isLoading={isLoadingAny}
+        emptyText="No active alerts right now."
+      />
 
-        <section className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-6">
-          <h3 className="text-lg font-semibold text-on-surface mb-3">Active Alerts</h3>
-          <div className="space-y-2">
-            {alerts.length > 0 ? (
-              alerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-medium text-on-surface text-sm">{alert.title}</p>
-                    <span className="text-xs uppercase text-on-surface-variant">
-                      {alert.severity}
-                    </span>
-                  </div>
-                  <p className="text-xs text-on-surface-variant mt-1">{alert.description}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-on-surface-variant">No active alerts right now.</p>
-            )}
-          </div>
-        </section>
+      <DataTableCard
+        title="Care Tasks"
+        description="Current care tasks visible in your account scope."
+        data={taskRows}
+        columns={taskColumns}
+        isLoading={isLoadingAny}
+        emptyText={tasksData.restricted ? "Care tasks are managed by staff for your account." : "No open tasks assigned."}
+      />
 
-        <section className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-6">
-          <h3 className="text-lg font-semibold text-on-surface mb-3">Room Control</h3>
-          <div className="space-y-3">
-            {roomDevices.length > 0 ? (
-              roomDevices.map((device) => (
-                <div
-                  key={device.id}
-                  className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-on-surface">{device.name}</p>
-                      <p className="text-xs text-on-surface-variant">{device.state}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => void controlDevice(device.id, "turn_on")}
-                        disabled={controllingDeviceId === device.id}
-                        className="px-3 py-1.5 rounded-lg text-xs bg-primary text-white disabled:opacity-60"
-                      >
-                        On
-                      </button>
-                      <button
-                        onClick={() => void controlDevice(device.id, "turn_off")}
-                        disabled={controllingDeviceId === device.id}
-                        className="px-3 py-1.5 rounded-lg text-xs bg-surface text-on-surface border border-outline-variant/40 disabled:opacity-60"
-                      >
-                        Off
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-on-surface-variant">
-                No active smart-home devices are mapped to your room.
-              </p>
-            )}
-          </div>
-        </section>
-
-        <section className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-6 space-y-3">
-          <h3 className="text-lg font-semibold text-on-surface">Tasks and Messages</h3>
-          <div>
-            <p className="text-sm font-medium text-on-surface mb-2">Care tasks</p>
-            {tasks.length > 0 ? (
-              <ul className="space-y-2">
-                {tasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20"
-                  >
-                    <p className="text-sm font-medium text-on-surface">{task.title}</p>
-                    <p className="text-xs text-on-surface-variant mt-1">{task.status}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : tasksRestricted ? (
-              <p className="text-sm text-on-surface-variant">
-                Care tasks are managed by staff for your account.
-              </p>
-            ) : (
-              <p className="text-sm text-on-surface-variant">
-                No open care tasks assigned at this time.
-              </p>
-            )}
-          </div>
-          <div>
-            <p className="text-sm font-medium text-on-surface mb-2">Latest messages</p>
-            {messages.length > 0 ? (
-              <ul className="space-y-2">
-                {messages.map((message) => (
-                  <li
-                    key={message.id}
-                    className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20"
-                  >
-                    <p className="text-sm font-medium text-on-surface">
-                      {message.subject || "Care team update"}
-                    </p>
-                    <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">
-                      {message.body}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-on-surface-variant">No messages in your inbox.</p>
-            )}
-            <Link
-              href="/patient/messages"
-              className="inline-flex items-center gap-2 mt-3 text-sm text-primary hover:underline"
-            >
-              <MessageCircle className="w-4 h-4" />
+      <DataTableCard
+        title="Latest Messages"
+        description="Recent care-team communication for your case."
+        data={messageRows}
+        columns={messageColumns}
+        isLoading={isLoadingAny}
+        emptyText="No messages in your inbox."
+        rightSlot={
+          <Button asChild size="sm" variant="outline">
+            <Link href="/patient/messages">
+              <MessageCircle className="h-4 w-4" />
               Open messages
             </Link>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function MetricCard({
-  title,
-  value,
-  unit,
-  icon: Icon,
-}: {
-  title: string;
-  value: string;
-  unit: string;
-  icon: React.ComponentType<{ className?: string }>;
-}) {
-  return (
-    <div className="bg-surface-container shadow-sm border border-outline-variant/20 rounded-3xl p-5">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm text-on-surface-variant">{title}</h3>
-        <Icon className="w-4 h-4 text-primary" />
-      </div>
-      <div className="flex items-end gap-2 mt-2">
-        <span className="text-3xl font-bold text-on-surface">{value}</span>
-        <span className="text-sm text-outline pb-1">{unit}</span>
-      </div>
+          </Button>
+        }
+      />
     </div>
   );
 }

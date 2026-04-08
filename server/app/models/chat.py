@@ -1,9 +1,9 @@
-"""AI chat persistence — conversations and messages per workspace user."""
-
+from __future__ import annotations
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 
-from .base import Base, utcnow
+"""AI chat persistence — conversations and messages per workspace user."""
 
+from .base import Base, utcnow
 
 class ChatConversation(Base):
     """A chat thread owned by a user within a workspace."""
@@ -27,7 +27,6 @@ class ChatConversation(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
-
 class ChatMessage(Base):
     """Single message in a conversation."""
 
@@ -44,7 +43,6 @@ class ChatMessage(Base):
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utcnow)
 
-
 class WorkspaceAISettings(Base):
     """Workspace-level default AI provider/model (admin-configurable)."""
 
@@ -59,3 +57,4 @@ class WorkspaceAISettings(Base):
     default_model = Column(String(128), nullable=False, default="gemma4:e4b")
     copilot_token_encrypted = Column(Text, nullable=True)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+

@@ -1,34 +1,221 @@
-"use client";
+﻿"use client";
+"use no memo";
 
-import { useQuery } from "@/hooks/useQuery";
-import EmptyState from "@/components/EmptyState";
-import { Bell } from "lucide-react";
-import type { Alert } from "@/lib/types";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Bell, Filter } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { api } from "@/lib/api";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
+
+type AlertRow = {
+  id: number;
+  title: string;
+  alertType: string;
+  description: string;
+  severity: string;
+  status: string;
+  patientId: number | null;
+  patientName: string;
+  timestamp: string;
+};
+
+type AlertStatusFilter = "all" | "active" | "acknowledged" | "resolved";
+type AlertSeverityFilter = "all" | "critical" | "warning" | "info";
 
 export default function HeadNurseAlertsPage() {
-  const { data: alerts, isLoading } = useQuery<Alert[]>("/alerts");
+  const [status, setStatus] = useState<AlertStatusFilter>("all");
+  const [severity, setSeverity] = useState<AlertSeverityFilter>("all");
+  const [search, setSearch] = useState("");
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const alertsQuery = useQuery({
+    queryKey: ["head-nurse", "alerts", "list"],
+    queryFn: () => api.listAlerts({ limit: 400 }),
+    refetchInterval: 30_000,
+  });
 
-  if (!alerts?.length) {
-    return <EmptyState icon={Bell} message="No alerts." />;
-  }
+  const patientsQuery = useQuery({
+    queryKey: ["head-nurse", "alerts", "patients"],
+    queryFn: () => api.listPatients({ limit: 300 }),
+  });
+
+  const alerts = useMemo(
+    () => (alertsQuery.data ?? []) as ListAlertsResponse,
+    [alertsQuery.data],
+  );
+  const patients = useMemo(
+    () => (patientsQuery.data ?? []) as ListPatientsResponse,
+    [patientsQuery.data],
+  );
+
+  const patientMap = useMemo(
+    () => new Map(patients.map((patient) => [patient.id, patient])),
+    [patients],
+  );
+
+  const rows = useMemo<AlertRow[]>(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    return alerts
+      .filter((item) => (status === "all" ? true : item.status === status))
+      .filter((item) => (severity === "all" ? true : item.severity === severity))
+      .map((item) => {
+        const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
+        return {
+          id: item.id,
+          title: item.title,
+          alertType: item.alert_type,
+          description: item.description,
+          severity: item.severity,
+          status: item.status,
+          patientId: item.patient_id,
+          patientName: patient ? `${patient.first_name} ${patient.last_name}`.trim() : "Unlinked patient",
+          timestamp: item.timestamp,
+        };
+      })
+      .filter((item) => {
+        if (!normalizedSearch) return true;
+        const corpus = `${item.title} ${item.alertType} ${item.description} ${item.patientName}`.toLowerCase();
+        return corpus.includes(normalizedSearch);
+      })
+      .sort((left, right) => right.timestamp.localeCompare(left.timestamp));
+  }, [alerts, patientMap, search, severity, status]);
+
+  const columns = useMemo<ColumnDef<AlertRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Alert",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <p className="text-xs text-muted-foreground">{row.original.alertType}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
+          </div>
+        ),
+      },
+      { accessorKey: "patientName", header: "Patient" },
+      {
+        accessorKey: "severity",
+        header: "Severity",
+        cell: ({ row }) => {
+          const alertSeverity = row.original.severity;
+          const variant =
+            alertSeverity === "critical"
+              ? "destructive"
+              : alertSeverity === "warning"
+                ? "warning"
+                : "secondary";
+          return <Badge variant={variant}>{alertSeverity}</Badge>;
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge variant={row.original.status === "active" ? "destructive" : "outline"}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "timestamp",
+        header: "Time",
+        cell: ({ row }) => (
+          <div className="space-y-1 text-sm">
+            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          const href = row.original.patientId
+            ? `/head-nurse/patients/${row.original.patientId}`
+            : "/head-nurse/patients";
+          return (
+            <Button asChild size="sm" variant="outline">
+              <Link href={href}>Open patient</Link>
+            </Button>
+          );
+        },
+      },
+    ],
+    [],
+  );
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-2xl font-bold text-on-surface">Alerts</h2>
-      {alerts.map((a) => (
-        <div key={a.id} className="surface-card p-4 text-sm">
-          <p className="font-medium">{a.alert_type}</p>
-          <p className="text-on-surface-variant">{a.description}</p>
+    <div className="space-y-6 animate-fade-in">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Alerts</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Filter and triage ward alerts with severity and status controls.
+        </p>
+      </div>
+
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search title, type, patient"
+        />
+
+        <Select value={status} onValueChange={(value) => setStatus(value as AlertStatusFilter)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="acknowledged">Acknowledged</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={severity} onValueChange={(value) => setSeverity(value as AlertSeverityFilter)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter severity" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All severity</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
+            <SelectItem value="warning">Warning</SelectItem>
+            <SelectItem value="info">Info</SelectItem>
+          </SelectContent>
+        </Select>
+      </section>
+
+      <DataTableCard
+        title="Alert Stream"
+        description="Active and historical alerts in descending time order."
+        data={rows}
+        columns={columns}
+        isLoading={alertsQuery.isLoading || patientsQuery.isLoading}
+        emptyText="No alerts match this filter."
+        rightSlot={<Filter className="h-4 w-4 text-muted-foreground" />}
+      />
+
+      <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
+        <div className="inline-flex items-center gap-2">
+          <Bell className="h-4 w-4" />
+          {rows.filter((item) => item.status === "active").length} active alerts in current result set
         </div>
-      ))}
+      </div>
     </div>
   );
 }

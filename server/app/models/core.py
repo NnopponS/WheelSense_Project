@@ -1,4 +1,6 @@
+from __future__ import annotations
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, JSON
+
 from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, utcnow
@@ -28,7 +30,6 @@ class Device(Base):
     last_seen = Column(DateTime(timezone=True), default=utcnow)
     config = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
 
-
 class DeviceActivityEvent(Base):
     """Admin-facing device fleet activity (registry, HA mappings, commands, pairing)."""
 
@@ -47,7 +48,6 @@ class DeviceActivityEvent(Base):
     registry_device_id = Column(String(32), nullable=True, index=True)
     smart_device_id = Column(Integer, nullable=True, index=True)
     details = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)
-
 
 class DeviceCommandDispatch(Base):
     """Audit trail for MQTT commands sent from admin/API (optional device ack)."""
@@ -92,13 +92,14 @@ class SmartDevice(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
     room_id = Column(Integer, ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True, index=True)
-    
+
     name = Column(String(128), nullable=False)
     ha_entity_id = Column(String(128), nullable=False, unique=True, index=True)  # e.g., light.bedroom_1
     device_type = Column(String(32), nullable=False)  # 'light', 'switch', 'climate', 'fan'
-    
+
     is_active = Column(Boolean, default=True)
     state = Column(String(32), default="unknown")  # Cache of the last known HA state ('on', 'off')
     config = Column(JSON().with_variant(JSONB, "postgresql"), default=dict)  # Features, capabilities
-    
+
     created_at = Column(DateTime(timezone=True), default=utcnow)
+
