@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@/hooks/useQuery";
 import EmptyState from "@/components/EmptyState";
@@ -51,6 +52,16 @@ export default function CaregiversPage() {
   }, [caregivers, search, roleFilter, activeFilter]);
 
   const isLoading = loadingCaregivers || loadingUsers;
+  const unlinkedStaffAccounts =
+    users?.filter(
+      (item) =>
+        item.is_active &&
+        (item.role === "admin" ||
+          item.role === "head_nurse" ||
+          item.role === "supervisor" ||
+          item.role === "observer") &&
+        item.caregiver_id == null,
+    ).length ?? 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -131,6 +142,18 @@ export default function CaregiversPage() {
           </div>
         </div>
       </div>
+
+      {unlinkedStaffAccounts > 0 ? (
+        <div className="rounded-xl border border-amber-400/45 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span className="font-semibold">
+            {unlinkedStaffAccounts} active staff account(s) are missing caregiver links.
+          </span>{" "}
+          <Link href="/admin/account-management" className="font-semibold underline">
+            Open account management
+          </Link>
+          {" "}to connect each account to the correct staff profile.
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="flex justify-center py-16">

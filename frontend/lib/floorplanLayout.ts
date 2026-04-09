@@ -6,6 +6,7 @@ export type FloorplanRoomShape = {
   w: number;
   h: number;
   device_id: number | null;
+  node_device_id?: string | null;
   power_kw: number | null;
 };
 
@@ -22,10 +23,33 @@ export interface FloorplanLayoutResponse {
       w: number;
       h: number;
       device_id?: number | null;
+      node_device_id?: string | null;
       power_kw?: number | null;
     }>;
   };
   updated_at: string | null;
+}
+
+const LEGACY_COORD_SCALE = 10;
+const LARGE_MAP_COORD_SCALE = 50;
+export const FLOORPLAN_LAYOUT_VERSION = 3;
+
+export function percentToCanvasUnits(value: number): number {
+  return value * LARGE_MAP_COORD_SCALE;
+}
+
+export function canvasUnitsToPercent(value: number): number {
+  return value / LARGE_MAP_COORD_SCALE;
+}
+
+function normalizeCoordinate(value: number, version: number): number {
+  if (version >= FLOORPLAN_LAYOUT_VERSION && value > 100) {
+    return value;
+  }
+  if (version >= FLOORPLAN_LAYOUT_VERSION) {
+    return value * LARGE_MAP_COORD_SCALE;
+  }
+  return value * LEGACY_COORD_SCALE;
 }
 
 export function normalizeFloorplanRooms(
@@ -33,14 +57,16 @@ export function normalizeFloorplanRooms(
 ): FloorplanRoomShape[] {
   const rooms = raw?.rooms;
   if (!Array.isArray(rooms)) return [];
+  const version = Number(raw?.version ?? 1);
   return rooms.map((r) => ({
     id: String(r.id),
     label: r.label ?? "Room",
-    x: r.x,
-    y: r.y,
-    w: r.w,
-    h: r.h,
+    x: normalizeCoordinate(r.x, version),
+    y: normalizeCoordinate(r.y, version),
+    w: normalizeCoordinate(r.w, version),
+    h: normalizeCoordinate(r.h, version),
     device_id: r.device_id ?? null,
+    node_device_id: r.node_device_id ?? null,
     power_kw: r.power_kw ?? null,
   }));
 }
@@ -64,11 +90,12 @@ export function bootstrapRoomsFromDbFloor(
     return {
       id: `room-${r.id}`,
       label: r.name,
-      x,
-      y,
-      w,
-      h,
+      x: x * LEGACY_COORD_SCALE,
+      y: y * LEGACY_COORD_SCALE,
+      w: w * LEGACY_COORD_SCALE,
+      h: h * LEGACY_COORD_SCALE,
       device_id: null,
+      node_device_id: null,
       power_kw: null,
     };
   });

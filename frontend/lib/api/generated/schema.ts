@@ -1102,6 +1102,26 @@ export interface paths {
         patch: operations["patch_users_me_api_auth_me_patch"];
         trace?: never;
     };
+    "/api/auth/impersonate/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Impersonation
+         * @description Issue a short-lived admin act-as token for a target workspace user.
+         */
+        post: operations["start_impersonation_api_auth_impersonate_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/me/profile-image": {
         parameters: {
             query?: never;
@@ -1833,6 +1853,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workflow/items/{item_type}/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Workflow Item Detail
+         * @description Unified read model for workflow item detail dialogs.
+         */
+        get: operations["get_workflow_item_detail_api_workflow_items__item_type___item_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/future/floorplans": {
         parameters: {
             query?: never;
@@ -2241,6 +2281,54 @@ export interface components {
              */
             created_at: string;
         };
+        /**
+         * AuthMeOut
+         * @description Current authenticated user, with optional impersonation context.
+         */
+        AuthMeOut: {
+            /** Username */
+            username: string;
+            /**
+             * Role
+             * @default observer
+             */
+            role: string;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /** Caregiver Id */
+            caregiver_id?: number | null;
+            /** Patient Id */
+            patient_id?: number | null;
+            /**
+             * Profile Image Url
+             * @default
+             */
+            profile_image_url: string;
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Impersonation
+             * @default false
+             */
+            impersonation: boolean;
+            /** Impersonated By User Id */
+            impersonated_by_user_id?: number | null;
+        };
         /** Body_login_for_access_token_api_auth_login_post */
         Body_login_for_access_token_api_auth_login_post: {
             /** Grant Type */
@@ -2366,6 +2454,9 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            target_person?: components["schemas"]["WorkflowPersonOut"] | null;
+            issued_by_person?: components["schemas"]["WorkflowPersonOut"] | null;
+            acknowledged_by_person?: components["schemas"]["WorkflowPersonOut"] | null;
         };
         /** CareDirectiveUpdate */
         CareDirectiveUpdate: {
@@ -2595,6 +2686,8 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            assigned_person?: components["schemas"]["WorkflowPersonOut"] | null;
+            created_by_person?: components["schemas"]["WorkflowPersonOut"] | null;
         };
         /** CareScheduleUpdate */
         CareScheduleUpdate: {
@@ -2680,6 +2773,8 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            assigned_person?: components["schemas"]["WorkflowPersonOut"] | null;
+            created_by_person?: components["schemas"]["WorkflowPersonOut"] | null;
         };
         /** CareTaskUpdate */
         CareTaskUpdate: {
@@ -3233,6 +3328,10 @@ export interface components {
              * @default unmapped
              */
             node_status: string;
+            /** Patient Hints */
+            patient_hints?: components["schemas"]["FloorplanPresencePatientHint"][];
+            /** Staff Hints */
+            staff_hints?: components["schemas"]["FloorplanPresenceStaffHint"][];
             patient_hint?: components["schemas"]["FloorplanPresencePatientHint"] | null;
             prediction_hint?: components["schemas"]["FloorplanPresencePredictionHint"] | null;
             /**
@@ -3249,6 +3348,25 @@ export interface components {
             staleness_seconds?: number | null;
             /** Sources */
             sources?: string[];
+        };
+        /** FloorplanPresenceStaffHint */
+        FloorplanPresenceStaffHint: {
+            /** Caregiver Id */
+            caregiver_id: number;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Role
+             * @default
+             */
+            role: string;
+            /**
+             * Source
+             * @default zone_assignment
+             */
+            source: string;
         };
         /**
          * FloorplanRoomShape
@@ -3441,6 +3559,14 @@ export interface components {
             meal_portion: string | null;
             /** Water Ml */
             water_ml: number | null;
+        };
+        /**
+         * ImpersonationStart
+         * @description Request body for admin act-as token creation.
+         */
+        ImpersonationStart: {
+            /** Target User Id */
+            target_user_id: number;
         };
         /**
          * MePatch
@@ -4099,6 +4225,10 @@ export interface components {
             recipient_user_id?: number | null;
             /** Patient Id */
             patient_id?: number | null;
+            /** Workflow Item Type */
+            workflow_item_type?: string | null;
+            /** Workflow Item Id */
+            workflow_item_id?: number | null;
             /**
              * Subject
              * @default
@@ -4121,6 +4251,10 @@ export interface components {
             recipient_user_id: number | null;
             /** Patient Id */
             patient_id: number | null;
+            /** Workflow Item Type */
+            workflow_item_type: string | null;
+            /** Workflow Item Id */
+            workflow_item_id: number | null;
             /** Subject */
             subject: string;
             /** Body */
@@ -4134,6 +4268,8 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            sender_person?: components["schemas"]["WorkflowPersonOut"] | null;
+            recipient_person?: components["schemas"]["WorkflowPersonOut"] | null;
         };
         /** RoomCreate */
         RoomCreate: {
@@ -4474,6 +4610,15 @@ export interface components {
             access_token: string;
             /** Token Type */
             token_type: string;
+            /**
+             * Impersonation
+             * @default false
+             */
+            impersonation: boolean;
+            /** Actor Admin Id */
+            actor_admin_id?: number | null;
+            /** Impersonated User Id */
+            impersonated_user_id?: number | null;
         };
         /** TrainRequest */
         TrainRequest: {
@@ -4575,6 +4720,11 @@ export interface components {
             username: string;
             /** Role */
             role: string;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
             /** Caregiver Id */
             caregiver_id?: number | null;
             /** Patient Id */
@@ -4686,6 +4836,42 @@ export interface components {
             active_alerts: number;
             /** Critical Patients */
             critical_patients: number;
+        };
+        /** WorkflowItemDetailOut */
+        WorkflowItemDetailOut: {
+            /** Item Type */
+            item_type: string;
+            /** Item */
+            item: {
+                [key: string]: unknown;
+            };
+            /** Patient */
+            patient?: {
+                [key: string]: unknown;
+            } | null;
+            assignee_person?: components["schemas"]["WorkflowPersonOut"] | null;
+            creator_person?: components["schemas"]["WorkflowPersonOut"] | null;
+            /** Messages */
+            messages?: components["schemas"]["RoleMessageOut"][];
+            /** Audit */
+            audit?: components["schemas"]["AuditTrailEventOut"][];
+        };
+        /** WorkflowPersonOut */
+        WorkflowPersonOut: {
+            /** User Id */
+            user_id: number;
+            /** Username */
+            username: string;
+            /** Role */
+            role: string;
+            /** Display Name */
+            display_name: string;
+            /** Person Type */
+            person_type: string;
+            /** Caregiver Id */
+            caregiver_id?: number | null;
+            /** Patient Id */
+            patient_id?: number | null;
         };
         /** WorkspaceCreate */
         WorkspaceCreate: {
@@ -7612,7 +7798,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserOut"];
+                    "application/json": components["schemas"]["AuthMeOut"];
                 };
             };
         };
@@ -7637,6 +7823,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_impersonation_api_auth_impersonate_start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImpersonationStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Token"];
                 };
             };
             /** @description Validation Error */
@@ -8805,6 +9024,8 @@ export interface operations {
         parameters: {
             query?: {
                 inbox_only?: boolean;
+                workflow_item_type?: string | null;
+                workflow_item_id?: number | null;
                 limit?: number;
             };
             header?: never;
@@ -9119,6 +9340,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditTrailEventOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workflow_item_detail_api_workflow_items__item_type___item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_type: string;
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowItemDetailOut"];
                 };
             };
             /** @description Validation Error */

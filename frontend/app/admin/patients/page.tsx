@@ -2,9 +2,10 @@
 
 import { useCallback, useState } from "react";
 import { Plus, Search } from "lucide-react";
+import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@/hooks/useQuery";
-import type { Patient } from "@/lib/types";
+import type { Patient, User } from "@/lib/types";
 import AddPatientModal from "@/components/admin/patients/AddPatientModal";
 import { PatientsDataTable } from "@/components/admin/patients/PatientsDataTable";
 import { Button } from "@/components/ui/button";
@@ -21,11 +22,16 @@ import {
 export default function PatientsPage() {
   const { t } = useTranslation();
   const { data: patients, isLoading, refetch } = useQuery<Patient[]>("/patients");
+  const { data: users } = useQuery<User[]>("/users");
   const [modalOpen, setModalOpen] = useState(false);
   const [sharedSearch, setSharedSearch] = useState("");
   const [careLevelFilter, setCareLevelFilter] = useState<"all" | Patient["care_level"]>("all");
   const [activeStatusFilter, setActiveStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [roomFilter, setRoomFilter] = useState<"all" | "assigned" | "unassigned">("all");
+  const unlinkedPatientAccounts =
+    users?.filter(
+      (item) => item.is_active && item.role === "patient" && item.patient_id == null,
+    ).length ?? 0;
 
   const onCreated = useCallback(async () => {
     await refetch();
@@ -45,6 +51,18 @@ export default function PatientsPage() {
           {t("patients.addNew")}
         </Button>
       </div>
+
+      {unlinkedPatientAccounts > 0 ? (
+        <div className="rounded-xl border border-amber-400/45 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span className="font-semibold">
+            {unlinkedPatientAccounts} active patient account(s) are not linked.
+          </span>{" "}
+          <Link href="/admin/account-management" className="font-semibold underline">
+            Open account management
+          </Link>
+          {" "}to assign them to the correct patient records.
+        </div>
+      ) : null}
 
       <Card>
         <CardContent className="grid gap-4 pt-6 md:grid-cols-2 xl:grid-cols-4">

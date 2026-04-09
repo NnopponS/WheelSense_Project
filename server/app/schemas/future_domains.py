@@ -132,6 +132,20 @@ class FloorplanPresencePatientHint(BaseModel):
     nickname: str = ""
     source: str
 
+
+class RoomOccupantOut(BaseModel):
+    actor_type: str
+    actor_id: int
+    display_name: str
+    subtitle: str = ""
+    role: Optional[str] = None
+    patient_id: Optional[int] = None
+    user_id: Optional[int] = None
+    caregiver_id: Optional[int] = None
+    room_id: Optional[int] = None
+    source: str
+    updated_at: Optional[datetime] = None
+
 class FloorplanPresencePredictionHint(BaseModel):
     device_id: str
     patient_id: Optional[int] = None
@@ -140,6 +154,23 @@ class FloorplanPresencePredictionHint(BaseModel):
     confidence: float = 0.0
     computed_at: datetime
     staleness_seconds: int
+
+
+class RoomSmartDeviceStateSummary(BaseModel):
+    id: int
+    name: str
+    device_type: str
+    ha_entity_id: str = ""
+    state: str = "unknown"
+    is_active: bool = True
+
+
+class RoomCameraSummary(BaseModel):
+    device_id: Optional[str] = None
+    latest_photo_id: Optional[int] = None
+    latest_photo_url: Optional[str] = None
+    captured_at: Optional[datetime] = None
+    capture_available: bool = False
 
 class FloorplanPresenceRoomOut(BaseModel):
     room_id: int
@@ -153,12 +184,24 @@ class FloorplanPresenceRoomOut(BaseModel):
     computed_at: datetime
     staleness_seconds: Optional[int] = None
     sources: list[str] = Field(default_factory=list)
+    occupants: list[RoomOccupantOut] = Field(default_factory=list)
+    alert_count: int = 0
+    smart_devices_summary: list[RoomSmartDeviceStateSummary] = Field(default_factory=list)
+    camera_summary: Optional[RoomCameraSummary] = None
 
 class FloorplanPresenceOut(BaseModel):
     facility_id: int
     floor_id: int
     computed_at: datetime
     rooms: list[FloorplanPresenceRoomOut]
+
+
+class RoomCaptureOut(BaseModel):
+    room_id: int
+    node_device_id: Optional[str] = None
+    command_id: Optional[int] = None
+    topic: Optional[str] = None
+    message: str
 
 # ── Floorplan builder (interactive layout JSON) ───────────────────────────────
 

@@ -34,6 +34,9 @@ class Token(BaseModel):
     """JWT Token response."""
     access_token: str
     token_type: str
+    impersonation: bool = False
+    actor_admin_id: Optional[int] = None
+    impersonated_user_id: Optional[int] = None
 
 class TokenData(BaseModel):
     """Data extracted from JWT."""
@@ -98,11 +101,23 @@ class UserOut(UserBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+class AuthMeOut(UserOut):
+    """Current authenticated user, with optional impersonation context."""
+
+    impersonation: bool = False
+    impersonated_by_user_id: Optional[int] = None
+
+class ImpersonationStart(BaseModel):
+    """Request body for admin act-as token creation."""
+
+    target_user_id: int
+
 class UserSearchOut(BaseModel):
     """Search result shape for person-target assignment controls."""
     id: int
     username: str
     role: str
+    is_active: bool = True
     caregiver_id: Optional[int] = None
     patient_id: Optional[int] = None
     display_name: str

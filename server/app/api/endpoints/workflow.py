@@ -17,7 +17,9 @@ from app.api.dependencies import (
     get_visible_patient_ids,
 )
 from app.models.core import Workspace
+from app.models.patients import Patient
 from app.models.users import User
+from app.models.workflow import RoleMessage
 from app.schemas.workflow import (
     AuditTrailEventOut,
     CareDirectiveAcknowledge,
@@ -34,15 +36,24 @@ from app.schemas.workflow import (
     HandoverNoteOut,
     RoleMessageCreate,
     RoleMessageOut,
+    WorkflowClaimRequest,
+    WorkflowHandoffRequest,
+    WorkflowItemDetailOut,
 )
 from app.services.workflow import (
+    WORKFLOW_AUDIT_ENTITY_TYPES,
     audit_trail_service,
     care_directive_service,
     care_task_service,
+    enrich_directive_people,
+    enrich_message_people,
+    enrich_schedule_people,
+    enrich_task_people,
     handover_note_service,
     role_message_service,
     schedule_service,
 )
+from sqlalchemy import select
 
 router = APIRouter()
 
@@ -181,6 +192,8 @@ async def update_task(
 @router.get("/messages", response_model=list[RoleMessageOut])
 async def list_messages(
     inbox_only: bool = True,
+    workflow_item_type: Optional[str] = None,
+    workflow_item_id: Optional[int] = None,
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
@@ -192,6 +205,8 @@ async def list_messages(
         user_id=current_user.id,
         user_role=current_user.role,
         inbox_only=inbox_only,
+        workflow_item_type=workflow_item_type,
+        workflow_item_id=workflow_item_id,
         limit=limit,
     )
 
@@ -363,4 +378,273 @@ async def query_audit_trail(
         visible_patient_ids=visible_patient_ids,
         limit=limit,
     )
+
+@router.get("/items/{item_type}/{item_id}", response_model=WorkflowItemDetailOut)
+async def get_workflow_item_detail(
+    item_type: str,
+    item_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+):
+    """Unified read model for workflow item detail dialogs."""
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    patient_id: int | None = None
+    item_out: dict
+    assignee_person = None
+    creator_person = None
+
+    if item_type == "task":
+        task = await care_task_service.get(db, ws_id=ws.id, id=item_id)
+        if not task:
+            raise HTTPException(404, "Workflow item not found")
+        if task.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, task.patient_id)
+        if not await care_task_service.can_user_access_task(
+            db,
+            ws_id=ws.id,
+            task_id=item_id,
+            user_id=current_user.id,
+            user_role=current_user.role,
+        ):
+            raise HTTPException(403, "Operation not permitted")
+        await enrich_task_people(db, ws.id, [task])
+        item_out = CareTaskOut.model_validate(task).model_dump(mode="json")
+        patient_id = task.patient_id
+        assignee_person = item_out.get("assigned_person")
+        creator_person = item_out.get("created_by_person")
+    elif item_type == "schedule":
+        schedule = await schedule_service.get(db, ws_id=ws.id, id=item_id)
+        if not schedule:
+            raise HTTPException(404, "Workflow item not found")
+        if schedule.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, schedule.patient_id)
+        if visible_patient_ids is not None and (
+            schedule.patient_id is not None and schedule.patient_id not in visible_patient_ids
+        ):
+            raise HTTPException(403, "Operation not permitted")
+        await enrich_schedule_people(db, ws.id, [schedule])
+        item_out = CareScheduleOut.model_validate(schedule).model_dump(mode="json")
+        patient_id = schedule.patient_id
+        assignee_person = item_out.get("assigned_person")
+        creator_person = item_out.get("created_by_person")
+    elif item_type == "directive":
+        directive = await care_directive_service.get(db, ws_id=ws.id, id=item_id)
+        if not directive:
+            raise HTTPException(404, "Workflow item not found")
+        if directive.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, directive.patient_id)
+        if not care_directive_service._is_directive_visible(
+            directive,
+            user_id=current_user.id,
+            user_role=current_user.role,
+        ):
+            raise HTTPException(403, "Operation not permitted")
+        await enrich_directive_people(db, ws.id, [directive])
+        item_out = CareDirectiveOut.model_validate(directive).model_dump(mode="json")
+        patient_id = directive.patient_id
+        assignee_person = item_out.get("target_person")
+        creator_person = item_out.get("issued_by_person")
+    else:
+        raise HTTPException(422, "Invalid workflow item type")
+
+    patient = None
+    if patient_id is not None:
+        patient_row = await db.get(Patient, patient_id)
+        if patient_row and patient_row.workspace_id == ws.id:
+            patient = {
+                "id": patient_row.id,
+                "first_name": patient_row.first_name,
+                "last_name": patient_row.last_name,
+                "nickname": patient_row.nickname or "",
+                "room_id": patient_row.room_id,
+                "care_level": patient_row.care_level,
+            }
+
+    message_rows = list(
+        (
+            await db.execute(
+                select(RoleMessage)
+                .where(
+                    RoleMessage.workspace_id == ws.id,
+                    RoleMessage.workflow_item_type == item_type,
+                    RoleMessage.workflow_item_id == item_id,
+                )
+                .order_by(RoleMessage.created_at.asc())
+                .limit(200)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    await enrich_message_people(db, ws.id, message_rows)
+    audit_rows = await audit_trail_service.query_events(
+        db,
+        ws_id=ws.id,
+        entity_type=WORKFLOW_AUDIT_ENTITY_TYPES[item_type],
+        visible_patient_ids=visible_patient_ids,
+        limit=200,
+    )
+    audit_rows = [row for row in audit_rows if row.entity_id == item_id]
+
+    return WorkflowItemDetailOut(
+        item_type=item_type,
+        item=item_out,
+        patient=patient,
+        assignee_person=assignee_person,
+        creator_person=creator_person,
+        messages=[RoleMessageOut.model_validate(row) for row in message_rows],
+        audit=[AuditTrailEventOut.model_validate(row) for row in audit_rows],
+    )
+
+
+@router.post("/items/{item_type}/{item_id}/claim")
+async def claim_workflow_item(
+    item_type: str,
+    item_id: int,
+    data: WorkflowClaimRequest,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+):
+    if item_type == "task":
+        task = await care_task_service.get(db, ws_id=ws.id, id=item_id)
+        if not task:
+            raise HTTPException(404, "Workflow item not found")
+        if task.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, task.patient_id)
+        if not await care_task_service.can_user_access_task(
+            db,
+            ws_id=ws.id,
+            task_id=item_id,
+            user_id=current_user.id,
+            user_role=current_user.role,
+        ):
+            raise HTTPException(403, "Operation not permitted")
+        claimed = await care_task_service.claim(
+            db,
+            ws_id=ws.id,
+            actor_user_id=current_user.id,
+            task_id=item_id,
+            note=data.note,
+        )
+        return CareTaskOut.model_validate(claimed)
+
+    if item_type == "schedule":
+        schedule = await schedule_service.get(db, ws_id=ws.id, id=item_id)
+        if not schedule:
+            raise HTTPException(404, "Workflow item not found")
+        if schedule.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, schedule.patient_id)
+        claimed = await schedule_service.claim(
+            db,
+            ws_id=ws.id,
+            actor_user_id=current_user.id,
+            schedule_id=item_id,
+            note=data.note,
+        )
+        return CareScheduleOut.model_validate(claimed)
+
+    if item_type == "directive":
+        directive = await care_directive_service.get(db, ws_id=ws.id, id=item_id)
+        if not directive:
+            raise HTTPException(404, "Workflow item not found")
+        if directive.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, directive.patient_id)
+        if not care_directive_service._is_directive_visible(
+            directive,
+            user_id=current_user.id,
+            user_role=current_user.role,
+        ):
+            raise HTTPException(403, "Operation not permitted")
+        claimed = await care_directive_service.claim(
+            db,
+            ws_id=ws.id,
+            actor_user_id=current_user.id,
+            directive_id=item_id,
+            note=data.note,
+        )
+        return CareDirectiveOut.model_validate(claimed)
+
+    raise HTTPException(422, "Invalid workflow item type")
+
+
+@router.post("/items/{item_type}/{item_id}/handoff")
+async def handoff_workflow_item(
+    item_type: str,
+    item_id: int,
+    data: WorkflowHandoffRequest,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+):
+    target_role = data.target_role if data.target_mode == "role" else None
+    target_user_id = data.target_user_id if data.target_mode == "user" else None
+
+    if item_type == "task":
+        task = await care_task_service.get(db, ws_id=ws.id, id=item_id)
+        if not task:
+            raise HTTPException(404, "Workflow item not found")
+        if task.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, task.patient_id)
+        if not await care_task_service.can_user_access_task(
+            db,
+            ws_id=ws.id,
+            task_id=item_id,
+            user_id=current_user.id,
+            user_role=current_user.role,
+        ):
+            raise HTTPException(403, "Operation not permitted")
+        handed = await care_task_service.handoff(
+            db,
+            ws_id=ws.id,
+            actor_user_id=current_user.id,
+            task_id=item_id,
+            target_role=target_role,
+            target_user_id=target_user_id,
+            note=data.note,
+        )
+        return CareTaskOut.model_validate(handed)
+
+    if item_type == "schedule":
+        schedule = await schedule_service.get(db, ws_id=ws.id, id=item_id)
+        if not schedule:
+            raise HTTPException(404, "Workflow item not found")
+        if schedule.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, schedule.patient_id)
+        handed = await schedule_service.handoff(
+            db,
+            ws_id=ws.id,
+            actor_user_id=current_user.id,
+            schedule_id=item_id,
+            target_role=target_role,
+            target_user_id=target_user_id,
+            note=data.note,
+        )
+        return CareScheduleOut.model_validate(handed)
+
+    if item_type == "directive":
+        directive = await care_directive_service.get(db, ws_id=ws.id, id=item_id)
+        if not directive:
+            raise HTTPException(404, "Workflow item not found")
+        if directive.patient_id is not None:
+            await assert_patient_record_access_db(db, ws.id, current_user, directive.patient_id)
+        if not care_directive_service._is_directive_visible(
+            directive,
+            user_id=current_user.id,
+            user_role=current_user.role,
+        ):
+            raise HTTPException(403, "Operation not permitted")
+        handed = await care_directive_service.handoff(
+            db,
+            ws_id=ws.id,
+            actor_user_id=current_user.id,
+            directive_id=item_id,
+            target_role=target_role,
+            target_user_id=target_user_id,
+            note=data.note,
+        )
+        return CareDirectiveOut.model_validate(handed)
+
+    raise HTTPException(422, "Invalid workflow item type")
 

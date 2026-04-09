@@ -3,12 +3,14 @@ from __future__ import annotations
 """Business logic for workflow domains (Phase 12R Wave P1)."""
 
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.request_context import get_impersonated_by_user_id
+from app.models.caregivers import CareGiver
 from app.models.patients import Patient
 from app.models.users import User
 from app.models.workflow import (
@@ -32,6 +34,13 @@ from app.schemas.workflow import (
 from app.services.base import CRUDBase
 
 CANONICAL_WORKFLOW_ROLES = {"admin", "head_nurse", "supervisor", "observer", "patient"}
+CANONICAL_WORKFLOW_ITEM_TYPES = {"task", "schedule", "directive"}
+
+WORKFLOW_AUDIT_ENTITY_TYPES = {
+    "task": "care_task",
+    "schedule": "care_schedule",
+    "directive": "care_directive",
+}
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -107,6 +116,196 @@ async def _validate_workspace_patient(
             detail="Patient not found in current workspace",
         )
 
+def _validate_workflow_item_ref(
+    workflow_item_type: str | None,
+    workflow_item_id: int | None,
+) -> None:
+    if workflow_item_type is None and workflow_item_id is None:
+        return
+    if workflow_item_type is None or workflow_item_id is None:
+        raise HTTPException(
+            status_code=422,
+            detail="workflow_item_type and workflow_item_id must be set together",
+        )
+    if workflow_item_type not in CANONICAL_WORKFLOW_ITEM_TYPES:
+        raise HTTPException(status_code=422, detail="Invalid workflow_item_type")
+
+
+async def _validate_workflow_item_exists(
+    session: AsyncSession,
+    ws_id: int,
+    workflow_item_type: str | None,
+    workflow_item_id: int | None,
+) -> None:
+    _validate_workflow_item_ref(workflow_item_type, workflow_item_id)
+    if workflow_item_type is None or workflow_item_id is None:
+        return
+    model = {
+        "task": CareTask,
+        "schedule": CareSchedule,
+        "directive": CareDirective,
+    }[workflow_item_type]
+    exists = (
+        await session.execute(
+            select(model.id).where(model.workspace_id == ws_id, model.id == workflow_item_id)
+        )
+    ).scalar_one_or_none()
+    if exists is None:
+        raise HTTPException(status_code=400, detail="Workflow item not found")
+
+
+def _person_from_user(
+    user: User,
+    caregivers: dict[int, CareGiver],
+    patients: dict[int, Patient],
+) -> dict[str, Any]:
+    person_type = "account"
+    display_name = user.username
+    if user.caregiver_id is not None and user.caregiver_id in caregivers:
+        caregiver = caregivers[user.caregiver_id]
+        display_name = f"{caregiver.first_name} {caregiver.last_name}".strip() or user.username
+        person_type = "caregiver"
+    elif user.patient_id is not None and user.patient_id in patients:
+        patient = patients[user.patient_id]
+        display_name = f"{patient.first_name} {patient.last_name}".strip() or user.username
+        person_type = "patient"
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "role": user.role,
+        "display_name": display_name,
+        "person_type": person_type,
+        "caregiver_id": user.caregiver_id,
+        "patient_id": user.patient_id,
+    }
+
+
+async def _load_person_map(
+    session: AsyncSession,
+    ws_id: int,
+    user_ids: set[int],
+) -> dict[int, dict[str, Any]]:
+    if not user_ids:
+        return {}
+    users = list(
+        (
+            await session.execute(
+                select(User).where(User.workspace_id == ws_id, User.id.in_(user_ids))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    caregiver_ids = {user.caregiver_id for user in users if user.caregiver_id is not None}
+    patient_ids = {user.patient_id for user in users if user.patient_id is not None}
+    caregivers: dict[int, CareGiver] = {}
+    if caregiver_ids:
+        rows = (
+            await session.execute(
+                select(CareGiver).where(
+                    CareGiver.workspace_id == ws_id,
+                    CareGiver.id.in_(caregiver_ids),
+                )
+            )
+        ).scalars().all()
+        caregivers = {row.id: row for row in rows}
+    patients: dict[int, Patient] = {}
+    if patient_ids:
+        rows = (
+            await session.execute(
+                select(Patient).where(
+                    Patient.workspace_id == ws_id,
+                    Patient.id.in_(patient_ids),
+                )
+            )
+        ).scalars().all()
+        patients = {row.id: row for row in rows}
+    return {
+        user.id: _person_from_user(user, caregivers, patients)
+        for user in users
+    }
+
+
+async def enrich_schedule_people(
+    session: AsyncSession,
+    ws_id: int,
+    schedules: list[CareSchedule],
+) -> list[CareSchedule]:
+    ids = {
+        user_id
+        for schedule in schedules
+        for user_id in (schedule.assigned_user_id, schedule.created_by_user_id)
+        if user_id is not None
+    }
+    people = await _load_person_map(session, ws_id, ids)
+    for schedule in schedules:
+        setattr(schedule, "assigned_person", people.get(schedule.assigned_user_id or -1))
+        setattr(schedule, "created_by_person", people.get(schedule.created_by_user_id or -1))
+    return schedules
+
+
+async def enrich_task_people(
+    session: AsyncSession,
+    ws_id: int,
+    tasks: list[CareTask],
+) -> list[CareTask]:
+    ids = {
+        user_id
+        for task in tasks
+        for user_id in (task.assigned_user_id, task.created_by_user_id)
+        if user_id is not None
+    }
+    people = await _load_person_map(session, ws_id, ids)
+    for task in tasks:
+        setattr(task, "assigned_person", people.get(task.assigned_user_id or -1))
+        setattr(task, "created_by_person", people.get(task.created_by_user_id or -1))
+    return tasks
+
+
+async def enrich_directive_people(
+    session: AsyncSession,
+    ws_id: int,
+    directives: list[CareDirective],
+) -> list[CareDirective]:
+    ids = {
+        user_id
+        for directive in directives
+        for user_id in (
+            directive.target_user_id,
+            directive.issued_by_user_id,
+            directive.acknowledged_by_user_id,
+        )
+        if user_id is not None
+    }
+    people = await _load_person_map(session, ws_id, ids)
+    for directive in directives:
+        setattr(directive, "target_person", people.get(directive.target_user_id or -1))
+        setattr(directive, "issued_by_person", people.get(directive.issued_by_user_id or -1))
+        setattr(
+            directive,
+            "acknowledged_by_person",
+            people.get(directive.acknowledged_by_user_id or -1),
+        )
+    return directives
+
+
+async def enrich_message_people(
+    session: AsyncSession,
+    ws_id: int,
+    messages: list[RoleMessage],
+) -> list[RoleMessage]:
+    ids = {
+        user_id
+        for message in messages
+        for user_id in (message.sender_user_id, message.recipient_user_id)
+        if user_id is not None
+    }
+    people = await _load_person_map(session, ws_id, ids)
+    for message in messages:
+        setattr(message, "sender_person", people.get(message.sender_user_id or -1))
+        setattr(message, "recipient_person", people.get(message.recipient_user_id or -1))
+    return messages
+
 async def _validate_schedule_target(
     session: AsyncSession,
     ws_id: int,
@@ -172,6 +371,10 @@ class AuditTrailService(CRUDBase[AuditTrailEvent, AuditTrailEvent, AuditTrailEve
         patient_id: Optional[int] = None,
         details: Optional[dict] = None,
     ) -> AuditTrailEvent:
+        event_details = dict(details or {})
+        impersonated_by_user_id = get_impersonated_by_user_id()
+        if impersonated_by_user_id is not None:
+            event_details.setdefault("impersonated_by_user_id", impersonated_by_user_id)
         event = AuditTrailEvent(
             workspace_id=ws_id,
             actor_user_id=actor_user_id,
@@ -180,7 +383,7 @@ class AuditTrailService(CRUDBase[AuditTrailEvent, AuditTrailEvent, AuditTrailEve
             action=action,
             entity_type=entity_type,
             entity_id=entity_id,
-            details=details or {},
+            details=event_details,
         )
         session.add(event)
         await session.flush()
@@ -235,7 +438,7 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
             stmt = stmt.where(CareSchedule.status == status)
         stmt = stmt.order_by(CareSchedule.starts_at.desc()).limit(limit)
         res = await session.execute(stmt)
-        return list(res.scalars().all())
+        return await enrich_schedule_people(session, ws_id, list(res.scalars().all()))
 
     async def create_schedule(
         self, session: AsyncSession, ws_id: int, actor_user_id: int, obj_in: CareScheduleCreate
@@ -263,6 +466,7 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
         )
         await session.commit()
         await session.refresh(db_obj)
+        await enrich_schedule_people(session, ws_id, [db_obj])
         return db_obj
 
     async def set_status(
@@ -286,6 +490,7 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
         )
         await session.commit()
         await session.refresh(schedule)
+        await enrich_schedule_people(session, ws_id, [schedule])
         return schedule
 
     async def update(
@@ -308,7 +513,107 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
                 assigned_user_id=patch.get("assigned_user_id", db_obj.assigned_user_id),
                 patient_id=patch.get("patient_id", db_obj.patient_id),
             )
-        return await super().update(session, ws_id=ws_id, db_obj=db_obj, obj_in=patch)
+        updated = await super().update(session, ws_id=ws_id, db_obj=db_obj, obj_in=patch)
+        await enrich_schedule_people(session, ws_id, [updated])
+        return updated
+
+    async def claim(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        actor_user_id: int,
+        schedule_id: int,
+        note: str = "",
+    ) -> Optional[CareSchedule]:
+        schedule = await self.get(session, ws_id=ws_id, id=schedule_id)
+        if not schedule:
+            return None
+        previous = {
+            "assigned_role": schedule.assigned_role,
+            "assigned_user_id": schedule.assigned_user_id,
+        }
+        schedule.assigned_role = None
+        schedule.assigned_user_id = actor_user_id
+        session.add(schedule)
+        await audit_trail_service.log_event(
+            session,
+            ws_id,
+            actor_user_id=actor_user_id,
+            domain="schedule",
+            action="claim",
+            entity_type="care_schedule",
+            entity_id=schedule.id,
+            patient_id=schedule.patient_id,
+            details={**previous, "note": note},
+        )
+        await session.commit()
+        await session.refresh(schedule)
+        await enrich_schedule_people(session, ws_id, [schedule])
+        return schedule
+
+    async def handoff(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        actor_user_id: int,
+        schedule_id: int,
+        target_role: str | None,
+        target_user_id: int | None,
+        note: str = "",
+    ) -> Optional[CareSchedule]:
+        schedule = await self.get(session, ws_id=ws_id, id=schedule_id)
+        if not schedule:
+            return None
+        await _validate_schedule_target(
+            session,
+            ws_id,
+            assigned_role=target_role,
+            assigned_user_id=target_user_id,
+            patient_id=schedule.patient_id,
+        )
+        previous = {
+            "assigned_role": schedule.assigned_role,
+            "assigned_user_id": schedule.assigned_user_id,
+        }
+        schedule.assigned_role = target_role
+        schedule.assigned_user_id = target_user_id
+        session.add(schedule)
+        await audit_trail_service.log_event(
+            session,
+            ws_id,
+            actor_user_id=actor_user_id,
+            domain="schedule",
+            action="handoff",
+            entity_type="care_schedule",
+            entity_id=schedule.id,
+            patient_id=schedule.patient_id,
+            details={
+                **previous,
+                "target_role": target_role,
+                "target_user_id": target_user_id,
+                "note": note,
+            },
+        )
+        await session.commit()
+        await role_message_service.send_message(
+            session,
+            ws_id=ws_id,
+            sender_user_id=actor_user_id,
+            obj_in=RoleMessageCreate(
+                recipient_role=target_role,
+                recipient_user_id=target_user_id,
+                patient_id=schedule.patient_id,
+                workflow_item_type="schedule",
+                workflow_item_id=schedule.id,
+                subject=f"Handoff: {schedule.title}",
+                body=note.strip() or f"Schedule handed off: {schedule.title}",
+            ),
+        )
+        await session.refresh(schedule)
+        await enrich_schedule_people(session, ws_id, [schedule])
+        return schedule
 
 class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
     @staticmethod
@@ -343,15 +648,21 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         )
         await session.commit()
         await session.refresh(db_obj)
+        await enrich_task_people(session, ws_id, [db_obj])
         return db_obj
 
     async def update_task(
-        self, session: AsyncSession, ws_id: int, actor_user_id: int, task_id: int, obj_in: CareTaskUpdate
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        actor_user_id: int,
+        task_id: int,
+        obj_in: CareTaskUpdate | dict,
     ) -> Optional[CareTask]:
         task = await self.get(session, ws_id=ws_id, id=task_id)
         if not task:
             return None
-        patch = obj_in.model_dump(exclude_unset=True)
+        patch = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
         if (
             "assigned_role" in patch
             or "assigned_user_id" in patch
@@ -385,6 +696,7 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         )
         await session.commit()
         await session.refresh(task)
+        await enrich_task_people(session, ws_id, [task])
         return task
 
     async def list_visible_tasks(
@@ -410,7 +722,7 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
             stmt = stmt.where(CareTask.status == status)
         stmt = stmt.order_by(CareTask.created_at.desc()).limit(limit)
         res = await session.execute(stmt)
-        return list(res.scalars().all())
+        return await enrich_task_people(session, ws_id, list(res.scalars().all()))
 
     async def can_user_access_task(
         self, session: AsyncSession, ws_id: int, *, task_id: int, user_id: int, user_role: str
@@ -419,6 +731,104 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         if not task:
             return False
         return self._is_task_visible(task, user_id=user_id, user_role=user_role)
+
+    async def claim(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        actor_user_id: int,
+        task_id: int,
+        note: str = "",
+    ) -> Optional[CareTask]:
+        task = await self.get(session, ws_id=ws_id, id=task_id)
+        if not task:
+            return None
+        previous = {
+            "assigned_role": task.assigned_role,
+            "assigned_user_id": task.assigned_user_id,
+        }
+        task.assigned_role = None
+        task.assigned_user_id = actor_user_id
+        session.add(task)
+        await audit_trail_service.log_event(
+            session,
+            ws_id,
+            actor_user_id=actor_user_id,
+            domain="task",
+            action="claim",
+            entity_type="care_task",
+            entity_id=task.id,
+            patient_id=task.patient_id,
+            details={**previous, "note": note},
+        )
+        await session.commit()
+        await session.refresh(task)
+        await enrich_task_people(session, ws_id, [task])
+        return task
+
+    async def handoff(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        actor_user_id: int,
+        task_id: int,
+        target_role: str | None,
+        target_user_id: int | None,
+        note: str = "",
+    ) -> Optional[CareTask]:
+        task = await self.get(session, ws_id=ws_id, id=task_id)
+        if not task:
+            return None
+        await _validate_task_target(
+            session,
+            ws_id,
+            assigned_role=target_role,
+            assigned_user_id=target_user_id,
+            patient_id=task.patient_id,
+        )
+        previous = {
+            "assigned_role": task.assigned_role,
+            "assigned_user_id": task.assigned_user_id,
+        }
+        task.assigned_role = target_role
+        task.assigned_user_id = target_user_id
+        session.add(task)
+        await audit_trail_service.log_event(
+            session,
+            ws_id,
+            actor_user_id=actor_user_id,
+            domain="task",
+            action="handoff",
+            entity_type="care_task",
+            entity_id=task.id,
+            patient_id=task.patient_id,
+            details={
+                **previous,
+                "target_role": target_role,
+                "target_user_id": target_user_id,
+                "note": note,
+            },
+        )
+        await session.commit()
+        await role_message_service.send_message(
+            session,
+            ws_id=ws_id,
+            sender_user_id=actor_user_id,
+            obj_in=RoleMessageCreate(
+                recipient_role=target_role,
+                recipient_user_id=target_user_id,
+                patient_id=task.patient_id,
+                workflow_item_type="task",
+                workflow_item_id=task.id,
+                subject=f"Handoff: {task.title}",
+                body=note.strip() or f"Task handed off: {task.title}",
+            ),
+        )
+        await session.refresh(task)
+        await enrich_task_people(session, ws_id, [task])
+        return task
 
 class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCreate]):
     async def send_message(
@@ -442,12 +852,20 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
             "recipient_user_id",
         )
         await _validate_workspace_patient(session, ws_id, obj_in.patient_id)
+        await _validate_workflow_item_exists(
+            session,
+            ws_id,
+            obj_in.workflow_item_type,
+            obj_in.workflow_item_id,
+        )
         db_obj = RoleMessage(
             workspace_id=ws_id,
             sender_user_id=sender_user_id,
             recipient_role=obj_in.recipient_role,
             recipient_user_id=obj_in.recipient_user_id,
             patient_id=obj_in.patient_id,
+            workflow_item_type=obj_in.workflow_item_type,
+            workflow_item_id=obj_in.workflow_item_id,
             subject=obj_in.subject,
             body=obj_in.body,
         )
@@ -462,10 +880,16 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
             entity_type="role_message",
             entity_id=db_obj.id,
             patient_id=db_obj.patient_id,
-            details={"recipient_role": db_obj.recipient_role, "recipient_user_id": db_obj.recipient_user_id},
+            details={
+                "recipient_role": db_obj.recipient_role,
+                "recipient_user_id": db_obj.recipient_user_id,
+                "workflow_item_type": db_obj.workflow_item_type,
+                "workflow_item_id": db_obj.workflow_item_id,
+            },
         )
         await session.commit()
         await session.refresh(db_obj)
+        await enrich_message_people(session, ws_id, [db_obj])
         return db_obj
 
     async def list_messages(
@@ -476,8 +900,11 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
         user_id: int,
         user_role: str,
         inbox_only: bool = True,
+        workflow_item_type: Optional[str] = None,
+        workflow_item_id: Optional[int] = None,
         limit: int = 100,
     ) -> list[RoleMessage]:
+        _validate_workflow_item_ref(workflow_item_type, workflow_item_id)
         stmt = select(RoleMessage).where(RoleMessage.workspace_id == ws_id)
         if inbox_only:
             stmt = stmt.where(
@@ -494,9 +921,14 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
                     (RoleMessage.recipient_user_id.is_(None) & (RoleMessage.recipient_role == user_role)),
                 )
             )
+        if workflow_item_type is not None and workflow_item_id is not None:
+            stmt = stmt.where(
+                RoleMessage.workflow_item_type == workflow_item_type,
+                RoleMessage.workflow_item_id == workflow_item_id,
+            )
         stmt = stmt.order_by(RoleMessage.created_at.desc()).limit(limit)
         res = await session.execute(stmt)
-        return list(res.scalars().all())
+        return await enrich_message_people(session, ws_id, list(res.scalars().all()))
 
     async def mark_read(
         self,
@@ -520,6 +952,7 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
         session.add(message)
         await session.commit()
         await session.refresh(message)
+        await enrich_message_people(session, ws_id, [message])
         return message
 
 class HandoverNoteService(CRUDBase[HandoverNote, HandoverNoteCreate, HandoverNoteCreate]):
@@ -643,7 +1076,7 @@ class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDire
             stmt = stmt.where(CareDirective.status == status)
         stmt = stmt.order_by(CareDirective.created_at.desc()).limit(limit)
         res = await session.execute(stmt)
-        return list(res.scalars().all())
+        return await enrich_directive_people(session, ws_id, list(res.scalars().all()))
 
     async def update(
         self,
@@ -665,7 +1098,9 @@ class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDire
                 target_user_id=patch.get("target_user_id", db_obj.target_user_id),
                 patient_id=patch.get("patient_id", db_obj.patient_id),
             )
-        return await super().update(session, ws_id=ws_id, db_obj=db_obj, obj_in=patch)
+        updated = await super().update(session, ws_id=ws_id, db_obj=db_obj, obj_in=patch)
+        await enrich_directive_people(session, ws_id, [updated])
+        return updated
 
     async def acknowledge(
         self,
@@ -700,6 +1135,105 @@ class CareDirectiveService(CRUDBase[CareDirective, CareDirectiveCreate, CareDire
         )
         await session.commit()
         await session.refresh(directive)
+        await enrich_directive_people(session, ws_id, [directive])
+        return directive
+
+    async def claim(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        actor_user_id: int,
+        directive_id: int,
+        note: str = "",
+    ) -> Optional[CareDirective]:
+        directive = await self.get(session, ws_id=ws_id, id=directive_id)
+        if not directive:
+            return None
+        previous = {
+            "target_role": directive.target_role,
+            "target_user_id": directive.target_user_id,
+        }
+        directive.target_role = None
+        directive.target_user_id = actor_user_id
+        session.add(directive)
+        await audit_trail_service.log_event(
+            session,
+            ws_id,
+            actor_user_id=actor_user_id,
+            domain="directive",
+            action="claim",
+            entity_type="care_directive",
+            entity_id=directive.id,
+            patient_id=directive.patient_id,
+            details={**previous, "note": note},
+        )
+        await session.commit()
+        await session.refresh(directive)
+        await enrich_directive_people(session, ws_id, [directive])
+        return directive
+
+    async def handoff(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        actor_user_id: int,
+        directive_id: int,
+        target_role: str | None,
+        target_user_id: int | None,
+        note: str = "",
+    ) -> Optional[CareDirective]:
+        directive = await self.get(session, ws_id=ws_id, id=directive_id)
+        if not directive:
+            return None
+        await _validate_directive_target(
+            session,
+            ws_id,
+            target_role=target_role,
+            target_user_id=target_user_id,
+            patient_id=directive.patient_id,
+        )
+        previous = {
+            "target_role": directive.target_role,
+            "target_user_id": directive.target_user_id,
+        }
+        directive.target_role = target_role
+        directive.target_user_id = target_user_id
+        session.add(directive)
+        await audit_trail_service.log_event(
+            session,
+            ws_id,
+            actor_user_id=actor_user_id,
+            domain="directive",
+            action="handoff",
+            entity_type="care_directive",
+            entity_id=directive.id,
+            patient_id=directive.patient_id,
+            details={
+                **previous,
+                "target_role": target_role,
+                "target_user_id": target_user_id,
+                "note": note,
+            },
+        )
+        await session.commit()
+        await role_message_service.send_message(
+            session,
+            ws_id=ws_id,
+            sender_user_id=actor_user_id,
+            obj_in=RoleMessageCreate(
+                recipient_role=target_role,
+                recipient_user_id=target_user_id,
+                patient_id=directive.patient_id,
+                workflow_item_type="directive",
+                workflow_item_id=directive.id,
+                subject=f"Handoff: {directive.title}",
+                body=note.strip() or f"Directive handed off: {directive.title}",
+            ),
+        )
+        await session.refresh(directive)
+        await enrich_directive_people(session, ws_id, [directive])
         return directive
 
 audit_trail_service = AuditTrailService(AuditTrailEvent)

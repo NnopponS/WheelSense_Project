@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
 from app.models.core import Workspace
+from app.core.security import create_access_token, get_password_hash
 from app.models.users import User
 
 
@@ -105,6 +106,87 @@ async def test_upload_profile_image_sets_hosted_url_and_is_public(client: AsyncC
     me = await client.get("/api/auth/me")
     assert me.status_code == 200
     assert me.json()["profile_image_url"] == url
+
+
+@pytest.mark.asyncio
+async def test_admin_impersonation_token_scopes_as_target_user(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    target = User(
+        workspace_id=admin_user.workspace_id,
+        username="impersonated_observer",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        is_active=True,
+    )
+    db_session.add(target)
+    await db_session.commit()
+    await db_session.refresh(target)
+
+    started = await client.post(
+        "/api/auth/impersonate/start",
+        json={"target_user_id": target.id},
+    )
+    assert started.status_code == 200, started.text
+    body = started.json()
+    assert body["impersonation"] is True
+    assert body["actor_admin_id"] == admin_user.id
+    assert body["impersonated_user_id"] == target.id
+
+    me = await client.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {body['access_token']}"},
+    )
+    assert me.status_code == 200
+    me_body = me.json()
+    assert me_body["id"] == target.id
+    assert me_body["role"] == "observer"
+    assert me_body["impersonation"] is True
+    assert me_body["impersonated_by_user_id"] == admin_user.id
+
+
+@pytest.mark.asyncio
+async def test_impersonation_rejects_non_admin_and_cross_workspace(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    other_ws = Workspace(name="impersonation-other-ws", is_active=True)
+    db_session.add(other_ws)
+    await db_session.flush()
+    observer = User(
+        workspace_id=admin_user.workspace_id,
+        username="not_admin_impersonator",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        is_active=True,
+    )
+    other_target = User(
+        workspace_id=other_ws.id,
+        username="cross_workspace_target",
+        hashed_password=get_password_hash("password123"),
+        role="patient",
+        is_active=True,
+    )
+    db_session.add_all([observer, other_target])
+    await db_session.commit()
+    await db_session.refresh(observer)
+    await db_session.refresh(other_target)
+
+    non_admin = await client.post(
+        "/api/auth/impersonate/start",
+        headers={"Authorization": f"Bearer {create_access_token(subject=observer.id, role=observer.role)}"},
+        json={"target_user_id": admin_user.id},
+    )
+    assert non_admin.status_code == 403
+
+    cross_workspace = await client.post(
+        "/api/auth/impersonate/start",
+        json={"target_user_id": other_target.id},
+    )
+    assert cross_workspace.status_code == 404
 
 
 @pytest.mark.asyncio

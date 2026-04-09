@@ -23,6 +23,7 @@ function decodeJwtRole(token: string): string | null {
 }
 
 function pathAllowedForRole(pathname: string, role: string): boolean {
+  if (pathname === "/account" || pathname.startsWith("/account/")) return true;
   if (role === "admin") return true;
   const prefix = Object.entries(ROLE_HOME).find(
     ([r, home]) => r === role && pathname.startsWith(home),
@@ -81,5 +82,6 @@ export const config = {
     "/supervisor/:path*",
     "/observer/:path*",
     "/patient/:path*",
+    "/account/:path*",
   ],
 };

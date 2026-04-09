@@ -102,6 +102,15 @@ Legacy routes that now redirect:
   - installed Ollama models come from `GET /api/settings/ai/ollama/models`
   - deleting a local Ollama model uses `DELETE /api/settings/ai/ollama/models/{name}`
   - the UI should not hardcode `gpt-4o`, `gpt-4.1`, or any other Copilot model IDs
+- Admin floorplan editing and monitoring map behavior:
+  - map rendering is SVG-based in `components/floorplan/FloorplanCanvas.tsx`
+  - canvas uses a 1000-unit internal coordinate space with legacy 0-100 layout compatibility
+  - drag/resize interactions snap to grid and use pointer capture to avoid stuck edits
+  - room-node linking is standardized around `room.node_device_id` (device string id), not only numeric `devices.id`
+  - monitoring workspace saves geometry to `/api/future/floorplans/layout` and syncs node links through `/api/rooms/{room_id}`
+- `/admin` dashboard no longer shows the large account-link status card or AI/Copilot status card; those responsibilities moved closer to operational pages:
+  - patient account-link gaps are surfaced on `/admin/patients`
+  - staff account-link gaps are surfaced on `/admin/caregivers`
 
 ## Development
 

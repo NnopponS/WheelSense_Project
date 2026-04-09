@@ -9,6 +9,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    Index,
     JSON,
     String,
     Text,
@@ -54,6 +55,7 @@ class FloorplanLayout(Base):
     floor_id = Column(Integer, ForeignKey("floors.id", ondelete="CASCADE"), nullable=False)
     layout_json = Column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
 
 class Specialist(Base):
     __tablename__ = "specialists"
@@ -112,6 +114,37 @@ class PharmacyOrder(Base):
     requested_at = Column(DateTime(timezone=True), default=utcnow, index=True)
     fulfilled_at = Column(DateTime(timezone=True), nullable=True)
     notes = Column(Text, default="")
+    created_at = Column(DateTime(timezone=True), default=utcnow)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class DemoActorPosition(Base):
+    """Manual room presence for demo-controlled staff and other actors."""
+
+    __tablename__ = "demo_actor_positions"
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id",
+            "actor_type",
+            "actor_id",
+            name="uq_demo_actor_positions_actor",
+        ),
+        Index(
+            "ix_demo_actor_positions_room",
+            "workspace_id",
+            "room_id",
+            "actor_type",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    actor_type = Column(String(16), nullable=False, index=True)  # staff | patient
+    actor_id = Column(Integer, nullable=False, index=True)
+    room_id = Column(Integer, ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    source = Column(String(32), default="manual", nullable=False)
+    note = Column(Text, default="")
+    updated_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 

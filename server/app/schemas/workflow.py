@@ -5,7 +5,37 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+class WorkflowPersonOut(BaseModel):
+    user_id: int
+    username: str
+    role: str
+    display_name: str
+    person_type: str
+    caregiver_id: Optional[int] = None
+    patient_id: Optional[int] = None
+
+
+class WorkflowClaimRequest(BaseModel):
+    note: str = ""
+
+
+class WorkflowHandoffRequest(BaseModel):
+    target_mode: str = Field(pattern="^(role|user)$")
+    target_role: Optional[str] = None
+    target_user_id: Optional[int] = None
+    note: str = ""
+
+    @model_validator(mode="after")
+    def validate_target(self):
+        if self.target_mode == "role":
+            if not self.target_role or self.target_user_id is not None:
+                raise ValueError("Role handoff requires target_role and no target_user_id")
+        if self.target_mode == "user":
+            if self.target_user_id is None or self.target_role is not None:
+                raise ValueError("User handoff requires target_user_id and no target_role")
+        return self
 
 class CareScheduleCreate(BaseModel):
     patient_id: Optional[int] = None
@@ -48,6 +78,8 @@ class CareScheduleOut(BaseModel):
     created_by_user_id: Optional[int]
     created_at: datetime
     updated_at: datetime
+    assigned_person: Optional[WorkflowPersonOut] = None
+    created_by_person: Optional[WorkflowPersonOut] = None
 
 class CareTaskCreate(BaseModel):
     schedule_id: Optional[int] = None
@@ -85,11 +117,15 @@ class CareTaskOut(BaseModel):
     completed_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+    assigned_person: Optional[WorkflowPersonOut] = None
+    created_by_person: Optional[WorkflowPersonOut] = None
 
 class RoleMessageCreate(BaseModel):
     recipient_role: Optional[str] = None
     recipient_user_id: Optional[int] = None
     patient_id: Optional[int] = None
+    workflow_item_type: Optional[str] = None
+    workflow_item_id: Optional[int] = None
     subject: str = ""
     body: str
 
@@ -107,11 +143,15 @@ class RoleMessageOut(BaseModel):
     recipient_role: Optional[str]
     recipient_user_id: Optional[int]
     patient_id: Optional[int]
+    workflow_item_type: Optional[str]
+    workflow_item_id: Optional[int]
     subject: str
     body: str
     is_read: bool
     read_at: Optional[datetime]
     created_at: datetime
+    sender_person: Optional[WorkflowPersonOut] = None
+    recipient_person: Optional[WorkflowPersonOut] = None
 
 class HandoverNoteCreate(BaseModel):
     patient_id: Optional[int] = None
@@ -155,6 +195,7 @@ class CareDirectiveUpdate(BaseModel):
 class CareDirectiveAcknowledge(BaseModel):
     note: str = ""
 
+
 class CareDirectiveOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -172,6 +213,9 @@ class CareDirectiveOut(BaseModel):
     acknowledged_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+    target_person: Optional[WorkflowPersonOut] = None
+    issued_by_person: Optional[WorkflowPersonOut] = None
+    acknowledged_by_person: Optional[WorkflowPersonOut] = None
 
 class AuditTrailEventOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -185,3 +229,17 @@ class AuditTrailEventOut(BaseModel):
     entity_id: Optional[int]
     details: dict[str, Any]
     created_at: datetime
+
+class WorkflowItemDetailOut(BaseModel):
+    item_type: str
+    item: dict[str, Any]
+    patient: Optional[dict[str, Any]] = None
+    assignee_person: Optional[WorkflowPersonOut] = None
+    creator_person: Optional[WorkflowPersonOut] = None
+    messages: list[RoleMessageOut] = Field(default_factory=list)
+    audit: list[AuditTrailEventOut] = Field(default_factory=list)
+
+
+class WorkflowActionOut(BaseModel):
+    item_type: str
+    item: dict[str, Any]

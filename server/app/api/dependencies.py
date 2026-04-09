@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.core.request_context import set_impersonated_by_user_id
 from app.db.session import get_session
 from app.models.caregivers import CareGiverPatientAccess
 from app.models.core import Workspace
@@ -30,6 +31,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 async def get_current_user(
     db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)
 ) -> User:
+    set_impersonated_by_user_id(None)
+    actor_admin_id: int | None = None
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         user_id: str | None = payload.get("sub")
@@ -41,6 +44,9 @@ async def get_current_user(
 
         token_data = TokenData(username=user_id, role=payload.get("role"))
         user_id_int = int(token_data.username)
+        raw_actor_admin_id = payload.get("actor_admin_id")
+        if raw_actor_admin_id is not None:
+            actor_admin_id = int(raw_actor_admin_id)
     except (JWTError, ValidationError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -55,6 +61,8 @@ async def get_current_user(
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    set_impersonated_by_user_id(actor_admin_id)
+    setattr(user, "_impersonated_by_user_id", actor_admin_id)
     return user
 
 

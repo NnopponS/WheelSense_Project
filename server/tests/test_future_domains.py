@@ -3,19 +3,22 @@
 from __future__ import annotations
 
 import io
+from datetime import datetime, timezone
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token, get_password_hash
 from app.models.caregivers import CareGiver
-from app.models.core import Device, Room
+from app.models.core import Device, Room, SmartDevice
 from app.models.facility import Facility, Floor
-from app.models.future_domains import Specialist
+from app.models.future_domains import DemoActorPosition, Specialist
 from app.models.patients import Patient, PatientDeviceAssignment
-from app.models.telemetry import RoomPrediction
+from app.models.telemetry import PhotoRecord, RoomPrediction
 from app.models.users import User
+from app.models.activity import Alert
 
 
 @pytest.mark.asyncio
@@ -145,6 +148,211 @@ async def test_floorplan_presence_projection(client: AsyncClient, db_session: As
     assert row["prediction_hint"]["device_id"] == "WHEEL-PRES-1"
     assert "assignment" in row["sources"]
     assert "prediction" in row["sources"]
+
+
+@pytest.mark.asyncio
+async def test_floorplan_presence_projection_includes_room_context(client: AsyncClient, db_session: AsyncSession):
+    fac = Facility(workspace_id=1, name="Presence Rich", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=1, facility_id=fac.id, floor_number=1, name="L1", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+
+    node = Device(
+        workspace_id=1,
+        device_id="NODE-PRES-2",
+        device_type="camera",
+        hardware_type="node",
+        display_name="Node Presence Rich",
+        ip_address="",
+        firmware="sim",
+        config={},
+    )
+    room = Room(
+        workspace_id=1,
+        floor_id=fl.id,
+        name="Presence Rich Room",
+        room_type="bedroom",
+        node_device_id="NODE-PRES-2",
+    )
+    patient = Patient(
+        workspace_id=1,
+        first_name="Rich",
+        last_name="Patient",
+        room_id=None,
+        care_level="normal",
+    )
+    observer = User(
+        workspace_id=1,
+        username="presence_rich_observer",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        is_active=True,
+    )
+    db_session.add_all([node, room, patient, observer])
+    await db_session.flush()
+    patient.room_id = room.id
+    db_session.add(
+        DemoActorPosition(
+            workspace_id=1,
+            actor_type="staff",
+            actor_id=observer.id,
+            room_id=room.id,
+            source="seed",
+            note="observer assigned",
+            updated_by_user_id=None,
+        )
+    )
+    db_session.add(
+        SmartDevice(
+            workspace_id=1,
+            room_id=room.id,
+            name="Bedside Lamp",
+            ha_entity_id="light.presence_rich_room",
+            device_type="light",
+            is_active=True,
+            state="on",
+            config={},
+        )
+    )
+    db_session.add(
+        PhotoRecord(
+            workspace_id=1,
+            device_id="NODE-PRES-2",
+            photo_id="presence-rich-photo",
+            filepath="storage/demo-photos/presence-rich-photo.jpg",
+            file_size=128,
+            timestamp=datetime.now(timezone.utc),
+        )
+    )
+    db_session.add(
+        Alert(
+            workspace_id=1,
+            patient_id=patient.id,
+            device_id="NODE-PRES-2",
+            alert_type="fall",
+            severity="critical",
+            title="Presence rich alert",
+            description="Seeded alert",
+            data={"room_id": room.id, "room_name": room.name},
+            status="active",
+        )
+    )
+    await db_session.commit()
+
+    response = await client.get(
+        f"/api/future/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}"
+    )
+    assert response.status_code == 200, response.text
+    row = response.json()["rooms"][0]
+    assert row["alert_count"] == 1
+    assert {item["actor_type"] for item in row["occupants"]} == {"patient", "staff"}
+    assert row["smart_devices_summary"][0]["ha_entity_id"] == "light.presence_rich_room"
+    assert row["camera_summary"]["device_id"] == "NODE-PRES-2"
+    assert row["camera_summary"]["latest_photo_id"] is not None
+
+
+@pytest.mark.asyncio
+async def test_floorplan_presence_patient_scope(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Patient Scope", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=1, name="L1", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    visible_room = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Visible", room_type="bedroom")
+    hidden_room = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Hidden", room_type="bedroom")
+    visible_patient = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Visible",
+        last_name="Patient",
+        room_id=None,
+        care_level="normal",
+    )
+    hidden_patient = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Hidden",
+        last_name="Patient",
+        room_id=None,
+        care_level="normal",
+    )
+    db_session.add_all([visible_room, hidden_room, visible_patient, hidden_patient])
+    await db_session.flush()
+    visible_patient.room_id = visible_room.id
+    hidden_patient.room_id = hidden_room.id
+    patient_user = User(
+        workspace_id=admin_user.workspace_id,
+        username="floorplan_patient_scope",
+        hashed_password=get_password_hash("password123"),
+        role="patient",
+        is_active=True,
+        patient_id=visible_patient.id,
+    )
+    db_session.add(patient_user)
+    await db_session.commit()
+    await db_session.refresh(patient_user)
+
+    response = await client.get(
+        f"/api/future/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}",
+        headers={
+            "Authorization": f"Bearer {create_access_token(subject=patient_user.id, role=patient_user.role)}"
+        },
+    )
+    assert response.status_code == 200, response.text
+    rooms = response.json()["rooms"]
+    assert [row["room_id"] for row in rooms] == [visible_room.id]
+    assert rooms[0]["patient_hint"]["patient_id"] == visible_patient.id
+
+
+@pytest.mark.asyncio
+async def test_demo_control_moves_staff_actor(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Demo Control Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=1, name="L1", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    room = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Dispatch Room", room_type="bedroom")
+    observer = User(
+        workspace_id=admin_user.workspace_id,
+        username="demo_control_observer",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        is_active=True,
+    )
+    db_session.add_all([room, observer])
+    await db_session.commit()
+    await db_session.refresh(room)
+    await db_session.refresh(observer)
+
+    response = await client.post(
+        f"/api/demo/actors/staff/{observer.id}/move",
+        json={"room_id": room.id, "note": "Dispatch observer"},
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["actor_type"] == "staff"
+    assert body["room_id"] == room.id
+
+    position = (
+        await db_session.execute(
+            select(DemoActorPosition).where(
+                DemoActorPosition.workspace_id == admin_user.workspace_id,
+                DemoActorPosition.actor_type == "staff",
+                DemoActorPosition.actor_id == observer.id,
+            )
+        )
+    ).scalar_one()
+    assert position.room_id == room.id
 
 
 @pytest.mark.asyncio

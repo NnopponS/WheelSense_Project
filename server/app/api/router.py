@@ -7,7 +7,7 @@ from .endpoints import (
     workspaces, devices, rooms, telemetry, localization, motion,
     patients, caregivers, facilities, vitals, timeline, alerts,
     auth, users, homeassistant, retention, cameras, analytics,
-    chat, ai_settings, workflow, future_domains, profile_images,
+    chat, ai_settings, workflow, future_domains, profile_images, demo_control,
 )
 from app.localization import is_model_ready
 
@@ -72,6 +72,12 @@ api_router.include_router(
     future_domains.router,
     prefix="/future",
     tags=["future-domains"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    demo_control.router,
+    prefix="/demo",
+    tags=["demo-control"],
     dependencies=[Depends(get_current_active_user)],
 )
 

@@ -9,6 +9,8 @@ import { DEVICE_HARDWARE_TABS } from "@/lib/deviceHardwareTabs";
 import FloorplanCanvas from "@/components/floorplan/FloorplanCanvas";
 import SearchableListboxPicker from "@/components/shared/SearchableListboxPicker";
 import {
+  canvasUnitsToPercent,
+  FLOORPLAN_LAYOUT_VERSION,
   normalizeFloorplanRooms,
   type FloorplanLayoutResponse,
   type FloorplanRoomShape,
@@ -33,11 +35,12 @@ function newRoom(): FloorplanRoomShape {
   return {
     id,
     label: "Room",
-    x: 12,
-    y: 12,
-    w: 28,
-    h: 32,
+    x: 150,
+    y: 150,
+    w: 300,
+    h: 300,
     device_id: null,
+    node_device_id: null,
     power_kw: null,
   };
 }
@@ -74,7 +77,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [nodeHardwareTab, setNodeHardwareTab] = useState<HardwareType | "all">("all");
+  const [nodeHardwareTab, setNodeHardwareTab] = useState<HardwareType | "all">("node");
   const [nodeDeviceSearch, setNodeDeviceSearch] = useState("");
 
   const [showNewFacility, setShowNewFacility] = useState(false);
@@ -151,7 +154,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
   const nodeDeviceOptions = useMemo(
     () =>
       filteredNodeDevices.map((d) => ({
-        id: String(d.id),
+        id: d.device_id,
         title: d.display_name || d.device_id,
         subtitle: `${d.device_id}${d.hardware_type ? ` · ${d.hardware_type}` : ""}`,
       })),
@@ -165,13 +168,25 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
     nodeDeviceSearch.trim().length > 0;
 
   const selectedNodeDevice =
-    selected?.device_id != null
-      ? devicesList.find((d) => d.id === selected.device_id) ?? null
+    selected?.node_device_id
+      ? devicesList.find((d) => d.device_id === selected.node_device_id) ?? null
       : null;
 
   useEffect(() => {
     setNodeDeviceSearch("");
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!devicesList.length) return;
+    setRooms((prev) =>
+      prev.map((room) => {
+        if (room.node_device_id || room.device_id == null) return room;
+        const linked = devicesList.find((device) => device.id === room.device_id);
+        if (!linked) return room;
+        return { ...room, node_device_id: linked.device_id };
+      }),
+    );
+  }, [devicesList]);
 
   const updateSelected = useCallback(
     (patch: Partial<FloorplanRoomShape>) => {
@@ -191,14 +206,14 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
       await api.put<FloorplanLayoutResponse>("/future/floorplans/layout", {
         facility_id: facilityId,
         floor_id: floorId,
-        version: 1,
+        version: FLOORPLAN_LAYOUT_VERSION,
         rooms: rooms.map((r) => ({
           id: r.id,
           label: r.label,
-          x: r.x,
-          y: r.y,
-          w: r.w,
-          h: r.h,
+          x: canvasUnitsToPercent(r.x),
+          y: canvasUnitsToPercent(r.y),
+          w: canvasUnitsToPercent(r.w),
+          h: canvasUnitsToPercent(r.h),
           device_id: r.device_id,
           power_kw: r.power_kw,
         })),
@@ -747,10 +762,15 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                       onSearchChange={setNodeDeviceSearch}
                       searchPlaceholder={t("floorplan.searchNodeDevice")}
                       selectedOptionId={
-                        selected.device_id != null ? String(selected.device_id) : null
+                        selected.node_device_id || null
                       }
                       onSelectOption={(id) => {
-                        updateSelected({ device_id: Number(id) });
+                        const linked =
+                          devicesList.find((device) => device.device_id === id) ?? null;
+                        updateSelected({
+                          node_device_id: id,
+                          device_id: linked?.id ?? null,
+                        });
                       }}
                       disabled={nodeEmptyPool}
                       listboxAriaLabel={t("floorplan.selectNodeDevice")}
@@ -761,18 +781,18 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                       emptyNoMatch={nodeEmptyNoMatch}
                     />
                   </div>
-                  {selected.device_id != null ? (
+                  {selected.node_device_id ? (
                     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-on-surface">
                       <span className="truncate font-medium">
                         {t("patients.deviceSelected")}:{" "}
                         {selectedNodeDevice
                           ? selectedNodeDevice.display_name || selectedNodeDevice.device_id
-                          : `#${selected.device_id}`}
+                          : selected.node_device_id}
                       </span>
                       <button
                         type="button"
                         className="ml-auto shrink-0 font-semibold text-primary hover:underline"
-                        onClick={() => updateSelected({ device_id: null })}
+                        onClick={() => updateSelected({ node_device_id: null, device_id: null })}
                       >
                         {t("floorplan.noNode")}
                       </button>

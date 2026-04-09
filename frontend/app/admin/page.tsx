@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { useQuery } from "@/hooks/useQuery";
 import { useAuth } from "@/hooks/useAuth";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { ageYears } from "@/lib/age";
@@ -27,21 +28,14 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
-import type { Alert, Device, HardwareType, Patient, SmartDevice, User } from "@/lib/types";
+import type { Alert, Device, HardwareType, Patient, SmartDevice } from "@/lib/types";
 import type {
   CareDirectiveOut,
   CareScheduleOut,
   CareTaskOut,
   DeviceActivityEventOut,
-  GetAlertSummaryResponse,
   GetWardSummaryResponse,
 } from "@/lib/api/task-scope-types";
-
-type CopilotModelsResponse = {
-  models: { id: string; name: string }[];
-  connected: boolean;
-  message?: string | null;
-};
 
 const HARDWARE_ROWS: Array<{ hardware: HardwareType; labelKey: TranslationKey }> = [
   { hardware: "wheelchair", labelKey: "devicesDetail.tabWheelchair" },
@@ -82,10 +76,6 @@ export default function DashboardPage() {
     () => withWorkspaceScope("/ha/devices", user?.workspace_id),
     [user?.workspace_id],
   );
-  const usersEndpoint = useMemo(
-    () => withWorkspaceScope("/users", user?.workspace_id),
-    [user?.workspace_id],
-  );
   const tasksEndpoint = useMemo(
     () => withWorkspaceScope("/workflow/tasks?status=pending&limit=24", user?.workspace_id),
     [user?.workspace_id],
@@ -102,20 +92,8 @@ export default function DashboardPage() {
     () => withWorkspaceScope("/devices/activity?limit=12", user?.workspace_id),
     [user?.workspace_id],
   );
-  const copilotStatusEndpoint = useMemo(
-    () => withWorkspaceScope("/settings/ai/copilot/status", user?.workspace_id),
-    [user?.workspace_id],
-  );
-  const copilotModelsEndpoint = useMemo(
-    () => withWorkspaceScope("/settings/ai/copilot/models", user?.workspace_id),
-    [user?.workspace_id],
-  );
   const wardSummaryEndpoint = useMemo(
     () => withWorkspaceScope("/analytics/wards/summary", user?.workspace_id),
-    [user?.workspace_id],
-  );
-  const alertSummaryEndpoint = useMemo(
-    () => withWorkspaceScope("/analytics/alerts/summary", user?.workspace_id),
     [user?.workspace_id],
   );
 
@@ -123,15 +101,11 @@ export default function DashboardPage() {
   const { data: alerts } = useQuery<Alert[]>(alertsEndpoint);
   const { data: devices } = useQuery<Device[]>(devicesEndpoint);
   const { data: smartDevices } = useQuery<SmartDevice[]>(smartEndpoint);
-  const { data: users } = useQuery<User[]>(usersEndpoint);
   const { data: tasks } = useQuery<CareTaskOut[]>(tasksEndpoint);
   const { data: directives } = useQuery<CareDirectiveOut[]>(directivesEndpoint);
   const { data: schedules } = useQuery<CareScheduleOut[]>(schedulesEndpoint);
   const { data: activity } = useQuery<DeviceActivityEventOut[]>(activityEndpoint);
   const { data: wardSummary } = useQuery<GetWardSummaryResponse>(wardSummaryEndpoint);
-  const { data: alertSummary } = useQuery<GetAlertSummaryResponse>(alertSummaryEndpoint);
-  const { data: copilotStatus } = useQuery<{ connected: boolean }>(copilotStatusEndpoint);
-  const { data: copilotModels } = useQuery<CopilotModelsResponse>(copilotModelsEndpoint);
 
   const activeAlerts = useMemo(
     () => (alerts ?? []).filter((item) => item.status === "active"),
@@ -202,14 +176,6 @@ export default function DashboardPage() {
     const online = list.filter((device) => isSmartDeviceOnline(device)).length;
     return { total: list.length, online, offline: list.length - online };
   }, [smartDevices]);
-  const activeUsers = useMemo(() => (users ?? []).filter((item) => item.is_active), [users]);
-  const linkedUsers = useMemo(
-    () => activeUsers.filter((item) => item.caregiver_id != null || item.patient_id != null),
-    [activeUsers],
-  );
-  const copilotModelCount = copilotModels?.models?.length ?? 0;
-  const copilotHealthy = Boolean(copilotStatus?.connected) && copilotModelCount > 0;
-  const copilotLimited = Boolean(copilotStatus?.connected) && copilotModelCount === 0;
   const workflowItems = useMemo(
     () => [
       ...openTasks.map((item) => ({
@@ -288,59 +254,64 @@ export default function DashboardPage() {
         </CardContent></Card>
         <Card><CardContent className="flex items-start gap-4 p-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/12 text-violet-600"><Bot className="h-5 w-5" /></div>
-          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.copilotStatus")}</p><p className="mt-1 text-2xl font-semibold text-foreground">{copilotStatus?.connected ? t("admin.connected") : t("admin.notConnected")}</p><p className="mt-1 text-xs text-muted-foreground">{copilotLimited ? t("admin.connectedButModelsUnavailable") : copilotModels?.message || `${copilotModelCount} ${t("admin.copilotModels")}`}</p></div>
+          <div><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.workflowQueue")}</p><p className="mt-1 text-2xl font-semibold text-foreground">{workflowItems.length}</p><p className="mt-1 text-xs text-muted-foreground">{t("admin.workflowQueueHint")}</p></div>
         </CardContent></Card>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
-        <Card className="border-border/70">
-          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
-            <div>
-              <CardTitle className="text-base">{t("admin.urgentAlerts")}</CardTitle>
-              <CardDescription>{t("admin.urgentAlertsHint")}</CardDescription>
-            </div>
-            <Button asChild size="sm" variant="outline"><Link href="/admin/alerts">{t("admin.openAlerts")}<ArrowRight className="h-4 w-4" /></Link></Button>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {urgentAlerts.length ? urgentAlerts.map((alert) => {
-              const patient = alert.patient_id ? patientMap.get(alert.patient_id) : null;
-              const Icon = SEVERITY_ICON[alert.severity] ?? Clock3;
-              return (
-                <Link key={alert.id} href={alert.patient_id ? `/admin/patients/${alert.patient_id}` : "/admin/alerts"} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40">
-                  <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Icon className="h-4 w-4" /></div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium text-foreground">{alert.title}</p><Badge variant={alert.severity === "critical" ? "destructive" : alert.severity === "warning" ? "warning" : "secondary"}>{alert.severity}</Badge></div>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{alert.description}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{patient ? `${patient.first_name} ${patient.last_name}` : t("admin.unlinkedPatient")}</p>
-                  </div>
-                </Link>
-              );
-            }) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("admin.noUrgentAlerts")}</p>}
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+        <DashboardFloorplanPanel className="min-w-0" />
 
-        <Card className="border-border/70">
-          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
-            <div>
-              <CardTitle className="text-base">{t("admin.workflowQueue")}</CardTitle>
-              <CardDescription>{t("admin.workflowQueueHint")}</CardDescription>
-            </div>
-            <Button asChild size="sm" variant="outline"><Link href="/admin/workflow">{t("admin.openWorkflow")}<ArrowRight className="h-4 w-4" /></Link></Button>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {workflowItems.length ? workflowItems.slice(0, 8).map((item) => (
-                <div key={item.key} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3">
-                  <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><item.icon className="h-4 w-4" /></div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium text-foreground">{item.title}</p><Badge variant={item.variant}>{item.badge}</Badge></div>
-                    <p className="mt-1 text-sm text-muted-foreground">{item.subtitle}</p>
+        <div className="grid gap-4">
+          <Card className="border-border/70">
+            <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+              <div>
+                <CardTitle className="text-base">{t("admin.urgentAlerts")}</CardTitle>
+                <CardDescription>{t("admin.urgentAlertsHint")}</CardDescription>
+              </div>
+              <Button asChild size="sm" variant="outline"><Link href="/admin/alerts">{t("admin.openAlerts")}<ArrowRight className="h-4 w-4" /></Link></Button>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {urgentAlerts.length ? urgentAlerts.map((alert) => {
+                const patient = alert.patient_id ? patientMap.get(alert.patient_id) : null;
+                const Icon = SEVERITY_ICON[alert.severity] ?? Clock3;
+                return (
+                  <Link key={alert.id} href={alert.patient_id ? `/admin/patients/${alert.patient_id}` : "/admin/alerts"} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40">
+                    <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Icon className="h-4 w-4" /></div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium text-foreground">{alert.title}</p><Badge variant={alert.severity === "critical" ? "destructive" : alert.severity === "warning" ? "warning" : "secondary"}>{alert.severity}</Badge></div>
+                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{alert.description}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{patient ? `${patient.first_name} ${patient.last_name}` : t("admin.unlinkedPatient")}</p>
+                    </div>
+                  </Link>
+                );
+              }) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("admin.noUrgentAlerts")}</p>}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70">
+            <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+              <div>
+                <CardTitle className="text-base">{t("admin.workflowQueue")}</CardTitle>
+                <CardDescription>{t("admin.workflowQueueHint")}</CardDescription>
+              </div>
+              <Button asChild size="sm" variant="outline"><Link href="/admin/workflow">{t("admin.openWorkflow")}<ArrowRight className="h-4 w-4" /></Link></Button>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {workflowItems.length ? workflowItems.slice(0, 8).map((item) => (
+                  <div key={item.key} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3">
+                    <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground"><item.icon className="h-4 w-4" /></div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium text-foreground">{item.title}</p><Badge variant={item.variant}>{item.badge}</Badge></div>
+                      <p className="mt-1 text-sm text-muted-foreground">{item.subtitle}</p>
+                    </div>
                   </div>
-                </div>
-              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("admin.noWorkflowItems")}</p>}          </CardContent>
-        </Card>
+                )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("admin.noWorkflowItems")}</p>}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid gap-4 xl:grid-cols-1">
         <Card className="border-border/70">
           <CardHeader className="space-y-2 pb-3"><CardTitle className="text-base">{t("admin.fleetHealth")}</CardTitle><CardDescription>{t("admin.fleetHealthHint")}</CardDescription></CardHeader>
           <CardContent className="space-y-2">
@@ -359,27 +330,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/70">
-          <CardHeader className="space-y-2 pb-3"><CardTitle className="text-base">{t("admin.accountLinkStatus")}</CardTitle><CardDescription>{t("admin.accountLinkStatusHint")}</CardDescription></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.activeAccounts")}</p><p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{activeUsers.length}</p></div>
-              <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.unlinkedAccounts")}</p><p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{Math.max(activeUsers.length - linkedUsers.length, 0)}</p></div>
-            </div>
-            <div className="flex items-center justify-between rounded-xl border border-border/70 px-3 py-3"><div><p className="font-medium text-foreground">{t("admin.caregiverLinkedAccounts")}</p><p className="text-xs text-muted-foreground">{t("admin.caregiverAccessSnapshot")}</p></div><Badge variant="outline">{activeUsers.filter((item) => item.caregiver_id != null).length}</Badge></div>
-            <div className="flex items-center justify-between rounded-xl border border-border/70 px-3 py-3"><div><p className="font-medium text-foreground">{t("admin.patientLinkedAccounts")}</p><p className="text-xs text-muted-foreground">{t("admin.patientLinkSnapshot")}</p></div><Badge variant="outline">{activeUsers.filter((item) => item.patient_id != null).length}</Badge></div>
-            <div className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{alertSummary ? `${alertSummary.total_active} ${t("admin.alertsActive")} · ${alertSummary.total_resolved} ${t("admin.alertsResolved")}` : t("admin.accountLinkFallback")}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70">
-          <CardHeader className="space-y-2 pb-3"><CardTitle className="text-base">{t("admin.aiShortcutTitle")}</CardTitle><CardDescription>{t("admin.aiShortcutHint")}</CardDescription></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between rounded-xl border border-border/70 px-3 py-3"><div><p className="font-medium text-foreground">{t("admin.copilotStatus")}</p><p className="text-xs text-muted-foreground">{copilotModels?.message || t("admin.copilotModelHint")}</p></div><Badge variant={copilotHealthy ? "success" : copilotLimited ? "warning" : "destructive"}>{copilotStatus?.connected ? t("admin.connected") : t("admin.notConnected")}</Badge></div>
-            <div className="rounded-xl border border-border/70 px-3 py-3"><p className="text-xs uppercase tracking-wide text-muted-foreground">{t("admin.copilotModels")}</p><p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{copilotModelCount}</p><p className="mt-1 text-xs text-muted-foreground">{copilotLimited ? t("admin.connectedButModelsUnavailable") : t("admin.copilotModelCountHint")}</p></div>
-            <Button asChild variant="outline" className="w-full justify-between"><Link href="/admin/settings"><span className="inline-flex items-center gap-2"><Bot className="h-4 w-4" />{t("admin.openAiSettings")}</span><ArrowRight className="h-4 w-4" /></Link></Button>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">

@@ -18,6 +18,6 @@ export const ROUTES = {
   CAREGIVERS: "/admin/caregivers",
   CAREGIVER_DETAIL: (id: number) => `/admin/caregivers/${id}`,
   FACILITIES: "/admin/facilities",
-  PROFILE: "/admin/settings?tab=profile",
+  PROFILE: "/account",
   ACCOUNT_MANAGEMENT: "/admin/account-management",
 } as const;

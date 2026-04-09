@@ -100,6 +100,157 @@ async def test_workflow_domains_crud_and_audit(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_workflow_item_detail_person_metadata_and_thread(
+    client: AsyncClient,
+):
+    caregiver = await client.post(
+        "/api/caregivers",
+        json={"first_name": "Mali", "last_name": "Care", "role": "observer"},
+    )
+    assert caregiver.status_code == 201
+    created_user = await client.post(
+        "/api/users",
+        json={
+            "username": "workflow_real_person",
+            "password": "password123",
+            "role": "observer",
+            "caregiver_id": caregiver.json()["id"],
+        },
+    )
+    assert created_user.status_code == 200
+    user_id = created_user.json()["id"]
+
+    task = await client.post(
+        "/api/workflow/tasks",
+        json={
+            "title": "Check room question",
+            "description": "Need follow-up from assigned person.",
+            "assigned_user_id": user_id,
+        },
+    )
+    assert task.status_code == 201
+    task_body = task.json()
+    assert task_body["assigned_person"]["display_name"] == "Mali Care"
+    assert task_body["assigned_person"]["person_type"] == "caregiver"
+
+    msg = await client.post(
+        "/api/workflow/messages",
+        json={
+            "recipient_user_id": user_id,
+            "workflow_item_type": "task",
+            "workflow_item_id": task_body["id"],
+            "subject": "Task question",
+            "body": "Please confirm when complete.",
+        },
+    )
+    assert msg.status_code == 201, msg.text
+    assert msg.json()["workflow_item_type"] == "task"
+    assert msg.json()["workflow_item_id"] == task_body["id"]
+
+    detail = await client.get(f"/api/workflow/items/task/{task_body['id']}")
+    assert detail.status_code == 200, detail.text
+    detail_body = detail.json()
+    assert detail_body["item_type"] == "task"
+    assert detail_body["assignee_person"]["display_name"] == "Mali Care"
+    assert [message["body"] for message in detail_body["messages"]] == [
+        "Please confirm when complete."
+    ]
+
+
+@pytest.mark.asyncio
+async def test_workflow_item_claim_and_handoff_endpoints(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    observer = User(
+        workspace_id=admin_user.workspace_id,
+        username="workflow_claim_target",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        is_active=True,
+    )
+    db_session.add(observer)
+    await db_session.commit()
+    await db_session.refresh(observer)
+
+    task = await client.post(
+        "/api/workflow/tasks",
+        json={
+            "title": "Claimable task",
+            "description": "Needs an owner update.",
+            "assigned_role": "observer",
+        },
+    )
+    assert task.status_code == 201, task.text
+    task_id = task.json()["id"]
+
+    claimed = await client.post(
+        f"/api/workflow/items/task/{task_id}/claim",
+        json={"note": "Taking ownership from the board"},
+    )
+    assert claimed.status_code == 200, claimed.text
+    claimed_body = claimed.json()
+    assert claimed_body["assigned_user_id"] == admin_user.id
+    assert claimed_body["assigned_role"] is None
+
+    handed = await client.post(
+        f"/api/workflow/items/task/{task_id}/handoff",
+        json={
+            "target_mode": "user",
+            "target_user_id": observer.id,
+            "note": "Handing off to the observer on duty",
+        },
+    )
+    assert handed.status_code == 200, handed.text
+    handed_body = handed.json()
+    assert handed_body["assigned_user_id"] == observer.id
+    assert handed_body["assigned_role"] is None
+
+
+@pytest.mark.asyncio
+async def test_impersonated_workflow_audit_preserves_admin_actor(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    head_nurse = User(
+        workspace_id=admin_user.workspace_id,
+        username="impersonated_workflow_head_nurse",
+        hashed_password=get_password_hash("password123"),
+        role="head_nurse",
+        is_active=True,
+    )
+    db_session.add(head_nurse)
+    await db_session.commit()
+    await db_session.refresh(head_nurse)
+
+    started = await client.post(
+        "/api/auth/impersonate/start",
+        json={"target_user_id": head_nurse.id},
+    )
+    assert started.status_code == 200, started.text
+    token = started.json()["access_token"]
+
+    directive = await client.post(
+        "/api/workflow/directives",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "title": "Impersonated directive",
+            "directive_text": "Audit should keep the admin origin.",
+            "target_role": "observer",
+        },
+    )
+    assert directive.status_code == 201, directive.text
+
+    audit = await client.get("/api/workflow/audit?domain=directive")
+    assert audit.status_code == 200
+    event = next(row for row in audit.json() if row["entity_id"] == directive.json()["id"])
+    assert event["actor_user_id"] == head_nurse.id
+    assert event["details"]["impersonated_by_user_id"] == admin_user.id
+
+
+@pytest.mark.asyncio
 async def test_workflow_audit_forbidden_for_observer(
     db_session: AsyncSession,
     admin_user: User,

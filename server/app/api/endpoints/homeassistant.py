@@ -66,7 +66,7 @@ async def _get_smart_device_for_user(
 async def list_smart_devices(
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin", "supervisor", "observer", "patient"]))
+    current_user: User = Depends(RequireRole(["admin", "head_nurse", "supervisor", "observer", "patient"]))
 ):
     """
     List all smart devices linked to this workspace.
@@ -190,11 +190,11 @@ async def control_smart_device(
     control: HADeviceControl,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin", "supervisor", "patient"]))
+    current_user: User = Depends(RequireRole(["admin", "head_nurse", "supervisor", "observer", "patient"]))
 ):
     """
     Control a smart device (requires HA API setup).
-    Observer role cannot control devices.
+    Staff roles and patients can control devices within their allowed scope.
     """
     device = await _get_smart_device_for_user(db, ws.id, device_id, current_user)
 
@@ -227,7 +227,7 @@ async def get_device_state(
     device_id: int,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin", "supervisor", "observer", "patient"]))
+    current_user: User = Depends(RequireRole(["admin", "head_nurse", "supervisor", "observer", "patient"]))
 ):
     """
     Query the direct status from HomeAssistant.

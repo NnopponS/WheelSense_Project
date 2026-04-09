@@ -33,6 +33,7 @@ from .workflow import (
 from .future_domains import (
     FloorplanAsset,
     FloorplanLayout,
+    DemoActorPosition,
     Specialist,
     Prescription,
     PharmacyOrder,
@@ -87,6 +88,7 @@ __all__ = [
     # Future domains
     "FloorplanAsset",
     "FloorplanLayout",
+    "DemoActorPosition",
     "Specialist",
     "Prescription",
     "PharmacyOrder",

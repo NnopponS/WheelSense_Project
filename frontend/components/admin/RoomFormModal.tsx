@@ -6,7 +6,7 @@ import { useQuery } from "@/hooks/useQuery";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
-import type { Facility, Floor } from "@/lib/types";
+import type { Device, Facility, Floor } from "@/lib/types";
 import SearchableListboxPicker, {
   type SearchableListboxOption,
 } from "@/components/shared/SearchableListboxPicker";
@@ -83,6 +83,7 @@ export default function RoomFormModal({
   const [typeChoice, setTypeChoice] = useState<(typeof ROOM_TYPE_VALUES)[number] | "other">("general");
   const [typeOther, setTypeOther] = useState("");
   const [nodeDeviceId, setNodeDeviceId] = useState("");
+  const [nodeSearch, setNodeSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [facilitySearch, setFacilitySearch] = useState("");
@@ -101,6 +102,11 @@ export default function RoomFormModal({
     return withWorkspaceScope(`/facilities/${facilityId}/floors`, user?.workspace_id);
   }, [open, facilityId, user?.workspace_id]);
   const { data: floors, isLoading: floorsLoading } = useQuery<Floor[]>(floorsEndpoint);
+  const devicesEndpoint = useMemo(
+    () => (open ? withWorkspaceScope("/devices", user?.workspace_id) : null),
+    [open, user?.workspace_id],
+  );
+  const { data: devices, isLoading: devicesLoading } = useQuery<Device[]>(devicesEndpoint);
 
   useEffect(() => {
     if (!open) return;
@@ -129,6 +135,7 @@ export default function RoomFormModal({
     }
     setFacilitySearch("");
     setFloorSearch("");
+    setNodeSearch("");
     setError(null);
   }, [open, mode, room, defaultFacilityId, defaultFloorId]);
 
@@ -234,6 +241,32 @@ export default function RoomFormModal({
     facilityId !== "" &&
     !floorsLoading &&
     (floors?.length ?? 0) === 0;
+
+  const nodeDeviceOptions = useMemo(() => {
+    const pool = (devices ?? []).filter((device) => device.hardware_type === "node");
+    const q = nodeSearch.trim().toLowerCase();
+    const filtered = !q
+      ? pool
+      : pool.filter((device) => {
+          const title = (device.display_name || device.device_id).toLowerCase();
+          return (
+            title.includes(q) ||
+            device.device_id.toLowerCase().includes(q) ||
+            (device.device_type || "").toLowerCase().includes(q)
+          );
+        });
+    return filtered.map((device) => ({
+      id: device.device_id,
+      title: device.display_name?.trim() || device.device_id,
+      subtitle: `${device.device_id}${device.device_type ? ` · ${device.device_type}` : ""}`,
+    }));
+  }, [devices, nodeSearch]);
+
+  const nodeEmptyNoMatch =
+    !devicesLoading && nodeSearch.trim().length > 0 && nodeDeviceOptions.length === 0;
+  const nodeEmptyPool =
+    !devicesLoading &&
+    (devices?.filter((device) => device.hardware_type === "node").length ?? 0) === 0;
 
   const submit = useCallback(async () => {
     const trimmed = name.trim();
@@ -489,13 +522,43 @@ export default function RoomFormModal({
             <label htmlFor="room-node" className="text-xs font-medium text-on-surface-variant">
               {t("monitoring.roomForm.nodeDevice")}
             </label>
-            <input
-              id="room-node"
-              className="input-field mt-1 w-full text-sm font-mono"
-              value={nodeDeviceId}
-              onChange={(e) => setNodeDeviceId(e.target.value)}
-              placeholder={t("monitoring.roomForm.nodePlaceholder")}
-            />
+            <div className="mt-1">
+              <SearchableListboxPicker
+                inputId="room-node"
+                listboxId="room-node-listbox"
+                options={nodeDeviceOptions}
+                search={nodeSearch}
+                onSearchChange={setNodeSearch}
+                searchPlaceholder={t("floorplan.searchNodeDevice")}
+                selectedOptionId={nodeDeviceId || null}
+                onSelectOption={(id) => {
+                  setNodeDeviceId(id);
+                  setNodeSearch("");
+                }}
+                disabled={devicesLoading || nodeEmptyPool}
+                listboxAriaLabel={t("floorplan.selectNodeDevice")}
+                noMatchMessage={t("floorplan.noNodeDeviceMatches")}
+                emptyNoMatch={nodeEmptyNoMatch}
+                listPresentation="portal"
+                listboxZIndex={160}
+              />
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="text-xs font-medium text-primary hover:underline disabled:text-on-surface-variant disabled:no-underline"
+                disabled={!nodeDeviceId}
+                onClick={() => {
+                  setNodeDeviceId("");
+                  setNodeSearch("");
+                }}
+              >
+                {t("floorplan.noNode")}
+              </button>
+              {nodeEmptyPool ? (
+                <span className="text-xs text-on-surface-variant">{t("floorplan.noDevicesInCategory")}</span>
+              ) : null}
+            </div>
           </div>
 
           {error ? <p className="text-sm text-error">{error}</p> : null}

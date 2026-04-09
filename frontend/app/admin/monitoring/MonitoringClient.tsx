@@ -403,7 +403,7 @@ export default function MonitoringClient() {
 
       <RoomDetailDrawer
         room={detailRoom}
-        open={activeRoomId !== null && detailRoom !== null}
+        open={view === "list" && activeRoomId !== null && detailRoom !== null}
         onClose={clearRoomSelection}
         onEdit={() => {
           if (!detailRoom) return;

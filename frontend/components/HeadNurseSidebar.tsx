@@ -10,11 +10,12 @@ import {
   Users,
   UserCog,
   Bell,
-  FileText,
+  Clock,
   MessageSquare,
   Activity,
   LogOut,
   Stethoscope,
+  MapPin,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import UserAvatar from "@/components/shared/UserAvatar";
@@ -42,9 +43,10 @@ const GROUPS: NavGroup[] = [
   {
     categoryKey: "nav.category.operations",
     items: [
+      { href: "/head-nurse/monitoring", labelKey: "nav.roomsMap", icon: MapPin },
       { href: "/head-nurse/alerts", labelKey: "nav.alerts", icon: Bell },
       { href: "/head-nurse/specialists", labelKey: "nav.specialists", icon: Stethoscope },
-      { href: "/head-nurse/reports", labelKey: "nav.reports", icon: FileText },
+      { href: "/head-nurse/workflow", labelKey: "nav.tasksDirectives", icon: Clock },
       { href: "/head-nurse/messages", labelKey: "nav.messages", icon: MessageSquare },
     ],
   },
@@ -125,7 +127,7 @@ export default function HeadNurseSidebar({ mobileOpen = false, onMobileOpenChang
 
         {user ? (
           <div className="border-t border-outline-variant/10 bg-surface-container-low px-4 py-3">
-            <div className="flex items-center gap-3">
+            <Link href="/account" className="flex items-center gap-3 rounded-lg p-1 transition-smooth hover:bg-surface-container">
               <UserAvatar
                 username={user.username}
                 profileImageUrl={user.profile_image_url}
@@ -137,7 +139,7 @@ export default function HeadNurseSidebar({ mobileOpen = false, onMobileOpenChang
                   {t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}
                 </p>
               </div>
-            </div>
+            </Link>
           </div>
         ) : null}
 

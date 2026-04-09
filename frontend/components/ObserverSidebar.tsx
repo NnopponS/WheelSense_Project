@@ -8,9 +8,11 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import {
   LogOut,
   Monitor,
+  MapPin,
   Activity,
   Users,
   Bell,
+  Clock,
   Tablet,
   ClipboardList,
 } from "lucide-react";
@@ -25,8 +27,10 @@ interface NavItem {
 
 const ITEMS: NavItem[] = [
   { href: "/observer", labelKey: "nav.observer.zone", icon: Monitor },
+  { href: "/observer/monitoring", labelKey: "nav.roomsMap", icon: MapPin },
   { href: "/observer/patients", labelKey: "nav.observer.myPatients", icon: Users },
   { href: "/observer/alerts", labelKey: "nav.alerts", icon: Bell },
+  { href: "/observer/workflow", labelKey: "nav.tasksDirectives", icon: Clock },
   { href: "/observer/devices", labelKey: "nav.observer.deviceStatus", icon: Tablet },
   { href: "/observer/prescriptions", labelKey: "nav.prescriptions", icon: ClipboardList },
 ];
@@ -100,7 +104,7 @@ export default function ObserverSidebar({ mobileOpen = false, onMobileOpenChange
 
         {user ? (
           <div className="border-t border-outline-variant/10 bg-surface-container-low px-4 py-3">
-            <div className="flex items-center gap-3">
+            <Link href="/account" className="flex items-center gap-3 rounded-lg p-1 transition-smooth hover:bg-surface-container">
               <UserAvatar
                 username={user.username}
                 profileImageUrl={user.profile_image_url}
@@ -112,7 +116,7 @@ export default function ObserverSidebar({ mobileOpen = false, onMobileOpenChange
                   {t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}
                 </p>
               </div>
-            </div>
+            </Link>
           </div>
         ) : null}
 

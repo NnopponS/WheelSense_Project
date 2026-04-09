@@ -66,6 +66,8 @@ class RoleMessage(Base):
     recipient_role = Column(String(32), nullable=True, index=True)
     recipient_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     patient_id = Column(Integer, ForeignKey("patients.id", ondelete="SET NULL"), nullable=True, index=True)
+    workflow_item_type = Column(String(32), nullable=True, index=True)
+    workflow_item_id = Column(Integer, nullable=True, index=True)
     subject = Column(String(128), default="")
     body = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False, index=True)

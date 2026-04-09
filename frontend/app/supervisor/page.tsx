@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import Link from "next/link";
@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { CheckCircle2, ClipboardList, Siren, Stethoscope } from "lucide-react";
-import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
+import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
@@ -467,7 +467,7 @@ export default function SupervisorDashboardPage() {
         />
       </section>
 
-      <FloorplanRoleViewer />
+      <DashboardFloorplanPanel openHref="/supervisor/monitoring" />
 
       <DataTableCard
         title="Immediate Task Queue"
@@ -478,7 +478,7 @@ export default function SupervisorDashboardPage() {
         emptyText="No open tasks."
         rightSlot={
           <Button asChild size="sm" variant="outline">
-            <Link href="/supervisor/directives">Manage all tasks</Link>
+            <Link href="/supervisor/workflow?tab=queue">Manage all tasks</Link>
           </Button>
         }
       />
@@ -492,7 +492,7 @@ export default function SupervisorDashboardPage() {
         emptyText="All directives are acknowledged."
         rightSlot={
           <Button asChild size="sm" variant="outline">
-            <Link href="/supervisor/directives">Open directives board</Link>
+            <Link href="/supervisor/workflow?tab=queue">Open directives board</Link>
           </Button>
         }
       />
@@ -513,4 +513,3 @@ export default function SupervisorDashboardPage() {
     </div>
   );
 }
-

@@ -26,8 +26,9 @@ interface NavItem {
 const ITEMS: NavItem[] = [
   { href: "/supervisor", labelKey: "nav.dashboard", icon: LayoutDashboard },
   { href: "/supervisor/patients", labelKey: "nav.patients", icon: Users },
+  { href: "/supervisor/monitoring", labelKey: "nav.roomsMap", icon: MapPin },
   { href: "/supervisor/emergency", labelKey: "nav.emergencyMap", icon: MapPin },
-  { href: "/supervisor/directives", labelKey: "nav.tasksDirectives", icon: Clock },
+  { href: "/supervisor/workflow", labelKey: "nav.tasksDirectives", icon: Clock },
   { href: "/supervisor/prescriptions", labelKey: "nav.prescriptions", icon: Pill },
 ];
 
@@ -116,7 +117,7 @@ export default function SupervisorSidebar({ mobileOpen = false, onMobileOpenChan
 
         {user ? (
           <div className="border-t border-outline-variant/30 bg-surface-container-low px-4 py-3">
-            <div className="flex items-center gap-3">
+            <Link href="/account" className="flex items-center gap-3 rounded-lg p-1 transition-smooth hover:bg-surface-container">
               <UserAvatar
                 username={user.username}
                 profileImageUrl={user.profile_image_url}
@@ -129,7 +130,7 @@ export default function SupervisorSidebar({ mobileOpen = false, onMobileOpenChan
                   {t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}
                 </p>
               </div>
-            </div>
+            </Link>
           </div>
         ) : null}
       </>

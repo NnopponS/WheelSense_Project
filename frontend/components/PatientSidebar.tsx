@@ -96,7 +96,7 @@ export default function PatientSidebar({ mobileOpen = false, onMobileOpenChange 
 
         {user ? (
           <div className="border-t border-outline-variant/10 bg-surface-container-low px-4 py-3">
-            <div className="flex items-center gap-3">
+            <Link href="/account" className="flex items-center gap-3 rounded-lg p-1 transition-smooth hover:bg-surface-container">
               <UserAvatar
                 username={user.username}
                 profileImageUrl={user.profile_image_url}
@@ -108,7 +108,7 @@ export default function PatientSidebar({ mobileOpen = false, onMobileOpenChange 
                   {t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}
                 </p>
               </div>
-            </div>
+            </Link>
           </div>
         ) : null}
 

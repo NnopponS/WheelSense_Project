@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 """Service layer for authentication and user management."""
@@ -197,6 +199,7 @@ class UserService:
                     "id": user.id,
                     "username": user.username,
                     "role": user.role,
+                    "is_active": user.is_active,
                     "caregiver_id": user.caregiver_id,
                     "patient_id": user.patient_id,
                     "display_name": display_name,
@@ -333,3 +336,51 @@ class AuthService:
             role=user.role,
         )
         return Token(access_token=access_token, token_type="bearer")
+
+    @staticmethod
+    async def start_impersonation(
+        session: AsyncSession,
+        *,
+        actor_admin: User,
+        target_user_id: int,
+    ) -> Token:
+        """Create a short-lived token that acts as another workspace user."""
+        if actor_admin.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only admins can act as another user",
+            )
+        target = await UserService.get_user(session, target_user_id)
+        if not target or target.workspace_id != actor_admin.workspace_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Target user not found",
+            )
+        if not target.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot act as an inactive user",
+            )
+        if target.id == actor_admin.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot act as the current admin user",
+            )
+
+        access_token = create_access_token(
+            subject=target.id,
+            role=target.role,
+            expires_delta=timedelta(minutes=60),
+            extra_claims={
+                "impersonation": True,
+                "actor_admin_id": actor_admin.id,
+                "impersonated_user_id": target.id,
+            },
+        )
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            impersonation=True,
+            actor_admin_id=actor_admin.id,
+            impersonated_user_id=target.id,
+        )

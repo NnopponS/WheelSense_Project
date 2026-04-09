@@ -335,6 +335,9 @@ The frontend currently depends on:
 - device fleet flows that call `GET /api/devices/activity` and `POST /api/devices/{device_id}/patient`
 - standardized admin patient create flow using `React Hook Form + Zod` in `frontend/components/admin/patients/AddPatientModal.tsx`
 - AI settings model discovery endpoints that soft-fail with `200` plus status metadata instead of surfacing provider bootstrap errors as hard HTTP failures
+- floorplan layout editing through `/api/future/floorplans/layout` with frontend SVG canvas compatibility for legacy 0-100 payloads and current map unit scaling
+- room-node assignment semantics centered on `Room.node_device_id` (string device id), with frontend map editors syncing node links via `PATCH /api/rooms/{room_id}`
+- admin dashboard account-link and AI status details shifted out of the large overview cards and surfaced in context-specific operational pages
 
 When backend contracts change, update:
 

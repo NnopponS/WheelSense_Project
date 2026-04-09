@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery, type QueryKey } from "@tanstack/react-query";
 import { AlertTriangle, Bell, CalendarClock, Clock3, Users } from "lucide-react";
+import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { useTranslation } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
@@ -262,6 +263,39 @@ export default function HeadNurseHomePage() {
         </Card>
       </section>
 
+      <div className="grid gap-4 xl:grid-cols-[1.04fr_0.96fr]">
+        <DashboardFloorplanPanel className="min-w-0" openHref="/head-nurse/monitoring" />
+
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3">
+            <CardTitle className="text-base">{t("headNurse.today")}</CardTitle>
+            <CardDescription>{t("headNurse.subtitle")}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-border/70 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.priorityAlerts")}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{topAlerts.length}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{criticalAlerts.length} {t("headNurse.criticalAlerts")}</p>
+            </div>
+            <div className="rounded-xl border border-border/70 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.priorityTasks")}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{topTasks.length}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{topSchedules.length} {t("headNurse.upcomingSchedules")}</p>
+            </div>
+            <div className="rounded-xl border border-border/70 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.timeline")}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{topTimeline.length}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{vitalsAverage?.spo2_avg != null ? `${vitalsAverage.spo2_avg.toFixed(1)}% SpO2` : t("headNurse.noVitals")}</p>
+            </div>
+            <div className="rounded-xl border border-border/70 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.totalPatients")}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{wardSummary?.total_patients ?? patients.length}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{recentCaregivers.length} {t("headNurse.onDutyHint")}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="border-border/70">
         <CardContent className="flex flex-wrap gap-2 p-3">
           {nav.map((item) => (
@@ -439,6 +473,5 @@ export default function HeadNurseHomePage() {
     </div>
   );
 }
-
 
 

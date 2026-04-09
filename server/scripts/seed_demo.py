@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import base64
 import random
 import sys
 from dataclasses import dataclass
@@ -32,8 +33,10 @@ from app.models import (
     AuditTrailEvent,
     CareDirective,
     CareGiver,
+    DemoActorPosition,
     HandoverNote,
     PharmacyOrder,
+    PhotoRecord,
     Prescription,
     RoleMessage,
     CareSchedule,
@@ -56,6 +59,8 @@ from app.models import (
 SEED = 4242
 DEMO_PASSWORD = "demo1234"
 DEMO_WORKSPACE = "WheelSense Demo Workspace"
+DEMO_PATIENT_COUNT = 5
+DEMO_ROOM_NODE_COUNT = 5
 
 THAI_ROOMS: list[dict[str, str]] = [
     {"name": "ห้องพักผู้ป่วย 1", "type": "bedroom"},
@@ -216,12 +221,14 @@ async def clear_workspace_event_data(session: AsyncSession, workspace_id: int) -
         PharmacyOrder,
         Prescription,
         Specialist,
+        PhotoRecord,
         RoleMessage,
         HandoverNote,
         AuditTrailEvent,
         CareTask,
         CareSchedule,
         CareDirective,
+        DemoActorPosition,
         Alert,
         ActivityTimeline,
         VitalReading,
@@ -374,7 +381,7 @@ async def seed_room_node_mappings(
     rooms: list[Room],
 ) -> int:
     """Bind a subset of rooms to demo node devices for monitoring/presence workflows."""
-    node_ids = ["SIM_NODE_01", "SIM_NODE_02", "SIM_NODE_03"]
+    node_ids = [f"SIM_NODE_{idx:02d}" for idx in range(1, DEMO_ROOM_NODE_COUNT + 1)]
     mapped = 0
     for idx, node_id in enumerate(node_ids):
         if idx >= len(rooms):
@@ -389,7 +396,18 @@ async def seed_room_node_mappings(
         )
         device = dq.scalar_one_or_none()
         if device is None:
-            continue
+            device = Device(
+                workspace_id=workspace_id,
+                device_id=node_id,
+                device_type="camera",
+                hardware_type="node",
+                display_name=f"Demo Node {idx + 1:02d}",
+                ip_address="",
+                firmware="sim-node-v1",
+                config={"seed": True},
+            )
+            session.add(device)
+            await session.flush()
 
         # Keep 1:1 room-node mapping deterministic within the workspace.
         await session.execute(
@@ -460,6 +478,7 @@ async def seed_caregivers_and_users(
     session: AsyncSession, workspace_id: int
 ) -> tuple[dict[str, CareGiver], dict[str, User]]:
     users_cfg = [
+        ("admin", "demo_admin", "Demo", "Admin"),
         ("head_nurse", "demo_headnurse", "ศิริพร", "หัวหน้าวอร์ด"),
         ("supervisor", "demo_supervisor", "มานะ", "เวชกิจ"),
         ("observer", "demo_observer", "สุดา", "ใจดี"),
@@ -467,6 +486,18 @@ async def seed_caregivers_and_users(
     ]
     hashed = get_password_hash(DEMO_PASSWORD)
     profile_by_username = {
+        "demo_admin": {
+            "employee_code": "AD-001",
+            "department": "Operations",
+            "employment_type": "full_time",
+            "specialty": "platform_admin",
+            "license_number": "TH-OPS-90001",
+            "phone": "081-100-1000",
+            "email": "admin.demo@wheelsense.local",
+            "emergency_contact_name": "Demo Systems",
+            "emergency_contact_phone": "081-900-1000",
+            "photo_url": "https://images.wheelsense.local/staff/admin-01.jpg",
+        },
         "demo_headnurse": {
             "employee_code": "HN-001",
             "department": "Nursing",
@@ -590,6 +621,8 @@ async def seed_caregivers_and_users(
         # Keep a single canonical mapping for each role.
         users_by_role.setdefault(role, user)
         caregivers_by_role.setdefault(role, caregiver)
+        users_by_role[username] = user
+        caregivers_by_role[username] = caregiver
 
     await session.commit()
     return caregivers_by_role, users_by_role
@@ -601,9 +634,9 @@ async def seed_patients_and_devices(
     patients: list[Patient] = []
     devices: list[Device] = []
 
-    bedroom_rooms = [r for r in rooms if r.room_type == "bedroom"][:10]
+    bedroom_rooms = [r for r in rooms if r.room_type == "bedroom"][:DEMO_PATIENT_COUNT]
 
-    for i, payload in enumerate(THAI_PATIENTS):
+    for i, payload in enumerate(THAI_PATIENTS[:DEMO_PATIENT_COUNT]):
         room = bedroom_rooms[i % len(bedroom_rooms)] if bedroom_rooms else None
         q = await session.execute(
             select(Patient).where(
@@ -698,6 +731,108 @@ async def seed_patient_user(
     return user
 
 
+async def seed_demo_actor_positions(
+    session: AsyncSession,
+    workspace_id: int,
+    users_by_role: dict[str, User],
+    patients: list[Patient],
+) -> int:
+    seed_positions = [
+        ("demo_admin", patients[3].room_id if len(patients) > 3 else patients[0].room_id),
+        ("demo_headnurse", patients[0].room_id),
+        ("demo_supervisor", patients[1].room_id if len(patients) > 1 else patients[0].room_id),
+        ("demo_observer", patients[0].room_id),
+        ("demo_observer2", patients[2].room_id if len(patients) > 2 else patients[0].room_id),
+    ]
+    count = 0
+    for username, room_id in seed_positions:
+        user = users_by_role.get(username)
+        if user is None or room_id is None:
+            continue
+        row = (
+            await session.execute(
+                select(DemoActorPosition).where(
+                    DemoActorPosition.workspace_id == workspace_id,
+                    DemoActorPosition.actor_type == "staff",
+                    DemoActorPosition.actor_id == user.id,
+                )
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            row = DemoActorPosition(
+                workspace_id=workspace_id,
+                actor_type="staff",
+                actor_id=user.id,
+                room_id=room_id,
+                source="seed",
+                note="show-demo seeded room presence",
+                updated_by_user_id=users_by_role["demo_admin"].id,
+            )
+            session.add(row)
+        else:
+            row.room_id = room_id
+            row.source = "seed"
+            row.note = "show-demo seeded room presence"
+            row.updated_by_user_id = users_by_role["demo_admin"].id
+        count += 1
+    await session.commit()
+    return count
+
+
+def _demo_photo_bytes() -> bytes:
+    return base64.b64decode(
+        "/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQEBAQEA8PEA8PDw8PDw8PDw8PDw8PFREWFhUR"
+        "FRUYHSggGBolGxUVITEhJSkrLi4uFx8zODMsNygtLisBCgoKDg0OGxAQGi0fHyUtLS0tLS0tLS0tLS0t"
+        "LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAAEAAQMBIgACEQEDEQH/xAAXAAADAQAA"
+        "AAAAAAAAAAAAAAABAgME/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEAMQAAAB6gD/xAAZEAEA"
+        "AgMAAAAAAAAAAAAAAAABABEhMUH/2gAIAQEAAT8AqY1b1//EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAI"
+        "AQIBAT8AIP/EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQMBAT8AIP/Z"
+    )
+
+
+async def seed_photo_snapshots(
+    session: AsyncSession,
+    workspace_id: int,
+    rooms: list[Room],
+) -> int:
+    photo_root = ROOT / "storage" / "demo-photos" / f"workspace-{workspace_id}"
+    photo_root.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(timezone.utc)
+    count = 0
+    for idx, room in enumerate(rooms[:DEMO_ROOM_NODE_COUNT]):
+        if not room.node_device_id:
+            continue
+        photo_id = f"seed_ws{workspace_id}_room{room.id}"
+        filepath = photo_root / f"{photo_id}.jpg"
+        filepath.write_bytes(_demo_photo_bytes())
+        row = (
+            await session.execute(
+                select(PhotoRecord).where(
+                    PhotoRecord.workspace_id == workspace_id,
+                    PhotoRecord.photo_id == photo_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            row = PhotoRecord(
+                workspace_id=workspace_id,
+                device_id=room.node_device_id,
+                photo_id=photo_id,
+                filepath=str(filepath),
+                file_size=filepath.stat().st_size,
+                timestamp=now - timedelta(minutes=idx * 3),
+            )
+            session.add(row)
+        else:
+            row.device_id = room.node_device_id
+            row.filepath = str(filepath)
+            row.file_size = filepath.stat().st_size
+            row.timestamp = now - timedelta(minutes=idx * 3)
+        count += 1
+    await session.commit()
+    return count
+
+
 async def seed_vitals(
     session: AsyncSession, workspace_id: int, patients: list[Patient], devices: list[Device]
 ) -> int:
@@ -763,17 +898,19 @@ async def seed_alerts(
     devices: list[Device],
 ) -> int:
     now = datetime.now(timezone.utc)
+    observer_primary = caregivers_by_role.get("demo_observer") or caregivers_by_role.get("observer")
+    observer_secondary = caregivers_by_role.get("demo_observer2") or observer_primary
     statuses = (
         ("active", None),
         ("active", None),
         ("active", None),
         ("acknowledged", caregivers_by_role.get("head_nurse")),
         ("acknowledged", caregivers_by_role.get("supervisor")),
-        ("acknowledged", caregivers_by_role.get("observer")),
-        ("acknowledged", caregivers_by_role.get("observer")),
+        ("acknowledged", observer_primary),
+        ("acknowledged", observer_secondary),
         ("resolved", caregivers_by_role.get("head_nurse")),
         ("resolved", caregivers_by_role.get("supervisor")),
-        ("resolved", caregivers_by_role.get("observer")),
+        ("resolved", observer_secondary),
     )
     severities = ("critical", "warning", "warning", "critical", "warning", "info")
     count = 0
@@ -818,11 +955,15 @@ async def seed_workflow(
     directive_count = 0
 
     supervisor = users_by_role["supervisor"]
-    observer = users_by_role["observer"]
     head_nurse = users_by_role["head_nurse"]
+    observers = [
+        users_by_role.get("demo_observer") or users_by_role["observer"],
+        users_by_role.get("demo_observer2") or users_by_role["observer"],
+    ]
 
     for i in range(5):
         patient = patients[i]
+        observer = observers[i % len(observers)]
         schedule = CareSchedule(
             workspace_id=workspace_id,
             patient_id=patient.id,
@@ -860,6 +1001,7 @@ async def seed_workflow(
 
     for i in range(3):
         patient = patients[i]
+        observer = observers[i % len(observers)]
         directive = CareDirective(
             workspace_id=workspace_id,
             patient_id=patient.id,
@@ -889,8 +1031,8 @@ async def seed_messages_and_handovers(
     now = datetime.now(timezone.utc)
     head_nurse = users_by_role["head_nurse"]
     supervisor = users_by_role["supervisor"]
-    observer = users_by_role["observer"]
-    patient_user = users_by_role.get("patient")
+    observer = users_by_role.get("demo_observer") or users_by_role["observer"]
+    observer_two = users_by_role.get("demo_observer2") or observer
 
     message_count = 0
     handover_count = 0
@@ -923,19 +1065,16 @@ async def seed_messages_and_handovers(
             "patient_id": patients[2].id,
             "is_read": False,
         },
+        {
+            "sender_user_id": observer_two.id,
+            "recipient_role": "supervisor",
+            "recipient_user_id": supervisor.id,
+            "subject": "Escalation ready",
+            "body": "Second observer has taken over rounds on the east wing.",
+            "patient_id": patients[3].id,
+            "is_read": False,
+        },
     ]
-    if patient_user:
-        message_specs.append(
-            {
-                "sender_user_id": patient_user.id,
-                "recipient_role": "head_nurse",
-                "recipient_user_id": head_nurse.id,
-                "subject": "Medication question",
-                "body": "Can the evening dose be shifted by 30 minutes?",
-                "patient_id": patients[0].id,
-                "is_read": False,
-            }
-        )
 
     for idx, spec in enumerate(message_specs):
         row = RoleMessage(
@@ -1092,8 +1231,6 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
         devices.extend(extra_devices)
         room_node_mappings = await seed_room_node_mappings(session, ws.id, rooms)
         smart_devices_count = await seed_smart_devices(session, ws.id, rooms)
-        patient_user = await seed_patient_user(session, ws.id, patients[0])
-        users_by_role["patient"] = patient_user
 
         vitals_count = await seed_vitals(session, ws.id, patients, devices)
         timeline_count = await seed_activity_timeline(session, ws.id, patients, rooms)
@@ -1101,14 +1238,14 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
         schedules, tasks, directives = await seed_workflow(
             session, ws.id, users_by_role, patients, rooms
         )
+        actor_positions = await seed_demo_actor_positions(session, ws.id, users_by_role, patients)
+        photo_snapshots = await seed_photo_snapshots(session, ws.id, rooms)
         messages, handovers = await seed_messages_and_handovers(
             session, ws.id, users_by_role, patients
         )
         specialists, prescriptions, pharmacy_orders = await seed_future_domains(
             session, ws.id, users_by_role, patients
         )
-
-        await attach_bootstrap_admin_to_workspace(session, ws.id)
         workspace_id = ws.id
 
     print("\n[OK] Demo seed complete.")
@@ -1126,15 +1263,16 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
     print(
         "Smart devices: "
         f"{smart_devices_count} | Room-node mappings: {room_node_mappings} | "
+        f"Actor positions: {actor_positions} | Photo snapshots: {photo_snapshots} | "
         f"Specialists: {specialists} | Prescriptions: {prescriptions} | "
         f"Pharmacy orders: {pharmacy_orders}\n"
     )
     print("Demo credentials:")
-    print("- admin        : BOOTSTRAP_ADMIN_USERNAME / BOOTSTRAP_ADMIN_PASSWORD (from env)")
+    print("- admin        : demo_admin / demo1234")
     print("- head_nurse   : demo_headnurse / demo1234")
     print("- supervisor   : demo_supervisor / demo1234")
     print("- observer     : demo_observer / demo1234")
-    print("- patient      : demo_patient / demo1234")
+    print("- observer     : demo_observer2 / demo1234")
 
 
 def parse_args() -> argparse.Namespace:

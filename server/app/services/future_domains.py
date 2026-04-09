@@ -9,13 +9,15 @@ import secrets
 from pathlib import Path
 
 from pydantic import BaseModel
-from sqlalchemy import desc, select
+from sqlalchemy import desc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.activity import Alert
 from app.models.caregivers import CareGiver
-from app.models.core import Device, Room
+from app.models.core import Device, Room, SmartDevice
 from app.models.future_domains import (
+    DemoActorPosition,
     FloorplanAsset,
     FloorplanLayout,
     PharmacyOrder,
@@ -23,7 +25,8 @@ from app.models.future_domains import (
     Specialist,
 )
 from app.models.patients import Patient, PatientDeviceAssignment
-from app.models.telemetry import RoomPrediction
+from app.models.telemetry import PhotoRecord, RoomPrediction
+from app.models.users import User
 from app.schemas.future_domains import (
     PharmacyOrderCreate,
     PharmacyOrderUpdate,
@@ -212,6 +215,8 @@ class FloorplanPresenceService:
         *,
         facility_id: int,
         floor_id: int,
+        visible_patient_ids: set[int] | None = None,
+        filter_to_visible_rooms: bool = False,
     ) -> dict:
         now = datetime.now(timezone.utc)
         layout = await FloorplanLayoutService.get_for_scope(session, ws_id, facility_id, floor_id)
@@ -250,13 +255,17 @@ class FloorplanPresenceService:
 
         patient_by_room: dict[int, Patient] = {}
         if room_ids:
-            patients = await session.execute(
-                select(Patient).where(
-                    Patient.workspace_id == ws_id,
-                    Patient.room_id.in_(room_ids),
-                    Patient.is_active.is_(True),
-                )
+            patient_stmt = select(Patient).where(
+                Patient.workspace_id == ws_id,
+                Patient.room_id.in_(room_ids),
+                Patient.is_active.is_(True),
             )
+            if visible_patient_ids is not None:
+                if not visible_patient_ids:
+                    patient_stmt = patient_stmt.where(Patient.id == -1)
+                else:
+                    patient_stmt = patient_stmt.where(Patient.id.in_(visible_patient_ids))
+            patients = await session.execute(patient_stmt)
             for patient in patients.scalars().all():
                 if patient.room_id is not None:
                     patient_by_room.setdefault(patient.room_id, patient)
@@ -284,7 +293,115 @@ class FloorplanPresenceService:
             )
         )
         for assignment in assignments.scalars().all():
+            if visible_patient_ids is not None and assignment.patient_id not in visible_patient_ids:
+                continue
             assignment_by_device.setdefault(assignment.device_id, assignment)
+
+        room_alert_counts: dict[int, int] = {room_id: 0 for room_id in room_ids}
+        if room_ids:
+            alert_rows = await session.execute(
+                select(Alert).where(
+                    Alert.workspace_id == ws_id,
+                    Alert.status == "active",
+                )
+            )
+            visible_patient_room_ids = {
+                patient.id: patient.room_id for patient in patient_by_room.values() if patient.room_id is not None
+            }
+            for alert in alert_rows.scalars().all():
+                room_id = None
+                if alert.patient_id is not None:
+                    room_id = visible_patient_room_ids.get(alert.patient_id)
+                if room_id is None and isinstance(alert.data, dict):
+                    raw_room_id = alert.data.get("room_id")
+                    if isinstance(raw_room_id, int):
+                        room_id = raw_room_id
+                if room_id in room_alert_counts:
+                    room_alert_counts[room_id] += 1
+
+        smart_devices_by_room: dict[int, list[SmartDevice]] = {room_id: [] for room_id in room_ids}
+        if room_ids:
+            smart_devices = await session.execute(
+                select(SmartDevice).where(
+                    SmartDevice.workspace_id == ws_id,
+                    SmartDevice.room_id.in_(room_ids),
+                )
+            )
+            for device in smart_devices.scalars().all():
+                if device.room_id is not None:
+                    smart_devices_by_room.setdefault(device.room_id, []).append(device)
+
+        latest_photo_by_device: dict[str, PhotoRecord] = {}
+        if node_device_ids:
+            photo_rows = await session.execute(
+                select(PhotoRecord)
+                .where(
+                    PhotoRecord.workspace_id == ws_id,
+                    PhotoRecord.device_id.in_(node_device_ids),
+                )
+                .order_by(PhotoRecord.timestamp.desc())
+                .limit(500)
+            )
+            for photo in photo_rows.scalars().all():
+                latest_photo_by_device.setdefault(photo.device_id, photo)
+
+        staff_positions_by_room: dict[int, list[dict]] = {room_id: [] for room_id in room_ids}
+        if room_ids:
+            positions = await session.execute(
+                select(DemoActorPosition).where(
+                    DemoActorPosition.workspace_id == ws_id,
+                    DemoActorPosition.room_id.in_(room_ids),
+                    or_(
+                        DemoActorPosition.actor_type == "staff",
+                        DemoActorPosition.actor_type == "user",
+                    ),
+                )
+            )
+            position_rows = list(positions.scalars().all())
+            staff_user_ids = {row.actor_id for row in position_rows}
+            staff_people: dict[int, User] = {}
+            caregiver_by_id: dict[int, CareGiver] = {}
+            if staff_user_ids:
+                user_rows = await session.execute(
+                    select(User).where(
+                        User.workspace_id == ws_id,
+                        User.id.in_(staff_user_ids),
+                        User.is_active.is_(True),
+                    )
+                )
+                users = list(user_rows.scalars().all())
+                staff_people = {user.id: user for user in users}
+                caregiver_ids = {user.caregiver_id for user in users if user.caregiver_id is not None}
+                if caregiver_ids:
+                    caregivers = await session.execute(
+                        select(CareGiver).where(
+                            CareGiver.workspace_id == ws_id,
+                            CareGiver.id.in_(caregiver_ids),
+                        )
+                    )
+                    caregiver_by_id = {caregiver.id: caregiver for caregiver in caregivers.scalars().all()}
+            for position in position_rows:
+                user = staff_people.get(position.actor_id)
+                if user is None or position.room_id is None:
+                    continue
+                caregiver = caregiver_by_id.get(user.caregiver_id or -1)
+                display_name = user.username
+                if caregiver is not None:
+                    display_name = f"{caregiver.first_name} {caregiver.last_name}".strip() or user.username
+                staff_positions_by_room.setdefault(position.room_id, []).append(
+                    {
+                        "actor_type": "staff",
+                        "actor_id": position.actor_id,
+                        "display_name": display_name,
+                        "subtitle": caregiver.role if caregiver and caregiver.role else user.role,
+                        "role": user.role,
+                        "user_id": user.id,
+                        "caregiver_id": user.caregiver_id,
+                        "room_id": position.room_id,
+                        "source": position.source or "manual_control",
+                        "updated_at": position.updated_at,
+                    }
+                )
 
         rows = []
         for room in rooms:
@@ -304,6 +421,7 @@ class FloorplanPresenceService:
 
             patient = patient_by_room.get(room.id)
             patient_hint = None
+            occupants: list[dict] = []
             if patient is not None:
                 sources.append("assignment")
                 patient_hint = {
@@ -313,11 +431,38 @@ class FloorplanPresenceService:
                     "nickname": patient.nickname or "",
                     "source": "room_assignment",
                 }
+                occupants.append(
+                    {
+                        "actor_type": "patient",
+                        "actor_id": patient.id,
+                        "display_name": (
+                            patient.nickname
+                            or f"{patient.first_name} {patient.last_name}".strip()
+                            or f"Patient #{patient.id}"
+                        ),
+                        "subtitle": patient.care_level,
+                        "patient_id": patient.id,
+                        "room_id": room.id,
+                        "source": "room_assignment",
+                        "updated_at": patient.updated_at,
+                    }
+                )
+
+            staff_occupants = staff_positions_by_room.get(room.id, [])
+            if staff_occupants:
+                sources.append("manual_staff_presence")
+                occupants.extend(staff_occupants)
 
             prediction = latest_prediction_by_room.get(room.id)
             prediction_hint = None
             confidence = 0.0
             staleness_seconds = None
+            if prediction is not None:
+                assignment = assignment_by_device.get(prediction.device_id)
+                if visible_patient_ids is not None and (
+                    assignment is None or assignment.patient_id not in visible_patient_ids
+                ):
+                    prediction = None
             if prediction is not None:
                 sources.append("prediction")
                 staleness_seconds = self._seconds_since(prediction.timestamp, now) or 0
@@ -333,21 +478,46 @@ class FloorplanPresenceService:
                     "staleness_seconds": staleness_seconds,
                 }
 
-            rows.append(
+            smart_devices_summary = [
                 {
-                    "room_id": room.id,
-                    "room_name": room.name,
-                    "floor_id": room.floor_id,
-                    "node_device_id": room.node_device_id,
-                    "node_status": node_status,
-                    "patient_hint": patient_hint,
-                    "prediction_hint": prediction_hint,
-                    "confidence": confidence,
-                    "computed_at": now,
-                    "staleness_seconds": staleness_seconds,
-                    "sources": sources,
+                    "id": device.id,
+                    "name": device.name,
+                    "device_type": device.device_type,
+                    "ha_entity_id": device.ha_entity_id,
+                    "state": device.state or "unknown",
+                    "is_active": bool(device.is_active),
                 }
-            )
+                for device in smart_devices_by_room.get(room.id, [])
+            ]
+
+            photo = latest_photo_by_device.get(room.node_device_id or "")
+            camera_summary = {
+                "device_id": room.node_device_id,
+                "latest_photo_id": photo.id if photo else None,
+                "latest_photo_url": f"/api/cameras/photos/{photo.id}/content" if photo else None,
+                "captured_at": photo.timestamp if photo else None,
+                "capture_available": bool(room.node_device_id),
+            }
+
+            row = {
+                "room_id": room.id,
+                "room_name": room.name,
+                "floor_id": room.floor_id,
+                "node_device_id": room.node_device_id,
+                "node_status": node_status,
+                "patient_hint": patient_hint,
+                "occupants": occupants,
+                "alert_count": room_alert_counts.get(room.id, 0),
+                "smart_devices_summary": smart_devices_summary,
+                "camera_summary": camera_summary,
+                "prediction_hint": prediction_hint,
+                "confidence": confidence,
+                "computed_at": now,
+                "staleness_seconds": staleness_seconds,
+                "sources": sources,
+            }
+            if not filter_to_visible_rooms or patient_hint is not None or prediction_hint is not None:
+                rows.append(row)
 
         return {"facility_id": facility_id, "floor_id": floor_id, "computed_at": now, "rooms": rows}
 

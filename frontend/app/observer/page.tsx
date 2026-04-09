@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import Link from "next/link";
@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { AlertTriangle, LocateFixed, Monitor, ShieldAlert } from "lucide-react";
 import { z } from "zod";
-import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
+import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
@@ -325,7 +325,7 @@ export default function ObserverZonePage() {
         </p>
       </div>
 
-      <FloorplanRoleViewer />
+      <DashboardFloorplanPanel openHref="/observer/monitoring" />
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryStatCard icon={Monitor} label="Rooms monitored" value={rooms.length} tone="info" />

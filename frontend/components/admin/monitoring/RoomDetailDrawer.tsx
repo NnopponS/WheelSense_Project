@@ -71,6 +71,15 @@ export default function RoomDetailDrawer({
           {t("monitoring.flow.roomDetail")}
         </p>
 
+        <div className="mb-4 rounded-xl border border-outline-variant/25 bg-surface-container-low/40 px-3 py-2">
+          <p className="text-xs uppercase tracking-wide text-on-surface-variant">
+            Node link
+          </p>
+          <p className="mt-1 text-sm font-medium text-on-surface">
+            {room.node_device_id?.trim() || "No node linked"}
+          </p>
+        </div>
+
         <RoomSmartDevicesPanel roomId={room.id} />
       </aside>
     </div>

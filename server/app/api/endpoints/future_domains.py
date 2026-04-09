@@ -20,10 +20,12 @@ from app.api.dependencies import (
     get_visible_patient_ids,
 )
 from app.models.core import Device, Workspace
+from app.models.core import Room as CoreRoom
 from app.models.facility import Facility, Floor
 from app.models.users import User
 from app.schemas.future_domains import (
     FloorplanAssetOut,
+    RoomCaptureOut,
     FloorplanLayoutOut,
     FloorplanLayoutPayload,
     FloorplanPresenceOut,
@@ -38,6 +40,7 @@ from app.schemas.future_domains import (
     SpecialistOut,
     SpecialistUpdate,
 )
+from app.services import device_management as dm
 from app.services.future_domains import (
     FloorplanLayoutService,
     floorplan_presence_service,
@@ -169,15 +172,40 @@ async def get_floorplan_presence(
     floor_id: int = Query(..., ge=1),
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+    current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
     """Read-side room presence projection for map-friendly monitoring."""
     await _assert_facility_floor(db, ws.id, facility_id, floor_id)
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await floorplan_presence_service.build_presence(
         db,
         ws_id=ws.id,
         facility_id=facility_id,
         floor_id=floor_id,
+        visible_patient_ids=visible_patient_ids,
+        filter_to_visible_rooms=current_user.role == "patient",
+    )
+
+
+@router.post("/rooms/{room_id}/capture", response_model=RoomCaptureOut)
+async def capture_room_snapshot(
+    room_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+):
+    room = await db.get(CoreRoom, room_id)
+    if not room or room.workspace_id != ws.id:
+        raise HTTPException(status_code=404, detail="Room not found")
+    if not room.node_device_id:
+        raise HTTPException(status_code=400, detail="Room has no mapped node device")
+    result = await dm.camera_check_snapshot(db, ws.id, room.node_device_id)
+    return RoomCaptureOut(
+        room_id=room.id,
+        node_device_id=room.node_device_id,
+        command_id=result.get("command_id"),
+        topic=result.get("topic"),
+        message=f"Capture requested for {room.name}",
     )
 
 @router.put("/floorplans/layout", response_model=FloorplanLayoutOut)

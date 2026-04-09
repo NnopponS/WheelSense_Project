@@ -10,10 +10,10 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.dependencies import get_db, get_current_active_user
+from app.api.dependencies import RequireRole, get_db, get_current_active_user
 from app.config import settings
 from app.models.users import User
-from app.schemas.users import MePatch, Token, UserOut
+from app.schemas.users import AuthMeOut, ImpersonationStart, MePatch, Token, UserOut
 from app.services.auth import AuthService
 from app.services.profile_image_storage import remove_hosted_profile_file_if_any
 
@@ -31,14 +31,31 @@ async def login_for_access_token(
         session, form_data.username, form_data.password
     )
 
-@router.get("/me", response_model=UserOut)
+@router.get("/me", response_model=AuthMeOut)
 async def read_users_me(
     current_user: User = Depends(get_current_active_user),
 ):
     """
     Get current user information based on the JWT token.
     """
-    return current_user
+    data = AuthMeOut.model_validate(current_user)
+    impersonated_by_user_id = getattr(current_user, "_impersonated_by_user_id", None)
+    data.impersonation = impersonated_by_user_id is not None
+    data.impersonated_by_user_id = impersonated_by_user_id
+    return data
+
+@router.post("/impersonate/start", response_model=Token)
+async def start_impersonation(
+    data: ImpersonationStart,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(RequireRole(["admin"])),
+):
+    """Issue a short-lived admin act-as token for a target workspace user."""
+    return await AuthService.start_impersonation(
+        session,
+        actor_admin=current_user,
+        target_user_id=data.target_user_id,
+    )
 
 @router.patch("/me", response_model=UserOut)
 async def patch_users_me(
@@ -96,4 +113,3 @@ async def upload_profile_image(
     await session.commit()
     await session.refresh(current_user)
     return current_user
-

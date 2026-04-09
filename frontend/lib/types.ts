@@ -257,6 +257,53 @@ export interface Alert {
   resolved_at: string | null;
 }
 
+export interface RoomOccupant {
+  actor_type: "patient" | "staff";
+  actor_id: number;
+  display_name: string;
+  subtitle?: string | null;
+  role?: string | null;
+  user_id?: number | null;
+  patient_id?: number | null;
+  caregiver_id?: number | null;
+  room_id?: number | null;
+  source?: string | null;
+  updated_at?: string | null;
+}
+
+export interface RoomSmartDeviceStateSummary {
+  id: number;
+  name: string;
+  device_type: string;
+  ha_entity_id: string;
+  state: string;
+  is_active: boolean;
+}
+
+export interface RoomCameraSummary {
+  device_id: string | null;
+  latest_photo_id: number | null;
+  latest_photo_url: string | null;
+  captured_at: string | null;
+  capture_available: boolean;
+}
+
+export interface WorkflowClaimRequest {
+  note: string;
+}
+
+export interface WorkflowHandoffRequest {
+  target_mode: "role" | "user";
+  target_role?: string | null;
+  target_user_id?: number | null;
+  note: string;
+}
+
+export interface DemoActorMoveRequest {
+  room_id: number;
+  note: string;
+}
+
 // ── Timeline Event ──────────────────────────────────────────────────────────
 
 export interface TimelineEvent {

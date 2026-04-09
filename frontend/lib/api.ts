@@ -3,6 +3,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { API_BASE } from "./constants";
+import type { DemoActorMoveRequest, WorkflowClaimRequest, WorkflowHandoffRequest } from "./types";
 import type {
   AcknowledgeAlertRequest,
   AcknowledgeAlertResponse,
@@ -85,7 +86,7 @@ function readCookieToken(): string | null {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-function getToken(): string | null {
+export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("ws_token") ?? readCookieToken();
 }
@@ -104,6 +105,76 @@ export function clearToken(): void {
       "ws_token=; path=/; max-age=0; SameSite=Lax";
   }
 }
+
+export type ImpersonationTokenResponse = {
+  access_token: string;
+  token_type: string;
+  impersonation?: boolean;
+  actor_admin_id?: number | null;
+  impersonated_user_id?: number | null;
+};
+
+export type UserSearchResult = {
+  id: number;
+  username: string;
+  role: string;
+  is_active: boolean;
+  caregiver_id?: number | null;
+  patient_id?: number | null;
+  display_name: string;
+};
+
+export type WorkflowPerson = {
+  user_id: number;
+  username: string;
+  role: string;
+  display_name: string;
+  person_type: string;
+  caregiver_id?: number | null;
+  patient_id?: number | null;
+};
+
+export type WorkflowItemDetail = {
+  item_type: "task" | "schedule" | "directive";
+  item: Record<string, unknown>;
+  patient?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    nickname?: string;
+    room_id?: number | null;
+    care_level?: string;
+  } | null;
+  assignee_person?: WorkflowPerson | null;
+  creator_person?: WorkflowPerson | null;
+  messages: Array<{
+    id: number;
+    sender_user_id: number;
+    recipient_role?: string | null;
+    recipient_user_id?: number | null;
+    patient_id?: number | null;
+    workflow_item_type?: string | null;
+    workflow_item_id?: number | null;
+    subject: string;
+    body: string;
+    is_read: boolean;
+    read_at?: string | null;
+    created_at: string;
+    sender_person?: WorkflowPerson | null;
+    recipient_person?: WorkflowPerson | null;
+  }>;
+  audit: Array<{
+    id: number;
+    actor_user_id?: number | null;
+    patient_id?: number | null;
+    domain: string;
+    action: string;
+    entity_type: string;
+    entity_id?: number | null;
+    details: Record<string, unknown>;
+    created_at: string;
+  }>;
+};
 
 async function request<T>(
   endpoint: string,
@@ -277,6 +348,21 @@ export const api = {
 
   listUsers: () => request<ListUsersResponse>("/users"),
 
+  searchUsers: (params?: { q?: string; roles?: string; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.q) query.set("q", params.q);
+    if (params?.roles) query.set("roles", params.roles);
+    if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+    const suffix = query.toString();
+    return request<UserSearchResult[]>(suffix ? `/users/search?${suffix}` : "/users/search");
+  },
+
+  startImpersonation: (targetUserId: number | string) =>
+    request<ImpersonationTokenResponse>("/auth/impersonate/start", {
+      method: "POST",
+      body: JSON.stringify({ target_user_id: Number(targetUserId) }),
+    }),
+
   listPatients: (params?: { q?: string; limit?: number; is_active?: boolean }) => {
     const query = new URLSearchParams();
     if (params?.q) query.set("q", params.q);
@@ -430,6 +516,24 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  claimWorkflowItem: (itemType: "task" | "schedule" | "directive", itemId: number | string, payload: WorkflowClaimRequest) =>
+    request<unknown>(
+      `/workflow/items/${encodeURIComponent(itemType)}/${encodeURIComponent(String(itemId))}/claim`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
+
+  handoffWorkflowItem: (itemType: "task" | "schedule" | "directive", itemId: number | string, payload: WorkflowHandoffRequest) =>
+    request<unknown>(
+      `/workflow/items/${encodeURIComponent(itemType)}/${encodeURIComponent(String(itemId))}/handoff`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
+
   listWorkflowDirectives: (params?: { status?: string; limit?: number }) => {
     const query = new URLSearchParams();
     if (params?.status) query.set("status", params.status);
@@ -551,10 +655,19 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
-  listWorkflowMessages: (params?: { inbox_only?: boolean; limit?: number }) => {
+  listWorkflowMessages: (params?: {
+    inbox_only?: boolean;
+    workflow_item_type?: string;
+    workflow_item_id?: number;
+    limit?: number;
+  }) => {
     const query = new URLSearchParams();
     if (typeof params?.inbox_only === "boolean") {
       query.set("inbox_only", params.inbox_only ? "true" : "false");
+    }
+    if (params?.workflow_item_type) query.set("workflow_item_type", params.workflow_item_type);
+    if (typeof params?.workflow_item_id === "number") {
+      query.set("workflow_item_id", String(params.workflow_item_id));
     }
     if (typeof params?.limit === "number") query.set("limit", String(params.limit));
     const suffix = query.toString();
@@ -562,6 +675,11 @@ export const api = {
       suffix ? `/workflow/messages?${suffix}` : "/workflow/messages",
     );
   },
+
+  getWorkflowItemDetail: (itemType: "task" | "schedule" | "directive", itemId: number | string) =>
+    request<WorkflowItemDetail>(
+      `/workflow/items/${encodeURIComponent(itemType)}/${encodeURIComponent(String(itemId))}`,
+    ),
 
   sendWorkflowMessage: (payload: SendWorkflowMessageRequest) =>
     request<SendWorkflowMessageResponse>("/workflow/messages", {
@@ -607,6 +725,15 @@ export const api = {
     query.set("floor_id", String(params.floor_id));
     return request<GetFloorplanPresenceResponse>(`/future/floorplans/presence?${query.toString()}`);
   },
+
+  moveDemoActor: (actorType: "patient" | "staff", actorId: number | string, payload: DemoActorMoveRequest) =>
+    request<unknown>(
+      `/demo/actors/${encodeURIComponent(actorType)}/${encodeURIComponent(String(actorId))}/move`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
 };
 
 export { ApiError };

@@ -19,7 +19,10 @@ def validate_runtime_settings() -> None:
         )
 
 def create_access_token(
-    subject: Union[str, Any], role: str, expires_delta: timedelta | None = None
+    subject: Union[str, Any],
+    role: str,
+    expires_delta: timedelta | None = None,
+    extra_claims: dict[str, Any] | None = None,
 ) -> str:
     """Create a JWT Access token."""
     if expires_delta:
@@ -30,6 +33,8 @@ def create_access_token(
         )
 
     to_encode = {"exp": expire, "sub": str(subject), "role": role}
+    if extra_claims:
+        to_encode.update(extra_claims)
     encoded_jwt = jwt.encode(
         to_encode, settings.secret_key, algorithm=settings.algorithm
     )

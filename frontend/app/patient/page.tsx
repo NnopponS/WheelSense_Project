@@ -7,11 +7,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Bell, Heart, MessageCircle, Siren, Sparkles } from "lucide-react";
+import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type { Room } from "@/lib/types";
 import type {
   CareTaskOut,
   CreateAlertRequest,
@@ -122,6 +124,12 @@ export default function PatientDashboard() {
     queryFn: () => api.listSmartDevices(),
   });
 
+  const roomsQuery = useQuery({
+    queryKey: ["patient", "dashboard", "rooms"],
+    enabled: effectivePatientId != null,
+    queryFn: () => api.listRooms(),
+  });
+
   const tasksQuery = useQuery({
     queryKey: ["patient", "dashboard", "tasks", effectivePatientId],
     enabled: effectivePatientId != null,
@@ -205,6 +213,12 @@ export default function PatientDashboard() {
   const smartDevices = useMemo(
     () => (smartDevicesQuery.data ?? []) as ListSmartDevicesResponse,
     [smartDevicesQuery.data],
+  );
+
+  const rooms = useMemo(() => (roomsQuery.data ?? []) as Room[], [roomsQuery.data]);
+  const patientRoom = useMemo(
+    () => rooms.find((room) => room.id === patient?.room_id) ?? null,
+    [patient?.room_id, rooms],
   );
 
   const tasksData = useMemo(
@@ -420,6 +434,7 @@ export default function PatientDashboard() {
     alertsQuery.isLoading ||
     messagesQuery.isLoading ||
     smartDevicesQuery.isLoading ||
+    roomsQuery.isLoading ||
     tasksQuery.isLoading;
 
   if (isLoadingAny && !patient) {
@@ -493,6 +508,69 @@ export default function PatientDashboard() {
           value={latestVitals?.skin_temperature != null ? Number(latestVitals.skin_temperature.toFixed(1)) : 0}
           tone={latestVitals?.skin_temperature != null ? "info" : "warning"}
         />
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.04fr_0.96fr]">
+        {patientRoom ? (
+          <DashboardFloorplanPanel
+            className="min-w-0"
+            initialFacilityId={patientRoom.facility_id ?? null}
+            initialFloorId={patientRoom.floor_id ?? null}
+            initialRoomName={patientRoom.name}
+          />
+        ) : (
+          <Card className="border-border/70">
+            <CardHeader className="space-y-2 pb-3">
+              <CardTitle className="text-base">Room context</CardTitle>
+              <CardDescription>
+                {patient.room_id != null
+                  ? "Your room map will appear when room metadata is available."
+                  : "Your account is not linked to a room yet."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-xl border border-border/70 px-3 py-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Assigned room</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
+                  {patient.room_id != null ? `Room #${patient.room_id}` : "Unassigned"}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {patient.room_id != null
+                    ? "Map loading failed or the room record is still unavailable."
+                    : "A room can be linked after account setup."}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="border-border/70">
+          <CardHeader className="space-y-2 pb-3">
+            <CardTitle className="text-base">Room context</CardTitle>
+            <CardDescription>
+              {patientRoom
+                ? `${patientRoom.name}${patientRoom.floor_name ? ` • ${patientRoom.floor_name}` : ""}${patientRoom.facility_name ? ` • ${patientRoom.facility_name}` : ""}`
+                : "Nearby equipment and room metadata will appear here."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border/70 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Room</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">
+                {patientRoom?.name ?? `#${patient.room_id ?? "—"}`}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border/70 px-3 py-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Devices</p>
+              <p className="mt-1 text-lg font-semibold text-foreground">{roomDevices.length}</p>
+            </div>
+            <p className="col-span-2 text-sm text-muted-foreground">
+              {patientRoom
+                ? "The compact floorplan above stays within the first viewport and can still show basic presence metadata when available."
+                : "Once room metadata is available, the map panel will seed itself to the right room and floor."}
+            </p>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
