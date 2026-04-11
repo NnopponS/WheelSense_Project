@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import { useMemo, useState } from "react";
@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
   ListPatientsResponse,
@@ -63,6 +64,7 @@ function parseError(error: unknown): string {
 }
 
 export default function HeadNurseMessagesPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"inbox" | "sent">("inbox");
@@ -174,7 +176,7 @@ export default function HeadNurseMessagesPage() {
     () => [
       {
         accessorKey: "subject",
-        header: "Message",
+        header: t("clinical.table.message"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.subject}</p>
@@ -184,31 +186,43 @@ export default function HeadNurseMessagesPage() {
       },
       {
         accessorKey: "recipientRole",
-        header: "Routing",
+        header: t("clinical.table.routing"),
         cell: ({ row }) => (
           <div className="space-y-1 text-xs text-muted-foreground">
-            <p>From user #{row.original.senderUserId}</p>
-            <p>{row.original.recipientRole ? `Role: ${row.original.recipientRole}` : "Direct message"}</p>
-            {row.original.recipientUserId ? <p>User #{row.original.recipientUserId}</p> : null}
+            <p>
+              {t("headNurse.messages.fromUserPrefix")}
+              {row.original.senderUserId}
+            </p>
+            <p>
+              {row.original.recipientRole
+                ? `${t("headNurse.messages.recipientRolePrefix")}${row.original.recipientRole}`
+                : t("headNurse.messages.directMessage")}
+            </p>
+            {row.original.recipientUserId ? (
+              <p>
+                {t("headNurse.messages.toUserPrefix")}
+                {row.original.recipientUserId}
+              </p>
+            ) : null}
           </div>
         ),
       },
       {
         accessorKey: "patientName",
-        header: "Patient",
+        header: t("clinical.table.patient"),
       },
       {
         accessorKey: "isRead",
-        header: "Read",
+        header: t("clinical.table.read"),
         cell: ({ row }) => (
           <Badge variant={row.original.isRead ? "success" : "warning"}>
-            {row.original.isRead ? "read" : "unread"}
+            {row.original.isRead ? t("headNurse.messages.readBadge") : t("headNurse.messages.unreadBadge")}
           </Badge>
         ),
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("clinical.table.created"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
@@ -218,7 +232,7 @@ export default function HeadNurseMessagesPage() {
       },
       {
         id: "actions",
-        header: "",
+        header: t("clinical.table.actions"),
         cell: ({ row }) => {
           if (activeTab !== "inbox" || row.original.isRead) return null;
           return (
@@ -233,13 +247,13 @@ export default function HeadNurseMessagesPage() {
               }}
             >
               <UserRoundCheck className="h-4 w-4" />
-              Mark read
+              {t("headNurse.messages.markRead")}
             </Button>
           );
         },
       },
     ],
-    [activeTab, markReadMutation, pendingReadId],
+    [activeTab, markReadMutation, pendingReadId, t],
   );
 
   const sendError = sendMessageMutation.error ? parseError(sendMessageMutation.error) : null;
@@ -247,10 +261,8 @@ export default function HeadNurseMessagesPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Clinical Messages</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Coordinate with role-based messaging and track acknowledgement state.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("headNurse.messages.pageTitle")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("headNurse.messages.pageSubtitle")}</p>
       </div>
 
       <Card>

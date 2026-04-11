@@ -36,7 +36,7 @@ export default function FacilityFloorToolbar({
     <div className="space-y-4 rounded-2xl border border-outline-variant/25 bg-surface-container-low/50 p-4">
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant flex items-center gap-2">
+          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
             <Building2 className="w-4 h-4 text-primary" />
             {t("facilities.title")}
           </label>
@@ -59,7 +59,7 @@ export default function FacilityFloorToolbar({
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant flex items-center gap-2">
+          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
             {t("floorplan.floor")}
           </label>
@@ -93,7 +93,7 @@ export default function FacilityFloorToolbar({
           className={`px-4 py-2 rounded-xl text-sm font-medium inline-flex items-center gap-2 transition-smooth ${
             view === "list"
               ? "bg-primary-fixed text-primary"
-              : "text-on-surface-variant hover:bg-surface-container-low"
+              : "text-muted-foreground hover:bg-surface-container-low"
           }`}
         >
           <List className="w-4 h-4" />
@@ -105,7 +105,7 @@ export default function FacilityFloorToolbar({
           className={`px-4 py-2 rounded-xl text-sm font-medium inline-flex items-center gap-2 transition-smooth ${
             view === "map"
               ? "bg-primary-fixed text-primary"
-              : "text-on-surface-variant hover:bg-surface-container-low"
+              : "text-muted-foreground hover:bg-surface-container-low"
           }`}
         >
           <MapIcon className="w-4 h-4" />

@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.core import Device, Room, SmartDevice, Workspace
-from app.models.future_domains import PharmacyOrder
+from app.models.medication import PharmacyOrder
 
 
 @pytest.mark.asyncio

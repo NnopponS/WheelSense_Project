@@ -41,6 +41,8 @@ cd server
 docker compose up -d --build
 ```
 
+Optional **synthetic MQTT** (`wheelsense-simulator`): not started by default. With `--profile simulator`, the simulator container runs `seed_sim_team.py` before `sim_controller` so staff/rooms/patients exist; optionally set `SIM_WORKSPACE_ID` in `server/.env` to pin a workspace. Details: `server/docs/RUNBOOK.md`.
+
 ### Frontend
 
 ```bash
@@ -59,6 +61,7 @@ The Next.js app proxies `/api/*` requests to the FastAPI server via `frontend/ap
 - Repo workflow memory: `.agents/workflows/wheelsense.md`
 - Cursor orchestration: `.cursor/agents/README.md`
 - Architecture decisions: `docs/adr/README.md`
+- Latest implementation handoff for follow-on agents: `docs/plans/2026-04-11-session-handoff.md`
 
 ## Historical Notes
 

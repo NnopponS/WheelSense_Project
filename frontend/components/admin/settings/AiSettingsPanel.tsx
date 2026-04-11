@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bot,
   Check,
@@ -13,8 +13,9 @@ import {
   WandSparkles,
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
+import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
-import { useQuery } from "@/hooks/useQuery";
+import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,8 +41,6 @@ type AISettingsOut = {
   model: string;
   workspace_default_provider: "ollama" | "copilot";
   workspace_default_model: string;
-  user_provider_override: string | null;
-  user_model_override: string | null;
 };
 
 type CopilotModel = {
@@ -305,32 +304,40 @@ function ProviderModelSection({
 export default function AiSettingsPanel() {
   const { t } = useTranslation();
 
-  const { data: aiSettings, refetch: refetchAi } = useQuery<AISettingsOut>("/settings/ai", {
+  const { data: aiSettings, refetch: refetchAiBase } = useQuery({
+    queryKey: ["admin", "settings", "ai", "settings"],
+    queryFn: () => api.get<AISettingsOut>("/settings/ai"),
     retry: false,
     staleTime: 60_000,
     refetchInterval: false,
   });
-  const { data: ollamaModels, refetch: refetchOllamaModels } =
-    useQuery<OllamaModelsResponse>("/settings/ai/ollama/models", {
-      retry: false,
-      staleTime: 30_000,
-      refetchInterval: false,
-    });
-  const { data: copilotStatus, refetch: refetchCopilotStatus } =
-    useQuery<{ connected: boolean }>("/settings/ai/copilot/status", {
-      retry: false,
-      staleTime: 30_000,
-      refetchInterval: false,
-    });
-  const { data: copilotModels, refetch: refetchCopilotModels } =
-    useQuery<CopilotModelsResponse>("/settings/ai/copilot/models", {
-      retry: false,
-      staleTime: 30_000,
-      refetchInterval: false,
-    });
+  const { data: ollamaModels, refetch: refetchOllamaModelsBase } = useQuery({
+    queryKey: ["admin", "settings", "ai", "ollama-models"],
+    queryFn: () => api.get<OllamaModelsResponse>("/settings/ai/ollama/models"),
+    retry: false,
+    staleTime: 30_000,
+    refetchInterval: false,
+  });
+  const { data: copilotStatus, refetch: refetchCopilotStatusBase } = useQuery({
+    queryKey: ["admin", "settings", "ai", "copilot-status"],
+    queryFn: () => api.get<{ connected: boolean }>("/settings/ai/copilot/status"),
+    retry: false,
+    staleTime: 30_000,
+    refetchInterval: false,
+  });
+  const { data: copilotModels, refetch: refetchCopilotModelsBase } = useQuery({
+    queryKey: ["admin", "settings", "ai", "copilot-models"],
+    queryFn: () => api.get<CopilotModelsResponse>("/settings/ai/copilot/models"),
+    retry: false,
+    staleTime: 30_000,
+    refetchInterval: false,
+  });
 
-  const [userProvider, setUserProvider] = useState<"ollama" | "copilot">("ollama");
-  const [userModel, setUserModel] = useState("");
+  const refetchAi = useCallback(() => refetchOrThrow(refetchAiBase), [refetchAiBase]);
+  const refetchOllamaModels = useCallback(() => refetchOrThrow(refetchOllamaModelsBase), [refetchOllamaModelsBase]);
+  const refetchCopilotStatus = useCallback(() => refetchOrThrow(refetchCopilotStatusBase), [refetchCopilotStatusBase]);
+  const refetchCopilotModels = useCallback(() => refetchOrThrow(refetchCopilotModelsBase), [refetchCopilotModelsBase]);
+
   const [workspaceProvider, setWorkspaceProvider] = useState<"ollama" | "copilot">("ollama");
   const [workspaceModel, setWorkspaceModel] = useState("");
   const [saving, setSaving] = useState(false);
@@ -366,8 +373,6 @@ export default function AiSettingsPanel() {
 
   useEffect(() => {
     if (!aiSettings) return;
-    setUserProvider((aiSettings.user_provider_override ?? aiSettings.provider) as "ollama" | "copilot");
-    setUserModel(aiSettings.user_model_override ?? aiSettings.model);
     setWorkspaceProvider(aiSettings.workspace_default_provider);
     setWorkspaceModel(aiSettings.workspace_default_model);
   }, [aiSettings]);
@@ -505,19 +510,6 @@ export default function AiSettingsPanel() {
     setCopilotFlowStatus("idle");
     setCopilotFlowMessage(null);
     setCopiedCode(false);
-  }
-
-  async function saveUserAi() {
-    setSaving(true);
-    try {
-      await api.put("/settings/ai", {
-        provider: userProvider,
-        model: userModel,
-      });
-      await refetchAi();
-    } finally {
-      setSaving(false);
-    }
   }
 
   async function saveWorkspaceAi() {
@@ -721,29 +713,8 @@ export default function AiSettingsPanel() {
       </Card>
 
       <ProviderModelSection
-        title={t("settings.ai.userOverrides")}
-        description="Personal AI preference used when you override the workspace default."
-        provider={userProvider}
-        onProviderChange={(value) => {
-          setUserProvider(value);
-          setUserModel(
-            value === "ollama"
-              ? availableOllamaModels[0]?.name ?? ""
-              : availableCopilotModels[0]?.id ?? "",
-          );
-        }}
-        model={userModel}
-        onModelChange={setUserModel}
-        ollamaModels={ollamaModels}
-        copilotModels={sanitizedCopilotModels}
-        disabled={saving}
-        saveLabel={t("settings.ai.saveUser")}
-        onSave={saveUserAi}
-      />
-
-      <ProviderModelSection
         title={t("settings.ai.workspaceDefaults")}
-        description="Admin default applied when a user does not pin their own provider/model."
+        description="Global provider/model used by the AI popup across the entire workspace."
         provider={workspaceProvider}
         onProviderChange={(value) => {
           setWorkspaceProvider(value);
@@ -755,8 +726,8 @@ export default function AiSettingsPanel() {
         }}
         model={workspaceModel}
         onModelChange={setWorkspaceModel}
-        ollamaModels={ollamaModels}
-        copilotModels={sanitizedCopilotModels}
+        ollamaModels={ollamaModels ?? null}
+        copilotModels={sanitizedCopilotModels ?? null}
         disabled={saving}
         saveLabel={t("settings.ai.saveWorkspace")}
         onSave={saveWorkspaceAi}

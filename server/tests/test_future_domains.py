@@ -1,4 +1,4 @@
-"""Tests for future domain APIs: floorplans, specialists, prescriptions, pharmacy."""
+"""Tests for canonical floorplans, specialists, prescriptions, and pharmacy APIs."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from app.core.security import create_access_token, get_password_hash
 from app.models.caregivers import CareGiver
 from app.models.core import Device, Room, SmartDevice
 from app.models.facility import Facility, Floor
-from app.models.future_domains import DemoActorPosition, Specialist
+from app.models.care import DemoActorPosition, Specialist
 from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.telemetry import PhotoRecord, RoomPrediction
 from app.models.users import User
@@ -27,13 +27,13 @@ async def test_floorplan_upload_and_download(client: AsyncClient):
     files = {"file": ("ward-a.png", io.BytesIO(payload), "image/png")}
     data = {"name": "Ward A map", "width": "1024", "height": "768"}
 
-    uploaded = await client.post("/api/future/floorplans/upload", data=data, files=files)
+    uploaded = await client.post("/api/floorplans/upload", data=data, files=files)
     assert uploaded.status_code == 201
     item = uploaded.json()
     assert item["name"] == "Ward A map"
     assert item["size_bytes"] == len(payload)
 
-    listed = await client.get("/api/future/floorplans")
+    listed = await client.get("/api/floorplans")
     assert listed.status_code == 200
     assert len(listed.json()) == 1
 
@@ -68,10 +68,10 @@ async def test_floorplan_layout_roundtrip(client: AsyncClient, db_session: Async
             }
         ],
     }
-    put = await client.put("/api/future/floorplans/layout", json=body)
+    put = await client.put("/api/floorplans/layout", json=body)
     assert put.status_code == 200, put.text
     got = await client.get(
-        f"/api/future/floorplans/layout?facility_id={fac.id}&floor_id={fl.id}"
+        f"/api/floorplans/layout?facility_id={fac.id}&floor_id={fl.id}"
     )
     assert got.status_code == 200
     data = got.json()
@@ -134,7 +134,7 @@ async def test_floorplan_presence_projection(client: AsyncClient, db_session: As
     await db_session.commit()
 
     response = await client.get(
-        f"/api/future/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}"
+        f"/api/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}"
     )
     assert response.status_code == 200, response.text
     body = response.json()
@@ -242,7 +242,7 @@ async def test_floorplan_presence_projection_includes_room_context(client: Async
     await db_session.commit()
 
     response = await client.get(
-        f"/api/future/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}"
+        f"/api/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}"
     )
     assert response.status_code == 200, response.text
     row = response.json()["rooms"][0]
@@ -298,7 +298,7 @@ async def test_floorplan_presence_patient_scope(
     await db_session.refresh(patient_user)
 
     response = await client.get(
-        f"/api/future/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}",
+        f"/api/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}",
         headers={
             "Authorization": f"Bearer {create_access_token(subject=patient_user.id, role=patient_user.role)}"
         },
@@ -374,7 +374,7 @@ async def test_future_domain_crud(client: AsyncClient, db_session: AsyncSession)
     await db_session.refresh(patient)
 
     specialist = await client.post(
-        "/api/future/specialists",
+        "/api/care/specialists",
         json={
             "first_name": "Alex",
             "last_name": "Khan",
@@ -386,7 +386,7 @@ async def test_future_domain_crud(client: AsyncClient, db_session: AsyncSession)
     specialist_id = specialist.json()["id"]
 
     prescription = await client.post(
-        "/api/future/prescriptions",
+        "/api/medication/prescriptions",
         json={
             "patient_id": patient.id,
             "specialist_id": specialist_id,
@@ -401,7 +401,7 @@ async def test_future_domain_crud(client: AsyncClient, db_session: AsyncSession)
     prescription_id = prescription.json()["id"]
 
     order = await client.post(
-        "/api/future/pharmacy/orders",
+        "/api/medication/pharmacy/orders",
         json={
             "prescription_id": prescription_id,
             "patient_id": patient.id,
@@ -414,12 +414,12 @@ async def test_future_domain_crud(client: AsyncClient, db_session: AsyncSession)
     assert order.status_code == 201
     assert order.json()["status"] == "pending"
 
-    listed_orders = await client.get(f"/api/future/pharmacy/orders?patient_id={patient.id}")
+    listed_orders = await client.get(f"/api/medication/pharmacy/orders?patient_id={patient.id}")
     assert listed_orders.status_code == 200
     assert len(listed_orders.json()) == 1
 
     updated = await client.patch(
-        f"/api/future/prescriptions/{prescription_id}",
+        f"/api/medication/prescriptions/{prescription_id}",
         json={"status": "completed"},
     )
     assert updated.status_code == 200
@@ -453,7 +453,7 @@ async def test_specialists_list_uses_supervisor_caregiver_directory(
     )
     await db_session.commit()
 
-    response = await client.get("/api/future/specialists")
+    response = await client.get("/api/care/specialists")
     assert response.status_code == 200, response.text
     body = response.json()
     assert [item["first_name"] for item in body] == ["มานะ"]
@@ -504,7 +504,7 @@ async def test_patient_role_only_sees_own_prescriptions(
     await db_session.commit()
 
     admin_rx = await client.post(
-        "/api/future/prescriptions",
+        "/api/medication/prescriptions",
         json={
             "patient_id": patient_b.id,
             "medication_name": "Aspirin",
@@ -515,7 +515,7 @@ async def test_patient_role_only_sees_own_prescriptions(
     assert admin_rx.status_code == 201
 
     own_rx = await client.post(
-        "/api/future/prescriptions",
+        "/api/medication/prescriptions",
         json={
             "patient_id": patient_a.id,
             "medication_name": "Metformin",
@@ -532,18 +532,18 @@ async def test_patient_role_only_sees_own_prescriptions(
         headers={"Authorization": f"Bearer {token}"},
     )
     try:
-        own_list = await patient_client.get("/api/future/prescriptions")
+        own_list = await patient_client.get("/api/medication/prescriptions")
         assert own_list.status_code == 200
         own_prescriptions = own_list.json()
         assert len(own_prescriptions) == 1
         assert own_prescriptions[0]["id"] == own_rx.json()["id"]
         assert own_prescriptions[0]["patient_id"] == patient_a.id
 
-        blocked = await patient_client.get(f"/api/future/prescriptions?patient_id={patient_b.id}")
+        blocked = await patient_client.get(f"/api/medication/prescriptions?patient_id={patient_b.id}")
         assert blocked.status_code == 403
 
         refill = await patient_client.post(
-            "/api/future/pharmacy/orders/request",
+            "/api/medication/pharmacy/orders/request",
             json={
                 "prescription_id": own_rx.json()["id"],
                 "pharmacy_name": "Patient Pharmacy",
@@ -555,7 +555,7 @@ async def test_patient_role_only_sees_own_prescriptions(
         assert refill.json()["status"] == "pending"
 
         other_refill = await patient_client.post(
-            "/api/future/pharmacy/orders/request",
+            "/api/medication/pharmacy/orders/request",
             json={"prescription_id": admin_rx.json()["id"]},
         )
         assert other_refill.status_code == 404

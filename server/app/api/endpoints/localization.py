@@ -1,88 +1,166 @@
 from __future__ import annotations
 
 from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-
-from app.api.dependencies import get_current_user_workspace, get_db
-from app.models.core import Workspace
-from app.models.telemetry import RSSITrainingData, RoomPrediction
-from app.schemas.core import TrainRequest, PredictRequest
-from app.localization import get_model_info, is_model_ready, predict_room, train_model
+from app.api.dependencies import (
+    RequireRole,
+    get_current_active_user,
+    get_current_user_workspace,
+    get_db,
+)
+from app.localization import (
+    get_localization_strategy,
+    get_model_info,
+    predict_room_with_strategy,
+    set_localization_strategy,
+    train_model,
+)
+from app.models.core import Device, Room, Workspace
+from app.models.telemetry import (
+    LocalizationCalibrationSample,
+    LocalizationCalibrationSession,
+    RSSITrainingData,
+    RoomPrediction,
+)
+from app.models.users import User
+from app.schemas.core import PredictRequest, TrainRequest
+from app.schemas.localization import (
+    LocalizationCalibrationSampleCreate,
+    LocalizationCalibrationSampleOut,
+    LocalizationCalibrationSessionCreate,
+    LocalizationCalibrationSessionOut,
+    LocalizationCalibrationTrainOut,
+    LocalizationConfigOut,
+    LocalizationConfigUpdate,
+)
 
 router = APIRouter()
 
+ROLE_LOCALIZATION_MANAGERS = ["admin", "head_nurse", "supervisor"]
+
+
 @router.get("")
-async def localization_info(ws: Workspace = Depends(get_current_user_workspace)):
-    """Get current model info for the authenticated user's workspace."""
-    return get_model_info(ws.id)
+async def localization_info(
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+):
+    info = get_model_info(ws.id)
+    info["strategy"] = await get_localization_strategy(db, ws.id)
+    return info
+
+
+@router.get("/config", response_model=LocalizationConfigOut)
+async def get_localization_config(
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+):
+    from app.localization import get_or_create_localization_config
+
+    row = await get_or_create_localization_config(db, ws.id)
+    return LocalizationConfigOut(
+        workspace_id=ws.id,
+        strategy=row.strategy,  # type: ignore[arg-type]
+        updated_at=row.updated_at,
+    )
+
+
+@router.put("/config", response_model=LocalizationConfigOut)
+async def update_localization_config(
+    body: LocalizationConfigUpdate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_LOCALIZATION_MANAGERS)),
+):
+    row = await set_localization_strategy(
+        db,
+        ws.id,
+        strategy=body.strategy,
+        updated_by_user_id=current_user.id,
+    )
+    return LocalizationConfigOut(
+        workspace_id=ws.id,
+        strategy=row.strategy,  # type: ignore[arg-type]
+        updated_at=row.updated_at,
+    )
+
 
 @router.post("/train")
 async def train_localization(
     body: TrainRequest,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_LOCALIZATION_MANAGERS)),
 ):
     if not body.data:
         raise HTTPException(400, "No training data")
 
-    # Persist training data
+    training_list = []
     for item in body.data:
-        row = RSSITrainingData(
-            workspace_id=ws.id,
-            room_id=item.room_id,
-            room_name=item.room_name,
-            rssi_vector=item.rssi_vector,
+        db.add(
+            RSSITrainingData(
+                workspace_id=ws.id,
+                room_id=item.room_id,
+                room_name=item.room_name,
+                rssi_vector=item.rssi_vector,
+            )
         )
-        db.add(row)
+        training_list.append(
+            {
+                "room_id": item.room_id,
+                "room_name": item.room_name,
+                "rssi_vector": item.rssi_vector,
+            }
+        )
     await db.commit()
-
-    # Train model
-    training_list = [
-        {
-            "room_id": item.room_id,
-            "room_name": item.room_name,
-            "rssi_vector": item.rssi_vector,
-        }
-        for item in body.data
-    ]
     stats = train_model(training_list, workspace_id=ws.id)
+    if "error" in stats:
+        raise HTTPException(400, stats["error"])
     return {"message": "Model trained", **stats}
+
 
 @router.post("/retrain")
 async def retrain_from_db(
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_LOCALIZATION_MANAGERS)),
 ):
-    result = await db.execute(select(RSSITrainingData).where(RSSITrainingData.workspace_id == ws.id))
-    rows = result.scalars().all()
+    rows = (
+        await db.execute(select(RSSITrainingData).where(RSSITrainingData.workspace_id == ws.id))
+    ).scalars().all()
     if not rows:
         raise HTTPException(400, "No training data in database for this workspace")
 
-    training_list = [
-        {
-            "room_id": r.room_id,
-            "room_name": r.room_name,
-            "rssi_vector": r.rssi_vector,
-        }
-        for r in rows
-    ]
-    stats = train_model(training_list, workspace_id=ws.id)
+    stats = train_model(
+        [
+            {
+                "room_id": r.room_id,
+                "room_name": r.room_name,
+                "rssi_vector": r.rssi_vector,
+            }
+            for r in rows
+        ],
+        workspace_id=ws.id,
+    )
+    if "error" in stats:
+        raise HTTPException(400, stats["error"])
     return {"message": "Model retrained from DB", **stats}
+
 
 @router.post("/predict")
 async def predict_localization(
     body: PredictRequest,
+    db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
 ):
-    if not is_model_ready(ws.id):
-        raise HTTPException(400, "Model not trained yet. POST /api/localization/train first.")
-    result = predict_room(body.rssi_vector, workspace_id=ws.id)
+    result = await predict_room_with_strategy(db, ws.id, body.rssi_vector)
     if result is None:
-        raise HTTPException(500, "Prediction failed")
+        raise HTTPException(400, "No RSSI observations available for prediction")
     return result
+
 
 @router.get("/predictions")
 async def list_predictions(
@@ -91,11 +169,15 @@ async def list_predictions(
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
 ):
-    query = select(RoomPrediction).where(RoomPrediction.workspace_id == ws.id).order_by(desc(RoomPrediction.timestamp)).limit(limit)
+    query = (
+        select(RoomPrediction)
+        .where(RoomPrediction.workspace_id == ws.id)
+        .order_by(desc(RoomPrediction.timestamp))
+        .limit(limit)
+    )
     if device_id:
         query = query.where(RoomPrediction.device_id == device_id)
-    result = await db.execute(query)
-    rows = result.scalars().all()
+    rows = (await db.execute(query)).scalars().all()
     return [
         {
             "id": r.id,
@@ -109,3 +191,167 @@ async def list_predictions(
         for r in rows
     ]
 
+
+@router.post(
+    "/calibration/sessions",
+    response_model=LocalizationCalibrationSessionOut,
+    status_code=201,
+)
+async def create_calibration_session(
+    body: LocalizationCalibrationSessionCreate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
+):
+    device = (
+        await db.execute(
+            select(Device).where(
+                Device.workspace_id == ws.id,
+                Device.device_id == body.device_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not device:
+        raise HTTPException(404, "Device not found in current workspace")
+    if device.hardware_type not in {"wheelchair", "mobile_phone"}:
+        raise HTTPException(400, "Calibration supports only wheelchair or mobile_phone devices")
+
+    row = LocalizationCalibrationSession(
+        workspace_id=ws.id,
+        device_id=body.device_id,
+        status="collecting",
+        notes=body.notes,
+        created_by_user_id=current_user.id,
+    )
+    db.add(row)
+    await db.commit()
+    await db.refresh(row)
+    return LocalizationCalibrationSessionOut(
+        id=row.id,
+        workspace_id=row.workspace_id,
+        device_id=row.device_id,
+        status=row.status,
+        notes=row.notes,
+        created_by_user_id=row.created_by_user_id,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
+
+
+@router.post(
+    "/calibration/sessions/{session_id}/samples",
+    response_model=LocalizationCalibrationSampleOut,
+    status_code=201,
+)
+async def add_calibration_sample(
+    session_id: int,
+    body: LocalizationCalibrationSampleCreate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(get_current_active_user),
+):
+    session_row = (
+        await db.execute(
+            select(LocalizationCalibrationSession).where(
+                LocalizationCalibrationSession.id == session_id,
+                LocalizationCalibrationSession.workspace_id == ws.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not session_row:
+        raise HTTPException(404, "Calibration session not found")
+    if session_row.status != "collecting":
+        raise HTTPException(400, "Session is not in collecting state")
+    if not body.rssi_vector:
+        raise HTTPException(400, "rssi_vector is required")
+
+    room = await db.get(Room, body.room_id)
+    if not room or room.workspace_id != ws.id:
+        raise HTTPException(404, "Room not found in current workspace")
+
+    sample = LocalizationCalibrationSample(
+        session_id=session_row.id,
+        workspace_id=ws.id,
+        device_id=session_row.device_id,
+        room_id=room.id,
+        room_name=body.room_name or room.name,
+        rssi_vector=body.rssi_vector,
+        captured_at=body.captured_at,
+    )
+    db.add(sample)
+    await db.commit()
+    await db.refresh(sample)
+    return LocalizationCalibrationSampleOut(
+        id=sample.id,
+        session_id=sample.session_id,
+        room_id=sample.room_id,
+        room_name=sample.room_name,
+        rssi_vector=sample.rssi_vector,
+        captured_at=sample.captured_at,
+    )
+
+
+@router.post(
+    "/calibration/sessions/{session_id}/train",
+    response_model=LocalizationCalibrationTrainOut,
+)
+async def train_from_calibration_session(
+    session_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_LOCALIZATION_MANAGERS)),
+):
+    session_row = (
+        await db.execute(
+            select(LocalizationCalibrationSession).where(
+                LocalizationCalibrationSession.id == session_id,
+                LocalizationCalibrationSession.workspace_id == ws.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not session_row:
+        raise HTTPException(404, "Calibration session not found")
+    if session_row.status == "trained":
+        raise HTTPException(400, "Calibration session is already trained")
+
+    samples = (
+        await db.execute(
+            select(LocalizationCalibrationSample).where(
+                LocalizationCalibrationSample.session_id == session_row.id,
+                LocalizationCalibrationSample.workspace_id == ws.id,
+            )
+        )
+    ).scalars().all()
+    if not samples:
+        raise HTTPException(400, "No calibration samples in this session")
+
+    training_payload = [
+        {
+            "room_id": item.room_id,
+            "room_name": item.room_name,
+            "rssi_vector": item.rssi_vector,
+        }
+        for item in samples
+    ]
+    stats = train_model(training_payload, workspace_id=ws.id)
+    if "error" in stats:
+        raise HTTPException(400, stats["error"])
+
+    for item in samples:
+        db.add(
+            RSSITrainingData(
+                workspace_id=ws.id,
+                room_id=item.room_id,
+                room_name=item.room_name,
+                rssi_vector=item.rssi_vector,
+            )
+        )
+    session_row.status = "trained"
+    db.add(session_row)
+    await db.commit()
+
+    return LocalizationCalibrationTrainOut(
+        session_id=session_row.id,
+        persisted_samples=len(samples),
+        training_stats=stats,
+    )

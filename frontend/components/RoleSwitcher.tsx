@@ -88,6 +88,14 @@ export default function RoleSwitcher() {
   if (!user || user.role !== "admin") return null;
 
   async function actAs(target: UserSearchResult) {
+    if (!target.id || target.id <= 0) {
+      setError("Invalid user selected.");
+      return;
+    }
+    if (target.id === user?.id) {
+      setError("Cannot impersonate yourself.");
+      return;
+    }
     setActingUserId(target.id);
     setError(null);
     try {
@@ -106,13 +114,13 @@ export default function RoleSwitcher() {
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        className="flex min-w-0 items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-2 text-left text-sm font-medium text-on-surface transition-smooth hover:bg-surface-container-high"
+        className="flex min-w-0 items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-2 text-left text-sm font-medium text-foreground transition-smooth hover:bg-surface-container-high"
         title={t("shell.viewMode")}
       >
         <SwitchCamera className="h-4 w-4 text-primary" />
         <span className="hidden min-w-0 flex-col text-left sm:flex">
           <span className="text-[10px] uppercase tracking-wider text-outline">{t("shell.actAsButtonLabel")}</span>
-          <span className="truncate text-sm font-medium text-on-surface">{t(currentRole.labelKey)}</span>
+          <span className="truncate text-sm font-medium text-foreground">{t(currentRole.labelKey)}</span>
         </span>
         <span className="sm:hidden">{t(currentRole.labelKey)}</span>
         <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -124,7 +132,7 @@ export default function RoleSwitcher() {
             <p className="text-xs font-semibold uppercase tracking-wider text-outline">
               {t("shell.actAsPanelTitle")}
             </p>
-            <p className="mt-1 text-xs text-on-surface-variant">{t("shell.actAsPanelHint")}</p>
+            <p className="mt-1 text-xs text-foreground-variant">{t("shell.actAsPanelHint")}</p>
           </div>
 
           <div className="flex flex-wrap gap-2 p-3">
@@ -137,7 +145,7 @@ export default function RoleSwitcher() {
               className={`min-w-[5.5rem] flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-smooth sm:min-w-0 sm:flex-none ${
                 selectedRole === "all"
                   ? "bg-primary text-on-primary"
-                  : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                  : "bg-surface-container text-foreground-variant hover:bg-surface-container-high"
               }`}
             >
               {t("shell.actAsAllRoles")}
@@ -153,7 +161,7 @@ export default function RoleSwitcher() {
                 className={`min-w-[5.5rem] flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-smooth sm:min-w-0 sm:flex-none ${
                   selectedRole === role.id
                     ? "bg-primary text-on-primary"
-                    : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                    : "bg-surface-container text-foreground-variant hover:bg-surface-container-high"
                 }`}
               >
                 {t(role.labelKey)}
@@ -176,7 +184,7 @@ export default function RoleSwitcher() {
 
             <div className="mt-3 max-h-72 space-y-1 overflow-y-auto">
               {loading ? (
-                <p className="px-2 py-3 text-sm text-on-surface-variant">{t("shell.actAsLoading")}</p>
+                <p className="px-2 py-3 text-sm text-foreground-variant">{t("shell.actAsLoading")}</p>
               ) : results.length ? (
                 results.map((result) => {
                   const rk = roleLabelKeyForUserRole(result.role);
@@ -190,10 +198,10 @@ export default function RoleSwitcher() {
                       className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-smooth hover:bg-surface-container disabled:opacity-60"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate font-medium text-on-surface">
+                        <span className="block truncate font-medium text-foreground">
                           {result.display_name || result.username}
                         </span>
-                        <span className="block truncate text-xs text-on-surface-variant">
+                        <span className="block truncate text-xs text-foreground-variant">
                           {result.username} · {roleBit} · #{result.id}
                         </span>
                       </span>
@@ -204,7 +212,7 @@ export default function RoleSwitcher() {
                   );
                 })
               ) : (
-                <p className="px-2 py-3 text-sm text-on-surface-variant">{t("shell.actAsEmpty")}</p>
+                <p className="px-2 py-3 text-sm text-foreground-variant">{t("shell.actAsEmpty")}</p>
               )}
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { percentToCanvasUnits, type FloorplanRoomShape } from "@/lib/floorplanLayout";
@@ -52,6 +52,38 @@ function snapRoom(room: FloorplanRoomShape): FloorplanRoomShape {
     w: snapToGrid(room.w),
     h: snapToGrid(room.h),
   });
+}
+
+/** One-time camera: frame all rooms with padding (matches admin floorplan editor UX vs full 5000 canvas). */
+function computeFitViewToRooms(rooms: FloorplanRoomShape[]): { zoom: number; pan: { x: number; y: number } } {
+  if (rooms.length === 0) return { zoom: 1, pan: { x: 0, y: 0 } };
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const r of rooms) {
+    minX = Math.min(minX, r.x);
+    minY = Math.min(minY, r.y);
+    maxX = Math.max(maxX, r.x + r.w);
+    maxY = Math.max(maxY, r.y + r.h);
+  }
+  const pad = percentToCanvasUnits(2);
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(CANVAS_BOUNDS, maxX + pad);
+  maxY = Math.min(CANVAS_BOUNDS, maxY + pad);
+  const bw = Math.max(maxX - minX, MIN_ROOM_SIZE);
+  const bh = Math.max(maxY - minY, MIN_ROOM_SIZE);
+  const side = Math.max(bw, bh);
+  let zoom = CANVAS_BASE_VIEW / side;
+  zoom = clampZoom(zoom);
+  const viewBoxSize = CANVAS_BASE_VIEW / zoom;
+  const maxPan = Math.max(0, CANVAS_BOUNDS - viewBoxSize);
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const panX = Math.max(0, Math.min(maxPan, cx - viewBoxSize / 2));
+  const panY = Math.max(0, Math.min(maxPan, cy - viewBoxSize / 2));
+  return { zoom, pan: { x: panX, y: panY } };
 }
 
 function applyResize(
@@ -123,6 +155,7 @@ export default function FloorplanCanvas({
   enableZoom,
   compact = false,
   roomMetaById = {},
+  fitContentOnMount = false,
 }: {
   rooms: FloorplanRoomShape[];
   onRoomsChange: (next: FloorplanRoomShape[]) => void;
@@ -135,6 +168,8 @@ export default function FloorplanCanvas({
   /** Reduce height and hide zoom controls for dashboard surfaces. */
   compact?: boolean;
   roomMetaById?: Record<string, FloorplanRoomMeta | null | undefined>;
+  /** After first non-empty layout, set zoom/pan to frame all rooms (does not refit on every edit). */
+  fitContentOnMount?: boolean;
 }) {
   const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -144,6 +179,7 @@ export default function FloorplanCanvas({
   const [isDragging, setIsDragging] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const didFitContentOnMount = useRef(false);
   const zoomEnabled = enableZoom ?? true;
   const viewBoxSize = useMemo(() => CANVAS_BASE_VIEW / zoom, [zoom]);
   const maxPan = useMemo(() => Math.max(0, CANVAS_BOUNDS - viewBoxSize), [viewBoxSize]);
@@ -158,6 +194,15 @@ export default function FloorplanCanvas({
   useEffect(() => {
     draftRoomsRef.current = draftRooms;
   }, [draftRooms]);
+
+  useLayoutEffect(() => {
+    if (!fitContentOnMount || didFitContentOnMount.current) return;
+    if (rooms.length === 0) return;
+    didFitContentOnMount.current = true;
+    const next = computeFitViewToRooms(rooms);
+    setZoom(next.zoom);
+    setPan(next.pan);
+  }, [fitContentOnMount, rooms]);
 
   const toSvgPoint = useCallback((clientX: number, clientY: number) => {
     const svg = svgRef.current;
@@ -327,7 +372,7 @@ export default function FloorplanCanvas({
   return (
     <div className={`space-y-2 ${compact ? "text-sm" : ""}`}>
       {zoomEnabled && (
-        <div className="flex flex-wrap items-center gap-2 text-sm text-on-surface">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
           <button
             type="button"
             className="inline-flex items-center justify-center p-2 rounded-lg border border-outline-variant/40 bg-surface-container-low hover:bg-surface-container-high"
@@ -356,7 +401,7 @@ export default function FloorplanCanvas({
             <RotateCcw className="w-3.5 h-3.5" />
             {t("floorplan.zoomReset")}
           </button>
-          <span className="text-xs text-on-surface-variant">{t("floorplan.zoomWheelHint")}</span>
+          <span className="text-xs text-foreground-variant">{t("floorplan.zoomWheelHint")}</span>
         </div>
       )}
 
@@ -371,6 +416,7 @@ export default function FloorplanCanvas({
         <svg
           ref={svgRef}
           viewBox={`${effectivePan.x} ${effectivePan.y} ${viewBoxSize} ${viewBoxSize}`}
+          preserveAspectRatio="xMidYMid meet"
           className={`w-full rounded-xl border-2 border-dashed border-outline-variant/40 bg-surface-container-low/80 select-none ${
             compact ? "min-h-[280px]" : "min-h-[560px]"
           } ${readOnly ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}

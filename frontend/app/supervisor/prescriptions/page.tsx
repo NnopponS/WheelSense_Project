@@ -22,11 +22,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
-  CreateFuturePrescriptionRequest,
-  ListFuturePrescriptionsResponse,
-  ListFutureSpecialistsResponse,
+  CreatePrescriptionRequest,
+  ListPrescriptionsResponse,
+  ListSpecialistsResponse,
   ListPatientsResponse,
 } from "@/lib/api/task-scope-types";
 
@@ -63,11 +64,12 @@ function errorText(error: unknown): string {
 }
 
 export default function SupervisorPrescriptionsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const prescriptionsQuery = useQuery({
     queryKey: ["supervisor", "prescriptions", "list"],
-    queryFn: () => api.listFuturePrescriptions(),
+    queryFn: () => api.listPrescriptions(),
   });
 
   const patientsQuery = useQuery({
@@ -77,7 +79,7 @@ export default function SupervisorPrescriptionsPage() {
 
   const specialistsQuery = useQuery({
     queryKey: ["supervisor", "prescriptions", "specialists"],
-    queryFn: () => api.listFutureSpecialists(),
+    queryFn: () => api.listSpecialists(),
   });
 
   const form = useForm<PrescriptionFormValues>({
@@ -103,9 +105,9 @@ export default function SupervisorPrescriptionsPage() {
         route: "oral",
         instructions: values.instructions.trim(),
         status: "active",
-      } satisfies CreateFuturePrescriptionRequest;
+      } satisfies CreatePrescriptionRequest;
 
-      await api.createFuturePrescription(payload);
+      await api.createPrescription(payload);
     },
     onSuccess: async () => {
       form.reset({
@@ -125,11 +127,11 @@ export default function SupervisorPrescriptionsPage() {
     [patientsQuery.data],
   );
   const specialists = useMemo(
-    () => (specialistsQuery.data ?? []) as ListFutureSpecialistsResponse,
+    () => (specialistsQuery.data ?? []) as ListSpecialistsResponse,
     [specialistsQuery.data],
   );
   const prescriptions = useMemo(
-    () => (prescriptionsQuery.data ?? []) as ListFuturePrescriptionsResponse,
+    () => (prescriptionsQuery.data ?? []) as ListPrescriptionsResponse,
     [prescriptionsQuery.data],
   );
 
@@ -146,20 +148,21 @@ export default function SupervisorPrescriptionsPage() {
         dosage: item.dosage,
         frequency: item.frequency,
         patientName: item.patient_id
-          ? `${patientMap.get(item.patient_id)?.first_name ?? ""} ${patientMap.get(item.patient_id)?.last_name ?? ""}`.trim() || `Patient #${item.patient_id}`
-          : "No linked patient",
+          ? `${patientMap.get(item.patient_id)?.first_name ?? ""} ${patientMap.get(item.patient_id)?.last_name ?? ""}`.trim() ||
+            `${t("clinical.patient.patientIdPrefix")}${item.patient_id}`
+          : t("supervisor.prescriptions.noLinkedPatient"),
         specialistId: item.specialist_id ?? null,
         status: item.status,
         createdAt: item.created_at,
       }))
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  }, [patientMap, prescriptions]);
+  }, [patientMap, prescriptions, t]);
 
   const columns = useMemo<ColumnDef<PrescriptionRow>[]>(
     () => [
       {
         accessorKey: "medicationName",
-        header: "Medication",
+        header: t("clinical.table.medication"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.medicationName}</p>
@@ -171,21 +174,21 @@ export default function SupervisorPrescriptionsPage() {
       },
       {
         accessorKey: "patientName",
-        header: "Patient",
+        header: t("clinical.table.patient"),
       },
       {
         accessorKey: "specialistId",
-        header: "Specialist",
+        header: t("clinical.table.specialist"),
         cell: ({ row }) =>
           row.original.specialistId != null ? `#${row.original.specialistId}` : "-",
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("clinical.table.created"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
@@ -194,7 +197,7 @@ export default function SupervisorPrescriptionsPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const saveError = createPrescriptionMutation.error
@@ -204,10 +207,8 @@ export default function SupervisorPrescriptionsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Prescription Management</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Create and monitor medication plans linked to specialists and patients.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("supervisor.prescriptions.pageTitle")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.prescriptions.pageSubtitle")}</p>
       </div>
 
       <Card>
@@ -310,12 +311,12 @@ export default function SupervisorPrescriptionsPage() {
       </Card>
 
       <DataTableCard
-        title="Prescription List"
-        description="Recent medication orders for supervisor review."
+        title={t("supervisor.prescriptions.listTitle")}
+        description={t("supervisor.prescriptions.listDesc")}
         data={rows}
         columns={columns}
         isLoading={prescriptionsQuery.isLoading || patientsQuery.isLoading || specialistsQuery.isLoading}
-        emptyText="No prescriptions found."
+        emptyText={t("supervisor.prescriptions.listEmpty")}
         rightSlot={<Pill className="h-4 w-4 text-muted-foreground" />}
       />
     </div>

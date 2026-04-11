@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { ApiError, api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { useTranslation } from "@/lib/i18n";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
 
 type AlertRow = {
@@ -43,6 +44,7 @@ function parseRequestError(error: unknown): string {
 }
 
 export default function HeadNurseAlertsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<AlertStatusFilter>("all");
   const [severity, setSeverity] = useState<AlertSeverityFilter>("all");
@@ -114,7 +116,9 @@ export default function HeadNurseAlertsPage() {
           severity: item.severity,
           status: item.status,
           patientId: item.patient_id,
-          patientName: patient ? `${patient.first_name} ${patient.last_name}`.trim() : "Unlinked patient",
+          patientName: patient
+            ? `${patient.first_name} ${patient.last_name}`.trim()
+            : t("admin.unlinkedPatient"),
           timestamp: item.timestamp,
         };
       })
@@ -124,13 +128,13 @@ export default function HeadNurseAlertsPage() {
         return corpus.includes(normalizedSearch);
       })
       .sort((left, right) => right.timestamp.localeCompare(left.timestamp));
-  }, [alerts, patientMap, search, severity, status]);
+  }, [alerts, patientMap, search, severity, status, t]);
 
   const columns = useMemo<ColumnDef<AlertRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Alert",
+        header: t("clinical.table.alert"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -139,10 +143,10 @@ export default function HeadNurseAlertsPage() {
           </div>
         ),
       },
-      { accessorKey: "patientName", header: "Patient" },
+      { accessorKey: "patientName", header: t("clinical.table.patient") },
       {
         accessorKey: "severity",
-        header: "Severity",
+        header: t("clinical.table.severity"),
         cell: ({ row }) => {
           const alertSeverity = row.original.severity;
           const variant =
@@ -156,7 +160,7 @@ export default function HeadNurseAlertsPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => (
           <Badge variant={row.original.status === "active" ? "destructive" : "outline"}>
             {row.original.status}
@@ -165,7 +169,7 @@ export default function HeadNurseAlertsPage() {
       },
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("clinical.table.time"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -175,7 +179,7 @@ export default function HeadNurseAlertsPage() {
       },
       {
         id: "actions",
-        header: "",
+        header: t("clinical.table.actions"),
         cell: ({ row }) => {
           const href = row.original.patientId
             ? `/head-nurse/patients/${row.original.patientId}`
@@ -197,7 +201,7 @@ export default function HeadNurseAlertsPage() {
                     });
                   }}
                 >
-                  Acknowledge
+                  {t("supervisor.page.acknowledge")}
                 </Button>
               ) : null}
               {row.original.status !== "resolved" ? (
@@ -214,27 +218,25 @@ export default function HeadNurseAlertsPage() {
                     });
                   }}
                 >
-                  Resolve
+                  {t("clinical.action.resolve")}
                 </Button>
               ) : null}
               <Button asChild size="sm" variant="outline">
-                <Link href={href}>Open patient</Link>
+                <Link href={href}>{t("headNurse.alerts.openPatient")}</Link>
               </Button>
             </div>
           );
         },
       },
     ],
-    [pendingAlertId, updateAlertMutation],
+    [pendingAlertId, t, updateAlertMutation],
   );
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Alerts</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Filter and triage ward alerts with severity and status controls.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("nav.alerts")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("headNurse.alerts.pageSubtitle")}</p>
       </div>
 
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -270,12 +272,12 @@ export default function HeadNurseAlertsPage() {
       </section>
 
       <DataTableCard
-        title="Alert Stream"
-        description="Active and historical alerts in descending time order."
+        title={t("headNurse.alerts.streamTitle")}
+        description={t("headNurse.alerts.streamDesc")}
         data={rows}
         columns={columns}
         isLoading={alertsQuery.isLoading || patientsQuery.isLoading}
-        emptyText="No alerts match this filter."
+        emptyText={t("headNurse.alerts.empty")}
         rightSlot={<Filter className="h-4 w-4 text-muted-foreground" />}
       />
 
@@ -288,7 +290,7 @@ export default function HeadNurseAlertsPage() {
       <div className="rounded-xl border bg-card px-4 py-3 text-sm text-muted-foreground">
         <div className="inline-flex items-center gap-2">
           <Bell className="h-4 w-4" />
-          {rows.filter((item) => item.status === "active").length} active alerts in current result set
+          {rows.filter((item) => item.status === "active").length} {t("headNurse.alerts.footerActivePrefix")}
         </div>
       </div>
     </div>

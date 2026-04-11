@@ -265,6 +265,8 @@ void loop() {
 
             telDoc.clear();
             telDoc["device_id"] = config.deviceName;
+            telDoc["device_type"] = "wheelchair";
+            telDoc["hardware_type"] = "wheelchair";
             telDoc["firmware"] = FIRMWARE_VERSION;
             telDoc["seq"] = telemetrySeq;
 

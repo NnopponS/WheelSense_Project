@@ -115,7 +115,7 @@ export default function PatientList({
         aria-label="Patient list filters"
       >
         <div className="flex min-w-[10rem] flex-1 flex-col gap-1">
-          <label htmlFor="admin-patient-filter-care" className="text-xs font-medium text-on-surface-variant">
+          <label htmlFor="admin-patient-filter-care" className="text-xs font-medium text-foreground-variant">
             {t("patients.careLevel")}
           </label>
           <select
@@ -134,7 +134,7 @@ export default function PatientList({
           </select>
         </div>
         <div className="flex min-w-[10rem] flex-1 flex-col gap-1">
-          <label htmlFor="admin-patient-filter-active" className="text-xs font-medium text-on-surface-variant">
+          <label htmlFor="admin-patient-filter-active" className="text-xs font-medium text-foreground-variant">
             {t("patients.accountStatus")}
           </label>
           <select
@@ -152,7 +152,7 @@ export default function PatientList({
           </select>
         </div>
         <div className="flex min-w-[10rem] flex-1 flex-col gap-1">
-          <label htmlFor="admin-patient-filter-room" className="text-xs font-medium text-on-surface-variant">
+          <label htmlFor="admin-patient-filter-room" className="text-xs font-medium text-foreground-variant">
             {t("patients.room")}
           </label>
           <select
@@ -187,7 +187,7 @@ export default function PatientList({
           {internalSearch.trim() ? (
             <button
               type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-foreground-variant hover:bg-surface-container-high hover:text-foreground"
               aria-label={t("patients.quickFindClear")}
               onClick={() => setInternalSearch("")}
             >
@@ -200,7 +200,7 @@ export default function PatientList({
       {filterToolbar}
 
       {noFilterMatches ? (
-        <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 py-12 text-center text-sm text-on-surface-variant">
+        <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 py-12 text-center text-sm text-foreground-variant">
           {t("patients.listNoMatches")}
         </div>
       ) : (
@@ -217,10 +217,10 @@ export default function PatientList({
                 {(patient.first_name?.[0] || "P").toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-on-surface">
+                <p className="truncate font-semibold text-foreground">
                   {patient.first_name} {patient.last_name}
                 </p>
-                <p className="mt-0.5 text-xs text-on-surface-variant">
+                <p className="mt-0.5 text-xs text-foreground-variant">
                   {t("patients.age")}: {ageYears(patient.date_of_birth, nowMs) ?? "—"}{" "}
                   {t("patients.years")}
                 </p>

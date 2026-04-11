@@ -1,16 +1,31 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, Menu, Search } from "lucide-react";
+import { Menu, Search, Beaker, Volume2, VolumeX } from "lucide-react";
+import { getAlertSoundEnabled, primeAlertAudioFromUserGesture, setAlertSoundEnabled } from "@/lib/alertSound";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import LanguageSwitcher from "./LanguageSwitcher";
 import RoleSwitcher from "./RoleSwitcher";
 import UserAvatar from "./shared/UserAvatar";
+import { NotificationBell } from "./NotificationBell";
+import { NotificationDrawer } from "./NotificationDrawer";
+
+type SimulatorStatus = {
+  env_mode: string;
+  is_simulator: boolean;
+  workspace_exists: boolean;
+};
 
 interface TopBarProps {
   title?: string;
@@ -30,14 +45,31 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   const { user, impersonation, stopImpersonation } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [alertSoundOn, setAlertSoundOn] = useState(false);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, hasNewNotifications } = useNotifications();
+  const { data: simulatorStatus } = useQuery({
+    queryKey: ["shell", "topbar", "demo-simulator-status"],
+    queryFn: () => api.get<SimulatorStatus>("/demo/simulator/status"),
+    enabled: !!user,
+    staleTime: getQueryStaleTimeMs("/demo/simulator/status"),
+    refetchInterval: getQueryPollingMs("/demo/simulator/status"),
+    retry: 3,
+  });
+
+  useEffect(() => {
+    setAlertSoundOn(getAlertSoundEnabled());
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-card/95 backdrop-blur">
       {impersonation.active ? (
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-foreground sm:px-6">
           <p className="min-w-0">
-            <span className="font-semibold">Admin acting as</span>{" "}
-            <span className="font-medium">{user?.username ?? "selected user"}</span>
+            <span className="font-semibold">{t("shell.impersonationActingAs")}</span>{" "}
+            <span className="font-medium">
+              {user?.username ?? t("shell.impersonationUserPlaceholder")}
+            </span>
           </p>
           <Button
             type="button"
@@ -47,7 +79,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
               void stopImpersonation().then(() => router.push("/admin"));
             }}
           >
-            Stop acting as user
+            {t("shell.impersonationStop")}
           </Button>
         </div>
       ) : null}
@@ -84,19 +116,53 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
 
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
           <RoleSwitcher />
+          {/* Environment Badge - Only shown for admins in simulator mode */}
+          {simulatorStatus?.is_simulator && user?.role === "admin" ? (
+            <Badge 
+              variant="secondary" 
+              className="hidden sm:inline-flex bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-100"
+            >
+              <Beaker className="mr-1 h-3 w-3" />
+              SIM
+            </Badge>
+          ) : null}
           <LanguageSwitcher />
           <ThemeToggle />
 
-          <Button type="button" variant="ghost" size="icon" aria-label={t("shell.notifications")}>
-            <Bell className="h-5 w-5" />
-          </Button>
+          {user && user.role !== "patient" ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={alertSoundOn ? "text-primary" : "text-muted-foreground"}
+              aria-label={alertSoundOn ? t("shell.alertSoundOn") : t("shell.alertSoundOff")}
+              aria-pressed={alertSoundOn}
+              title={t("shell.alertSound")}
+              onClick={() => {
+                const next = !alertSoundOn;
+                if (next) {
+                  primeAlertAudioFromUserGesture();
+                }
+                setAlertSoundEnabled(next);
+                setAlertSoundOn(next);
+              }}
+            >
+              {alertSoundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+            </Button>
+          ) : null}
+
+          <NotificationBell
+            onClick={() => setNotificationsOpen(true)}
+            unreadCount={unreadCount}
+            hasNewNotifications={hasNewNotifications}
+          />
 
           {user ? (
             <div className="ml-1 flex min-w-0 items-center gap-2 border-l border-border pl-2 sm:ml-2 sm:pl-3">
               <Link
               href="/account"
               className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-              aria-label="Open account settings"
+              aria-label={t("shell.openAccountSettings")}
             >
               <UserAvatar
                 username={user.username}
@@ -116,6 +182,15 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
           ) : null}
         </div>
       </div>
+
+      <NotificationDrawer
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        notifications={notifications}
+        onMarkAsRead={markAsRead}
+        onMarkAllAsRead={markAllAsRead}
+        onClearAll={clearAll}
+      />
     </header>
   );
 }

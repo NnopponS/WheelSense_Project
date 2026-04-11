@@ -1,0 +1,382 @@
+# Observer Module — Full Audit Walkthrough
+
+> **Scope**: All pages, routes, API calls, mutations, and sidebar navigation for the `observer` role.
+
+---
+
+## 1. Route Inventory
+
+### Filesystem Routes (13 total)
+
+| # | Route | File | Type |
+|---|-------|------|------|
+| 1 | `/observer` | `page.tsx` (558 lines) | Dashboard |
+| 2 | `/observer/tasks` | `tasks/page.tsx` (421 lines) | Task management |
+| 3 | `/observer/alerts` | `alerts/page.tsx` (182 lines) | Alert queue |
+| 4 | `/observer/calendar` | `calendar/page.tsx` (304 lines) | Scheduling |
+| 5 | `/observer/patients` | `patients/page.tsx` (222 lines) | Patient roster |
+| 6 | `/observer/patients/[id]` | `patients/[id]/page.tsx` (725 lines) | Patient detail |
+| 7 | `/observer/devices` | `devices/page.tsx` (252 lines) | Device fleet |
+| 8 | `/observer/prescriptions` | `prescriptions/page.tsx` (130 lines) | Read-only Rx board |
+| 9 | `/observer/monitoring` | `monitoring/page.tsx` (12 lines) | Staff monitoring |
+| 10 | `/observer/floorplans` | `floorplans/page.tsx` (26 lines) | Floorplan viewer |
+| 11 | `/observer/workflow` | `workflow/page.tsx` (16 lines) | Operations console |
+| 12 | `/observer/support` | `support/page.tsx` (6 lines) | ReportIssueForm |
+| 13 | `/observer/settings` | `settings/page.tsx` (6 lines) | Redirect → `/account` |
+
+### Sidebar Navigation Config (7 items)
+
+| Sidebar key | Route | Present in filesystem |
+|---|---|---|
+| `nav.dashboard` | `/observer` | ✅ |
+| `nav.tasks` | `/observer/tasks` | ✅ |
+| `nav.calendar` | `/observer/calendar` | ✅ |
+| `nav.observer.myPatients` | `/observer/patients` | ✅ |
+| `nav.alerts` | `/observer/alerts` | ✅ |
+| `nav.floorplans` | `/observer/floorplans` | ✅ |
+| `nav.reportIssue` | `/observer/support` | ✅ |
+| `nav.settings` | `/observer/settings` | ✅ |
+
+### ❌ Missing from Sidebar (4 routes)
+
+| Route | Why it matters |
+|---|---|
+| `/observer/devices` | Fully functional device fleet page with 252 lines, 4 queries, stats, and DataTableCard. **Unreachable without URL** |
+| `/observer/prescriptions` | Fully functional Rx board with 130 lines. **Unreachable without URL** |
+| `/observer/monitoring` | Staff monitoring page with zone map. Dashboard links here but sidebar doesn't |
+| `/observer/workflow` | Full OperationsConsole with task/directive management. **Unreachable without URL** |
+
+> [!WARNING]
+> 4 fully implemented pages are invisible to users — they only work by manual URL entry or dashboard shortcuts.
+
+---
+
+## 2. Per-Page Audit
+
+### 2.1 Dashboard — `/observer/page.tsx` ✅ Excellent
+
+| Aspect | Details |
+|---|---|
+| **Queries** (5) | `shift-checklist`, patients, alerts (20s poll), tasks, vitals (30s poll) |
+| **Mutations** (1) | `putShiftChecklistMe` — invalidates `shift-checklist` query ✅ |
+| **Data processing** | `patientById` Map, `latestVitalsByPatient` Map, priority sorting |
+| **Components used** | `DashboardFloorplanPanel`, `Card`, `Badge`, `Checkbox`, `Button` |
+| **i18n** | ✅ Full — uses `t()` throughout headers, stat labels, badges |
+| **Navigation links** | Links to `/observer/tasks`, `/observer/patients`, `/observer/monitoring` |
+| **Hard-coded strings** | ⚠️ Lines 404-405 `"My Tasks"`, `"Assigned care tasks for today"` |
+| | ⚠️ Lines 467-468 `"My Patients"`, `"Assigned patients and their status"` |
+| | ⚠️ Lines 441-442 `"Unit-wide"`, Line 457 `"No pending tasks"`, Line 549 `"No patients assigned"` |
+| **Issue** | `vitalsQuery` is fetched but `isLoading` check doesn't include it (line 164-168) |
+
+### 2.2 Tasks — `/observer/tasks/page.tsx` 🔴 Multiple Issues
+
+| Aspect | Details |
+|---|---|
+| **Queries** (1) | ⚠️ Uses legacy `useQuery` from `@/hooks/useQuery` instead of `@tanstack/react-query` |
+| **Mutations** (2) | `handleCompleteTask`, `handleStartTask` — **both use raw `api.patch()`** |
+| **Cache invalidation** | Uses manual `refetchTasks()` instead of `queryClient.invalidateQueries()` |
+| **Cross-role invalidation** | ❌ None — task completion does NOT invalidate dashboard queries or patient queries |
+| **Error handling** | ⚠️ Uses `console.error` (lines 64, 80) instead of UI error state |
+| **i18n** | ❌ Very poor — most strings hardcoded: `"Your assigned tasks..."`, `"Total"`, `"Pending"`, `"In Progress"`, etc. |
+| **Design** | Well-structured with `TaskItem` and `TaskBadge` sub-components |
+| **API pattern** | Lines 58, 75 use `api.patch("/workflow/tasks/${taskId}")` — other pages use typed `api.updateWorkflowTask()` |
+
+> [!CAUTION]
+> **This page has the most issues in the observer module:**
+> 1. Legacy `useQuery` hook (the only page using it)
+> 2. Raw `api.patch()` instead of typed helper
+> 3. `console.error` in production code
+> 4. No cross-query cache invalidation
+> 5. Hardcoded English strings
+
+### 2.3 Alerts — `/observer/alerts/page.tsx` ✅ Good
+
+| Aspect | Details |
+|---|---|
+| **Queries** (2) | alerts (20s poll), patients |
+| **Mutations** | None (read-only view) |
+| **Data processing** | severity → sort, joined with patient Map |
+| **i18n** | ✅ Full — all columns and labels use `t()` |
+| **Components** | `DataTableCard`, `Badge`, `Button` |
+| **Navigation** | Action column links to patient detail page ✅ |
+
+### 2.4 Calendar — `/observer/calendar/page.tsx` ✅ Excellent
+
+| Aspect | Details |
+|---|---|
+| **Queries** (3) | schedules, patients, caregivers |
+| **Mutations** | Managed inside `ScheduleForm` via `onSuccess` → refetch |
+| **Components** | `CalendarView`, `AgendaView`, `ScheduleForm` |
+| **Features** | Patient & assignee filters, create/edit schedules, view mode switching |
+| **i18n** | ✅ Full |
+| **Cross-nav** | ✅ Links to `/observer/patients`, `/observer/tasks` |
+
+### 2.5 Patients — `/observer/patients/page.tsx` ✅ Good
+
+| Aspect | Details |
+|---|---|
+| **Queries** (4) | patients, tasks, messages, handovers |
+| **Mutations** | None (read-only) |
+| **Features** | Client-side search, per-patient task/message/handover counts |
+| **Components** | `SummaryStatCard`, `DataTableCard`, `Input` |
+| **i18n** | ❌ Fully hardcoded English strings throughout |
+| **Navigation** | Row links to `/observer/patients/${id}` ✅ |
+
+### 2.6 Patient Detail — `/observer/patients/[id]/page.tsx` ✅ Excellent (Best page)
+
+| Aspect | Details |
+|---|---|
+| **Queries** (7) | patient, vitals, alerts, timeline, tasks, messages, handovers |
+| **Mutations** (5) | `createTimelineEvent`, `sendWorkflowMessage`, `createWorkflowHandover`, `updateWorkflowTask`, `markWorkflowMessageRead` |
+| **Cache invalidation** | ✅ Excellent — all 5 mutations invalidate local **AND** parent list queries |
+| **Cross-role impact** | ✅ Timeline events → visible to head_nurse/supervisor |
+| | ✅ Workflow messages → sent to `head_nurse` role |
+| | ✅ Handover notes → targeted at `head_nurse` role |
+| **Error handling** | ✅ `errorText()` helper with `ApiError` 403 detection and UI error state |
+| **Param validation** | ✅ `hasValidPatientId` guard with fallback UI |
+| **API pattern** | ✅ All typed helpers (`api.createTimelineEvent`, `api.updateWorkflowTask`, etc.) |
+| **i18n** | ❌ Fully hardcoded English strings |
+| **Components** | 3 inline form cards (Note, Message, Handover) + 5 DataTableCards |
+
+### 2.7 Devices — `/observer/devices/page.tsx` ✅ Good
+
+| Aspect | Details |
+|---|---|
+| **Queries** (4) | devices (30s poll), predictions (30s poll), alerts, vitals |
+| **Validation** | ✅ `zod` schemas for device and prediction data |
+| **Features** | Online/offline detection (5-min threshold), localization confidence, battery levels |
+| **Components** | `SummaryStatCard`, `DataTableCard` |
+| **i18n** | ❌ Hardcoded English |
+| **Not in sidebar** | ⚠️ Only reachable by URL |
+
+### 2.8 Prescriptions — `/observer/prescriptions/page.tsx` ✅ Good
+
+| Aspect | Details |
+|---|---|
+| **Queries** (2) | prescriptions, patients |
+| **Mutations** | None (read-only, appropriate for observer role) |
+| **i18n** | ❌ Hardcoded English |
+| **Not in sidebar** | ⚠️ Only reachable by URL |
+
+### 2.9 Monitoring — `/observer/monitoring/page.tsx` ✅ Thin
+
+| Aspect | Details |
+|---|---|
+| **Implementation** | Delegates to shared `StaffMonitoringPage` component |
+| **i18n** | ✅ Uses `t()` for title and subtitle |
+| **Not in sidebar** | ⚠️ Dashboard links here but sidebar doesn't |
+
+### 2.10 Floorplans — `/observer/floorplans/page.tsx` ⚠️ CSS Issue
+
+| Aspect | Details |
+|---|---|
+| **Implementation** | Delegates to shared `FloorplanRoleViewer` |
+| **CSS Classes** | ⚠️ Uses `text-on-surface` and `text-on-surface-variant` (Material Design tokens) |
+| | All other pages use `text-foreground` and `text-muted-foreground` |
+| **Hardcoded string** | Line 18: `"Floorplan view for patient monitoring during shifts."` |
+
+### 2.11 Workflow — `/observer/workflow/page.tsx` ✅ Thin
+
+| Aspect | Details |
+|---|---|
+| **Implementation** | Delegates to shared `OperationsConsole` with `role="observer"` |
+| **i18n** | ✅ Uses `t()` |
+| **Not in sidebar** | ⚠️ Unreachable without URL |
+
+### 2.12 Support — `/observer/support/page.tsx` ✅ Minimal
+
+| Aspect | Details |
+|---|---|
+| **Implementation** | Renders shared `ReportIssueForm` |
+| **Note** | Missing `"use client"` directive (but likely works because parent is client) |
+
+### 2.13 Settings — `/observer/settings/page.tsx` ✅ Redirect
+
+| Aspect | Details |
+|---|---|
+| **Implementation** | Server-side redirect to `/account` |
+
+---
+
+## 3. API Integration Summary
+
+### 3.1 Read Operations (GET queries) — All Verified ✅
+
+| API Method | Used In | Pattern |
+|---|---|---|
+| `api.getShiftChecklistMe()` | Dashboard | ✅ TanStack Query |
+| `api.listPatients()` | Dashboard, Alerts, Calendar, Patients, Prescriptions | ✅ |
+| `api.listAlerts()` | Dashboard, Alerts, Devices, Patient Detail | ✅ Polling |
+| `api.listWorkflowTasks()` | Dashboard, Tasks, Patients, Patient Detail | ⚠️ Tasks page uses legacy hook |
+| `api.listVitalReadings()` | Dashboard, Devices, Patient Detail | ✅ Polling |
+| `api.listWorkflowSchedules()` | Calendar | ✅ |
+| `api.listCaregivers()` | Calendar | ✅ |
+| `api.listDevicesRaw()` | Devices | ✅ + zod validation |
+| `api.listLocalizationPredictionsRaw()` | Devices | ✅ + zod validation |
+| `api.listPrescriptions()` | Prescriptions | ✅ |
+| `api.getPatient()` | Patient Detail | ✅ |
+| `api.listTimelineEvents()` | Patient Detail | ✅ |
+| `api.listWorkflowMessages()` | Patients, Patient Detail | ✅ |
+| `api.listWorkflowHandovers()` | Patients, Patient Detail | ✅ |
+
+### 3.2 Write Operations (Mutations) — 7 Total
+
+| Mutation | Page | API Helper | Cache Invalidation | Cross-Role |
+|---|---|---|---|---|
+| `putShiftChecklistMe` | Dashboard | ✅ Typed | ✅ shift-checklist | N/A |
+| `handleCompleteTask` | Tasks | ❌ `api.patch()` | ⚠️ `refetchTasks()` only | ❌ |
+| `handleStartTask` | Tasks | ❌ `api.patch()` | ⚠️ `refetchTasks()` only | ❌ |
+| `createTimelineEvent` | Patient Detail | ✅ Typed | ✅ timeline + dashboard | ✅ head_nurse/supervisor |
+| `sendWorkflowMessage` | Patient Detail | ✅ Typed | ✅ messages + patients list | ✅ head_nurse |
+| `createWorkflowHandover` | Patient Detail | ✅ Typed | ✅ handovers + patients list | ✅ head_nurse |
+| `updateWorkflowTask` | Patient Detail | ✅ Typed | ✅ tasks + patients list | ✅ All roles |
+| `markWorkflowMessageRead` | Patient Detail | ✅ Typed | ✅ messages + patients list | ✅ |
+| `ScheduleForm` (in Calendar) | Calendar | ✅ Inside component | ✅ Refetch schedules | ✅ All roles |
+
+---
+
+## 4. Findings & Severity
+
+### 🔴 Critical (Bugs / Broken Patterns)
+
+| # | Location | Issue | Impact |
+|---|---|---|---|
+| C1 | `tasks/page.tsx:15` | Legacy `useQuery` from `@/hooks/useQuery` | Inconsistent data layer; may lack `refetchInterval`, `enabled`, `staleTime` features |
+| C2 | `tasks/page.tsx:58,75` | Raw `api.patch()` instead of typed `api.updateWorkflowTask()` | Bypasses type safety; no centralized error mapping |
+| C3 | `tasks/page.tsx:64,80` | `console.error` in production | No user-visible error feedback; errors silently swallowed |
+| C4 | `tasks/page.tsx` | No cross-query invalidation | Dashboard and patient views show stale task counts after actions |
+
+### 🟡 Important (UX gaps)
+
+| # | Location | Issue | Impact |
+|---|---|---|---|
+| I1 | `sidebarConfig.ts:132-151` | `devices`, `prescriptions`, `monitoring`, `workflow` missing from sidebar | 4 functional pages are unreachable without manual URL |
+| I2 | `floorplans/page.tsx:13,17` | `text-on-surface` / `text-on-surface-variant` CSS classes | Inconsistent with design system (`text-foreground` / `text-muted-foreground`) |
+| I3 | `page.tsx:164-168` | `vitalsQuery.isLoading` not included in `isLoadingAny` | Dashboard may show stale vitals during initial load |
+| I4 | `floorplans/page.tsx:18` | Hardcoded English description string | Should use `t()` |
+
+### 🟢 Improvement (i18n, polish)
+
+| # | Location | Issue |
+|---|---|---|
+| P1 | `tasks/page.tsx` ~30 hardcoded strings | "Your assigned tasks…", "Total", "Pending", "In Progress", etc. |
+| P2 | `page.tsx:404-405, 467-468` | "My Tasks", "My Patients" section headers |
+| P3 | `patients/page.tsx` ~20 hardcoded strings | "My Patients", "Track patient-level tasks…", all column headers |
+| P4 | `patients/[id]/page.tsx` ~40 hardcoded strings | Form labels, button text, data table titles |
+| P5 | `devices/page.tsx` ~15 hardcoded strings | "Device Status", all column headers, summary labels |
+| P6 | `prescriptions/page.tsx` ~10 hardcoded strings | "Prescription Board", all column headers |
+| P7 | `support/page.tsx` | Missing `"use client"` directive |
+
+---
+
+## 5. Recommended Fixes
+
+### Fix 1: Add Missing Sidebar Entries ⬆️ High Priority
+
+```diff
+// sidebarConfig.ts — observer section
+  observer: [
+    {
+      categoryKey: "nav.category.care",
+      items: [
+        { key: "nav.dashboard", href: "/observer", icon: LayoutDashboard },
+        { key: "nav.tasks", href: "/observer/tasks", icon: ClipboardCheck, requiredCapability: "workflow.manage" },
+        { key: "nav.calendar", href: "/observer/calendar", icon: Calendar, requiredCapability: "schedule.manage" },
+        { key: "nav.observer.myPatients", href: "/observer/patients", icon: Users, requiredCapability: "patients.read" },
+        { key: "nav.alerts", href: "/observer/alerts", icon: Bell, requiredCapability: "alerts.read", badge: "alerts" },
++       { key: "nav.devices", href: "/observer/devices", icon: Tablet, requiredCapability: "devices.read" },
++       { key: "nav.prescriptions", href: "/observer/prescriptions", icon: Pill },
++       { key: "nav.monitoring", href: "/observer/monitoring", icon: Activity },
++       { key: "nav.workflow", href: "/observer/workflow", icon: Clock, requiredCapability: "workflow.manage" },
+        { key: "nav.floorplans", href: "/observer/floorplans", icon: MapPin, requiredCapability: "facilities.read" },
+        { key: "nav.reportIssue", href: "/observer/support", icon: Bug },
+      ],
+    },
+```
+
+### Fix 2: Refactor Tasks Page ⬆️ High Priority
+
+```diff
+// tasks/page.tsx
+-import { useQuery } from "@/hooks/useQuery";
++import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+-  const { data: tasksData, refetch: refetchTasks, isLoading } = useQuery<ListWorkflowTasksResponse>("/workflow/tasks");
++  const queryClient = useQueryClient();
++  const { data: tasksData, isLoading } = useQuery({
++    queryKey: ["observer", "tasks", "list"],
++    queryFn: () => api.listWorkflowTasks({ limit: 300 }),
++  });
+
+-  await api.patch(`/workflow/tasks/${taskId}`, { status: "completed", ... });
+-  await refetchTasks();
++  useMutation({
++    mutationFn: (taskId: number) => api.updateWorkflowTask(taskId, { status: "completed" }),
++    onSuccess: () => {
++      void queryClient.invalidateQueries({ queryKey: ["observer", "tasks"] });
++      void queryClient.invalidateQueries({ queryKey: ["observer", "dashboard"] });
++      void queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
++    },
++  });
+
+-  console.error("Failed to complete task:", err);
++  // Use UI error state instead
+```
+
+### Fix 3: Standardize Floorplans CSS ⬇️ Low Priority
+
+```diff
+// floorplans/page.tsx
+-  <h2 className="text-2xl font-bold text-on-surface flex items-center gap-2">
++  <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+
+-  <p className="text-sm text-on-surface-variant mt-1">
++  <p className="text-sm text-muted-foreground mt-1">
+```
+
+### Fix 4: Dashboard vitals loading ⬇️ Low Priority
+
+```diff
+// page.tsx line 164-168
+  const isLoadingAny =
+    patientsQuery.isLoading ||
+    alertsQuery.isLoading ||
+    tasksQuery.isLoading ||
++   vitalsQuery.isLoading ||
+    shiftChecklistQuery.isLoading;
+```
+
+---
+
+## 6. Cross-Role Data Flow Summary
+
+```mermaid
+graph LR
+    subgraph Observer Actions
+        A[Create Timeline Event] --> |visible to| HN[Head Nurse Dashboard]
+        A --> |visible to| SV[Supervisor Timeline]
+        B[Send Workflow Message] --> |recipient: head_nurse| HN
+        C[Submit Handover] --> |target: head_nurse| HN
+        D[Update Task Status] --> |visible to| HN
+        D --> |visible to| SV
+        E[Shift Checklist] --> |personal only| OB[Observer Dashboard]
+    end
+```
+
+**Verdict**: The Patient Detail page (`patients/[id]`) has **excellent cross-role integration** — all 5 mutations correctly target other roles and invalidate caches. The Tasks page is the **weakest link** and needs refactoring.
+
+---
+
+## 7. Overall Assessment
+
+| Dimension | Rating | Notes |
+|---|---|---|
+| **Route coverage** | ⭐⭐⭐⭐ | 13 routes, 4 hidden from sidebar |
+| **API integration** | ⭐⭐⭐⭐ | 14 read queries, 7+ mutations, all functional |
+| **Mutation logic** | ⭐⭐⭐ | Patient detail: excellent. Tasks page: needs rewrite |
+| **Cache invalidation** | ⭐⭐⭐ | Good in Patient Detail, missing in Tasks |
+| **Cross-role impact** | ⭐⭐⭐⭐⭐ | Timeline, messages, handovers all reach other roles |
+| **i18n / localization** | ⭐⭐ | Dashboard + calendar good; others mostly hardcoded |
+| **Code quality** | ⭐⭐⭐⭐ | No console.log, no TODOs. 2 console.error in tasks |
+| **Design consistency** | ⭐⭐⭐⭐ | Floorplans CSS is the only inconsistency |
+| **Shared components** | ⭐⭐⭐⭐⭐ | Excellent reuse of DataTableCard, SummaryStatCard |

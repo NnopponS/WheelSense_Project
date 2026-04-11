@@ -1,7 +1,9 @@
 import AdminSettingsClient, { type SettingsTabKey } from "./SettingsClient";
 
 function parseTab(tab: string | undefined): SettingsTabKey {
-  if (tab === "ai" || tab === "ml") return tab;
+  if (tab === "ml" || tab === "system") return "system";
+  if (tab === "audit") return "audit";
+  if (tab === "ai" || tab === "server") return tab;
   return "profile";
 }
 

@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserRoundPlus } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
-import { useQuery } from "@/hooks/useQuery";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import SearchableListboxPicker from "@/components/shared/SearchableListboxPicker";
 import type { Patient } from "@/lib/types";
 
@@ -26,7 +28,14 @@ export default function AdminPatientsQuickFind({ search, onSearchChange }: Props
       : "/patients?limit=100";
   }, [search]);
 
-  const { data: patients, isLoading } = useQuery<Patient[]>(endpoint);
+  const { data: patients, isLoading } = useQuery({
+    queryKey: ["admin", "patients", "quick-find", endpoint],
+    queryFn: () => api.get<Patient[]>(endpoint),
+    enabled: Boolean(endpoint),
+    staleTime: getQueryStaleTimeMs(endpoint),
+    refetchInterval: getQueryPollingMs(endpoint),
+    retry: 3,
+  });
 
   const listOptions = useMemo(
     () =>
@@ -48,7 +57,7 @@ export default function AdminPatientsQuickFind({ search, onSearchChange }: Props
 
   return (
     <div className="rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4 space-y-3">
-      <p className="text-xs text-on-surface-variant leading-relaxed">
+      <p className="text-xs text-muted-foreground leading-relaxed">
         {t("patients.quickFindHint")}
       </p>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -87,7 +96,7 @@ export default function AdminPatientsQuickFind({ search, onSearchChange }: Props
           onClick={() => {
             const id = selectedPatientId.trim();
             if (!id) return;
-            router.push(`/admin/patients/${id}`);
+            router.push(`/head-nurse/patients/${id}`);
           }}
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white gradient-cta disabled:opacity-50 sm:min-w-[8.5rem]"
         >

@@ -20,8 +20,21 @@ from .caregivers import (
 )
 from .vitals import VitalReading, HealthObservation
 from .activity import ActivityTimeline, Alert
-from .telemetry import IMUTelemetry, RSSIReading, RoomPrediction, RSSITrainingData, MotionTrainingData, PhotoRecord
+from .telemetry import (
+    IMUTelemetry,
+    RSSIReading,
+    RoomPrediction,
+    RSSITrainingData,
+    MotionTrainingData,
+    PhotoRecord,
+    NodeStatusTelemetry,
+    MobileDeviceTelemetry,
+    LocalizationConfig,
+    LocalizationCalibrationSession,
+    LocalizationCalibrationSample,
+)
 from .chat import ChatConversation, ChatMessage, WorkspaceAISettings
+from .chat_actions import ChatAction
 from .workflow import (
     CareSchedule,
     CareTask,
@@ -30,14 +43,12 @@ from .workflow import (
     CareDirective,
     AuditTrailEvent,
 )
-from .future_domains import (
-    FloorplanAsset,
-    FloorplanLayout,
-    DemoActorPosition,
-    Specialist,
-    Prescription,
-    PharmacyOrder,
-)
+from .floorplans import FloorplanAsset, FloorplanLayout
+from .care import DemoActorPosition, Specialist
+from .medication import Prescription, PharmacyOrder
+from .service_requests import ServiceRequest
+from .support import SupportTicket, SupportTicketComment, SupportTicketAttachment
+from .shift_checklist import ShiftChecklistState
 
 __all__ = [
     "Base",
@@ -74,9 +85,15 @@ __all__ = [
     "RSSITrainingData",
     "MotionTrainingData",
     "PhotoRecord",
+    "NodeStatusTelemetry",
+    "MobileDeviceTelemetry",
+    "LocalizationConfig",
+    "LocalizationCalibrationSession",
+    "LocalizationCalibrationSample",
     # AI Chat
     "ChatConversation",
     "ChatMessage",
+    "ChatAction",
     "WorkspaceAISettings",
     # Workflow domains
     "CareSchedule",
@@ -85,11 +102,17 @@ __all__ = [
     "HandoverNote",
     "CareDirective",
     "AuditTrailEvent",
-    # Future domains
+    # Operational care/map/medication domains
     "FloorplanAsset",
     "FloorplanLayout",
     "DemoActorPosition",
     "Specialist",
     "Prescription",
     "PharmacyOrder",
+    "ServiceRequest",
+    # Support
+    "SupportTicket",
+    "SupportTicketComment",
+    "SupportTicketAttachment",
+    "ShiftChecklistState",
 ]

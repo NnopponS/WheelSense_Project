@@ -24,7 +24,7 @@ from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.ai_settings import (
     AISettingsOut,
-    AIUserSettingsUpdate,
+    AIWorkspaceSettingsUpdate,
     CopilotDeviceCodeOut,
     CopilotModelInfo,
     CopilotModelsOut,
@@ -42,91 +42,58 @@ logger = logging.getLogger("wheelsense.ai_settings")
 
 router = APIRouter()
 
+
+async def _build_ai_settings_out(db: AsyncSession, workspace_id: int) -> AISettingsOut:
+    ws_p, ws_m = await ai_chat.get_workspace_ai_defaults(db, workspace_id)
+    eff_p, eff_m = await ai_chat.resolve_effective_ai(
+        db,
+        workspace_id=workspace_id,
+        override_provider=None,
+        override_model=None,
+    )
+    return AISettingsOut(
+        provider=eff_p,  # type: ignore[arg-type]
+        model=eff_m,
+        workspace_default_provider=ws_p,  # type: ignore[arg-type]
+        workspace_default_model=ws_m,
+    )
+
+
 @router.get("", response_model=AISettingsOut)
 async def get_ai_settings(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_active_user),
+    _: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
-    ws_p, ws_m = await ai_chat.get_workspace_ai_defaults(db, workspace.id)
-    eff_p, eff_m = await ai_chat.resolve_effective_ai(
-        db, user, workspace, override_provider=None, override_model=None
-    )
-    return AISettingsOut(
-        provider=eff_p,  # type: ignore[arg-type]
-        model=eff_m,
-        workspace_default_provider=ws_p,  # type: ignore[arg-type]
-        workspace_default_model=ws_m,
-        user_provider_override=user.ai_provider,  # type: ignore[arg-type]
-        user_model_override=user.ai_model,
-    )
+    return await _build_ai_settings_out(db, workspace.id)
 
 @router.put("", response_model=AISettingsOut)
-async def update_user_ai_settings(
-    body: AIUserSettingsUpdate,
+async def update_workspace_ai_settings(
+    body: AIWorkspaceSettingsUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_active_user),
+    _: User = Depends(RequireRole(["admin"])),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
-    if body.provider is not None:
-        user.ai_provider = body.provider
-    if body.model is not None:
-        user.ai_model = body.model
-    db.add(user)
+    row = await _get_or_create_ws_ai_row(db, workspace.id)
+    row.default_provider = body.provider
+    row.default_model = body.model
+    db.add(row)
     await db.commit()
-    await db.refresh(user)
-    ws_p, ws_m = await ai_chat.get_workspace_ai_defaults(db, workspace.id)
-    eff_p, eff_m = await ai_chat.resolve_effective_ai(
-        db, user, workspace, override_provider=None, override_model=None
-    )
-    return AISettingsOut(
-        provider=eff_p,  # type: ignore[arg-type]
-        model=eff_m,
-        workspace_default_provider=ws_p,  # type: ignore[arg-type]
-        workspace_default_model=ws_m,
-        user_provider_override=user.ai_provider,  # type: ignore[arg-type]
-        user_model_override=user.ai_model,
-    )
+    return await _build_ai_settings_out(db, workspace.id)
 
 @router.put("/global", response_model=AISettingsOut)
 async def update_global_ai_settings(
     body: GlobalAISettingsUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(RequireRole(["admin"])),
+    _: User = Depends(RequireRole(["admin"])),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
-    res = await db.execute(
-        select(WorkspaceAISettings).where(
-            WorkspaceAISettings.workspace_id == workspace.id
-        )
-    )
-    row = res.scalar_one_or_none()
-    if row:
-        row.default_provider = body.default_provider
-        row.default_model = body.default_model
-        db.add(row)
-    else:
-        db.add(
-            WorkspaceAISettings(
-                workspace_id=workspace.id,
-                default_provider=body.default_provider,
-                default_model=body.default_model,
-            )
-        )
+    row = await _get_or_create_ws_ai_row(db, workspace.id)
+    row.default_provider = body.default_provider
+    row.default_model = body.default_model
+    db.add(row)
     await db.commit()
-    await db.refresh(user)
-    ws_p, ws_m = await ai_chat.get_workspace_ai_defaults(db, workspace.id)
-    eff_p, eff_m = await ai_chat.resolve_effective_ai(
-        db, user, workspace, override_provider=None, override_model=None
-    )
-    return AISettingsOut(
-        provider=eff_p,  # type: ignore[arg-type]
-        model=eff_m,
-        workspace_default_provider=ws_p,  # type: ignore[arg-type]
-        workspace_default_model=ws_m,
-        user_provider_override=user.ai_provider,  # type: ignore[arg-type]
-        user_model_override=user.ai_model,
-    )
+    return await _build_ai_settings_out(db, workspace.id)
 
 async def _get_or_create_ws_ai_row(
     db: AsyncSession, workspace_id: int

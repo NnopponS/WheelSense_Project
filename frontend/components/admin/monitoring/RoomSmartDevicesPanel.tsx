@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useQuery } from "@/hooks/useQuery";
+import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
+import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import { useTranslation } from "@/lib/i18n";
 import type { SmartDevice } from "@/lib/types";
 import { Plus, Trash2 } from "lucide-react";
@@ -13,7 +15,15 @@ export interface RoomSmartDevicesPanelProps {
 
 export default function RoomSmartDevicesPanel({ roomId }: RoomSmartDevicesPanelProps) {
   const { t } = useTranslation();
-  const { data: allDevices, isLoading, error, refetch } = useQuery<SmartDevice[]>("/ha/devices");
+  const haDevicesPath = "/ha/devices";
+  const { data: allDevices, isLoading, error, refetch: refetchBase } = useQuery({
+    queryKey: ["admin", "monitoring", "room-smart-devices", haDevicesPath],
+    queryFn: () => api.get<SmartDevice[]>(haDevicesPath),
+    staleTime: getQueryStaleTimeMs(haDevicesPath),
+    refetchInterval: getQueryPollingMs(haDevicesPath),
+    retry: 3,
+  });
+  const refetch = useCallback(() => refetchOrThrow(refetchBase), [refetchBase]);
   const [message, setMessage] = useState<string | null>(null);
 
   const devices = useMemo(() => {
@@ -78,13 +88,13 @@ export default function RoomSmartDevicesPanel({ roomId }: RoomSmartDevicesPanelP
 
   if (roomId === null) {
     return (
-      <p className="text-sm text-on-surface-variant py-2">{t("monitoring.ha.pickRoom")}</p>
+      <p className="text-sm text-foreground-variant py-2">{t("monitoring.ha.pickRoom")}</p>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h4 className="text-sm font-semibold text-on-surface">{t("monitoring.ha.title")}</h4>
+      <h4 className="text-sm font-semibold text-foreground">{t("monitoring.ha.title")}</h4>
 
       {message && <p className="text-xs text-error">{message}</p>}
 
@@ -95,7 +105,7 @@ export default function RoomSmartDevicesPanel({ roomId }: RoomSmartDevicesPanelP
       ) : error ? (
         <p className="text-sm text-error">{t("monitoring.ha.loadFailed")}</p>
       ) : devices.length === 0 ? (
-        <p className="text-sm text-on-surface-variant">{t("monitoring.ha.empty")}</p>
+        <p className="text-sm text-foreground-variant">{t("monitoring.ha.empty")}</p>
       ) : (
         <ul className="space-y-3">
           {devices.map((d) => (
@@ -121,7 +131,7 @@ export default function RoomSmartDevicesPanel({ roomId }: RoomSmartDevicesPanelP
       ) : (
         <div className="rounded-xl border border-outline-variant/30 p-3 space-y-2 bg-surface-container-low/50">
           <div>
-            <label className="text-xs text-on-surface-variant">{t("monitoring.ha.entityId")}</label>
+            <label className="text-xs text-foreground-variant">{t("monitoring.ha.entityId")}</label>
             <input
               className="input-field text-sm w-full mt-1"
               value={newEntity}
@@ -130,7 +140,7 @@ export default function RoomSmartDevicesPanel({ roomId }: RoomSmartDevicesPanelP
             />
           </div>
           <div>
-            <label className="text-xs text-on-surface-variant">{t("monitoring.ha.name")}</label>
+            <label className="text-xs text-foreground-variant">{t("monitoring.ha.name")}</label>
             <input
               className="input-field text-sm w-full mt-1"
               value={newName}
@@ -138,7 +148,7 @@ export default function RoomSmartDevicesPanel({ roomId }: RoomSmartDevicesPanelP
             />
           </div>
           <div>
-            <label className="text-xs text-on-surface-variant">{t("monitoring.ha.type")}</label>
+            <label className="text-xs text-foreground-variant">{t("monitoring.ha.type")}</label>
             <input
               className="input-field text-sm w-full mt-1"
               value={newType}
@@ -179,9 +189,9 @@ function DeviceRow({
 
   return (
     <li className="rounded-lg border border-outline-variant/25 p-3 space-y-2">
-      <p className="text-xs text-on-surface-variant font-mono truncate">{device.ha_entity_id}</p>
+      <p className="text-xs text-foreground-variant font-mono truncate">{device.ha_entity_id}</p>
       <div>
-        <label className="text-xs text-on-surface-variant">{t("monitoring.ha.name")}</label>
+        <label className="text-xs text-foreground-variant">{t("monitoring.ha.name")}</label>
         <input
           className="input-field text-sm w-full mt-1"
           value={name}
@@ -189,7 +199,7 @@ function DeviceRow({
         />
       </div>
       <div>
-        <label className="text-xs text-on-surface-variant">{t("monitoring.ha.type")}</label>
+        <label className="text-xs text-foreground-variant">{t("monitoring.ha.type")}</label>
         <input
           className="input-field text-sm w-full mt-1"
           value={deviceType}

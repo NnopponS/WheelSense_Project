@@ -1,0 +1,8 @@
+# Mock/sim DB mode: same images/build as production entry, different Postgres volume + simulator.
+# Do not run both this and docker-compose.yml at once (same host ports).
+
+name: wheelsense-platform
+
+include:
+  - path: docker-compose.core.yml
+  - path: docker-compose.data-mock.yml

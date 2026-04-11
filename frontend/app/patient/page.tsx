@@ -1,95 +1,45 @@
-﻿"use client";
-"use no memo";
+"use client";
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ColumnDef } from "@tanstack/react-table";
-import { Bell, Heart, MessageCircle, Siren, Sparkles } from "lucide-react";
-import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
-import { DataTableCard } from "@/components/supervisor/DataTableCard";
-import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import {
+  AlertTriangle,
+  Calendar,
+  Heart,
+  HelpCircle,
+  Home,
+  MessageCircle,
+  Phone,
+  Siren,
+  Sparkles,
+} from "lucide-react";
+import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useAuth } from "@/hooks/useAuth";
-import { api, ApiError } from "@/lib/api";
-import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
-import type { Room } from "@/lib/types";
-import type {
-  CareTaskOut,
-  CreateAlertRequest,
-  GetPatientResponse,
-  ListAlertsResponse,
-  ListPatientsResponse,
-  ListSmartDevicesResponse,
-  ListVitalReadingsResponse,
-  ListWorkflowMessagesResponse,
-} from "@/lib/api/task-scope-types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { GetPatientResponse } from "@/lib/api/task-scope-types";
+import { PatientMySensors } from "@/components/patient/PatientMySensors";
+import { PatientCareRoadmap } from "@/components/patient/PatientCareRoadmap";
 
-type AssistanceKind = "assistance" | "sos";
-
-type AlertRow = {
-  id: number;
-  title: string;
-  description: string;
-  severity: string;
-  timestamp: string;
-};
-
-type TaskRow = {
-  id: number;
-  title: string;
-  status: string;
-  priority: string;
-  dueAt: string | null;
-};
-
-type MessageRow = {
-  id: number;
-  subject: string;
-  body: string;
-  isRead: boolean;
-  createdAt: string;
-};
-
-function parseError(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
-  if (error instanceof Error) return error.message;
-  return "Request failed.";
-}
-
-export default function PatientDashboard() {
+export default function PatientDashboardPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const previewRaw = searchParams.get("previewAs");
   const previewNum = previewRaw != null && previewRaw !== "" ? Number(previewRaw) : NaN;
   const previewPatientId = Number.isFinite(previewNum) && previewNum > 0 ? Math.floor(previewNum) : null;
-
   const isAdminPreview = user?.role === "admin" && previewPatientId != null;
-  const showAdminPatientPicker = user?.role === "admin" && user.patient_id == null && previewPatientId == null;
 
   const effectivePatientId = useMemo(() => {
     if (isAdminPreview) return previewPatientId;
     return user?.patient_id ?? null;
   }, [isAdminPreview, previewPatientId, user?.patient_id]);
-
-  const adminPatientsQuery = useQuery({
-    queryKey: ["patient", "admin-picker", "patients"],
-    enabled: showAdminPatientPicker,
-    queryFn: () => api.listPatients({ limit: 500 }),
-  });
 
   const patientQuery = useQuery({
     queryKey: ["patient", "dashboard", "patient", effectivePatientId],
@@ -97,60 +47,12 @@ export default function PatientDashboard() {
     queryFn: () => api.getPatient(Number(effectivePatientId)),
   });
 
-  const vitalsQuery = useQuery({
-    queryKey: ["patient", "dashboard", "vitals", effectivePatientId],
-    enabled: effectivePatientId != null,
-    queryFn: () => api.listVitalReadings({ patient_id: Number(effectivePatientId), limit: 24 }),
-    refetchInterval: 30_000,
-  });
-
-  const alertsQuery = useQuery({
-    queryKey: ["patient", "dashboard", "alerts", effectivePatientId],
-    enabled: effectivePatientId != null,
-    queryFn: () =>
-      api.listAlerts({ status: "active", patient_id: Number(effectivePatientId), limit: 20 }),
-    refetchInterval: 20_000,
-  });
-
-  const messagesQuery = useQuery({
-    queryKey: ["patient", "dashboard", "messages", effectivePatientId],
-    enabled: effectivePatientId != null,
-    queryFn: () => api.listWorkflowMessages({ inbox_only: true, limit: 80 }),
-  });
-
-  const smartDevicesQuery = useQuery({
-    queryKey: ["patient", "dashboard", "smart-devices"],
-    enabled: effectivePatientId != null,
-    queryFn: () => api.listSmartDevices(),
-  });
-
-  const roomsQuery = useQuery({
-    queryKey: ["patient", "dashboard", "rooms"],
-    enabled: effectivePatientId != null,
-    queryFn: () => api.listRooms(),
-  });
-
-  const tasksQuery = useQuery({
-    queryKey: ["patient", "dashboard", "tasks", effectivePatientId],
-    enabled: effectivePatientId != null,
-    retry: false,
-    queryFn: async () => {
-      try {
-        const items = await api.listWorkflowTasks({ limit: 80 });
-        return { items, restricted: false };
-      } catch (error) {
-        if (error instanceof ApiError && (error.status === 403 || error.status === 404)) {
-          return { items: [] as CareTaskOut[], restricted: true };
-        }
-        throw error;
-      }
-    },
-  });
+  const patient = patientQuery.data as GetPatientResponse | null;
 
   const raiseAssistanceMutation = useMutation({
-    mutationFn: async (kind: AssistanceKind) => {
+    mutationFn: async (kind: "assistance" | "sos") => {
       if (!effectivePatientId) return;
-      const payload = {
+      await api.createAlert({
         patient_id: Number(effectivePatientId),
         alert_type: kind === "sos" ? "emergency_sos" : "patient_assistance",
         severity: kind === "sos" ? "critical" : "warning",
@@ -159,531 +61,173 @@ export default function PatientDashboard() {
           kind === "sos"
             ? "Patient pressed emergency SOS from patient dashboard."
             : "Patient requested non-emergency assistance from patient dashboard.",
-        data: {
-          source: "patient_dashboard",
-          kind,
-        },
-      } satisfies CreateAlertRequest;
-
-      await api.createAlert(payload);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["patient", "dashboard", "alerts"] });
-      await queryClient.invalidateQueries({ queryKey: ["patient", "dashboard"] });
-    },
-  });
-
-  const controlDeviceMutation = useMutation({
-    mutationFn: async (variables: { deviceId: number; action: "turn_on" | "turn_off" | "toggle" }) => {
-      await api.controlSmartDevice(variables.deviceId, {
-        action: variables.action,
-        parameters: {},
+        data: { source: "patient_dashboard", kind },
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["patient", "dashboard", "smart-devices"] });
+      await queryClient.invalidateQueries({ queryKey: ["patient", "dashboard", "alerts"] });
     },
   });
 
-  const patient = useMemo(
-    () => (patientQuery.data ?? null) as GetPatientResponse | null,
-    [patientQuery.data],
-  );
-
-  const adminPatients = useMemo(
-    () => (adminPatientsQuery.data ?? []) as ListPatientsResponse,
-    [adminPatientsQuery.data],
-  );
-
-  const vitals = useMemo(
-    () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
-    [vitalsQuery.data],
-  );
-
-  const alerts = useMemo(
-    () => (alertsQuery.data ?? []) as ListAlertsResponse,
-    [alertsQuery.data],
-  );
-
-  const messages = useMemo(
-    () => (messagesQuery.data ?? []) as ListWorkflowMessagesResponse,
-    [messagesQuery.data],
-  );
-
-  const smartDevices = useMemo(
-    () => (smartDevicesQuery.data ?? []) as ListSmartDevicesResponse,
-    [smartDevicesQuery.data],
-  );
-
-  const rooms = useMemo(() => (roomsQuery.data ?? []) as Room[], [roomsQuery.data]);
-  const patientRoom = useMemo(
-    () => rooms.find((room) => room.id === patient?.room_id) ?? null,
-    [patient?.room_id, rooms],
-  );
-
-  const tasksData = useMemo(
-    () => tasksQuery.data ?? { items: [] as CareTaskOut[], restricted: false },
-    [tasksQuery.data],
-  );
-
-  const patientTasks = useMemo(
-    () =>
-      tasksData.items.filter(
-        (task) => task.patient_id === effectivePatientId || task.patient_id == null,
-      ),
-    [effectivePatientId, tasksData.items],
-  );
-
-  const patientMessages = useMemo(
-    () =>
-      messages.filter(
-        (message) => message.patient_id === effectivePatientId || message.patient_id == null,
-      ),
-    [effectivePatientId, messages],
-  );
-
-  const roomDevices = useMemo(() => {
-    if (!patient?.room_id) return [] as ListSmartDevicesResponse;
-    return smartDevices.filter((device) => device.room_id === patient.room_id && device.is_active);
-  }, [patient, smartDevices]);
-
-  const latestVitals = vitals[0] ?? null;
-
-  const alertRows = useMemo<AlertRow[]>(() => {
-    return alerts
-      .map((alert) => ({
-        id: alert.id,
-        title: alert.title,
-        description: alert.description,
-        severity: alert.severity,
-        timestamp: alert.timestamp,
-      }))
-      .sort((left, right) => right.timestamp.localeCompare(left.timestamp));
-  }, [alerts]);
-
-  const taskRows = useMemo<TaskRow[]>(() => {
-    return patientTasks
-      .map((task) => ({
-        id: task.id,
-        title: task.title,
-        status: task.status,
-        priority: task.priority,
-        dueAt: task.due_at,
-      }))
-      .sort((left, right) => {
-        if (!left.dueAt) return 1;
-        if (!right.dueAt) return -1;
-        return left.dueAt.localeCompare(right.dueAt);
-      })
-      .slice(0, 20);
-  }, [patientTasks]);
-
-  const messageRows = useMemo<MessageRow[]>(() => {
-    return patientMessages
-      .map((message) => ({
-        id: message.id,
-        subject: message.subject || "Care team update",
-        body: message.body,
-        isRead: message.is_read,
-        createdAt: message.created_at,
-      }))
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
-      .slice(0, 20);
-  }, [patientMessages]);
-
-  const alertColumns = useMemo<ColumnDef<AlertRow>[]>(
-    () => [
-      {
-        accessorKey: "title",
-        header: "Alert",
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "severity",
-        header: "Severity",
-        cell: ({ row }) => {
-          const severity = row.original.severity;
-          const variant =
-            severity === "critical"
-              ? "destructive"
-              : severity === "warning"
-                ? "warning"
-                : "secondary";
-          return <Badge variant={variant}>{severity}</Badge>;
-        },
-      },
-      {
-        accessorKey: "timestamp",
-        header: "Time",
-        cell: ({ row }) => (
-          <div className="space-y-1 text-sm">
-            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
-
-  const taskColumns = useMemo<ColumnDef<TaskRow>[]>(
-    () => [
-      {
-        accessorKey: "title",
-        header: "Task",
-      },
-      {
-        accessorKey: "priority",
-        header: "Priority",
-        cell: ({ row }) => <Badge variant="outline">{row.original.priority}</Badge>,
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
-      },
-      {
-        accessorKey: "dueAt",
-        header: "Due",
-        cell: ({ row }) => formatDateTime(row.original.dueAt),
-      },
-    ],
-    [],
-  );
-
-  const messageColumns = useMemo<ColumnDef<MessageRow>[]>(
-    () => [
-      {
-        accessorKey: "subject",
-        header: "Message",
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.subject}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.body}</p>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "isRead",
-        header: "Read",
-        cell: ({ row }) => (
-          <Badge variant={row.original.isRead ? "success" : "warning"}>
-            {row.original.isRead ? "read" : "unread"}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: "createdAt",
-        header: "Created",
-        cell: ({ row }) => (
-          <div className="space-y-1 text-sm">
-            <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.createdAt)}</p>
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
-
-  if (showAdminPatientPicker) {
+  if (!effectivePatientId || (!patientQuery.isLoading && !patient)) {
     return (
-      <Card className="mx-auto max-w-lg">
-        <CardContent className="space-y-4 pt-6">
-          <h2 className="text-xl font-bold text-foreground">Choose Patient Preview</h2>
-          <p className="text-sm text-muted-foreground">
-            Select a patient to preview patient portal as admin.
-          </p>
-          <Select
-            onValueChange={(value) => {
-              router.push(`/patient?previewAs=${value}`);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select patient" />
-            </SelectTrigger>
-            <SelectContent>
-              {adminPatients.map((patientOption) => (
-                <SelectItem key={patientOption.id} value={String(patientOption.id)}>
-                  {patientOption.first_name} {patientOption.last_name} (#{patientOption.id})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!effectivePatientId) {
-    return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-destructive">
-        Your account is not linked to a patient record.
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 text-center animate-fade-in">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/12 text-red-600 mb-6">
+          <AlertTriangle className="h-8 w-8" />
+        </div>
+        <h1 className="text-2xl font-semibold text-foreground md:text-3xl">{t("patient.page.notLinkedTitle")}</h1>
+        <p className="mt-3 text-base text-muted-foreground max-w-lg">{t("patient.page.notLinkedBody")}</p>
       </div>
     );
   }
-
-  const isLoadingAny =
-    patientQuery.isLoading ||
-    vitalsQuery.isLoading ||
-    alertsQuery.isLoading ||
-    messagesQuery.isLoading ||
-    smartDevicesQuery.isLoading ||
-    roomsQuery.isLoading ||
-    tasksQuery.isLoading;
-
-  if (isLoadingAny && !patient) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!patient) {
-    return (
-      <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-6 text-destructive">
-        Unable to load patient dashboard.
-      </div>
-    );
-  }
-
-  const assistanceError = raiseAssistanceMutation.error
-    ? parseError(raiseAssistanceMutation.error)
-    : null;
-  const deviceError = controlDeviceMutation.error ? parseError(controlDeviceMutation.error) : null;
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {isAdminPreview ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
-          <p className="text-foreground">Preview mode: patient portal</p>
-          <Link href="/patient" className="font-semibold text-primary hover:underline">
-            Clear preview
-          </Link>
+    <div className="space-y-6 pb-6 animate-fade-in max-w-5xl mx-auto">
+      {/* Greeting Header */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <Heart className="h-3.5 w-3.5" />
+            {t("patient.page.portalBadge")}
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
+              {t("patient.page.helloPrefix")}{" "}
+              {patient?.nickname || patient?.first_name || t("patient.page.guest")}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("patient.page.roomPrefix")} {patient?.room_id ?? t("patient.page.roomUnassigned")} ·{" "}
+              {t("patient.page.dashboardTagline")}
+            </p>
+          </div>
         </div>
-      ) : null}
-
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">
-            Welcome, {patient.nickname || patient.first_name}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Room {patient.room_id ?? "Unassigned"} • Care level {patient.care_level}
-          </p>
+        <div className="flex items-center gap-2">
+          {patient?.care_level && (
+            <Badge
+              variant={
+                patient.care_level === "critical"
+                  ? "destructive"
+                  : patient.care_level === "special"
+                    ? "warning"
+                    : "outline"
+              }
+              className="text-sm"
+            >
+              {patient.care_level} {t("patient.page.careSuffix")}
+            </Badge>
+          )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            void queryClient.invalidateQueries({ queryKey: ["patient", "dashboard"] });
-          }}
-        >
-          Refresh
-        </Button>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <SummaryStatCard
-          icon={Heart}
-          label="Heart rate"
-          value={latestVitals?.heart_rate_bpm ?? 0}
-          tone={latestVitals?.heart_rate_bpm ? "info" : "warning"}
-        />
-        <SummaryStatCard
-          icon={Sparkles}
-          label="SpO2"
-          value={latestVitals?.spo2 ?? 0}
-          tone={latestVitals?.spo2 ? "info" : "warning"}
-        />
-        <SummaryStatCard
-          icon={Bell}
-          label="Skin temp"
-          value={latestVitals?.skin_temperature != null ? Number(latestVitals.skin_temperature.toFixed(1)) : 0}
-          tone={latestVitals?.skin_temperature != null ? "info" : "warning"}
-        />
-      </section>
+      {effectivePatientId != null ? <PatientMySensors patientId={Number(effectivePatientId)} /> : null}
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.04fr_0.96fr]">
-        {patientRoom ? (
-          <DashboardFloorplanPanel
-            className="min-w-0"
-            initialFacilityId={patientRoom.facility_id ?? null}
-            initialFloorId={patientRoom.floor_id ?? null}
-            initialRoomName={patientRoom.name}
-          />
-        ) : (
-          <Card className="border-border/70">
-            <CardHeader className="space-y-2 pb-3">
-              <CardTitle className="text-base">Room context</CardTitle>
-              <CardDescription>
-                {patient.room_id != null
-                  ? "Your room map will appear when room metadata is available."
-                  : "Your account is not linked to a room yet."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="rounded-xl border border-border/70 px-3 py-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Assigned room</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {patient.room_id != null ? `Room #${patient.room_id}` : "Unassigned"}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {patient.room_id != null
-                    ? "Map loading failed or the room record is still unavailable."
-                    : "A room can be linked after account setup."}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      {effectivePatientId != null ? (
+        <PatientCareRoadmap patientId={Number(effectivePatientId)} />
+      ) : null}
 
-        <Card className="border-border/70">
-          <CardHeader className="space-y-2 pb-3">
-            <CardTitle className="text-base">Room context</CardTitle>
-            <CardDescription>
-              {patientRoom
-                ? `${patientRoom.name}${patientRoom.floor_name ? ` • ${patientRoom.floor_name}` : ""}${patientRoom.facility_name ? ` • ${patientRoom.facility_name}` : ""}`
-                : "Nearby equipment and room metadata will appear here."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border/70 px-3 py-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Room</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">
-                {patientRoom?.name ?? `#${patient.room_id ?? "—"}`}
-              </p>
+      {/* Quick Actions */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card
+          className="cursor-pointer border-border/70 transition-all hover:border-primary/50 hover:shadow-md"
+          onClick={() => !raiseAssistanceMutation.isPending && raiseAssistanceMutation.mutate("assistance")}
+        >
+          <CardContent className="flex flex-col items-center justify-center gap-4 p-8 md:p-12">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-sky-500/12 text-sky-600">
+              <Phone className="h-10 w-10" />
             </div>
-            <div className="rounded-xl border border-border/70 px-3 py-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Devices</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">{roomDevices.length}</p>
+            <div className="text-center">
+              <p className="text-xl font-semibold text-foreground md:text-2xl">{t("patient.page.callNurse")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.callNurseHint")}</p>
             </div>
-            <p className="col-span-2 text-sm text-muted-foreground">
-              {patientRoom
-                ? "The compact floorplan above stays within the first viewport and can still show basic presence metadata when available."
-                : "Once room metadata is available, the map panel will seed itself to the right room and floor."}
-            </p>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full max-w-xs"
+              disabled={raiseAssistanceMutation.isPending}
+            >
+              <Phone className="mr-2 h-5 w-5" />
+              {t("patient.page.requestAssistance")}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer border-red-500/30 bg-red-500/5 transition-all hover:border-red-500/60 hover:shadow-md"
+          onClick={() => !raiseAssistanceMutation.isPending && raiseAssistanceMutation.mutate("sos")}
+        >
+          <CardContent className="flex flex-col items-center justify-center gap-4 p-8 md:p-12">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-500/12 text-red-600">
+              <Siren className="h-10 w-10 animate-pulse" />
+            </div>
+            <div className="text-center">
+              <p className="text-xl font-semibold text-red-600 md:text-2xl">{t("patient.page.emergencySos")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.emergencySosHint")}</p>
+            </div>
+            <Button
+              size="lg"
+              variant="destructive"
+              className="w-full max-w-xs"
+              disabled={raiseAssistanceMutation.isPending}
+            >
+              <Siren className="mr-2 h-5 w-5" />
+              {t("patient.page.emergencyAlert")}
+            </Button>
           </CardContent>
         </Card>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardContent className="space-y-3 pt-6">
-            <h3 className="text-lg font-semibold text-foreground">Assistance & SOS</h3>
-            <p className="text-sm text-muted-foreground">
-              Send assistance request directly to your care team.
-            </p>
-            {assistanceError ? <p className="text-sm text-destructive">{assistanceError}</p> : null}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Button
-                type="button"
-                disabled={raiseAssistanceMutation.isPending}
-                onClick={() => raiseAssistanceMutation.mutate("assistance")}
-              >
-                {raiseAssistanceMutation.isPending ? "Sending..." : "Request Assistance"}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={raiseAssistanceMutation.isPending}
-                onClick={() => raiseAssistanceMutation.mutate("sos")}
-              >
-                <Siren className="h-4 w-4" />
-                {raiseAssistanceMutation.isPending ? "Sending SOS..." : "Emergency SOS"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Quick links */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/patient/room-controls" className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm font-medium text-foreground transition-colors hover:bg-muted">
+          <Home className="h-4 w-4 text-muted-foreground" />
+          Room Controls
+        </Link>
+        <Link href="/patient/support" className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm font-medium text-foreground transition-colors hover:bg-muted">
+          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+          Report Issue
+        </Link>
+      </div>
 
-        <Card>
-          <CardContent className="space-y-3 pt-6">
-            <h3 className="text-lg font-semibold text-foreground">Room Device Control</h3>
-            <p className="text-sm text-muted-foreground">
-              Smart devices currently mapped to your room.
-            </p>
-            {deviceError ? <p className="text-sm text-destructive">{deviceError}</p> : null}
-            <div className="space-y-3">
-              {roomDevices.length > 0 ? (
-                roomDevices.map((device) => (
-                  <div key={device.id} className="rounded-xl border bg-card p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="font-medium text-foreground">{device.name}</p>
-                        <p className="text-xs text-muted-foreground">State: {device.state}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={controlDeviceMutation.isPending}
-                          onClick={() => controlDeviceMutation.mutate({ deviceId: device.id, action: "turn_on" })}
-                        >
-                          On
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={controlDeviceMutation.isPending}
-                          onClick={() => controlDeviceMutation.mutate({ deviceId: device.id, action: "turn_off" })}
-                        >
-                          Off
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No active smart-home devices are mapped to your room.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Navigation */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          {
+            href: "/patient/schedule",
+            icon: Calendar,
+            labelKey: "patient.page.navSchedule" as const,
+            color: "bg-emerald-500/12 text-emerald-600",
+          },
+          {
+            href: "/patient/room-controls",
+            icon: Home,
+            labelKey: "patient.page.navRoom" as const,
+            color: "bg-amber-500/12 text-amber-600",
+          },
+          {
+            href: "/patient/messages",
+            icon: MessageCircle,
+            labelKey: "patient.page.navMessages" as const,
+            color: "bg-sky-500/12 text-sky-600",
+          },
+          {
+            href: "/patient/services",
+            icon: Sparkles,
+            labelKey: "patient.page.navServices" as const,
+            color: "bg-violet-500/12 text-violet-600",
+          },
+        ].map(({ href, icon: Icon, labelKey, color }) => (
+          <Link key={href} href={href}>
+            <Card className="border-border/70 transition-all hover:border-primary/40 hover:shadow-sm">
+              <CardContent className="flex flex-col items-center justify-center gap-3 p-6">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}>
+                  <Icon className="h-6 w-6" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">{t(labelKey)}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </section>
-
-      <DataTableCard
-        title="Active Alerts"
-        description="Current patient alerts that require awareness."
-        data={alertRows}
-        columns={alertColumns}
-        isLoading={isLoadingAny}
-        emptyText="No active alerts right now."
-      />
-
-      <DataTableCard
-        title="Care Tasks"
-        description="Current care tasks visible in your account scope."
-        data={taskRows}
-        columns={taskColumns}
-        isLoading={isLoadingAny}
-        emptyText={tasksData.restricted ? "Care tasks are managed by staff for your account." : "No open tasks assigned."}
-      />
-
-      <DataTableCard
-        title="Latest Messages"
-        description="Recent care-team communication for your case."
-        data={messageRows}
-        columns={messageColumns}
-        isLoading={isLoadingAny}
-        emptyText="No messages in your inbox."
-        rightSlot={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/patient/messages">
-              <MessageCircle className="h-4 w-4" />
-              Open messages
-            </Link>
-          </Button>
-        }
-      />
     </div>
   );
 }

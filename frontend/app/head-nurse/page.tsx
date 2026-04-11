@@ -2,11 +2,25 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useQuery, type QueryKey } from "@tanstack/react-query";
-import { AlertTriangle, Bell, CalendarClock, Clock3, Users } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  Bell,
+  CalendarClock,
+  Clock3,
+  Stethoscope,
+  Users,
+  ArrowRight,
+  Activity,
+  CheckCircle2,
+  ShieldAlert,
+  CheckIcon,
+  ClipboardList,
+  Calendar,
+} from "lucide-react";
 import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { useTranslation } from "@/lib/i18n";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,463 +29,480 @@ import type {
   CareDirectiveOut,
   CareScheduleOut,
   CareTaskOut,
-  GetAlertSummaryResponse,
-  GetVitalsAveragesResponse,
   GetWardSummaryResponse,
   ListAlertsResponse,
-  ListCaregiversResponse,
   ListPatientsResponse,
+  ListCaregiversResponse,
   ListTimelineEventsResponse,
 } from "@/lib/api/task-scope-types";
 
-type ViewMode = "today" | "alerts" | "tasks" | "timeline";
-
-const keys = {
-  ward: ["head-nurse", "dashboard", "ward-summary"] as QueryKey,
-  alertSummary: ["head-nurse", "dashboard", "alert-summary"] as QueryKey,
-  vitalsAverage: ["head-nurse", "dashboard", "vitals-average"] as QueryKey,
-  alerts: ["head-nurse", "dashboard", "alerts"] as QueryKey,
-  caregivers: ["head-nurse", "dashboard", "caregivers"] as QueryKey,
-  patients: ["head-nurse", "dashboard", "patients"] as QueryKey,
-  tasks: ["head-nurse", "dashboard", "tasks"] as QueryKey,
-  schedules: ["head-nurse", "dashboard", "schedules"] as QueryKey,
-  timeline: ["head-nurse", "dashboard", "timeline"] as QueryKey,
-  directives: ["head-nurse", "dashboard", "directives"] as QueryKey,
-};
-
-function StatusPill({ children, severity }: { children: string; severity?: "success" | "warning" | "critical" }) {
-  return (
-    <Badge
-      variant={
-        severity === "critical" ? "destructive" : severity === "warning" ? "warning" : "outline"
-      }
-    >
-      {children}
-    </Badge>
-  );
-}
-
-export default function HeadNurseHomePage() {
+export default function HeadNurseDashboardPage() {
   const { t } = useTranslation();
-  const [view, setView] = useState<ViewMode>("today");
+  const queryClient = useQueryClient();
+  const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
 
+  // Data queries
   const wardSummaryQuery = useQuery({
-    queryKey: keys.ward,
+    queryKey: ["head-nurse", "dashboard", "ward-summary"],
     queryFn: () => api.getWardSummary(),
   });
-  const alertSummaryQuery = useQuery({
-    queryKey: keys.alertSummary,
-    queryFn: () => api.getAlertSummary(),
-  });
-  const vitalsAverageQuery = useQuery({
-    queryKey: keys.vitalsAverage,
-    queryFn: () => api.getVitalsAverages(24),
-  });
+
   const alertsQuery = useQuery({
-    queryKey: keys.alerts,
-    queryFn: () => api.listAlerts({ status: "active", limit: 160 }),
+    queryKey: ["head-nurse", "dashboard", "alerts"],
+    queryFn: () => api.listAlerts({ status: "active", limit: 100 }),
+    refetchInterval: 15_000,
   });
-  const caregiversQuery = useQuery({
-    queryKey: keys.caregivers,
-    queryFn: () => api.listCaregivers({ limit: 300 }),
-  });
+
   const patientsQuery = useQuery({
-    queryKey: keys.patients,
+    queryKey: ["head-nurse", "dashboard", "patients"],
     queryFn: () => api.listPatients({ limit: 300 }),
   });
+
+  const caregiversQuery = useQuery({
+    queryKey: ["head-nurse", "dashboard", "caregivers"],
+    queryFn: () => api.listCaregivers({ limit: 100 }),
+  });
+
   const tasksQuery = useQuery({
-    queryKey: keys.tasks,
-    queryFn: () => api.listWorkflowTasks({ limit: 200 }),
+    queryKey: ["head-nurse", "dashboard", "tasks"],
+    queryFn: () => api.listWorkflowTasks({ limit: 100 }),
   });
-  const directivesQuery = useQuery({
-    queryKey: keys.directives,
-    queryFn: () => api.listWorkflowDirectives({ status: "active", limit: 200 }),
-  });
+
   const schedulesQuery = useQuery({
-    queryKey: keys.schedules,
-    queryFn: () => api.listWorkflowSchedules({ status: "scheduled", limit: 200 }),
+    queryKey: ["head-nurse", "dashboard", "schedules"],
+    queryFn: () => api.listWorkflowSchedules({ status: "scheduled", limit: 50 }),
   });
+
+  const directivesQuery = useQuery({
+    queryKey: ["head-nurse", "dashboard", "directives"],
+    queryFn: () => api.listWorkflowDirectives({ status: "active", limit: 50 }),
+  });
+
   const timelineQuery = useQuery({
-    queryKey: keys.timeline,
-    queryFn: () => api.listTimelineEvents({ limit: 80 }),
+    queryKey: ["head-nurse", "dashboard", "timeline"],
+    queryFn: () => api.listTimelineEvents({ limit: 50 }),
     refetchInterval: 30_000,
   });
 
-  const wardSummary = useMemo(() => (wardSummaryQuery.data ?? null) as GetWardSummaryResponse | null, [wardSummaryQuery.data]);
-  const alertSummary = useMemo(() => (alertSummaryQuery.data ?? null) as GetAlertSummaryResponse | null, [alertSummaryQuery.data]);
-  const vitalsAverage = useMemo(() => (vitalsAverageQuery.data ?? null) as GetVitalsAveragesResponse | null, [vitalsAverageQuery.data]);
+  // Data processing
+  const wardSummary = useMemo(
+    () => (wardSummaryQuery.data ?? null) as GetWardSummaryResponse | null,
+    [wardSummaryQuery.data],
+  );
   const alerts = useMemo(() => (alertsQuery.data ?? []) as ListAlertsResponse, [alertsQuery.data]);
-  const caregivers = useMemo(() => (caregiversQuery.data ?? []) as ListCaregiversResponse, [caregiversQuery.data]);
-  const patients = useMemo(() => (patientsQuery.data ?? []) as ListPatientsResponse, [patientsQuery.data]);
+  const patients = useMemo(
+    () => (patientsQuery.data ?? []) as ListPatientsResponse,
+    [patientsQuery.data],
+  );
+  const caregivers = useMemo(
+    () => (caregiversQuery.data ?? []) as ListCaregiversResponse,
+    [caregiversQuery.data],
+  );
   const tasks = useMemo(() => (tasksQuery.data ?? []) as CareTaskOut[], [tasksQuery.data]);
-  const directives = useMemo(() => (directivesQuery.data ?? []) as CareDirectiveOut[], [directivesQuery.data]);
-  const schedules = useMemo(() => (schedulesQuery.data ?? []) as CareScheduleOut[], [schedulesQuery.data]);
-  const timeline = useMemo(() => (timelineQuery.data ?? []) as ListTimelineEventsResponse, [timelineQuery.data]);
+  const schedules = useMemo(
+    () => (schedulesQuery.data ?? []) as CareScheduleOut[],
+    [schedulesQuery.data],
+  );
+  const directives = useMemo(
+    () => (directivesQuery.data ?? []) as CareDirectiveOut[],
+    [directivesQuery.data],
+  );
+  const timeline = useMemo(
+    () => (timelineQuery.data ?? []) as ListTimelineEventsResponse,
+    [timelineQuery.data],
+  );
 
   const patientMap = useMemo(
     () => new Map(patients.map((patient) => [patient.id, patient])),
     [patients],
   );
+
   const activeAlerts = useMemo(
     () => alerts.filter((item) => item.status === "active"),
     [alerts],
   );
+
   const criticalAlerts = useMemo(
     () => activeAlerts.filter((item) => item.severity === "critical"),
     [activeAlerts],
   );
+
   const openTasks = useMemo(
     () => tasks.filter((item) => item.status === "pending" || item.status === "in_progress"),
     [tasks],
   );
+
   const activeDirectives = useMemo(
     () => directives.filter((item) => item.status === "active"),
     [directives],
   );
+
   const upcomingSchedules = useMemo(
     () =>
       [...schedules]
         .filter((item) => item.status === "scheduled")
-        .sort((left, right) => left.starts_at.localeCompare(right.starts_at)),
+        .sort((left, right) => left.starts_at.localeCompare(right.starts_at))
+        .slice(0, 5),
     [schedules],
   );
-  const sortedAlerts = useMemo(
-    () =>
-      [...activeAlerts].sort((left, right) => {
-        if (left.severity !== right.severity) {
-          const order = { critical: 0, warning: 1, low: 2 };
-          return (order[left.severity as keyof typeof order] ?? 3) - (order[right.severity as keyof typeof order] ?? 3);
-        }
-        return right.timestamp.localeCompare(left.timestamp);
-      }),
-    [activeAlerts],
-  );
-  const sortedTasks = useMemo(
-    () =>
-      [...openTasks].sort((left, right) => {
-        const order = { critical: 0, high: 1, normal: 2, low: 3 };
-        const leftRank = order[left.priority as keyof typeof order] ?? 4;
-        const rightRank = order[right.priority as keyof typeof order] ?? 4;
-        if (leftRank !== rightRank) return leftRank - rightRank;
-        if (!left.due_at) return 1;
-        if (!right.due_at) return -1;
-        return left.due_at.localeCompare(right.due_at);
-      }),
-    [openTasks],
-  );
-  const sortedTimeline = useMemo(
-    () =>
-      [...timeline].sort((left, right) => right.timestamp.localeCompare(left.timestamp)),
-    [timeline],
-  );
-  const recentCaregivers = useMemo(
-    () => caregivers.filter((item) => item.is_active).slice(0, 4),
+
+  const onDutyStaff = useMemo(
+    () => caregivers.filter((c) => c.is_active).slice(0, 8),
     [caregivers],
   );
 
-  const topAlerts = sortedAlerts.slice(0, view === "today" ? 3 : 8);
-  const topTasks = sortedTasks.slice(0, view === "today" ? 3 : 8);
-  const topTimeline = sortedTimeline.slice(0, view === "today" ? 4 : 10);
-  const topSchedules = upcomingSchedules.slice(0, view === "today" ? 3 : 6);
+  const sortedAlerts = useMemo(
+    () =>
+      [...activeAlerts]
+        .sort((left, right) => {
+          const order = { critical: 0, warning: 1, low: 2 };
+          const leftRank = order[left.severity as keyof typeof order] ?? 3;
+          const rightRank = order[right.severity as keyof typeof order] ?? 3;
+          if (leftRank !== rightRank) return leftRank - rightRank;
+          return right.timestamp.localeCompare(left.timestamp);
+        })
+        .slice(0, 6),
+    [activeAlerts],
+  );
 
-  const nav = [
-    { key: "today" as const, label: t("headNurse.today") },
-    { key: "alerts" as const, label: t("headNurse.alerts") },
-    { key: "tasks" as const, label: t("headNurse.tasks") },
-    { key: "timeline" as const, label: t("headNurse.timeline") },
-  ];
+  const sortedTasks = useMemo(
+    () =>
+      [...openTasks]
+        .sort((left, right) => {
+          const order = { critical: 0, high: 1, normal: 2, low: 3 };
+          const leftRank = order[left.priority as keyof typeof order] ?? 4;
+          const rightRank = order[right.priority as keyof typeof order] ?? 4;
+          if (leftRank !== rightRank) return leftRank - rightRank;
+          if (!left.due_at) return 1;
+          if (!right.due_at) return -1;
+          return left.due_at.localeCompare(right.due_at);
+        })
+        .slice(0, 6),
+    [openTasks],
+  );
+
+  const recentTimeline = useMemo(
+    () =>
+      [...timeline]
+        .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
+        .slice(0, 5),
+    [timeline],
+  );
+
+  // Mutations
+  const completeTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      await api.updateWorkflowTask(taskId, { status: "completed" });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["head-nurse", "dashboard", "tasks"] });
+    },
+    onSettled: () => setPendingTaskId(null),
+  });
 
   return (
     <div className="space-y-6 pb-6 animate-fade-in">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-foreground">{t("headNurse.title")}</h2>
-        <p className="max-w-3xl text-sm text-muted-foreground">{t("headNurse.subtitle")}</p>
+      {/* Header */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <Stethoscope className="h-3.5 w-3.5" />
+            {t("headNurse.title")}
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
+              {t("headNurse.wardDashboardTitle")}
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+              {t("headNurse.wardDashboardSubtitle")}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/head-nurse/patients">{t("nav.patients")}</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/head-nurse/staff">{t("nav.staff")}</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/head-nurse/tasks">{t("nav.tasks")}</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/head-nurse/alerts">
+              <Bell className="mr-1.5 h-4 w-4" />
+              {t("nav.alerts")}
+            </Link>
+          </Button>
+        </div>
       </div>
 
+      {/* Stats Overview */}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-border/70">
-          <CardContent className="flex items-start gap-3 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {t("headNurse.totalPatients")}
-              </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                {wardSummary?.total_patients ?? patients.length}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {recentCaregivers.length} {t("headNurse.onDutyHint")}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/70">
-          <CardContent className="flex items-start gap-3 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/12 text-red-600">
-              <Bell className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {t("headNurse.activeAlerts")}
-              </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                {wardSummary?.active_alerts ?? alertSummary?.total_active ?? activeAlerts.length}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {criticalAlerts.length} {t("headNurse.criticalAlerts")}
-              </p>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("dash.totalPatients")}</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  {wardSummary?.total_patients ?? patients.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {onDutyStaff.length} {t("headNurse.staffOnDuty")}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border/70">
-          <CardContent className="flex items-start gap-3 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/12 text-amber-600">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {t("headNurse.openTasks")}
-              </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{openTasks.length}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {activeDirectives.length} {t("headNurse.activeDirectives")}
-              </p>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/12 text-red-600">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("dash.activeAlerts")}</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  {activeAlerts.length}
+                </p>
+                <p className="mt-1 text-xs text-red-600">
+                  {criticalAlerts.length} {t("headNurse.criticalAlerts")}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-border/70">
-          <CardContent className="flex items-start gap-3 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600">
-              <CalendarClock className="h-5 w-5" />
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/12 text-amber-600">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.openTasks")}</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  {openTasks.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {activeDirectives.length} {t("headNurse.activeDirectives")}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {t("headNurse.upcomingSchedules")}
-              </p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                {upcomingSchedules.length}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {vitalsAverage?.spo2_avg != null
-                  ? `${vitalsAverage.spo2_avg.toFixed(1)}% SpO2`
-                  : t("headNurse.noVitals")}
-              </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600">
+                <Calendar className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("headNurse.upcomingSchedules")}
+                </p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  {upcomingSchedules.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("headNurse.next24Hours")}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[1.04fr_0.96fr]">
+      {/* Floorplan & Staff Grid */}
+      <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
         <DashboardFloorplanPanel className="min-w-0" openHref="/head-nurse/monitoring" />
 
+        {/* On-Duty Staff */}
         <Card className="border-border/70">
-          <CardHeader className="space-y-2 pb-3">
-            <CardTitle className="text-base">{t("headNurse.today")}</CardTitle>
-            <CardDescription>{t("headNurse.subtitle")}</CardDescription>
+          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+            <div>
+              <CardTitle className="text-base">{t("headNurse.onDutyStaffTitle")}</CardTitle>
+              <CardDescription>{t("headNurse.onDutyStaffDesc")}</CardDescription>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/head-nurse/staff">
+                {t("dash.viewAll")}
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-border/70 px-3 py-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.priorityAlerts")}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{topAlerts.length}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{criticalAlerts.length} {t("headNurse.criticalAlerts")}</p>
-            </div>
-            <div className="rounded-xl border border-border/70 px-3 py-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.priorityTasks")}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{topTasks.length}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{topSchedules.length} {t("headNurse.upcomingSchedules")}</p>
-            </div>
-            <div className="rounded-xl border border-border/70 px-3 py-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.timeline")}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{topTimeline.length}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{vitalsAverage?.spo2_avg != null ? `${vitalsAverage.spo2_avg.toFixed(1)}% SpO2` : t("headNurse.noVitals")}</p>
-            </div>
-            <div className="rounded-xl border border-border/70 px-3 py-3">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.totalPatients")}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">{wardSummary?.total_patients ?? patients.length}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{recentCaregivers.length} {t("headNurse.onDutyHint")}</p>
-            </div>
+          <CardContent className="space-y-2">
+            {onDutyStaff.length ? (
+              onDutyStaff.map((caregiver) => (
+                <div
+                  key={caregiver.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-2.5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                      <Stethoscope className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {caregiver.first_name} {caregiver.last_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{caregiver.role}</p>
+                    </div>
+                  </div>
+                  <Badge variant="success">{t("common.active")}</Badge>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
+                <Users className="mx-auto h-8 w-8 text-muted-foreground/50" />
+                <p className="mt-2 text-sm text-muted-foreground">{t("headNurse.noStaffOnDuty")}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="border-border/70">
-        <CardContent className="flex flex-wrap gap-2 p-3">
-          {nav.map((item) => (
-            <Button
-              key={item.key}
-              type="button"
-              variant={view === item.key ? "default" : "outline"}
-              size="sm"
-              onClick={() => setView(item.key)}
-            >
-              {item.label}
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
-
-      {view === "today" ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          <Card className="border-border/70">
-            <CardHeader className="space-y-2 pb-3">
+      {/* Alerts & Tasks Grid */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {/* Priority Alerts */}
+        <Card className="border-border/70">
+          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+            <div>
               <CardTitle className="text-base">{t("headNurse.priorityAlerts")}</CardTitle>
-              <CardDescription>{t("headNurse.priorityAlertsHint")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {topAlerts.length ? topAlerts.map((alert) => (
-                <Link
-                  key={alert.id}
-                  href={alert.patient_id ? `/head-nurse/patients/${alert.patient_id}` : "/head-nurse/alerts"}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{alert.title}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{alert.description}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {alert.patient_id ? (patientMap.get(alert.patient_id)?.first_name ?? "") : t("headNurse.unitWide")}
-                    </p>
-                  </div>
-                  <StatusPill severity={alert.severity as "warning" | "critical"}>{alert.severity}</StatusPill>
-                </Link>
-              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("headNurse.noAlerts")}</p>}
-            </CardContent>
-          </Card>
+              <CardDescription>{t("headNurse.alertsCardDesc")}</CardDescription>
+            </div>
+            <Button asChild size="sm" variant="ghost">
+              <Link href="/head-nurse/alerts">
+                {t("dash.viewAll")}
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {sortedAlerts.length ? (
+              sortedAlerts.map((alert) => {
+                const patient = alert.patient_id ? patientMap.get(alert.patient_id) : null;
+                return (
+                  <Link
+                    key={alert.id}
+                    href={alert.patient_id ? `/head-nurse/patients/${alert.patient_id}` : "/head-nurse/alerts"}
+                    className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium text-foreground">{alert.title}</p>
+                        <Badge
+                          variant={
+                            alert.severity === "critical"
+                              ? "destructive"
+                              : alert.severity === "warning"
+                                ? "warning"
+                                : "secondary"
+                          }
+                          className="shrink-0"
+                        >
+                          {alert.severity}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                        {alert.description}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{patient ? `${patient.first_name} ${patient.last_name}` : t("headNurse.unitWide")}</span>
+                        <span>·</span>
+                        <span>{formatRelativeTime(alert.timestamp)}</span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
+                <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500/50" />
+                <p className="mt-2 text-sm text-muted-foreground">{t("headNurse.noAlerts")}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/70">
-            <CardHeader className="space-y-2 pb-3">
+        {/* Priority Tasks */}
+        <Card className="border-border/70">
+          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+            <div>
               <CardTitle className="text-base">{t("headNurse.priorityTasks")}</CardTitle>
-              <CardDescription>{t("headNurse.priorityTasksHint")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {topTasks.length ? topTasks.map((task) => (
-                <div key={task.id} className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{task.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{task.patient_id ? (patientMap.get(task.patient_id)?.first_name ?? "") : t("headNurse.unitWide")}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{task.due_at ? `${formatDateTime(task.due_at)} - ${formatRelativeTime(task.due_at)}` : t("headNurse.noDueDate")}</p>
-                  </div>
-                  <StatusPill severity={task.priority === "critical" ? "critical" : task.priority === "high" ? "warning" : undefined}>{task.priority}</StatusPill>
-                </div>
-              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("headNurse.noTasks")}</p>}
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70">
-            <CardHeader className="space-y-2 pb-3">
-              <CardTitle className="text-base">{t("headNurse.scheduleSnapshot")}</CardTitle>
-              <CardDescription>{t("headNurse.scheduleSnapshotHint")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {topSchedules.length ? topSchedules.map((schedule) => (
-                <div key={schedule.id} className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{schedule.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{schedule.patient_id ? (patientMap.get(schedule.patient_id)?.first_name ?? "") : t("headNurse.unitWide")}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(schedule.starts_at)}</p>
-                  </div>
-                  <StatusPill>{schedule.schedule_type}</StatusPill>
-                </div>
-              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("headNurse.noSchedules")}</p>}
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70">
-            <CardHeader className="space-y-2 pb-3">
-              <CardTitle className="text-base">{t("headNurse.timelineSnapshot")}</CardTitle>
-              <CardDescription>{t("headNurse.timelineSnapshotHint")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {topTimeline.length ? topTimeline.map((event) => (
-                <div key={event.id} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3">
-                  <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <Clock3 className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-foreground">{event.event_type}</p>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{formatRelativeTime(event.timestamp)}</p>
-                  </div>
-                </div>
-              )) : <p className="rounded-xl border border-dashed border-border/70 px-3 py-3 text-sm text-muted-foreground">{t("headNurse.noTimeline")}</p>}
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
-
-      {view === "alerts" ? (
-        <Card className="border-border/70">
-          <CardHeader className="space-y-2 pb-3">
-            <CardTitle className="text-base">{t("headNurse.alerts")}</CardTitle>
-            <CardDescription>{t("headNurse.alertsHint")}</CardDescription>
+              <CardDescription>{t("supervisor.page.taskQueueDesc")}</CardDescription>
+            </div>
+            <Button asChild size="sm" variant="ghost">
+              <Link href="/head-nurse/tasks">
+                {t("dash.viewAll")}
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
-            {topAlerts.map((alert) => (
-              <div key={alert.id} className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">{alert.title}</p>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{alert.description}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(alert.timestamp)} · {formatRelativeTime(alert.timestamp)}</p>
-                </div>
-                <StatusPill severity={alert.severity as "warning" | "critical"}>{alert.severity}</StatusPill>
+            {sortedTasks.length ? (
+              sortedTasks.map((task) => {
+                const patient = task.patient_id ? patientMap.get(task.patient_id) : null;
+                return (
+                  <div
+                    key={task.id}
+                    className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium text-foreground">{task.title}</p>
+                        <Badge
+                          variant={
+                            task.priority === "critical"
+                              ? "destructive"
+                              : task.priority === "high"
+                                ? "warning"
+                                : "secondary"
+                          }
+                          className="shrink-0"
+                        >
+                          {task.priority}
+                        </Badge>
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{patient ? `${patient.first_name} ${patient.last_name}` : t("headNurse.unitWide")}</span>
+                        {task.due_at && (
+                          <>
+                            <span>·</span>
+                            <span>
+                              {t("headNurse.taskDuePrefix")} {formatDateTime(task.due_at)}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={completeTaskMutation.isPending && pendingTaskId === task.id}
+                      onClick={() => {
+                        setPendingTaskId(task.id);
+                        completeTaskMutation.mutate(task.id);
+                      }}
+                    >
+                      <CheckIcon className="mr-1.5 h-4 w-4" />
+                      {t("tasks.completeTask")}
+                    </Button>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
+                <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500/50" />
+                <p className="mt-2 text-sm text-muted-foreground">{t("headNurse.noTasks")}</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
-      ) : null}
-
-      {view === "tasks" ? (
-        <Card className="border-border/70">
-          <CardHeader className="space-y-2 pb-3">
-            <CardTitle className="text-base">{t("headNurse.tasks")}</CardTitle>
-            <CardDescription>{t("headNurse.tasksHint")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {topTasks.map((task) => (
-              <div key={task.id} className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">{task.title}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{task.description || t("headNurse.noDetails")}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{task.due_at ? `${formatDateTime(task.due_at)} - ${formatRelativeTime(task.due_at)}` : t("headNurse.noDueDate")}</p>
-                </div>
-                <StatusPill severity={task.priority === "critical" ? "critical" : task.priority === "high" ? "warning" : undefined}>{task.priority}</StatusPill>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {view === "timeline" ? (
-        <Card className="border-border/70">
-          <CardHeader className="space-y-2 pb-3">
-            <CardTitle className="text-base">{t("headNurse.timeline")}</CardTitle>
-            <CardDescription>{t("headNurse.timelineHint")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {topTimeline.map((event) => (
-              <div key={event.id} className="flex items-start gap-3 rounded-xl border border-border/70 px-3 py-3">
-                <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                  <Clock3 className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-foreground">{event.event_type}</p>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {(event.patient_id ? (patientMap.get(event.patient_id)?.first_name ?? "") : (event.room_name || t("headNurse.unitWide")))} - {formatRelativeTime(event.timestamp)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {!alerts.length && !tasks.length && !timeline.length ? (
-        <p className="text-sm text-muted-foreground">{t("headNurse.loadingFallback")}</p>
-      ) : null}
+      </div>
     </div>
   );
 }
-
-

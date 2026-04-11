@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
-import { useQuery } from "@/hooks/useQuery";
 import { api, ApiError } from "@/lib/api";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
+import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import type { Facility } from "@/lib/types";
 import EmptyState from "@/components/EmptyState";
 import { Building2, MapPin, Pencil, Plus, Search, Trash2 } from "lucide-react";
@@ -22,7 +24,14 @@ const EMPTY_FORM: FormState = {
 
 export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void } = {}) {
   const { t } = useTranslation();
-  const { data: facilities, isLoading, refetch } = useQuery<Facility[]>("/facilities");
+  const { data: facilities, isLoading, refetch: refetchFacilitiesBase } = useQuery({
+    queryKey: ["admin", "facilities-panel", "list"],
+    queryFn: () => api.get<Facility[]>("/facilities"),
+    staleTime: getQueryStaleTimeMs("/facilities"),
+    refetchInterval: getQueryPollingMs("/facilities"),
+    retry: 3,
+  });
+  const refetch = useCallback(() => refetchOrThrow(refetchFacilitiesBase), [refetchFacilitiesBase]);
   const [search, setSearch] = useState("");
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -113,7 +122,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:gap-6">
         <div className="surface-card p-4 space-y-3 w-full xl:order-2 xl:w-[min(100%,340px)] xl:shrink-0">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-on-surface">
+            <p className="text-sm font-semibold text-foreground">
               {editingId === null ? t("facilities.addNew") : "Edit facility"}
             </p>
             {editingId !== null && (
@@ -157,7 +166,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
 
         <div className="min-w-0 flex-1 xl:order-1">
           {message && (
-            <p className="text-sm text-on-surface-variant mb-3">{message}</p>
+            <p className="text-sm text-foreground-variant mb-3">{message}</p>
           )}
 
           {isLoading ? (
@@ -176,9 +185,9 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
                     <Building2 className="w-5 h-5 text-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-on-surface truncate">{facility.name}</p>
+                    <p className="font-semibold text-foreground truncate">{facility.name}</p>
                     {facility.address && (
-                      <p className="text-xs text-on-surface-variant flex items-center gap-1">
+                      <p className="text-xs text-foreground-variant flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-outline" />
                         <span className="truncate">{facility.address}</span>
                       </p>
@@ -192,7 +201,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
                     onClick={() => startEdit(facility)}
                     aria-label="Edit facility"
                   >
-                    <Pencil className="w-4 h-4 text-on-surface-variant" />
+                    <Pencil className="w-4 h-4 text-foreground-variant" />
                   </button>
                   <button
                     type="button"
@@ -205,7 +214,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
                 </div>
               </div>
               {facility.description && (
-                <p className="text-xs text-on-surface-variant">{facility.description}</p>
+                <p className="text-xs text-foreground-variant">{facility.description}</p>
               )}
             </div>
           ))}

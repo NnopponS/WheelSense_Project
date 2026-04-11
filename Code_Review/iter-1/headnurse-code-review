@@ -1,0 +1,147 @@
+# Head Nurse Frontend — Comprehensive Audit
+
+## Scope
+Full audit of all pages, routes, API integrations, and navigation within the `head-nurse` role workspace.
+
+---
+
+## Route Coverage Analysis
+
+### Sidebar Config vs Filesystem
+
+| Route | In Sidebar? | Reachable Via | Status |
+|---|---|---|---|
+| `/head-nurse` | ✅ Dashboard | Direct nav | ✅ OK |
+| `/head-nurse/calendar` | ✅ | Direct nav | ✅ OK |
+| `/head-nurse/staff` | ✅ | Direct nav + links from dashboard/calendar | ✅ OK |
+| `/head-nurse/patients` | ✅ | Direct nav + links from dashboard | ✅ OK |
+| `/head-nurse/patients/[id]` | — (dynamic) | Link from patients list + dashboard alerts | ✅ OK |
+| `/head-nurse/alerts` | ✅ | Direct nav + links from dashboard | ✅ OK |
+| `/head-nurse/shift-checklists` | ✅ | Direct nav | ✅ OK |
+| `/head-nurse/floorplans` | ✅ | Direct nav | ✅ OK |
+| `/head-nurse/support` | ✅ | Direct nav | ✅ OK |
+| `/head-nurse/settings` | ✅ | Direct nav | ✅ OK (redirect to `/account`) |
+| `/head-nurse/tasks` | ❌ **Missing** | Dashboard link only | ⚠️ Hidden |
+| `/head-nurse/timeline` | ❌ **Missing** | No links found | 🔴 Orphaned |
+| `/head-nurse/messages` | ❌ **Missing** | No sidebar entry | ⚠️ Hidden |
+| `/head-nurse/monitoring` | ❌ **Missing** | No sidebar entry | ⚠️ Hidden |
+| `/head-nurse/specialists` | ❌ **Missing** | No sidebar entry | ⚠️ Hidden |
+| `/head-nurse/workflow` | ❌ **Missing** | Only via reports redirect | ⚠️ Hidden |
+| `/head-nurse/reports` | ❌ **Missing** | No sidebar entry (redirects to workflow) | ⚠️ Hidden |
+
+> [!WARNING]
+> **7 directories** exist in the filesystem but have **no sidebar navigation entry**. The `timeline/` page is fully orphaned with no inbound links.
+
+---
+
+## Per-Page Audit Summary
+
+### ✅ Well-Implemented Pages
+
+| Page | Lines | API Calls | Notes |
+|---|---|---|---|
+| [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/page.tsx) (Dashboard) | 509 | 6 queries | Aggregates alerts, patients, staff, tasks, schedules, ward summary |
+| [patients/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/patients/page.tsx) | 138 | 1 query | Searchable roster with detail links |
+| [patients/[id]/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/patients/%5Bid%5D/page.tsx) | 398 | 5 parallel queries | Vitals, alerts, timeline, devices — excellent detail page |
+| [alerts/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/alerts/page.tsx) | 297 | 2 queries | Filtering + acknowledge/resolve mutations |
+| [staff/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/staff/page.tsx) | 729 | 3 queries | Roster + task/schedule creation forms |
+| [calendar/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/calendar/page.tsx) | 298 | 3 queries | Schedule view with patient/assignee filters |
+| [tasks/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/tasks/page.tsx) | 279 | 2 queries | Calendar task board with status mutations |
+| [timeline/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/timeline/page.tsx) | 217 | 2 queries | Calendar-style activity history with filters |
+| [messages/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/messages/page.tsx) | 370 | 2 queries | Inbox/sent tabs + composition form |
+| [specialists/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/specialists/page.tsx) | 276 | 1 query | Specialist directory with creation form |
+
+### ✅ Wrapper / Redirect Pages
+
+| Page | Wraps | Notes |
+|---|---|---|
+| [shift-checklists/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/shift-checklists/page.tsx) | `ShiftChecklistWorkspaceClient` | Thin wrapper, correct |
+| [floorplans/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/floorplans/page.tsx) | `FloorplanRoleViewer` | Ward occupancy & alerts overlay |
+| [monitoring/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/monitoring/page.tsx) | `StaffMonitoringPage` | Real-time staff tracking |
+| [workflow/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/workflow/page.tsx) | `OperationsConsole` | Tabbed operations view |
+| [support/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/support/page.tsx) | `ReportIssueForm` | Bug/issue reporting |
+| [settings/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/settings/page.tsx) | Redirect → `/account` | Global account page |
+| [reports/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/head-nurse/reports/page.tsx) | Redirect → `/head-nurse/workflow?tab=reports` | Intentional redirect |
+
+---
+
+## Code Quality
+
+| Check | Result |
+|---|---|
+| `console.log` statements | ✅ **None found** |
+| `TODO` / `FIXME` / `HACK` markers | ✅ **None found** |
+| TypeScript types | ✅ All pages use typed API responses from `task-scope-types` |
+| Error handling | ✅ `parseRequestError` helpers used consistently |
+| State management | ✅ TanStack Query with `useMemo` chains |
+| Forms | ✅ `zod` + `react-hook-form` on all create/edit forms |
+| Shared components | ✅ `DataTableCard`, `SummaryStatCard` used consistently |
+| Validation | ✅ Patient detail validates route params before fetching |
+
+---
+
+## Issues Found
+
+### 🔴 Critical: Orphaned Route
+- **`/head-nurse/timeline`** — Exists with a full 217-line implementation but has **zero inbound links** from any other head-nurse page or sidebar. Completely unreachable without direct URL entry.
+
+### ⚠️ High: Missing Sidebar Entries
+The following functional pages have no sidebar navigation. Users can only discover them through deep links or direct URL:
+
+| Page | Suggested Sidebar Category | Priority |
+|---|---|---|
+| `tasks/` | Care (task board) | **High** — Linked from dashboard but should be in nav |
+| `messages/` | Care or Admin (communication) | **High** — Critical role communication tool |
+| `timeline/` | Care (activity history) | **High** — Currently orphaned |
+| `monitoring/` | Care (staff monitoring) | **Medium** — Real-time staff tracker |
+| `specialists/` | Care (specialist directory) | **Medium** — Important for referrals |
+| `workflow/` | Admin (operations console) | **Low** — Accessible via reports redirect |
+
+### ℹ️ Note: Redirect Pages
+- `settings/` → `/account` — Intentional, acceptable
+- `reports/` → `/head-nurse/workflow?tab=reports` — Intentional, but having both a redirect and a hidden workflow page is confusing
+
+---
+
+## What's Working Well
+
+1. **Patient Detail Page** — Excellent implementation with 5 parallel queries, proper param validation, and clear data tables
+2. **Dashboard** — Comprehensive aggregation from 6 data sources with quick-action links
+3. **Staff Management** — Full CRUD with multi-form support (tasks + schedules)
+4. **Alerts** — Real-time filtering with acknowledge/resolve mutations
+5. **Calendar** — Schedule management with patient/assignee filtering
+6. **Consistent Architecture** — All pages follow the same `useQuery` → `useMemo` → `DataTableCard` pattern
+7. **Clean Codebase** — No debug statements, no TODOs, full TypeScript typing
+
+---
+
+## Recommended Actions
+
+### Immediate (sidebar fix)
+Add missing routes to [sidebarConfig.ts](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/lib/sidebarConfig.ts#L83-104):
+
+```diff
+ {
+   categoryKey: "nav.category.care",
+   items: [
+     { key: "nav.dashboard", href: "/head-nurse", icon: LayoutDashboard },
+     { key: "nav.calendar", href: "/head-nurse/calendar", icon: Calendar, requiredCapability: "schedule.manage" },
+     { key: "nav.caregivers", href: "/head-nurse/staff", icon: UserCog, requiredCapability: "caregivers.read" },
+     { key: "nav.patients", href: "/head-nurse/patients", icon: Users, requiredCapability: "patients.read" },
+     { key: "nav.alerts", href: "/head-nurse/alerts", icon: Bell, requiredCapability: "alerts.read", badge: "alerts" },
++    { key: "nav.tasks", href: "/head-nurse/tasks", icon: ClipboardList, requiredCapability: "tasks.read" },
++    { key: "nav.timeline", href: "/head-nurse/timeline", icon: Clock },
++    { key: "nav.messages", href: "/head-nurse/messages", icon: MessageSquare },
+     { key: "nav.shiftChecklists", href: "/head-nurse/shift-checklists", icon: ListChecks },
+     { key: "nav.floorplans", href: "/head-nurse/floorplans", icon: MapPin, requiredCapability: "facilities.read" },
++    { key: "nav.monitoring", href: "/head-nurse/monitoring", icon: Monitor },
++    { key: "nav.specialists", href: "/head-nurse/specialists", icon: Stethoscope },
+     { key: "nav.reportIssue", href: "/head-nurse/support", icon: Bug },
+   ],
+ },
+```
+
+### Follow-up
+- Remove `reports/` redirect if `workflow/` gets a sidebar entry (or keep both)
+- Add `refetchInterval` to the timeline page for real-time updates
+- Add E2E tests for the dashboard's data aggregation chain

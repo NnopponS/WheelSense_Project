@@ -14,6 +14,7 @@ COPY alembic.ini ./
 COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
 COPY seed_device_extras.py ./
+COPY sim_controller.py ./
 
 EXPOSE 8000
 

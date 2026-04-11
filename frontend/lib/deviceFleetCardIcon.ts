@@ -54,7 +54,7 @@ export function registryDeviceCardPresentation(
   return {
     Icon: Tablet,
     wrapClass: "bg-surface-container-high",
-    iconClass: "text-on-surface-variant",
+    iconClass: "text-muted-foreground",
   };
 }
 

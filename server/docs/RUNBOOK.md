@@ -1,8 +1,129 @@
 # WheelSense Server Runbook
 
+## Dual-Environment Setup (Simulator vs Production)
+
+WheelSense now supports two distinct runtime environments:
+
+| Environment | Purpose | Database | Pre-populated Data |
+|-------------|---------|----------|-------------------|
+| **Simulator** | Testing, demos, development | `pgdata-sim` | Yes (patients, staff, devices) |
+| **Production** | Real-world deployment | `pgdata-prod` | No (clean start) |
+
+Both environments use the **same Docker project name** (`wheelsense-platform`), the **same application images** (`wheelsense-platform-server`, `wheelsense-platform-web`), and a shared [`docker-compose.core.yml`](../docker-compose.core.yml). Entry files [`docker-compose.yml`](../docker-compose.yml) and [`docker-compose.sim.yml`](../docker-compose.sim.yml) use Compose [`include`](https://docs.docker.com/compose/how-tos/multiple-compose-files/include/) to merge the core stack with exactly one database fragment ([`docker-compose.data-prod.yml`](../docker-compose.data-prod.yml) vs [`docker-compose.data-mock.yml`](../docker-compose.data-mock.yml)). The Postgres service is always named `db` inside the stack; only the named volume differs (`pgdata-prod` vs `pgdata-sim`).
+
+Requires **Docker Compose v2.20+** (e.g. Docker Desktop 4.24+) for `include`. Fallback without `include`:
+
+```bash
+cd server
+docker compose -f docker-compose.core.yml -f docker-compose.data-mock.yml up -d --build   # mock/sim
+docker compose -f docker-compose.core.yml -f docker-compose.data-prod.yml up -d --build   # production DB
+```
+
+Both environments share the same MQTT broker (`mosquitto`) and topics, but use completely isolated PostgreSQL volumes. This means:
+- Data modifications in Simulator do NOT affect Production
+- Data modifications in Production do NOT affect Simulator
+- You can switch between environments without losing data in either
+
+### Quick Start with Helper Scripts
+
+**Windows (PowerShell):**
+```powershell
+cd server\scripts
+.\start-sim.ps1        # Start mock/sim environment (docker-compose.sim.yml)
+.\start-prod.ps1      # Start production-DB environment (docker-compose.yml)
+.\docker-up.ps1 -Mode mock -Detach   # Alternative: explicit prod | mock
+```
+
+**Unix/Linux/macOS (Bash):**
+```bash
+cd server/scripts
+./start-sim.sh         # Start simulator environment
+./start-prod.sh        # Start production environment
+```
+
+**Script Options:**
+- `-Build` / `--build` - Rebuild containers before starting
+- `-Reset` / `--reset` - Clear data volumes and start fresh (requires confirmation)
+- `-Detach` / `--detach` - Run in background (detached mode)
+
+### Short command: `docker compose up --build -d` (sim or prod)
+
+Compose reads **`COMPOSE_FILE`** from the environment (and from a `server/.env` file in the project directory when you run `docker compose` from `server/`).
+
+1. In `server/.env` (local only; do not commit secrets), set **one** of:
+   - `COMPOSE_FILE=docker-compose.sim.yml` — mock/sim DB + simulator (same as `-f docker-compose.sim.yml`)
+   - `COMPOSE_FILE=docker-compose.yml` — production DB (default stack)
+2. From `server/` run:
+
+```bash
+docker compose up --build -d
+```
+
+Correct flag order is **`up` then `--build`** (`docker compose up --build -d`). There is no `docker compose --build -d`.
+
+Switching sim vs prod: change `COMPOSE_FILE` in `server/.env` (or unset) and run the same command again; stop the other stack first if ports are busy (`docker compose down` with the previous `COMPOSE_FILE`, or use `scripts/start-sim.ps1` / `start-prod.ps1` which stop the opposite entry for you).
+
+### Faster iteration (avoid long image rebuilds)
+
+- **Frontend only:** after the stack is up once, you can stop the web container and run `npm run dev` in `frontend/` (see “Without Dockerized Frontend” in `server/docs/CONTRIBUTING.md`). Rebuild the Docker web image only when you care about the production-like bundle.
+- **Backend only (local):** run Postgres + Mosquitto in Docker and `uvicorn app.main:app --reload` on the host against `DATABASE_URL` pointing at `localhost:5433` (see `server/docs/ENV.md`).
+- **Cached rebuilds:** normal `docker compose up --build -d` reuses layers; use `build --no-cache` only when dependencies or base image must be refreshed.
+
+### Manual Docker Compose Commands
+
+**Start Simulator Environment:**
+```bash
+cd server
+docker compose -f docker-compose.sim.yml up -d --build
+```
+
+**Start Production Environment:**
+```bash
+cd server
+docker compose up -d --build
+```
+
+**Important:** You should only run ONE environment at a time to avoid port conflicts. The helper scripts automatically stop the other environment before starting.
+
+### Environment Differences
+
+| Feature | Simulator | Production |
+|---------|-----------|------------|
+| Compose entry | `docker-compose.sim.yml` (core + mock DB + simulator) | `docker-compose.yml` (core + prod DB) |
+| ENV_MODE | `simulator` | `production` |
+| Database volume | `pgdata-sim` | `pgdata-prod` |
+| Auto-seeding | Yes (`seed_sim_team.py`) | No (clean) |
+| MQTT Simulator | Yes (`wheelsense-simulator` service) | No |
+| Reset capability | Yes (via Admin Settings) | No (full clear only) |
+
+### Simulator Reset
+
+When running in Simulator mode, admins can reset the environment to baseline state:
+
+1. Navigate to `/admin/settings`
+2. Click the "Server" tab
+3. Find the "Simulator Environment" section
+4. Click "Reset Simulator Data"
+
+This will:
+- Clear all dynamic data (alerts, vitals, tasks, etc.)
+- Preserve the workspace and facility structure
+- Re-seed baseline demo patients, staff, and devices
+- Update the displayed statistics
+
+**API Endpoint:** `POST /api/demo/simulator/reset` (admin only)
+
+**API Endpoint:** `GET /api/demo/simulator/status` (any authenticated workspace user — read-only; used by the web TopBar)
+
+### Environment Indicator
+
+When logged in as an admin in Simulator mode, the TopBar displays an orange "SIM" badge next to the role switcher.
+
+---
+
 ## Standard Operations
 
-### Start or refresh the full stack
+### Start or refresh the full stack (Production mode)
 
 ```bash
 cd server
@@ -17,6 +138,34 @@ docker compose -f docker-compose.yml -f docker-compose.no-web.yml up -d
 ```
 
 Then run `npm run dev` from `../frontend`.
+
+### Legacy: Synthetic MQTT simulator (optional profile - DEPRECATED)
+
+The `wheelsense-simulator` service is **not** started by default. It publishes fake `WheelSense/data` (and related flows) and **exits with code 1** if the target workspace has no rooms or no active patient device assignments, which would restart-loop under `restart: unless-stopped`.
+
+**Production-style stack (no simulator):**
+
+```bash
+cd server
+docker compose up -d --build
+```
+
+**Dev stack with simulator:**
+
+1. The `wheelsense-simulator` container runs `python scripts/seed_sim_team.py` **before** `sim_controller.py`, so the demo workspace gets rooms, patients, staff users, and the bootstrap admin is moved onto that workspace (same as a manual seed). You can still run `seed_demo.py` / `seed_sim_team.py` yourself when not using Docker.
+2. Optionally set `SIM_WORKSPACE_ID` in `server/.env` to pin a workspace id. If unset, `sim_controller` prefers the workspace named `BOOTSTRAP_DEMO_WORKSPACE_NAME` (default **WheelSense Demo Workspace**), then the workspace with the most active `PatientDeviceAssignment` rows, then the highest workspace id.
+3. Start the profile:
+
+```bash
+cd server
+docker compose --profile simulator up -d --build
+```
+
+Stop only the simulator:
+
+```bash
+docker compose stop wheelsense-simulator
+```
 
 ### Follow logs
 
@@ -157,6 +306,38 @@ docker compose exec wheelsense-platform-server alembic history
 
 ## Notes On Optional Services
 
+- **Dual-Environment Setup**: Use `docker-compose.sim.yml` (mock DB + simulator) or `docker-compose.yml` (production DB). Both merge [`docker-compose.core.yml`](../docker-compose.core.yml) and share MQTT; Postgres volumes are isolated (`pgdata-sim` vs `pgdata-prod`).
+- `wheelsense-simulator` is defined only in [`docker-compose.data-mock.yml`](../docker-compose.data-mock.yml) (included by `docker-compose.sim.yml`). Set `SIM_WORKSPACE_ID` to pin the workspace.
 - `copilot-cli` is opt-in via the `copilot` profile
-- `homeassistant` is part of the default Compose stack
-- the old Ollama service block is currently commented out in `docker-compose.yml`; the current default is host-native Ollama via `host.docker.internal` unless that block is restored
+- `homeassistant` is part of the core stack (both entries)
+- the old Ollama service block is commented out in `docker-compose.core.yml`; the current default is host-native Ollama via `host.docker.internal` unless that block is restored
+
+## Volume Management
+
+### List Docker volumes
+```bash
+docker volume ls | grep wheelsense
+```
+
+### Backup Simulator Data
+```bash
+cd server
+docker compose -f docker-compose.sim.yml exec db pg_dump -U wheelsense wheelsense > backup-sim.sql
+```
+
+### Backup Production Data
+```bash
+cd server
+docker compose exec db pg_dump -U wheelsense wheelsense > backup-prod.sql
+```
+
+### Completely Remove All Data (DANGER)
+```bash
+cd server
+# Stop whichever stack was last used (same project name; one entry file is enough)
+docker compose -f docker-compose.yml down
+# or: docker compose -f docker-compose.sim.yml down
+
+# Remove all volumes (THIS DELETES ALL DATA)
+docker volume rm wheelsense-platform_pgdata-prod wheelsense-platform_pgdata-sim 2>/dev/null || true
+```

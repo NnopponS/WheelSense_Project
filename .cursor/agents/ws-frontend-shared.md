@@ -16,8 +16,35 @@ work. Use the fast/default model for copy tweaks and isolated UI edits.
 - `frontend/app/login/**`
 - shared files under `frontend/components/`
 - shared files under `frontend/lib/`, especially `api.ts`, `types.ts`,
-  `constants.ts`, and `i18n.tsx`
+  `constants.ts`, `i18n.tsx`, and **NEW** `sidebarConfig.ts`
 - `frontend/proxy.ts`
+
+## New Unified Navigation System (UI Redesign 2026-04-10)
+
+### Core Navigation Components
+- `RoleSidebar.tsx` — Unified sidebar for all roles (replaces 5 old sidebars)
+- `RoleShell.tsx` — Unified layout shell with auth/role guards
+- `sidebarConfig.ts` — Single source of truth for role navigation configs
+
+### Dashboard Components
+- `KPIStatCard.tsx` — Key metric stat card
+- `RoomSubCard.tsx` — Room summary sub-card
+- `RoomDetailPopup.tsx` — Room detail popup overlay
+- `TaskChecklistCard.tsx` — Task checklist card component
+- `WardOverviewGrid.tsx` — Ward overview grid layout
+
+### Calendar Components
+- `CalendarView.tsx` — Full calendar view component
+- `AgendaView.tsx` — Agenda/list view for schedules
+- `ScheduleForm.tsx` — Schedule creation/editing form
+
+### Notification System
+- `useNotifications.ts` — Notification state hook
+- `NotificationBell.tsx` — Notification bell icon with badge (integrated in `TopBar.tsx`)
+- `NotificationDrawer.tsx` — Notification list drawer
+
+### Updated Components
+- `TopBar.tsx` — Now includes `NotificationBell` integration
 
 ## Reads before edit
 
@@ -27,8 +54,8 @@ work. Use the fast/default model for copy tweaks and isolated UI edits.
 
 ## Parallel
 
-- Hotspots: `TopBar.tsx`, `*Sidebar.tsx`, `frontend/lib/constants.ts`,
-  `frontend/lib/types.ts`
+- Hotspots: `TopBar.tsx`, `RoleSidebar.tsx`, `RoleShell.tsx`, `frontend/lib/constants.ts`,
+  `frontend/lib/types.ts`, `frontend/lib/sidebarConfig.ts`
 - Serialize these hotspots with the role lanes or finish with one integration
   pass
 

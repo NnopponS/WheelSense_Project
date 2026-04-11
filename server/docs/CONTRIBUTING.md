@@ -22,12 +22,38 @@ alembic upgrade head
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## Full Stack
+## Full Stack (Production Mode)
 
 ```bash
 cd server
 docker compose up -d --build
 ```
+
+## Full Stack (Simulator / Mock DB Mode)
+
+Mock/sim mode uses the same app images as production but a separate Postgres volume (`pgdata-sim`) and the `wheelsense-simulator` service (see `docker-compose.core.yml` + `docker-compose.data-mock.yml`, merged via `docker-compose.sim.yml`).
+
+```bash
+cd server
+docker compose -f docker-compose.sim.yml up -d --build
+```
+
+Or use the helper scripts:
+
+```bash
+# Windows PowerShell
+cd server\scripts
+.\start-sim.ps1    # Mock/sim (stops production entry first)
+.\start-prod.ps1   # Production DB (stops sim entry first)
+.\docker-up.ps1 -Mode mock -Detach
+
+# Unix/Linux/macOS
+cd server/scripts
+./start-sim.sh     # Mock/sim
+./start-prod.sh    # Production DB
+```
+
+## Without Dockerized Frontend
 
 To run the API stack without the Dockerized frontend:
 
@@ -53,21 +79,43 @@ Read these before editing backend code:
 
 ## Useful Commands
 
+<!-- AUTO-GENERATED:server-commands — synced from repo scripts and docker-compose; update when adding CLI/pytest targets -->
+
 | Command | Description |
 |---------|-------------|
 | `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000` | Run local API server |
-| `docker compose up -d --build` | Rebuild and start the full stack |
-| `docker compose logs -f wheelsense-platform-server` | Follow API logs |
+| **Production Environment** ||
+| `docker compose up -d --build` | Start production stack (core + prod DB; clean `pgdata-prod`) |
+| `docker compose logs -f wheelsense-platform-server` | Follow API logs (same container name in both modes) |
+| **Mock / simulator** ||
+| `docker compose -f docker-compose.sim.yml up -d --build` | Start mock stack (core + sim DB + synthetic MQTT) |
+| `docker compose -f docker-compose.sim.yml logs -f wheelsense-platform-server` | Follow API logs in mock mode |
+| **Helper Scripts (Recommended)** ||
+| `scripts/start-sim.ps1` or `start-sim.sh` | Start mock/sim entry (auto-stops production entry first) |
+| `scripts/start-prod.ps1` or `start-prod.sh` | Start production entry (auto-stops sim entry first) |
+| `scripts/docker-up.ps1 -Mode prod` or `-Mode mock` (optional `-Detach`, `-Build`) | Windows: pick DB mode explicitly |
+| `scripts/start-sim.ps1 -Build` | Rebuild containers before starting |
+| `scripts/start-sim.ps1 -Reset` | Clear simulator volumes and start fresh |
+| **Development** ||
 | `alembic upgrade head` | Apply all migrations |
 | `alembic revision --autogenerate -m "..."` | Create a migration |
 | `python -m pytest tests/ --ignore=scripts/ -q` | Full backend regression suite |
 | `python -m pytest tests/test_mqtt_handler.py tests/test_mqtt_phase4.py -q` | MQTT-focused tests |
 | `python -m pytest tests/test_api.py -q` | API/regression tests |
 | `python -m pytest tests/test_mcp_server.py -q` | MCP tests |
+| **Seeding (Manual)** ||
+| `python scripts/seed_demo.py` | Full demo workspace seed (legacy) |
+| `python scripts/seed_sim_team.py` | Minimal simulator-ready seed (used by docker-compose.sim.yml) |
+| `python scripts/seed_production.py` | Production-quality demo seed (for testing production setup) |
+| `python scripts/clear_database.py` | Clear app data (see script `--help`) |
+| **Legacy (Profile-based simulator)** ||
+| `docker compose --profile simulator up -d --build` | ⚠️ DEPRECATED: Use `docker-compose.sim.yml` instead |
 | `python cli.py` | Operator CLI |
-| `python sim_controller.py` | Simulation controller |
+| `python sim_controller.py --routine` | Headless routine sim (auto-started in simulator compose) |
 
-Frontend commands live in `frontend/package.json`.
+<!-- END AUTO-GENERATED:server-commands -->
+
+Frontend `package.json` scripts are summarized under `<!-- AUTO-GENERATED:frontend-scripts -->` in `frontend/README.md`.
 
 ## Testing Notes
 
@@ -84,3 +132,4 @@ Frontend commands live in `frontend/package.json`.
 - [ ] Migration added for schema changes
 - [ ] Tests updated
 - [ ] `server/AGENTS.md` and related workflow docs updated if behavior changed
+- [ ] Dual-environment setup verified (test in simulator mode if applicable)

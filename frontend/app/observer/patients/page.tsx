@@ -1,23 +1,43 @@
 ﻿"use client";
 "use no memo";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ClipboardList, MessageSquare, NotebookPen, Search, Users } from "lucide-react";
+import { ClipboardList, MessageSquare, NotebookPen, Pill, Search, Users } from "lucide-react";
+import ObserverPrescriptionsPage from "@/app/observer/prescriptions/page";
+import { useHubTab, HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import type {
   CareTaskOut,
   ListPatientsResponse,
   ListWorkflowHandoversResponse,
   ListWorkflowMessagesResponse,
 } from "@/lib/api/task-scope-types";
+
+const TABS: HubTab[] = [
+  { key: "patients", label: "Patients", icon: Users },
+  { key: "prescriptions", label: "Prescriptions", icon: Pill },
+];
+
+export default function ObserverPatientsPage() {
+  const tab = useHubTab(TABS);
+  return (
+    <div>
+      <Suspense><HubTabBar tabs={TABS} /></Suspense>
+      {tab === "patients" && <PatientsContent />}
+      {tab === "prescriptions" && <ObserverPrescriptionsPage />}
+    </div>
+  );
+}
 
 type PatientRow = {
   id: number;
@@ -30,7 +50,21 @@ type PatientRow = {
   handoverCount: number;
 };
 
-export default function ObserverPatientsPage() {
+function observerCareLevelKey(level: string): TranslationKey {
+  switch (level) {
+    case "critical":
+      return "patients.careLevelCritical";
+    case "special":
+      return "patients.careLevelSpecial";
+    case "standard":
+      return "patients.careLevelStandard";
+    default:
+      return "patients.careLevelStandard";
+  }
+}
+
+function PatientsContent() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
 
   const patientsQuery = useQuery({
@@ -114,19 +148,20 @@ export default function ObserverPatientsPage() {
     () => [
       {
         accessorKey: "fullName",
-        header: "Patient",
+        header: t("patients.colPatient"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
             <p className="text-xs text-muted-foreground">
-              {row.original.nickname || "No nickname"} • ID #{row.original.id}
+              {row.original.nickname || t("observer.patients.noNickname")} • {t("patients.recordId")} #
+              {row.original.id}
             </p>
           </div>
         ),
       },
       {
         accessorKey: "careLevel",
-        header: "Care level",
+        header: t("observer.patients.careLevel"),
         cell: ({ row }) => (
           <Badge
             variant={
@@ -137,38 +172,41 @@ export default function ObserverPatientsPage() {
                   : "success"
             }
           >
-            {row.original.careLevel}
+            {t(observerCareLevelKey(row.original.careLevel))}
           </Badge>
         ),
       },
       {
         accessorKey: "roomId",
-        header: "Room",
-        cell: ({ row }) => (row.original.roomId != null ? `Room #${row.original.roomId}` : "Unassigned"),
+        header: t("observer.patients.room"),
+        cell: ({ row }) =>
+          row.original.roomId != null
+            ? `${t("patients.roomPrefix")} #${row.original.roomId}`
+            : t("observer.patients.unassigned"),
       },
       {
         accessorKey: "openTaskCount",
-        header: "Open tasks",
+        header: t("observer.patients.openTasks"),
       },
       {
         accessorKey: "unreadMessageCount",
-        header: "Unread messages",
+        header: t("observer.patients.unreadMessages"),
       },
       {
         accessorKey: "handoverCount",
-        header: "Handovers",
+        header: t("observer.patients.handovers"),
       },
       {
         id: "actions",
         header: "",
         cell: ({ row }) => (
           <Button asChild size="sm" variant="outline">
-            <Link href={`/observer/patients/${row.original.id}`}>Open detail</Link>
+            <Link href={`/observer/patients/${row.original.id}`}>{t("observer.patients.openDetail")}</Link>
           </Button>
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const openTaskTotal = tasks.filter(
@@ -185,17 +223,15 @@ export default function ObserverPatientsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">My Patients</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Track patient-level tasks, unread role messages, and handover context.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("observer.patients.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("observer.patients.subtitle")}</p>
       </div>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryStatCard icon={Users} label="Assigned patients" value={patients.length} tone="info" />
-        <SummaryStatCard icon={ClipboardList} label="Open tasks" value={openTaskTotal} tone="warning" />
-        <SummaryStatCard icon={MessageSquare} label="Unread messages" value={unreadTotal} tone="warning" />
-        <SummaryStatCard icon={NotebookPen} label="Recent handovers" value={handovers.length} tone="info" />
+        <SummaryStatCard icon={Users} label={t("observer.patients.assignedPatients")} value={patients.length} tone="info" />
+        <SummaryStatCard icon={ClipboardList} label={t("observer.patients.openTasks")} value={openTaskTotal} tone="warning" />
+        <SummaryStatCard icon={MessageSquare} label={t("observer.patients.unreadMessages")} value={unreadTotal} tone="warning" />
+        <SummaryStatCard icon={NotebookPen} label={t("observer.patients.recentHandovers")} value={handovers.length} tone="info" />
       </section>
 
       <div className="relative max-w-md">
@@ -203,18 +239,18 @@ export default function ObserverPatientsPage() {
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search patient by name, nickname, or ID"
+          placeholder={t("observer.patients.searchPlaceholder")}
           className="pl-9"
         />
       </div>
 
       <DataTableCard
-        title="Patient Coverage"
-        description="Observer patient list with operational message and task indicators."
+        title={t("observer.patients.coverageTitle")}
+        description={t("observer.patients.coverageDesc")}
         data={rows}
         columns={columns}
         isLoading={isLoadingAny}
-        emptyText="No patients match your search."
+        emptyText={t("observer.patients.noMatch")}
       />
     </div>
   );

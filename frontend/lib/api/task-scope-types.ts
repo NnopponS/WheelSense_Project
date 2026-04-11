@@ -51,6 +51,15 @@ export type RoleMessageCreateInput = components["schemas"]["RoleMessageCreate"];
 export type HandoverNoteOut = components["schemas"]["HandoverNoteOut"];
 export type PharmacyOrderOut = components["schemas"]["PharmacyOrderOut"];
 export type PharmacyOrderRequestInput = components["schemas"]["PharmacyOrderRequest"];
+export type ServiceRequestOut = components["schemas"]["ServiceRequestOut"];
+export type ServiceRequestCreateInput = components["schemas"]["ServiceRequestCreateIn"];
+export type ServiceRequestPatchInput = components["schemas"]["ServiceRequestPatchIn"];
+export type SupportTicketOut = components["schemas"]["SupportTicketOut"];
+export type SupportTicketCreateInput = components["schemas"]["SupportTicketCreateIn"];
+export type SupportTicketPatchInput = components["schemas"]["SupportTicketPatchIn"];
+export type SupportTicketCommentOut = components["schemas"]["SupportTicketCommentOut"];
+export type SupportTicketCommentCreateInput = components["schemas"]["SupportTicketCommentCreateIn"];
+export type SupportTicketAttachmentOut = components["schemas"]["SupportTicketAttachmentOut"];
 export type FloorplanPresenceOut = components["schemas"]["FloorplanPresenceOut"];
 export type SmartDeviceResponse = components["schemas"]["SmartDeviceResponse"];
 export type HADeviceControlInput = components["schemas"]["HADeviceControl"];
@@ -86,11 +95,11 @@ export type ListWorkflowSchedulesResponse = JsonResponse<
 export type ListWorkflowAuditResponse = JsonResponse<
   operations["query_audit_trail_api_workflow_audit_get"]
 >;
-export type ListFuturePrescriptionsResponse = JsonResponse<
-  operations["list_prescriptions_api_future_prescriptions_get"]
+export type ListPrescriptionsResponse = JsonResponse<
+  operations["list_prescriptions_api_medication_prescriptions_get"]
 >;
-export type ListFutureSpecialistsResponse = JsonResponse<
-  operations["list_specialists_api_future_specialists_get"]
+export type ListSpecialistsResponse = JsonResponse<
+  operations["list_specialists_api_care_specialists_get"]
 >;
 export type ListLocalizationPredictionsResponse = JsonResponse<
   operations["list_predictions_api_localization_predictions_get"]
@@ -113,6 +122,12 @@ export type GetWardSummaryResponse = JsonResponse<
 export type ListWorkflowMessagesResponse = JsonResponse<
   operations["list_messages_api_workflow_messages_get"]
 >;
+export type ListSupportTicketsResponse = JsonResponse<
+  operations["list_support_tickets_api_support_tickets_get"]
+>;
+export type ListServiceRequestsResponse = JsonResponse<
+  operations["list_service_requests_api_services_requests_get"]
+>;
 export type ListWorkflowHandoversResponse = JsonResponse<
   operations["list_handover_notes_api_workflow_handovers_get"]
 >;
@@ -122,11 +137,14 @@ export type ListPatientDeviceAssignmentsResponse = JsonResponse<
 export type ListSmartDevicesResponse = JsonResponse<
   operations["list_smart_devices_api_ha_devices_get"]
 >;
+export type GetSmartDeviceStateResponse = JsonResponse<
+  operations["get_device_state_api_ha_devices__device_id__state_get"]
+>;
 export type ListPharmacyOrdersResponse = JsonResponse<
-  operations["list_pharmacy_orders_api_future_pharmacy_orders_get"]
+  operations["list_pharmacy_orders_api_medication_pharmacy_orders_get"]
 >;
 export type GetFloorplanPresenceResponse = JsonResponse<
-  operations["get_floorplan_presence_api_future_floorplans_presence_get"]
+  operations["get_floorplan_presence_api_floorplans_presence_get"]
 >;
 
 export type UpdatePatientRequest = JsonRequest<
@@ -146,6 +164,18 @@ export type UpdateWorkflowTaskRequest = JsonRequest<
 export type CreateWorkflowTaskRequest = JsonRequest<
   operations["create_task_api_workflow_tasks_post"]
 >;
+export type UpdateSupportTicketRequest = JsonRequest<
+  operations["patch_support_ticket_api_support_tickets__ticket_id__patch"]
+>;
+export type AddSupportTicketCommentRequest = JsonRequest<
+  operations["add_support_ticket_comment_api_support_tickets__ticket_id__comments_post"]
+>;
+export type CreateServiceRequestRequest = JsonRequest<
+  operations["create_service_request_api_services_requests_post"]
+>;
+export type UpdateServiceRequestRequest = JsonRequest<
+  operations["update_service_request_api_services_requests__request_id__patch"]
+>;
 export type UpdateWorkflowScheduleRequest = JsonRequest<
   operations["update_schedule_api_workflow_schedules__schedule_id__patch"]
 >;
@@ -158,11 +188,11 @@ export type AcknowledgeWorkflowDirectiveRequest = JsonRequest<
 export type CreateWorkflowDirectiveRequest = JsonRequest<
   operations["create_directive_api_workflow_directives_post"]
 >;
-export type CreateFuturePrescriptionRequest = JsonRequest<
-  operations["create_prescription_api_future_prescriptions_post"]
+export type CreatePrescriptionRequest = JsonRequest<
+  operations["create_prescription_api_medication_prescriptions_post"]
 >;
-export type CreateFutureSpecialistRequest = JsonRequest<
-  operations["create_specialist_api_future_specialists_post"]
+export type CreateSpecialistRequest = JsonRequest<
+  operations["create_specialist_api_care_specialists_post"]
 >;
 export type SendWorkflowMessageRequest = JsonRequest<
   operations["send_message_api_workflow_messages_post"]
@@ -181,7 +211,7 @@ export type ControlSmartDeviceRequest = JsonRequest<
   operations["control_smart_device_api_ha_devices__device_id__control_post"]
 >;
 export type RequestPharmacyOrderRequest = JsonRequest<
-  operations["request_pharmacy_order_api_future_pharmacy_orders_request_post"]
+  operations["request_pharmacy_order_api_medication_pharmacy_orders_request_post"]
 >;
 
 export type DeviceActivityEventOut = components["schemas"]["DeviceActivityEventOut"];
@@ -204,6 +234,18 @@ export type UpdateWorkflowTaskResponse = JsonResponse<
 export type CreateWorkflowTaskResponse = JsonResponseCreated<
   operations["create_task_api_workflow_tasks_post"]
 >;
+export type UpdateSupportTicketResponse = JsonResponse<
+  operations["patch_support_ticket_api_support_tickets__ticket_id__patch"]
+>;
+export type AddSupportTicketCommentResponse = JsonResponseCreated<
+  operations["add_support_ticket_comment_api_support_tickets__ticket_id__comments_post"]
+>;
+export type CreateServiceRequestResponse = JsonResponseCreated<
+  operations["create_service_request_api_services_requests_post"]
+>;
+export type UpdateServiceRequestResponse = JsonResponse<
+  operations["update_service_request_api_services_requests__request_id__patch"]
+>;
 export type UpdateWorkflowScheduleResponse = JsonResponse<
   operations["update_schedule_api_workflow_schedules__schedule_id__patch"]
 >;
@@ -216,11 +258,11 @@ export type AcknowledgeWorkflowDirectiveResponse = JsonResponse<
 export type CreateWorkflowDirectiveResponse = JsonResponseCreated<
   operations["create_directive_api_workflow_directives_post"]
 >;
-export type CreateFuturePrescriptionResponse = JsonResponseCreated<
-  operations["create_prescription_api_future_prescriptions_post"]
+export type CreatePrescriptionResponse = JsonResponseCreated<
+  operations["create_prescription_api_medication_prescriptions_post"]
 >;
-export type CreateFutureSpecialistResponse = JsonResponseCreated<
-  operations["create_specialist_api_future_specialists_post"]
+export type CreateSpecialistResponse = JsonResponseCreated<
+  operations["create_specialist_api_care_specialists_post"]
 >;
 export type SendWorkflowMessageResponse = JsonResponseCreated<
   operations["send_message_api_workflow_messages_post"]
@@ -236,5 +278,35 @@ export type ControlSmartDeviceResponse = JsonResponse<
   operations["control_smart_device_api_ha_devices__device_id__control_post"]
 >;
 export type RequestPharmacyOrderResponse = JsonResponseCreated<
-  operations["request_pharmacy_order_api_future_pharmacy_orders_request_post"]
+  operations["request_pharmacy_order_api_medication_pharmacy_orders_request_post"]
 >;
+
+/** Shift checklist (manual contract — regenerate OpenAPI when backend exports schemas). */
+export type ShiftChecklistItemApi = {
+  id: string;
+  label_key: string;
+  checked: boolean;
+  category: "shift" | "room" | "patient";
+};
+
+export type ShiftChecklistMeResponse = {
+  shift_date: string;
+  user_id: number;
+  items: ShiftChecklistItemApi[];
+  updated_at: string | null;
+};
+
+export type ShiftChecklistPutRequest = {
+  shift_date: string;
+  items: ShiftChecklistItemApi[];
+};
+
+export type ShiftChecklistWorkspaceRow = {
+  user_id: number;
+  username: string;
+  role: string;
+  shift_date: string;
+  items: ShiftChecklistItemApi[];
+  percent_complete: number;
+  updated_at: string | null;
+};

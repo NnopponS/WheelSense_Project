@@ -102,3 +102,22 @@ class DemoResetResponse(BaseModel):
     profile: str
     status: str
     message: str
+
+
+class SimulatorResetResponse(BaseModel):
+    """Response schema for simulator environment reset."""
+    action: str
+    workspace_id: int
+    workspace_name: str
+    cleared_counts: dict[str, int] | None = None
+    message: str
+
+
+class SimulatorStatusResponse(BaseModel):
+    """Response schema for simulator environment status."""
+    env_mode: str
+    is_simulator: bool
+    workspace_exists: bool
+    workspace_id: int | None = None
+    workspace_name: str | None = None
+    statistics: dict[str, int] | None = None

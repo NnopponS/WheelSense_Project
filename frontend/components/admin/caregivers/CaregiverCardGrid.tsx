@@ -35,8 +35,8 @@ export default function CaregiverCardGrid({ caregivers, users, basePath }: Props
               {(c.first_name?.[0] || c.last_name?.[0] || "S").toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-on-surface">{fullName}</p>
-              <p className="mt-0.5 text-xs text-on-surface-variant">
+              <p className="truncate font-semibold text-foreground">{fullName}</p>
+              <p className="mt-0.5 text-xs text-foreground-variant">
                 {formatStaffRoleLabel(c.role, t)}
               </p>
               <p className="mt-1 text-[11px] text-outline">

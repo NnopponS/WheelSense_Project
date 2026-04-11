@@ -745,3 +745,12 @@ async def test_schedule_status_filter_applies_before_limit(client: AsyncClient):
 async def test_workflow_list_limit_is_bounded(client: AsyncClient):
     invalid = await client.get("/api/workflow/tasks?limit=0")
     assert invalid.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_messaging_recipients_available_to_authenticated_roles(client: AsyncClient):
+    """Workflow compose directory should be available to authenticated staff and patient roles."""
+    res = await client.get("/api/workflow/messaging/recipients")
+    assert res.status_code == 200
+    payload = res.json()
+    assert isinstance(payload, list)

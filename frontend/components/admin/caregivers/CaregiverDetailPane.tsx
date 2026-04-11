@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
-import { useQuery } from "@/hooks/useQuery";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
+import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import type { Caregiver, Patient, Room, User } from "@/lib/types";
 import { ageYears } from "@/lib/age";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
@@ -25,6 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StaffRoutineAndCalendarPanel } from "@/components/admin/caregivers/StaffRoutineAndCalendarPanel";
 import {
   Calendar,
   ChevronRight,
@@ -240,7 +244,7 @@ function ZoneDialog({
 
         <div className="space-y-4 px-6 pb-2 pt-1">
           <div>
-            <label htmlFor={zoneNameInputId} className="text-xs font-medium text-on-surface-variant">
+            <label htmlFor={zoneNameInputId} className="text-xs font-medium text-foreground-variant">
               Zone name
             </label>
             <input
@@ -258,7 +262,7 @@ function ZoneDialog({
             <label
               id={roomLabelId}
               htmlFor={roomInputId}
-              className="text-xs font-medium text-on-surface-variant"
+              className="text-xs font-medium text-foreground-variant"
             >
               Room
             </label>
@@ -299,7 +303,7 @@ function ZoneDialog({
               />
             </div>
             {roomEmptyPool ? (
-              <p className="mt-1 text-xs text-on-surface-variant">
+              <p className="mt-1 text-xs text-foreground-variant">
                 No rooms are available yet. You can still leave this zone unassigned.
               </p>
             ) : null}
@@ -307,7 +311,7 @@ function ZoneDialog({
 
           {mode === "edit" ? (
             <div>
-              <label className="text-xs font-medium text-on-surface-variant">
+              <label className="text-xs font-medium text-foreground-variant">
                 Active status
               </label>
               <Select
@@ -329,7 +333,7 @@ function ZoneDialog({
               </Select>
             </div>
           ) : (
-            <p className="text-xs text-on-surface-variant">
+            <p className="text-xs text-foreground-variant">
               New zones are created as active assignments.
             </p>
           )}
@@ -340,7 +344,7 @@ function ZoneDialog({
         <DialogFooter className="px-6 pb-6">
           <button
             type="button"
-            className="rounded-xl border border-outline-variant/40 px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-low"
+            className="rounded-xl border border-outline-variant/40 px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-container-low"
             onClick={onClose}
             disabled={submitting}
           >
@@ -404,7 +408,7 @@ function ShiftDialog({
             <div>
               <label
                 htmlFor={shiftDateInputId}
-                className="text-xs font-medium text-on-surface-variant"
+                className="text-xs font-medium text-foreground-variant"
               >
                 Shift date
               </label>
@@ -419,7 +423,7 @@ function ShiftDialog({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-on-surface-variant">
+              <label className="text-xs font-medium text-foreground-variant">
                 Shift type
               </label>
               <Select
@@ -446,7 +450,7 @@ function ShiftDialog({
             <div>
               <label
                 htmlFor={startTimeInputId}
-                className="text-xs font-medium text-on-surface-variant"
+                className="text-xs font-medium text-foreground-variant"
               >
                 Start time
               </label>
@@ -463,7 +467,7 @@ function ShiftDialog({
             <div>
               <label
                 htmlFor={endTimeInputId}
-                className="text-xs font-medium text-on-surface-variant"
+                className="text-xs font-medium text-foreground-variant"
               >
                 End time
               </label>
@@ -482,7 +486,7 @@ function ShiftDialog({
           <div>
             <label
               htmlFor={notesInputId}
-              className="text-xs font-medium text-on-surface-variant"
+              className="text-xs font-medium text-foreground-variant"
             >
               Notes
             </label>
@@ -501,7 +505,7 @@ function ShiftDialog({
         <DialogFooter className="px-6 pb-6">
           <button
             type="button"
-            className="rounded-xl border border-outline-variant/40 px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-low"
+            className="rounded-xl border border-outline-variant/40 px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-container-low"
             onClick={onClose}
             disabled={submitting}
           >
@@ -574,7 +578,7 @@ function UserAccountItem({
       <li className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-3 text-sm animate-fade-in shadow-sm">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-on-surface">{user.username}</span>
+            <span className="font-semibold text-foreground">{user.username}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -585,20 +589,20 @@ function UserAccountItem({
               onChange={(e) => setIsActive(e.target.checked)}
               className="h-4 w-4 rounded border-outline-variant text-primary focus:ring-primary"
             />
-            <label htmlFor={`active-toggle-${user.id}`} className="text-xs font-medium text-on-surface">
+            <label htmlFor={`active-toggle-${user.id}`} className="text-xs font-medium text-foreground">
               Account Active
             </label>
           </div>
 
           <div>
-            <label htmlFor={`pwd-${user.id}`} className="block text-[10px] uppercase font-bold text-on-surface-variant">
+            <label htmlFor={`pwd-${user.id}`} className="block text-[10px] uppercase font-bold text-foreground-variant">
               New Password (Optional)
             </label>
             <input
               id={`pwd-${user.id}`}
               type="password"
               placeholder="Leave blank to keep same"
-              className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-1.5 text-xs text-on-surface"
+              className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-1.5 text-xs text-foreground"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
@@ -608,7 +612,7 @@ function UserAccountItem({
 
           <div className="flex items-center justify-end gap-2 pt-1">
             <button
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-container-high transition-smooth"
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high transition-smooth"
               onClick={handleCancel}
               disabled={saving}
             >
@@ -630,7 +634,7 @@ function UserAccountItem({
   return (
     <li className="rounded-xl bg-surface-container-low px-3 py-2.5 text-sm group">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-on-surface">{user.username}</span>
+        <span className="font-medium text-foreground">{user.username}</span>
         <div className="flex items-center gap-3">
           <span
             className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
@@ -651,7 +655,7 @@ function UserAccountItem({
           </button>
         </div>
       </div>
-      <div className="mt-1 flex items-center gap-1.5 text-xs text-on-surface-variant">
+      <div className="mt-1 flex items-center gap-1.5 text-xs text-foreground-variant">
         <Shield className="h-3.5 w-3.5 text-outline" aria-hidden />
         <span>
           {t("admin.users.role")}: {user.role}
@@ -672,26 +676,67 @@ export default function CaregiverDetailPane({
   const nowMs = useFixedNowMs();
   const { user } = useAuth();
   const fullName = `${caregiver.first_name} ${caregiver.last_name}`.trim();
+  const caregiverPhotoUrl = caregiver.photo_url?.trim() || null;
   const canManageSchedule = Boolean(
     user && hasCapability(user.role, "caregivers.schedule.manage"),
   );
   const canManageAccounts = Boolean(user && hasCapability(user.role, "users.manage"));
 
-  const { data: rooms, isLoading: roomsLoading } = useQuery<Room[]>(
-    `/rooms`,
-  );
-  const { data: shifts, isLoading: shiftsLoading, refetch: refetchShifts } = useQuery<ShiftOut[]>(
-    `/caregivers/${caregiver.id}/shifts`,
-  );
-  const { data: zones, isLoading: zonesLoading, refetch: refetchZones } = useQuery<ZoneOut[]>(
-    `/caregivers/${caregiver.id}/zones`,
-  );
-  const { data: patients } = useQuery<Patient[]>("/patients");
+  const roomsEndpoint = "/rooms";
+  const { data: rooms, isLoading: roomsLoading } = useQuery({
+    queryKey: ["admin", "caregivers", "detail", caregiver.id, "rooms"],
+    queryFn: () => api.get<Room[]>(roomsEndpoint),
+    staleTime: getQueryStaleTimeMs(roomsEndpoint),
+    refetchInterval: getQueryPollingMs(roomsEndpoint),
+    retry: 3,
+  });
+  const shiftsEndpoint = `/caregivers/${caregiver.id}/shifts`;
+  const {
+    data: shifts,
+    isLoading: shiftsLoading,
+    refetch: refetchShiftsBase,
+  } = useQuery({
+    queryKey: ["admin", "caregivers", "detail", caregiver.id, "shifts"],
+    queryFn: () => api.get<ShiftOut[]>(shiftsEndpoint),
+    staleTime: getQueryStaleTimeMs(shiftsEndpoint),
+    refetchInterval: getQueryPollingMs(shiftsEndpoint),
+    retry: 3,
+  });
+  const zonesEndpoint = `/caregivers/${caregiver.id}/zones`;
+  const {
+    data: zones,
+    isLoading: zonesLoading,
+    refetch: refetchZonesBase,
+  } = useQuery({
+    queryKey: ["admin", "caregivers", "detail", caregiver.id, "zones"],
+    queryFn: () => api.get<ZoneOut[]>(zonesEndpoint),
+    staleTime: getQueryStaleTimeMs(zonesEndpoint),
+    refetchInterval: getQueryPollingMs(zonesEndpoint),
+    retry: 3,
+  });
+  const patientsEndpoint = "/patients";
+  const { data: patients } = useQuery({
+    queryKey: ["admin", "caregivers", "detail", caregiver.id, "patients"],
+    queryFn: () => api.get<Patient[]>(patientsEndpoint),
+    staleTime: getQueryStaleTimeMs(patientsEndpoint),
+    refetchInterval: getQueryPollingMs(patientsEndpoint),
+    retry: 3,
+  });
+  const patientAccessEndpoint = `/caregivers/${caregiver.id}/patients`;
   const {
     data: patientAccess,
     isLoading: patientAccessLoading,
-    refetch: refetchPatientAccess,
-  } = useQuery<CaregiverPatientAccessResponse>(`/caregivers/${caregiver.id}/patients`);
+    refetch: refetchPatientAccessBase,
+  } = useQuery({
+    queryKey: ["admin", "caregivers", "detail", caregiver.id, "patient-access"],
+    queryFn: () => api.get<CaregiverPatientAccessResponse>(patientAccessEndpoint),
+    staleTime: getQueryStaleTimeMs(patientAccessEndpoint),
+    refetchInterval: getQueryPollingMs(patientAccessEndpoint),
+    retry: 3,
+  });
+  const refetchShifts = useCallback(() => refetchOrThrow(refetchShiftsBase), [refetchShiftsBase]);
+  const refetchZones = useCallback(() => refetchOrThrow(refetchZonesBase), [refetchZonesBase]);
+  const refetchPatientAccess = useCallback(() => refetchOrThrow(refetchPatientAccessBase), [refetchPatientAccessBase]);
   const [zoneDialogOpen, setZoneDialogOpen] = useState(false);
   const [zoneDialogMode, setZoneDialogMode] = useState<"create" | "edit">("create");
   const [zoneDraft, setZoneDraft] = useState<ZoneDraft>({
@@ -720,6 +765,7 @@ export default function CaregiverDetailPane({
   const [patientAccessError, setPatientAccessError] = useState<string | null>(null);
   const patientAccessInputId = useId();
   const patientAccessListboxId = useId();
+  const [mainTab, setMainTab] = useState<"overview" | "work">("overview");
 
   useEffect(() => {
     setPatientAccessDraftIds(extractPatientAccessIds(patientAccess));
@@ -961,34 +1007,78 @@ export default function CaregiverDetailPane({
 
   return (
     <div className="w-full space-y-6" aria-labelledby="caregiver-detail-heading">
+      <Tabs
+        value={mainTab}
+        onValueChange={(v) => setMainTab(v as "overview" | "work")}
+        className="w-full"
+      >
+        <TabsList className="mb-4 grid h-auto w-full max-w-lg grid-cols-2 gap-1 p-1">
+          <TabsTrigger value="overview" className="text-sm">
+            {t("caregivers.detailTabOverview")}
+          </TabsTrigger>
+          <TabsTrigger value="work" className="text-sm">
+            {t("caregivers.detailTabWork")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="mt-0 space-y-0">
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-variant">
               {t("caregivers.sectionAbout")}
             </p>
             <div className="flex flex-col gap-5 sm:flex-row">
               <div className="relative flex aspect-[4/5] w-full shrink-0 items-end justify-start overflow-hidden rounded-xl border border-outline-variant/20 bg-gradient-to-br from-primary/20 to-primary/5 sm:w-40">
-                <span className="absolute bottom-2 left-2 rounded bg-black/35 px-2 py-0.5 font-mono text-[10px] font-semibold text-on-surface/90">
+                <span className="absolute bottom-2 left-2 rounded bg-black/35 px-2 py-0.5 font-mono text-[10px] font-semibold text-foreground/90">
                   Staff #{caregiver.id}
                 </span>
-                <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-primary/40">
-                  {(caregiver.first_name?.[0] || caregiver.last_name?.[0] || "S").toUpperCase()}
-                </div>
+                {caregiverPhotoUrl ? (
+                  <img
+                    src={caregiverPhotoUrl}
+                    alt={fullName || `Staff #${caregiver.id}`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-primary/40">
+                    {(caregiver.first_name?.[0] || caregiver.last_name?.[0] || "S").toUpperCase()}
+                  </div>
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <h1
                   id="caregiver-detail-heading"
-                  className="text-2xl font-bold text-on-surface"
+                  className="text-2xl font-bold text-foreground"
                 >
                   {fullName || `Staff #${caregiver.id}`}
                 </h1>
-                <p className="mt-1 text-sm text-on-surface-variant">
+                <p className="mt-1 text-sm text-foreground-variant">
                   {t("admin.users.role")}:{" "}
-                  <span className="font-medium text-on-surface">
+                  <span className="font-medium text-foreground">
                     {formatStaffRoleLabel(caregiver.role, t)}
                   </span>
                 </p>
+                <ul className="mt-3 space-y-1.5 text-sm text-foreground-variant">
+                  <li>
+                    {t("caregivers.employeeCode")}: {caregiver.employee_code?.trim() || "—"}
+                  </li>
+                  <li>
+                    {t("caregivers.department")}: {caregiver.department?.trim() || "—"}
+                  </li>
+                  <li>
+                    {t("caregivers.specialty")}: {caregiver.specialty?.trim() || "—"}
+                  </li>
+                  <li>
+                    {t("caregivers.licenseLabel")}: {caregiver.license_number?.trim() || "—"}
+                  </li>
+                  <li>
+                    {t("caregivers.emergencyContactName")}:{" "}
+                    {caregiver.emergency_contact_name?.trim() || "—"}
+                  </li>
+                  <li>
+                    {t("caregivers.emergencyContactPhone")}:{" "}
+                    {caregiver.emergency_contact_phone?.trim() || "—"}
+                  </li>
+                </ul>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-medium uppercase ${
@@ -1003,7 +1093,7 @@ export default function CaregiverDetailPane({
           </section>
 
                     <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-on-surface">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
               <MapPin className="h-5 w-5 text-primary" aria-hidden />
               {t("caregivers.sectionZones")}
             </h2>
@@ -1023,7 +1113,7 @@ export default function CaregiverDetailPane({
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
             ) : !zones?.length ? (
-              <p className="text-sm text-on-surface-variant">—</p>
+              <p className="text-sm text-foreground-variant">—</p>
             ) : (
               <ul className="space-y-2">
                 {zones.map((z) => (
@@ -1037,18 +1127,18 @@ export default function CaregiverDetailPane({
                         z.room_id != null ? patientCountByRoomId.get(z.room_id) ?? 0 : 0;
                       const mapHref =
                         room && room.facility_id != null && room.floor_id != null
-                          ? `/admin/monitoring?facility=${room.facility_id}&floor=${room.floor_id}&view=map&room=${room.id}`
+                          ? `/head-nurse/monitoring?facility=${room.facility_id}&floor=${room.floor_id}&view=map&room=${room.id}`
                           : null;
                       return (
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="min-w-0 space-y-1">
-                            <p className="font-semibold text-on-surface">
+                            <p className="font-semibold text-foreground">
                               {z.zone_name || formatRoomLabel(room) || "—"}
                             </p>
-                            <p className="text-xs text-on-surface-variant">
+                            <p className="text-xs text-foreground-variant">
                               {formatRoomContext(room)}
                             </p>
-                            <p className="text-xs text-on-surface-variant">
+                            <p className="text-xs text-foreground-variant">
                               Linked patients: {patientCount}
                             </p>
                           </div>
@@ -1102,11 +1192,11 @@ export default function CaregiverDetailPane({
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 font-semibold text-on-surface">
+                <h2 className="flex items-center gap-2 font-semibold text-foreground">
                   <Shield className="h-5 w-5 text-primary" aria-hidden />
                   Patient access
                 </h2>
-                <p className="mt-1 text-sm text-on-surface-variant">
+                <p className="mt-1 text-sm text-foreground-variant">
                   {patientAccessDraftIds.length} assigned patient{patientAccessDraftIds.length === 1 ? "" : "s"}
                 </p>
               </div>
@@ -1158,7 +1248,7 @@ export default function CaregiverDetailPane({
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
             ) : patientAccessSelectedPatients.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">No explicit patient access assigned.</p>
+              <p className="text-sm text-foreground-variant">No explicit patient access assigned.</p>
             ) : (
               <ul className="space-y-2">
                 {patientAccessSelectedPatients.map((patient) => (
@@ -1167,8 +1257,8 @@ export default function CaregiverDetailPane({
                     className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4"
                   >
                     <Link href={`/admin/patients/${patient.id}`} className="min-w-0">
-                      <p className="font-semibold text-on-surface">{formatPatientLabel(patient)}</p>
-                      <p className="text-xs text-on-surface-variant">
+                      <p className="font-semibold text-foreground">{formatPatientLabel(patient)}</p>
+                      <p className="text-xs text-foreground-variant">
                         {patient.room_id != null ? `Room #${patient.room_id}` : `Patient #${patient.id}`} ·{" "}
                         {patient.care_level}
                       </p>
@@ -1191,12 +1281,12 @@ export default function CaregiverDetailPane({
           </section>
 
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-on-surface">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
               <Users className="h-5 w-5 text-primary" aria-hidden />
               {t("caregivers.sectionLinkedPatients")}
             </h2>
             {linkedPatients.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">{t("caregivers.linkedPatientsEmpty")}</p>
+              <p className="text-sm text-foreground-variant">{t("caregivers.linkedPatientsEmpty")}</p>
             ) : (
               <ul className="space-y-2">
                 {linkedPatients.map((p) => (
@@ -1206,10 +1296,10 @@ export default function CaregiverDetailPane({
                       className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4 transition-smooth hover:border-primary/30 hover:shadow-sm"
                     >
                       <div className="min-w-0">
-                        <p className="font-semibold text-on-surface">
+                        <p className="font-semibold text-foreground">
                           {p.first_name} {p.last_name}
                         </p>
-                        <p className="text-xs text-on-surface-variant">
+                        <p className="text-xs text-foreground-variant">
                           {t("patients.age")}: {ageYears(p.date_of_birth, nowMs) ?? "—"} ·{" "}
                           {p.care_level}
                         </p>
@@ -1223,7 +1313,7 @@ export default function CaregiverDetailPane({
           </section>
 
                     <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-on-surface">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
               <Clock className="h-5 w-5 text-primary" aria-hidden />
               Shift schedule
             </h2>
@@ -1243,7 +1333,7 @@ export default function CaregiverDetailPane({
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
             ) : !shifts?.length ? (
-              <p className="text-sm text-on-surface-variant">—</p>
+              <p className="text-sm text-foreground-variant">—</p>
             ) : (
               <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
                 {shifts.map((s) => (
@@ -1253,8 +1343,8 @@ export default function CaregiverDetailPane({
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 space-y-1">
-                        <p className="font-medium text-on-surface">{formatDate(s.shift_date)}</p>
-                        <p className="text-xs text-on-surface-variant">
+                        <p className="font-medium text-foreground">{formatDate(s.shift_date)}</p>
+                        <p className="text-xs text-foreground-variant">
                           {formatTime(s.start_time)} – {formatTime(s.end_time)}
                           {s.notes ? ` · ${s.notes}` : ""}
                         </p>
@@ -1294,12 +1384,12 @@ export default function CaregiverDetailPane({
           </section>
 
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-on-surface">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
               <UserCircle2 className="h-5 w-5 text-primary" aria-hidden />
               {t("patients.sectionLinkedAccounts")}
             </h2>
             {linkedUsers.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">
+              <p className="text-sm text-foreground-variant">
                 No user account linked to this caregiver record.
               </p>
             ) : (
@@ -1318,7 +1408,7 @@ export default function CaregiverDetailPane({
 
           {scheduleError ? <p className="text-sm text-critical">{scheduleError}</p> : null}
 
-          <p className="text-xs text-on-surface-variant">
+          <p className="text-xs text-foreground-variant">
             Staff ID: {caregiver.id} · Workspace: {caregiver.workspace_id}
           </p>
         </div>
@@ -1377,6 +1467,11 @@ export default function CaregiverDetailPane({
           onSubmit={() => void handleSubmitShift()}
         />
       </div>
+        </TabsContent>
+        <TabsContent value="work" className="mt-0">
+          <StaffRoutineAndCalendarPanel linkedUsers={linkedUsers} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

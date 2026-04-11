@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   ArrowRight,
@@ -16,8 +16,11 @@ import {
   Wifi,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@/hooks/useQuery";
+import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
+import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import type { FloorplanPresenceOut } from "@/lib/api/task-scope-types";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import {
@@ -277,8 +280,8 @@ function SummaryStat({
       <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${iconTone}`}>
         <Icon className="h-5 w-5" />
       </div>
-      <p className="text-xs uppercase tracking-wide text-on-surface-variant">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-on-surface">{value}</p>
+      <p className="text-xs uppercase tracking-wide text-foreground-variant">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
@@ -294,12 +297,12 @@ function OccupantList({
 }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <Users className="h-4 w-4 text-primary" />
         {title}
       </div>
       {items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-outline-variant/30 px-3 py-3 text-sm text-on-surface-variant">
+        <div className="rounded-xl border border-dashed border-outline-variant/30 px-3 py-3 text-sm text-foreground-variant">
           {emptyText}
         </div>
       ) : (
@@ -311,8 +314,8 @@ function OccupantList({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-on-surface">{item.display_name}</p>
-                  <p className="mt-1 text-xs text-on-surface-variant">
+                  <p className="truncate font-medium text-foreground">{item.display_name}</p>
+                  <p className="mt-1 text-xs text-foreground-variant">
                     {item.subtitle || item.role || formatSourceLabel(item.source)}
                   </p>
                 </div>
@@ -321,7 +324,7 @@ function OccupantList({
                 </Badge>
               </div>
               {item.updated_at ? (
-                <p className="mt-2 text-[11px] text-on-surface-variant">
+                <p className="mt-2 text-[11px] text-foreground-variant">
                   Updated {formatRelativeTime(item.updated_at)}
                 </p>
               ) : null}
@@ -349,39 +352,81 @@ export default function FloorplanRoleViewer({
   const [facilityId, setFacilityId] = useState<number | "">(() => initialFacilityId ?? "");
   const [floorId, setFloorId] = useState<number | "">(() => initialFloorId ?? "");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "floorplan">("floorplan");
   const [captureMessage, setCaptureMessage] = useState<string | null>(null);
   const [captureBusy, setCaptureBusy] = useState(false);
 
-  const { data: facilities, isLoading: loadingFac } = useQuery<Facility[]>("/facilities");
+  const { data: facilities, isLoading: loadingFac } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "facilities"],
+    queryFn: () => api.get<Facility[]>("/facilities"),
+    staleTime: getQueryStaleTimeMs("/facilities"),
+    refetchInterval: getQueryPollingMs("/facilities"),
+    retry: 3,
+  });
 
+  const safeFacilities = useMemo(() => facilities ?? [], [facilities]);
   const effectiveFacilityId = useMemo<number | "">(
-    () => (facilityId === "" ? (facilities?.[0]?.id ?? "") : facilityId),
-    [facilityId, facilities],
+    () => {
+      if (safeFacilities.length === 0) return "";
+      if (facilityId !== "" && safeFacilities.some((facility) => facility.id === facilityId)) {
+        return facilityId;
+      }
+      return safeFacilities[0]?.id ?? "";
+    },
+    [facilityId, safeFacilities],
   );
 
   const floorsEndpoint =
     effectiveFacilityId === "" ? null : `/facilities/${effectiveFacilityId}/floors`;
-  const { data: floors, isLoading: loadingFloors } = useQuery<Floor[]>(floorsEndpoint);
+  const { data: floors, isLoading: loadingFloors } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "floors", floorsEndpoint],
+    queryFn: () => api.get<Floor[]>(floorsEndpoint!),
+    enabled: Boolean(floorsEndpoint),
+    staleTime: floorsEndpoint ? getQueryStaleTimeMs(floorsEndpoint) : 0,
+    refetchInterval: floorsEndpoint ? getQueryPollingMs(floorsEndpoint) : false,
+    retry: 3,
+  });
 
+  const safeFloors = useMemo(() => floors ?? [], [floors]);
   const effectiveFloorId = useMemo<number | "">(
-    () => (floorId === "" ? (floors?.[0]?.id ?? "") : floorId),
-    [floorId, floors],
+    () => {
+      if (safeFloors.length === 0) return "";
+      if (floorId !== "" && safeFloors.some((floor) => floor.id === floorId)) {
+        return floorId;
+      }
+      return safeFloors[0]?.id ?? "";
+    },
+    [floorId, safeFloors],
   );
 
   const layoutEndpoint = useMemo(() => {
     if (effectiveFacilityId === "" || effectiveFloorId === "") return null;
-    return `/future/floorplans/layout?facility_id=${effectiveFacilityId}&floor_id=${effectiveFloorId}`;
+    return `/floorplans/layout?facility_id=${effectiveFacilityId}&floor_id=${effectiveFloorId}`;
   }, [effectiveFacilityId, effectiveFloorId]);
 
   const {
     data: layoutRes,
     isLoading: loadingLayout,
     error: layoutError,
-  } = useQuery<FloorplanLayoutResponse>(layoutEndpoint);
+  } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "layout", layoutEndpoint],
+    queryFn: () => api.get<FloorplanLayoutResponse>(layoutEndpoint!),
+    enabled: Boolean(layoutEndpoint),
+    staleTime: layoutEndpoint ? getQueryStaleTimeMs(layoutEndpoint) : 0,
+    refetchInterval: layoutEndpoint ? getQueryPollingMs(layoutEndpoint) : false,
+    retry: 3,
+  });
 
   const floorRoomsEndpoint =
     effectiveFloorId === "" ? null : `/rooms?floor_id=${effectiveFloorId}`;
-  const { data: floorRooms, isLoading: loadingFloorRooms } = useQuery<Room[]>(floorRoomsEndpoint);
+  const { data: floorRooms, isLoading: loadingFloorRooms } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "floor-rooms", floorRoomsEndpoint],
+    queryFn: () => api.get<Room[]>(floorRoomsEndpoint!),
+    enabled: Boolean(floorRoomsEndpoint),
+    staleTime: floorRoomsEndpoint ? getQueryStaleTimeMs(floorRoomsEndpoint) : 0,
+    refetchInterval: floorRoomsEndpoint ? getQueryPollingMs(floorRoomsEndpoint) : false,
+    retry: 3,
+  });
 
   const rooms = useMemo(() => {
     const fromLayout = normalizeFloorplanRooms(layoutRes?.layout_json);
@@ -399,22 +444,30 @@ export default function FloorplanRoleViewer({
 
   const presenceEndpoint = useMemo(() => {
     if (!showPresence || effectiveFacilityId === "" || effectiveFloorId === "") return null;
-    return `/future/floorplans/presence?facility_id=${effectiveFacilityId}&floor_id=${effectiveFloorId}`;
+    return `/floorplans/presence?facility_id=${effectiveFacilityId}&floor_id=${effectiveFloorId}`;
   }, [showPresence, effectiveFacilityId, effectiveFloorId]);
 
   const {
     data: presenceData,
     error: presenceError,
     isLoading: loadingPresence,
-    refetch: refetchPresence,
-  } = useQuery<PresenceResponse>(presenceEndpoint, {
+    refetch: refetchPresenceBase,
+  } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "presence", presenceEndpoint, compact],
+    queryFn: () => api.get<PresenceResponse>(presenceEndpoint!),
     enabled: Boolean(presenceEndpoint),
     refetchInterval: compact ? false : 15_000,
+    staleTime: presenceEndpoint ? getQueryStaleTimeMs(presenceEndpoint) : 0,
     retry: false,
   });
+  const refetchPresence = useCallback(() => refetchOrThrow(refetchPresenceBase), [refetchPresenceBase]);
 
-  const { data: allSmartDevices } = useQuery<SmartDevice[]>(compact ? null : "/ha/devices", {
+  const { data: allSmartDevices } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "ha-devices", compact],
+    queryFn: () => api.get<SmartDevice[]>("/ha/devices"),
     enabled: !compact,
+    staleTime: getQueryStaleTimeMs("/ha/devices"),
+    refetchInterval: getQueryPollingMs("/ha/devices"),
     retry: false,
   });
 
@@ -535,7 +588,7 @@ export default function FloorplanRoleViewer({
     setCaptureMessage(null);
     try {
       const response = await api.post<{ message?: string }>(
-        `/future/rooms/${encodeURIComponent(String(selectedPresenceRoom.room_id))}/capture`,
+        `/rooms/${encodeURIComponent(String(selectedPresenceRoom.room_id))}/capture`,
       );
       setCaptureMessage(response?.message ?? "Capture requested.");
       await refetchPresence();
@@ -549,14 +602,14 @@ export default function FloorplanRoleViewer({
   const headerClass = compact ? "space-y-2" : "space-y-4";
   const shellClass = compact ? "p-4" : "p-5";
 
-  if (!loadingFac && (!facilities?.length || facilities.length === 0)) {
+  if (!loadingFac && safeFacilities.length === 0) {
     return (
       <section className={`surface-card ${shellClass} ${className}`.trim()}>
-        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-on-surface">
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-foreground">
           <MapPin className="h-4 w-4 text-primary" />
           {t("floorplan.viewTitle")}
         </h3>
-        <p className="text-sm text-on-surface-variant">{t("floorplan.noFacilities")}</p>
+        <p className="text-sm text-foreground-variant">{t("floorplan.noFacilities")}</p>
       </section>
     );
   }
@@ -566,11 +619,11 @@ export default function FloorplanRoleViewer({
       <div className={headerClass}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-on-surface">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-foreground">
               <MapPin className="h-4 w-4 text-primary" />
               {compact ? "Ward monitoring summary" : "Live operations map"}
             </h3>
-            <p className="mt-1 text-xs text-on-surface-variant">
+            <p className="mt-1 text-xs text-foreground-variant">
               {compact
                 ? "Room occupancy, alerts, and node freshness in one glance."
                 : "Readable room cards, occupancy context, and room-level inspection for staff operations."}
@@ -578,6 +631,26 @@ export default function FloorplanRoleViewer({
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="inline-flex rounded-lg border border-border p-0.5">
+              <Button
+                type="button"
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 text-xs px-3"
+                onClick={() => setViewMode("list")}
+              >
+                List
+              </Button>
+              <Button
+                type="button"
+                variant={viewMode === "floorplan" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 text-xs px-3"
+                onClick={() => setViewMode("floorplan")}
+              >
+                Floorplan
+              </Button>
+            </div>
             <Badge variant="outline">{presenceRooms.length || rooms.length} rooms</Badge>
             <Badge variant="success">{occupiedRooms} occupied</Badge>
             <Badge variant={totalAlerts > 0 ? "destructive" : "outline"}>{totalAlerts} alerts</Badge>
@@ -621,7 +694,7 @@ export default function FloorplanRoleViewer({
 
       <div className={`mb-4 grid gap-3 ${compact ? "sm:grid-cols-2 xl:grid-cols-3" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
         <div>
-          <label className="mb-1 block text-xs font-medium text-on-surface-variant">
+          <label className="mb-1 block text-xs font-medium text-foreground-variant">
             {t("floorplan.building")}
           </label>
           <select
@@ -637,7 +710,7 @@ export default function FloorplanRoleViewer({
             disabled={loadingFac}
           >
             <option value="">{t("floorplan.selectBuilding")}</option>
-            {(facilities ?? []).map((facility) => (
+            {safeFacilities.map((facility) => (
               <option key={facility.id} value={facility.id}>
                 {facility.name}
               </option>
@@ -646,7 +719,7 @@ export default function FloorplanRoleViewer({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-on-surface-variant">
+          <label className="mb-1 block text-xs font-medium text-foreground-variant">
             {t("floorplan.floor")}
           </label>
           <select
@@ -661,7 +734,7 @@ export default function FloorplanRoleViewer({
             disabled={effectiveFacilityId === "" || loadingFloors}
           >
             <option value="">{t("floorplan.selectFloor")}</option>
-            {(floors ?? []).map((floor) => (
+            {safeFloors.map((floor) => (
               <option key={floor.id} value={floor.id}>
                 {floor.name || String(floor.floor_number)}
               </option>
@@ -669,7 +742,7 @@ export default function FloorplanRoleViewer({
           </select>
         </div>
 
-        <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/40 px-3 py-2 text-xs text-on-surface-variant">
+        <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/40 px-3 py-2 text-xs text-foreground-variant">
           {loadingPresence
             ? "Refreshing live occupancy..."
             : presenceError
@@ -681,8 +754,8 @@ export default function FloorplanRoleViewer({
       </div>
 
       {effectiveFacilityId !== "" && effectiveFloorId !== "" && loadingFloors === false ? (
-        floors?.length === 0 ? (
-          <p className="text-sm text-on-surface-variant">{t("floorplan.noFloors")}</p>
+        safeFloors.length === 0 ? (
+          <p className="text-sm text-foreground-variant">{t("floorplan.noFloors")}</p>
         ) : canvasLoading ? (
           <div
             className={`flex items-center justify-center rounded-xl border border-outline-variant/30 bg-surface-container-low/80 ${
@@ -694,7 +767,7 @@ export default function FloorplanRoleViewer({
         ) : layoutError ? (
           <p className="text-sm text-error">{t("floorplan.layoutError")}</p>
         ) : rooms.length === 0 ? (
-          <p className="text-sm text-on-surface-variant">{t("floorplan.emptyLayout")}</p>
+          <p className="text-sm text-foreground-variant">{t("floorplan.emptyLayout")}</p>
         ) : compact ? (
           <>
             <FloorplanCanvas
@@ -706,7 +779,7 @@ export default function FloorplanRoleViewer({
               onSelect={setSelectedId}
               roomMetaById={roomMetaById}
             />
-            <p className="mt-2 text-xs text-on-surface-variant">
+            <p className="mt-2 text-xs text-foreground-variant">
               {selectedRoomEntry?.presenceRoom
                 ? `${selectedRoomEntry.room.label}: ${getRoomOccupants(selectedRoomEntry.presenceRoom)
                     .slice(0, 3)
@@ -718,15 +791,53 @@ export default function FloorplanRoleViewer({
         ) : (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.06fr)_360px]">
             <div className="min-w-0 space-y-3">
-              <FloorplanCanvas
-                readOnly
-                rooms={rooms}
-                onRoomsChange={() => {}}
-                selectedId={visibleSelectedId}
-                onSelect={setSelectedId}
-                roomMetaById={roomMetaById}
-              />
-              <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/40 px-3 py-2 text-xs text-on-surface-variant">
+              {viewMode === "list" ? (
+                <div className="grid gap-2 max-h-[720px] overflow-y-auto pr-2 grid-cols-1 sm:grid-cols-2">
+                  {roomEntries.map((entry) => {
+                    const meta = roomMetaById[entry.room.id];
+                    const toneClass = meta?.tone === "critical" ? "border-red-500/50 bg-red-500/10" :
+                                      meta?.tone === "warning" ? "border-amber-500/50 bg-amber-500/10" :
+                                      meta?.tone === "success" ? "border-emerald-500/50 bg-emerald-500/10" :
+                                      "border-border bg-surface-container-low";
+                    return (
+                      <button
+                        key={entry.room.id}
+                        type="button"
+                        className={`text-left w-full rounded-xl border p-4 transition-colors ${entry.room.id === visibleSelectedId ? "ring-2 ring-primary" : ""} ${toneClass}`}
+                        onClick={() => setSelectedId(entry.room.id)}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="font-semibold text-sm truncate">{entry.room.label}</div>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {meta?.chips?.map((c, i) => (
+                            <Badge key={i} variant={c.tone === "critical" ? "destructive" : c.tone === "success" ? "success" : c.tone === "warning" ? "warning" : "outline"} className="text-[10px]">
+                              {c.label}
+                            </Badge>
+                          ))}
+                        </div>
+                        {meta?.detailLines && meta.detailLines.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-2 flex flex-col gap-0.5">
+                            {meta.detailLines.map((line, idx) => (
+                              <span key={idx} className="truncate">{line}</span>
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <FloorplanCanvas
+                  readOnly
+                  rooms={rooms}
+                  onRoomsChange={() => {}}
+                  selectedId={visibleSelectedId}
+                  onSelect={setSelectedId}
+                  roomMetaById={roomMetaById}
+                />
+              )}
+              <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/40 px-3 py-2 text-xs text-foreground-variant">
                 {presenceError
                   ? "Presence feed degraded. Room geometry remains available while live overlays retry."
                   : "Select a room to inspect occupants, Home Assistant devices, node freshness, and the latest photo snapshot."}
@@ -739,10 +850,10 @@ export default function FloorplanRoleViewer({
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h4 className="truncate text-lg font-semibold text-on-surface">
+                        <h4 className="truncate text-lg font-semibold text-foreground">
                           {selectedRoomEntry.room.label}
                         </h4>
-                        <p className="mt-1 text-sm text-on-surface-variant">
+                        <p className="mt-1 text-sm text-foreground-variant">
                           {selectedPresenceRoom
                             ? `${describeNodeStatus(selectedPresenceRoom)}${selectedPresenceRoom.node_device_id ? ` | ${selectedPresenceRoom.node_device_id}` : ""}`
                             : "No live room telemetry yet"}
@@ -790,25 +901,25 @@ export default function FloorplanRoleViewer({
                   />
 
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <Clock3 className="h-4 w-4 text-primary" />
                       Room telemetry
                     </div>
                     <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-3 py-3">
-                      <div className="flex items-center gap-2 text-sm text-on-surface">
-                        <UserRound className="h-4 w-4 text-on-surface-variant" />
+                      <div className="flex items-center gap-2 text-sm text-foreground">
+                        <UserRound className="h-4 w-4 text-foreground-variant" />
                         {selectedPresenceRoom?.prediction_hint?.predicted_room_name?.trim()
                           ? `Latest prediction from ${selectedPresenceRoom.prediction_hint.device_id} points here`
                           : "No prediction hint for this room."}
                       </div>
                       {selectedPresenceRoom?.prediction_hint ? (
-                        <p className="mt-2 text-xs text-on-surface-variant">
+                        <p className="mt-2 text-xs text-foreground-variant">
                           Confidence {Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}% |
                           computed {formatRelativeTime(selectedPresenceRoom.prediction_hint.computed_at)}
                         </p>
                       ) : null}
                       {selectedPresenceRoom?.computed_at ? (
-                        <p className="mt-2 text-xs text-on-surface-variant">
+                        <p className="mt-2 text-xs text-foreground-variant">
                           Presence updated {formatRelativeTime(selectedPresenceRoom.computed_at)}
                         </p>
                       ) : null}
@@ -816,12 +927,12 @@ export default function FloorplanRoleViewer({
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <Wifi className="h-4 w-4 text-primary" />
                       Home Assistant devices
                     </div>
                     {inspectorDevices.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-outline-variant/30 px-3 py-3 text-sm text-on-surface-variant">
+                      <div className="rounded-xl border border-dashed border-outline-variant/30 px-3 py-3 text-sm text-foreground-variant">
                         No smart devices are linked to this room.
                       </div>
                     ) : (
@@ -833,8 +944,8 @@ export default function FloorplanRoleViewer({
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="truncate font-medium text-on-surface">{device.name}</p>
-                                <p className="mt-1 text-xs text-on-surface-variant">
+                                <p className="truncate font-medium text-foreground">{device.name}</p>
+                                <p className="mt-1 text-xs text-foreground-variant">
                                   {device.device_type}
                                   {"ha_entity_id" in device && device.ha_entity_id
                                     ? ` | ${device.ha_entity_id}`
@@ -852,7 +963,7 @@ export default function FloorplanRoleViewer({
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <Camera className="h-4 w-4 text-primary" />
                       Latest room snapshot
                     </div>
@@ -868,13 +979,13 @@ export default function FloorplanRoleViewer({
                         />
                       </div>
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-outline-variant/30 bg-surface-container-low/40 px-3 py-6 text-center text-sm text-on-surface-variant">
+                      <div className="rounded-2xl border border-dashed border-outline-variant/30 bg-surface-container-low/40 px-3 py-6 text-center text-sm text-foreground-variant">
                         No snapshot is available for this room yet.
                       </div>
                     )}
 
                     {selectedPresenceRoom?.camera_summary?.captured_at ? (
-                      <p className="text-xs text-on-surface-variant">
+                      <p className="text-xs text-foreground-variant">
                         Captured {formatDateTime(selectedPresenceRoom.camera_summary.captured_at)} |{" "}
                         {formatRelativeTime(selectedPresenceRoom.camera_summary.captured_at)}
                       </p>
@@ -893,7 +1004,7 @@ export default function FloorplanRoleViewer({
                       <button
                         type="button"
                         onClick={() => void refetchPresence()}
-                        className="inline-flex items-center gap-2 rounded-xl border border-outline-variant/30 px-4 py-2 text-sm font-medium text-on-surface transition-smooth hover:bg-surface-container-low"
+                        className="inline-flex items-center gap-2 rounded-xl border border-outline-variant/30 px-4 py-2 text-sm font-medium text-foreground transition-smooth hover:bg-surface-container-low"
                       >
                         <RefreshCcw className="h-4 w-4" />
                         Refresh
@@ -901,12 +1012,12 @@ export default function FloorplanRoleViewer({
                     </div>
 
                     {captureMessage ? (
-                      <p className="text-xs text-on-surface-variant">{captureMessage}</p>
+                      <p className="text-xs text-foreground-variant">{captureMessage}</p>
                     ) : null}
                   </div>
                 </>
               ) : (
-                <div className="rounded-2xl border border-dashed border-outline-variant/30 px-4 py-8 text-center text-sm text-on-surface-variant">
+                <div className="rounded-2xl border border-dashed border-outline-variant/30 px-4 py-8 text-center text-sm text-foreground-variant">
                   Select a room on the map to inspect its live operations details.
                 </div>
               )}
@@ -914,7 +1025,7 @@ export default function FloorplanRoleViewer({
           </div>
         )
       ) : (
-        <p className="text-sm text-on-surface-variant">{t("floorplan.emptyLayout")}</p>
+        <p className="text-sm text-foreground-variant">{t("floorplan.emptyLayout")}</p>
       )}
     </section>
   );

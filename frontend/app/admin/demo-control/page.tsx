@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@/hooks/useQuery";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import DemoPanel from "@/components/admin/demo-control/DemoPanel";
@@ -18,37 +18,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Pause, Play, RefreshCcw, Route, Send, Shield, Users } from "lucide-react";
+import { Camera, Send, Shield, Users, AlertTriangle, Route, Trash2 } from "lucide-react";
 import type { Patient, Room, User } from "@/lib/types";
 import type {
   CareDirectiveOut,
   CareScheduleOut,
   CareTaskOut,
   ListAlertsResponse,
-  ListDeviceActivityResponse,
-  ListWorkflowAuditResponse,
-  ListWorkflowHandoversResponse,
-  ListWorkflowMessagesResponse,
+  CreateAlertRequest
 } from "@/lib/api/task-scope-types";
 
 type Tone = "success" | "error" | "info";
 type ActorType = "patient" | "staff";
 type ItemType = "task" | "schedule" | "directive";
 type TargetMode = "role" | "user";
-type ScenarioId = "show-demo" | "morning-rounds" | "handoff-pressure" | "photo-sweep" | "emergency-drill";
 
 const WORKFLOW_ITEM_OPTIONS: Array<{ value: ItemType; label: string }> = [
   { value: "task", label: "Tasks" },
   { value: "schedule", label: "Schedules" },
   { value: "directive", label: "Directives" },
-];
-
-const SCENARIOS: Array<{ id: ScenarioId; title: string; description: string }> = [
-  { id: "show-demo", title: "Show Demo", description: "Reset and stage the default walkthrough." },
-  { id: "morning-rounds", title: "Morning Rounds", description: "Drive routine tasks and room checks." },
-  { id: "handoff-pressure", title: "Handoff Pressure", description: "Push handover and transfer activity." },
-  { id: "photo-sweep", title: "Photo Sweep", description: "Refresh camera snapshots and visibility." },
-  { id: "emergency-drill", title: "Emergency Drill", description: "Trigger alert and escalation flow." },
 ];
 
 function errText(error: unknown): string {
@@ -80,36 +68,56 @@ function valueFromItem(item: CareTaskOut | CareScheduleOut | CareDirectiveOut) {
 
 export default function AdminDemoControlPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
-  const patients = useQuery<Patient[]>(
-    withWorkspaceScope("/patients?limit=50", user?.workspace_id),
-  ).data ?? [];
-  const users = useQuery<User[]>(
-    withWorkspaceScope("/users/search?roles=admin,head_nurse,supervisor,observer&limit=100", user?.workspace_id),
-  ).data ?? [];
-  const rooms = useQuery<Room[]>(withWorkspaceScope("/rooms?limit=100", user?.workspace_id)).data ?? [];
-  const tasks = useQuery<CareTaskOut[]>(withWorkspaceScope("/workflow/tasks?limit=50", user?.workspace_id)).data ?? [];
-  const schedules = useQuery<CareScheduleOut[]>(withWorkspaceScope("/workflow/schedules?limit=50", user?.workspace_id)).data ?? [];
-  const directives = useQuery<CareDirectiveOut[]>(withWorkspaceScope("/workflow/directives?limit=50", user?.workspace_id)).data ?? [];
-  const handovers = useQuery<ListWorkflowHandoversResponse>(withWorkspaceScope("/workflow/handovers?limit=50", user?.workspace_id)).data ?? [];
-  const messages = useQuery<ListWorkflowMessagesResponse>(withWorkspaceScope("/workflow/messages?inbox_only=false&limit=50", user?.workspace_id)).data ?? [];
-  const audit = useQuery<ListWorkflowAuditResponse>(withWorkspaceScope("/workflow/audit?limit=30", user?.workspace_id)).data ?? [];
-  const alerts = useQuery<ListAlertsResponse>(withWorkspaceScope("/alerts?status=active&limit=20", user?.workspace_id)).data ?? [];
-  const activity = useQuery<ListDeviceActivityResponse>(withWorkspaceScope("/devices/activity?limit=10", user?.workspace_id)).data ?? [];
+  const patients = useQuery<Patient[]>({
+    queryKey: ["demo-control", "patients", user?.workspace_id],
+    queryFn: () => api.get(withWorkspaceScope("/patients?limit=50", user?.workspace_id) as string)
+  }).data ?? [];
+  const users = useQuery<User[]>({
+    queryKey: ["demo-control", "users", user?.workspace_id],
+    queryFn: () => api.get(withWorkspaceScope("/users/search?roles=admin,head_nurse,supervisor,observer&limit=100", user?.workspace_id) as string)
+  }).data ?? [];
+  const rooms = useQuery<Room[]>({
+    queryKey: ["demo-control", "rooms", user?.workspace_id],
+    queryFn: () => api.get(withWorkspaceScope("/rooms?limit=100", user?.workspace_id) as string)
+  }).data ?? [];
+  const tasks = useQuery<CareTaskOut[]>({
+    queryKey: ["demo-control", "tasks", user?.workspace_id],
+    queryFn: () => api.get(withWorkspaceScope("/workflow/tasks?limit=50", user?.workspace_id) as string)
+  }).data ?? [];
+  const schedules = useQuery<CareScheduleOut[]>({
+    queryKey: ["demo-control", "schedules", user?.workspace_id],
+    queryFn: () => api.get(withWorkspaceScope("/workflow/schedules?limit=50", user?.workspace_id) as string)
+  }).data ?? [];
+  const directives = useQuery<CareDirectiveOut[]>({
+    queryKey: ["demo-control", "directives", user?.workspace_id],
+    queryFn: () => api.get(withWorkspaceScope("/workflow/directives?limit=50", user?.workspace_id) as string)
+  }).data ?? [];
+  const alerts = useQuery<ListAlertsResponse>({
+    queryKey: ["demo-control", "alerts", user?.workspace_id],
+    queryFn: () => api.get(withWorkspaceScope("/alerts?status=active&limit=20", user?.workspace_id) as string)
+  }).data ?? [];
 
-  const [scenario, setScenario] = useState<ScenarioId>("show-demo");
   const [actorType, setActorType] = useState<ActorType>("patient");
   const [actorId, setActorId] = useState("");
   const [roomId, setRoomId] = useState("");
-  const [note, setNote] = useState("Move the selected actor for the walkthrough.");
+  const note = "Move the selected actor for the walkthrough.";
+
   const [itemType, setItemType] = useState<ItemType>("task");
   const [itemId, setItemId] = useState("");
   const [targetMode, setTargetMode] = useState<TargetMode>("role");
   const [targetValue, setTargetValue] = useState("supervisor");
-  const [workflowNote, setWorkflowNote] = useState("Advance the demo workflow item.");
+  const [workflowNote, setWorkflowNote] = useState("Advance the demo workflow item.");  
   const [snapshotRoomId, setSnapshotRoomId] = useState("");
+  
+  // Custom Event States
+  const [alertPatientId, setAlertPatientId] = useState("");
+  const [alertSeverity, setAlertSeverity] = useState("warning");
+  const [alertTitle, setAlertTitle] = useState("Manual Test Alert");
+
   const [logs, setLogs] = useState<Array<{ id: string; title: string; detail: string; tone: Tone; at: string }>>([
-    { id: logId("seed"), title: "Ready", detail: "Demo control panel loaded.", tone: "info", at: ts() },
+    { id: logId("seed"), title: "Ready", detail: "Manual Testing Control Panel loaded.", tone: "info", at: ts() },
   ]);
 
   const activePatients: Patient[] = patients.filter((item) => item.is_active);
@@ -133,10 +141,25 @@ export default function AdminDemoControlPage() {
     try {
       await command();
       pushLog(title, detail, "success");
+      // Force refresh data
+      queryClient.invalidateQueries();
     } catch (error) {
       pushLog(title, errText(error), "error");
     }
   }
+
+  const handleCreateAlert = () => {
+    if (!alertPatientId) return;
+    const payload: CreateAlertRequest = {
+      patient_id: Number(alertPatientId),
+      alert_type: "manual_test",
+      severity: alertSeverity as "low" | "warning" | "critical",
+      title: alertTitle,
+      description: "Triggered from Manual Testing Panel",
+      data: { source: "demo_control" }
+    };
+    run("Create Alert", `Created ${alertSeverity} alert for Patient #${alertPatientId}`, () => api.createAlert(payload));
+  };
 
   return (
     <div className="space-y-6 pb-8 animate-fade-in">
@@ -145,15 +168,15 @@ export default function AdminDemoControlPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
               <Shield className="h-3.5 w-3.5" />
-              Show Demo Control
+              Manual Testing Suite
             </div>
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-                Seed, move, advance, and replay the demo workspace.
+                Comprehensive Admin Control Panel
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                This panel assumes `POST /api/demo/*` endpoints exist and gives a deterministic way to reset
-                the workspace, move actors, trigger workflow progress, and capture room media.
+                Trigger arbitrary system events, inject alerts, move actors, and advance workflow items 
+                to comprehensively test all features of the WheelSense platform without predefined constraints.
               </p>
             </div>
           </div>
@@ -165,79 +188,76 @@ export default function AdminDemoControlPage() {
             </Badge>
             <Badge variant="secondary">Tasks {activeTasks.length}</Badge>
             <Badge variant="secondary">Rooms {rooms.length}</Badge>
-            <Badge variant="outline" className="gap-1">
-              <Route className="h-3.5 w-3.5" />
-              Demo route
-            </Badge>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
-            onClick={() => void run("Reset show-demo", "Requested a deterministic demo workspace reset.", () => api.post("/demo/reset", { profile: "show-demo" }))}
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Reset show-demo
-          </Button>
-          <Button
             variant="outline"
-            onClick={() => void run(`Start scenario ${scenario}`, "Scenario playback started.", () => api.post(`/demo/scenarios/${encodeURIComponent(scenario)}/start`))}
+            className="border-2 border-foreground"
+            onClick={() => void run("Reset Workspace", "Cleared all dynamic data to starting state.", () => api.post("/demo/reset", { profile: "clean-slate" }))}
           >
-            <Play className="h-4 w-4" />
-            Start scenario
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => void run(`Stop scenario ${scenario}`, "Scenario playback stopped.", () => api.post(`/demo/scenarios/${encodeURIComponent(scenario)}/stop`))}
-          >
-            <Pause className="h-4 w-4" />
-            Stop scenario
+            <Trash2 className="mr-2 h-4 w-4" />
+            Clean Slate (Reset)
           </Button>
         </div>
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-4">
+          
           <DemoPanel
-            badge="Scenario playback"
-            title="Reset and run scripted walkthroughs"
-            description="Reset the show-demo workspace, then start or stop deterministic playback presets."
-            action={
-              <Select value={scenario} onValueChange={(value) => setScenario(value as ScenarioId)}>
-                <SelectTrigger className="w-[220px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SCENARIOS.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            }
-            footer={SCENARIOS.find((item) => item.id === scenario)?.description}
+            badge="Inject Events"
+            title="Trigger System Alerts"
+            description="Manually push alerts into the system to test responsive UI components for nurses and supervisors."
+            action={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
           >
-            <div className="grid gap-3 md:grid-cols-2">
-              {SCENARIOS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setScenario(item.id)}
-                  className={`rounded-2xl border p-4 text-left transition-smooth ${
-                    scenario === item.id
-                      ? "border-primary bg-primary/6 shadow-sm"
-                      : "border-border/70 bg-surface-container-low/40 hover:bg-surface-container-low/80"
-                  }`}
-                >
-                  <p className="font-medium text-foreground">{item.title}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                </button>
-              ))}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Patient</Label>
+                <Select value={alertPatientId} onValueChange={setAlertPatientId}>
+                  <SelectTrigger><SelectValue placeholder="Select patient" /></SelectTrigger>
+                  <SelectContent>
+                    {activePatients.map((item) => (
+                      <SelectItem key={item.id} value={String(item.id)}>
+                        {item.first_name} {item.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Severity</Label>
+                <Select value={alertSeverity} onValueChange={setAlertSeverity}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="warning">Warning</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <input 
+                  type="text" 
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={alertTitle}
+                  onChange={(e) => setAlertTitle(e.target.value)}
+                />
+              </div>
             </div>
+            <Button
+              className="w-full mt-2"
+              disabled={!alertPatientId}
+              onClick={handleCreateAlert}
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Inject Alert
+            </Button>
           </DemoPanel>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <DemoPanel badge="Movement" title="Move an actor" description="Place a patient or staff member in a room for the walkthrough." action={<Badge variant="outline">Manual</Badge>}>
+            <DemoPanel badge="Movement" title="Move an actor" description="Place a patient or staff member in a room." action={<Route className="h-4 w-4 text-muted-foreground" />}>
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>Actor type</Label>
@@ -281,10 +301,6 @@ export default function AdminDemoControlPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Note</Label>
-                  <Textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} />
-                </div>
                 <Button
                   className="w-full"
                   disabled={!actorId || !roomId}
@@ -300,13 +316,13 @@ export default function AdminDemoControlPage() {
                     )
                   }
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="mr-2 h-4 w-4" />
                   Move actor
                 </Button>
               </div>
             </DemoPanel>
 
-            <DemoPanel badge="Camera" title="Capture the current room" description="Request a fresh room photo snapshot for the chosen room." action={<Camera className="h-4 w-4 text-muted-foreground" />}>
+            <DemoPanel badge="Hardware" title="Capture Snapshot" description="Trigger a room snapshot from connected hardware." action={<Camera className="h-4 w-4 text-muted-foreground" />}>
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>Room</Label>
@@ -332,8 +348,8 @@ export default function AdminDemoControlPage() {
                     )
                   }
                 >
-                  <Camera className="h-4 w-4" />
-                  Capture now
+                  <Camera className="mr-2 h-4 w-4" />
+                  Trigger Capture
                 </Button>
               </div>
             </DemoPanel>
@@ -341,8 +357,8 @@ export default function AdminDemoControlPage() {
 
           <DemoPanel
             badge="Workflow"
-            title="Advance tasks, schedules, and directives"
-            description="Drive claim, handoff, or advance behavior against the seeded workflow rows."
+            title="Advance Workflows"
+            description="Force workflow progression to test role-based handoffs and task queues."
             action={
               <div className="flex flex-wrap gap-2">
                 <Select value={itemType} onValueChange={(value) => setItemType(value as ItemType)}>
@@ -426,9 +442,9 @@ export default function AdminDemoControlPage() {
                           }),
                       )
                     }
-                    className="rounded-2xl border border-border/70 bg-surface-container-low/40 p-4 text-left transition-smooth hover:bg-surface-container-low/80 disabled:opacity-50"
+                    className="rounded-2xl border border-border/70 bg-surface-container-low/40 p-4 text-left transition-smooth hover:bg-primary/10 hover:border-primary/30 disabled:opacity-50"
                   >
-                    <p className="font-medium text-foreground">{action}</p>
+                    <p className="font-medium text-foreground capitalize">{action}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {action === "claim" ? "Take ownership." : action === "handoff" ? "Transfer work." : "Push next status."}
                     </p>
@@ -436,7 +452,7 @@ export default function AdminDemoControlPage() {
                 ))}
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">Target preview: {targetPreview}</p>
+            <p className="text-xs text-muted-foreground mt-2">Target preview: {targetPreview}</p>
             {itemPreview ? (
               <p className="text-xs text-muted-foreground">
                 Selected item: #{itemPreview.id} {valueFromItem(itemPreview)}
@@ -450,10 +466,9 @@ export default function AdminDemoControlPage() {
             <CardContent className="space-y-4 p-5">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Current roster</p>
-                  <h2 className="text-lg font-semibold text-foreground">Show-demo seed shape</h2>
+                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Current State</p>
+                  <h2 className="text-lg font-semibold text-foreground">Workspace Resources</h2>
                 </div>
-                <Badge variant="outline">5 + 2 + 1 + 1 + 1</Badge>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
@@ -471,38 +486,6 @@ export default function AdminDemoControlPage() {
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
                   <p className="text-xs text-muted-foreground">Alerts</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{alerts.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/90">
-            <CardContent className="space-y-3 p-5">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Seed preview</p>
-                  <h3 className="text-base font-semibold text-foreground">Roster and workflow summary</h3>
-                </div>
-                <Badge variant="secondary">{messages.length} messages</Badge>
-              </div>
-              <div className="space-y-3 text-sm">
-                <div className="grid gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Patients</p>
-                  {activePatients.slice(0, 5).map((patient) => (
-                    <div key={patient.id} className="rounded-xl border border-border/70 px-3 py-2">
-                      <p className="font-medium text-foreground">{patient.first_name} {patient.last_name}</p>
-                      <p className="text-xs text-muted-foreground">Room {patient.room_id ?? "unassigned"} - Care {patient.care_level}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Staff</p>
-                  {staffUsers.slice(0, 5).map((member) => (
-                    <div key={member.id} className="rounded-xl border border-border/70 px-3 py-2">
-                      <p className="font-medium text-foreground">{displayName(member)}</p>
-                      <p className="text-xs text-muted-foreground">{member.role} - #{member.id}</p>
-                    </div>
-                  ))}
                 </div>
               </div>
             </CardContent>
@@ -537,24 +520,6 @@ export default function AdminDemoControlPage() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/70 bg-card/90">
-            <CardContent className="space-y-3 p-5 text-sm text-muted-foreground">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Live counts</p>
-                  <h3 className="text-base font-semibold text-foreground">Current workspace state</h3>
-                </div>
-                <Badge variant="secondary">Polling only</Badge>
-              </div>
-              <p>Open tasks: {activeTasks.length}</p>
-              <p>Scheduled rounds: {activeSchedules.length}</p>
-              <p>Active directives: {activeDirectives.length}</p>
-              <p>Handover notes: {handovers.length}</p>
-              <p>Audit events: {audit.length}</p>
-              <p>Device activity entries: {activity.length}</p>
             </CardContent>
           </Card>
         </div>

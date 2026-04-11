@@ -11,8 +11,8 @@ from app.api.dependencies import (
     RequireRole,
     get_current_user_workspace,
     get_db,
+    ROLE_FACILITY_READ,
     ROLE_PATIENT_MANAGERS,
-    ROLE_SUPERVISOR_READ,
 )
 from app.models.core import Workspace
 from app.models.core import Room
@@ -41,7 +41,7 @@ async def list_facilities(
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_SUPERVISOR_READ)),
+    _: User = Depends(RequireRole(ROLE_FACILITY_READ)),
 ):
     return await facility_service.get_multi(db, ws_id=ws.id, skip=skip, limit=limit)
 
@@ -59,7 +59,7 @@ async def get_facility(
     facility_id: int,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_SUPERVISOR_READ)),
+    _: User = Depends(RequireRole(ROLE_FACILITY_READ)),
 ):
     fac = await facility_service.get(db, ws_id=ws.id, id=facility_id)
     if not fac:
@@ -97,7 +97,7 @@ async def list_floors(
     facility_id: int,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    _: User = Depends(RequireRole(ROLE_SUPERVISOR_READ)),
+    _: User = Depends(RequireRole(ROLE_FACILITY_READ)),
 ):
     all_floors = await floor_service.get_multi(db, ws_id=ws.id)
     return [f for f in all_floors if f.facility_id == facility_id]

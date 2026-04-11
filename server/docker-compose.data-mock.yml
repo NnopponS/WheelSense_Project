@@ -1,0 +1,59 @@
+# Mock/simulator Postgres (pgdata-sim) + synthetic MQTT worker. Merged with docker-compose.core.yml via docker-compose.sim.yml.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wheelsense
+      POSTGRES_USER: wheelsense
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_dev}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-sim:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wheelsense"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  wheelsense-platform-server:
+    environment:
+      ENV_MODE: simulator
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      BOOTSTRAP_DEMO_WORKSPACE_NAME: ${BOOTSTRAP_DEMO_WORKSPACE_NAME:-WheelSense Demo Workspace}
+
+  wheelsense-simulator:
+    # No fixed container_name: avoids conflict with orphaned containers from older stacks
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wheelsense-platform-wheelsense-platform-server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+      wheelsense-platform-server:
+        condition: service_started
+    environment:
+      PYTHONUNBUFFERED: "1"
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
+      MQTT_PORT: ${MQTT_PORT:-1883}
+      MQTT_USER: ${MQTT_USER:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      API_BASE_URL: http://wheelsense-platform-server:8000/api
+      BOOTSTRAP_DEMO_WORKSPACE_NAME: ${BOOTSTRAP_DEMO_WORKSPACE_NAME:-WheelSense Demo Workspace}
+      SIM_WORKSPACE_ID: ${SIM_WORKSPACE_ID:-}
+    command:
+      - sh
+      - -c
+      - python scripts/seed_sim_team.py && exec python sim_controller.py --routine
+
+volumes:
+  pgdata-sim:

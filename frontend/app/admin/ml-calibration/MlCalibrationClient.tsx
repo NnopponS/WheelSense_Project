@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useQuery } from "@/hooks/useQuery";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/lib/i18n";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import { 
   Cpu, 
@@ -16,7 +17,8 @@ import {
   AlertCircle,
   Save,
   Download,
-  Terminal
+  Terminal,
+  Camera
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,6 +60,7 @@ interface MotionTrainResponse {
 }
 
 export default function MlCalibrationClient() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>("localization");
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null);
@@ -68,16 +71,59 @@ export default function MlCalibrationClient() {
   const [isRecording, setIsRecording] = useState(false);
   const [trainingStatus, setTrainingStatus] = useState<string | null>(null);
 
+  // States for Localization config & recording
+  const [locStrategy, setLocStrategy] = useState<"knn" | "max_rssi">("knn");
+  const [selectedRoomId, setSelectedRoomId] = useState<number | "">("");
+  const [selectedLocDevice, setSelectedLocDevice] = useState<string>("");
+  const [locSessionId, setLocSessionId] = useState<number | null>(null);
+  const [recordingLoc, setRecordingLoc] = useState(false);
+  const [locSamplesCount, setLocSamplesCount] = useState(0);
+
   // Queries
   const roomsEndpoint = useMemo(() => withWorkspaceScope("/rooms", user?.workspace_id), [user?.workspace_id]);
-  const devicesEndpoint = useMemo(() => withWorkspaceScope("/devices?hardware_type=wheelchair", user?.workspace_id), [user?.workspace_id]);
+  const devicesEndpoint = useMemo(() => withWorkspaceScope("/devices", user?.workspace_id), [user?.workspace_id]);
   const locModelEndpoint = useMemo(() => withWorkspaceScope("/localization", user?.workspace_id), [user?.workspace_id]);
+  const locConfigEndpoint = useMemo(() => withWorkspaceScope("/localization/config", user?.workspace_id), [user?.workspace_id]);
   const motionModelEndpoint = useMemo(() => withWorkspaceScope("/motion/model", user?.workspace_id), [user?.workspace_id]);
 
-  const { data: rooms } = useQuery<Room[]>(roomsEndpoint);
-  const { data: devices } = useQuery<Device[]>(devicesEndpoint);
-  const { data: locModel, refetch: refetchLoc } = useQuery<LocalizationModelInfo>(locModelEndpoint);
-  const { data: motionModel, refetch: refetchMotion } = useQuery<MotionModelInfo>(motionModelEndpoint);
+  const { data: rooms } = useQuery({
+    queryKey: ["admin", "ml-calibration", "rooms", roomsEndpoint],
+    queryFn: () => api.get<Room[]>(roomsEndpoint!),
+    enabled: Boolean(roomsEndpoint),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+  const { data: devices } = useQuery({
+    queryKey: ["admin", "ml-calibration", "devices", devicesEndpoint],
+    queryFn: () => api.get<Device[]>(devicesEndpoint!),
+    enabled: Boolean(devicesEndpoint),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+  const { data: locModel, refetch: refetchLoc } = useQuery({
+    queryKey: ["admin", "ml-calibration", "localization", locModelEndpoint],
+    queryFn: () => api.get<LocalizationModelInfo>(locModelEndpoint!),
+    enabled: Boolean(locModelEndpoint),
+    staleTime: 30_000,
+  });
+  const { data: locConfig, refetch: refetchLocConfig } = useQuery({
+    queryKey: ["admin", "ml-calibration", "localization-config", locConfigEndpoint],
+    queryFn: () => api.get<{ strategy: "knn" | "max_rssi" }>(locConfigEndpoint!),
+    enabled: Boolean(locConfigEndpoint),
+    staleTime: 30_000,
+  });
+  const { data: motionModel, refetch: refetchMotion } = useQuery({
+    queryKey: ["admin", "ml-calibration", "motion-model", motionModelEndpoint],
+    queryFn: () => api.get<MotionModelInfo>(motionModelEndpoint!),
+    enabled: Boolean(motionModelEndpoint),
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (locConfig?.strategy) {
+      setLocStrategy(locConfig.strategy);
+    }
+  }, [locConfig?.strategy]);
 
   const showMsg = (text: string, type: "success" | "error" | "info" = "info") => {
     setMessage({ text, type });
@@ -85,6 +131,84 @@ export default function MlCalibrationClient() {
   };
 
   // Handlers for Localization
+  // Handlers for Localization
+  const handleStartLocSession = async () => {
+    if (!selectedLocDevice || !selectedRoomId) return;
+    try {
+      const res = await api.post<{ id: number }>("/localization/calibration/sessions", {
+        device_id: selectedLocDevice,
+        notes: `room_id:${selectedRoomId}`,
+      });
+      setLocSessionId(res.id);
+      setRecordingLoc(true);
+      setLocSamplesCount(0);
+      showMsg("Calibration session started. Move around and record samples.", "success");
+    } catch (err) {
+      showMsg(err instanceof ApiError ? err.message : "Failed to start session", "error");
+    }
+  };
+
+  const handleRecordLocSample = async () => {
+    if (!locSessionId || !selectedRoomId || !selectedLocDevice) return;
+    try {
+      const readings = await api.get<
+        { node_id: string | null; rssi: number; timestamp?: string | null }[]
+      >(`/telemetry/rssi?device_id=${encodeURIComponent(selectedLocDevice)}&limit=500`);
+      const byNode: Record<string, number> = {};
+      const sorted = [...(readings ?? [])].sort((a, b) => {
+        const ta = a.timestamp ? Date.parse(a.timestamp) : 0;
+        const tb = b.timestamp ? Date.parse(b.timestamp) : 0;
+        return tb - ta;
+      });
+      for (const row of sorted) {
+        if (!row.node_id) continue;
+        if (byNode[row.node_id] !== undefined) continue;
+        byNode[row.node_id] = Math.round(Number(row.rssi));
+      }
+      if (Object.keys(byNode).length === 0) {
+        showMsg(
+          "No RSSI readings found for this device yet. Ensure the device is online and publishing RSSI.",
+          "error",
+        );
+        return;
+      }
+      const roomName = rooms?.find((r) => r.id === Number(selectedRoomId))?.name;
+      await api.post(`/localization/calibration/sessions/${locSessionId}/samples`, {
+        room_id: Number(selectedRoomId),
+        room_name: roomName,
+        rssi_vector: byNode,
+      });
+      setLocSamplesCount((prev) => prev + 1);
+      showMsg("Sample recorded", "success");
+    } catch (err) {
+      showMsg(err instanceof ApiError ? err.message : "Failed to record sample", "error");
+    }
+  };
+
+  const handleStopLocSession = async () => {
+    if (!locSessionId) return;
+    try {
+      await api.post(`/localization/calibration/sessions/${locSessionId}/train`, {});
+      setRecordingLoc(false);
+      setLocSessionId(null);
+      showMsg("Session trained and samples saved to the training set.", "success");
+      await refetchLoc();
+    } catch (err) {
+      showMsg(err instanceof ApiError ? err.message : "Failed to finish session", "error");
+    }
+  };
+
+  const handleStrategyChange = async (strategy: "knn" | "max_rssi") => {
+    try {
+      await api.put("/localization/config", { strategy });
+      setLocStrategy(strategy);
+      showMsg(`Localization strategy changed to ${strategy}`, "success");
+      await refetchLocConfig();
+    } catch (err) {
+      showMsg(err instanceof ApiError ? err.message : "Failed to change strategy", "error");
+    }
+  };
+
   const handleTrainLoc = async () => {
     try {
       setTrainingStatus("training_loc");
@@ -150,11 +274,11 @@ export default function MlCalibrationClient() {
   return (
     <div className="space-y-6 animate-fade-in max-w-6xl">
       <div>
-        <h2 className="text-2xl font-bold text-on-surface flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Cpu className="w-6 h-6 text-primary" />
           ML Calibration
         </h2>
-        <p className="text-sm text-on-surface-variant mt-1">
+        <p className="text-sm text-foreground-variant mt-1">
           Manage and calibrate machine learning models for room localization and motion detection.
         </p>
       </div>
@@ -191,64 +315,166 @@ export default function MlCalibrationClient() {
 
       {activeTab === "localization" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                Rooms & Training Status
-              </CardTitle>
-              <CardDescription>
-                RSSI fingerprints are mapped to these rooms.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Room Name</TableHead>
-                    <TableHead>Node ID</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rooms?.map((room) => (
-                    <TableRow key={room.id}>
-                      <TableCell className="font-medium">{room.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{room.node_device_id || "No Node"}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {locModel?.status === "ready" && (locModel?.rooms ?? 0) > 0 ? (
-                          <div className="flex items-center gap-1 text-success">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span className="text-xs">Active</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-on-surface-variant">No Data</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {(!rooms || rooms.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8 text-on-surface-variant italic">
-                        No rooms configured. Go to Facility Management to add rooms.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Terminal className="w-5 h-5" />
+                  Localization Data Collector
+                </CardTitle>
+                <CardDescription>
+                  Record RSSI fingerprints for a selected room to train the model.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Room</Label>
+                    <Select value={String(selectedRoomId)} onValueChange={v => setSelectedRoomId(Number(v))} disabled={recordingLoc}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select room..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rooms?.map(r => (
+                          <SelectItem key={r.id} value={String(r.id)}>
+                            {r.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Calibration Device (M5/Mobile)</Label>
+                    <Select value={selectedLocDevice} onValueChange={setSelectedLocDevice} disabled={recordingLoc}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select device..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {devices?.map(d => (
+                          <SelectItem key={d.device_id} value={d.device_id}>
+                            {d.display_name} ({d.device_id})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-          <Card>
+                <p className="text-xs text-muted-foreground border-l-4 border-primary/30 pl-3 leading-relaxed">
+                  {t("admin.ml.sessionHardwareNote")}
+                </p>
+
+                <div className="flex gap-3">
+                  {!recordingLoc ? (
+                    <Button 
+                      className="flex-1 h-12 rounded-xl text-lg font-bold bg-primary text-white hover:bg-primary/90"
+                      onClick={handleStartLocSession}
+                      disabled={!selectedLocDevice || !selectedRoomId}
+                    >
+                      <Play className="w-5 h-5 mr-2 fill-current" /> Start Calibration Session
+                    </Button>
+                  ) : (
+                    <>
+                      <Button 
+                        className="flex-1 h-12 rounded-xl text-lg font-bold bg-success text-white hover:bg-success/90"
+                        onClick={handleRecordLocSample}
+                      >
+                        <Camera className="w-5 h-5 mr-2" /> Record Sample ({locSamplesCount})
+                      </Button>
+                      <Button 
+                        className="flex-1 h-12 rounded-xl text-lg font-bold bg-error text-white hover:bg-error/90"
+                        onClick={handleStopLocSession}
+                      >
+                        <Square className="w-5 h-5 mr-2 fill-current" /> Finish & Train
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {recordingLoc && (
+                  <div className="flex items-center justify-center gap-2 p-4 bg-info-container/20 rounded-xl animate-pulse">
+                    <div className="w-3 h-3 rounded-full bg-info" />
+                    <span className="text-sm font-bold text-info uppercase tracking-widest">Move device around the room and record samples</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Rooms & Training Status
+                </CardTitle>
+                <CardDescription>
+                  RSSI fingerprints are mapped to these rooms.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Room Name</TableHead>
+                      <TableHead>Node ID</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rooms?.map((room) => (
+                      <TableRow key={room.id}>
+                        <TableCell className="font-medium">{room.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{room.node_device_id || "No Node"}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {locModel?.status === "ready" && (locModel?.rooms ?? 0) > 0 ? (
+                            <div className="flex items-center gap-1 text-success">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span className="text-xs">Active</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-foreground-variant">No Data</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!rooms || rooms.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8 text-foreground-variant italic">
+                          No rooms configured. Go to Facility Management to add rooms.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="h-fit">
             <CardHeader>
               <CardTitle className="text-lg">Model Controls</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="surface-container-low p-4 rounded-xl space-y-2">
+              <div className="space-y-2">
+                <Label>Localization Strategy</Label>
+                <Select value={locStrategy} onValueChange={(v) => handleStrategyChange(v as "knn" | "max_rssi")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="knn">KNN (Fingerprinting)</SelectItem>
+                    <SelectItem value="max_rssi">Strongest RSSI Node</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-foreground-variant italic">
+                  {locStrategy === "knn" ? "Uses machine learning on RSSI fingerprints." : "Falls back to nearest node if KNN is disabled."}
+                </p>
+              </div>
+
+              <div className="surface-container-low p-4 rounded-xl space-y-2 mt-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-on-surface-variant">Status</span>
+                  <span className="text-foreground-variant">Status</span>
                   <Badge variant={locModel?.status === "ready" ? "default" : "secondary"}>
                     {locModel?.status || "Unknown"}
                   </Badge>
@@ -256,11 +482,11 @@ export default function MlCalibrationClient() {
                 {locModel?.status === "ready" && (
                   <>
                     <div className="flex justify-between text-sm">
-                      <span className="text-on-surface-variant">Trained Rooms</span>
+                      <span className="text-foreground-variant">Trained Rooms</span>
                       <span className="font-bold">{locModel.rooms ?? 0}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-on-surface-variant">Nodes (Beacons)</span>
+                      <span className="text-foreground-variant">Nodes (Beacons)</span>
                       <span className="font-bold">{locModel.nodes?.length || 0}</span>
                     </div>
                   </>
@@ -279,7 +505,7 @@ export default function MlCalibrationClient() {
                 )}
                 Retrain from Database
               </Button>
-              <p className="text-[10px] text-on-surface-variant italic px-1 text-center">
+              <p className="text-[10px] text-foreground-variant italic px-1 text-center">
                 Uses existing RSSI fingerprint data in the database.
               </p>
             </CardContent>
@@ -334,6 +560,10 @@ export default function MlCalibrationClient() {
                 </div>
               </div>
 
+              <p className="text-xs text-muted-foreground border-l-4 border-primary/30 pl-3 leading-relaxed">
+                {t("admin.ml.sessionHardwareNote")}
+              </p>
+
               <div className="flex gap-3">
                 <Button 
                   className={`flex-1 h-12 rounded-xl text-lg font-bold ${isRecording ? 'bg-error text-white hover:bg-error/90' : 'bg-success text-white hover:bg-success/90'}`}
@@ -364,7 +594,7 @@ export default function MlCalibrationClient() {
                     </Badge>
                   ))}
                   {(!motionModel?.labels || motionModel?.labels.length === 0) && (
-                    <span className="text-xs text-on-surface-variant italic">No labels trained yet.</span>
+                    <span className="text-xs text-foreground-variant italic">No labels trained yet.</span>
                   )}
                 </div>
               </div>
@@ -378,7 +608,7 @@ export default function MlCalibrationClient() {
             <CardContent className="space-y-4">
               <div className="surface-container-low p-4 rounded-xl space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-on-surface-variant">Trained</span>
+                  <span className="text-foreground-variant">Trained</span>
                   <Badge variant={motionModel?.trained ? "default" : "secondary"}>
                     {motionModel?.trained ? "Ready" : "Not Trained"}
                   </Badge>
@@ -386,11 +616,11 @@ export default function MlCalibrationClient() {
                 {motionModel?.trained && (
                   <>
                     <div className="flex justify-between text-sm">
-                      <span className="text-on-surface-variant">Accuracy</span>
+                      <span className="text-foreground-variant">Accuracy</span>
                       <span className="font-bold">{((motionModel.accuracy ?? 0) * 100).toFixed(1)}%</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-on-surface-variant">Samples</span>
+                      <span className="text-foreground-variant">Samples</span>
                       <span className="font-bold">{motionModel.n_samples ?? 0}</span>
                     </div>
                   </>

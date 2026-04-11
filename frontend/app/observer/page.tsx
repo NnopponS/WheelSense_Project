@@ -1,361 +1,597 @@
 "use client";
-"use no memo";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { type ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, LocateFixed, Monitor, ShieldAlert } from "lucide-react";
-import { z } from "zod";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  CheckCircle2,
+  Clock,
+  Heart,
+  ListTodo,
+  Map as MapIcon,
+  Stethoscope,
+  User,
+  Users,
+  AlertTriangle,
+  CheckSquare,
+  ArrowRight,
+} from "lucide-react";
 import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
-import { DataTableCard } from "@/components/supervisor/DataTableCard";
-import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { api } from "@/lib/api";
+import {
+  mergeServerShiftChecklist,
+  rowsToApiPayload,
+  utcShiftDateString,
+} from "@/lib/shiftChecklistDefaults";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
-import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import type {
+  CareTaskOut,
   ListAlertsResponse,
   ListPatientsResponse,
+  ListVitalReadingsResponse,
 } from "@/lib/api/task-scope-types";
 
-const predictionSchema = z
-  .object({
-    id: z.number(),
-    device_id: z.string(),
-    timestamp: z.string().nullable().optional(),
-    predicted_room_id: z.number().nullable().optional(),
-    predicted_room_name: z.string().nullable().optional(),
-    confidence: z.number().nullable().optional(),
-    model_type: z.string().nullable().optional(),
-  })
-  .passthrough();
+function taskPriorityLabel(t: (key: TranslationKey) => string, priority: string): string {
+  switch (priority) {
+    case "low":
+      return t("priority.low");
+    case "medium":
+      return t("priority.medium");
+    case "high":
+      return t("priority.high");
+    case "critical":
+      return t("support.priorityCritical");
+    case "urgent":
+      return t("priority.urgent");
+    default:
+      return priority;
+  }
+}
 
-const roomSchema = z
-  .object({
-    id: z.number(),
-    name: z.string(),
-    description: z.string().optional().default(""),
-    room_type: z.string().optional().default("room"),
-  })
-  .passthrough();
+function careLevelLabel(t: (key: TranslationKey) => string, level: string): string {
+  switch (level) {
+    case "standard":
+      return t("observer.page.careLevelStandard");
+    case "special":
+      return t("observer.page.careLevelSpecial");
+    case "critical":
+      return t("observer.page.careLevelCritical");
+    default:
+      return level;
+  }
+}
 
-type RoomRow = {
-  roomId: number;
-  roomName: string;
-  description: string;
-  roomType: string;
-  patients: number;
-  activeAlerts: number;
-  trackedDevices: number;
-  avgConfidence: number | null;
-};
+export default function ObserverDashboardPage() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [shiftDate] = useState(() => utcShiftDateString());
 
-type AlertRow = {
-  id: number;
-  title: string;
-  description: string;
-  severity: string;
-  patientId: number | null;
-  patientName: string;
-  roomName: string;
-  timestamp: string;
-};
+  const shiftChecklistQuery = useQuery({
+    queryKey: ["shift-checklist", "me", shiftDate],
+    queryFn: () => api.getShiftChecklistMe({ shift_date: shiftDate }),
+  });
 
-export default function ObserverZonePage() {
-  const roomsQuery = useQuery({
-    queryKey: ["observer", "dashboard", "rooms"],
-    queryFn: async () => {
-      const raw = await api.listRooms();
-      if (!Array.isArray(raw)) return [] as z.infer<typeof roomSchema>[];
-      return raw
-        .map((item) => roomSchema.safeParse(item))
-        .filter((result) => result.success)
-        .map((result) => result.data);
+  const shiftChecklistMutation = useMutation({
+    mutationFn: (items: ReturnType<typeof mergeServerShiftChecklist>) =>
+      api.putShiftChecklistMe({ shift_date: shiftDate, items: rowsToApiPayload(items) }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["shift-checklist", "me", shiftDate] });
     },
   });
 
+  // Data queries
   const patientsQuery = useQuery({
     queryKey: ["observer", "dashboard", "patients"],
-    queryFn: () => api.listPatients({ limit: 400 }),
+    queryFn: () => api.listPatients({ limit: 100 }),
   });
 
   const alertsQuery = useQuery({
     queryKey: ["observer", "dashboard", "alerts"],
-    queryFn: () => api.listAlerts({ status: "active", limit: 250 }),
+    queryFn: () => api.listAlerts({ status: "active", limit: 50 }),
+    refetchInterval: 20_000,
   });
 
-  const predictionsQuery = useQuery({
-    queryKey: ["observer", "dashboard", "predictions"],
-    queryFn: async () => {
-      const raw = await api.listLocalizationPredictionsRaw({ limit: 250 });
-      if (!Array.isArray(raw)) return [] as z.infer<typeof predictionSchema>[];
-      return raw
-        .map((item) => predictionSchema.safeParse(item))
-        .filter((result) => result.success)
-        .map((result) => result.data);
-    },
+  const tasksQuery = useQuery({
+    queryKey: ["observer", "dashboard", "tasks"],
+    queryFn: () => api.listWorkflowTasks({ limit: 50 }),
+  });
+
+  const vitalsQuery = useQuery({
+    queryKey: ["observer", "dashboard", "vitals"],
+    queryFn: () => api.listVitalReadings({ limit: 100 }),
     refetchInterval: 30_000,
   });
 
-  const rooms = useMemo(() => roomsQuery.data ?? [], [roomsQuery.data]);
+  // Data processing
   const patients = useMemo(
     () => (patientsQuery.data ?? []) as ListPatientsResponse,
     [patientsQuery.data],
   );
-  const alerts = useMemo(
-    () => (alertsQuery.data ?? []) as ListAlertsResponse,
-    [alertsQuery.data],
-  );
-  const predictions = useMemo(
-    () => predictionsQuery.data ?? [],
-    [predictionsQuery.data],
+  const alerts = useMemo(() => (alertsQuery.data ?? []) as ListAlertsResponse, [alertsQuery.data]);
+  const tasks = useMemo(() => (tasksQuery.data ?? []) as CareTaskOut[], [tasksQuery.data]);
+  const vitals = useMemo(
+    () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
+    [vitalsQuery.data],
   );
 
-  const patientMap = useMemo(
+  const patientById = useMemo(
     () => new Map(patients.map((patient) => [patient.id, patient])),
     [patients],
   );
 
-  const latestPredictionByDevice = useMemo(() => {
-    const latest = new Map<string, z.infer<typeof predictionSchema>>();
-    for (const prediction of predictions) {
-      const existing = latest.get(prediction.device_id);
-      const existingTimestamp = existing?.timestamp ?? "";
-      const currentTimestamp = prediction.timestamp ?? "";
-      if (!existing || currentTimestamp > existingTimestamp) {
-        latest.set(prediction.device_id, prediction);
+  // Latest vitals per patient
+  const latestVitalsByPatient = useMemo(() => {
+    const map = new Map<number, ListVitalReadingsResponse[number]>();
+    for (const reading of vitals) {
+      const current = map.get(reading.patient_id);
+      if (!current || reading.timestamp > current.timestamp) {
+        map.set(reading.patient_id, reading);
       }
     }
-    return latest;
-  }, [predictions]);
+    return map;
+  }, [vitals]);
 
-  const roomRows = useMemo<RoomRow[]>(() => {
-    const latestPredictions = Array.from(latestPredictionByDevice.values());
-
-    return rooms.map((room) => {
-      const roomPredictions = latestPredictions.filter(
-        (prediction) =>
-          prediction.predicted_room_id === room.id ||
-          prediction.predicted_room_name === room.name,
-      );
-
-      const roomAlerts = alerts.filter((alert) => {
-        const data = alert.data as Record<string, unknown>;
-        const alertRoomId = typeof data.room_id === "number" ? data.room_id : null;
-        const alertRoomName = typeof data.room_name === "string" ? data.room_name : null;
-
-        if (alertRoomId != null) return alertRoomId === room.id;
-        if (alertRoomName != null) return alertRoomName === room.name;
-
-        if (!alert.device_id) return false;
-        const prediction = latestPredictionByDevice.get(alert.device_id);
-        if (!prediction) return false;
-        return (
-          prediction.predicted_room_id === room.id ||
-          prediction.predicted_room_name === room.name
-        );
-      });
-
-      const confidenceValues = roomPredictions
-        .map((prediction) => prediction.confidence)
-        .filter((confidence): confidence is number => typeof confidence === "number");
-
-      const avgConfidence = confidenceValues.length
-        ? confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length
-        : null;
-
-      return {
-        roomId: room.id,
-        roomName: room.name,
-        description: room.description,
-        roomType: room.room_type,
-        patients: patients.filter((patient) => patient.room_id === room.id).length,
-        activeAlerts: roomAlerts.length,
-        trackedDevices: roomPredictions.length,
-        avgConfidence,
-      };
-    });
-  }, [alerts, latestPredictionByDevice, patients, rooms]);
-
-  const alertRows = useMemo<AlertRow[]>(() => {
-    return [...alerts]
-      .filter((alert) => alert.status === "active")
-      .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
-      .map((alert) => {
-        const patient = alert.patient_id ? patientMap.get(alert.patient_id) : null;
-        const data = alert.data as Record<string, unknown>;
-        const roomName =
-          typeof data.room_name === "string" ? data.room_name : "Unknown room";
-
+  // My assigned patients (for now show all active patients, in future filter by caregiver assignment)
+  const myPatients = useMemo(() => {
+    return patients
+      .filter((p) => p.is_active)
+      .slice(0, 8)
+      .map((patient) => {
+        const patientAlerts = alerts.filter((a) => a.patient_id === patient.id);
+        const latestVitals = latestVitalsByPatient.get(patient.id);
         return {
-          id: alert.id,
-          title: alert.title,
-          description: alert.description,
-          severity: alert.severity,
-          patientId: alert.patient_id,
-          patientName: patient
-            ? `${patient.first_name} ${patient.last_name}`.trim()
-            : "Unlinked patient",
-          roomName,
-          timestamp: alert.timestamp,
+          patient,
+          alerts: patientAlerts,
+          latestVitals,
         };
       });
-  }, [alerts, patientMap]);
+  }, [patients, alerts, latestVitalsByPatient]);
 
-  const roomColumns = useMemo<ColumnDef<RoomRow>[]>(
-    () => [
-      {
-        accessorKey: "roomName",
-        header: "Room",
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.roomName}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">
-              {row.original.description || "Clinical room"}
-            </p>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "roomType",
-        header: "Type",
-      },
-      {
-        accessorKey: "patients",
-        header: "Patients",
-      },
-      {
-        accessorKey: "activeAlerts",
-        header: "Active alerts",
-      },
-      {
-        accessorKey: "trackedDevices",
-        header: "Tracked devices",
-      },
-      {
-        accessorKey: "avgConfidence",
-        header: "Avg confidence",
-        cell: ({ row }) =>
-          row.original.avgConfidence != null
-            ? `${Math.round(row.original.avgConfidence * 100)}%`
-            : "-",
-      },
-    ],
-    [],
+  // My tasks (filter by assigned caregiver if available)
+  const myTasks = useMemo(() => {
+    return tasks
+      .filter((task) => task.status === "pending" || task.status === "in_progress")
+      .sort((left, right) => {
+        const order = { critical: 0, high: 1, normal: 2, low: 3 };
+        const leftRank = order[left.priority as keyof typeof order] ?? 4;
+        const rightRank = order[right.priority as keyof typeof order] ?? 4;
+        if (leftRank !== rightRank) return leftRank - rightRank;
+        if (!left.due_at) return 1;
+        if (!right.due_at) return -1;
+        return left.due_at.localeCompare(right.due_at);
+      })
+      .slice(0, 6);
+  }, [tasks]);
+
+  const checklist = useMemo(
+    () => mergeServerShiftChecklist(shiftChecklistQuery.data?.items),
+    [shiftChecklistQuery.data],
   );
 
-  const alertColumns = useMemo<ColumnDef<AlertRow>[]>(
-    () => [
-      {
-        accessorKey: "title",
-        header: "Alert",
-        cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
-          </div>
-        ),
-      },
-      {
-        accessorKey: "patientName",
-        header: "Patient",
-      },
-      {
-        accessorKey: "roomName",
-        header: "Room",
-      },
-      {
-        accessorKey: "severity",
-        header: "Severity",
-        cell: ({ row }) => {
-          const severity = row.original.severity;
-          const variant =
-            severity === "critical"
-              ? "destructive"
-              : severity === "warning"
-                ? "warning"
-                : "secondary";
-          return <Badge variant={variant}>{severity}</Badge>;
-        },
-      },
-      {
-        accessorKey: "timestamp",
-        header: "Time",
-        cell: ({ row }) => (
-          <div className="space-y-1 text-sm">
-            <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
-          </div>
-        ),
-      },
-      {
-        id: "actions",
-        header: "",
-        cell: ({ row }) => (
-          <Button asChild size="sm" variant="outline">
-            <Link href={row.original.patientId ? `/observer/patients/${row.original.patientId}` : "/observer/patients"}>
-              Open patient
-            </Link>
-          </Button>
-        ),
-      },
-    ],
-    [],
-  );
+  // Shift stats
+  const shiftStats = useMemo(() => {
+    const total = checklist.length;
+    const completed = checklist.filter((item) => item.checked).length;
+    const remaining = total - completed;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, remaining, percent };
+  }, [checklist]);
 
-  const trackedDevices = latestPredictionByDevice.size;
-  const highConfidenceCount = Array.from(latestPredictionByDevice.values()).filter(
-    (prediction) => (prediction.confidence ?? 0) >= 0.8,
-  ).length;
-  const activeAlertCount = alerts.filter((item) => item.status === "active").length;
+  const toggleChecklistItem = (id: string) => {
+    const next = checklist.map((item) =>
+      item.id === id ? { ...item, checked: !item.checked } : item,
+    );
+    shiftChecklistMutation.mutate(next);
+  };
 
   const isLoadingAny =
-    roomsQuery.isLoading ||
     patientsQuery.isLoading ||
     alertsQuery.isLoading ||
-    predictionsQuery.isLoading;
+    tasksQuery.isLoading ||
+    shiftChecklistQuery.isLoading ||
+    vitalsQuery.isLoading;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Zone Dashboard</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Live room watch with active alerts and localization confidence.
-        </p>
+    <div className="space-y-6 pb-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            <User className="h-3.5 w-3.5" />
+            {t("observer.page.consoleBadge")}
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
+              {t("observer.page.dashboardTitle")}
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+              {t("observer.page.dashboardSubtitle")}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/observer/tasks">{t("nav.tasks")}</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/observer/patients">{t("nav.patients")}</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/observer/monitoring">
+              <MapIcon className="mr-1.5 h-4 w-4" />
+              {t("observer.page.zoneMap")}
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      <DashboardFloorplanPanel openHref="/observer/monitoring" />
+      {/* Stats Overview */}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("observer.page.statMyPatients")}
+                </p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  {myPatients.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("observer.page.statAssignedToday")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryStatCard icon={Monitor} label="Rooms monitored" value={rooms.length} tone="info" />
-        <SummaryStatCard icon={ShieldAlert} label="Active alerts" value={activeAlertCount} tone={activeAlertCount > 0 ? "warning" : "success"} />
-        <SummaryStatCard icon={LocateFixed} label="Located devices" value={trackedDevices} tone="info" />
-        <SummaryStatCard icon={AlertTriangle} label="High confidence" value={highConfidenceCount} tone="warning" />
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/12 text-amber-600">
+                <ListTodo className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("observer.page.statMyTasks")}
+                </p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  {myTasks.length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("observer.page.statPending")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600">
+                <CheckSquare className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("observer.page.statChecklist")}
+                </p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  {shiftStats.percent}%
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {shiftStats.completed}/{shiftStats.total} {t("observer.page.statCompletedSuffix")}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/12 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("observer.page.statAlerts")}
+                </p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+                  {alerts.filter((a) => a.status === "active").length}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("observer.page.statActiveZone")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
-      <DataTableCard
-        title="Room Watchlist"
-        description="Room-level patient, alert, and localization signal overview."
-        data={roomRows}
-        columns={roomColumns}
-        isLoading={isLoadingAny}
-        emptyText="No rooms are configured in this workspace."
-      />
+      {/* Zone Map & Shift Checklist Grid */}
+      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        {/* Zone Map */}
+        <DashboardFloorplanPanel openHref="/observer/monitoring" />
 
-      <DataTableCard
-        title="Active Alerts"
-        description="Current active alerts mapped to room and patient context."
-        data={alertRows}
-        columns={alertColumns}
-        isLoading={isLoadingAny}
-        emptyText="No active alerts right now."
-        rightSlot={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/observer/alerts">Open alerts board</Link>
-          </Button>
-        }
-      />
+        {/* Shift Checklist */}
+        <Card className="border-border/70">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base">{t("observer.page.shiftChecklistTitle")}</CardTitle>
+                <CardDescription>{t("observer.page.shiftChecklistDesc")}</CardDescription>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-foreground">{shiftStats.percent}%</p>
+                <p className="text-xs text-muted-foreground">{t("observer.page.completeLabel")}</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Shift Tasks */}
+            <div>
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("observer.page.shiftStart")}
+              </h4>
+              <div className="space-y-2">
+                {checklist
+                  .filter((item) => item.category === "shift")
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
+                    >
+                      <Checkbox
+                        checked={item.checked}
+                        disabled={shiftChecklistMutation.isPending}
+                        onCheckedChange={() => toggleChecklistItem(item.id)}
+                      />
+                      <span
+                        className={`text-sm ${
+                          item.checked ? "text-muted-foreground line-through" : "text-foreground"
+                        }`}
+                      >
+                        {t(item.labelKey)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Room Tasks */}
+            <div>
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("observer.page.roomRounds")}
+              </h4>
+              <div className="space-y-2">
+                {checklist
+                  .filter((item) => item.category === "room")
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
+                    >
+                      <Checkbox
+                        checked={item.checked}
+                        disabled={shiftChecklistMutation.isPending}
+                        onCheckedChange={() => toggleChecklistItem(item.id)}
+                      />
+                      <span
+                        className={`text-sm ${
+                          item.checked ? "text-muted-foreground line-through" : "text-foreground"
+                        }`}
+                      >
+                        {t(item.labelKey)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* Documentation */}
+            <div>
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("observer.page.documentation")}
+              </h4>
+              <div className="space-y-2">
+                {checklist
+                  .filter((item) => item.category === "patient")
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
+                    >
+                      <Checkbox
+                        checked={item.checked}
+                        disabled={shiftChecklistMutation.isPending}
+                        onCheckedChange={() => toggleChecklistItem(item.id)}
+                      />
+                      <span
+                        className={`text-sm ${
+                          item.checked ? "text-muted-foreground line-through" : "text-foreground"
+                        }`}
+                      >
+                        {t(item.labelKey)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* My Tasks & Patient Cards Grid */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {/* My Tasks */}
+        <Card className="border-border/70">
+          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+            <div>
+              <CardTitle className="text-base">{t("observer.page.statMyTasks")}</CardTitle>
+              <CardDescription>{t("observer.page.previewTasksDesc")}</CardDescription>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/observer/tasks">
+                {t("dash.viewAll")}
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {myTasks.length ? (
+              myTasks.map((task) => {
+                const patient = task.patient_id ? patientById.get(task.patient_id) : null;
+                return (
+                  <div
+                    key={task.id}
+                    className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium text-foreground">{task.title}</p>
+                        <Badge
+                          variant={
+                            task.priority === "critical"
+                              ? "destructive"
+                              : task.priority === "high"
+                                ? "warning"
+                                : "secondary"
+                          }
+                          className="shrink-0"
+                        >
+                          {taskPriorityLabel(t, task.priority)}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {patient
+                          ? `${patient.first_name} ${patient.last_name}`
+                          : t("observer.page.unitWide")}
+                      </p>
+                      {task.due_at && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          <Clock className="mr-1 inline h-3 w-3" />
+                          {t("observer.tasks.due")} {formatRelativeTime(task.due_at)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
+                <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500/50" />
+            <p className="mt-2 text-sm text-muted-foreground">{t("observer.tasks.noPending")}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* My Patients */}
+        <Card className="border-border/70">
+          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
+            <div>
+              <CardTitle className="text-base">{t("observer.page.statMyPatients")}</CardTitle>
+              <CardDescription>{t("observer.page.previewPatientsDesc")}</CardDescription>
+            </div>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/observer/patients">
+                {t("dash.viewAll")}
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {myPatients.length ? (
+              myPatients.map(({ patient, alerts: patientAlerts, latestVitals }) => (
+                <Link
+                  key={patient.id}
+                  href={`/observer/patients/${patient.id}`}
+                  className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium text-foreground">
+                        {patient.first_name} {patient.last_name}
+                      </p>
+                      <Badge
+                        variant={
+                          patient.care_level === "critical"
+                            ? "destructive"
+                            : patient.care_level === "special"
+                              ? "warning"
+                              : "outline"
+                        }
+                        className="shrink-0"
+                      >
+                        {careLevelLabel(t, patient.care_level)}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {t("observer.page.roomPrefix")}{" "}
+                      {patient.room_id ?? "—"}
+                      {latestVitals && (
+                        <span className="ml-2">
+                          {latestVitals.heart_rate_bpm && (
+                            <span className="mr-2 inline-flex items-center gap-1">
+                              <Heart className="h-3 w-3" />
+                              {latestVitals.heart_rate_bpm}bpm
+                            </span>
+                          )}
+                          {latestVitals.spo2 && (
+                            <span className="inline-flex items-center gap-1">
+                              <Stethoscope className="h-3 w-3" />
+                              {latestVitals.spo2}%
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </p>
+                    {patientAlerts.length > 0 && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {(() => {
+                          const criticalCount = patientAlerts.filter(
+                            (a) => a.severity === "critical",
+                          ).length;
+                          const otherCount = patientAlerts.length - criticalCount;
+                          return (
+                            <>
+                              {criticalCount > 0 && (
+                                <span>
+                                  {criticalCount} {t("observer.page.severityCritical")}
+                                </span>
+                              )}
+                              {otherCount > 0 && (
+                                <span className={criticalCount > 0 ? "ml-1" : undefined}>
+                                  {otherCount}{" "}
+                                  {otherCount === 1
+                                    ? t("observer.page.alertSingular")
+                                    : t("observer.page.alertPlural")}
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
+                <Users className="mx-auto h-8 w-8 text-muted-foreground/50" />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t("observer.page.noPatientsAssigned")}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

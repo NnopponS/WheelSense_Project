@@ -57,6 +57,8 @@ Protected queries should filter by workspace:
 select(Model).where(Model.workspace_id == ws.id)
 ```
 
+Patient accounts (`role=patient`) must not receive workspace-wide device registry reads unless the route explicitly filters to their active `PatientDeviceAssignment` rows (see `GET /api/devices` and `GET /api/devices/{device_id}`).
+
 ### AI settings and provider pattern
 
 - treat backend AI settings endpoints as runtime truth for provider/model state
@@ -85,6 +87,8 @@ Expected ingestion flow:
 5. Use `device.workspace_id` for all writes
 6. Write derived rows and publish derived MQTT topics only after the device is known
 
+Future **room-native actuator** commands (non–Home Assistant) are specified in `docs/adr/0012-room-native-actuators-mqtt.md`: separate topic prefixes and REST entry points from wheelchair/camera control, still requiring a registered gateway device and workspace scope before any publish.
+
 Do not:
 
 - auto-create devices from telemetry
@@ -99,6 +103,16 @@ When backend changes affect the web app:
 - verify `frontend/lib/api.ts` call shapes still match
 - verify route guards and role routing in `frontend/proxy.ts`
 - update `frontend/README.md` or `wheelsense_role_breakdown.md` if user-facing structure changed
+- canonical cross-domain route prefixes are now:
+  - `/api/floorplans/*`
+  - `/api/care/*`
+  - `/api/medication/*`
+- do not introduce new public `/api/future/*` callers; treat old `future_domains` module names as import-compatibility only
+
+For **user-visible copy and locale (EN/TH)**:
+
+- follow `frontend/README.md` → **Internationalization (EN / TH)** for `useTranslation`, `lib/i18n.tsx`, key namespaces, and static-vs-API rules
+- use `.cursor/agents/wheelsense-admin-i18n.md` when bulk-adding or reviewing strings
 
 For search-and-link admin screens, follow:
 
@@ -107,9 +121,10 @@ For search-and-link admin screens, follow:
 For current frontend standardization work, prefer:
 
 - `frontend/components/ui/*` for shared button/input/dialog/table primitives
-- `frontend/hooks/useQuery.ts` instead of ad hoc `fetch` in pages
+- TanStack Query directly for admin/role pages and shared components; use explicit `queryKey`s and `lib/queryEndpointDefaults.ts` when matching legacy poll/stale behavior
 - `frontend/lib/forms/*` for form schema + payload mapping
 - `npm run openapi:types` after backend contract changes that need regenerated schema output
+- run `npm run build` in `frontend/` after i18n key or consumer changes (types keys off the translation map)
 
 ## Docker And Runtime Verification
 
@@ -133,6 +148,8 @@ To run backend without the dockerized frontend:
 cd server
 docker compose -f docker-compose.yml -f docker-compose.no-web.yml up -d
 ```
+
+Synthetic MQTT (`wheelsense-simulator`) is opt-in: `docker compose --profile simulator up -d` runs `seed_sim_team.py` inside the simulator container before `sim_controller.py` (see `server/docs/RUNBOOK.md`). Optional `SIM_WORKSPACE_ID` in `.env` pins the workspace.
 
 ## Testing
 
@@ -182,3 +199,20 @@ For AI/provider changes also verify:
 - generated OpenAPI schema includes any new `/api/settings/ai/*` endpoints
 
 Do not treat `HANDOFF.md` as canonical documentation; it is session state.
+
+## Current Memory
+
+- The misleading public `/api/future/*` namespace has been removed from runtime routing.
+- `GET /api/workflow/messaging/recipients` is no longer patient-only; it now allows all authenticated roles and returns staff-user recipients for user-targeted compose surfaces.
+- Facility/floor read endpoints (`/api/facilities`, `/api/facilities/{id}/floors`) allow observer read access so shared floorplan viewers can load role-appropriate metadata without 403 churn.
+- Simulator status (`GET /api/demo/simulator/status`) remains strict/read-only but tolerates missing optional domain tables by reporting zero-count statistics instead of 500 during partial rollout states.
+- The canonical production domains are:
+  - `floorplans`
+  - `care`
+  - `medication`
+- Admin route ownership is now clearer:
+  - `/admin/audit` is canonical
+  - `/admin/messages` is a real workflow-backed page
+  - `/admin/facility-management` is canonical
+  - `/admin/facilities`, `/admin/floorplans`, and `/admin/audit-log` are compatibility redirects
+- `demo-control` remains intentionally hidden from the sidebar unless a future task adds an explicit environment gate.

@@ -14,7 +14,7 @@ export default function LanguageSwitcher() {
   return (
     <button
       onClick={toggle}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-smooth cursor-pointer"
+      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-foreground-variant hover:bg-surface-container-high transition-smooth cursor-pointer"
       aria-label="Switch language"
       title={locale === "en" ? "เปลี่ยนเป็นภาษาไทย" : "Switch to English"}
     >

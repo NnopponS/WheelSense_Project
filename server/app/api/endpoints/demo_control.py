@@ -3,7 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import RequireRole, get_current_user_workspace, get_db
+from app.api.dependencies import (
+    ROLE_ALL_AUTHENTICATED,
+    RequireRole,
+    get_current_user_workspace,
+    get_db,
+)
 from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.demo_control import (
@@ -18,6 +23,8 @@ from app.schemas.demo_control import (
     DemoScenarioStopRequest,
     DemoWorkflowAdvanceRequest,
     DemoWorkflowAdvanceResponse,
+    SimulatorResetResponse,
+    SimulatorStatusResponse,
 )
 from app.services.demo_control import (
     demo_control_service,
@@ -229,4 +236,61 @@ async def stop_scenario(
         scenario_id=scenario_id,
         status="stopped" if stopped else "not_running",
         message="Scenario stopped" if stopped else "Scenario was not running",
+    )
+
+
+# ── Simulator Environment Endpoints ───────────────────────────────────────────
+
+@router.post("/simulator/reset", response_model=SimulatorResetResponse)
+async def reset_simulator_environment(
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(["admin"])),
+):
+    """Reset the simulator environment to baseline state.
+    
+    This endpoint is only available in simulator mode (ENV_MODE=simulator).
+    It clears all dynamic data and re-seeds the baseline simulator workspace.
+    
+    Requires admin role.
+    """
+    from app.config import settings
+    from app.services.simulator_reset import reset_simulator_workspace
+    
+    if not settings.is_simulator_mode:
+        raise HTTPException(
+            status_code=403,
+            detail="Simulator reset is only available in simulator mode (ENV_MODE=simulator)",
+        )
+    
+    result = await reset_simulator_workspace(ws.name)
+    return SimulatorResetResponse(
+        action=result["action"],
+        workspace_id=result["workspace_id"],
+        workspace_name=result["workspace_name"],
+        cleared_counts=result.get("cleared_counts"),
+        message=result["message"],
+    )
+
+
+@router.get("/simulator/status", response_model=SimulatorStatusResponse)
+async def get_simulator_environment_status(
+    db: AsyncSession = Depends(get_db),
+    _ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
+):
+    """Get the current simulator environment status.
+    
+    Returns environment mode, workspace info, and statistics.
+    Read-only; any authenticated workspace user (used by TopBar for all roles).
+    """
+    from app.services.simulator_reset import get_simulator_status
+
+    result = await get_simulator_status(db)
+    return SimulatorStatusResponse(
+        env_mode=result["env_mode"],
+        is_simulator=result["is_simulator"],
+        workspace_exists=result["workspace_exists"],
+        workspace_id=result.get("workspace_id"),
+        workspace_name=result.get("workspace_name"),
+        statistics=result.get("statistics"),
     )

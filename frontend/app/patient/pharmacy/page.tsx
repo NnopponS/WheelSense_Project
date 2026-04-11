@@ -23,10 +23,11 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/lib/i18n";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
-  ListFuturePrescriptionsResponse,
+  ListPrescriptionsResponse,
   ListPharmacyOrdersResponse,
   RequestPharmacyOrderRequest,
 } from "@/lib/api/task-scope-types";
@@ -67,22 +68,23 @@ type PharmacyOrderRow = {
   fulfilledAt: string | null;
 };
 
-function errorText(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
-  if (error instanceof Error) return error.message;
-  return "Failed to request pharmacy order.";
-}
-
 export default function PatientPharmacyPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  const toErrorText = (error: unknown): string => {
+    if (error instanceof ApiError) return error.message;
+    if (error instanceof Error) return error.message;
+    return t("patient.pharmacy.requestFailed");
+  };
   const patientId = user?.patient_id ?? undefined;
   const hasPatientProfile = typeof patientId === "number";
 
   const prescriptionsQuery = useQuery({
     queryKey: ["patient", "pharmacy", "prescriptions", patientId],
     enabled: hasPatientProfile,
-    queryFn: () => api.listFuturePrescriptions({ patient_id: patientId, status: "active" }),
+    queryFn: () => api.listPrescriptions({ patient_id: patientId, status: "active" }),
   });
 
   const ordersQuery = useQuery({
@@ -95,7 +97,7 @@ export default function PatientPharmacyPage() {
     resolver: zodResolver(refillRequestSchema),
     defaultValues: {
       prescriptionId: EMPTY_SELECT,
-      pharmacyName: "Preferred pharmacy",
+      pharmacyName: t("patient.pharmacy.pharmacyPlaceholder"),
       quantity: 30,
       notes: "",
     },
@@ -104,7 +106,7 @@ export default function PatientPharmacyPage() {
   const requestMutation = useMutation({
     mutationFn: async (values: RefillRequestValues) => {
       if (!hasPatientProfile) {
-        throw new Error("No patient profile is linked to this account.");
+        throw new Error(t("patient.pharmacy.noPatientProfileError"));
       }
 
       const payload = {
@@ -119,7 +121,7 @@ export default function PatientPharmacyPage() {
     onSuccess: async () => {
       form.reset({
         prescriptionId: EMPTY_SELECT,
-        pharmacyName: "Preferred pharmacy",
+        pharmacyName: t("patient.pharmacy.pharmacyPlaceholder"),
         quantity: 30,
         notes: "",
       });
@@ -128,7 +130,7 @@ export default function PatientPharmacyPage() {
   });
 
   const prescriptions = useMemo(
-    () => (prescriptionsQuery.data ?? []) as ListFuturePrescriptionsResponse,
+    () => (prescriptionsQuery.data ?? []) as ListPrescriptionsResponse,
     [prescriptionsQuery.data],
   );
 
@@ -172,8 +174,8 @@ export default function PatientPharmacyPage() {
           prescriptionLabel: prescription
             ? `${prescription.medication_name} • ${prescription.dosage}`
             : order.prescription_id != null
-              ? `Prescription #${order.prescription_id}`
-              : "Unlinked prescription",
+              ? `${t("patient.pharmacy.prescriptionNumber")}${order.prescription_id}`
+              : t("patient.pharmacy.unlinkedPrescription"),
           pharmacyName: order.pharmacy_name,
           quantity: order.quantity,
           refillsRemaining: order.refills_remaining,
@@ -183,13 +185,13 @@ export default function PatientPharmacyPage() {
         };
       })
       .sort((left, right) => right.requestedAt.localeCompare(left.requestedAt));
-  }, [orders, prescriptionMap]);
+  }, [orders, prescriptionMap, t]);
 
   const prescriptionColumns = useMemo<ColumnDef<PrescriptionRow>[]>(
     () => [
       {
         accessorKey: "medicationName",
-        header: "Medication",
+        header: t("patient.pharmacy.colMedication"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.medicationName}</p>
@@ -199,15 +201,15 @@ export default function PatientPharmacyPage() {
           </div>
         ),
       },
-      { accessorKey: "route", header: "Route" },
+      { accessorKey: "route", header: t("patient.pharmacy.colRoute") },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("patient.pharmacy.colStatus"),
         cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("patient.pharmacy.colCreated"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
@@ -218,14 +220,14 @@ export default function PatientPharmacyPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const orderColumns = useMemo<ColumnDef<PharmacyOrderRow>[]>(
     () => [
       {
         accessorKey: "orderNumber",
-        header: "Order",
+        header: t("patient.pharmacy.colOrder"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.orderNumber}</p>
@@ -235,24 +237,24 @@ export default function PatientPharmacyPage() {
       },
       {
         accessorKey: "pharmacyName",
-        header: "Pharmacy",
+        header: t("patient.pharmacy.colPharmacy"),
       },
       {
         accessorKey: "quantity",
-        header: "Quantity",
+        header: t("patient.pharmacy.colQuantity"),
       },
       {
         accessorKey: "refillsRemaining",
-        header: "Refills",
+        header: t("patient.pharmacy.colRefills"),
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("patient.pharmacy.colStatus"),
         cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
       },
       {
         accessorKey: "requestedAt",
-        header: "Requested",
+        header: t("patient.pharmacy.colRequested"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.requestedAt)}</p>
@@ -264,28 +266,28 @@ export default function PatientPharmacyPage() {
       },
       {
         accessorKey: "fulfilledAt",
-        header: "Fulfilled",
+        header: t("patient.pharmacy.colFulfilled"),
         cell: ({ row }) => formatDateTime(row.original.fulfilledAt),
       },
     ],
-    [],
+    [t],
   );
 
-  const saveError = requestMutation.error ? errorText(requestMutation.error) : null;
+  const saveError = requestMutation.error ? toErrorText(requestMutation.error) : null;
   const canRequest = hasPatientProfile && activePrescriptions.length > 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">My Pharmacy Orders</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t("patient.pharmacy.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Request a refill from one of your active prescriptions and track fulfillment below.
+          {t("patient.pharmacy.subtitle")}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Request Refill</CardTitle>
+          <CardTitle className="text-base">{t("patient.pharmacy.requestRefillTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -294,7 +296,7 @@ export default function PatientPharmacyPage() {
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="space-y-2">
-                <Label>Prescription</Label>
+                <Label>{t("patient.pharmacy.labelPrescription")}</Label>
                 <Controller
                   control={form.control}
                   name="prescriptionId"
@@ -305,10 +307,12 @@ export default function PatientPharmacyPage() {
                       disabled={!hasPatientProfile || activePrescriptions.length === 0}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select prescription" />
+                        <SelectValue placeholder={t("patient.pharmacy.selectPrescriptionPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={EMPTY_SELECT}>Select prescription</SelectItem>
+                        <SelectItem value={EMPTY_SELECT}>
+                          {t("patient.pharmacy.selectPrescriptionPlaceholder")}
+                        </SelectItem>
                         {activePrescriptions.map((prescription) => (
                           <SelectItem key={prescription.id} value={String(prescription.id)}>
                             {prescription.medication_name} ({prescription.dosage})
@@ -326,11 +330,11 @@ export default function PatientPharmacyPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Pharmacy Name</Label>
+                <Label>{t("patient.pharmacy.labelPharmacyName")}</Label>
                 <Input
                   {...form.register("pharmacyName")}
                   disabled={!canRequest}
-                  placeholder="Preferred pharmacy"
+                  placeholder={t("patient.pharmacy.pharmacyPlaceholder")}
                 />
                 {form.formState.errors.pharmacyName ? (
                   <p className="text-xs text-destructive">
@@ -340,7 +344,7 @@ export default function PatientPharmacyPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Quantity</Label>
+                <Label>{t("patient.pharmacy.labelQuantity")}</Label>
                 <Input
                   type="number"
                   min={1}
@@ -355,22 +359,22 @@ export default function PatientPharmacyPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>{t("patient.pharmacy.labelNotes")}</Label>
               <Textarea
                 rows={3}
                 {...form.register("notes")}
                 disabled={!canRequest}
-                placeholder="Optional delivery or refill notes"
+                placeholder={t("patient.pharmacy.notesPlaceholder")}
               />
             </div>
 
             {!hasPatientProfile ? (
               <p className="text-sm text-muted-foreground">
-                No patient profile is linked to this account.
+                {t("patient.pharmacy.noProfileLinked")}
               </p>
             ) : activePrescriptions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No active prescriptions are ready for refill yet.
+                {t("patient.pharmacy.noActivePrescriptions")}
               </p>
             ) : null}
 
@@ -378,29 +382,29 @@ export default function PatientPharmacyPage() {
 
             <Button type="submit" disabled={requestMutation.isPending || !canRequest}>
               <Send className="h-4 w-4" />
-              {requestMutation.isPending ? "Submitting..." : "Request refill"}
+              {requestMutation.isPending ? t("patient.pharmacy.submitting") : t("patient.pharmacy.requestRefill")}
             </Button>
           </form>
         </CardContent>
       </Card>
 
       <DataTableCard
-        title="Active Prescriptions"
-        description="Medication plans available for refill requests."
+        title={t("patient.pharmacy.activeRxTitle")}
+        description={t("patient.pharmacy.activeRxDesc")}
         data={prescriptionRows}
         columns={prescriptionColumns}
         isLoading={prescriptionsQuery.isLoading}
-        emptyText="No active prescriptions found."
+        emptyText={t("patient.pharmacy.emptyActiveRx")}
         rightSlot={<PackageCheck className="h-4 w-4 text-muted-foreground" />}
       />
 
       <DataTableCard
-        title="Pharmacy Orders"
-        description="Orders linked to your patient profile."
+        title={t("patient.pharmacy.ordersTitle")}
+        description={t("patient.pharmacy.ordersDesc")}
         data={orderRows}
         columns={orderColumns}
         isLoading={ordersQuery.isLoading}
-        emptyText="No pharmacy orders are linked to your account yet."
+        emptyText={t("patient.pharmacy.emptyOrders")}
         rightSlot={<PackageCheck className="h-4 w-4 text-muted-foreground" />}
       />
     </div>

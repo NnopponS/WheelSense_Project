@@ -49,7 +49,7 @@ export default function AlertPanel({
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-smooth ${
               filter === f.key
                 ? "bg-primary text-on-primary"
-                : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
+                : "bg-surface-container-low text-foreground-variant hover:bg-surface-container"
             }`}
           >
             {t(f.labelKey)}
@@ -75,7 +75,7 @@ export default function AlertPanel({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-on-surface">
+                  <span className="font-semibold text-foreground">
                     {alert.title || alert.alert_type}
                   </span>
                   <span
@@ -84,14 +84,14 @@ export default function AlertPanel({
                         ? "bg-error text-on-error"
                         : alert.severity === "warning"
                           ? "bg-warning text-on-warning"
-                          : "bg-surface-container-high text-on-surface-variant"
+                          : "bg-surface-container-high text-foreground-variant"
                     }`}
                   >
                     {alert.severity}
                   </span>
                 </div>
                 {alert.description && (
-                  <p className="text-sm text-on-surface-variant mt-1">{alert.description}</p>
+                  <p className="text-sm text-foreground-variant mt-1">{alert.description}</p>
                 )}
                 <div className="flex items-center gap-4 mt-2 text-xs text-outline">
                   <span className="flex items-center gap-1">

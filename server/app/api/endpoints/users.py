@@ -46,6 +46,11 @@ async def read_users(
 @router.get("/search", response_model=list[UserSearchOut])
 async def search_users(
     q: str | None = None,
+    kind: str | None = Query(default=None, pattern="^(staff|patient)$"),
+    role: str | None = Query(
+        default=None,
+        pattern="^(admin|head_nurse|supervisor|observer|patient)$",
+    ),
     roles: str | None = None,
     limit: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_db),
@@ -60,6 +65,8 @@ async def search_users(
         session,
         ws.id,
         q=q,
+        role=role,
+        kind=kind,
         roles=role_filters or None,
         limit=limit,
     )

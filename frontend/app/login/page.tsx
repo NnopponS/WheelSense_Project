@@ -8,6 +8,20 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Eye, EyeOff, Activity, ArrowRight } from "lucide-react";
 import { getRoleHome } from "@/lib/routes";
 
+function AuthLoadingShell({ label }: { label: string }) {
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-4 bg-surface"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div className="h-8 w-8 rounded-full border-2 border-solid border-primary border-t-transparent animate-spin" />
+      <span className="text-sm text-foreground-variant">{label}</span>
+    </div>
+  );
+}
+
 function getSafePostLoginPath(next: string | null, role: string): string {
   const roleHome = getRoleHome(role);
   if (!next || !next.startsWith("/") || next.startsWith("//")) return roleHome;
@@ -44,19 +58,11 @@ export default function LoginPage() {
   }, [user, router]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <AuthLoadingShell label={t("common.loading")} />;
   }
 
   if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <AuthLoadingShell label={t("common.loading")} />;
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -74,6 +80,7 @@ export default function LoginPage() {
       // The `if (user)` effect at the top level handles it perfectly on next render.
     } catch {
       setError(t("auth.failed"));
+      setPassword(""); // Clear password on failed login for security
     } finally {
       setSubmitting(false);
     }
@@ -139,13 +146,13 @@ export default function LoginPage() {
             <div className="w-10 h-10 gradient-cta rounded-lg flex items-center justify-center">
               <Activity className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-lg text-on-surface">WheelSense</span>
+            <span className="font-bold text-lg text-foreground">WheelSense</span>
           </div>
 
-          <h1 className="text-2xl font-bold text-on-surface mb-1">
+          <h1 className="text-2xl font-bold text-foreground mb-1">
             {t("auth.signIn")}
           </h1>
-          <p className="text-sm text-on-surface-variant mb-8">
+          <p className="text-sm text-foreground-variant mb-8">
             {t("auth.signInDesc")}
           </p>
 
@@ -159,7 +166,7 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="login-user"
-                className="text-sm font-medium text-on-surface"
+                className="text-sm font-medium text-foreground"
               >
                 {t("auth.username")}
               </label>
@@ -178,7 +185,7 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <label
                 htmlFor="login-pass"
-                className="text-sm font-medium text-on-surface"
+                className="text-sm font-medium text-foreground"
               >
                 {t("auth.password")}
               </label>
@@ -195,7 +202,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-foreground cursor-pointer"
                   aria-label="Toggle password visibility"
                 >
                   {showPassword ? (

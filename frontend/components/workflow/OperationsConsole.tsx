@@ -457,7 +457,6 @@ function buildReportView(params: {
         { key: "patient", label: "Patient" },
         { key: "heartRate", label: "HR" },
         { key: "spo2", label: "SpO2" },
-        { key: "temperature", label: "Temp" },
         { key: "captured", label: "Captured", className: "whitespace-normal" },
       ],
       rows: Array.from(latestVitalsByPatient.values())
@@ -468,7 +467,6 @@ function buildReportView(params: {
           patient: labelPatient(patientMap.get(reading.patient_id)),
           heartRate: reading.heart_rate_bpm != null ? `${reading.heart_rate_bpm} bpm` : "-",
           spo2: reading.spo2 != null ? `${reading.spo2}%` : "-",
-          temperature: reading.skin_temperature != null ? `${reading.skin_temperature.toFixed(1)} C` : "-",
           captured: `${formatDateTime(reading.timestamp)} | ${formatRelativeTime(reading.timestamp)}`,
         })),
       metrics: [
@@ -632,7 +630,7 @@ export function OperationsConsole({
     queryFn: () =>
       api.searchUsers({
         roles: STAFF_ROLE_OPTIONS.join(","),
-        limit: 120,
+        limit: 100,
       }),
   });
 
@@ -776,7 +774,7 @@ export function OperationsConsole({
       status: schedule.status,
       timestamp: schedule.starts_at || schedule.updated_at || schedule.created_at,
       secondaryLabel: schedule.schedule_type,
-      notePreview: schedule.notes,
+      notePreview: schedule.notes ?? "",
       routingRole: schedule.assigned_role,
       routingUserId: schedule.assigned_user_id,
     }));
@@ -2403,13 +2401,15 @@ export function OperationsConsole({
               <p className="text-sm text-muted-foreground">Loading workflow detail...</p>
             ) : detailQuery.isError ? (
               <p className="text-sm text-destructive">{parseError(detailQuery.error)}</p>
-            ) : detailQuery.data ? (
+            ) : detailQuery.data != null &&
+              detailQuery.data.item != null &&
+              typeof detailQuery.data.item === "object" ? (
               <>
                 <section className="grid gap-3 rounded-lg border border-border bg-muted/25 p-4 md:grid-cols-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</p>
-                    <Badge className="mt-2" variant={statusVariant(String(detailQuery.data.item.status ?? selectedRow?.status ?? "open"))}>
-                      {String(detailQuery.data.item.status ?? selectedRow?.status ?? "open")}
+                    <Badge className="mt-2" variant={statusVariant(String(detailQuery.data?.item?.status ?? selectedRow?.status ?? "open"))}>
+                      {String(detailQuery.data?.item?.status ?? selectedRow?.status ?? "open")}
                     </Badge>
                   </div>
                   <div>
@@ -2431,36 +2431,36 @@ export function OperationsConsole({
                     {
                       label: "Priority",
                       value:
-                        typeof detailQuery.data.item.priority === "string"
-                          ? detailQuery.data.item.priority
+                        typeof detailQuery.data?.item?.priority === "string"
+                          ? detailQuery.data?.item?.priority
                           : null,
                     },
                     {
                       label: "Schedule type",
                       value:
-                        typeof detailQuery.data.item.schedule_type === "string"
-                          ? detailQuery.data.item.schedule_type
+                        typeof detailQuery.data?.item?.schedule_type === "string"
+                          ? detailQuery.data?.item?.schedule_type
                           : null,
                     },
                     {
                       label: "Due at",
                       value:
-                        typeof detailQuery.data.item.due_at === "string"
-                          ? formatDateTime(detailQuery.data.item.due_at)
+                        typeof detailQuery.data?.item?.due_at === "string"
+                          ? formatDateTime(detailQuery.data?.item?.due_at)
                           : null,
                     },
                     {
                       label: "Starts at",
                       value:
-                        typeof detailQuery.data.item.starts_at === "string"
-                          ? formatDateTime(detailQuery.data.item.starts_at)
+                        typeof detailQuery.data?.item?.starts_at === "string"
+                          ? formatDateTime(detailQuery.data?.item?.starts_at)
                           : null,
                     },
                     {
                       label: "Effective from",
                       value:
-                        typeof detailQuery.data.item.effective_from === "string"
-                          ? formatDateTime(detailQuery.data.item.effective_from)
+                        typeof detailQuery.data?.item?.effective_from === "string"
+                          ? formatDateTime(detailQuery.data?.item?.effective_from)
                           : null,
                     },
                   ]
@@ -2479,22 +2479,22 @@ export function OperationsConsole({
                   {
                     label: "Description",
                     value:
-                      typeof detailQuery.data.item.description === "string"
-                        ? detailQuery.data.item.description
+                      typeof detailQuery.data?.item?.description === "string"
+                        ? detailQuery.data?.item?.description
                         : null,
                   },
                   {
                     label: "Notes",
                     value:
-                      typeof detailQuery.data.item.notes === "string"
-                        ? detailQuery.data.item.notes
+                      typeof detailQuery.data?.item?.notes === "string"
+                        ? detailQuery.data?.item?.notes
                         : null,
                   },
                   {
                     label: "Directive",
                     value:
-                      typeof detailQuery.data.item.directive_text === "string"
-                        ? detailQuery.data.item.directive_text
+                      typeof detailQuery.data?.item?.directive_text === "string"
+                        ? detailQuery.data?.item?.directive_text
                         : null,
                   },
                 ]
@@ -2516,12 +2516,12 @@ export function OperationsConsole({
                     </p>
                   </div>
                   <div className="space-y-2">
-                    {detailQuery.data.messages.length === 0 ? (
+                    {(detailQuery.data?.messages ?? []).length === 0 ? (
                       <p className="rounded-lg border border-dashed border-border p-3 text-sm text-muted-foreground">
                         No discussion yet.
                       </p>
                     ) : (
-                      detailQuery.data.messages.map((message) => (
+                      (detailQuery.data?.messages ?? []).map((message) => (
                         <div key={message.id} className="rounded-lg border border-border p-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-sm font-medium text-foreground">
@@ -2566,10 +2566,10 @@ export function OperationsConsole({
 
                 <section className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground">Audit</h3>
-                  {detailQuery.data.audit.length === 0 ? (
+                  {(detailQuery.data?.audit ?? []).length === 0 ? (
                     <p className="text-sm text-muted-foreground">No item audit entries yet.</p>
                   ) : (
-                    detailQuery.data.audit.map((event) => (
+                    (detailQuery.data?.audit ?? []).map((event) => (
                       <div key={event.id} className="rounded-lg border border-border p-3 text-sm">
                         <p className="font-medium text-foreground">{event.action}</p>
                         <p className="text-xs text-muted-foreground">
@@ -2580,6 +2580,10 @@ export function OperationsConsole({
                   )}
                 </section>
               </>
+            ) : detailQuery.data ? (
+              <p className="text-sm text-muted-foreground">
+                Workflow detail response did not include an item payload.
+              </p>
             ) : null}
           </div>
         </DialogContent>

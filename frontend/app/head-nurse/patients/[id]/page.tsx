@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { useTranslation } from "@/lib/i18n";
 import type {
   GetPatientResponse,
   ListAlertsResponse,
@@ -59,6 +60,7 @@ type AssignmentRow = {
 };
 
 export default function HeadNursePatientDetailPage() {
+  const { t } = useTranslation();
   const params = useParams();
 
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -180,7 +182,7 @@ export default function HeadNursePatientDetailPage() {
     () => [
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("clinical.table.time"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -190,37 +192,37 @@ export default function HeadNursePatientDetailPage() {
       },
       {
         accessorKey: "heartRate",
-        header: "HR",
+        header: t("clinical.table.hr"),
         cell: ({ row }) => row.original.heartRate ?? "-",
       },
       {
         accessorKey: "spo2",
-        header: "SpO2",
+        header: t("clinical.table.spo2"),
         cell: ({ row }) => row.original.spo2 ?? "-",
       },
       {
         accessorKey: "rrInterval",
-        header: "RR interval",
+        header: t("clinical.table.rrInterval"),
         cell: ({ row }) => (row.original.rrInterval != null ? `${row.original.rrInterval} ms` : "-"),
       },
       {
         accessorKey: "battery",
-        header: "Battery",
+        header: t("clinical.table.battery"),
         cell: ({ row }) => (row.original.battery != null ? `${row.original.battery}%` : "-"),
       },
       {
         accessorKey: "source",
-        header: "Source",
+        header: t("clinical.table.source"),
       },
     ],
-    [],
+    [t],
   );
 
   const alertsColumns = useMemo<ColumnDef<AlertRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Alert",
+        header: t("clinical.table.alert"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -230,7 +232,7 @@ export default function HeadNursePatientDetailPage() {
       },
       {
         accessorKey: "severity",
-        header: "Severity",
+        header: t("clinical.table.severity"),
         cell: ({ row }) => {
           const severity = row.original.severity;
           const variant =
@@ -244,7 +246,7 @@ export default function HeadNursePatientDetailPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => (
           <Badge variant={row.original.status === "active" ? "destructive" : "outline"}>
             {row.original.status}
@@ -253,18 +255,18 @@ export default function HeadNursePatientDetailPage() {
       },
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("clinical.table.time"),
         cell: ({ row }) => formatDateTime(row.original.timestamp),
       },
     ],
-    [],
+    [t],
   );
 
   const timelineColumns = useMemo<ColumnDef<TimelineRow>[]>(
     () => [
       {
         accessorKey: "eventType",
-        header: "Event",
+        header: t("clinical.table.event"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.eventType}</p>
@@ -272,11 +274,11 @@ export default function HeadNursePatientDetailPage() {
           </div>
         ),
       },
-      { accessorKey: "roomName", header: "Room" },
-      { accessorKey: "source", header: "Source" },
+      { accessorKey: "roomName", header: t("clinical.table.room") },
+      { accessorKey: "source", header: t("clinical.table.source") },
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("clinical.table.time"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -285,47 +287,47 @@ export default function HeadNursePatientDetailPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const assignmentColumns = useMemo<ColumnDef<AssignmentRow>[]>(
     () => [
       {
         accessorKey: "deviceId",
-        header: "Device",
+        header: t("clinical.table.device"),
       },
       {
         accessorKey: "deviceRole",
-        header: "Role",
+        header: t("clinical.table.role"),
       },
       {
         accessorKey: "isActive",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => (
           <Badge variant={row.original.isActive ? "success" : "outline"}>
-            {row.original.isActive ? "active" : "inactive"}
+            {row.original.isActive
+              ? t("clinical.recordStatus.activeBadge")
+              : t("clinical.recordStatus.inactiveBadge")}
           </Badge>
         ),
       },
       {
         accessorKey: "assignedAt",
-        header: "Assigned",
+        header: t("clinical.table.assigned"),
         cell: ({ row }) => formatDateTime(row.original.assignedAt),
       },
     ],
-    [],
+    [t],
   );
 
   if (!hasValidPatientId) {
     return (
       <Card>
         <CardContent className="space-y-3 pt-6">
-          <h2 className="text-xl font-semibold text-foreground">Invalid patient ID</h2>
-          <p className="text-sm text-muted-foreground">
-            The route parameter is invalid. Return to the patient roster and select a patient.
-          </p>
+          <h2 className="text-xl font-semibold text-foreground">{t("clinical.patient.invalidIdTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("clinical.patient.invalidIdDesc")}</p>
           <Button asChild size="sm" variant="outline">
-            <Link href="/head-nurse/patients">Back to patients</Link>
+            <Link href="/head-nurse/patients">{t("clinical.patient.backToPatients")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -343,54 +345,72 @@ export default function HeadNursePatientDetailPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h2 className="text-2xl font-bold text-foreground">
-          {patient ? `${patient.first_name} ${patient.last_name}` : "Patient detail"}
+          {patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Clinical detail view for real-time vitals, alerts, timeline, and linked devices.
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("headNurse.patientDetail.pageSubtitle")}</p>
       </div>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryStatCard icon={Bell} label="Active alerts" value={activeAlerts.length} tone={activeAlerts.length > 0 ? "warning" : "success"} />
-        <SummaryStatCard icon={Activity} label="Critical alerts" value={criticalAlerts.length} tone={criticalAlerts.length > 0 ? "critical" : "success"} />
-        <SummaryStatCard icon={HeartPulse} label="Recent vitals" value={vitalsRows.length} tone="info" />
-        <SummaryStatCard icon={Tablet} label="Linked devices" value={assignmentRows.length} tone="info" />
+        <SummaryStatCard
+          icon={Bell}
+          label={t("clinical.patientDetail.statActiveAlerts")}
+          value={activeAlerts.length}
+          tone={activeAlerts.length > 0 ? "warning" : "success"}
+        />
+        <SummaryStatCard
+          icon={Activity}
+          label={t("clinical.patientDetail.statCriticalAlerts")}
+          value={criticalAlerts.length}
+          tone={criticalAlerts.length > 0 ? "critical" : "success"}
+        />
+        <SummaryStatCard
+          icon={HeartPulse}
+          label={t("clinical.patientDetail.statRecentVitals")}
+          value={vitalsRows.length}
+          tone="info"
+        />
+        <SummaryStatCard
+          icon={Tablet}
+          label={t("clinical.patientDetail.statLinkedDevices")}
+          value={assignmentRows.length}
+          tone="info"
+        />
       </section>
 
       <DataTableCard
-        title="Recent Vitals"
-        description="Latest sensor readings captured for this patient."
+        title={t("clinical.patientDetail.vitalsTitle")}
+        description={t("clinical.patientDetail.vitalsDesc")}
         data={vitalsRows}
         columns={vitalsColumns}
         isLoading={isLoadingAny}
-        emptyText="No vitals available for this patient."
+        emptyText={t("clinical.patientDetail.vitalsEmpty")}
       />
 
       <DataTableCard
-        title="Alerts"
-        description="Alert timeline sorted by recency."
+        title={t("clinical.patientDetail.alertsTitle")}
+        description={t("clinical.patientDetail.alertsDesc")}
         data={alertRows}
         columns={alertsColumns}
         isLoading={isLoadingAny}
-        emptyText="No alerts found for this patient."
+        emptyText={t("clinical.patientDetail.alertsEmpty")}
       />
 
       <DataTableCard
-        title="Activity Timeline"
-        description="Recent room and event movements for the patient."
+        title={t("headNurse.patientDetail.timelineTitle")}
+        description={t("headNurse.patientDetail.timelineDesc")}
         data={timelineRows}
         columns={timelineColumns}
         isLoading={isLoadingAny}
-        emptyText="No timeline events found for this patient."
+        emptyText={t("headNurse.patientDetail.timelineEmpty")}
       />
 
       <DataTableCard
-        title="Device Assignments"
-        description="Devices currently or previously linked to this patient."
+        title={t("headNurse.patientDetail.assignmentsTitle")}
+        description={t("headNurse.patientDetail.assignmentsDesc")}
         data={assignmentRows}
         columns={assignmentColumns}
         isLoading={isLoadingAny}
-        emptyText="No device assignments found for this patient."
+        emptyText={t("headNurse.patientDetail.assignmentsEmpty")}
       />
     </div>
   );

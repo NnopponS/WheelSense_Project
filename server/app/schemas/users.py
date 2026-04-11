@@ -3,8 +3,8 @@ from __future__ import annotations
 """Pydantic schemas for Users and Authentication."""
 
 import re
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import Literal, Optional
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -92,6 +92,58 @@ class MePatch(BaseModel):
     def validate_profile_image_url(cls, v: Optional[str]) -> Optional[str]:
         return validate_optional_profile_image_url(v)
 
+class SelfCaregiverProfilePatch(BaseModel):
+    first_name: Optional[str] = Field(default=None, max_length=64)
+    last_name: Optional[str] = Field(default=None, max_length=64)
+    employee_code: Optional[str] = Field(default=None, max_length=32)
+    department: Optional[str] = Field(default=None, max_length=64)
+    employment_type: Optional[str] = Field(default=None, max_length=32)
+    specialty: Optional[str] = Field(default=None, max_length=64)
+    license_number: Optional[str] = Field(default=None, max_length=64)
+    phone: Optional[str] = Field(default=None, max_length=20)
+    email: Optional[str] = Field(default=None, max_length=128)
+    emergency_contact_name: Optional[str] = Field(default=None, max_length=128)
+    emergency_contact_phone: Optional[str] = Field(default=None, max_length=32)
+    photo_url: Optional[str] = Field(default=None, max_length=256)
+
+class SelfPatientProfilePatch(BaseModel):
+    first_name: Optional[str] = Field(default=None, max_length=64)
+    last_name: Optional[str] = Field(default=None, max_length=64)
+    nickname: Optional[str] = Field(default=None, max_length=32)
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = Field(default=None, max_length=10)
+    height_cm: Optional[float] = None
+    weight_kg: Optional[float] = None
+    blood_type: Optional[str] = Field(default=None, max_length=4)
+    allergies: Optional[list[str]] = None
+    notes: Optional[str] = None
+    photo_url: Optional[str] = Field(default=None, max_length=256)
+
+class SelfUserProfilePatch(BaseModel):
+    username: Optional[str] = Field(default=None, min_length=3, max_length=128)
+    profile_image_url: Optional[str] = Field(default=None, max_length=8192)
+    email: Optional[str] = Field(default=None, max_length=128)
+    phone: Optional[str] = Field(default=None, max_length=20)
+
+    @field_validator("profile_image_url")
+    @classmethod
+    def validate_profile_image_url(cls, v: Optional[str]) -> Optional[str]:
+        return validate_optional_profile_image_url(v)
+
+class AuthMeProfilePatch(BaseModel):
+    username: Optional[str] = Field(default=None, min_length=3, max_length=128)
+    profile_image_url: Optional[str] = Field(default=None, max_length=8192)
+    caregiver: Optional[SelfCaregiverProfilePatch] = None
+    patient: Optional[SelfPatientProfilePatch] = None
+    user: Optional[SelfUserProfilePatch] = None
+    linked_caregiver: Optional[SelfCaregiverProfilePatch] = None
+    linked_patient: Optional[SelfPatientProfilePatch] = None
+
+    @field_validator("profile_image_url")
+    @classmethod
+    def validate_profile_image_url(cls, v: Optional[str]) -> Optional[str]:
+        return validate_optional_profile_image_url(v)
+
 class UserOut(UserBase):
     """User response model."""
     id: int
@@ -106,6 +158,55 @@ class AuthMeOut(UserOut):
 
     impersonation: bool = False
     impersonated_by_user_id: Optional[int] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+class LinkedCaregiverProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    workspace_id: int
+    first_name: str
+    last_name: str
+    role: str
+    employee_code: str
+    department: str
+    employment_type: str
+    specialty: str
+    license_number: str
+    phone: str
+    email: str
+    emergency_contact_name: str
+    emergency_contact_phone: str
+    photo_url: str
+    is_active: bool
+
+class LinkedPatientProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    workspace_id: int
+    first_name: str
+    last_name: str
+    nickname: str
+    date_of_birth: date | None
+    gender: str
+    height_cm: float | None
+    weight_kg: float | None
+    blood_type: str
+    allergies: list[str]
+    notes: str
+    photo_url: str
+    is_active: bool
+
+class AuthMeProfileOut(BaseModel):
+    user: AuthMeOut
+    linked_caregiver: Optional[LinkedCaregiverProfileOut] = None
+    linked_patient: Optional[LinkedPatientProfileOut] = None
+
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(min_length=6, max_length=128)
+    new_password: str = Field(min_length=6, max_length=128)
 
 class ImpersonationStart(BaseModel):
     """Request body for admin act-as token creation."""
@@ -120,4 +221,7 @@ class UserSearchOut(BaseModel):
     is_active: bool = True
     caregiver_id: Optional[int] = None
     patient_id: Optional[int] = None
+    kind: Literal["staff", "patient", "unlinked"]
+    linked_name: Optional[str] = None
+    employee_code: Optional[str] = None
     display_name: str

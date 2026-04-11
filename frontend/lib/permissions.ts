@@ -18,7 +18,10 @@ export type Capability =
   | "reports.read"
   | "facilities.manage"
   | "facilities.read"
-  | "self.read";
+  | "self.read"
+  | "workflow.manage"
+  | "schedule.manage"
+  | "device_health.read";
 
 const ROLE_CAPABILITIES: Record<AppRole, Set<Capability>> = {
   admin: new Set<Capability>([
@@ -38,6 +41,9 @@ const ROLE_CAPABILITIES: Record<AppRole, Set<Capability>> = {
     "facilities.manage",
     "facilities.read",
     "self.read",
+    "workflow.manage",
+    "schedule.manage",
+    "device_health.read",
   ]),
   head_nurse: new Set<Capability>([
     "users.manage",
@@ -55,6 +61,9 @@ const ROLE_CAPABILITIES: Record<AppRole, Set<Capability>> = {
     "reports.read",
     "facilities.read",
     "self.read",
+    "workflow.manage",
+    "schedule.manage",
+    "device_health.read",
   ]),
   supervisor: new Set<Capability>([
     "patients.read",
@@ -66,6 +75,9 @@ const ROLE_CAPABILITIES: Record<AppRole, Set<Capability>> = {
     "reports.read",
     "facilities.read",
     "self.read",
+    "workflow.manage",
+    "schedule.manage",
+    "device_health.read",
   ]),
   observer: new Set<Capability>([
     "patients.read",
@@ -73,12 +85,15 @@ const ROLE_CAPABILITIES: Record<AppRole, Set<Capability>> = {
     "alerts.read",
     "messages.manage",
     "self.read",
+    "workflow.manage",
+    "schedule.manage",
+    "device_health.read",
   ]),
-  patient: new Set<Capability>(["alerts.read", "messages.manage", "self.read"]),
+  patient: new Set<Capability>(["alerts.read", "messages.manage", "self.read", "schedule.manage"]),
 };
 
 const APP_ROUTE_ROLES = {
-  "/admin": new Set<AppRole>(["admin"]),
+  "/admin": new Set<AppRole>(["admin", "head_nurse"]),
   "/head-nurse": new Set<AppRole>(["admin", "head_nurse"]),
   "/supervisor": new Set<AppRole>(["admin", "supervisor"]),
   "/observer": new Set<AppRole>(["admin", "observer"]),

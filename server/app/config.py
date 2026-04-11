@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     app_name: str = "WheelSense Server"
     debug: bool = False
 
+    # Environment mode: simulator | production
+    # - simulator: Pre-populated with demo data, includes reset capability
+    # - production: Clean database for real-world deployment
+    env_mode: str = "production"
+
     # Auth (JWT)
     secret_key: str = DEFAULT_SECRET_KEY
     algorithm: str = "HS256"
@@ -91,5 +96,20 @@ class Settings(BaseSettings):
     @property
     def has_secure_secret_key(self) -> bool:
         return bool(self.secret_key and self.secret_key != DEFAULT_SECRET_KEY)
+
+    @property
+    def is_simulator_mode(self) -> bool:
+        return self.env_mode.lower() == "simulator"
+
+    @field_validator("env_mode", mode="before")
+    @classmethod
+    def normalize_env_mode(cls, value: object) -> str:
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"sim", "simulator", "dev", "development", "demo"}:
+                return "simulator"
+            if normalized in {"prod", "production", "live", "real"}:
+                return "production"
+        return "production"
 
 settings = Settings()

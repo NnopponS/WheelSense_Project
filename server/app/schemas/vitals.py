@@ -15,7 +15,6 @@ class VitalReadingCreate(BaseModel):
     heart_rate_bpm: int | None = None
     rr_interval_ms: float | None = None
     spo2: int | None = None
-    skin_temperature: float | None = None
     sensor_battery: int | None = None
     source: str = "ble"  # ble | polar_sdk | manual
 
@@ -29,7 +28,6 @@ class VitalReadingOut(BaseModel):
     heart_rate_bpm: int | None
     rr_interval_ms: float | None
     spo2: int | None
-    skin_temperature: float | None
     sensor_battery: int | None
     source: str
 

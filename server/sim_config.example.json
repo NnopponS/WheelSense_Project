@@ -1,0 +1,15 @@
+{
+  "_description": "Example simulation configuration for WheelSense",
+  "vital_update_interval": 30,
+  "alert_probability": 0.05,
+  "movement_probability": 0.15,
+  "caregiver_task_completion": 0.8,
+  "routine_check_interval": 300,
+  "handover_generation_interval": 3600,
+  "enable_vitals": true,
+  "enable_movement": true,
+  "enable_alerts": true,
+  "enable_routine_simulation": true,
+  "enable_handover_generation": true,
+  "log_level": "INFO"
+}

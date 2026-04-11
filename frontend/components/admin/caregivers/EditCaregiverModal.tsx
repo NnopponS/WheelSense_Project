@@ -128,8 +128,8 @@ function FormSection({
   return (
     <section className="space-y-4 rounded-lg border border-outline-variant/20 bg-surface-container-low/40 p-4">
       <div>
-        <h4 className="text-sm font-semibold text-on-surface">{title}</h4>
-        <p className="mt-1 text-xs text-on-surface-variant">{description}</p>
+        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+        <p className="mt-1 text-xs text-foreground-variant">{description}</p>
       </div>
       {children}
     </section>
@@ -153,7 +153,7 @@ function TextField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-xs font-medium text-on-surface-variant">
+      <label htmlFor={id} className="block text-xs font-medium text-foreground-variant">
         {label}
       </label>
       <input
@@ -183,7 +183,7 @@ function SelectField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-xs font-medium text-on-surface-variant">
+      <label htmlFor={id} className="block text-xs font-medium text-foreground-variant">
         {label}
       </label>
       <select
@@ -276,7 +276,7 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
         <div className="flex items-center justify-between gap-3">
           <h3
             id="edit-caregiver-heading"
-            className="flex items-center gap-2 text-lg font-bold text-on-surface"
+            className="flex items-center gap-2 text-lg font-bold text-foreground"
           >
             <Pencil className="h-5 w-5 text-primary" aria-hidden />
             {t("caregivers.editStaff")}
@@ -431,7 +431,7 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
                 onChange={(event) => update({ is_active: event.target.checked })}
                 className="h-4 w-4 rounded border-outline-variant text-primary focus:ring-primary"
               />
-              <label htmlFor="edit-cg-active" className="text-sm font-medium text-on-surface">
+              <label htmlFor="edit-cg-active" className="text-sm font-medium text-foreground">
                 {t("common.active")}
               </label>
             </div>
@@ -445,7 +445,7 @@ export default function EditCaregiverModal({ open, caregiver, onClose, onSaved }
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container-low transition-smooth"
+              className="rounded-xl px-4 py-2 text-sm font-medium text-foreground-variant hover:bg-surface-container-low transition-smooth"
             >
               {t("common.cancel")}
             </button>

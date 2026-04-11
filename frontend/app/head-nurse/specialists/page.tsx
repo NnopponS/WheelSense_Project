@@ -23,9 +23,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import type {
-  CreateFutureSpecialistRequest,
-  ListFutureSpecialistsResponse,
+  CreateSpecialistRequest,
+  ListSpecialistsResponse,
 } from "@/lib/api/task-scope-types";
 
 const specialistSchema = z.object({
@@ -58,11 +59,12 @@ function errorText(error: unknown): string {
 }
 
 export default function HeadNurseSpecialistsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const specialistsQuery = useQuery({
     queryKey: ["head-nurse", "specialists", "list"],
-    queryFn: () => api.listFutureSpecialists(),
+    queryFn: () => api.listSpecialists(),
   });
 
   const form = useForm<SpecialistFormValues>({
@@ -90,9 +92,9 @@ export default function HeadNurseSpecialistsPage() {
         email: values.email.trim() || null,
         notes: values.notes.trim(),
         is_active: values.isActive === "true",
-      } satisfies CreateFutureSpecialistRequest;
+      } satisfies CreateSpecialistRequest;
 
-      await api.createFutureSpecialist(payload);
+      await api.createSpecialist(payload);
     },
     onSuccess: async () => {
       form.reset({
@@ -110,7 +112,7 @@ export default function HeadNurseSpecialistsPage() {
   });
 
   const specialists = useMemo(
-    () => (specialistsQuery.data ?? []) as ListFutureSpecialistsResponse,
+    () => (specialistsQuery.data ?? []) as ListSpecialistsResponse,
     [specialistsQuery.data],
   );
 
@@ -130,7 +132,7 @@ export default function HeadNurseSpecialistsPage() {
     () => [
       {
         accessorKey: "fullName",
-        header: "Specialist",
+        header: t("clinical.table.specialist"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
@@ -140,30 +142,32 @@ export default function HeadNurseSpecialistsPage() {
       },
       {
         accessorKey: "licenseNumber",
-        header: "License",
+        header: t("clinical.table.license"),
         cell: ({ row }) => row.original.licenseNumber || "-",
       },
       {
         accessorKey: "phone",
-        header: "Phone",
+        header: t("clinical.table.phone"),
         cell: ({ row }) => row.original.phone || "-",
       },
       {
         accessorKey: "email",
-        header: "Email",
+        header: t("clinical.table.email"),
         cell: ({ row }) => row.original.email || "-",
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => (
           <Badge variant={row.original.status === "active" ? "success" : "outline"}>
-            {row.original.status}
+            {row.original.status === "active"
+              ? t("clinical.recordStatus.activeBadge")
+              : t("clinical.recordStatus.inactiveBadge")}
           </Badge>
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const saveError = createMutation.error ? errorText(createMutation.error) : null;
@@ -171,10 +175,8 @@ export default function HeadNurseSpecialistsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Specialist Directory</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Maintain specialists used by prescription and referral workflows.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("headNurse.specialists.pageTitle")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("headNurse.specialists.pageSubtitle")}</p>
       </div>
 
       <Card>
@@ -262,12 +264,12 @@ export default function HeadNurseSpecialistsPage() {
       </Card>
 
       <DataTableCard
-        title="Specialist List"
-        description="Specialists available for referrals and prescriptions."
+        title={t("headNurse.specialists.listTitle")}
+        description={t("headNurse.specialists.listDesc")}
         data={rows}
         columns={columns}
         isLoading={specialistsQuery.isLoading}
-        emptyText="No specialists available."
+        emptyText={t("headNurse.specialists.listEmpty")}
         rightSlot={<Stethoscope className="h-4 w-4 text-muted-foreground" />}
       />
     </div>

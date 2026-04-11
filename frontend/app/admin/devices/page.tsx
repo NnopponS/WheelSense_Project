@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState, type ComponentType } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Tablet, Wifi, WifiOff } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
-import { useQuery } from "@/hooks/useQuery";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import {
@@ -62,10 +63,20 @@ function DevicesPageContent() {
     [tab, user?.workspace_id],
   );
 
-  const { data: devices, isLoading: loadingRegistry, refetch: refetchRegistry } =
-    useQuery<Device[]>(registryEndpoint);
-  const { data: smartDevices, isLoading: loadingSmart, refetch: refetchSmart } =
-    useQuery<SmartDevice[]>(smartEndpoint);
+  const { data: devices, isLoading: loadingRegistry, refetch: refetchRegistry } = useQuery({
+    queryKey: ["admin", "devices", "registry", registryEndpoint, tab],
+    queryFn: () => api.get<Device[]>(registryEndpoint!),
+    enabled: Boolean(registryEndpoint),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+  const { data: smartDevices, isLoading: loadingSmart, refetch: refetchSmart } = useQuery({
+    queryKey: ["admin", "devices", "smart-ha", smartEndpoint],
+    queryFn: () => api.get<SmartDevice[]>(smartEndpoint!),
+    enabled: Boolean(smartEndpoint),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
 
   const isLoading = tab === "smart_ha" ? loadingSmart : loadingRegistry;
 
@@ -122,17 +133,24 @@ function DevicesPageContent() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h2 className="text-2xl font-bold text-foreground">{t("devices.title")}</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("devices.subtitle")}</p>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          Device health details are now shown inside each device detail panel.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard label="Registry devices" value={registryStats.total} />
-        <SummaryCard label="Online registry" value={registryStats.online} />
-        <SummaryCard
-          label={tab === "smart_ha" ? "Reachable smart devices" : "Offline registry"}
-          value={tab === "smart_ha" ? smartStats.reachable : registryStats.offline}
-        />
-      </div>
+      {tab === "smart_ha" ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <SummaryCard label="Smart Devices" value={smartStats.total} icon={Tablet} />
+          <SummaryCard label="Reachable" value={smartStats.reachable} icon={Wifi} />
+          <SummaryCard label="Inactive" value={smartStats.inactive} icon={WifiOff} />
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <SummaryCard label="Registry devices" value={registryStats.total} icon={Tablet} />
+          <SummaryCard label="Online registry" value={registryStats.online} icon={Wifi} />
+          <SummaryCard label="Offline registry" value={registryStats.offline} icon={WifiOff} />
+        </div>
+      )}
 
       <Card>
         <CardContent className="space-y-4 pt-6">
@@ -233,7 +251,6 @@ function DevicesPageContent() {
             const title = device.display_name?.trim() || device.device_id;
             const visual = registryDeviceCardPresentation(device.hardware_type);
             const DeviceIcon = visual.Icon;
-
             return (
               <Card
                 key={device.id}
@@ -249,9 +266,7 @@ function DevicesPageContent() {
                     </div>
                     <div className="min-w-0">
                       <CardTitle className="truncate text-base">{title}</CardTitle>
-                      <p className="truncate font-mono text-xs text-muted-foreground">
-                        {device.device_id}
-                      </p>
+                      <p className="truncate font-mono text-xs text-muted-foreground">{device.device_id}</p>
                     </div>
                   </div>
                   <Badge variant={online ? "success" : "warning"}>
@@ -279,9 +294,7 @@ function DevicesPageContent() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-muted-foreground">{t("devices.lastSeen")}</p>
-                    <p className="text-foreground">
-                      {device.last_seen ? formatDateTime(device.last_seen) : "-"}
-                    </p>
+                    <p className="text-foreground">{device.last_seen ? formatDateTime(device.last_seen) : "-"}</p>
                     <p className="text-xs text-muted-foreground">
                       {device.last_seen ? formatRelativeTime(device.last_seen) : "-"}
                     </p>
@@ -307,7 +320,6 @@ function DevicesPageContent() {
 
 export default function DevicesPage() {
   const { t } = useTranslation();
-
   return (
     <Suspense
       fallback={
@@ -322,12 +334,23 @@ export default function DevicesPage() {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  icon: ComponentType<{ className?: string }>;
+}) {
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="mt-1 text-3xl font-semibold text-foreground">{value}</p>
+    <Card className="bg-card">
+      <CardContent className="flex items-center justify-between pt-6">
+        <div>
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="mt-1 text-3xl font-semibold text-foreground">{value}</p>
+        </div>
+        <Icon className="h-8 w-8 text-muted-foreground" />
       </CardContent>
     </Card>
   );

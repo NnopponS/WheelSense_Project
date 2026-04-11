@@ -9,15 +9,18 @@ export const ROUTES = {
   SUPERVISOR: "/supervisor",
   OBSERVER: "/observer",
   PATIENT: "/patient",
-  PATIENTS: "/admin/patients",
-  PATIENT_DETAIL: (id: number) => `/admin/patients/${id}`,
+  // Clinical features moved to head-nurse role
+  PATIENTS: "/head-nurse/patients",
+  PATIENT_DETAIL: (id: number) => `/head-nurse/patients/${id}`,
   DEVICES: "/admin/devices",
-  MONITORING: "/admin/monitoring",
-  ALERTS: "/admin/alerts",
-  TIMELINE: "/admin/timeline",
-  CAREGIVERS: "/admin/caregivers",
+  // Monitoring, alerts moved to role-specific dashboards
+  MONITORING: "/admin",
+  ALERTS: "/head-nurse/alerts",
+  TIMELINE: "/admin",
+  // Staff detail pages remain at admin; list view redirect to head-nurse
+  CAREGIVERS: "/head-nurse/staff",
   CAREGIVER_DETAIL: (id: number) => `/admin/caregivers/${id}`,
-  FACILITIES: "/admin/facilities",
+  FACILITIES: "/admin/facility-management",
   PROFILE: "/account",
   ACCOUNT_MANAGEMENT: "/admin/account-management",
 } as const;

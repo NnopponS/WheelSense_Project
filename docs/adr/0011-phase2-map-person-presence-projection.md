@@ -8,7 +8,7 @@
 
 The system already has:
 
-- **Rooms** with `node_device_id` (1:1 node mapping) and floorplan layout JSON (`/api/future/floorplans/layout`).
+- **Rooms** with `node_device_id` (1:1 node mapping) and floorplan layout JSON (`/api/floorplans/layout`).
 - **Patient** and **caregiver** device assignments.
 - **Localization** producing `room_predictions` for wheelchair-class telemetry.
 
@@ -24,7 +24,7 @@ Forces:
 
 Treat **room presence** as a **read-side projection**:
 
-1. **API**: Add `GET /api/future/floorplans/presence?facility_id=&floor_id=` returning a list of rooms (aligned with layout or DB rooms) plus optional fields:
+1. **API**: Add `GET /api/floorplans/presence?facility_id=&floor_id=` returning a list of rooms (aligned with layout or DB rooms) plus optional fields:
    - `node_device_id`, node online/stale
    - `patient` hint (from active assignment on wheelchair / relevant device linked to room context)
    - `prediction` hint (latest `room_predictions` for devices tied to that room or patient)
@@ -41,7 +41,7 @@ Treat **room presence** as a **read-side projection**:
 
 Implementation note:
 
-- The MVP is implemented as `GET /api/future/floorplans/presence` with service-layer projection logic under the future domains service. It returns room-level node status, optional patient and prediction hints, confidence, staleness, computed timestamp, and source tags. It does not mutate patient assignment or prediction tables.
+- The MVP is implemented as `GET /api/floorplans/presence` with service-layer projection logic under the floorplans service. It returns room-level node status, optional patient and prediction hints, confidence, staleness, computed timestamp, and source tags. It does not mutate patient assignment or prediction tables.
 
 ## Alternatives Considered
 

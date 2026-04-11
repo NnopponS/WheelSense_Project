@@ -1,0 +1,250 @@
+# Patient Frontend Module — Comprehensive Audit Report
+
+> **Scope:** All pages, components, API integrations, mutations, and cross-role effects under `frontend/app/patient/`
+> **Date:** 2026-04-11
+
+---
+
+## 1. Route Coverage & Navigation
+
+All patient routes are registered in [sidebarConfig.ts](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/lib/sidebarConfig.ts) and the layout uses the unified `RoleShell` pattern.
+
+| Route | Page File | Sidebar | Status |
+|---|---|---|---|
+| `/patient` | [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/page.tsx) | ✅ Dashboard | ✅ **Functional** |
+| `/patient/messages` | [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/messages/page.tsx) | ✅ Messages | ✅ **Functional** |
+| `/patient/pharmacy` | [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/pharmacy/page.tsx) | ✅ Pharmacy | ✅ **Functional** |
+| `/patient/schedule` | [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/schedule/page.tsx) | ✅ Schedule | ✅ **Read-Only** |
+| `/patient/room-controls` | [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/room-controls/page.tsx) | ✅ Room | ⚠️ **Placeholder** |
+| `/patient/services` | [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/services/page.tsx) | ✅ Services | ⚠️ **Placeholder** |
+| `/patient/settings` | [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/settings/page.tsx) | ✅ Settings | ✅ Redirect → `/account` |
+| `/patient/support` | [page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/support/page.tsx) | ✅ Support | ✅ **Functional** |
+
+> [!NOTE]
+> No orphaned routes or missing sidebar entries. All 8 nav items match their page files exactly.
+
+---
+
+## 2. Per-Page Deep Analysis
+
+### 2.1 Dashboard ([page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/page.tsx))
+
+**Functionality:** Central patient hub with sensor widgets, care roadmap, and emergency buttons.
+
+| Aspect | Assessment |
+|---|---|
+| Auth & Patient ID | ✅ Derives from `useAuth()` or admin preview param |
+| Data Fetching | ✅ `useQuery` for alerts with `refetchInterval: 10_000` |
+| Mutations | ✅ `raiseAssistanceMutation` → `api.createAlert()` → `POST /alerts` |
+| Cache Invalidation | ✅ Invalidates `["patient", "dashboard", "alerts"]` on success |
+| Error Handling | ✅ Uses toast and `toErrorText()` helper |
+| i18n | ✅ Full coverage via `t()` keys |
+| Cross-Role Impact | ✅ **Assistance/SOS alerts** appear in **Head Nurse**, **Supervisor**, and **Observer** alert panels |
+
+**Sub-components:**
+
+- [PatientMySensors](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/components/patient/PatientMySensors.tsx) (318 lines)
+  - ✅ `useQuery` + `useQueries` for device assignments + detail fetch
+  - ✅ 12-second auto-refresh via `refetchInterval`
+  - ✅ Hardware-specific metric rendering (wheelchair, mobile, Polar HR)
+  - ✅ Battery progress bar with `<Progress>` component
+  - ✅ Proper loading/error/empty states
+  - ✅ Deduplication of active assignments
+
+- [PatientCareRoadmap](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/components/patient/PatientCareRoadmap.tsx) (293 lines)
+  - ✅ Past / Now / Next tri-column timeline
+  - ✅ Schedule + Task data merged with `date-fns` classification
+  - ✅ Room labels resolved via `api.listRooms()`
+  - ✅ Link to `/patient/schedule` and `/patient/room-controls`
+
+---
+
+### 2.2 Messages ([messages/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/messages/page.tsx))
+
+**Functionality:** Inbox + compose interface for patient-to-staff communication.
+
+| Aspect | Assessment |
+|---|---|
+| Data Fetching | ✅ `useQuery` for inbox and staff list |
+| Send Message | ✅ `sendMessageMutation` → `api.sendMessage()` |
+| Mark Read | ✅ `markReadMutation` → `api.markMessageRead()` |
+| Cache Invalidation | ✅ Both mutations invalidate `["patient", "messages"]` |
+| Error Handling | ✅ `toErrorText()` with toast feedback |
+| i18n | ✅ Full coverage |
+| Cross-Role Impact | ✅ **Messages appear in nurse/staff inboxes** |
+
+---
+
+### 2.3 Pharmacy ([pharmacy/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/pharmacy/page.tsx))
+
+**Functionality:** Prescription viewer + refill request form.
+
+| Aspect | Assessment |
+|---|---|
+| Schema Validation | ✅ `zod` schema with `react-hook-form` integration |
+| Data Fetching | ✅ `useQuery` for prescriptions and order history |
+| Mutation | ✅ `requestMutation` → `api.requestPharmacyOrder()` → `POST /medication/pharmacy/orders/request` |
+| Cache Invalidation | ✅ Invalidates `["patient", "pharmacy"]` |
+| Backend Verified | ✅ Route exists in `server/app/api/endpoints/medication.py:131` |
+| Error Handling | ✅ Mutation error state displayed |
+| i18n | ✅ Full coverage |
+| Cross-Role Impact | ✅ **Orders visible to pharmacy staff / admin** |
+
+---
+
+### 2.4 Schedule ([schedule/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/schedule/page.tsx))
+
+**Functionality:** Read-only calendar view of care schedules and tasks.
+
+| Aspect | Assessment |
+|---|---|
+| Data Fetching | ✅ `useQuery` for schedules + tasks |
+| Calendar | ✅ Maps data to calendar event format |
+| Admin Preview | ✅ Supports `?patientId=` param for admin preview |
+| Mutations | ❌ **None** — read-only (appropriate for patient role) |
+| i18n | ✅ Full coverage |
+
+---
+
+### 2.5 Room Controls ([room-controls/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/room-controls/page.tsx))
+
+| Aspect | Assessment |
+|---|---|
+| API Integration | ❌ **None** — pure UI placeholder |
+| Mutations | ❌ **None** |
+| UI Quality | ✅ Well-structured cards with icons (Lighting, Temperature, Airflow) |
+| i18n | ✅ All strings use `t()` |
+| Buttons | ❌ **Buttons render but do nothing** |
+
+> [!WARNING]
+> **Room Controls is a visual shell only.** The three control cards (Lighting, Temperature, Airflow) and the "Smart Room" card all contain placeholder content with no backend API hooks. Clicking controls has zero effect.
+
+---
+
+### 2.6 Services ([services/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/services/page.tsx))
+
+| Aspect | Assessment |
+|---|---|
+| API Integration | ❌ **None** — UI-only |
+| Mutations | ❌ **None** |
+| UI Quality | ✅ Card grid for Food, Transport, Housekeeping |
+| Buttons | ❌ **"Request" buttons are non-functional** — no `onClick` handlers, no API calls |
+| i18n | ✅ All strings use `t()` |
+
+> [!WARNING]
+> **Services page buttons are dead.** Each service card has a `<Button>` with label `t("patient.services.requestCta")` but **no `onClick` or form submission**. Clicking does nothing.
+
+---
+
+### 2.7 Settings ([settings/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/settings/page.tsx))
+
+✅ Server-side redirect to `/account` — correct pattern used across all roles.
+
+---
+
+### 2.8 Support ([support/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/support/page.tsx))
+
+**Functionality:** Shared `ReportIssueForm` component for ticket submission.
+
+| Aspect | Assessment |
+|---|---|
+| API Integration | ✅ `api.post()` to `/support/tickets` (workspace-scoped) |
+| Error Handling | ✅ `ApiError` caught with user-friendly message |
+| Success State | ✅ Shows ticket ID confirmation |
+| Form Validation | ✅ `minLength={3}` on title, disabled submit when invalid |
+| i18n | ✅ Full `t()` coverage |
+| Backend Verified | ✅ Route exists in `server/app/services/support.py` |
+| Cross-Role Impact | ✅ **Tickets appear in Admin support queue** |
+
+> [!TIP]
+> The support form uses `useState` for form management instead of `react-hook-form` + `zod`. This is acceptable for a simple form but inconsistent with the Pharmacy page pattern.
+
+---
+
+## 3. Cross-Role Impact Matrix
+
+| Patient Action | Backend Route | Visible To |
+|---|---|---|
+| **Raise Assistance/SOS** | `POST /alerts` | Head Nurse, Supervisor, Observer, Admin |
+| **Send Message** | `POST /messages` | Target nurse/staff inbox |
+| **Request Pharmacy Refill** | `POST /medication/pharmacy/orders/request` | Pharmacy staff, Admin |
+| **Submit Support Ticket** | `POST /support/tickets` | Admin support queue |
+| **Room Controls** | ❌ No backend | ❌ No cross-role effect |
+| **Services Requests** | ❌ No backend | ❌ No cross-role effect |
+
+---
+
+## 4. Code Quality Report
+
+### ✅ Clean
+- **No `console.log` / `console.error`** — zero instances found
+- **No TODO/FIXME/HACK markers** — zero instances found
+- **No raw `api.patch` calls** — all mutations use typed API helpers
+- **No legacy `useQuery` imports** — all use `@tanstack/react-query`
+- **No non-standard CSS classes** — consistent use of shadcn/tailwind tokens
+
+### ✅ Architectural Consistency
+- All pages are `"use client"` components
+- Layout uses unified `RoleShell` with `appRoot="/patient"` and `max-w-5xl` constraint
+- All data fetching uses `useQuery` / `useMutation` from TanStack Query
+- All cache invalidation follows `await queryClient.invalidateQueries()` pattern
+
+### ⚠️ Minor Inconsistencies
+
+| Issue | Location | Severity |
+|---|---|---|
+| Support form uses `useState` instead of `react-hook-form` | [ReportIssueForm.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/components/support/ReportIssueForm.tsx) | Low — form is simple |
+| Services buttons have no `onClick` handlers | [services/page.tsx:47,67,87](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/services/page.tsx) | **High** — UX dead-end |
+| Room controls are fully placeholder | [room-controls/page.tsx](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/app/patient/room-controls/page.tsx) | Medium — expected for IoT phase |
+
+---
+
+## 5. API Integration Verification
+
+| Frontend API Call | Server Endpoint | Verified |
+|---|---|---|
+| `api.createAlert()` | `POST /api/alerts` | ✅ [router.py:39](file:///c:/Users/worap/Documents/Project/wheelsense-platform/server/app/api/router.py) |
+| `api.listPatientDeviceAssignments()` | `GET /api/patients/{id}/devices` | ✅ [api.ts:479](file:///c:/Users/worap/Documents/Project/wheelsense-platform/frontend/lib/api.ts) |
+| `api.requestPharmacyOrder()` | `POST /api/medication/pharmacy/orders/request` | ✅ [medication.py:131](file:///c:/Users/worap/Documents/Project/wheelsense-platform/server/app/api/endpoints/medication.py) |
+| `api.sendMessage()` | `POST /api/messages` | ✅ via typed api helper |
+| `api.post("/support/tickets")` | `POST /api/support/tickets` | ✅ [support.py](file:///c:/Users/worap/Documents/Project/wheelsense-platform/server/app/services/support.py) |
+| `api.listWorkflowSchedules()` | `GET /api/workflow/schedules` | ✅ via typed api helper |
+| `api.listWorkflowTasks()` | `GET /api/workflow/tasks` | ✅ via typed api helper |
+| `api.getDeviceDetailRaw()` | `GET /api/devices/{id}` | ✅ via typed api helper |
+
+---
+
+## 6. Findings Summary
+
+### ✅ Strengths
+1. **Dashboard** is feature-complete with real-time sensor data, care timeline, and emergency alerts
+2. **Messages** has full CRUD with proper cache invalidation
+3. **Pharmacy** has proper schema validation (`zod`) and mutation handling
+4. **All functional pages** properly create backend effects visible to other roles
+5. **Zero code quality issues** — no console.log, no TODOs, no hardcoded strings
+6. **Consistent architecture** — RoleShell, TanStack Query, typed API helpers throughout
+
+### ⚠️ Issues Requiring Action
+
+| # | Issue | Priority | Effort |
+|---|---|---|---|
+| 1 | **Services page buttons are non-functional** — 3 "Request" buttons with no `onClick` handler | 🔴 High | Medium |
+| 2 | **Room Controls is a placeholder shell** — no backend integration | 🟡 Medium | High (requires IoT backend) |
+| 3 | **Services page has no API backing** — no backend endpoints for food/transport/housekeeping requests | 🟡 Medium | High (requires new backend endpoints) |
+| 4 | **Support form uses `useState` instead of `react-hook-form`** — inconsistent with Pharmacy pattern | 🟢 Low | Low |
+
+---
+
+## 7. Recommended Next Steps
+
+### Immediate (Services Page Fix)
+The "Request" buttons on the Services page should either:
+1. **Connect to an API** — create a service request endpoint and wire `useMutation`
+2. **Show a "Coming Soon" toast** — add `onClick={() => toast({ title: t("common.comingSoon") })}` to prevent dead clicks
+
+### Medium-Term
+1. **Room Controls** — requires IoT backend integration (MQTT-based light/temp/fan control). Mark as "Phase 2 - IoT" in the roadmap.
+2. **Services Backend** — create `POST /api/services/requests` endpoint with type (food/transport/housekeeping) and wire frontend mutations.
+
+### Low Priority
+- Migrate `ReportIssueForm` from `useState` to `react-hook-form` + `zod` for consistency with Pharmacy.

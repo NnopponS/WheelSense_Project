@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Redirect: facilities merged into /admin/monitoring?tab=facilities */
+/** Legacy facilities URL now redirects to the canonical facility-management page. */
 export default function FacilitiesRedirectPage() {
-  redirect("/admin/monitoring?tab=facilities");
+  redirect("/admin/facility-management");
 }

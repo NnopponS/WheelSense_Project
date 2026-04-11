@@ -30,7 +30,7 @@ async def active_workspace():
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room")
+@patch("app.mqtt_handler.predict_room_with_strategy")
 async def test_handle_telemetry(mock_predict, active_workspace):
     mock_client = AsyncMock()
     mock_predict.return_value = {

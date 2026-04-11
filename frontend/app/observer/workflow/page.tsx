@@ -1,11 +1,15 @@
+"use client";
+
 import { OperationsConsole } from "@/components/workflow/OperationsConsole";
+import { useTranslation } from "@/lib/i18n";
 
 export default function ObserverWorkflowPage() {
+  const { t } = useTranslation();
   return (
     <OperationsConsole
       role="observer"
-      title="Operations Console"
-      subtitle="Observer queue, handoff context, audit trail, and reports in one shared workflow surface."
+      title={t("observer.workflow.title")}
+      subtitle={t("observer.workflow.subtitle")}
     />
   );
 }

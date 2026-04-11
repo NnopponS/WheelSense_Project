@@ -508,3 +508,50 @@ async def test_device_detail_includes_imu_and_polar_vitals(
     assert "mqtt_user" not in j
     assert "mqtt_user" not in (j["config"] or {})
     assert "mqtt_password" not in (j["config"] or {})
+
+
+@pytest.mark.asyncio
+async def test_patient_registry_device_reads_are_assignment_scoped(
+    client: AsyncClient,
+    admin_user: User,
+    db_session: AsyncSession,
+    make_token_headers,
+):
+    ws = admin_user.workspace_id
+    own = await client.post("/api/patients", json={"first_name": "Dev", "last_name": "Owner"})
+    assert own.status_code == 201
+    own_id = own.json()["id"]
+
+    r1 = await client.post("/api/devices", json={"device_id": "WDEV_PAT", "device_type": "wheelchair"})
+    assert r1.status_code == 200
+    r2 = await client.post("/api/devices", json={"device_id": "OTHERDEV", "device_type": "wheelchair"})
+    assert r2.status_code == 200
+
+    assign = await client.post(
+        f"/api/patients/{own_id}/devices",
+        json={"device_id": "WDEV_PAT", "device_role": "wheelchair_sensor"},
+    )
+    assert assign.status_code == 201
+
+    patient_user = User(
+        workspace_id=ws,
+        username="patient_registry_scope",
+        hashed_password=get_password_hash("password123"),
+        role="patient",
+        patient_id=own_id,
+        is_active=True,
+    )
+    db_session.add(patient_user)
+    await db_session.commit()
+    await db_session.refresh(patient_user)
+    ph = make_token_headers(patient_user)
+
+    listed = await client.get("/api/devices", headers=ph)
+    assert listed.status_code == 200
+    assert {row["device_id"] for row in listed.json()} == {"WDEV_PAT"}
+
+    forbidden = await client.get("/api/devices/OTHERDEV", headers=ph)
+    assert forbidden.status_code == 403
+
+    ok = await client.get("/api/devices/WDEV_PAT", headers=ph)
+    assert ok.status_code == 200

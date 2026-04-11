@@ -15,6 +15,8 @@
 #include "esp_camera.h"
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "mbedtls/base64.h"
+#include "esp_system.h"
 
 // ===== Camera Pins (T-SIMCam) =====
 #define PWDN_GPIO     -1
@@ -42,9 +44,19 @@
 #define NODE_PREFIX       "WSN_"
 #define DEFAULT_MQTT      "broker.emqx.io"
 #define DEFAULT_MQTT_PORT 1883
-#define MQTT_BUF_SIZE     65536 // Increased to 64KB to fit JPEG frames
+#define MQTT_BUF_SIZE     65000 // PubSubClient uses uint16_t for packet size
 #define STATUS_INTERVAL   10000
 #define CONFIG_PORTAL_TIMEOUT 180000
+#define SNAPSHOT_CHUNK_BYTES 12288
+#define SNAPSHOT_PAYLOAD_GUARD 60000
+#define BATTERY_MIN_V 3.30f
+#define BATTERY_MAX_V 4.20f
+#ifndef BATTERY_ADC_PIN
+#define BATTERY_ADC_PIN -1
+#endif
+#ifndef BATTERY_DIVIDER_RATIO
+#define BATTERY_DIVIDER_RATIO 2.0f
+#endif
 
 // ===== State =====
 Preferences prefs;
@@ -69,6 +81,12 @@ unsigned long lastStatusMs = 0;
 unsigned long lastCaptureMs = 0;
 unsigned long lastMqttReconnect = 0;
 unsigned long framesCaptured = 0;
+unsigned long snapshotsOk = 0;
+unsigned long snapshotsFailed = 0;
+unsigned long lastSnapshotMs = 0;
+size_t lastSnapshotBytes = 0;
+String lastSnapshotMode = "none";
+String lastSnapshotError = "";
 
 // ===== Config Load/Save =====
 void loadConfig() {
@@ -377,6 +395,165 @@ void startConfigPortal() {
                   deviceId.c_str(), WiFi.softAPIP().toString().c_str());
 }
 
+bool readBatteryStatus(float &voltageV, int &pct) {
+#if BATTERY_ADC_PIN >= 0
+    uint32_t mv = analogReadMilliVolts(BATTERY_ADC_PIN);
+    if (mv == 0) return false;
+    voltageV = (mv / 1000.0f) * BATTERY_DIVIDER_RATIO;
+    float ratio = (voltageV - BATTERY_MIN_V) / (BATTERY_MAX_V - BATTERY_MIN_V);
+    if (ratio < 0.0f) ratio = 0.0f;
+    if (ratio > 1.0f) ratio = 1.0f;
+    pct = (int)(ratio * 100.0f);
+    return true;
+#else
+    (void)voltageV;
+    (void)pct;
+    return false;
+#endif
+}
+
+String makePhotoId() {
+    char id[32];
+    unsigned long rnd = (unsigned long)esp_random();
+    snprintf(id, sizeof(id), "%08lX%08lX", millis(), rnd);
+    return String(id);
+}
+
+bool encodeBase64(const uint8_t *src, size_t srcLen, String &out) {
+    size_t encodedLen = 4 * ((srcLen + 2) / 3);
+    unsigned char *buf = (unsigned char *)malloc(encodedLen + 1);
+    if (!buf) return false;
+    size_t actualLen = 0;
+    int rc = mbedtls_base64_encode(buf, encodedLen + 1, &actualLen, src, srcLen);
+    if (rc != 0) {
+        free(buf);
+        return false;
+    }
+    buf[actualLen] = '\0';
+    out = String((const char *)buf);
+    free(buf);
+    return true;
+}
+
+void publishAck(const String &commandId, const String &command, const String &status, const String &message) {
+    if (!mqtt.connected() || commandId.length() == 0) return;
+    StaticJsonDocument<384> doc;
+    doc["command_id"] = commandId;
+    doc["device_id"] = deviceId;
+    doc["command"] = command;
+    doc["status"] = status;
+    doc["message"] = message;
+    doc["timestamp_ms"] = millis();
+    String body;
+    serializeJson(doc, body);
+    String topic = "WheelSense/camera/" + deviceId + "/ack";
+    mqtt.publish(topic.c_str(), body.c_str());
+}
+
+bool publishPhotoChunked(camera_fb_t *fb, String &errorCode) {
+    if (!fb || fb->len == 0) {
+        errorCode = "capture_empty";
+        return false;
+    }
+    String topic = "WheelSense/camera/" + deviceId + "/photo";
+    String photoId = makePhotoId();
+    int totalChunks = (int)((fb->len + SNAPSHOT_CHUNK_BYTES - 1) / SNAPSHOT_CHUNK_BYTES);
+
+    for (int idx = 0; idx < totalChunks; idx++) {
+        size_t offset = (size_t)idx * SNAPSHOT_CHUNK_BYTES;
+        size_t chunkLen = fb->len - offset;
+        if (chunkLen > SNAPSHOT_CHUNK_BYTES) chunkLen = SNAPSHOT_CHUNK_BYTES;
+
+        String b64;
+        if (!encodeBase64(fb->buf + offset, chunkLen, b64)) {
+            errorCode = "base64_encode_failed";
+            return false;
+        }
+
+        String payload;
+        payload.reserve(b64.length() + 220);
+        payload += "{\"photo_id\":\"";
+        payload += photoId;
+        payload += "\",\"device_id\":\"";
+        payload += deviceId;
+        payload += "\",\"chunk_index\":";
+        payload += String(idx);
+        payload += ",\"total_chunks\":";
+        payload += String(totalChunks);
+        payload += ",\"data\":\"";
+        payload += b64;
+        payload += "\"}";
+
+        if (payload.length() > SNAPSHOT_PAYLOAD_GUARD) {
+            errorCode = "chunk_too_large";
+            return false;
+        }
+        if (!mqtt.publish(topic.c_str(), payload.c_str())) {
+            errorCode = "chunk_publish_failed";
+            return false;
+        }
+        delay(2);
+    }
+    return true;
+}
+
+bool publishFrameFallback(camera_fb_t *fb, String &errorCode) {
+    if (!fb || fb->len == 0) {
+        errorCode = "capture_empty";
+        return false;
+    }
+    String frameTopic = "WheelSense/camera/" + deviceId + "/frame";
+    if (!mqtt.beginPublish(frameTopic.c_str(), fb->len, false)) {
+        errorCode = "frame_begin_failed";
+        return false;
+    }
+    size_t written = mqtt.write(fb->buf, fb->len);
+    bool ok = mqtt.endPublish();
+    if (!ok || written != fb->len) {
+        errorCode = "frame_publish_failed";
+        return false;
+    }
+    return true;
+}
+
+bool captureAndPublishSnapshot(String &mode, String &errorCode) {
+    camera_fb_t *fb = esp_camera_fb_get();
+    if (!fb) {
+        errorCode = "capture_failed";
+        return false;
+    }
+
+    size_t frameLen = fb->len;
+    bool ok = publishPhotoChunked(fb, errorCode);
+    if (ok) {
+        mode = "mqtt_chunked_photo";
+    } else {
+        String fallbackErr;
+        if (publishFrameFallback(fb, fallbackErr)) {
+            ok = true;
+            mode = "mqtt_frame_fallback";
+            errorCode = "";
+        } else {
+            errorCode += "|" + fallbackErr;
+        }
+    }
+
+    if (ok) {
+        framesCaptured++;
+        snapshotsOk++;
+        lastSnapshotMs = millis();
+        lastSnapshotBytes = frameLen;
+        lastSnapshotMode = mode;
+        lastSnapshotError = "";
+    } else {
+        snapshotsFailed++;
+        lastSnapshotError = errorCode;
+    }
+
+    esp_camera_fb_return(fb);
+    return ok;
+}
+
 // ===== MQTT =====
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
     char msg[length + 1];
@@ -390,30 +567,32 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     String controlTopic = String("WheelSense/camera/") + deviceId + "/control";
 
     if (topicStr == controlTopic) {
-        String cmd = doc["command"] | "";
+        String cmd = doc["command"] | doc["cmd"] | "";
+        String commandId = doc["command_id"] | "";
         cmd.toLowerCase();
 
         if (cmd == "start_stream") {
             captureIntervalMs = doc["interval_ms"] | 200;  // ~5 FPS default
             streamEnabled = true;
             Serial.printf("[MQTT] Stream started: %dms interval\n", captureIntervalMs);
+            publishAck(commandId, cmd, "ok", "stream_started");
         }
         else if (cmd == "stop_stream") {
             streamEnabled = false;
             captureIntervalMs = 0;
             Serial.println("[MQTT] Stream stopped");
+            publishAck(commandId, cmd, "ok", "stream_stopped");
         }
-        else if (cmd == "capture_frame") {
-            // One-shot capture
-            camera_fb_t* fb = esp_camera_fb_get();
-            if (fb) {
-                String frameTopic = String("WheelSense/camera/") + deviceId + "/frame";
-                mqtt.beginPublish(frameTopic.c_str(), fb->len, false);
-                mqtt.write(fb->buf, fb->len);
-                mqtt.endPublish();
-                esp_camera_fb_return(fb);
-                framesCaptured++;
-                Serial.println("[Camera] Single frame sent");
+        else if (cmd == "capture" || cmd == "capture_frame" || cmd == "snapshot") {
+            String mode;
+            String errorCode;
+            bool ok = captureAndPublishSnapshot(mode, errorCode);
+            if (ok) {
+                Serial.printf("[Camera] Snapshot sent via %s\n", mode.c_str());
+                publishAck(commandId, cmd, "ok", mode);
+            } else {
+                Serial.printf("[Camera] Snapshot failed: %s\n", errorCode.c_str());
+                publishAck(commandId, cmd, "error", errorCode);
             }
         }
         else if (cmd == "set_resolution") {
@@ -426,13 +605,19 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
                 else if (res == "XGA") s->set_framesize(s, FRAMESIZE_XGA);
                 Serial.printf("[Camera] Resolution: %s\n", res.c_str());
             }
+            publishAck(commandId, cmd, "ok", "resolution_updated");
         }
         else if (cmd == "reboot") {
+            publishAck(commandId, cmd, "ok", "rebooting");
             delay(200);
             ESP.restart();
         }
         else if (cmd == "enter_config_mode") {
             startConfigPortal();
+            publishAck(commandId, cmd, "ok", "entering_config_mode");
+        }
+        else {
+            publishAck(commandId, cmd, "error", "unknown_command");
         }
         return;
     }
@@ -484,6 +669,7 @@ bool connectMQTT() {
         reg["device_id"] = deviceId;
         reg["node_id"] = nodeId;
         reg["device_type"] = "camera";
+        reg["hardware_type"] = "node";
         reg["ip_address"] = WiFi.localIP().toString();
         reg["firmware"] = FIRMWARE_VERSION;
         String body;
@@ -497,18 +683,35 @@ bool connectMQTT() {
 void sendStatus() {
     if (!mqtt.connected()) return;
     StaticJsonDocument<512> doc;
+    float batteryV = 0.0f;
+    int batteryPct = 0;
+    bool hasBattery = readBatteryStatus(batteryV, batteryPct);
+
     doc["type"] = "status";
     doc["device_id"] = deviceId;
     doc["node_id"] = nodeId;
     doc["device_type"] = "camera";
+    doc["hardware_type"] = "node";
     doc["status"] = configMode ? "config" : "online";
     doc["ip_address"] = WiFi.localIP().toString();
     doc["rssi"] = WiFi.RSSI();
     doc["heap"] = ESP.getFreeHeap();
     doc["frames_captured"] = framesCaptured;
     doc["stream_enabled"] = streamEnabled;
+    doc["capture_interval_ms"] = captureIntervalMs;
     doc["uptime_s"] = millis() / 1000;
     doc["firmware"] = FIRMWARE_VERSION;
+    doc["photo_transport"] = lastSnapshotMode;
+    doc["snapshots_ok"] = snapshotsOk;
+    doc["snapshots_failed"] = snapshotsFailed;
+    doc["last_snapshot_ms"] = lastSnapshotMs;
+    doc["last_snapshot_bytes"] = (uint32_t)lastSnapshotBytes;
+    doc["last_snapshot_error"] = lastSnapshotError;
+    doc["battery_available"] = hasBattery;
+    if (hasBattery) {
+        doc["battery_pct"] = batteryPct;
+        doc["battery_voltage_v"] = batteryV;
+    }
 
     String body;
     serializeJson(doc, body);
@@ -581,6 +784,9 @@ void setup() {
     pinMode(FLASH_GPIO, OUTPUT);
     digitalWrite(FLASH_GPIO, LOW);
     pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
+#if BATTERY_ADC_PIN >= 0
+    pinMode(BATTERY_ADC_PIN, INPUT);
+#endif
 
     Serial.println("\n========================================");
     Serial.println("  WheelSense Camera v" FIRMWARE_VERSION);

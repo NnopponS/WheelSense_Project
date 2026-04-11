@@ -1,0 +1,87 @@
+
+> frontend@0.1.0 build
+> next build
+
+▲ Next.js 16.2.2 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 14.5s
+  Running TypeScript ...
+  Finished TypeScript in 12.1s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/57) ...
+  Generating static pages using 15 workers (14/57) 
+  Generating static pages using 15 workers (28/57) 
+  Generating static pages using 15 workers (42/57) 
+✓ Generating static pages using 15 workers (57/57) in 936ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /account
+├ ○ /admin
+├ ○ /admin/account-management
+├ ○ /admin/alerts
+├ ○ /admin/audit
+├ ○ /admin/caregivers
+├ ƒ /admin/caregivers/[id]
+├ ○ /admin/demo-control
+├ ○ /admin/device-health
+├ ○ /admin/devices
+├ ○ /admin/facilities
+├ ○ /admin/floorplans
+├ ○ /admin/ml-calibration
+├ ƒ /admin/monitoring
+├ ○ /admin/patients
+├ ƒ /admin/patients/[id]
+├ ○ /admin/profile
+├ ƒ /admin/settings
+├ ○ /admin/smart-devices
+├ ○ /admin/support
+├ ○ /admin/timeline
+├ ○ /admin/users
+├ ○ /admin/vitals
+├ ○ /admin/workflow
+├ ƒ /api/[[...path]]
+├ ○ /head-nurse
+├ ○ /head-nurse/alerts
+├ ○ /head-nurse/calendar
+├ ○ /head-nurse/messages
+├ ○ /head-nurse/monitoring
+├ ○ /head-nurse/patients
+├ ƒ /head-nurse/patients/[id]
+├ ○ /head-nurse/reports
+├ ○ /head-nurse/specialists
+├ ○ /head-nurse/staff
+├ ○ /head-nurse/workflow
+├ ○ /login
+├ ○ /_not-found
+├ ○ /observer
+├ ○ /observer/alerts
+├ ○ /observer/devices
+├ ○ /observer/monitoring
+├ ○ /observer/patients
+├ ƒ /observer/patients/[id]
+├ ○ /observer/prescriptions
+├ ○ /observer/tasks
+├ ○ /observer/workflow
+├ ○ /patient
+├ ○ /patient/messages
+├ ○ /patient/pharmacy
+├ ○ /patient/schedule
+├ ○ /supervisor
+├ ○ /supervisor/calendar
+├ ○ /supervisor/directives
+├ ○ /supervisor/emergency
+├ ○ /supervisor/monitoring
+├ ○ /supervisor/patients
+├ ƒ /supervisor/patients/[id]
+├ ○ /supervisor/prescriptions
+└ ○ /supervisor/workflow
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

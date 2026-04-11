@@ -1,17 +1,29 @@
 ﻿"use client";
 "use no memo";
 
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Search, Users } from "lucide-react";
+import { Calendar, Search, Stethoscope, UserCog, Users } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { HubTabBar, useHubTab } from "@/components/shared/HubTabBar";
 import { api } from "@/lib/api";
 import type { ListPatientsResponse } from "@/lib/api/task-scope-types";
+import { useTranslation } from "@/lib/i18n";
+import HeadNurseStaffPage from "@/app/head-nurse/staff/page";
+import HeadNurseSpecialistsPage from "@/app/head-nurse/specialists/page";
+import HeadNurseCalendarPage from "@/app/head-nurse/calendar/page";
+
+const TABS = [
+  { key: "patients", label: "Patients", icon: Users },
+  { key: "staff", label: "Staff", icon: UserCog },
+  { key: "specialists", label: "Specialists", icon: Stethoscope },
+  { key: "calendar", label: "Calendar", icon: Calendar },
+];
 
 type PatientRow = {
   id: number;
@@ -21,7 +33,8 @@ type PatientRow = {
   status: "active" | "inactive";
 };
 
-export default function HeadNursePatientsPage() {
+function PatientsTabContent() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
 
   const patientsQuery = useQuery({
@@ -52,7 +65,7 @@ export default function HeadNursePatientsPage() {
     () => [
       {
         accessorKey: "fullName",
-        header: "Patient",
+        header: t("clinical.table.patient"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
@@ -62,7 +75,7 @@ export default function HeadNursePatientsPage() {
       },
       {
         accessorKey: "careLevel",
-        header: "Care level",
+        header: t("clinical.table.careLevel"),
         cell: ({ row }) => (
           <Badge
             variant={
@@ -79,38 +92,43 @@ export default function HeadNursePatientsPage() {
       },
       {
         accessorKey: "roomId",
-        header: "Room",
-        cell: ({ row }) => (row.original.roomId != null ? `Room #${row.original.roomId}` : "Unassigned"),
+        header: t("clinical.table.room"),
+        cell: ({ row }) =>
+          row.original.roomId != null
+            ? `${t("clinical.patient.roomPrefix")}${row.original.roomId}`
+            : t("clinical.patient.unassignedRoom"),
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => (
           <Badge variant={row.original.status === "active" ? "success" : "outline"}>
-            {row.original.status}
+            {row.original.status === "active"
+              ? t("clinical.recordStatus.activeBadge")
+              : t("clinical.recordStatus.inactiveBadge")}
           </Badge>
         ),
       },
       {
         id: "actions",
-        header: "",
+        header: t("clinical.table.actions"),
         cell: ({ row }) => (
           <Button asChild size="sm" variant="outline">
-            <Link href={`/head-nurse/patients/${row.original.id}`}>Open detail</Link>
+            <Link href={`/head-nurse/patients/${row.original.id}`}>
+              {t("clinical.table.openDetail")}
+            </Link>
           </Button>
         ),
       },
     ],
-    [],
+    [t],
   );
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Patients</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Ward roster with care-level visibility and quick access to patient detail.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("nav.patients")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("clinical.patientsRoster.subtitle")}</p>
       </div>
 
       <div className="relative max-w-md">
@@ -118,20 +136,36 @@ export default function HeadNursePatientsPage() {
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search patients by name or ID"
+          placeholder={t("clinical.patientsRoster.searchPlaceholder")}
           className="pl-9"
         />
       </div>
 
       <DataTableCard
-        title="Patient Roster"
-        description="All patients in current workspace scope."
+        title={t("clinical.patientsRoster.title")}
+        description={t("clinical.patientsRoster.description")}
         data={rows}
         columns={columns}
         isLoading={patientsQuery.isLoading}
-        emptyText="No patients found."
+        emptyText={t("clinical.patientsRoster.empty")}
         rightSlot={<Users className="h-4 w-4 text-muted-foreground" />}
       />
+    </div>
+  );
+}
+
+export default function HeadNursePatientsPage() {
+  const tab = useHubTab(TABS);
+
+  return (
+    <div>
+      <Suspense>
+        <HubTabBar tabs={TABS} />
+      </Suspense>
+      {tab === "patients" && <PatientsTabContent />}
+      {tab === "staff" && <HeadNurseStaffPage />}
+      {tab === "specialists" && <HeadNurseSpecialistsPage />}
+      {tab === "calendar" && <HeadNurseCalendarPage />}
     </div>
   );
 }

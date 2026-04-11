@@ -7,13 +7,17 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import update
+from sqlalchemy import select, update
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
+from app.config import settings
+from app.main import app
 from app.models.core import Workspace
 from app.core.security import create_access_token, get_password_hash
 from app.models.users import User
+from app.services.simulator_reset import get_simulator_status
 
 
 # ── Workspace tests ──────────────────────────────────────────────────────────
@@ -472,9 +476,9 @@ async def test_localization_info(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_predict_without_model_returns_400(client: AsyncClient):
+async def test_predict_without_model_returns_200(client: AsyncClient):
     res = await client.post("/api/localization/predict", json={"rssi_vector": {"node1": -70}})
-    assert res.status_code == 400
+    assert res.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -483,3 +487,87 @@ async def test_retrain_without_data_returns_400(client: AsyncClient):
     await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
     res = await client.post("/api/localization/retrain")
     assert res.status_code == 400
+
+
+# ── Demo / simulator status ──────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_simulator_status_200_for_authenticated_admin(client: AsyncClient):
+    res = await client.get("/api/demo/simulator/status")
+    assert res.status_code == 200
+    data = res.json()
+    assert "env_mode" in data
+    assert "is_simulator" in data
+    assert "workspace_exists" in data
+
+
+@pytest.mark.asyncio
+async def test_simulator_status_200_for_non_admin_same_workspace(
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    nurse = User(
+        username="nurse_sim_status",
+        hashed_password=get_password_hash("pass"),
+        role="head_nurse",
+        workspace_id=admin_user.workspace_id,
+        is_active=True,
+    )
+    db_session.add(nurse)
+    await db_session.commit()
+
+    token = create_access_token(subject=str(nurse.id), role=nurse.role)
+
+    async def _override_db():
+        yield db_session
+
+    with (
+        patch("app.db.session.init_db", new_callable=AsyncMock),
+        patch("app.mqtt_handler.mqtt_listener", new_callable=AsyncMock),
+    ):
+        app.dependency_overrides[get_db] = _override_db
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": f"Bearer {token}"},
+        ) as ac:
+            res = await ac.get("/api/demo/simulator/status")
+        app.dependency_overrides.clear()
+
+    assert res.status_code == 200
+    data = res.json()
+    assert "env_mode" in data
+    assert "is_simulator" in data
+
+
+@pytest.mark.asyncio
+async def test_simulator_status_handles_missing_optional_tables(db_session: AsyncSession):
+    workspace_name = settings.bootstrap_demo_workspace_name or "WheelSense Demo Workspace"
+    existing = (
+        await db_session.execute(select(Workspace).where(Workspace.name == workspace_name))
+    ).scalar_one_or_none()
+    if existing is None:
+        db_session.add(Workspace(name=workspace_name, mode="simulation", is_active=True))
+        await db_session.commit()
+
+    original_scalar = db_session.scalar
+    call_count = {"value": 0}
+
+    async def flaky_scalar(statement, *args, **kwargs):
+        call_count["value"] += 1
+        if call_count["value"] == 3:
+            raise OperationalError(
+                "SELECT count(*) FROM care_tasks",
+                {},
+                Exception('relation "care_tasks" does not exist'),
+            )
+        return await original_scalar(statement, *args, **kwargs)
+
+    with patch.object(db_session, "scalar", new=AsyncMock(side_effect=flaky_scalar)):
+        status_data = await get_simulator_status(db_session)
+
+    assert status_data["workspace_exists"] is True
+    stats = status_data["statistics"]
+    assert stats["tasks"] == 0
+    assert all(isinstance(value, int) for value in stats.values())

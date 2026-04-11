@@ -11,6 +11,7 @@ from app.api.dependencies import (
     RequireRole,
     ROLE_ALL_AUTHENTICATED,
     ROLE_CLINICAL_STAFF,
+    ROLE_PATIENT,
     assert_patient_record_access_db,
     get_current_user_workspace,
     get_db,
@@ -20,6 +21,7 @@ from app.models.core import Workspace
 from app.models.patients import Patient
 from app.models.users import User
 from app.models.workflow import RoleMessage
+from app.schemas.users import UserSearchOut
 from app.schemas.workflow import (
     AuditTrailEventOut,
     CareDirectiveAcknowledge,
@@ -40,6 +42,7 @@ from app.schemas.workflow import (
     WorkflowHandoffRequest,
     WorkflowItemDetailOut,
 )
+from app.services.auth import UserService
 from app.services.workflow import (
     WORKFLOW_AUDIT_ENTITY_TYPES,
     audit_trail_service,
@@ -57,7 +60,8 @@ from sqlalchemy import select
 
 router = APIRouter()
 
-ROLE_WORKFLOW_WRITE = ["admin", "head_nurse", "supervisor"]
+# Observer may create patient-linked schedules/tasks for assigned patients (same DB checks as staff).
+ROLE_WORKFLOW_WRITE = ["admin", "head_nurse", "supervisor", "observer"]
 ROLE_DIRECTIVE_WRITE = ["admin", "head_nurse"]
 ROLE_AUDIT_QUERY = ["admin", "head_nurse", "supervisor"]
 
@@ -68,10 +72,15 @@ async def list_schedules(
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+    current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
     if patient_id is not None:
         await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
+    elif current_user.role == ROLE_PATIENT:
+        own_pid = getattr(current_user, "patient_id", None)
+        if own_pid is None:
+            return []
+        patient_id = int(own_pid)
     visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await schedule_service.list_schedules(
         db,
@@ -136,7 +145,7 @@ async def list_tasks(
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
+    current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
     visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     return await care_task_service.list_visible_tasks(
@@ -209,6 +218,23 @@ async def list_messages(
         workflow_item_id=workflow_item_id,
         limit=limit,
     )
+
+@router.get("/messaging/recipients", response_model=list[UserSearchOut])
+async def list_messaging_recipients(
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
+):
+    """Active staff user accounts in this workspace for message compose user-targeting."""
+    rows = await UserService.search_users(
+        db,
+        ws.id,
+        kind="staff",
+        roles=["admin", "head_nurse", "supervisor", "observer"],
+        limit=200,
+    )
+    return [UserSearchOut.model_validate(row) for row in rows if row.get("kind") == "staff"]
+
 
 @router.post("/messages", response_model=RoleMessageOut, status_code=201)
 async def send_message(

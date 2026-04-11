@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { useTranslation } from "@/lib/i18n";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
 
 const roomSchema = z
@@ -63,6 +64,7 @@ type PredictionRow = {
 };
 
 export default function SupervisorEmergencyPage() {
+  const { t } = useTranslation();
   const alertsQuery = useQuery({
     queryKey: ["supervisor", "emergency", "alerts"],
     queryFn: () => api.listAlerts({ status: "active", limit: 200 }),
@@ -145,7 +147,7 @@ export default function SupervisorEmergencyPage() {
   const occupancyByRoom = useMemo(() => {
     const map = new Map<string, { devices: number; avgConfidence: number; latestSeen: string | null }>();
     for (const prediction of latestPredictionByDevice) {
-      const roomName = prediction.predicted_room_name ?? "Unknown room";
+      const roomName = prediction.predicted_room_name ?? t("supervisor.emergency.unknownRoom");
       const existing = map.get(roomName);
       const confidence = prediction.confidence ?? 0;
       if (!existing) {
@@ -168,7 +170,7 @@ export default function SupervisorEmergencyPage() {
       });
     }
     return map;
-  }, [latestPredictionByDevice]);
+  }, [latestPredictionByDevice, t]);
 
   const criticalRooms = useMemo(() => {
     const names = new Set<string>();
@@ -190,13 +192,13 @@ export default function SupervisorEmergencyPage() {
           description: alert.description,
           patientName: patient
             ? `${patient.first_name} ${patient.last_name}`.trim()
-            : "Patient not linked",
+            : t("supervisor.emergency.patientNotLinked"),
           patientId: alert.patient_id,
           timestamp: alert.timestamp,
         };
       })
       .sort((left, right) => right.timestamp.localeCompare(left.timestamp));
-  }, [activeCriticalAlerts, patientById]);
+  }, [activeCriticalAlerts, patientById, t]);
 
   const roomRows = useMemo<RoomRow[]>(() => {
     return rooms.map((room) => {
@@ -219,18 +221,18 @@ export default function SupervisorEmergencyPage() {
       .sort((left, right) => (right.confidence ?? 0) - (left.confidence ?? 0))
       .map((prediction) => ({
         deviceId: prediction.device_id,
-        roomName: prediction.predicted_room_name ?? "Unknown room",
+        roomName: prediction.predicted_room_name ?? t("supervisor.emergency.unknownRoom"),
         confidence: prediction.confidence ?? null,
         modelType: prediction.model_type || "-",
         timestamp: prediction.timestamp ?? null,
       }));
-  }, [latestPredictionByDevice]);
+  }, [latestPredictionByDevice, t]);
 
   const alertColumns = useMemo<ColumnDef<AlertRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Alert",
+        header: t("clinical.table.alert"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -238,10 +240,10 @@ export default function SupervisorEmergencyPage() {
           </div>
         ),
       },
-      { accessorKey: "patientName", header: "Patient" },
+      { accessorKey: "patientName", header: t("clinical.table.patient") },
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("clinical.table.time"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -251,25 +253,25 @@ export default function SupervisorEmergencyPage() {
       },
       {
         id: "actions",
-        header: "",
+        header: t("clinical.table.actions"),
         cell: ({ row }) => {
           const href = row.original.patientId ? `/supervisor/patients/${row.original.patientId}` : "/supervisor/patients";
           return (
             <Button asChild size="sm" variant="outline">
-              <Link href={href}>Open patient</Link>
+              <Link href={href}>{t("headNurse.alerts.openPatient")}</Link>
             </Button>
           );
         },
       },
     ],
-    [],
+    [t],
   );
 
   const roomColumns = useMemo<ColumnDef<RoomRow>[]>(
     () => [
       {
         accessorKey: "roomName",
-        header: "Room",
+        header: t("clinical.table.room"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.roomName}</p>
@@ -279,11 +281,11 @@ export default function SupervisorEmergencyPage() {
       },
       {
         accessorKey: "localizedDevices",
-        header: "Localized devices",
+        header: t("clinical.table.localizedDevices"),
       },
       {
         accessorKey: "averageConfidence",
-        header: "Avg confidence",
+        header: t("clinical.table.avgConfidence"),
         cell: ({ row }) =>
           row.original.averageConfidence != null
             ? `${Math.round(row.original.averageConfidence * 100)}%`
@@ -291,36 +293,40 @@ export default function SupervisorEmergencyPage() {
       },
       {
         accessorKey: "lastSignal",
-        header: "Last signal",
+        header: t("clinical.table.lastSignal"),
         cell: ({ row }) => formatDateTime(row.original.lastSignal),
       },
       {
         accessorKey: "isCritical",
-        header: "Risk",
+        header: t("clinical.table.risk"),
         cell: ({ row }) =>
-          row.original.isCritical ? <Badge variant="destructive">Critical</Badge> : <Badge variant="outline">Normal</Badge>,
+          row.original.isCritical ? (
+            <Badge variant="destructive">{t("supervisor.emergency.riskCritical")}</Badge>
+          ) : (
+            <Badge variant="outline">{t("supervisor.emergency.riskNormal")}</Badge>
+          ),
       },
     ],
-    [],
+    [t],
   );
 
   const predictionColumns = useMemo<ColumnDef<PredictionRow>[]>(
     () => [
       {
         accessorKey: "deviceId",
-        header: "Device",
+        header: t("clinical.table.device"),
       },
-      { accessorKey: "roomName", header: "Predicted room" },
+      { accessorKey: "roomName", header: t("clinical.table.predictedRoom") },
       {
         accessorKey: "confidence",
-        header: "Confidence",
+        header: t("clinical.table.confidence"),
         cell: ({ row }) =>
           row.original.confidence != null ? `${Math.round(row.original.confidence * 100)}%` : "-",
       },
-      { accessorKey: "modelType", header: "Model" },
+      { accessorKey: "modelType", header: t("clinical.table.model") },
       {
         accessorKey: "timestamp",
-        header: "Timestamp",
+        header: t("clinical.table.timestamp"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -329,7 +335,7 @@ export default function SupervisorEmergencyPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const isLoadingAny =
@@ -338,49 +344,57 @@ export default function SupervisorEmergencyPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Emergency Monitoring</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Track room-level risk using critical alerts and live localization predictions.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("supervisor.emergency.pageTitle")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.emergency.pageSubtitle")}</p>
       </div>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <SummaryStatCard
           icon={Siren}
-          label="Active critical alerts"
+          label={t("supervisor.emergency.statCriticalAlerts")}
           value={activeCriticalAlerts.length}
           tone={activeCriticalAlerts.length > 0 ? "critical" : "success"}
         />
-        <SummaryStatCard icon={Radio} label="Tracked devices" value={latestPredictionByDevice.length} tone="info" />
-        <SummaryStatCard icon={MapPin} label="Rooms with live signals" value={occupancyByRoom.size} tone="warning" />
+        <SummaryStatCard
+          icon={Radio}
+          label={t("supervisor.emergency.statTrackedDevices")}
+          value={latestPredictionByDevice.length}
+          tone="info"
+        />
+        <SummaryStatCard
+          icon={MapPin}
+          label={t("supervisor.emergency.statRoomsLive")}
+          value={occupancyByRoom.size}
+          tone="warning"
+        />
       </section>
 
       <DataTableCard
-        title="Critical Alert Queue"
-        description="Active critical alerts with quick path to patient detail."
+        title={t("supervisor.emergency.alertQueueTitle")}
+        description={t("supervisor.emergency.alertQueueDesc")}
         data={alertRows}
         columns={alertColumns}
         isLoading={isLoadingAny}
-        emptyText="No active critical alerts at this time."
+        emptyText={t("supervisor.emergency.alertQueueEmpty")}
         rightSlot={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
       />
 
       <DataTableCard
-        title="Floor Coverage by Room"
-        description="Latest room-level occupancy signals from localization predictions."
+        title={t("supervisor.emergency.floorCoverageTitle")}
+        description={t("supervisor.emergency.floorCoverageDesc")}
         data={roomRows}
         columns={roomColumns}
         isLoading={isLoadingAny}
-        emptyText="No rooms are available for this workspace."
+        emptyText={t("supervisor.emergency.floorCoverageEmpty")}
       />
 
       <DataTableCard
-        title="Live Device Localization Feed"
-        description="Most recent prediction for each tracked device."
+        title={t("supervisor.emergency.localizationFeedTitle")}
+        description={t("supervisor.emergency.localizationFeedDesc")}
         data={predictionRows}
         columns={predictionColumns}
         isLoading={isLoadingAny}
-        emptyText="No localization predictions are currently streaming."
+        emptyText={t("supervisor.emergency.localizationFeedEmpty")}
       />
     </div>
   );

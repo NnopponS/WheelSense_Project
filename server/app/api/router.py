@@ -4,10 +4,12 @@ from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_current_active_user
 from .endpoints import (
+    admin_database,
     workspaces, devices, rooms, telemetry, localization, motion,
     patients, caregivers, facilities, vitals, timeline, alerts,
     auth, users, homeassistant, retention, cameras, analytics,
-    chat, ai_settings, workflow, future_domains, profile_images, demo_control,
+    chat, ai_settings, workflow, floorplans, care, medication, service_requests, profile_images, demo_control,
+    support, calendar, chat_actions, shift_checklist,
 )
 from app.localization import is_model_ready
 
@@ -69,15 +71,63 @@ api_router.include_router(
     dependencies=[Depends(get_current_active_user)],
 )
 api_router.include_router(
-    future_domains.router,
-    prefix="/future",
-    tags=["future-domains"],
+    floorplans.router,
+    prefix="/floorplans",
+    tags=["floorplans"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    care.router,
+    prefix="/care",
+    tags=["care"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    medication.router,
+    prefix="/medication",
+    tags=["medication"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    service_requests.router,
+    prefix="/services",
+    tags=["service-requests"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    calendar.router,
+    prefix="/calendar",
+    tags=["calendar"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    support.router,
+    prefix="/support",
+    tags=["support"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    chat_actions.router,
+    prefix="/chat",
+    tags=["chat-actions"],
     dependencies=[Depends(get_current_active_user)],
 )
 api_router.include_router(
     demo_control.router,
     prefix="/demo",
     tags=["demo-control"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    admin_database.router,
+    prefix="/admin/database",
+    tags=["admin-database"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    shift_checklist.router,
+    prefix="/shift-checklist",
+    tags=["shift-checklist"],
     dependencies=[Depends(get_current_active_user)],
 )
 

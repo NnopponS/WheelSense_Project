@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import { useMemo, useState } from "react";
@@ -21,36 +21,52 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
   ListWorkflowMessagesResponse,
   SendWorkflowMessageRequest,
 } from "@/lib/api/task-scope-types";
 
-type RecipientRole = "observer" | "supervisor" | "head_nurse";
+const NO_RECIPIENT_SELECTED = "__none__";
+
+type MessagingRecipient = {
+  id: number;
+  username: string;
+  role: string;
+  display_name: string;
+  kind: string;
+};
 
 type MessageRow = {
   id: number;
   subject: string;
   body: string;
   isRead: boolean;
-  recipientRole: string | null;
+  recipientLabel: string;
   createdAt: string;
 };
 
-function toErrorText(error: unknown): string {
+function toErrorText(error: unknown, fallback: string): string {
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error) return error.message;
-  return "Request failed.";
+  return fallback;
 }
 
 export default function PatientMessagesPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const [recipientRole, setRecipientRole] = useState<RecipientRole>("observer");
+  const [recipientUserId, setRecipientUserId] = useState<string>(NO_RECIPIENT_SELECTED);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+
+  const recipientsQuery = useQuery({
+    queryKey: ["patient", "messages", "recipients"],
+    queryFn: () => api.listWorkflowMessagingRecipients(),
+    staleTime: 60_000,
+  });
 
   const messagesQuery = useQuery({
     queryKey: ["patient", "messages", "list"],
@@ -60,8 +76,16 @@ export default function PatientMessagesPage() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async () => {
+      const rid = Number(recipientUserId);
+      if (
+        recipientUserId === NO_RECIPIENT_SELECTED ||
+        !Number.isFinite(rid) ||
+        rid <= 0
+      ) {
+        throw new Error("Select a recipient");
+      }
       const payload = {
-        recipient_role: recipientRole,
+        recipient_user_id: rid,
         patient_id: user?.patient_id ?? null,
         subject: subject.trim() || "Patient message",
         body: body.trim(),
@@ -90,16 +114,29 @@ export default function PatientMessagesPage() {
     [messagesQuery.data],
   );
 
+  const recipients = useMemo(
+    () => (recipientsQuery.data ?? []) as MessagingRecipient[],
+    [recipientsQuery.data],
+  );
+
   const rows = useMemo<MessageRow[]>(() => {
     return messages
-      .map((message) => ({
-        id: message.id,
-        subject: message.subject || "Care team message",
-        body: message.body,
-        isRead: message.is_read,
-        recipientRole: message.recipient_role,
-        createdAt: message.created_at,
-      }))
+      .map((message) => {
+        const person = message.recipient_person;
+        const recipientLabel =
+          person?.display_name?.trim() ||
+          (message.recipient_user_id != null ? `User #${message.recipient_user_id}` : null) ||
+          message.recipient_role ||
+          "-";
+        return {
+          id: message.id,
+          subject: message.subject || "Care team message",
+          body: message.body,
+          isRead: message.is_read,
+          recipientLabel,
+          createdAt: message.created_at,
+        };
+      })
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   }, [messages]);
 
@@ -109,7 +146,7 @@ export default function PatientMessagesPage() {
     () => [
       {
         accessorKey: "subject",
-        header: "Message",
+        header: t("patient.messages.colMessage"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.subject}</p>
@@ -118,22 +155,22 @@ export default function PatientMessagesPage() {
         ),
       },
       {
-        accessorKey: "recipientRole",
-        header: "Recipient role",
-        cell: ({ row }) => row.original.recipientRole || "-",
+        accessorKey: "recipientLabel",
+        header: t("patient.messages.colRecipient"),
+        cell: ({ row }) => row.original.recipientLabel,
       },
       {
         accessorKey: "isRead",
-        header: "Read",
+        header: t("patient.messages.colRead"),
         cell: ({ row }) => (
           <Badge variant={row.original.isRead ? "success" : "warning"}>
-            {row.original.isRead ? "read" : "unread"}
+            {row.original.isRead ? t("patient.messages.read") : t("patient.messages.unread")}
           </Badge>
         ),
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("patient.messages.colCreated"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
@@ -152,61 +189,86 @@ export default function PatientMessagesPage() {
               variant="outline"
               onClick={() => markReadMutation.mutate(row.original.id)}
             >
-              Mark read
+              {t("patient.messages.markRead")}
             </Button>
           ),
       },
     ],
-    [markReadMutation],
+    [markReadMutation, t],
   );
 
-  const sendError = sendMessageMutation.error ? toErrorText(sendMessageMutation.error) : null;
+  const sendError = sendMessageMutation.error
+    ? toErrorText(sendMessageMutation.error, t("patient.messages.requestFailed"))
+    : null;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Messages</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t("patient.messages.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Inbox: {rows.length} messages, {unreadCount} unread.
+          {t("patient.messages.inboxIntro")} {rows.length} {t("patient.messages.messagesWord")},{" "}
+          {unreadCount} {t("patient.messages.unreadLabel")}.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Send Message to Care Team</CardTitle>
+          <CardTitle className="text-base">{t("patient.messages.sendCardTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Recipient role</Label>
-              <Select value={recipientRole} onValueChange={(value) => setRecipientRole(value as RecipientRole)}>
+              <Label>{t("patient.messages.recipientUser")}</Label>
+              <Select
+                value={recipientUserId}
+                onValueChange={setRecipientUserId}
+                disabled={recipientsQuery.isLoading || recipients.length === 0}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue
+                    placeholder={
+                      recipientsQuery.isLoading
+                        ? t("common.loading")
+                        : recipients.length === 0
+                          ? t("patient.messages.noRecipients")
+                          : t("patient.messages.recipientPlaceholder")
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="observer">Observer</SelectItem>
-                  <SelectItem value="supervisor">Supervisor</SelectItem>
-                  <SelectItem value="head_nurse">Head Nurse</SelectItem>
+                  <SelectItem value={NO_RECIPIENT_SELECTED} className="text-muted-foreground">
+                    {t("patient.messages.recipientPlaceholder")}
+                  </SelectItem>
+                  {recipients.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      {r.display_name} (@{r.username}) · {r.role}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {recipientsQuery.isError ? (
+                <p className="text-xs text-destructive">{t("patient.messages.recipientsLoadFailed")}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">{t("patient.messages.recipientUserHint")}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label>Subject</Label>
+              <Label>{t("patient.messages.subject")}</Label>
               <Input
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
-                placeholder="Medication question"
+                placeholder={t("patient.messages.subjectPlaceholder")}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Message</Label>
+            <Label>{t("patient.messages.body")}</Label>
             <Textarea
               rows={4}
               value={body}
               onChange={(event) => setBody(event.target.value)}
-              placeholder="Write your message for the care team."
+              placeholder={t("patient.messages.bodyPlaceholder")}
             />
           </div>
 
@@ -214,22 +276,26 @@ export default function PatientMessagesPage() {
 
           <Button
             type="button"
-            disabled={sendMessageMutation.isPending || !body.trim()}
+            disabled={
+              sendMessageMutation.isPending ||
+              !body.trim() ||
+              recipientUserId === NO_RECIPIENT_SELECTED
+            }
             onClick={() => sendMessageMutation.mutate()}
           >
             <Send className="h-4 w-4" />
-            {sendMessageMutation.isPending ? "Sending..." : "Send message"}
+            {sendMessageMutation.isPending ? t("patient.messages.sending") : t("patient.messages.send")}
           </Button>
         </CardContent>
       </Card>
 
       <DataTableCard
-        title="Inbox"
-        description="Recent messages from and to care-team roles."
+        title={t("patient.messages.inboxTitle")}
+        description={t("patient.messages.inboxDesc")}
         data={rows}
         columns={columns}
         isLoading={messagesQuery.isLoading}
-        emptyText="No messages in your inbox."
+        emptyText={t("patient.messages.empty")}
         rightSlot={<Mail className="h-4 w-4 text-muted-foreground" />}
       />
     </div>

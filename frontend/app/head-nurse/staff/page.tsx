@@ -25,6 +25,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { useTranslation } from "@/lib/i18n";
 import type {
   CareTaskOut,
   CareScheduleOut,
@@ -99,6 +100,7 @@ function toIsoDateTime(value: string): string {
 }
 
 export default function HeadNurseStaffPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
@@ -291,34 +293,38 @@ export default function HeadNurseStaffPage() {
     () => [
       {
         accessorKey: "fullName",
-        header: "Caregiver",
+        header: t("clinical.table.caregiver"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-xs text-muted-foreground">{row.original.role || "caregiver"}</p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.role || t("clinical.role.caregiverFallback")}
+            </p>
           </div>
         ),
       },
-      { accessorKey: "phone", header: "Phone" },
-      { accessorKey: "email", header: "Email" },
+      { accessorKey: "phone", header: t("clinical.table.phone") },
+      { accessorKey: "email", header: t("clinical.table.email") },
       {
         accessorKey: "isActive",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => (
           <Badge variant={row.original.isActive ? "success" : "outline"}>
-            {row.original.isActive ? "active" : "inactive"}
+            {row.original.isActive
+              ? t("clinical.recordStatus.activeBadge")
+              : t("clinical.recordStatus.inactiveBadge")}
           </Badge>
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const schedulesColumns = useMemo<ColumnDef<ScheduleRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Schedule",
+        header: t("clinical.table.schedule"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -328,22 +334,22 @@ export default function HeadNurseStaffPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
       },
       {
         id: "assignment",
-        header: "Assignment",
+        header: t("clinical.table.assignment"),
         cell: ({ row }) =>
           row.original.assignedRole
-            ? `Role: ${row.original.assignedRole}`
+            ? `${t("headNurse.staff.rolePrefix")}${row.original.assignedRole}`
             : row.original.assignedUserId
-              ? `User #${row.original.assignedUserId}`
-              : "Unassigned",
+              ? `${t("headNurse.staff.userPrefix")}${row.original.assignedUserId}`
+              : t("headNurse.staff.unassigned"),
       },
       {
         accessorKey: "startsAt",
-        header: "Starts",
+        header: t("clinical.table.starts"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.startsAt)}</p>
@@ -352,14 +358,14 @@ export default function HeadNurseStaffPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const tasksColumns = useMemo<ColumnDef<TaskRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Task",
+        header: t("clinical.table.task"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -369,7 +375,7 @@ export default function HeadNurseStaffPage() {
       },
       {
         accessorKey: "priority",
-        header: "Priority",
+        header: t("clinical.table.priority"),
         cell: ({ row }) => {
           const priority = row.original.priority;
           const variant =
@@ -385,12 +391,12 @@ export default function HeadNurseStaffPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
       },
       {
         accessorKey: "dueAt",
-        header: "Due",
+        header: t("clinical.table.due"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.dueAt)}</p>
@@ -400,7 +406,7 @@ export default function HeadNurseStaffPage() {
       },
       {
         id: "actions",
-        header: "",
+        header: t("clinical.table.actions"),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             {row.original.status === "pending" ? (
@@ -414,7 +420,7 @@ export default function HeadNurseStaffPage() {
                   updateTaskMutation.mutate({ id: row.original.id, status: "in_progress" });
                 }}
               >
-                Start
+                {t("clinical.action.start")}
               </Button>
             ) : null}
             <Button
@@ -426,13 +432,13 @@ export default function HeadNurseStaffPage() {
                 updateTaskMutation.mutate({ id: row.original.id, status: "completed" });
               }}
             >
-              Complete
+              {t("clinical.action.complete")}
             </Button>
           </div>
         ),
       },
     ],
-    [pendingTaskId, updateTaskMutation],
+    [pendingTaskId, t, updateTaskMutation],
   );
 
   const openTaskCount = taskRows.length;

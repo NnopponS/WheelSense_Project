@@ -7,18 +7,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import (
+    ROLE_ALL_AUTHENTICATED,
+    ROLE_PATIENT,
     ROLE_PATIENT_MANAGERS,
     RequireRole,
+    assert_patient_may_access_assigned_device_db,
+    get_current_active_user,
     get_current_user_workspace,
     get_db,
 )
 from app.models.core import Device, DeviceCommandDispatch, Workspace
+from app.models.patients import PatientDeviceAssignment
+from app.models.users import User
 from app.schemas.device_activity import DeviceActivityEventOut
 from app.schemas.devices import (
     CameraCommand,
     DeviceCommandOut,
     DeviceCommandRequest,
     DeviceCreate,
+    MobileTelemetryIngest,
+    MobileTelemetryIngestOut,
     DevicePatientAssign,
     DevicePatch,
 )
@@ -58,8 +66,19 @@ async def list_devices(
     hardware_type: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
 ):
     query = select(Device).where(Device.workspace_id == ws.id).order_by(desc(Device.last_seen))
+    if current_user.role == ROLE_PATIENT:
+        patient_id = getattr(current_user, "patient_id", None)
+        if patient_id is None:
+            return []
+        assigned_ids = select(PatientDeviceAssignment.device_id).where(
+            PatientDeviceAssignment.workspace_id == ws.id,
+            PatientDeviceAssignment.patient_id == patient_id,
+            PatientDeviceAssignment.is_active.is_(True),
+        )
+        query = query.where(Device.device_id.in_(assigned_ids))
     if device_type:
         query = query.where(Device.device_type == device_type)
     if hardware_type:
@@ -74,7 +93,9 @@ async def list_device_commands(
     limit: int = 20,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
 ):
+    await assert_patient_may_access_assigned_device_db(db, ws.id, current_user, device_id)
     await dm.get_device(db, ws.id, device_id)
     lim = min(max(limit, 1), 100)
     q = (
@@ -106,8 +127,21 @@ async def get_device_detail(
     device_id: str,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
 ):
+    await assert_patient_may_access_assigned_device_db(db, ws.id, current_user, device_id)
     return await dm.build_device_detail(db, ws.id, device_id)
+
+
+@router.post("/mobile/ingest", response_model=MobileTelemetryIngestOut)
+async def ingest_mobile_telemetry(
+    body: MobileTelemetryIngest,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: object = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
+):
+    payload = await dm.ingest_mobile_telemetry(db, ws.id, body)
+    return MobileTelemetryIngestOut(**payload)
 
 @router.post("/{device_id}/patient")
 async def assign_patient_from_device(

@@ -10,14 +10,39 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.dependencies import RequireRole, get_db, get_current_active_user
+from app.api.dependencies import (
+    RequireRole,
+    get_current_active_user,
+    get_current_user_workspace,
+    get_db,
+)
 from app.config import settings
+from app.models.core import Workspace
 from app.models.users import User
-from app.schemas.users import AuthMeOut, ImpersonationStart, MePatch, Token, UserOut
-from app.services.auth import AuthService
+from app.schemas.users import (
+    AuthMeOut,
+    AuthMeProfileOut,
+    AuthMeProfilePatch,
+    ChangePasswordIn,
+    ImpersonationStart,
+    MePatch,
+    Token,
+    UserOut,
+)
+from app.services.auth import AuthService, UserService
 from app.services.profile_image_storage import remove_hosted_profile_file_if_any
 
 router = APIRouter(tags=["Authentication"])
+
+
+def _build_auth_me_out(current_user: User, *, caregiver=None) -> AuthMeOut:
+    data = AuthMeOut.model_validate(current_user)
+    impersonated_by_user_id = getattr(current_user, "_impersonated_by_user_id", None)
+    data.impersonation = impersonated_by_user_id is not None
+    data.impersonated_by_user_id = impersonated_by_user_id
+    data.email = getattr(caregiver, "email", None) or None
+    data.phone = getattr(caregiver, "phone", None) or None
+    return data
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(
@@ -38,11 +63,59 @@ async def read_users_me(
     """
     Get current user information based on the JWT token.
     """
-    data = AuthMeOut.model_validate(current_user)
-    impersonated_by_user_id = getattr(current_user, "_impersonated_by_user_id", None)
-    data.impersonation = impersonated_by_user_id is not None
-    data.impersonated_by_user_id = impersonated_by_user_id
-    return data
+    return _build_auth_me_out(current_user)
+
+@router.get("/me/profile", response_model=AuthMeProfileOut)
+async def read_users_me_profile(
+    session: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Get current user information with linked caregiver/patient profile.
+    """
+    profile = await UserService.get_me_profile(session, ws.id, current_user)
+    data = _build_auth_me_out(current_user, caregiver=profile["linked_caregiver"])
+    return AuthMeProfileOut(
+        user=data,
+        linked_caregiver=profile["linked_caregiver"],
+        linked_patient=profile["linked_patient"],
+    )
+
+@router.patch("/me/profile", response_model=AuthMeProfileOut)
+async def patch_users_me_profile(
+    data: AuthMeProfilePatch,
+    session: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Update the authenticated user's own profile fields and linked person record fields.
+    """
+    updated = await UserService.update_me_profile(session, ws.id, current_user, data)
+    me_data = _build_auth_me_out(updated["user"], caregiver=updated["linked_caregiver"])
+    return AuthMeProfileOut(
+        user=me_data,
+        linked_caregiver=updated["linked_caregiver"],
+        linked_patient=updated["linked_patient"],
+    )
+
+@router.post("/change-password")
+async def change_password(
+    data: ChangePasswordIn,
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Change current authenticated user password.
+    """
+    await UserService.change_password(
+        session,
+        current_user,
+        data.current_password,
+        data.new_password,
+    )
+    return {"ok": True}
 
 @router.post("/impersonate/start", response_model=Token)
 async def start_impersonation(

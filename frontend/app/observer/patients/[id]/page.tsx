@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/lib/api";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
   CareTaskOut,
@@ -74,15 +75,39 @@ type HandoverRow = {
   createdAt: string;
 };
 
-function errorText(error: unknown, fallback: string): string {
+function errorText(
+  error: unknown,
+  translate: (key: TranslationKey) => string,
+  fallbackKey: TranslationKey,
+): string {
   if (error instanceof ApiError && error.status === 403) {
-    return "You do not have permission for this action.";
+    return translate("observer.patientDetail.forbidden");
   }
   if (error instanceof Error) return error.message;
-  return fallback;
+  return translate(fallbackKey);
+}
+
+function taskPriorityLabel(translate: (key: TranslationKey) => string, priority: string): string {
+  switch (priority) {
+    case "low":
+      return translate("priority.low");
+    case "medium":
+      return translate("priority.medium");
+    case "high":
+      return translate("priority.high");
+    case "critical":
+      return translate("support.priorityCritical");
+    case "urgent":
+      return translate("priority.urgent");
+    case "normal":
+      return translate("support.priorityNormal");
+    default:
+      return priority;
+  }
 }
 
 export default function ObserverPatientDetailPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const queryClient = useQueryClient();
 
@@ -157,7 +182,7 @@ export default function ObserverPatientDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["observer", "patient-detail", patientId, "timeline"] });
       await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard"] });
     },
-    onError: (error) => setActionError(errorText(error, "Failed to save observation note.")),
+    onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errSaveNote")),
   });
 
   const sendMessageMutation = useMutation({
@@ -178,7 +203,7 @@ export default function ObserverPatientDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["observer", "patient-detail", patientId, "messages"] });
       await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
     },
-    onError: (error) => setActionError(errorText(error, "Failed to send workflow message.")),
+    onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errSendMessage")),
   });
 
   const createHandoverMutation = useMutation({
@@ -199,7 +224,7 @@ export default function ObserverPatientDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["observer", "patient-detail", patientId, "handovers"] });
       await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
     },
-    onError: (error) => setActionError(errorText(error, "Failed to submit handover note.")),
+    onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errHandover")),
   });
 
   const updateTaskMutation = useMutation({
@@ -211,7 +236,7 @@ export default function ObserverPatientDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
       setActionError(null);
     },
-    onError: (error) => setActionError(errorText(error, "Failed to update task status.")),
+    onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errTaskStatus")),
   });
 
   const markReadMutation = useMutation({
@@ -223,7 +248,7 @@ export default function ObserverPatientDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["observer", "patients"] });
       setActionError(null);
     },
-    onError: (error) => setActionError(errorText(error, "Failed to mark message as read.")),
+    onError: (error) => setActionError(errorText(error, t, "observer.patientDetail.errMarkRead")),
   });
 
   const patient = useMemo(
@@ -319,12 +344,12 @@ export default function ObserverPatientDetailPage() {
       .sort((left, right) => right.created_at.localeCompare(left.created_at))
       .map((message) => ({
         id: message.id,
-        subject: message.subject || "Care coordination message",
+        subject: message.subject || t("observer.patientDetail.defaultCareSubject"),
         body: message.body,
         isRead: message.is_read,
         createdAt: message.created_at,
       }));
-  }, [patientMessages]);
+  }, [patientMessages, t]);
 
   const handoverRows = useMemo<HandoverRow[]>(() => {
     return [...handovers]
@@ -342,7 +367,7 @@ export default function ObserverPatientDetailPage() {
     () => [
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("observer.patientDetail.colTime"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -350,38 +375,51 @@ export default function ObserverPatientDetailPage() {
           </div>
         ),
       },
-      { accessorKey: "heartRate", header: "HR", cell: ({ row }) => row.original.heartRate ?? "-" },
-      { accessorKey: "spo2", header: "SpO2", cell: ({ row }) => row.original.spo2 ?? "-" },
+      {
+        accessorKey: "heartRate",
+        header: t("observer.patientDetail.colHeartRate"),
+        cell: ({ row }) => row.original.heartRate ?? "-",
+      },
+      {
+        accessorKey: "spo2",
+        header: t("observer.patientDetail.colSpo2"),
+        cell: ({ row }) => row.original.spo2 ?? "-",
+      },
       {
         accessorKey: "rrInterval",
-        header: "RR interval",
-        cell: ({ row }) => (row.original.rrInterval != null ? `${row.original.rrInterval} ms` : "-"),
+        header: t("observer.patientDetail.colRrInterval"),
+        cell: ({ row }) =>
+          row.original.rrInterval != null
+            ? `${row.original.rrInterval} ${t("observer.patientDetail.unitMs")}`
+            : "-",
       },
       {
         accessorKey: "battery",
-        header: "Battery",
+        header: t("observer.patientDetail.colBattery"),
         cell: ({ row }) => (row.original.battery != null ? `${row.original.battery}%` : "-"),
       },
-      { accessorKey: "source", header: "Source" },
+      { accessorKey: "source", header: t("observer.patientDetail.colSource") },
     ],
-    [],
+    [t],
   );
 
   const taskColumns = useMemo<ColumnDef<TaskRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Task",
+        header: t("observer.patientDetail.colTask"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description || "No description"}</p>
+            <p className="line-clamp-2 text-xs text-muted-foreground">
+              {row.original.description || t("observer.patientDetail.noDescription")}
+            </p>
           </div>
         ),
       },
       {
         accessorKey: "priority",
-        header: "Priority",
+        header: t("observer.patientDetail.colPriority"),
         cell: ({ row }) => {
           const priority = row.original.priority;
           const variant =
@@ -392,13 +430,17 @@ export default function ObserverPatientDetailPage() {
                 : priority === "normal"
                   ? "secondary"
                   : "outline";
-          return <Badge variant={variant}>{priority}</Badge>;
+          return <Badge variant={variant}>{taskPriorityLabel(t, priority)}</Badge>;
         },
       },
-      { accessorKey: "status", header: "Status", cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge> },
+      {
+        accessorKey: "status",
+        header: t("observer.patientDetail.colStatus"),
+        cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
+      },
       {
         accessorKey: "dueAt",
-        header: "Due",
+        header: t("observer.patientDetail.colDue"),
         cell: ({ row }) => formatDateTime(row.original.dueAt),
       },
       {
@@ -415,7 +457,7 @@ export default function ObserverPatientDetailPage() {
                   updateTaskMutation.mutate({ taskId: row.original.id, status: "in_progress" })
                 }
               >
-                Start
+                {t("observer.patientDetail.startTask")}
               </Button>
             ) : null}
             {row.original.status !== "completed" ? (
@@ -424,7 +466,7 @@ export default function ObserverPatientDetailPage() {
                 size="sm"
                 onClick={() => updateTaskMutation.mutate({ taskId: row.original.id, status: "completed" })}
               >
-                Complete
+                {t("observer.patientDetail.completeTask")}
               </Button>
             ) : (
               <Button
@@ -433,21 +475,21 @@ export default function ObserverPatientDetailPage() {
                 variant="outline"
                 onClick={() => updateTaskMutation.mutate({ taskId: row.original.id, status: "pending" })}
               >
-                Reopen
+                {t("observer.patientDetail.reopenTask")}
               </Button>
             )}
           </div>
         ),
       },
     ],
-    [updateTaskMutation],
+    [t, updateTaskMutation],
   );
 
   const timelineColumns = useMemo<ColumnDef<TimelineRow>[]>(
     () => [
       {
         accessorKey: "eventType",
-        header: "Event",
+        header: t("observer.patientDetail.colEvent"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.eventType}</p>
@@ -455,11 +497,11 @@ export default function ObserverPatientDetailPage() {
           </div>
         ),
       },
-      { accessorKey: "roomName", header: "Room" },
-      { accessorKey: "source", header: "Source" },
+      { accessorKey: "roomName", header: t("observer.patientDetail.colRoom") },
+      { accessorKey: "source", header: t("observer.patientDetail.colSource") },
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("observer.patientDetail.colTime"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -468,14 +510,14 @@ export default function ObserverPatientDetailPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   const messagesColumns = useMemo<ColumnDef<MessageRow>[]>(
     () => [
       {
         accessorKey: "subject",
-        header: "Message",
+        header: t("observer.patientDetail.colMessage"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.subject}</p>
@@ -485,16 +527,16 @@ export default function ObserverPatientDetailPage() {
       },
       {
         accessorKey: "isRead",
-        header: "Read",
+        header: t("observer.patientDetail.colRead"),
         cell: ({ row }) => (
           <Badge variant={row.original.isRead ? "success" : "warning"}>
-            {row.original.isRead ? "read" : "unread"}
+            {row.original.isRead ? t("observer.patientDetail.readBadge") : t("observer.patientDetail.unreadBadge")}
           </Badge>
         ),
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("observer.patientDetail.colCreated"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
@@ -513,33 +555,35 @@ export default function ObserverPatientDetailPage() {
               variant="outline"
               onClick={() => markReadMutation.mutate(row.original.id)}
             >
-              Mark read
+              {t("observer.patientDetail.markRead")}
             </Button>
           ),
       },
     ],
-    [markReadMutation],
+    [markReadMutation, t],
   );
 
   const handoversColumns = useMemo<ColumnDef<HandoverRow>[]>(
     () => [
       {
         accessorKey: "note",
-        header: "Handover note",
+        header: t("observer.patientDetail.colHandoverNote"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="line-clamp-3 text-sm text-foreground">{row.original.note}</p>
-            <p className="text-xs text-muted-foreground">{row.original.targetRole || "all roles"}</p>
+            <p className="text-xs text-muted-foreground">
+              {row.original.targetRole || t("observer.patientDetail.allRoles")}
+            </p>
           </div>
         ),
       },
       {
         accessorKey: "priority",
-        header: "Priority",
+        header: t("observer.patientDetail.colPriority"),
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("observer.patientDetail.colCreated"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
@@ -548,19 +592,17 @@ export default function ObserverPatientDetailPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   if (!hasValidPatientId) {
     return (
       <Card>
         <CardContent className="space-y-3 pt-6">
-          <h2 className="text-xl font-semibold text-foreground">Invalid patient ID</h2>
-          <p className="text-sm text-muted-foreground">
-            The route parameter is invalid. Return to the patient roster and select a patient.
-          </p>
+          <h2 className="text-xl font-semibold text-foreground">{t("observer.patientDetail.invalidId")}</h2>
+          <p className="text-sm text-muted-foreground">{t("observer.patientDetail.invalidIdDesc")}</p>
           <Button asChild size="sm" variant="outline">
-            <Link href="/observer/patients">Back to patients</Link>
+            <Link href="/observer/patients">{t("observer.patientDetail.back")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -580,18 +622,16 @@ export default function ObserverPatientDetailPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h2 className="text-2xl font-bold text-foreground">
-          {patient ? `${patient.first_name} ${patient.last_name}` : "Patient detail"}
+          {patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Observer care coordination workspace for notes, tasks, messages, and handovers.
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("observer.patientDetail.subtitle")}</p>
       </div>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryStatCard icon={Bell} label="Active alerts" value={activeAlerts.length} tone={activeAlerts.length > 0 ? "warning" : "success"} />
-        <SummaryStatCard icon={HeartPulse} label="Recent vitals" value={vitalsRows.length} tone="info" />
-        <SummaryStatCard icon={ClipboardList} label="Open tasks" value={taskRows.filter((row) => row.status !== "completed").length} tone="warning" />
-        <SummaryStatCard icon={MessageSquare} label="Unread messages" value={messageRows.filter((row) => !row.isRead).length} tone="warning" />
+        <SummaryStatCard icon={Bell} label={t("observer.patientDetail.activeAlerts")} value={activeAlerts.length} tone={activeAlerts.length > 0 ? "warning" : "success"} />
+        <SummaryStatCard icon={HeartPulse} label={t("observer.patientDetail.recentVitals")} value={vitalsRows.length} tone="info" />
+        <SummaryStatCard icon={ClipboardList} label={t("observer.patientDetail.openTasks")} value={taskRows.filter((row) => row.status !== "completed").length} tone="warning" />
+        <SummaryStatCard icon={MessageSquare} label={t("observer.patientDetail.unreadMessages")} value={messageRows.filter((row) => !row.isRead).length} tone="warning" />
       </section>
 
       {actionError ? (
@@ -603,120 +643,120 @@ export default function ObserverPatientDetailPage() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card>
           <CardContent className="space-y-3 pt-6">
-            <h3 className="text-sm font-semibold text-foreground">Add Observation Note</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("observer.patientDetail.addObservation")}</h3>
             <Textarea
               value={noteText}
               onChange={(event) => setNoteText(event.target.value)}
               rows={4}
-              placeholder="Record what you observed during rounds"
+              placeholder={t("observer.patientDetail.observationPlaceholder")}
             />
             <Button
               type="button"
               disabled={createTimelineMutation.isPending || !noteText.trim()}
               onClick={() => createTimelineMutation.mutate(noteText.trim())}
             >
-              {createTimelineMutation.isPending ? "Saving..." : "Save to timeline"}
+              {createTimelineMutation.isPending ? t("observer.patientDetail.saving") : t("observer.patientDetail.saveTimeline")}
             </Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="space-y-3 pt-6">
-            <h3 className="text-sm font-semibold text-foreground">Send Role Message</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("observer.patientDetail.sendRoleMessage")}</h3>
             <div className="space-y-2">
-              <Label htmlFor="observer-message-subject">Subject</Label>
+              <Label htmlFor="observer-message-subject">{t("observer.patientDetail.subject")}</Label>
               <Input
                 id="observer-message-subject"
                 value={messageSubject}
                 onChange={(event) => setMessageSubject(event.target.value)}
-                placeholder="Patient update"
+                placeholder={t("observer.patientDetail.patientUpdate")}
               />
             </div>
             <Textarea
               value={messageText}
               onChange={(event) => setMessageText(event.target.value)}
               rows={4}
-              placeholder="Send update to head nurse"
+              placeholder={t("observer.patientDetail.messagePlaceholder")}
             />
             <Button
               type="button"
               disabled={sendMessageMutation.isPending || !messageText.trim()}
               onClick={() =>
                 sendMessageMutation.mutate({
-                  subject: messageSubject.trim() || "Patient update",
+                  subject: messageSubject.trim() || t("observer.patientDetail.patientUpdate"),
                   body: messageText.trim(),
                 })
               }
             >
-              {sendMessageMutation.isPending ? "Sending..." : "Send message"}
+              {sendMessageMutation.isPending ? t("observer.patientDetail.sending") : t("observer.patientDetail.sendMessage")}
             </Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="space-y-3 pt-6">
-            <h3 className="text-sm font-semibold text-foreground">Submit Handover</h3>
+            <h3 className="text-sm font-semibold text-foreground">{t("observer.patientDetail.submitHandover")}</h3>
             <Textarea
               value={handoverText}
               onChange={(event) => setHandoverText(event.target.value)}
               rows={4}
-              placeholder="Record concise handover for next shift"
+              placeholder={t("observer.patientDetail.handoverPlaceholder")}
             />
             <Button
               type="button"
               disabled={createHandoverMutation.isPending || !handoverText.trim()}
               onClick={() => createHandoverMutation.mutate(handoverText.trim())}
             >
-              {createHandoverMutation.isPending ? "Submitting..." : "Add handover"}
+              {createHandoverMutation.isPending ? t("observer.patientDetail.submitting") : t("observer.patientDetail.addHandover")}
             </Button>
           </CardContent>
         </Card>
       </section>
 
       <DataTableCard
-        title="Recent Vitals"
-        description="Latest patient vitals records."
+        title={t("observer.patientDetail.recentVitalsTitle")}
+        description={t("observer.patientDetail.recentVitalsDesc")}
         data={vitalsRows}
         columns={vitalsColumns}
         isLoading={isLoadingAny}
-        emptyText="No vitals captured for this patient."
+        emptyText={t("observer.patientDetail.noVitals")}
       />
 
       <DataTableCard
-        title="Task Workflow"
-        description="Patient-linked tasks with inline status actions."
+        title={t("observer.patientDetail.taskWorkflowTitle")}
+        description={t("observer.patientDetail.taskWorkflowDesc")}
         data={taskRows}
         columns={taskColumns}
         isLoading={isLoadingAny}
-        emptyText="No tasks assigned to this patient."
+        emptyText={t("observer.patientDetail.noTasks")}
         rightSlot={<Activity className="h-4 w-4 text-muted-foreground" />}
       />
 
       <DataTableCard
-        title="Timeline"
-        description="Recent timeline events and observer notes."
+        title={t("observer.patientDetail.timelineTitle")}
+        description={t("observer.patientDetail.timelineDesc")}
         data={timelineRows}
         columns={timelineColumns}
         isLoading={isLoadingAny}
-        emptyText="No timeline events recorded yet."
+        emptyText={t("observer.patientDetail.noTimeline")}
       />
 
       <DataTableCard
-        title="Workflow Messages"
-        description="Messages linked to this patient case."
+        title={t("observer.patientDetail.messagesTitle")}
+        description={t("observer.patientDetail.messagesDesc")}
         data={messageRows}
         columns={messagesColumns}
         isLoading={isLoadingAny}
-        emptyText="No messages for this patient yet."
+        emptyText={t("observer.patientDetail.noMessages")}
       />
 
       <DataTableCard
-        title="Handover Notes"
-        description="Shift handover notes for this patient."
+        title={t("observer.patientDetail.handoverTitle")}
+        description={t("observer.patientDetail.handoverDesc")}
         data={handoverRows}
         columns={handoversColumns}
         isLoading={isLoadingAny}
-        emptyText="No handover notes submitted yet."
+        emptyText={t("observer.patientDetail.noHandovers")}
         rightSlot={<NotebookPen className="h-4 w-4 text-muted-foreground" />}
       />
     </div>

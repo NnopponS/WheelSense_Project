@@ -3,6 +3,7 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "@/lib/i18n";
 import { type ColumnDef } from "@tanstack/react-table";
 import { AlertTriangle, LocateFixed, Signal, Tablet } from "lucide-react";
 import { z } from "zod";
@@ -51,6 +52,7 @@ type DeviceRow = {
 };
 
 export default function ObserverDevicesPage() {
+  const { t } = useTranslation();
   const nowMs = useFixedNowMs();
 
   const devicesQuery = useQuery({
@@ -143,14 +145,14 @@ export default function ObserverDevicesPage() {
         hardwareType: device.hardware_type || "unknown",
         isOnline,
         lastSeen: device.last_seen ?? null,
-        predictedRoom: prediction?.predicted_room_name || "No prediction",
+        predictedRoom: prediction?.predicted_room_name || t("observer.devices.noPrediction"),
         confidence: prediction?.confidence ?? null,
         alertCount,
         heartRate: latestVital?.heart_rate_bpm ?? null,
         battery: latestVital?.sensor_battery ?? null,
       };
     });
-  }, [alerts, devices, latestPredictionByDevice, latestVitalByDevice, nowMs]);
+  }, [alerts, devices, latestPredictionByDevice, latestVitalByDevice, nowMs, t]);
 
   const onlineCount = rows.filter((row) => row.isOnline).length;
   const offlineCount = rows.length - onlineCount;
@@ -160,7 +162,7 @@ export default function ObserverDevicesPage() {
     () => [
       {
         accessorKey: "displayName",
-        header: "Device",
+        header: t("observer.tasks.device"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.displayName}</p>
@@ -170,17 +172,21 @@ export default function ObserverDevicesPage() {
       },
       {
         accessorKey: "hardwareType",
-        header: "Hardware",
+        header: t("observer.tasks.hardware"),
       },
       {
         accessorKey: "isOnline",
-        header: "Status",
+        header: t("observer.tasks.status"),
         cell: ({ row }) =>
-          row.original.isOnline ? <Badge variant="success">Online</Badge> : <Badge variant="destructive">Offline</Badge>,
+          row.original.isOnline ? (
+            <Badge variant="success">{t("observer.devices.onlineBadge")}</Badge>
+          ) : (
+            <Badge variant="destructive">{t("observer.devices.offlineBadge")}</Badge>
+          ),
       },
       {
         accessorKey: "lastSeen",
-        header: "Last seen",
+        header: t("observer.tasks.lastSeen"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.lastSeen)}</p>
@@ -190,30 +196,30 @@ export default function ObserverDevicesPage() {
       },
       {
         accessorKey: "predictedRoom",
-        header: "Predicted room",
+        header: t("observer.tasks.predictedRoom"),
       },
       {
         accessorKey: "confidence",
-        header: "Confidence",
+        header: t("observer.tasks.confidence"),
         cell: ({ row }) =>
           row.original.confidence != null ? `${Math.round(row.original.confidence * 100)}%` : "-",
       },
       {
         accessorKey: "alertCount",
-        header: "Alerts",
+        header: t("observer.tasks.alerts"),
       },
       {
         accessorKey: "heartRate",
-        header: "HR",
+        header: t("observer.tasks.hr"),
         cell: ({ row }) => row.original.heartRate ?? "-",
       },
       {
         accessorKey: "battery",
-        header: "Battery",
+        header: t("observer.tasks.battery"),
         cell: ({ row }) => (row.original.battery != null ? `${row.original.battery}%` : "-"),
       },
     ],
-    [],
+    [t],
   );
 
   const isLoadingAny =
@@ -225,26 +231,24 @@ export default function ObserverDevicesPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Device Status</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Connectivity, localization confidence, and active alert load by device.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("observer.devices.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("observer.devices.subtitle")}</p>
       </div>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryStatCard icon={Tablet} label="Total devices" value={rows.length} tone="info" />
-        <SummaryStatCard icon={Signal} label="Online now" value={onlineCount} tone={onlineCount > 0 ? "success" : "warning"} />
-        <SummaryStatCard icon={AlertTriangle} label="Offline/stale" value={offlineCount} tone={offlineCount > 0 ? "warning" : "success"} />
-        <SummaryStatCard icon={LocateFixed} label="High confidence" value={highConfidenceCount} tone="info" />
+        <SummaryStatCard icon={Tablet} label={t("observer.devices.total")} value={rows.length} tone="info" />
+        <SummaryStatCard icon={Signal} label={t("observer.devices.online")} value={onlineCount} tone={onlineCount > 0 ? "success" : "warning"} />
+        <SummaryStatCard icon={AlertTriangle} label={t("observer.devices.offline")} value={offlineCount} tone={offlineCount > 0 ? "warning" : "success"} />
+        <SummaryStatCard icon={LocateFixed} label={t("observer.devices.highConfidence")} value={highConfidenceCount} tone="info" />
       </section>
 
       <DataTableCard
-        title="Device Fleet"
-        description="Device telemetry health and latest localization prediction."
+        title={t("observer.devices.fleet")}
+        description={t("observer.devices.fleetDesc")}
         data={rows}
         columns={columns}
         isLoading={isLoadingAny}
-        emptyText="No devices are registered in this workspace."
+        emptyText={t("observer.devices.noDevices")}
       />
     </div>
   );

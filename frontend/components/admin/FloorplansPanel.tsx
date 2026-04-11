@@ -1,14 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@/hooks/useQuery";
+import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
+import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import { useTranslation } from "@/lib/i18n";
-import type { Device, Facility, Floor, HardwareType } from "@/lib/types";
+import type { Device, Facility, Floor, HardwareType, Room } from "@/lib/types";
 import { DEVICE_HARDWARE_TABS } from "@/lib/deviceHardwareTabs";
 import FloorplanCanvas from "@/components/floorplan/FloorplanCanvas";
 import SearchableListboxPicker from "@/components/shared/SearchableListboxPicker";
 import {
+  bootstrapRoomsFromDbFloor,
   canvasUnitsToPercent,
   FLOORPLAN_LAYOUT_VERSION,
   normalizeFloorplanRooms,
@@ -45,13 +48,31 @@ function newRoom(): FloorplanRoomShape {
   };
 }
 
-export default function FloorplansPanel({ embedded = false }: { embedded?: boolean }) {
+export type FloorplansPanelExternalScope = {
+  facilityId: number;
+  floorId: number;
+};
+
+export default function FloorplansPanel({
+  embedded = false,
+  externalScope = null,
+}: {
+  embedded?: boolean;
+  /** Parent-selected facility/floor (e.g. Facility management tabs). Hides duplicate building/floor pickers. */
+  externalScope?: FloorplansPanelExternalScope | null;
+}) {
   const { t } = useTranslation();
   const {
     data: facilities,
     isLoading: loadingFac,
-    refetch: refetchFacilities,
-  } = useQuery<Facility[]>("/facilities");
+    refetch: refetchFacilitiesBase,
+  } = useQuery({
+    queryKey: ["admin", "floorplans-panel", "facilities"],
+    queryFn: () => api.get<Facility[]>("/facilities"),
+    staleTime: getQueryStaleTimeMs("/facilities"),
+    refetchInterval: getQueryPollingMs("/facilities"),
+    retry: 3,
+  });
   const [facilityId, setFacilityId] = useState<number | "">("");
   const [floorId, setFloorId] = useState<number | "">("");
 
@@ -60,18 +81,57 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
   const {
     data: floors,
     isLoading: loadingFloors,
-    refetch: refetchFloors,
-  } = useQuery<Floor[]>(floorsEndpoint);
+    refetch: refetchFloorsBase,
+  } = useQuery({
+    queryKey: ["admin", "floorplans-panel", "floors", floorsEndpoint],
+    queryFn: () => api.get<Floor[]>(floorsEndpoint!),
+    enabled: Boolean(floorsEndpoint),
+    staleTime: floorsEndpoint ? getQueryStaleTimeMs(floorsEndpoint) : 0,
+    refetchInterval: floorsEndpoint ? getQueryPollingMs(floorsEndpoint) : false,
+    retry: 3,
+  });
 
   const layoutEndpoint = useMemo(() => {
     if (facilityId === "" || floorId === "") return null;
-    return `/future/floorplans/layout?facility_id=${facilityId}&floor_id=${floorId}`;
+    return `/floorplans/layout?facility_id=${facilityId}&floor_id=${floorId}`;
   }, [facilityId, floorId]);
 
-  const { data: layoutRes, isLoading: loadingLayout, error: layoutError, refetch } =
-    useQuery<FloorplanLayoutResponse>(layoutEndpoint);
+  const {
+    data: layoutRes,
+    isLoading: loadingLayout,
+    error: layoutError,
+    refetch: refetchLayoutBase,
+  } = useQuery({
+    queryKey: ["admin", "floorplans-panel", "layout", layoutEndpoint],
+    queryFn: () => api.get<FloorplanLayoutResponse>(layoutEndpoint!),
+    enabled: Boolean(layoutEndpoint),
+    staleTime: layoutEndpoint ? getQueryStaleTimeMs(layoutEndpoint) : 0,
+    refetchInterval: layoutEndpoint ? getQueryPollingMs(layoutEndpoint) : false,
+    retry: 3,
+  });
 
-  const { data: devices } = useQuery<Device[]>("/devices");
+  const floorRoomsEndpoint =
+    facilityId === "" || floorId === "" ? null : `/rooms?floor_id=${floorId}`;
+  const { data: floorRooms, isLoading: loadingFloorRooms } = useQuery({
+    queryKey: ["admin", "floorplans-panel", "floor-rooms", floorRoomsEndpoint],
+    queryFn: () => api.get<Room[]>(floorRoomsEndpoint!),
+    enabled: Boolean(floorRoomsEndpoint),
+    staleTime: floorRoomsEndpoint ? getQueryStaleTimeMs(floorRoomsEndpoint) : 0,
+    refetchInterval: floorRoomsEndpoint ? getQueryPollingMs(floorRoomsEndpoint) : false,
+    retry: 3,
+  });
+
+  const { data: devices } = useQuery({
+    queryKey: ["admin", "floorplans-panel", "devices"],
+    queryFn: () => api.get<Device[]>("/devices"),
+    staleTime: getQueryStaleTimeMs("/devices"),
+    refetchInterval: getQueryPollingMs("/devices"),
+    retry: 3,
+  });
+
+  const refetchFacilities = useCallback(() => refetchOrThrow(refetchFacilitiesBase), [refetchFacilitiesBase]);
+  const refetchFloors = useCallback(() => refetchOrThrow(refetchFloorsBase), [refetchFloorsBase]);
+  const refetch = useCallback(() => refetchOrThrow(refetchLayoutBase), [refetchLayoutBase]);
 
   const [rooms, setRooms] = useState<FloorplanRoomShape[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -90,6 +150,17 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
   const [newFloorName, setNewFloorName] = useState("");
   const [creatingFloor, setCreatingFloor] = useState(false);
 
+  const isExternalScope =
+    externalScope != null &&
+    Number.isFinite(externalScope.facilityId) &&
+    Number.isFinite(externalScope.floorId);
+
+  useEffect(() => {
+    if (!isExternalScope || !externalScope) return;
+    setFacilityId(externalScope.facilityId);
+    setFloorId(externalScope.floorId);
+  }, [isExternalScope, externalScope]);
+
   const nextFloorNumber = useMemo(() => {
     if (!floors?.length) return 1;
     return Math.max(...floors.map((f) => f.floor_number)) + 1;
@@ -105,26 +176,56 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
     return fl.name?.trim() ? fl.name : `Floor ${fl.floor_number}`;
   }, [floors, floorId]);
 
-  useEffect(() => {
-    if (!layoutRes) return;
-    setRooms(normalizeFloorplanRooms(layoutRes.layout_json));
-    setSelectedId(null);
-  }, [layoutRes, facilityId, floorId]);
+  const roomsFromLayout = useMemo(
+    () => normalizeFloorplanRooms(layoutRes?.layout_json),
+    [layoutRes],
+  );
+
+  const canvasLoading =
+    loadingLayout ||
+    (roomsFromLayout.length === 0 && loadingFloorRooms);
 
   useEffect(() => {
+    if (facilityId === "" || floorId === "") return;
+    if (!layoutRes) {
+      setRooms([]);
+      setSelectedId(null);
+      return;
+    }
+    const fromLayout = normalizeFloorplanRooms(layoutRes.layout_json);
+    if (fromLayout.length > 0) {
+      setRooms(fromLayout);
+      setSelectedId(null);
+      return;
+    }
+    if (floorRooms == null) {
+      return;
+    }
+    if (floorRooms.length > 0) {
+      setRooms(bootstrapRoomsFromDbFloor(floorRooms));
+    } else {
+      setRooms([]);
+    }
+    setSelectedId(null);
+  }, [layoutRes, facilityId, floorId, floorRooms]);
+
+  useEffect(() => {
+    if (isExternalScope) return;
     if (facilityId !== "" || !facilities?.length) return;
     setFacilityId(facilities[0].id);
-  }, [facilities, facilityId]);
+  }, [facilities, facilityId, isExternalScope]);
 
   useEffect(() => {
+    if (isExternalScope) return;
     setFloorId("");
     setShowNewFloor(false);
-  }, [facilityId]);
+  }, [facilityId, isExternalScope]);
 
   useEffect(() => {
+    if (isExternalScope) return;
     if (floorId !== "" || !floors?.length) return;
     setFloorId(floors[0].id);
-  }, [floors, floorId]);
+  }, [floors, floorId, isExternalScope]);
 
   const selected = rooms.find((r) => r.id === selectedId) ?? null;
 
@@ -203,7 +304,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
     setSaving(true);
     setMessage(null);
     try {
-      await api.put<FloorplanLayoutResponse>("/future/floorplans/layout", {
+      await api.put<FloorplanLayoutResponse>("/floorplans/layout", {
         facility_id: facilityId,
         floor_id: floorId,
         version: FLOORPLAN_LAYOUT_VERSION,
@@ -365,11 +466,11 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
     <div className="space-y-6 animate-fade-in">
       {!embedded && (
         <div>
-          <h2 className="text-2xl font-bold text-on-surface flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <MapPin className="w-7 h-7 text-primary" />
             {t("floorplan.title")}
           </h2>
-          <p className="text-sm text-on-surface-variant mt-1">
+          <p className="text-sm text-foreground-variant mt-1">
             {t("floorplan.subtitle")}
           </p>
         </div>
@@ -379,15 +480,15 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
         <div className="relative px-5 py-4 border-b border-outline-variant/20 bg-gradient-to-r from-primary/12 via-primary/5 to-transparent">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h3 className="text-sm font-semibold text-on-surface tracking-tight">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">
                 {t("floorplan.scopeTitle")}
               </h3>
-              <p className="text-xs text-on-surface-variant mt-0.5 max-w-xl">
+              <p className="text-xs text-foreground-variant mt-0.5 max-w-xl">
                 {t("floorplan.scopeHint")}
               </p>
             </div>
             {facilityId !== "" && floorId !== "" && (
-              <div className="flex items-center gap-1.5 text-xs text-on-surface-variant bg-surface/80 px-3 py-1.5 rounded-full border border-outline-variant/20">
+              <div className="flex items-center gap-1.5 text-xs text-foreground-variant bg-surface/80 px-3 py-1.5 rounded-full border border-outline-variant/20">
                 <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span className="truncate max-w-[140px]">{selectedFacilityName}</span>
                 <ChevronRight className="w-3.5 h-3.5 opacity-60 shrink-0" />
@@ -398,10 +499,15 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
           </div>
         </div>
 
+        {isExternalScope ? (
+          <div className="px-5 pb-4">
+            <p className="text-xs text-foreground-variant">{t("floorplan.externalScopeHint")}</p>
+          </div>
+        ) : (
         <div className="p-5 grid gap-6 lg:grid-cols-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-on-surface flex items-center gap-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-primary" />
                 {t("floorplan.building")}
               </label>
@@ -457,12 +563,12 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
             {showNewFacility && (
               <div className="rounded-xl border border-primary/35 bg-surface-container-high/80 p-4 space-y-3 shadow-inner">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-on-surface">
+                  <p className="text-xs font-semibold text-foreground">
                     {t("floorplan.newBuilding")}
                   </p>
                   <button
                     type="button"
-                    className="p-1 rounded-lg hover:bg-surface-container-low text-on-surface-variant"
+                    className="p-1 rounded-lg hover:bg-surface-container-low text-foreground-variant"
                     aria-label={t("floorplan.cancel")}
                     onClick={() => {
                       setShowNewFacility(false);
@@ -499,7 +605,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
 
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <label className="text-xs font-semibold uppercase tracking-wide text-on-surface flex items-center gap-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-foreground flex items-center gap-2">
                 <Layers className="w-4 h-4 text-primary" />
                 {t("floorplan.floor")}
               </label>
@@ -562,12 +668,12 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
             {showNewFloor && facilityId !== "" && (
               <div className="rounded-xl border border-primary/35 bg-surface-container-high/80 p-4 space-y-3 shadow-inner">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-on-surface">
+                  <p className="text-xs font-semibold text-foreground">
                     {t("floorplan.newFloor")}
                   </p>
                   <button
                     type="button"
-                    className="p-1 rounded-lg hover:bg-surface-container-low text-on-surface-variant"
+                    className="p-1 rounded-lg hover:bg-surface-container-low text-foreground-variant"
                     aria-label={t("floorplan.cancel")}
                     onClick={() => setShowNewFloor(false)}
                   >
@@ -576,7 +682,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                 </div>
                 <div className="space-y-3">
                   <div className="max-w-[140px]">
-                    <label className="text-[11px] text-on-surface-variant block mb-1">
+                    <label className="text-[11px] text-foreground-variant block mb-1">
                       {t("floorplan.floorNumberLabel")}
                     </label>
                     <input
@@ -590,7 +696,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-on-surface-variant block mb-1">
+                    <label className="text-[11px] text-foreground-variant block mb-1">
                       {t("floorplan.floorDisplayName")}
                     </label>
                     <input
@@ -613,9 +719,10 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
             )}
           </div>
         </div>
+        )}
 
         <div className="px-5 py-4 border-t border-outline-variant/20 bg-surface-container-low/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <p className="text-xs font-medium text-on-surface-variant">
+          <p className="text-xs font-medium text-foreground-variant">
             {t("floorplan.actions")}
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -669,7 +776,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
             <p className="text-xs font-medium text-outline uppercase tracking-wide">
               {t("floorplan.canvas")}
             </p>
-            {loadingLayout ? (
+            {canvasLoading ? (
               <div className="h-80 flex items-center justify-center surface-card">
                 <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
@@ -684,29 +791,36 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                   Retry
                 </button>
               </div>
+            ) : rooms.length === 0 ? (
+              <div className="min-h-[280px] flex items-center justify-center surface-card px-4">
+                <p className="text-sm text-foreground-variant text-center">
+                  {t("floorplan.emptyLayout")}
+                </p>
+              </div>
             ) : (
               <FloorplanCanvas
+                fitContentOnMount
                 rooms={rooms}
                 onRoomsChange={setRooms}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
               />
             )}
-            <p className="text-xs text-on-surface-variant">{t("floorplan.hint")}</p>
+            <p className="text-xs text-foreground-variant">{t("floorplan.hint")}</p>
           </div>
 
           <div className="surface-card p-4 space-y-3 h-fit">
-            <p className="text-sm font-semibold text-on-surface">
+            <p className="text-sm font-semibold text-foreground">
               {t("floorplan.roomProps")}
             </p>
             {!selected ? (
-              <p className="text-sm text-on-surface-variant">
+              <p className="text-sm text-foreground-variant">
                 {t("floorplan.selectRoom")}
               </p>
             ) : (
               <>
                 <div>
-                  <label className="text-xs text-on-surface-variant">
+                  <label className="text-xs text-foreground-variant">
                     {t("floorplan.label")}
                   </label>
                   <input
@@ -716,9 +830,9 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                   />
                 </div>
                 <div className="space-y-3">
-                  <p className="text-xs text-on-surface-variant">{t("floorplan.nodeDeviceLinkHint")}</p>
+                  <p className="text-xs text-foreground-variant">{t("floorplan.nodeDeviceLinkHint")}</p>
                   <div>
-                    <p className="mb-2 text-xs font-medium text-on-surface-variant">
+                    <p className="mb-2 text-xs font-medium text-foreground-variant">
                       {t("floorplan.deviceCategoryStep")}
                     </p>
                     <div
@@ -741,7 +855,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                             className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-smooth ${
                               active
                                 ? "border-primary bg-primary/15 text-primary"
-                                : "border-outline-variant/30 text-on-surface hover:bg-surface-container-high"
+                                : "border-outline-variant/30 text-foreground hover:bg-surface-container-high"
                             }`}
                           >
                             {t(tab.labelKey)}
@@ -751,7 +865,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                     </div>
                   </div>
                   <div>
-                    <p className="mb-2 text-xs font-medium text-on-surface-variant">
+                    <p className="mb-2 text-xs font-medium text-foreground-variant">
                       {t("floorplan.deviceSearchStep")}
                     </p>
                     <SearchableListboxPicker
@@ -782,7 +896,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                     />
                   </div>
                   {selected.node_device_id ? (
-                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-on-surface">
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-foreground">
                       <span className="truncate font-medium">
                         {t("patients.deviceSelected")}:{" "}
                         {selectedNodeDevice
@@ -800,7 +914,7 @@ export default function FloorplansPanel({ embedded = false }: { embedded?: boole
                   ) : null}
                 </div>
                 <div>
-                  <label className="text-xs text-on-surface-variant">
+                  <label className="text-xs text-foreground-variant">
                     {t("floorplan.powerKw")}
                   </label>
                   <input

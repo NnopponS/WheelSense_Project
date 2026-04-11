@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Redirect: floorplans merged into /admin/monitoring?tab=floorplans */
+/** Legacy floorplans URL now redirects to the canonical facility-management page. */
 export default function FloorplansRedirectPage() {
-  redirect("/admin/monitoring?tab=floorplans");
+  redirect("/admin/facility-management");
 }

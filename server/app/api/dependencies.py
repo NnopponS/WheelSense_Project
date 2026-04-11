@@ -15,6 +15,7 @@ from app.core.request_context import set_impersonated_by_user_id
 from app.db.session import get_session
 from app.models.caregivers import CareGiverPatientAccess
 from app.models.core import Workspace
+from app.models.patients import PatientDeviceAssignment
 from app.models.users import User
 from app.schemas.users import TokenData
 from app.services.auth import UserService
@@ -122,6 +123,8 @@ ROLE_PATIENT_MANAGERS = [ROLE_ADMIN, ROLE_HEAD_NURSE]
 ROLE_USER_MANAGERS = [ROLE_ADMIN, ROLE_HEAD_NURSE]
 # Read-only facility/caregiver for supervisor
 ROLE_SUPERVISOR_READ = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_SUPERVISOR]
+# Facility/floor read access used by role-shared floorplan viewers.
+ROLE_FACILITY_READ = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_SUPERVISOR, ROLE_OBSERVER]
 # Vitals/timeline writes (caregiver notes)
 ROLE_CARE_NOTE_WRITERS = [ROLE_ADMIN, ROLE_HEAD_NURSE, ROLE_OBSERVER]
 # All roles that may read vitals/alerts when scoped to self (includes patient)
@@ -173,11 +176,13 @@ ROLE_CAPABILITIES: Final[dict[str, set[str]]] = {
         "alerts.read",
         "notes.write",
         "messages.manage",
+        "facilities.read",
     },
     ROLE_PATIENT: {
         "self.read",
         "alerts.read",
         "messages.manage",
+        "devices.read",
     },
 }
 
@@ -202,7 +207,7 @@ async def get_visible_patient_ids(
     user: User,
 ) -> set[int] | None:
     """Return None for admin-wide access, otherwise the explicit visible patient ids."""
-    if user.role == ROLE_ADMIN:
+    if user.role in {ROLE_ADMIN, ROLE_HEAD_NURSE}:
         return None
     if user.role == ROLE_PATIENT:
         patient_id = getattr(user, "patient_id", None)
@@ -235,4 +240,38 @@ async def assert_patient_record_access_db(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot access this patient's records",
+        )
+
+
+async def assert_patient_may_access_assigned_device_db(
+    db: AsyncSession,
+    ws_id: int,
+    user: User,
+    device_id: str,
+) -> None:
+    """Limit registry device reads for patient accounts to actively assigned hardware."""
+    if user.role != ROLE_PATIENT:
+        return
+    patient_id = getattr(user, "patient_id", None)
+    if patient_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Patient account is not linked to a care profile",
+        )
+    row = (
+        await db.execute(
+            select(PatientDeviceAssignment.id)
+            .where(
+                PatientDeviceAssignment.workspace_id == ws_id,
+                PatientDeviceAssignment.patient_id == patient_id,
+                PatientDeviceAssignment.device_id == device_id,
+                PatientDeviceAssignment.is_active.is_(True),
+            )
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Device is not assigned to your care profile",
         )

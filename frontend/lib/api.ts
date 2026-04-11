@@ -14,8 +14,11 @@ import type {
   ControlSmartDeviceResponse,
   CreateAlertRequest,
   CreateAlertResponse,
-  CreateFutureSpecialistRequest,
-  CreateFutureSpecialistResponse,
+  CreatePrescriptionRequest,
+  CreatePrescriptionResponse,
+  CreateServiceRequestResponse,
+  CreateSpecialistRequest,
+  CreateSpecialistResponse,
   CameraCheckResponse,
   CreateTimelineEventRequest,
   CreateTimelineEventResponse,
@@ -26,23 +29,24 @@ import type {
   CreateWorkflowScheduleResponse,
   CreateWorkflowTaskRequest,
   CreateWorkflowTaskResponse,
-  CreateFuturePrescriptionRequest,
-  CreateFuturePrescriptionResponse,
   CreatePatientContactRequest,
   CreateUserRequest,
   GetAlertSummaryResponse,
   GetFloorplanPresenceResponse,
   GetVitalsAveragesResponse,
   GetWardSummaryResponse,
+  GetSmartDeviceStateResponse,
   ListCaregiversResponse,
   ListAlertsResponse,
   ListDeviceActivityResponse,
-  ListFuturePrescriptionsResponse,
-  ListFutureSpecialistsResponse,
+  ListPrescriptionsResponse,
+  ListSpecialistsResponse,
+  ListServiceRequestsResponse,
   ListLocalizationPredictionsResponse,
   ListPatientDeviceAssignmentsResponse,
   ListPatientsResponse,
   ListPharmacyOrdersResponse,
+  ListSupportTicketsResponse,
   ListSmartDevicesResponse,
   ListTimelineEventsResponse,
   GetPatientResponse,
@@ -58,8 +62,18 @@ import type {
   ListWorkflowTasksResponse,
   RequestPharmacyOrderRequest,
   RequestPharmacyOrderResponse,
+  ServiceRequestCreateInput,
+  ShiftChecklistMeResponse,
+  ShiftChecklistPutRequest,
+  ShiftChecklistWorkspaceRow,
   SendWorkflowMessageRequest,
   SendWorkflowMessageResponse,
+  SupportTicketCommentCreateInput,
+  SupportTicketCommentOut,
+  UpdateServiceRequestRequest,
+  UpdateServiceRequestResponse,
+  UpdateSupportTicketRequest,
+  UpdateSupportTicketResponse,
   UpdateRoomRequest,
   UpdatePatientContactRequest,
   UpdatePatientRequest,
@@ -70,6 +84,11 @@ import type {
   UpdateUserRequest,
 } from "./api/task-scope-types";
 
+/** Default timeout so hung upstream/proxy calls cannot leave auth stuck in `loading` forever */
+const DEFAULT_REQUEST_TIMEOUT_MS = 25_000;
+const USERS_SEARCH_LIMIT_MAX = 100;
+const WORKFLOW_SCHEDULES_LIMIT_MAX = 500;
+
 class ApiError extends Error {
   constructor(
     public status: number,
@@ -78,6 +97,15 @@ class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+}
+
+type ApiRequestInit = RequestInit & { timeoutMs?: number };
+
+function clampPositiveInt(value: number, max: number): number {
+  if (!Number.isFinite(value)) return max;
+  const normalized = Math.floor(value);
+  if (normalized < 1) return 1;
+  return Math.min(normalized, max);
 }
 
 function readCookieToken(): string | null {
@@ -178,11 +206,12 @@ export type WorkflowItemDetail = {
 
 async function request<T>(
   endpoint: string,
-  options: RequestInit = {},
+  options: ApiRequestInit = {},
 ): Promise<T> {
+  const { timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, ...fetchInit } = options;
   const token = getToken();
   const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string>),
+    ...(fetchInit.headers as Record<string, string>),
   };
 
   if (token) {
@@ -190,14 +219,32 @@ async function request<T>(
   }
 
   // Don't set Content-Type for FormData (browser sets multipart boundary)
-  if (!(options.body instanceof FormData)) {
+  if (!(fetchInit.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${endpoint}`, {
+      ...fetchInit,
+      signal: controller.signal,
+      headers,
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    const aborted =
+      err instanceof DOMException
+        ? err.name === "AbortError"
+        : err instanceof Error && err.name === "AbortError";
+    if (aborted) {
+      throw new ApiError(408, "Request timed out");
+    }
+    throw err;
+  }
+  clearTimeout(timer);
 
   if (res.status === 401) {
     clearToken();
@@ -257,11 +304,28 @@ export async function login(
   form.append("username", username);
   form.append("password", password);
 
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: form,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DEFAULT_REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    const aborted =
+      err instanceof DOMException
+        ? err.name === "AbortError"
+        : err instanceof Error && err.name === "AbortError";
+    if (aborted) {
+      throw new ApiError(408, "Request timed out");
+    }
+    throw err;
+  }
+  clearTimeout(timer);
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: "Login failed" }));
@@ -352,16 +416,23 @@ export const api = {
     const query = new URLSearchParams();
     if (params?.q) query.set("q", params.q);
     if (params?.roles) query.set("roles", params.roles);
-    if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+    if (typeof params?.limit === "number") {
+      query.set("limit", String(clampPositiveInt(params.limit, USERS_SEARCH_LIMIT_MAX)));
+    }
     const suffix = query.toString();
     return request<UserSearchResult[]>(suffix ? `/users/search?${suffix}` : "/users/search");
   },
 
-  startImpersonation: (targetUserId: number | string) =>
-    request<ImpersonationTokenResponse>("/auth/impersonate/start", {
+  startImpersonation: (targetUserId: number | string) => {
+    const id = Number(targetUserId);
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error("Invalid target user ID");
+    }
+    return request<ImpersonationTokenResponse>("/auth/impersonate/start", {
       method: "POST",
-      body: JSON.stringify({ target_user_id: Number(targetUserId) }),
-    }),
+      body: JSON.stringify({ target_user_id: id }),
+    });
+  },
 
   listPatients: (params?: { q?: string; limit?: number; is_active?: boolean }) => {
     const query = new URLSearchParams();
@@ -373,6 +444,32 @@ export const api = {
     const suffix = query.toString();
     return request<ListPatientsResponse>(suffix ? `/patients?${suffix}` : "/patients");
   },
+
+  listSupportTickets: (params?: { status?: string; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+    const suffix = query.toString();
+    return request<ListSupportTicketsResponse>(suffix ? `/support/tickets?${suffix}` : "/support/tickets");
+  },
+
+  updateSupportTicket: (ticketId: number | string, payload: UpdateSupportTicketRequest) =>
+    request<UpdateSupportTicketResponse>(`/support/tickets/${encodeURIComponent(String(ticketId))}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  addSupportTicketComment: (
+    ticketId: number | string,
+    payload: SupportTicketCommentCreateInput,
+  ) =>
+    request<SupportTicketCommentOut>(
+      `/support/tickets/${encodeURIComponent(String(ticketId))}/comments`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
 
   listAlerts: (params?: { status?: string; patient_id?: number; limit?: number }) => {
     const query = new URLSearchParams();
@@ -470,6 +567,11 @@ export const api = {
 
   listSmartDevices: () => request<ListSmartDevicesResponse>("/ha/devices"),
 
+  getSmartDeviceState: (deviceId: number | string) =>
+    request<GetSmartDeviceStateResponse>(
+      `/ha/devices/${encodeURIComponent(String(deviceId))}/state`,
+    ),
+
   controlSmartDevice: (deviceId: number | string, payload: ControlSmartDeviceRequest) =>
     request<ControlSmartDeviceResponse>(`/ha/devices/${encodeURIComponent(String(deviceId))}/control`, {
       method: "POST",
@@ -566,7 +668,9 @@ export const api = {
     const query = new URLSearchParams();
     if (params?.status) query.set("status", params.status);
     if (typeof params?.patient_id === "number") query.set("patient_id", String(params.patient_id));
-    if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+    if (typeof params?.limit === "number") {
+      query.set("limit", String(clampPositiveInt(params.limit, WORKFLOW_SCHEDULES_LIMIT_MAX)));
+    }
     const suffix = query.toString();
     return request<ListWorkflowSchedulesResponse>(
       suffix ? `/workflow/schedules?${suffix}` : "/workflow/schedules",
@@ -605,13 +709,13 @@ export const api = {
     return request<ListWorkflowAuditResponse>(suffix ? `/workflow/audit?${suffix}` : "/workflow/audit");
   },
 
-  listFuturePrescriptions: (params?: { patient_id?: number; status?: string }) => {
+  listPrescriptions: (params?: { patient_id?: number; status?: string }) => {
     const query = new URLSearchParams();
     if (typeof params?.patient_id === "number") query.set("patient_id", String(params.patient_id));
     if (params?.status) query.set("status", params.status);
     const suffix = query.toString();
-    return request<ListFuturePrescriptionsResponse>(
-      suffix ? `/future/prescriptions?${suffix}` : "/future/prescriptions",
+    return request<ListPrescriptionsResponse>(
+      suffix ? `/medication/prescriptions?${suffix}` : "/medication/prescriptions",
     );
   },
 
@@ -624,36 +728,71 @@ export const api = {
     if (params?.status) query.set("status", params.status);
     const suffix = query.toString();
     return request<ListPharmacyOrdersResponse>(
-      suffix ? `/future/pharmacy/orders?${suffix}` : "/future/pharmacy/orders",
+      suffix ? `/medication/pharmacy/orders?${suffix}` : "/medication/pharmacy/orders",
     );
   },
 
+  listServiceRequests: (params?: { status?: string; service_type?: string; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (params?.service_type) query.set("service_type", params.service_type);
+    if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+    const suffix = query.toString();
+    return request<ListServiceRequestsResponse>(suffix ? `/services/requests?${suffix}` : "/services/requests");
+  },
+
+  createServiceRequest: (payload: ServiceRequestCreateInput) =>
+    request<CreateServiceRequestResponse>("/services/requests", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  updateServiceRequest: (requestId: number | string, payload: UpdateServiceRequestRequest) =>
+    request<UpdateServiceRequestResponse>(`/services/requests/${encodeURIComponent(String(requestId))}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
   requestPharmacyOrder: (payload: RequestPharmacyOrderRequest) =>
-    request<RequestPharmacyOrderResponse>("/future/pharmacy/orders/request", {
+    request<RequestPharmacyOrderResponse>("/medication/pharmacy/orders/request", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
 
-  createFuturePrescription: (payload: CreateFuturePrescriptionRequest) =>
-    request<CreateFuturePrescriptionResponse>("/future/prescriptions", {
+  createPrescription: (payload: CreatePrescriptionRequest) =>
+    request<CreatePrescriptionResponse>("/medication/prescriptions", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
 
-  listFutureSpecialists: (params?: { specialty?: string }) => {
+  listSpecialists: (params?: { specialty?: string }) => {
     const query = new URLSearchParams();
     if (params?.specialty) query.set("specialty", params.specialty);
     const suffix = query.toString();
-    return request<ListFutureSpecialistsResponse>(
-      suffix ? `/future/specialists?${suffix}` : "/future/specialists",
+    return request<ListSpecialistsResponse>(
+      suffix ? `/care/specialists?${suffix}` : "/care/specialists",
     );
   },
 
-  createFutureSpecialist: (payload: CreateFutureSpecialistRequest) =>
-    request<CreateFutureSpecialistResponse>("/future/specialists", {
+  createSpecialist: (payload: CreateSpecialistRequest) =>
+    request<CreateSpecialistResponse>("/care/specialists", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  listWorkflowMessagingRecipients: () =>
+    request<
+      Array<{
+        id: number;
+        username: string;
+        role: string;
+        display_name: string;
+        kind: "staff" | "patient" | "unlinked";
+        is_active?: boolean;
+        linked_name?: string | null;
+        employee_code?: string | null;
+      }>
+    >("/workflow/messaging/recipients"),
 
   listWorkflowMessages: (params?: {
     inbox_only?: boolean;
@@ -723,7 +862,7 @@ export const api = {
     const query = new URLSearchParams();
     query.set("facility_id", String(params.facility_id));
     query.set("floor_id", String(params.floor_id));
-    return request<GetFloorplanPresenceResponse>(`/future/floorplans/presence?${query.toString()}`);
+    return request<GetFloorplanPresenceResponse>(`/floorplans/presence?${query.toString()}`);
   },
 
   moveDemoActor: (actorType: "patient" | "staff", actorId: number | string, payload: DemoActorMoveRequest) =>
@@ -734,6 +873,28 @@ export const api = {
         body: JSON.stringify(payload),
       },
     ),
+
+  getShiftChecklistMe: (params?: { shift_date?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.shift_date) query.set("shift_date", params.shift_date);
+    const suffix = query.toString();
+    return request<ShiftChecklistMeResponse>(suffix ? `/shift-checklist/me?${suffix}` : "/shift-checklist/me");
+  },
+
+  putShiftChecklistMe: (payload: ShiftChecklistPutRequest) =>
+    request<ShiftChecklistMeResponse>("/shift-checklist/me", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  listShiftChecklistWorkspace: (params?: { shift_date?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.shift_date) query.set("shift_date", params.shift_date);
+    const suffix = query.toString();
+    return request<ShiftChecklistWorkspaceRow[]>(
+      suffix ? `/shift-checklist/workspace?${suffix}` : "/shift-checklist/workspace",
+    );
+  },
 };
 
 export { ApiError };

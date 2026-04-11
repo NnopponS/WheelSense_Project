@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,14 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import HTTPException, status
 
-from sqlalchemy import or_
+from sqlalchemy import and_, func, or_
 from sqlalchemy.future import select
 
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.caregivers import CareGiver
 from app.models.patients import Patient
 from app.models.users import User
-from app.schemas.users import UserCreate, Token
+from app.schemas.users import AuthMeProfilePatch, UserCreate, Token
 from app.services.profile_image_storage import remove_hosted_profile_file_if_any
 
 class UserService:
@@ -145,53 +146,74 @@ class UserService:
         *,
         q: str | None = None,
         roles: list[str] | None = None,
+        role: str | None = None,
+        kind: str | None = None,
         limit: int = 20,
     ) -> list[dict]:
         """Search workspace users for assign-to-person controls."""
-        stmt = select(User).where(User.workspace_id == ws_id, User.is_active.is_(True))
+        stmt = (
+            select(User, CareGiver, Patient)
+            .outerjoin(
+                CareGiver,
+                and_(
+                    CareGiver.id == User.caregiver_id,
+                    CareGiver.workspace_id == ws_id,
+                ),
+            )
+            .outerjoin(
+                Patient,
+                and_(
+                    Patient.id == User.patient_id,
+                    Patient.workspace_id == ws_id,
+                ),
+            )
+            .where(User.workspace_id == ws_id, User.is_active.is_(True))
+        )
+        if role:
+            stmt = stmt.where(User.role == role)
         if roles:
             stmt = stmt.where(User.role.in_(roles))
+        if kind == "staff":
+            stmt = stmt.where(or_(User.role != "patient", User.caregiver_id.isnot(None)))
+        elif kind == "patient":
+            stmt = stmt.where(or_(User.role == "patient", User.patient_id.isnot(None)))
         needle = (q or "").strip()
         if needle:
             like = f"%{needle}%"
-            conditions = [User.username.ilike(like)]
+            conditions = [
+                User.username.ilike(like),
+                CareGiver.first_name.ilike(like),
+                CareGiver.last_name.ilike(like),
+                CareGiver.employee_code.ilike(like),
+                Patient.first_name.ilike(like),
+                Patient.last_name.ilike(like),
+                Patient.nickname.ilike(like),
+                func.trim(func.coalesce(CareGiver.first_name, "") + " " + func.coalesce(CareGiver.last_name, "")).ilike(like),
+                func.trim(func.coalesce(Patient.first_name, "") + " " + func.coalesce(Patient.last_name, "")).ilike(like),
+            ]
             if needle.isdigit():
-                conditions.append(User.id == int(needle))
+                numeric_id = int(needle)
+                conditions.extend([User.id == numeric_id, Patient.id == numeric_id])
             stmt = stmt.where(or_(*conditions))
         stmt = stmt.order_by(User.username.asc()).limit(limit)
-        users = list((await session.execute(stmt)).scalars().all())
-        caregiver_ids = {user.caregiver_id for user in users if user.caregiver_id is not None}
-        patient_ids = {user.patient_id for user in users if user.patient_id is not None}
-
-        caregivers: dict[int, str] = {}
-        if caregiver_ids:
-            rows = (
-                await session.execute(
-                    select(CareGiver).where(
-                        CareGiver.workspace_id == ws_id,
-                        CareGiver.id.in_(caregiver_ids),
-                    )
-                )
-            ).scalars().all()
-            caregivers = {row.id: f"{row.first_name} {row.last_name}".strip() for row in rows}
-
-        patients: dict[int, str] = {}
-        if patient_ids:
-            rows = (
-                await session.execute(
-                    select(Patient).where(
-                        Patient.workspace_id == ws_id,
-                        Patient.id.in_(patient_ids),
-                    )
-                )
-            ).scalars().all()
-            patients = {row.id: f"{row.first_name} {row.last_name}".strip() for row in rows}
-
+        rows = list((await session.execute(stmt)).all())
         results = []
-        for user in users:
+        for user, caregiver, patient in rows:
+            caregiver_name = ""
+            if caregiver:
+                caregiver_name = f"{caregiver.first_name} {caregiver.last_name}".strip()
+            patient_name = ""
+            if patient:
+                patient_name = f"{patient.first_name} {patient.last_name}".strip()
+            linked_name = caregiver_name or patient_name or None
+            if patient is not None or user.role == "patient":
+                row_kind = "patient"
+            elif caregiver is not None or user.role in {"admin", "head_nurse", "supervisor", "observer"}:
+                row_kind = "staff"
+            else:
+                row_kind = "unlinked"
             display_name = (
-                caregivers.get(user.caregiver_id or -1)
-                or patients.get(user.patient_id or -1)
+                linked_name
                 or user.username
             )
             results.append(
@@ -202,10 +224,142 @@ class UserService:
                     "is_active": user.is_active,
                     "caregiver_id": user.caregiver_id,
                     "patient_id": user.patient_id,
+                    "kind": row_kind,
+                    "linked_name": linked_name,
+                    "employee_code": caregiver.employee_code if caregiver else None,
                     "display_name": display_name,
                 }
             )
         return results
+
+    @staticmethod
+    async def get_me_profile(
+        session: AsyncSession,
+        ws_id: int,
+        user: User,
+    ) -> dict[str, Any]:
+        caregiver = None
+        patient = None
+        if user.caregiver_id is not None:
+            caregiver = (
+                await session.execute(
+                    select(CareGiver).where(
+                        CareGiver.workspace_id == ws_id,
+                        CareGiver.id == user.caregiver_id,
+                    )
+                )
+            ).scalar_one_or_none()
+        if user.patient_id is not None:
+            patient = (
+                await session.execute(
+                    select(Patient).where(
+                        Patient.workspace_id == ws_id,
+                        Patient.id == user.patient_id,
+                    )
+                )
+            ).scalar_one_or_none()
+        return {
+            "user": user,
+            "linked_caregiver": caregiver,
+            "linked_patient": patient,
+        }
+
+    @staticmethod
+    async def update_me_profile(
+        session: AsyncSession,
+        ws_id: int,
+        user: User,
+        payload: AuthMeProfilePatch,
+    ) -> dict[str, Any]:
+        data = payload.model_dump(exclude_unset=True)
+        user_patch = dict(data.get("user") or {})
+        username = data.get("username", user_patch.get("username"))
+        if username is not None and username != user.username:
+            existing = await UserService.get_user_by_username(session, username)
+            if existing and existing.id != user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username already registered",
+                )
+            user.username = username
+
+        profile_image_url = data.get("profile_image_url", user_patch.get("profile_image_url"))
+        if profile_image_url is not None or "profile_image_url" in data or "profile_image_url" in user_patch:
+            old_val = (user.profile_image_url or "").strip()
+            new_val = profile_image_url
+            if new_val is None:
+                remove_hosted_profile_file_if_any(old_val)
+                user.profile_image_url = ""
+            else:
+                new_s = new_val.strip()
+                if new_s != old_val:
+                    remove_hosted_profile_file_if_any(old_val)
+                user.profile_image_url = new_s
+            session.add(user)
+
+        caregiver_patch = dict(data.get("caregiver") or data.get("linked_caregiver") or {})
+        if "email" in user_patch and "email" not in caregiver_patch:
+            caregiver_patch["email"] = user_patch.get("email")
+        if "phone" in user_patch and "phone" not in caregiver_patch:
+            caregiver_patch["phone"] = user_patch.get("phone")
+        if caregiver_patch:
+            if user.caregiver_id is None:
+                raise HTTPException(status_code=400, detail="Current account is not linked to a staff profile")
+            caregiver = (
+                await session.execute(
+                    select(CareGiver).where(
+                        CareGiver.workspace_id == ws_id,
+                        CareGiver.id == user.caregiver_id,
+                    )
+                )
+            ).scalar_one_or_none()
+            if not caregiver:
+                raise HTTPException(status_code=404, detail="Linked staff profile not found")
+            for field, value in caregiver_patch.items():
+                setattr(caregiver, field, value)
+            session.add(caregiver)
+
+        patient_patch = data.get("patient") or data.get("linked_patient")
+        if patient_patch:
+            if user.patient_id is None:
+                raise HTTPException(status_code=400, detail="Current account is not linked to a patient profile")
+            patient = (
+                await session.execute(
+                    select(Patient).where(
+                        Patient.workspace_id == ws_id,
+                        Patient.id == user.patient_id,
+                    )
+                )
+            ).scalar_one_or_none()
+            if not patient:
+                raise HTTPException(status_code=404, detail="Linked patient profile not found")
+            for field, value in patient_patch.items():
+                setattr(patient, field, value)
+            session.add(patient)
+
+        await session.commit()
+        return await UserService.get_me_profile(session, ws_id, user)
+
+    @staticmethod
+    async def change_password(
+        session: AsyncSession,
+        user: User,
+        current_password: str,
+        new_password: str,
+    ) -> None:
+        if not verify_password(current_password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect",
+            )
+        if current_password == new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must differ from current password",
+            )
+        user.hashed_password = get_password_hash(new_password)
+        session.add(user)
+        await session.commit()
 
     @staticmethod
     async def update_user(

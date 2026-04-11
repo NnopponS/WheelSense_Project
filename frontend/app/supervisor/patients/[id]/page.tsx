@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { useTranslation } from "@/lib/i18n";
 import type {
   CareDirectiveOut,
   CareTaskOut,
@@ -58,6 +59,7 @@ type DirectiveRow = {
 };
 
 export default function SupervisorPatientDetailPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const queryClient = useQueryClient();
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
@@ -226,7 +228,7 @@ export default function SupervisorPatientDetailPage() {
     () => [
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("clinical.table.time"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -236,37 +238,37 @@ export default function SupervisorPatientDetailPage() {
       },
       {
         accessorKey: "heartRate",
-        header: "HR",
+        header: t("clinical.table.hr"),
         cell: ({ row }) => row.original.heartRate ?? "-",
       },
       {
         accessorKey: "spo2",
-        header: "SpO2",
+        header: t("clinical.table.spo2"),
         cell: ({ row }) => row.original.spo2 ?? "-",
       },
       {
         accessorKey: "rrInterval",
-        header: "RR interval",
+        header: t("clinical.table.rrInterval"),
         cell: ({ row }) => (row.original.rrInterval != null ? `${row.original.rrInterval} ms` : "-"),
       },
       {
         accessorKey: "battery",
-        header: "Battery",
+        header: t("clinical.table.battery"),
         cell: ({ row }) => (row.original.battery != null ? `${row.original.battery}%` : "-"),
       },
       {
         accessorKey: "source",
-        header: "Source",
+        header: t("clinical.table.source"),
       },
     ],
-    [],
+    [t],
   );
 
   const alertsColumns = useMemo<ColumnDef<AlertRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Alert",
+        header: t("clinical.table.alert"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -276,7 +278,7 @@ export default function SupervisorPatientDetailPage() {
       },
       {
         accessorKey: "severity",
-        header: "Severity",
+        header: t("clinical.table.severity"),
         cell: ({ row }) => {
           const severity = row.original.severity;
           const variant =
@@ -290,7 +292,7 @@ export default function SupervisorPatientDetailPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => (
           <Badge variant={row.original.status === "active" ? "destructive" : "outline"}>
             {row.original.status}
@@ -299,22 +301,22 @@ export default function SupervisorPatientDetailPage() {
       },
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("clinical.table.time"),
         cell: ({ row }) => formatDateTime(row.original.timestamp),
       },
     ],
-    [],
+    [t],
   );
 
   const tasksColumns = useMemo<ColumnDef<TaskRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Task",
+        header: t("clinical.table.task"),
       },
       {
         accessorKey: "priority",
-        header: "Priority",
+        header: t("clinical.table.priority"),
         cell: ({ row }) => {
           const priority = row.original.priority;
           const variant =
@@ -330,16 +332,16 @@ export default function SupervisorPatientDetailPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
       },
       {
         accessorKey: "dueAt",
-        header: "Due",
+        header: t("clinical.table.due"),
         cell: ({ row }) => formatDateTime(row.original.dueAt),
       },
       {
         id: "actions",
-        header: "",
+        header: t("clinical.table.actions"),
         cell: ({ row }) => (
           <Button
             type="button"
@@ -353,19 +355,19 @@ export default function SupervisorPatientDetailPage() {
               completeTaskMutation.mutate(row.original.id);
             }}
           >
-            Complete
+            {t("clinical.action.complete")}
           </Button>
         ),
       },
     ],
-    [completeTaskMutation, pendingTaskId],
+    [completeTaskMutation, pendingTaskId, t],
   );
 
   const directivesColumns = useMemo<ColumnDef<DirectiveRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Directive",
+        header: t("clinical.table.directive"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -375,19 +377,19 @@ export default function SupervisorPatientDetailPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("clinical.table.status"),
         cell: ({ row }) => (
           <Badge variant={row.original.status === "active" ? "warning" : "outline"}>{row.original.status}</Badge>
         ),
       },
       {
         accessorKey: "effectiveFrom",
-        header: "Effective",
+        header: t("clinical.table.effective"),
         cell: ({ row }) => formatDateTime(row.original.effectiveFrom),
       },
       {
         id: "actions",
-        header: "",
+        header: t("clinical.table.actions"),
         cell: ({ row }) => (
           <Button
             type="button"
@@ -402,24 +404,22 @@ export default function SupervisorPatientDetailPage() {
               acknowledgeDirectiveMutation.mutate(row.original.id);
             }}
           >
-            Acknowledge
+            {t("supervisor.page.acknowledge")}
           </Button>
         ),
       },
     ],
-    [acknowledgeDirectiveMutation, pendingDirectiveId],
+    [acknowledgeDirectiveMutation, pendingDirectiveId, t],
   );
 
   if (!hasValidPatientId) {
     return (
       <Card>
         <CardContent className="space-y-3 pt-6">
-          <h2 className="text-xl font-semibold text-foreground">Invalid patient ID</h2>
-          <p className="text-sm text-muted-foreground">
-            The route parameter is invalid. Return to the patient roster and select a patient.
-          </p>
+          <h2 className="text-xl font-semibold text-foreground">{t("clinical.patient.invalidIdTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("clinical.patient.invalidIdDesc")}</p>
           <Button asChild size="sm" variant="outline">
-            <Link href="/supervisor/patients">Back to patients</Link>
+            <Link href="/supervisor/patients">{t("clinical.patient.backToPatients")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -437,54 +437,72 @@ export default function SupervisorPatientDetailPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h2 className="text-2xl font-bold text-foreground">
-          {patient ? `${patient.first_name} ${patient.last_name}` : "Patient detail"}
+          {patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Supervisor deep-dive for alerts, vitals, directives, and task execution.
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.patientDetail.pageSubtitle")}</p>
       </div>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryStatCard icon={Siren} label="Active alerts" value={activeAlerts.length} tone={activeAlerts.length > 0 ? "warning" : "success"} />
-        <SummaryStatCard icon={Activity} label="Critical alerts" value={criticalAlerts.length} tone={criticalAlerts.length > 0 ? "critical" : "success"} />
-        <SummaryStatCard icon={HeartPulse} label="Recent vitals" value={vitalsRows.length} tone="info" />
-        <SummaryStatCard icon={ClipboardList} label="Open tasks" value={taskRows.filter((task) => task.status !== "completed").length} tone="warning" />
+        <SummaryStatCard
+          icon={Siren}
+          label={t("clinical.patientDetail.statActiveAlerts")}
+          value={activeAlerts.length}
+          tone={activeAlerts.length > 0 ? "warning" : "success"}
+        />
+        <SummaryStatCard
+          icon={Activity}
+          label={t("clinical.patientDetail.statCriticalAlerts")}
+          value={criticalAlerts.length}
+          tone={criticalAlerts.length > 0 ? "critical" : "success"}
+        />
+        <SummaryStatCard
+          icon={HeartPulse}
+          label={t("clinical.patientDetail.statRecentVitals")}
+          value={vitalsRows.length}
+          tone="info"
+        />
+        <SummaryStatCard
+          icon={ClipboardList}
+          label={t("supervisor.patientDetail.statOpenTasks")}
+          value={taskRows.filter((task) => task.status !== "completed").length}
+          tone="warning"
+        />
       </section>
 
       <DataTableCard
-        title="Recent Vitals"
-        description="Latest readings from assigned monitoring sources."
+        title={t("clinical.patientDetail.vitalsTitle")}
+        description={t("clinical.patientDetail.vitalsDesc")}
         data={vitalsRows}
         columns={vitalsColumns}
         isLoading={isLoadingAny}
-        emptyText="No vitals available for this patient."
+        emptyText={t("clinical.patientDetail.vitalsEmpty")}
       />
 
       <DataTableCard
-        title="Alerts"
-        description="Patient alert history in descending time order."
+        title={t("clinical.patientDetail.alertsTitle")}
+        description={t("clinical.patientDetail.alertsDesc")}
         data={alertRows}
         columns={alertsColumns}
         isLoading={isLoadingAny}
-        emptyText="No alerts found for this patient."
+        emptyText={t("clinical.patientDetail.alertsEmpty")}
       />
 
       <DataTableCard
-        title="Care Tasks"
-        description="Workflow tasks linked to this patient."
+        title={t("supervisor.patientDetail.tasksTitle")}
+        description={t("supervisor.patientDetail.tasksDesc")}
         data={taskRows}
         columns={tasksColumns}
         isLoading={isLoadingAny}
-        emptyText="No tasks linked to this patient."
+        emptyText={t("supervisor.patientDetail.tasksEmpty")}
       />
 
       <DataTableCard
-        title="Directives"
-        description="Workflow directives issued for this patient."
+        title={t("supervisor.patientDetail.directivesTitle")}
+        description={t("supervisor.patientDetail.directivesDesc")}
         data={directiveRows}
         columns={directivesColumns}
         isLoading={isLoadingAny}
-        emptyText="No directives linked to this patient."
+        emptyText={t("supervisor.patientDetail.directivesEmpty")}
       />
     </div>
   );

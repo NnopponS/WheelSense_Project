@@ -6,7 +6,7 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { ROUTES } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
-import { useQuery } from "@/hooks/useQuery";
+import { useQuery } from "@tanstack/react-query";
 import CaregiverDetailPane from "@/components/admin/caregivers/CaregiverDetailPane";
 import EditCaregiverModal from "@/components/admin/caregivers/EditCaregiverModal";
 import type { Caregiver, User } from "@/lib/types";
@@ -24,7 +24,11 @@ export default function AdminCaregiverDetailPage({
   const { id } = use(params);
   const { t } = useTranslation();
   const numericId = Number(id);
-  const { data: users, refetch: refetchUsers } = useQuery<User[]>("/users");
+  const { data: users, refetch: refetchUsers } = useQuery({
+    queryKey: ["admin", "caregivers", "detail", "users"],
+    queryFn: () => api.get<User[]>("/users"),
+    staleTime: 30_000,
+  });
   const [caregiver, setCaregiver] = useState<Caregiver | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +99,7 @@ export default function AdminCaregiverDetailPage({
             <ArrowLeft className="h-4 w-4" aria-hidden />
             {t("caregivers.backToDirectory")}
           </Link>
-          <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-4 py-8 text-center text-sm text-on-surface-variant">
+          <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-4 py-8 text-center text-sm text-foreground-variant">
             {error ?? t("caregivers.detailNotFound")}
           </div>
         </>
@@ -104,7 +108,7 @@ export default function AdminCaregiverDetailPage({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
               href={ROUTES.CAREGIVERS}
-              className="inline-flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-smooth"
+              className="inline-flex items-center gap-2 text-sm text-foreground-variant hover:text-primary transition-smooth"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden />
               {t("caregivers.backToDirectory")}
@@ -112,7 +116,7 @@ export default function AdminCaregiverDetailPage({
             <button
               type="button"
               onClick={() => setEditorOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 text-on-surface hover:bg-surface-container-high transition-smooth"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 text-foreground hover:bg-surface-container-high transition-smooth"
             >
               <Pencil className="h-4 w-4" aria-hidden />
               {t("caregivers.editStaff")}

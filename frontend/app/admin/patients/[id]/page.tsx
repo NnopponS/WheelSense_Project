@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type {
   Patient,
+  Caregiver,
   User as PortalUser,
   VitalReading,
   Alert,
@@ -54,6 +55,7 @@ export default function PatientDetailPage({
   const [patient, setPatient] = useState<Patient | null>(null);
   const [contacts, setContacts] = useState<PatientContact[]>([]);
   const [roomName, setRoomName] = useState<string | null>(null);
+  const [caregivers, setCaregivers] = useState<Caregiver[]>([]);
   const [vitals, setVitals] = useState<VitalReading[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
@@ -69,7 +71,7 @@ export default function PatientDetailPage({
       const p = await api.get<Patient>(`/patients/${id}`);
       setPatient(p);
 
-      const [c, v, a, tl, d, users] = await Promise.all([
+      const [c, v, a, tl, d, users, cg] = await Promise.all([
         api.get<PatientContact[]>(`/patients/${id}/contacts`).catch(() => []),
         api
           .get<VitalReading[]>(`/vitals/readings?patient_id=${id}&limit=20`)
@@ -78,12 +80,14 @@ export default function PatientDetailPage({
         api.get<TimelineEvent[]>(`/timeline?patient_id=${id}`).catch(() => []),
         api.get<DeviceAssignment[]>(`/patients/${id}/devices`).catch(() => []),
         api.get<PortalUser[]>("/users").catch(() => []),
+        api.get<Caregiver[]>("/caregivers?limit=1000").catch(() => []),
       ]);
       setContacts(c);
       setVitals(v);
       setAlerts(a);
       setTimeline(tl);
       setAssignments(d);
+      setCaregivers(cg);
       setLinkedPortalUsers(
         Array.isArray(users) ? users.filter((u) => u.patient_id === pid) : [],
       );
@@ -135,7 +139,7 @@ export default function PatientDetailPage({
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <AlertCircle className="w-12 h-12 text-error mb-3" />
-        <p className="text-on-surface font-medium">{error || t("patients.empty")}</p>
+        <p className="text-foreground font-medium">{error || t("patients.empty")}</p>
         <Link
           href="/admin/patients"
           className="text-sm text-primary mt-3 hover:underline"
@@ -159,6 +163,7 @@ export default function PatientDetailPage({
           : bmiCat === "obese"
             ? t("patients.bmiObese")
             : "—";
+  const patientPhotoUrl = patient.photo_url?.trim();
 
   const primaryContact =
     contacts.find((c) => c.is_primary) ||
@@ -186,7 +191,7 @@ export default function PatientDetailPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/admin/patients"
-          className="inline-flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-smooth"
+          className="inline-flex items-center gap-2 text-sm text-foreground-variant hover:text-primary transition-smooth"
         >
           <ArrowLeft className="w-4 h-4" />
           {t("patients.backToList")}
@@ -194,7 +199,7 @@ export default function PatientDetailPage({
         <button
           type="button"
           onClick={() => setEditorOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 text-on-surface hover:bg-surface-container-high transition-smooth"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 text-foreground hover:bg-surface-container-high transition-smooth"
         >
           <Pencil className="w-4 h-4" />
           {t("patients.editPatient")}
@@ -211,40 +216,48 @@ export default function PatientDetailPage({
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-6">
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <p className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant mb-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-foreground-variant mb-1">
               {t("patients.detailAbout")}
             </p>
             <div className="flex flex-col sm:flex-row gap-5">
               <div className="relative w-full sm:w-40 aspect-[4/5] rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-end justify-start overflow-hidden shrink-0 border border-outline-variant/20">
-                <span className="absolute bottom-2 left-2 text-[10px] font-mono font-semibold text-on-surface/90 bg-black/35 px-2 py-0.5 rounded">
+                <span className="absolute bottom-2 left-2 text-[10px] font-mono font-semibold text-foreground/90 bg-black/35 px-2 py-0.5 rounded">
                   {t("patients.detailPatientId")} #{patient.id}
                 </span>
-                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-primary/40">
-                  {patient.first_name?.[0]}
-                  {patient.last_name?.[0]}
-                </div>
+                {patientPhotoUrl ? (
+                  <img
+                    src={patientPhotoUrl}
+                    alt={`${patient.first_name} ${patient.last_name}`}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-primary/40">
+                    {patient.first_name?.[0]}
+                    {patient.last_name?.[0]}
+                  </div>
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-on-surface">
+                <h1 className="text-2xl font-bold text-foreground">
                   {patient.first_name} {patient.last_name}
                 </h1>
-                <p className="text-sm text-on-surface-variant mt-1">
+                <p className="text-sm text-foreground-variant mt-1">
                   {patient.nickname ? `${patient.nickname} · ` : ""}
                   {age != null ? `${age} ${t("patients.years")}` : "—"}
                   {" · "}
                   {genderLabel}
                 </p>
                 {roomName && (
-                  <p className="text-sm text-on-surface-variant mt-2">
+                  <p className="text-sm text-foreground-variant mt-2">
                     {t("patients.room")}:{" "}
-                    <span className="font-medium text-on-surface">{roomName}</span>
+                    <span className="font-medium text-foreground">{roomName}</span>
                   </p>
                 )}
                 <div className="flex flex-wrap gap-2 mt-4">
                   <span className={`text-xs px-3 py-1 rounded-full font-medium care-${patient.care_level}`}>
                     {patient.care_level}
                   </span>
-                  <span className="text-xs px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant">
+                  <span className="text-xs px-3 py-1 rounded-full bg-surface-container-high text-foreground-variant">
                     {patient.mobility_type}
                   </span>
                   <span
@@ -282,9 +295,9 @@ export default function PatientDetailPage({
           </section>
 
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="font-semibold text-on-surface mb-4">{t("patients.sectionLinkedAccounts")}</h2>
+            <h2 className="font-semibold text-foreground mb-4">{t("patients.sectionLinkedAccounts")}</h2>
             {linkedPortalUsers.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">{t("patients.linkedAccountsEmpty")}</p>
+              <p className="text-sm text-foreground-variant">{t("patients.linkedAccountsEmpty")}</p>
             ) : (
               <ul className="space-y-3">
                 {linkedPortalUsers.map((u) => (
@@ -293,8 +306,8 @@ export default function PatientDetailPage({
                     className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 px-4 py-3 text-sm"
                   >
                     <div>
-                      <p className="font-semibold text-on-surface">{u.username}</p>
-                      <p className="text-xs text-on-surface-variant capitalize">{u.role}</p>
+                      <p className="font-semibold text-foreground">{u.username}</p>
+                      <p className="text-xs text-foreground-variant capitalize">{u.role}</p>
                     </div>
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${
@@ -310,15 +323,15 @@ export default function PatientDetailPage({
           </section>
 
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="font-semibold text-on-surface mb-4">{t("patients.sectionChronic")}</h2>
+            <h2 className="font-semibold text-foreground mb-4">{t("patients.sectionChronic")}</h2>
             {patient.medical_conditions.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">—</p>
+              <p className="text-sm text-foreground-variant">—</p>
             ) : (
               <ul className="flex flex-wrap gap-2">
                 {patient.medical_conditions.map((c, i) => (
                   <li
                     key={i}
-                    className="text-sm px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface"
+                    className="text-sm px-3 py-1.5 rounded-lg bg-surface-container-high text-foreground"
                   >
                     {formatCondition(c)}
                   </li>
@@ -328,15 +341,15 @@ export default function PatientDetailPage({
           </section>
 
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="font-semibold text-on-surface mb-4">{t("patients.sectionAllergies")}</h2>
+            <h2 className="font-semibold text-foreground mb-4">{t("patients.sectionAllergies")}</h2>
             {patient.allergies.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">—</p>
+              <p className="text-sm text-foreground-variant">—</p>
             ) : (
               <ul className="space-y-2">
                 {patient.allergies.map((a, i) => (
                   <li
                     key={i}
-                    className="text-sm px-4 py-3 rounded-lg bg-error/10 border border-error/20 text-on-surface"
+                    className="text-sm px-4 py-3 rounded-lg bg-error/10 border border-error/20 text-foreground"
                   >
                     {a}
                   </li>
@@ -347,15 +360,15 @@ export default function PatientDetailPage({
 
           {surgeries.length > 0 && (
             <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-              <h2 className="font-semibold text-on-surface mb-4">{t("patients.sectionSurgeries")}</h2>
+              <h2 className="font-semibold text-foreground mb-4">{t("patients.sectionSurgeries")}</h2>
               <ul className="space-y-3">
                 {surgeries.map((s, i) => (
                   <li
                     key={i}
                     className="text-sm border border-outline-variant/15 rounded-lg p-4 bg-surface-container-low/50"
                   >
-                    <p className="font-medium text-on-surface">{s.procedure || "—"}</p>
-                    <p className="text-on-surface-variant text-xs mt-1">
+                    <p className="font-medium text-foreground">{s.procedure || "—"}</p>
+                    <p className="text-foreground-variant text-xs mt-1">
                       {[s.facility, s.year != null && s.year !== "" ? String(s.year) : null]
                         .filter(Boolean)
                         .join(" · ") || "—"}
@@ -368,7 +381,7 @@ export default function PatientDetailPage({
 
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
             <div className="flex items-center justify-between gap-2 mb-4">
-              <h2 className="font-semibold text-on-surface">{t("patients.sectionMeds")}</h2>
+              <h2 className="font-semibold text-foreground">{t("patients.sectionMeds")}</h2>
               {medCount > 0 && (
                 <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/15 text-primary">
                   {medCount} {t("patients.activeMedsBadge")}
@@ -376,7 +389,7 @@ export default function PatientDetailPage({
               )}
             </div>
             {medCount === 0 ? (
-              <p className="text-sm text-on-surface-variant">—</p>
+              <p className="text-sm text-foreground-variant">—</p>
             ) : (
               <ul className="space-y-3">
                 {patient.medications
@@ -386,12 +399,12 @@ export default function PatientDetailPage({
                       key={i}
                       className="text-sm border border-outline-variant/15 rounded-lg p-4"
                     >
-                      <p className="font-semibold text-on-surface">{m.name}</p>
-                      <p className="text-on-surface-variant mt-1">
+                      <p className="font-semibold text-foreground">{m.name}</p>
+                      <p className="text-foreground-variant mt-1">
                         {[m.dosage, m.frequency].filter(Boolean).join(" · ") || "—"}
                       </p>
                       {m.instructions && (
-                        <p className="text-xs text-on-surface-variant mt-2 uppercase tracking-wide">
+                        <p className="text-xs text-foreground-variant mt-2 uppercase tracking-wide">
                           {m.instructions}
                         </p>
                       )}
@@ -403,15 +416,15 @@ export default function PatientDetailPage({
 
           {patient.notes?.trim() && (
             <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-              <h2 className="font-semibold text-on-surface mb-2">{t("patients.formSectionNotes")}</h2>
-              <p className="text-sm text-on-surface-variant whitespace-pre-wrap">{patient.notes}</p>
+              <h2 className="font-semibold text-foreground mb-2">{t("patients.formSectionNotes")}</h2>
+              <p className="text-sm text-foreground-variant whitespace-pre-wrap">{patient.notes}</p>
             </section>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <SectionCard icon={Heart} title={t("patients.latestVitals")} iconColor="text-error">
               {vitals.length === 0 ? (
-                <p className="text-sm text-on-surface-variant py-4">—</p>
+                <p className="text-sm text-foreground-variant py-4">—</p>
               ) : (
                 <div className="space-y-2">
                   {vitals.slice(0, 5).map((v) => (
@@ -419,10 +432,10 @@ export default function PatientDetailPage({
                       key={v.id}
                       className="flex items-center justify-between p-3 rounded-lg bg-surface-container-low text-sm"
                     >
-                      <span className="text-on-surface-variant">
+                      <span className="text-foreground-variant">
                         {new Date(v.timestamp).toLocaleString(localeTag)}
                       </span>
-                      <div className="flex gap-4 text-on-surface font-medium">
+                      <div className="flex gap-4 text-foreground font-medium">
                         {v.heart_rate_bpm != null && <span>HR: {v.heart_rate_bpm}</span>}
                         {v.spo2 != null && <span>SpO2: {v.spo2}%</span>}
                         {v.skin_temperature != null && <span>Temp: {v.skin_temperature}°C</span>}
@@ -435,7 +448,7 @@ export default function PatientDetailPage({
 
             <SectionCard icon={Bell} title={t("patients.alertsSection")} iconColor="text-warning">
               {alerts.length === 0 ? (
-                <p className="text-sm text-on-surface-variant py-4">—</p>
+                <p className="text-sm text-foreground-variant py-4">—</p>
               ) : (
                 <div className="space-y-2">
                   {alerts.slice(0, 5).map((a) => (
@@ -453,8 +466,8 @@ export default function PatientDetailPage({
                         }`}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-on-surface truncate">{a.title}</p>
-                        <p className="text-xs text-on-surface-variant truncate">{a.description}</p>
+                        <p className="font-medium text-foreground truncate">{a.title}</p>
+                        <p className="text-xs text-foreground-variant truncate">{a.description}</p>
                       </div>
                     </div>
                   ))}
@@ -464,16 +477,16 @@ export default function PatientDetailPage({
 
             <SectionCard icon={Clock} title={t("patients.timelineSection")} iconColor="text-info">
               {timeline.length === 0 ? (
-                <p className="text-sm text-on-surface-variant py-4">—</p>
+                <p className="text-sm text-foreground-variant py-4">—</p>
               ) : (
                 <div className="space-y-2">
                   {timeline.slice(0, 5).map((ev) => (
                     <div key={ev.id} className="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low text-sm">
-                      <Activity className="w-4 h-4 text-on-surface-variant shrink-0 mt-0.5" />
+                      <Activity className="w-4 h-4 text-foreground-variant shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-medium text-on-surface">{ev.event_type}</p>
-                        <p className="text-xs text-on-surface-variant">{ev.description}</p>
-                        <p className="text-xs text-on-surface-variant mt-1">
+                        <p className="font-medium text-foreground">{ev.event_type}</p>
+                        <p className="text-xs text-foreground-variant">{ev.description}</p>
+                        <p className="text-xs text-foreground-variant mt-1">
                           {new Date(ev.timestamp).toLocaleString(localeTag)}
                           {ev.room_name ? ` · ${ev.room_name}` : ""}
                         </p>
@@ -486,7 +499,7 @@ export default function PatientDetailPage({
 
             <SectionCard icon={Tablet} title={t("patients.devicesSection")} iconColor="text-primary">
               {activeAssignments.length === 0 ? (
-                <p className="text-sm text-on-surface-variant py-4">—</p>
+                <p className="text-sm text-foreground-variant py-4">—</p>
               ) : (
                 <div className="space-y-2">
                   {activeAssignments.map((d) => (
@@ -495,10 +508,10 @@ export default function PatientDetailPage({
                       className="flex items-center justify-between p-3 rounded-lg bg-surface-container-low text-sm"
                     >
                       <div className="flex items-center gap-2">
-                        <Tablet className="w-4 h-4 text-on-surface-variant" />
-                        <span className="text-on-surface font-medium">{d.device_id}</span>
+                        <Tablet className="w-4 h-4 text-foreground-variant" />
+                        <span className="text-foreground font-medium">{d.device_id}</span>
                       </div>
-                      <span className="text-xs px-2 py-1 rounded-full bg-surface-container-high text-on-surface-variant">
+                      <span className="text-xs px-2 py-1 rounded-full bg-surface-container-high text-foreground-variant">
                         {d.device_role}
                       </span>
                     </div>
@@ -540,6 +553,35 @@ export default function PatientDetailPage({
               <p className="text-sm opacity-90">{t("patients.noEmergencyContact")}</p>
             )}
           </section>
+
+          <section className="surface-card rounded-xl border border-outline-variant/20 p-5">
+            <h2 className="font-semibold text-foreground mb-4 flex items-center justify-between gap-2">
+              <span>{t("caregivers.title")}</span>
+              <span className="text-xs font-normal text-foreground-variant">{caregivers.length}</span>
+            </h2>
+            {caregivers.length === 0 ? (
+              <p className="text-sm text-foreground-variant">{t("caregivers.empty")}</p>
+            ) : (
+              <ul className="space-y-2">
+                {caregivers.map((person) => (
+                  <li
+                    key={person.id}
+                    className="rounded-lg border border-outline-variant/20 p-3 bg-surface-container-low text-sm hover:border-primary/30 transition-smooth"
+                  >
+                    <Link
+                      href={`/admin/caregivers/${person.id}`}
+                      className="flex items-center justify-between gap-3"
+                    >
+                      <span className="font-medium text-foreground">
+                        {person.first_name} {person.last_name}
+                      </span>
+                      <span className="text-xs text-primary">{t("caregivers.openFullDetail")}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </aside>
       </div>
     </div>
@@ -549,8 +591,8 @@ export default function PatientDetailPage({
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-on-surface-variant">{label}</p>
-      <p className="text-sm font-medium text-on-surface mt-0.5">{value}</p>
+      <p className="text-xs text-foreground-variant">{label}</p>
+      <p className="text-sm font-medium text-foreground mt-0.5">{value}</p>
     </div>
   );
 }
@@ -568,7 +610,7 @@ function SectionCard({
 }) {
   return (
     <div className="surface-card rounded-xl border border-outline-variant/20 p-6">
-      <h2 className="font-semibold text-on-surface flex items-center gap-2 mb-4">
+      <h2 className="font-semibold text-foreground flex items-center gap-2 mb-4">
         <Icon className={`w-5 h-5 ${iconColor}`} />
         {title}
       </h2>

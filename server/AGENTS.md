@@ -60,6 +60,45 @@ High-level flow:
 6. starts the retention scheduler when enabled
 7. mounts the MCP SSE app at `/mcp`
 
+## Dual-Environment Docker Compose Setup
+
+WheelSense supports two database modes with **isolated PostgreSQL volumes** but the **same core Compose stack** ([`docker-compose.core.yml`](docker-compose.core.yml)) and **shared MQTT broker**. Entry files [`docker-compose.yml`](docker-compose.yml) and [`docker-compose.sim.yml`](docker-compose.sim.yml) use Compose `include` to merge `docker-compose.data-prod.yml` or `docker-compose.data-mock.yml` respectively (same app images; do not run both entries at once on the same host ports).
+
+### Environment Modes
+
+| Mode | Compose entry | Database volume | Pre-seeded data | MQTT simulator | Use case |
+|------|----------------|-----------------|-----------------|------------------|----------|
+| **Mock / simulator** | `docker-compose.sim.yml` | `pgdata-sim` | Yes (5 patients, staff, devices) | Yes | Testing, demos, development |
+| **Production DB** | `docker-compose.yml` | `pgdata-prod` | No (clean) | No | Real-world deployment |
+
+### Quick Start
+
+```bash
+# Simulator (pre-populated demo data)
+docker compose -f docker-compose.sim.yml up -d --build
+
+# Production (clean database)
+docker compose up -d --build
+```
+
+### Environment Detection
+
+- Backend exposes `ENV_MODE` via settings (`simulator` or `production`)
+- Use `settings.is_simulator_mode` to check mode in code
+- Frontend detects simulator via `/api/demo/simulator/status` endpoint
+
+### Simulator Reset Capability
+
+When running in simulator mode, admins can reset to baseline state:
+
+- **API:** `POST /api/demo/simulator/reset` (clears dynamic data, re-seeds baseline)
+- **API:** `GET /api/demo/simulator/status` (returns env mode + statistics; **any authenticated** user; reset remains admin-only; status queries use the request `get_db` session, not a separate `AsyncSessionLocal` scope; missing optional domain tables are treated as zero-count so status does not fail with 500 during partial rollout states)
+- **UI:** Admin Settings > Server > "Reset Simulator Data" button (visible only in simulator mode)
+
+### Legacy Profile-Based Simulator (DEPRECATED)
+
+The old `--profile simulator` approach is replaced by the mock entry (`docker-compose.sim.yml` → `docker-compose.data-mock.yml`). The `wheelsense-simulator` service exists only in the mock data fragment, not in production DB mode.
+
 ## Workspace And Auth Model
 
 Important runtime truth:
@@ -123,7 +162,7 @@ The access assignment API is:
 - `GET /api/caregivers/{caregiver_id}/patients` lists active patient access rows.
 - `PUT /api/caregivers/{caregiver_id}/patients` replaces the active access set with `{ "patient_ids": [...] }`.
 
-The current implementation applies this patient visibility policy to `/api/patients` list/get plus patient-linked workflow list/create/update paths. Alerts, vitals, timeline, and future-domain patient-linked reads should use the same helper when those endpoint files are touched.
+The current implementation applies this patient visibility policy to `/api/patients` list/get plus patient-linked workflow list/create/update paths. Alerts, vitals, timeline, and patient-linked reads in the floorplans, care, and medication domains should use the same helper when those endpoint files are touched.
 
 ### Device and telemetry domain
 
@@ -136,6 +175,7 @@ The current implementation applies this patient visibility policy to `/api/patie
 
 Important device management additions:
 
+- `role=patient` may only list or read `GET /api/devices`, `GET /api/devices/{device_id}`, and `GET /api/devices/{device_id}/commands` for devices with an active `PatientDeviceAssignment` to their linked `patient_id` (other roles keep workspace-wide registry reads).
 - `GET /api/devices/activity` returns recent workspace-scoped device/admin activity
 - `POST /api/devices/{device_id}/patient` links or unlinks a patient assignment for a device
 - device activity logging is best-effort and should not block the main request path
@@ -159,18 +199,35 @@ Important `/api/workflow` semantics:
 - target roles must be canonical: `admin`, `head_nurse`, `supervisor`, `observer`, or `patient`
 - target users and patient links are validated inside the current workspace
 - patient-linked workflow reads are filtered through the current user's patient visibility policy
+- **`GET /api/workflow/schedules`** and **`GET /api/workflow/tasks`** accept `ROLE_ALL_AUTHENTICATED`. **Patient** accounts may list their own rows: if `patient_id` is omitted on `GET .../schedules`, the server sets it to the caller’s linked `patient_id` (empty list when unlinked).
+- **`POST /api/workflow/schedules`** and **`POST /api/workflow/tasks`** use `ROLE_WORKFLOW_WRITE`, which includes **`observer`** in addition to `admin`, `head_nurse`, and `supervisor`; patient-linked payloads still go through `assert_patient_record_access_db`.
+- **`GET /api/workflow/messaging/recipients`** is available to **all authenticated roles** and returns active staff users (`admin`, `head_nurse`, `supervisor`, `observer`) in the workspace via `UserService.search_users` (`UserSearchOut` list) for user-targeted compose UIs (patient and admin).
+- **`POST /api/workflow/messages`**: body must include **`recipient_role` or `recipient_user_id`** (validated in service: do not send both). Patient UI targets a **staff user id** so messages are addressable to a real account, not only a role inbox.
+
+### Shift checklists
+
+- `GET /api/shift-checklist/me?shift_date=` — clinical staff roles (`admin`, `head_nurse`, `supervisor`, `observer`); returns saved checklist items for the current user and UTC calendar day (empty list until first save)
+- `PUT /api/shift-checklist/me` — upsert the caller's checklist JSON for that day (workspace-scoped; no client-supplied `workspace_id`)
+- `GET /api/shift-checklist/workspace?shift_date=` — `admin` and `head_nurse` only; lists active `observer` and `supervisor` accounts in the workspace with completion percentage for oversight
 
 ### Integrations and extended domains
 
-- `/api/ha`
+- `/api/ha` — **Home Assistant** integration. Patient **room-controls** and staff smart-device UIs use these **REST** surfaces (browser → Next `/api/*` → FastAPI). The web client does **not** publish MQTT for room actuators; MQTT remains for ingested devices and server-originated control topics. Non–Home Assistant room hardware is **planned** under `docs/adr/0012-room-native-actuators-mqtt.md` (future gateway + scoped REST, not `/api/care/device/action`).
 - `/api/chat`
 - `/api/settings/ai`
-- `/api/future`
+- `/api/floorplans`
+- `/api/care`
+- `/api/medication`
 - `/api/retention`
 
-Important `/api/future` semantics:
+Important canonical domain semantics:
 
-- `GET /api/future/specialists` syncs supervisor caregivers into specialist rows and returns those caregiver-backed specialists before falling back to standalone specialist records, so head-nurse specialist workflows share the staff directory instead of a separate demo island.
+- `GET /api/care/specialists` syncs supervisor caregivers into specialist rows and returns those caregiver-backed specialists before falling back to standalone specialist records, so head-nurse specialist workflows share the staff directory instead of a separate demo island.
+- The public surface is assembled from dedicated backend modules:
+  - `floorplans` for uploads, layout, presence, and room capture
+  - `care` for specialists
+  - `medication` for prescriptions and pharmacy orders
+- `future_domains` remains only as a thin compatibility shim for older imports and must not be mounted as a public router.
 
 Current AI settings/runtime notes:
 
@@ -194,6 +251,8 @@ Topics currently used by runtime code:
 | `WheelSense/camera/{device_id}/control` | server -> camera | capture/stream/resolution commands |
 | `WheelSense/vitals/{patient_id}` | server -> subscribers | derived vital broadcasts |
 | `WheelSense/alerts/{patient_id}` or `WheelSense/alerts/{device_id}` | server -> subscribers | fall/alert broadcasts |
+
+**Planned (not implemented; see `docs/adr/0012-room-native-actuators-mqtt.md`):** dedicated **room actuator** MQTT prefixes (for example `WheelSense/room/{room_id}/actuator/command` and optional `.../actuator/ack`) for non–Home Assistant hardware. Those commands must flow through a future workspace-scoped REST surface that resolves a **registered room gateway device** before publish, with rate limits and audit logging. They are intentionally separate from wheelchair `WheelSense/{device_id}/control` semantics.
 
 The wheelchair firmware also listens to:
 
@@ -270,6 +329,7 @@ Current AI provider behavior:
 - `server/app/schemas/` - request/response contracts
 - `server/app/services/` - business logic
 - `server/alembic/versions/` - schema migrations
+- Code that still needs compatibility shims should prefer the new `floorplans`, `care`, and `medication` modules over `future_domains`.
 
 ## Environment And Ops
 
@@ -326,16 +386,16 @@ The frontend currently depends on:
 - cookie + localStorage token model
 - root providers in `frontend/components/providers/AppProviders.tsx`
 - Zustand auth state in `frontend/lib/stores/auth-store.ts`
-- TanStack Query-backed reads through `frontend/hooks/useQuery.ts`
+- TanStack Query-backed reads via `@tanstack/react-query` (`useQuery` / `useMutation`) with `lib/api.ts` in `queryFn`, namespaced `queryKey`s, optional defaults from `frontend/lib/queryEndpointDefaults.ts`, and `frontend/lib/refetchOrThrow.ts` where a refetch must reject like the old client wrapper; the legacy `frontend/hooks/useQuery.ts` file is gone
 - `frontend/lib/types.ts` mirroring backend contracts
 - generated OpenAPI schema output in `frontend/lib/api/generated/schema.ts`
-- route areas for `admin`, `head_nurse`, `supervisor`, `observer`, `patient`
+- route areas for `admin`, `head_nurse`, `supervisor`, `observer`, `patient`; role sidebar is a short list in `frontend/lib/sidebarConfig.ts` with optional `activeForPaths` and in-page **`?tab=`** hubs (`HubTabBar`) so many screens stay on canonical paths without duplicating REST
 - legacy admin compatibility redirects for `/admin/users` and `/admin/smart-devices`
 - account-management flows that call `PUT /api/users/{user_id}` with patient/caregiver link fields
 - device fleet flows that call `GET /api/devices/activity` and `POST /api/devices/{device_id}/patient`
 - standardized admin patient create flow using `React Hook Form + Zod` in `frontend/components/admin/patients/AddPatientModal.tsx`
 - AI settings model discovery endpoints that soft-fail with `200` plus status metadata instead of surfacing provider bootstrap errors as hard HTTP failures
-- floorplan layout editing through `/api/future/floorplans/layout` with frontend SVG canvas compatibility for legacy 0-100 payloads and current map unit scaling
+- floorplan layout editing through `/api/floorplans/layout` with frontend SVG canvas compatibility for legacy 0-100 payloads and current map unit scaling
 - room-node assignment semantics centered on `Room.node_device_id` (string device id), with frontend map editors syncing node links via `PATCH /api/rooms/{room_id}`
 - admin dashboard account-link and AI status details shifted out of the large overview cards and surfaced in context-specific operational pages
 

@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Bell } from "lucide-react";
 import { api } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ type AlertRow = {
 };
 
 export default function ObserverAlertsPage() {
+  const { t } = useTranslation();
+
   const alertsQuery = useQuery({
     queryKey: ["observer", "alerts", "list"],
     queryFn: () => api.listAlerts({ status: "active", limit: 300 }),
@@ -76,17 +79,17 @@ export default function ObserverAlertsPage() {
           patientId: alert.patient_id,
           patientName: patient
             ? `${patient.first_name} ${patient.last_name}`.trim()
-            : "Unlinked patient",
+            : t("observer.alerts.unlinkedPatient"),
           timestamp: alert.timestamp,
         };
       });
-  }, [alerts, patientMap]);
+  }, [alerts, patientMap, t]);
 
   const columns = useMemo<ColumnDef<AlertRow>[]>(
     () => [
       {
         accessorKey: "title",
-        header: "Alert",
+        header: t("observer.alerts.colAlert"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
@@ -97,11 +100,11 @@ export default function ObserverAlertsPage() {
       },
       {
         accessorKey: "patientName",
-        header: "Patient",
+        header: t("observer.alerts.colPatient"),
       },
       {
         accessorKey: "severity",
-        header: "Severity",
+        header: t("observer.alerts.colSeverity"),
         cell: ({ row }) => {
           const severity = row.original.severity;
           const variant =
@@ -115,7 +118,7 @@ export default function ObserverAlertsPage() {
       },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("observer.alerts.colStatus"),
         cell: ({ row }) => (
           <Badge variant={row.original.status === "active" ? "destructive" : "outline"}>
             {row.original.status}
@@ -124,7 +127,7 @@ export default function ObserverAlertsPage() {
       },
       {
         accessorKey: "timestamp",
-        header: "Time",
+        header: t("observer.alerts.colTime"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
@@ -145,32 +148,32 @@ export default function ObserverAlertsPage() {
                   row.original.patientId ? `/observer/patients/${row.original.patientId}` : "/observer/patients"
                 }
               >
-                Open patient
+                {t("observer.alerts.openPatient")}
               </Link>
             </Button>
           </div>
         ),
       },
     ],
-    [],
+    [t],
   );
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Active Alerts</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t("observer.alerts.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Monitor active alerts and open the linked patient record.
+          {t("observer.alerts.subtitle")}
         </p>
       </div>
 
       <DataTableCard
-        title="Alert Queue"
-        description="Current active alerts with severity and patient context."
+        title={t("observer.alerts.queueTitle")}
+        description={t("observer.alerts.queueDesc")}
         data={rows}
         columns={columns}
         isLoading={alertsQuery.isLoading || patientsQuery.isLoading}
-        emptyText="No active alerts right now."
+        emptyText={t("observer.alerts.empty")}
         rightSlot={<Bell className="h-4 w-4 text-muted-foreground" />}
       />
     </div>

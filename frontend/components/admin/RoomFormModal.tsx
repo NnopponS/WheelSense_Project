@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
-import { useQuery } from "@/hooks/useQuery";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
@@ -93,20 +94,39 @@ export default function RoomFormModal({
     () => (open ? withWorkspaceScope("/facilities", user?.workspace_id) : null),
     [open, user?.workspace_id],
   );
-  const { data: facilities, isLoading: facilitiesLoading } = useQuery<Facility[]>(
-    facilitiesEndpoint,
-  );
+  const { data: facilities, isLoading: facilitiesLoading } = useQuery({
+    queryKey: ["admin", "room-form", "facilities", facilitiesEndpoint],
+    queryFn: () => api.get<Facility[]>(facilitiesEndpoint!),
+    enabled: Boolean(facilitiesEndpoint),
+    staleTime: facilitiesEndpoint ? getQueryStaleTimeMs(facilitiesEndpoint) : 0,
+    refetchInterval: facilitiesEndpoint ? getQueryPollingMs(facilitiesEndpoint) : false,
+    retry: 3,
+  });
 
   const floorsEndpoint = useMemo(() => {
     if (!open || facilityId === "") return null;
     return withWorkspaceScope(`/facilities/${facilityId}/floors`, user?.workspace_id);
   }, [open, facilityId, user?.workspace_id]);
-  const { data: floors, isLoading: floorsLoading } = useQuery<Floor[]>(floorsEndpoint);
+  const { data: floors, isLoading: floorsLoading } = useQuery({
+    queryKey: ["admin", "room-form", "floors", floorsEndpoint, facilityId],
+    queryFn: () => api.get<Floor[]>(floorsEndpoint!),
+    enabled: Boolean(floorsEndpoint),
+    staleTime: floorsEndpoint ? getQueryStaleTimeMs(floorsEndpoint) : 0,
+    refetchInterval: floorsEndpoint ? getQueryPollingMs(floorsEndpoint) : false,
+    retry: 3,
+  });
   const devicesEndpoint = useMemo(
     () => (open ? withWorkspaceScope("/devices", user?.workspace_id) : null),
     [open, user?.workspace_id],
   );
-  const { data: devices, isLoading: devicesLoading } = useQuery<Device[]>(devicesEndpoint);
+  const { data: devices, isLoading: devicesLoading } = useQuery({
+    queryKey: ["admin", "room-form", "devices", devicesEndpoint],
+    queryFn: () => api.get<Device[]>(devicesEndpoint!),
+    enabled: Boolean(devicesEndpoint),
+    staleTime: devicesEndpoint ? getQueryStaleTimeMs(devicesEndpoint) : 0,
+    refetchInterval: devicesEndpoint ? getQueryPollingMs(devicesEndpoint) : false,
+    retry: 3,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -339,12 +359,12 @@ export default function RoomFormModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
-          <h3 id={titleId} className="text-lg font-semibold text-on-surface">
+          <h3 id={titleId} className="text-lg font-semibold text-foreground">
             {mode === "create" ? t("monitoring.roomForm.titleCreate") : t("monitoring.roomForm.titleEdit")}
           </h3>
           <button
             type="button"
-            className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"
+            className="p-2 rounded-lg hover:bg-surface-container-low text-foreground-variant"
             onClick={onClose}
             aria-label={t("monitoring.roomForm.close")}
           >
@@ -360,7 +380,7 @@ export default function RoomFormModal({
           }}
         >
           <div>
-            <label htmlFor="room-name" className="text-xs font-medium text-on-surface-variant">
+            <label htmlFor="room-name" className="text-xs font-medium text-foreground-variant">
               {t("monitoring.roomForm.name")}
             </label>
             <input
@@ -374,7 +394,7 @@ export default function RoomFormModal({
           </div>
 
           <div>
-            <label htmlFor="room-desc" className="text-xs font-medium text-on-surface-variant">
+            <label htmlFor="room-desc" className="text-xs font-medium text-foreground-variant">
               {t("monitoring.roomForm.description")}
             </label>
             <textarea
@@ -389,7 +409,7 @@ export default function RoomFormModal({
             <label
               id={facilityLabelId}
               htmlFor={facilityInputId}
-              className="text-xs font-medium text-on-surface-variant"
+              className="text-xs font-medium text-foreground-variant"
             >
               {t("monitoring.roomForm.facility")}
             </label>
@@ -425,7 +445,7 @@ export default function RoomFormModal({
               />
             </div>
             {facilityEmptyPool ? (
-              <p className="text-xs text-on-surface-variant mt-1">
+              <p className="text-xs text-foreground-variant mt-1">
                 {t("monitoring.roomForm.addFacilityFirst")}
               </p>
             ) : null}
@@ -435,7 +455,7 @@ export default function RoomFormModal({
             <label
               id={floorLabelId}
               htmlFor={floorInputId}
-              className="text-xs font-medium text-on-surface-variant"
+              className="text-xs font-medium text-foreground-variant"
             >
               {t("monitoring.roomForm.floor")}
             </label>
@@ -468,7 +488,7 @@ export default function RoomFormModal({
               />
             </div>
             {floorNoFloorsYet ? (
-              <p className="text-xs text-on-surface-variant mt-1">
+              <p className="text-xs text-foreground-variant mt-1">
                 {t("monitoring.roomForm.noFloorsInBuilding")}
               </p>
             ) : null}
@@ -486,7 +506,7 @@ export default function RoomFormModal({
           </div>
 
           <div>
-            <label htmlFor="room-type" className="text-xs font-medium text-on-surface-variant">
+            <label htmlFor="room-type" className="text-xs font-medium text-foreground-variant">
               {t("monitoring.roomForm.roomType")}
             </label>
             <select
@@ -519,7 +539,7 @@ export default function RoomFormModal({
           </div>
 
           <div>
-            <label htmlFor="room-node" className="text-xs font-medium text-on-surface-variant">
+            <label htmlFor="room-node" className="text-xs font-medium text-foreground-variant">
               {t("monitoring.roomForm.nodeDevice")}
             </label>
             <div className="mt-1">
@@ -546,7 +566,7 @@ export default function RoomFormModal({
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"
-                className="text-xs font-medium text-primary hover:underline disabled:text-on-surface-variant disabled:no-underline"
+                className="text-xs font-medium text-primary hover:underline disabled:text-foreground-variant disabled:no-underline"
                 disabled={!nodeDeviceId}
                 onClick={() => {
                   setNodeDeviceId("");
@@ -556,7 +576,7 @@ export default function RoomFormModal({
                 {t("floorplan.noNode")}
               </button>
               {nodeEmptyPool ? (
-                <span className="text-xs text-on-surface-variant">{t("floorplan.noDevicesInCategory")}</span>
+                <span className="text-xs text-foreground-variant">{t("floorplan.noDevicesInCategory")}</span>
               ) : null}
             </div>
           </div>

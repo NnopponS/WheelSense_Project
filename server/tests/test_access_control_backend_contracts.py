@@ -163,7 +163,7 @@ async def test_workflow_target_validation_rejects_invalid_roles_and_cross_worksp
 
 
 @pytest.mark.asyncio
-async def test_workflow_patient_filters_use_caregiver_access(
+async def test_workflow_head_nurse_has_workspace_wide_patient_visibility(
     client: AsyncClient,
     db_session: AsyncSession,
     admin_user: User,
@@ -195,12 +195,6 @@ async def test_workflow_patient_filters_use_caregiver_access(
     await db_session.commit()
     await db_session.refresh(head_nurse)
 
-    assigned = await client.put(
-        f"/api/caregivers/{caregiver_id}/patients",
-        json={"patient_ids": [first_id]},
-    )
-    assert assigned.status_code == 200
-
     first_task = await client.post(
         "/api/workflow/tasks",
         json={"title": "Visible task", "patient_id": first_id, "assigned_role": "head_nurse"},
@@ -214,4 +208,7 @@ async def test_workflow_patient_filters_use_caregiver_access(
 
     scoped = await client.get("/api/workflow/tasks", headers=make_token_headers(head_nurse))
     assert scoped.status_code == 200
-    assert [row["id"] for row in scoped.json()] == [first_task.json()["id"]]
+    assert {row["id"] for row in scoped.json()} == {
+        first_task.json()["id"],
+        second_task.json()["id"],
+    }

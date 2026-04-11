@@ -8,9 +8,10 @@ import { ClipboardList } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
+import { useTranslation } from "@/lib/i18n";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type {
-  ListFuturePrescriptionsResponse,
+  ListPrescriptionsResponse,
   ListPatientsResponse,
 } from "@/lib/api/task-scope-types";
 
@@ -26,9 +27,10 @@ type PrescriptionRow = {
 };
 
 export default function ObserverPrescriptionsPage() {
+  const { t } = useTranslation();
   const prescriptionsQuery = useQuery({
     queryKey: ["observer", "prescriptions", "list"],
-    queryFn: () => api.listFuturePrescriptions(),
+    queryFn: () => api.listPrescriptions(),
   });
 
   const patientsQuery = useQuery({
@@ -37,7 +39,7 @@ export default function ObserverPrescriptionsPage() {
   });
 
   const prescriptions = useMemo(
-    () => (prescriptionsQuery.data ?? []) as ListFuturePrescriptionsResponse,
+    () => (prescriptionsQuery.data ?? []) as ListPrescriptionsResponse,
     [prescriptionsQuery.data],
   );
 
@@ -85,16 +87,16 @@ export default function ObserverPrescriptionsPage() {
           </div>
         ),
       },
-      { accessorKey: "patientName", header: "Patient" },
-      { accessorKey: "route", header: "Route" },
+      { accessorKey: "patientName", header: t("observer.prescriptions.patient") },
+      { accessorKey: "route", header: t("observer.prescriptions.route") },
       {
         accessorKey: "status",
-        header: "Status",
+        header: t("observer.prescriptions.status"),
         cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("observer.prescriptions.created"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
@@ -103,25 +105,23 @@ export default function ObserverPrescriptionsPage() {
         ),
       },
     ],
-    [],
+    [t],
   );
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Prescription Board</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Review active medication plans while handling routine care tasks.
-        </p>
+        <h2 className="text-2xl font-bold text-foreground">{t("observer.prescriptions.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("observer.prescriptions.subtitle")}</p>
       </div>
 
       <DataTableCard
-        title="Prescriptions"
-        description="Current prescriptions linked to patients in this workspace."
+        title={t("observer.prescriptions.board")}
+        description={t("observer.prescriptions.boardDesc")}
         data={rows}
         columns={columns}
         isLoading={prescriptionsQuery.isLoading || patientsQuery.isLoading}
-        emptyText="No prescriptions assigned."
+        emptyText={t("observer.prescriptions.noItems")}
         rightSlot={<ClipboardList className="h-4 w-4 text-muted-foreground" />}
       />
     </div>

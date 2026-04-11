@@ -61,6 +61,7 @@ class PatientOut(BaseModel):
     height_cm: float | None
     weight_kg: float | None
     blood_type: str
+    photo_url: str | None = None
     medical_conditions: list[MedicalConditionEntry]
     allergies: list[str]
     medications: list[dict[str, Any]]

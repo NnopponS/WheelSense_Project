@@ -1,55 +1,46 @@
 from __future__ import annotations
-from sqlalchemy import select
-
-"""WheelSense Server — MQTT message handler.
-
-Subscribes to device telemetry, ingests data into PostgreSQL,
-runs room prediction, publishes results back.
-
-Phase 4 enhancements:
-- Polar HR ingestion → VitalReading
-- Room transition tracking → ActivityTimeline events
-- Fall detection (|az| > 3g, velocity < 0.05) → Alert
-- Photo chunking from T-SIMCam
-- Vitals/Alert broadcast over MQTT
-"""
 
 import asyncio
 import base64
 import json
 import logging
 import os
+import uuid
 from contextlib import suppress
 from datetime import datetime
 
 import aiomqtt
+from sqlalchemy import select
 
 from .config import settings
+from .localization import predict_room_with_strategy
 from app.db.session import AsyncSessionLocal
+from app.models.activity import ActivityTimeline, Alert
 from app.models.base import utcnow
 from app.models.core import Device
 from app.models.patients import PatientDeviceAssignment
+from app.models.telemetry import (
+    IMUTelemetry,
+    MotionTrainingData,
+    NodeStatusTelemetry,
+    PhotoRecord,
+    RoomPrediction,
+    RSSIReading,
+)
 from app.models.vitals import VitalReading
-from app.models.activity import ActivityTimeline, Alert
-from app.models.telemetry import IMUTelemetry, RSSIReading, RoomPrediction, MotionTrainingData, PhotoRecord
-from .localization import predict_room
 
 logger = logging.getLogger("wheelsense.mqtt")
 
-# ── In-memory trackers ───────────────────────────────────────────────────────
-# Track last known room per device for transition detection
-_room_tracker: dict[str, dict] = {}  # device_id → {"room_id": int, "room_name": str}
+_room_tracker: dict[str, dict] = {}
+_photo_buffers: dict[str, dict] = {}
+_fall_cooldown: dict[str, float] = {}
 
-# Photo chunk buffers for assembly
-_photo_buffers: dict[str, dict] = {}  # photo_id → {"chunks": {idx: bytes}, "total": int, "device_id": str}
-
-# Fall detection cooldown (prevent duplicate alerts within 30s)
-_fall_cooldown: dict[str, float] = {}  # device_id → last_fall_timestamp
 FALL_COOLDOWN_SECONDS = 30.0
+FALL_AZ_THRESHOLD = 3.0
+FALL_VELOCITY_THRESHOLD = 0.05
 
-# ── Thresholds ───────────────────────────────────────────────────────────────
-FALL_AZ_THRESHOLD = 3.0  # g-force on Z-axis
-FALL_VELOCITY_THRESHOLD = 0.05  # m/s — near-zero velocity after impact
+PHOTO_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "photos")
+
 
 async def _get_registered_device(session, device_id: str) -> Device | None:
     result = await session.execute(select(Device).where(Device.device_id == device_id))
@@ -61,10 +52,11 @@ async def _get_registered_device(session, device_id: str) -> Device | None:
         )
     return devices[0] if devices else None
 
+
 async def _lookup_patient_for_device(session, ws_id: int, device_id: str) -> int | None:
-    """Find patient_id assigned to this device in the workspace."""
     result = await session.execute(
-        select(PatientDeviceAssignment).where(
+        select(PatientDeviceAssignment)
+        .where(
             PatientDeviceAssignment.workspace_id == ws_id,
             PatientDeviceAssignment.device_id == device_id,
             PatientDeviceAssignment.is_active.is_(True),
@@ -80,13 +72,12 @@ async def _lookup_patient_for_device(session, ws_id: int, device_id: str) -> int
         return None
     return assignments[0].patient_id
 
+
 async def mqtt_listener():
-    """Long-running task: connect to MQTT, subscribe, handle messages."""
     reconnect_interval = 5
 
     while True:
         try:
-            # Build connection kwargs — support TLS for public brokers
             connect_kwargs: dict = {
                 "hostname": settings.mqtt_broker,
                 "port": settings.mqtt_port,
@@ -95,18 +86,25 @@ async def mqtt_listener():
             }
             if settings.mqtt_tls:
                 import ssl
+
                 connect_kwargs["tls_params"] = aiomqtt.TLSParameters(
                     ca_certs=None,
-                    cert_reqs=ssl.CERT_NONE,  # Public brokers often use default CA
+                    cert_reqs=ssl.CERT_NONE,
                 )
 
             async with aiomqtt.Client(**connect_kwargs) as client:
-                logger.info("MQTT connected to %s:%d (TLS=%s)", settings.mqtt_broker, settings.mqtt_port, settings.mqtt_tls)
+                logger.info(
+                    "MQTT connected to %s:%d (TLS=%s)",
+                    settings.mqtt_broker,
+                    settings.mqtt_port,
+                    settings.mqtt_tls,
+                )
 
                 await client.subscribe("WheelSense/data")
                 await client.subscribe("WheelSense/camera/+/registration")
                 await client.subscribe("WheelSense/camera/+/status")
-                await client.subscribe("WheelSense/camera/+/photo")  # Phase 4: photo chunks
+                await client.subscribe("WheelSense/camera/+/photo")
+                await client.subscribe("WheelSense/camera/+/frame")
                 await client.subscribe("WheelSense/+/ack")
                 await client.subscribe("WheelSense/camera/+/ack")
 
@@ -117,30 +115,31 @@ async def mqtt_listener():
                             await _handle_telemetry(message.payload, client)
                         elif topic.endswith("/ack"):
                             await _handle_device_ack(message.payload)
-                        elif "/registration" in topic:
+                        elif topic.endswith("/registration"):
                             await _handle_camera_registration(message.payload)
-                        elif "/status" in topic:
+                        elif topic.endswith("/status"):
                             await _handle_camera_status(message.payload)
-                        elif "/photo" in topic:
+                        elif topic.endswith("/photo"):
                             await _handle_photo_chunk(message.payload)
+                        elif topic.endswith("/frame"):
+                            await _handle_camera_frame(topic, message.payload)
                     except Exception:
                         logger.exception("Error handling MQTT message on %s", topic)
 
-        except aiomqtt.MqttError as e:
-            logger.warning("MQTT connection lost (%s), reconnecting in %ds...", e, reconnect_interval)
+        except aiomqtt.MqttError as exc:
+            logger.warning(
+                "MQTT connection lost (%s), reconnecting in %ds...",
+                exc,
+                reconnect_interval,
+            )
         except Exception:
-            logger.exception("MQTT unexpected error, reconnecting in %ds...", reconnect_interval)
-
+            logger.exception(
+                "MQTT unexpected error, reconnecting in %ds...", reconnect_interval
+            )
         await asyncio.sleep(reconnect_interval)
 
-async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
-    """Parse M5StickC telemetry JSON, store in DB, run prediction.
 
-    Phase 4 additions:
-    - polar_hr → VitalReading + broadcast
-    - Room transition → ActivityTimeline events
-    - Fall detection → Alert + broadcast
-    """
+async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
     data = json.loads(payload)
     device_id = data.get("device_id", "unknown")
     imu = data.get("imu", {})
@@ -148,7 +147,7 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
     battery = data.get("battery", {})
     rssi_list = data.get("rssi", [])
     session_id = data.get("session_id", "")
-    polar_hr = data.get("polar_hr")  # Phase 4: Polar HR data
+    polar_hr = data.get("polar_hr")
 
     ts_str = data.get("timestamp", "")
     ts = None
@@ -157,6 +156,10 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
             ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
     if ts is None:
         ts = utcnow()
+
+    patient_id: int | None = None
+    fall_detected = False
+    prediction: dict | None = None
 
     async with AsyncSessionLocal() as session:
         device = await _get_registered_device(session, device_id)
@@ -167,165 +170,168 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
 
         device.last_seen = utcnow()  # type: ignore[assignment]
         device.firmware = data.get("firmware", device.firmware)
+        session.add(device)
 
-        # Store IMU telemetry
-        imu_row = IMUTelemetry(
-            workspace_id=ws_id,
-            device_id=device_id,
-            timestamp=ts,
-            seq=data.get("seq", 0),
-            ax=imu.get("ax"), ay=imu.get("ay"), az=imu.get("az"),
-            gx=imu.get("gx"), gy=imu.get("gy"), gz=imu.get("gz"),
-            distance_m=motion.get("distance_m"),
-            velocity_ms=motion.get("velocity_ms"),
-            accel_ms2=motion.get("accel_ms2"),
-            direction=motion.get("direction"),
-            battery_pct=battery.get("percentage"),
-            battery_v=battery.get("voltage_v"),
-            charging=battery.get("charging", False),
-        )
-        session.add(imu_row)
-
-        # Motion recording data
-        if data.get("is_recording", False):
-            motion_row = MotionTrainingData(
+        session.add(
+            IMUTelemetry(
                 workspace_id=ws_id,
                 device_id=device_id,
-                session_id=session_id,
                 timestamp=ts,
-                action_label=data.get("action_label", "unknown"),
-                ax=imu.get("ax"), ay=imu.get("ay"), az=imu.get("az"),
-                gx=imu.get("gx"), gy=imu.get("gy"), gz=imu.get("gz"),
+                seq=data.get("seq", 0),
+                ax=imu.get("ax"),
+                ay=imu.get("ay"),
+                az=imu.get("az"),
+                gx=imu.get("gx"),
+                gy=imu.get("gy"),
+                gz=imu.get("gz"),
                 distance_m=motion.get("distance_m"),
                 velocity_ms=motion.get("velocity_ms"),
                 accel_ms2=motion.get("accel_ms2"),
+                direction=motion.get("direction"),
+                battery_pct=battery.get("percentage"),
+                battery_v=battery.get("voltage_v"),
+                charging=battery.get("charging", False),
             )
-            session.add(motion_row)
+        )
 
-        # Store RSSI readings
+        if data.get("is_recording", False):
+            session.add(
+                MotionTrainingData(
+                    workspace_id=ws_id,
+                    device_id=device_id,
+                    session_id=session_id,
+                    timestamp=ts,
+                    action_label=data.get("action_label", "unknown"),
+                    ax=imu.get("ax"),
+                    ay=imu.get("ay"),
+                    az=imu.get("az"),
+                    gx=imu.get("gx"),
+                    gy=imu.get("gy"),
+                    gz=imu.get("gz"),
+                    distance_m=motion.get("distance_m"),
+                    velocity_ms=motion.get("velocity_ms"),
+                    accel_ms2=motion.get("accel_ms2"),
+                )
+            )
+
         for r in rssi_list:
-            rssi_row = RSSIReading(
-                workspace_id=ws_id,
-                device_id=device_id,
-                timestamp=ts,
-                node_id=r.get("node", ""),
-                rssi=r.get("rssi", -100),
-                mac=r.get("mac", ""),
+            session.add(
+                RSSIReading(
+                    workspace_id=ws_id,
+                    device_id=device_id,
+                    timestamp=ts,
+                    node_id=r.get("node", ""),
+                    rssi=r.get("rssi", -100),
+                    mac=r.get("mac", ""),
+                )
             )
-            session.add(rssi_row)
 
-        # ── Phase 4: Polar HR → VitalReading ─────────────────────────────
         patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
-
-        if polar_hr and patient_id:
-            vital = VitalReading(
-                workspace_id=ws_id,
-                patient_id=patient_id,
-                device_id=device_id,
-                timestamp=ts,
-                heart_rate_bpm=polar_hr.get("heart_rate_bpm"),
-                rr_interval_ms=polar_hr.get("rr_interval_ms"),
-                spo2=polar_hr.get("spo2"),
-                skin_temperature=polar_hr.get("skin_temperature"),
-                sensor_battery=polar_hr.get("sensor_battery"),
-                source="ble",
+        if polar_hr and patient_id is not None:
+            session.add(
+                VitalReading(
+                    workspace_id=ws_id,
+                    patient_id=patient_id,
+                    device_id=device_id,
+                    timestamp=ts,
+                    heart_rate_bpm=polar_hr.get("heart_rate_bpm"),
+                    rr_interval_ms=polar_hr.get("rr_interval_ms"),
+                    spo2=polar_hr.get("spo2"),
+                    sensor_battery=polar_hr.get("sensor_battery"),
+                    source="ble",
+                )
             )
-            session.add(vital)
-            logger.debug("VitalReading stored: HR=%s for patient=%d", polar_hr.get("heart_rate_bpm"), patient_id)
 
-        # ── Phase 4: Fall Detection ──────────────────────────────────────
         az = abs(imu.get("az", 0.0))
-        velocity = motion.get("velocity_ms", 1.0)  # Default high so no false positive
-        fall_detected = False
-
+        velocity = motion.get("velocity_ms", 1.0)
         if az > FALL_AZ_THRESHOLD and velocity < FALL_VELOCITY_THRESHOLD:
             fall_detected = await _maybe_create_fall_alert(
                 session, ws_id, device_id, patient_id, ts, az, velocity
             )
 
+        rssi_vector = {r["node"]: r["rssi"] for r in rssi_list if "node" in r}
+        if rssi_vector:
+            prediction = await predict_room_with_strategy(session, ws_id, rssi_vector)
+            if prediction is not None:
+                session.add(
+                    RoomPrediction(
+                        workspace_id=ws_id,
+                        device_id=device_id,
+                        timestamp=ts,
+                        predicted_room_id=prediction.get("room_id"),
+                        predicted_room_name=prediction.get("room_name", ""),
+                        confidence=prediction.get("confidence", 0.0),
+                        model_type=prediction.get("model_type", "knn"),
+                        rssi_vector=rssi_vector,
+                    )
+                )
+                patient_id_for_room = patient_id or await _lookup_patient_for_device(
+                    session, ws_id, device_id
+                )
+                if patient_id_for_room is not None:
+                    await _track_room_transition(
+                        session, ws_id, device_id, patient_id_for_room, prediction, ts
+                    )
+
         await session.commit()
 
-    # ── Phase 4: Broadcast vitals ────────────────────────────────────────
-    if polar_hr and patient_id:
-        vitals_payload = json.dumps({
-            "patient_id": patient_id,
-            "device_id": device_id,
-            "heart_rate_bpm": polar_hr.get("heart_rate_bpm"),
-            "rr_interval_ms": polar_hr.get("rr_interval_ms"),
-            "timestamp": ts.isoformat() if ts else None,
-        })
-        await client.publish(f"WheelSense/vitals/{patient_id}", vitals_payload)
+    if polar_hr and patient_id is not None:
+        await client.publish(
+            f"WheelSense/vitals/{patient_id}",
+            json.dumps(
+                {
+                    "patient_id": patient_id,
+                    "device_id": device_id,
+                    "heart_rate_bpm": polar_hr.get("heart_rate_bpm"),
+                    "rr_interval_ms": polar_hr.get("rr_interval_ms"),
+                    "timestamp": ts.isoformat() if ts else None,
+                }
+            ),
+        )
 
-    # ── Phase 4: Broadcast fall alert ────────────────────────────────────
     if fall_detected:
-        alert_payload = json.dumps({
-            "alert_type": "fall",
-            "severity": "critical",
-            "patient_id": patient_id,
-            "device_id": device_id,
-            "az": az,
-            "velocity": velocity,
-            "timestamp": ts.isoformat() if ts else None,
-        })
-        topic = f"WheelSense/alerts/{patient_id}" if patient_id else f"WheelSense/alerts/{device_id}"
-        await client.publish(topic, alert_payload)
+        topic = (
+            f"WheelSense/alerts/{patient_id}"
+            if patient_id is not None
+            else f"WheelSense/alerts/{device_id}"
+        )
+        await client.publish(
+            topic,
+            json.dumps(
+                {
+                    "alert_type": "fall",
+                    "severity": "critical",
+                    "patient_id": patient_id,
+                    "device_id": device_id,
+                    "timestamp": ts.isoformat() if ts else None,
+                }
+            ),
+        )
 
-    # ── Room prediction + transition tracking ────────────────────────────
-    if rssi_list:
-        rssi_vector = {r["node"]: r["rssi"] for r in rssi_list if "node" in r}
-        prediction = predict_room(rssi_vector, workspace_id=ws_id)
+    if prediction is not None:
+        await client.publish(
+            f"WheelSense/room/{device_id}",
+            json.dumps(
+                {
+                    "room_id": prediction.get("room_id"),
+                    "room_name": prediction.get("room_name", ""),
+                    "confidence": round(prediction.get("confidence", 0.0), 3),
+                    "model_type": prediction.get("model_type", "knn"),
+                    "strategy": prediction.get("strategy"),
+                }
+            ),
+        )
 
-        if prediction:
-            # Store prediction
-            async with AsyncSessionLocal() as session:
-                device = await _get_registered_device(session, device_id)
-                if not device:
-                    logger.warning(
-                        "Skipping prediction persistence for unregistered device: %s",
-                        device_id,
-                    )
-                    return
-                ws_id = device.workspace_id
-                pred_row = RoomPrediction(
-                    workspace_id=ws_id,
-                    device_id=device_id,
-                    timestamp=ts,
-                    predicted_room_id=prediction.get("room_id"),
-                    predicted_room_name=prediction.get("room_name", ""),
-                    confidence=prediction.get("confidence", 0.0),
-                    model_type=prediction.get("model_type", "knn"),
-                    rssi_vector=rssi_vector,
-                )
-                session.add(pred_row)
-
-                # ── Phase 4: Room Transition Tracking ────────────────────
-                patient_id_for_room = patient_id
-                if not patient_id_for_room:
-                    patient_id_for_room = await _lookup_patient_for_device(
-                        session, ws_id, device_id
-                    )
-
-                if patient_id_for_room:
-                    await _track_room_transition(
-                        session, ws_id, device_id, patient_id_for_room,
-                        prediction, ts
-                    )
-
-                await session.commit()
-
-            # Publish prediction back to device
-            result_payload = json.dumps({
-                "room_id": prediction.get("room_id"),
-                "room_name": prediction.get("room_name", ""),
-                "confidence": round(prediction.get("confidence", 0.0), 3),
-            })
-            await client.publish(f"WheelSense/room/{device_id}", result_payload)
 
 async def _maybe_create_fall_alert(
-    session, ws_id: int, device_id: str, patient_id: int | None,
-    ts, az: float, velocity: float
-):
-    """Create a fall alert if not in cooldown period."""
+    session,
+    ws_id: int,
+    device_id: str,
+    patient_id: int | None,
+    ts,
+    az: float,
+    velocity: float,
+) -> bool:
     import time
 
     now = time.time()
@@ -335,82 +341,204 @@ async def _maybe_create_fall_alert(
         return False
 
     _fall_cooldown[device_id] = now
-
-    alert = Alert(
-        workspace_id=ws_id,
-        patient_id=patient_id,
-        device_id=device_id,
-        timestamp=ts,
-        alert_type="fall",
-        severity="critical",
-        title=f"Fall Detected — {device_id}",
-        description=f"Sudden impact az={az:.2f}g with near-zero velocity={velocity:.3f}m/s",
-        data={"az": az, "velocity": velocity},
-        status="active",
+    session.add(
+        Alert(
+            workspace_id=ws_id,
+            patient_id=patient_id,
+            device_id=device_id,
+            timestamp=ts,
+            alert_type="fall",
+            severity="critical",
+            title=f"Fall Detected - {device_id}",
+            description=f"Sudden impact az={az:.2f}g with near-zero velocity={velocity:.3f}m/s",
+            data={"az": az, "velocity": velocity},
+            status="active",
+        )
     )
-    session.add(alert)
-    logger.warning("FALL DETECTED: device=%s patient=%s az=%.2fg vel=%.3fm/s", device_id, patient_id, az, velocity)
+    logger.warning(
+        "FALL DETECTED: device=%s patient=%s az=%.2fg vel=%.3fm/s",
+        device_id,
+        patient_id,
+        az,
+        velocity,
+    )
     return True
 
+
 async def _track_room_transition(
-    session, ws_id: int, device_id: str, patient_id: int,
-    prediction: dict, ts
+    session,
+    ws_id: int,
+    device_id: str,
+    patient_id: int,
+    prediction: dict,
+    ts,
 ):
-    """Detect room changes and create timeline events."""
     new_room_id = prediction.get("room_id")
     new_room_name = prediction.get("room_name", "")
-
     prev = _room_tracker.get(device_id)
 
     if prev is None:
-        # First observation — just record entry
         _room_tracker[device_id] = {"room_id": new_room_id, "room_name": new_room_name}
-        session.add(ActivityTimeline(
-            workspace_id=ws_id,
-            patient_id=patient_id,
-            timestamp=ts,
-            event_type="room_enter",
-            room_id=new_room_id,
-            room_name=new_room_name,
-            description=f"Entered {new_room_name}",
-            source="auto",
-        ))
+        session.add(
+            ActivityTimeline(
+                workspace_id=ws_id,
+                patient_id=patient_id,
+                timestamp=ts,
+                event_type="room_enter",
+                room_id=new_room_id,
+                room_name=new_room_name,
+                description=f"Entered {new_room_name}",
+                source="auto",
+            )
+        )
         return
 
     if prev["room_id"] != new_room_id:
-        # Room changed! Create exit + enter events
-        session.add(ActivityTimeline(
-            workspace_id=ws_id,
-            patient_id=patient_id,
-            timestamp=ts,
-            event_type="room_exit",
-            room_id=prev["room_id"],
-            room_name=prev["room_name"],
-            description=f"Left {prev['room_name']}",
-            source="auto",
-        ))
-        session.add(ActivityTimeline(
-            workspace_id=ws_id,
-            patient_id=patient_id,
-            timestamp=ts,
-            event_type="room_enter",
-            room_id=new_room_id,
-            room_name=new_room_name,
-            description=f"Entered {new_room_name}",
-            source="auto",
-        ))
+        session.add(
+            ActivityTimeline(
+                workspace_id=ws_id,
+                patient_id=patient_id,
+                timestamp=ts,
+                event_type="room_exit",
+                room_id=prev["room_id"],
+                room_name=prev["room_name"],
+                description=f"Left {prev['room_name']}",
+                source="auto",
+            )
+        )
+        session.add(
+            ActivityTimeline(
+                workspace_id=ws_id,
+                patient_id=patient_id,
+                timestamp=ts,
+                event_type="room_enter",
+                room_id=new_room_id,
+                room_name=new_room_name,
+                description=f"Entered {new_room_name}",
+                source="auto",
+            )
+        )
         _room_tracker[device_id] = {"room_id": new_room_id, "room_name": new_room_name}
         logger.info(
-            "Room transition: patient=%d %s → %s",
-            patient_id, prev["room_name"], new_room_name
+            "Room transition: patient=%d %s -> %s",
+            patient_id,
+            prev["room_name"],
+            new_room_name,
         )
 
-# ── Photo Chunking ───────────────────────────────────────────────────────────
 
-PHOTO_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "photos")
+def _normalize_node_status_payload(data: dict) -> dict:
+    battery = data.get("battery")
+    battery_pct = data.get("battery_pct")
+    battery_v = data.get("battery_v")
+    charging = data.get("charging")
+    if isinstance(battery, dict):
+        battery_pct = battery.get("percentage", battery_pct)
+        battery_v = battery.get("voltage_v", battery_v)
+        charging = battery.get("charging", charging)
+    elif isinstance(battery, (int, float)) and battery_pct is None:
+        battery_pct = int(battery)
+
+    return {
+        "status": data.get("status", data.get("state", "online")),
+        "battery_pct": battery_pct,
+        "battery_v": battery_v,
+        "charging": charging,
+        "stream_enabled": data.get("stream_enabled"),
+        "frames_captured": data.get("frames_captured"),
+        "snapshots_captured": data.get("snapshots_captured"),
+        "last_snapshot_id": data.get("last_snapshot_id"),
+        "heap": data.get("heap"),
+        "ip_address": data.get("ip_address"),
+        "payload": data,
+    }
+
+
+async def _upsert_node_status_snapshot(session, device: Device, status: dict) -> None:
+    now = utcnow()
+    session.add(
+        NodeStatusTelemetry(
+            workspace_id=device.workspace_id,
+            device_id=device.device_id,
+            timestamp=now,
+            status=status.get("status", ""),
+            battery_pct=status.get("battery_pct"),
+            battery_v=status.get("battery_v"),
+            charging=status.get("charging"),
+            stream_enabled=status.get("stream_enabled"),
+            frames_captured=status.get("frames_captured"),
+            snapshots_captured=status.get("snapshots_captured"),
+            last_snapshot_id=status.get("last_snapshot_id"),
+            heap=status.get("heap"),
+            ip_address=status.get("ip_address"),
+            payload=status.get("payload", {}),
+        )
+    )
+    cfg = dict(device.config or {})
+    cfg["camera_status"] = {"payload": status, "updated_at": now.isoformat()}
+    device.config = cfg  # type: ignore[assignment]
+    device.last_seen = now  # type: ignore[assignment]
+    session.add(device)
+
+
+async def _persist_photo_bytes(device_id: str, photo_id: str, payload: bytes, save_dir: str | None):
+    target_dir = save_dir or PHOTO_SAVE_DIR
+    os.makedirs(target_dir, exist_ok=True)
+    ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{device_id}_{ts_str}_{photo_id}.jpg"
+    filepath = os.path.join(target_dir, filename)
+    with open(filepath, "wb") as handle:
+        handle.write(payload)
+    logger.info("Photo assembled: %s (%d bytes)", filepath, len(payload))
+
+    async with AsyncSessionLocal() as session:
+        device = await _get_registered_device(session, device_id)
+        if not device:
+            logger.warning("Discarding photo for unregistered device: %s", device_id)
+            return
+
+        session.add(
+            PhotoRecord(
+                workspace_id=device.workspace_id,
+                device_id=device.device_id,
+                photo_id=photo_id,
+                filepath=filepath,
+                file_size=len(payload),
+            )
+        )
+
+        latest_status = (
+            await session.execute(
+                select(NodeStatusTelemetry)
+                .where(
+                    NodeStatusTelemetry.workspace_id == device.workspace_id,
+                    NodeStatusTelemetry.device_id == device.device_id,
+                )
+                .order_by(NodeStatusTelemetry.timestamp.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        snapshots = 1
+        if latest_status and latest_status.snapshots_captured is not None:
+            snapshots = int(latest_status.snapshots_captured) + 1
+        await _upsert_node_status_snapshot(
+            session,
+            device,
+            {
+                "status": "online",
+                "snapshots_captured": snapshots,
+                "last_snapshot_id": photo_id,
+                "ip_address": device.ip_address,
+                "payload": {
+                    "last_snapshot_id": photo_id,
+                    "snapshots_captured": snapshots,
+                },
+            },
+        )
+        await session.commit()
+
 
 async def _handle_photo_chunk(payload: bytes, save_dir: str | None = None):
-    """Reassemble chunked photo uploads from T-SIMCam."""
     data = json.loads(payload)
     photo_id = data.get("photo_id", "")
     device_id = data.get("device_id", "")
@@ -427,56 +555,23 @@ async def _handle_photo_chunk(payload: bytes, save_dir: str | None = None):
 
     _photo_buffers[photo_id]["chunks"][chunk_index] = chunk_data
     logger.debug("Photo chunk %d/%d for %s", chunk_index + 1, total_chunks, photo_id)
-
-    # Check if all chunks received
     buf = _photo_buffers[photo_id]
     if len(buf["chunks"]) == buf["total"]:
-        # Reassemble in order
         assembled = b"".join(buf["chunks"][i] for i in range(buf["total"]))
-
-        async with AsyncSessionLocal() as session:
-            device = await _get_registered_device(session, device_id)
-            if not device:
-                logger.warning("Discarding photo for unregistered device: %s", device_id)
-                del _photo_buffers[photo_id]
-                return
-
-        target_dir = save_dir or PHOTO_SAVE_DIR
-        os.makedirs(target_dir, exist_ok=True)
-
-        ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{device_id}_{ts_str}_{photo_id}.jpg"
-        filepath = os.path.join(target_dir, filename)
-
-        with open(filepath, "wb") as f:
-            f.write(assembled)
-
-        logger.info("Photo assembled: %s (%d bytes)", filepath, len(assembled))
-
-        # Save to database
-        try:
-            async with AsyncSessionLocal() as session:
-                device = await _get_registered_device(session, device_id)
-                if device:
-                    photo_record = PhotoRecord(
-                        workspace_id=device.workspace_id,
-                        device_id=device.device_id,
-                        photo_id=photo_id,
-                        filepath=filepath,
-                        file_size=len(assembled)
-                    )
-                    session.add(photo_record)
-                    await session.commit()
-                    logger.debug("PhotoRecord saved to database for device %s", device_id)
-        except Exception as e:
-            logger.error("Failed to save PhotoRecord to DB: %s", e)
-
+        await _persist_photo_bytes(device_id, photo_id, assembled, save_dir)
         del _photo_buffers[photo_id]
 
-# ── Camera Handlers (unchanged) ─────────────────────────────────────────────
+
+async def _handle_camera_frame(topic: str, payload: bytes, save_dir: str | None = None):
+    parts = topic.split("/")
+    if len(parts) < 4:
+        return
+    device_id = parts[2]
+    photo_id = str(uuid.uuid4())
+    await _persist_photo_bytes(device_id, photo_id, payload, save_dir)
+
 
 async def _handle_device_ack(payload: bytes):
-    """Optional command acknowledgements from firmware (WheelSense/.../ack)."""
     try:
         data = json.loads(payload)
     except json.JSONDecodeError:
@@ -490,8 +585,8 @@ async def _handle_device_ack(payload: bytes):
     async with AsyncSessionLocal() as session:
         await apply_command_ack(session, str(command_id), data)
 
+
 async def _handle_camera_registration(payload: bytes):
-    """Handle camera node registration."""
     data = json.loads(payload)
     device_id = data.get("device_id", "")
     if not device_id:
@@ -511,6 +606,17 @@ async def _handle_camera_registration(payload: bytes):
         cfg = dict(device.config or {})
         cfg["node_id"] = data.get("node_id", cfg.get("node_id", ""))
         device.config = cfg  # type: ignore[assignment]
+        await _upsert_node_status_snapshot(
+            session,
+            device,
+            _normalize_node_status_payload(
+                {
+                    "status": "online",
+                    "ip_address": device.ip_address,
+                    "payload": data,
+                }
+            ),
+        )
         await session.commit()
         logger.info(
             "Camera registered in workspace %d: %s at %s",
@@ -519,8 +625,8 @@ async def _handle_camera_registration(payload: bytes):
             data.get("ip_address", "?"),
         )
 
+
 async def _handle_camera_status(payload: bytes):
-    """Handle camera status updates."""
     data = json.loads(payload)
     device_id = data.get("device_id", "")
     if not device_id:
@@ -531,14 +637,5 @@ async def _handle_camera_status(payload: bytes):
         if not device:
             logger.warning("Camera status dropped for unregistered device: %s", device_id)
             return
-
-        if device:
-            device.last_seen = utcnow()  # type: ignore[assignment]
-            cfg = dict(device.config or {})
-            cfg["camera_status"] = {
-                "payload": data,
-                "updated_at": utcnow().isoformat(),
-            }
-            device.config = cfg  # type: ignore[assignment]
-            await session.commit()
-
+        await _upsert_node_status_snapshot(session, device, _normalize_node_status_payload(data))
+        await session.commit()

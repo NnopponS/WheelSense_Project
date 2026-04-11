@@ -104,7 +104,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
         <div className="flex items-center justify-between">
           <h3
             id="add-caregiver-heading"
-            className="flex items-center gap-2 text-lg font-bold text-on-surface"
+            className="flex items-center gap-2 text-lg font-bold text-foreground"
           >
             <UserPlus className="h-5 w-5 text-primary" aria-hidden />
             {t("caregivers.addNew")}
@@ -124,7 +124,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
             <div>
               <label
                 htmlFor="cg-first-name"
-                className="block text-xs font-medium text-on-surface-variant"
+                className="block text-xs font-medium text-foreground-variant"
               >
                 First Name *
               </label>
@@ -141,7 +141,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
             <div>
               <label
                 htmlFor="cg-last-name"
-                className="block text-xs font-medium text-on-surface-variant"
+                className="block text-xs font-medium text-foreground-variant"
               >
                 Last Name *
               </label>
@@ -159,7 +159,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
           <div>
             <label
               htmlFor="cg-role"
-              className="block text-xs font-medium text-on-surface-variant"
+              className="block text-xs font-medium text-foreground-variant"
             >
               {t("profile.role")}
             </label>
@@ -180,7 +180,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
             <div>
               <label
                 htmlFor="cg-phone"
-                className="block text-xs font-medium text-on-surface-variant"
+                className="block text-xs font-medium text-foreground-variant"
               >
                 Phone
               </label>
@@ -196,7 +196,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
             <div>
               <label
                 htmlFor="cg-email"
-                className="block text-xs font-medium text-on-surface-variant"
+                className="block text-xs font-medium text-foreground-variant"
               >
                 Email
               </label>
@@ -220,7 +220,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
                 onChange={(e) => setCreateAccount(e.target.checked)}
                 className="h-4 w-4 rounded border-outline-variant text-primary focus:ring-primary"
               />
-              <label htmlFor="cg-create-account" className="text-sm font-medium text-on-surface">
+              <label htmlFor="cg-create-account" className="text-sm font-medium text-foreground">
                 Create login account for this staff member
               </label>
             </div>
@@ -230,7 +230,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
                 <div>
                   <label
                     htmlFor="cg-username"
-                    className="block text-xs font-medium text-on-surface-variant"
+                    className="block text-xs font-medium text-foreground-variant"
                   >
                     Username * <span className="text-outline text-[10px] ml-1">(min 3 chars)</span>
                   </label>
@@ -246,7 +246,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
                 <div>
                   <label
                     htmlFor="cg-password"
-                    className="block text-xs font-medium text-on-surface-variant"
+                    className="block text-xs font-medium text-foreground-variant"
                   >
                     Password * <span className="text-outline text-[10px] ml-1">(min 6 chars)</span>
                   </label>
@@ -273,7 +273,7 @@ export default function AddCaregiverModal({ open, onClose, onCreated }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container-low transition-smooth"
+              className="rounded-xl px-4 py-2 text-sm font-medium text-foreground-variant hover:bg-surface-container-low transition-smooth"
             >
               Cancel
             </button>

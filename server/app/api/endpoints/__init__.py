@@ -5,7 +5,13 @@ from . import auth, users
 from . import homeassistant, retention, cameras
 from . import analytics, chat, ai_settings
 from . import workflow
-from . import future_domains
+from . import floorplans, care, medication
+from . import service_requests
+from . import support
+from . import calendar
+from . import chat_actions
+from . import admin_database
+from . import shift_checklist
 
 __all__ = [
     "workspaces",
@@ -29,5 +35,13 @@ __all__ = [
     "chat",
     "ai_settings",
     "workflow",
-    "future_domains",
+    "floorplans",
+    "care",
+    "medication",
+    "service_requests",
+    "support",
+    "calendar",
+    "chat_actions",
+    "admin_database",
+    "shift_checklist",
 ]

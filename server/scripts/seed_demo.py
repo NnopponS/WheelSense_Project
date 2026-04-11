@@ -33,6 +33,7 @@ from app.models import (
     AuditTrailEvent,
     CareDirective,
     CareGiver,
+    CareGiverPatientAccess,
     DemoActorPosition,
     HandoverNote,
     PharmacyOrder,
@@ -1215,6 +1216,217 @@ async def attach_bootstrap_admin_to_workspace(
         return
     user.workspace_id = workspace_id
     await session.commit()
+
+
+async def seed_sim_team_caregivers_and_users(
+    session: AsyncSession, workspace_id: int
+) -> tuple[dict[str, CareGiver], dict[str, User]]:
+    """Head nurse, supervisor, and two observers — each with a linked User. No extra admin (use bootstrap admin)."""
+    users_cfg: list[tuple[str, str, str, str]] = [
+        ("head_nurse", "sim_headnurse", "ศิริพร", "หัวหน้าวอร์ด"),
+        ("supervisor", "sim_supervisor", "มานะ", "เวชกิจ"),
+        ("observer", "sim_observer1", "สุดา", "ใจดี"),
+        ("observer", "sim_observer2", "วิมล", "รักษ์ไทย"),
+    ]
+    profile_by_username = {
+        "sim_headnurse": {
+            "employee_code": "HN-SIM-01",
+            "department": "Nursing",
+            "employment_type": "full_time",
+            "specialty": "geriatric_care",
+            "license_number": "TH-RN-SIM01",
+            "phone": "081-200-2001",
+            "email": "sim.headnurse@wheelsense.local",
+            "emergency_contact_name": "Sim Ward",
+            "emergency_contact_phone": "081-900-2001",
+            "photo_url": "",
+        },
+        "sim_supervisor": {
+            "employee_code": "SV-SIM-01",
+            "department": "Care Operations",
+            "employment_type": "full_time",
+            "specialty": "fall_response",
+            "license_number": "TH-SV-SIM01",
+            "phone": "081-200-2002",
+            "email": "sim.supervisor@wheelsense.local",
+            "emergency_contact_name": "Sim Ops",
+            "emergency_contact_phone": "081-900-2002",
+            "photo_url": "",
+        },
+        "sim_observer1": {
+            "employee_code": "OB-SIM-01",
+            "department": "Nursing",
+            "employment_type": "full_time",
+            "specialty": "night_watch",
+            "license_number": "TH-NA-SIM01",
+            "phone": "081-200-2003",
+            "email": "sim.observer1@wheelsense.local",
+            "emergency_contact_name": "Sim Contact",
+            "emergency_contact_phone": "081-900-2003",
+            "photo_url": "",
+        },
+        "sim_observer2": {
+            "employee_code": "OB-SIM-02",
+            "department": "Nursing",
+            "employment_type": "part_time",
+            "specialty": "mobility_support",
+            "license_number": "TH-NA-SIM02",
+            "phone": "081-200-2004",
+            "email": "sim.observer2@wheelsense.local",
+            "emergency_contact_name": "Sim Contact 2",
+            "emergency_contact_phone": "081-900-2004",
+            "photo_url": "",
+        },
+    }
+    hashed = get_password_hash(DEMO_PASSWORD)
+    caregivers_by_key: dict[str, CareGiver] = {}
+    users_by_key: dict[str, User] = {}
+
+    for role, username, first_name, last_name in users_cfg:
+        profile = profile_by_username[username]
+        cq = await session.execute(
+            select(CareGiver).where(
+                CareGiver.workspace_id == workspace_id,
+                CareGiver.first_name == first_name,
+                CareGiver.last_name == last_name,
+            )
+        )
+        caregiver = cq.scalar_one_or_none()
+        if caregiver is None:
+            caregiver = CareGiver(
+                workspace_id=workspace_id,
+                first_name=first_name,
+                last_name=last_name,
+                role=role,
+                employee_code=profile["employee_code"],
+                department=profile["department"],
+                employment_type=profile["employment_type"],
+                specialty=profile["specialty"],
+                license_number=profile["license_number"],
+                is_active=True,
+                phone=profile["phone"],
+                email=profile["email"],
+                emergency_contact_name=profile["emergency_contact_name"],
+                emergency_contact_phone=profile["emergency_contact_phone"],
+                photo_url=profile["photo_url"],
+            )
+            session.add(caregiver)
+            await session.flush()
+        else:
+            caregiver.role = role
+            caregiver.employee_code = profile["employee_code"]
+            caregiver.department = profile["department"]
+            caregiver.employment_type = profile["employment_type"]
+            caregiver.specialty = profile["specialty"]
+            caregiver.license_number = profile["license_number"]
+            caregiver.phone = profile["phone"]
+            caregiver.email = profile["email"]
+            caregiver.emergency_contact_name = profile["emergency_contact_name"]
+            caregiver.emergency_contact_phone = profile["emergency_contact_phone"]
+            caregiver.photo_url = profile["photo_url"]
+            caregiver.is_active = True
+
+        uq = await session.execute(select(User).where(User.username == username))
+        user = uq.scalar_one_or_none()
+        if user is None:
+            user = User(
+                workspace_id=workspace_id,
+                username=username,
+                hashed_password=hashed,
+                role=role,
+                caregiver_id=caregiver.id,
+                is_active=True,
+            )
+            session.add(user)
+        else:
+            if user.workspace_id != workspace_id:
+                raise RuntimeError(
+                    f"Username '{username}' already belongs to workspace_id={user.workspace_id}. "
+                    "Use --reset or a different workspace name."
+                )
+            user.role = role
+            user.caregiver_id = caregiver.id
+            user.is_active = True
+            user.hashed_password = hashed
+        await session.flush()
+        caregivers_by_key[username] = caregiver
+        users_by_key[username] = user
+
+    await session.commit()
+    return caregivers_by_key, users_by_key
+
+
+async def seed_sim_team_observer_access(
+    session: AsyncSession,
+    workspace_id: int,
+    caregivers_by_key: dict[str, CareGiver],
+    patients: list[Patient],
+) -> int:
+    """Grant both sim observers visibility to all seeded patients (non-admin roles need access rows)."""
+    observer_keys = ("sim_observer1", "sim_observer2")
+    created = 0
+    for key in observer_keys:
+        cg = caregivers_by_key.get(key)
+        if not cg:
+            continue
+        for patient in patients:
+            q = await session.execute(
+                select(CareGiverPatientAccess).where(
+                    CareGiverPatientAccess.workspace_id == workspace_id,
+                    CareGiverPatientAccess.caregiver_id == cg.id,
+                    CareGiverPatientAccess.patient_id == patient.id,
+                    CareGiverPatientAccess.is_active.is_(True),
+                )
+            )
+            row = q.scalar_one_or_none()
+            if row is None:
+                session.add(
+                    CareGiverPatientAccess(
+                        workspace_id=workspace_id,
+                        caregiver_id=cg.id,
+                        patient_id=patient.id,
+                        assigned_by_user_id=None,
+                        is_active=True,
+                    )
+                )
+                created += 1
+    await session.commit()
+    return created
+
+
+async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
+    """Minimal seed for MQTT simulator + role UX: rooms, 5 patients + wheelchair assignments, 4 staff users, bootstrap admin on workspace."""
+    async with AsyncSessionLocal() as session:
+        ws = await ensure_workspace(session, workspace_name, reset)
+        await clear_workspace_event_data(session, ws.id)
+
+        facility, floors = await seed_facility(session, ws.id)
+        rooms = await seed_rooms(session, ws.id, floors)
+        await seed_floorplan_layouts(session, ws.id, facility, floors, rooms)
+        caregivers_by_key, _users_by_key = await seed_sim_team_caregivers_and_users(session, ws.id)
+        patients, devices = await seed_patients_and_devices(session, ws.id, rooms)
+        extra_devices = await seed_additional_sim_devices(session, ws.id)
+        devices.extend(extra_devices)
+        room_node_mappings = await seed_room_node_mappings(session, ws.id, rooms)
+        smart_devices_count = await seed_smart_devices(session, ws.id, rooms)
+        access_rows = await seed_sim_team_observer_access(session, ws.id, caregivers_by_key, patients)
+        await attach_bootstrap_admin_to_workspace(session, ws.id)
+        workspace_id = ws.id
+
+    print("\n[OK] Sim team seed complete (simulator-ready).")
+    print(f"Workspace id: {workspace_id} | name: {workspace_name}")
+    print(f"Rooms: {len(rooms)} | Patients: {len(patients)} | Wheelchair devices + assignments: OK")
+    print(f"Smart devices: {smart_devices_count} | Room-node mappings: {room_node_mappings}")
+    print(f"Observer patient access rows (new): {access_rows}")
+    print("\nStaff logins (password demo1234):")
+    print("  sim_headnurse   (head_nurse)")
+    print("  sim_supervisor  (supervisor)")
+    print("  sim_observer1   (observer)")
+    print("  sim_observer2   (observer)")
+    print("\nAdmin: use your bootstrap account (see BOOTSTRAP_ADMIN_USERNAME / BOOTSTRAP_ADMIN_PASSWORD).")
+    print(f"\nDocker simulator: set SIM_WORKSPACE_ID={workspace_id} in server/.env, then:")
+    print("  docker compose --profile simulator up -d --build wheelsense-simulator")
+    return workspace_id
 
 
 async def run_seed(workspace_name: str, reset: bool) -> None:

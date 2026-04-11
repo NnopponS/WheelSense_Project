@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { UserRoundPlus, Unlink2 } from "lucide-react";
-import { useQuery } from "@/hooks/useQuery";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import SearchableListboxPicker from "@/components/shared/SearchableListboxPicker";
 import type { DevicePatientLink, Patient } from "@/lib/types";
@@ -39,7 +40,14 @@ export default function PatientLinkSection({
     const path = q ? `/patients?q=${encodeURIComponent(q)}&limit=50` : "/patients?limit=50";
     return withWorkspaceScope(path, workspaceId);
   }, [search, workspaceId]);
-  const { data: patients, isLoading: patientsLoading } = useQuery<Patient[]>(patientEndpoint);
+  const { data: patients, isLoading: patientsLoading } = useQuery({
+    queryKey: ["admin", "devices", "patient-link", deviceId, patientEndpoint],
+    queryFn: () => api.get<Patient[]>(patientEndpoint!),
+    enabled: Boolean(patientEndpoint),
+    staleTime: patientEndpoint ? getQueryStaleTimeMs(patientEndpoint) : 0,
+    refetchInterval: patientEndpoint ? getQueryPollingMs(patientEndpoint) : false,
+    retry: 3,
+  });
 
   const listOptions = useMemo(() => {
     const rows = patients ?? [];
@@ -111,12 +119,12 @@ export default function PatientLinkSection({
 
   return (
     <section className="space-y-2">
-      <h4 className="text-sm font-semibold text-on-surface">{t("devicesDetail.patient")}</h4>
+      <h4 className="text-sm font-semibold text-foreground">{t("devicesDetail.patient")}</h4>
       {linkedPatient ? (
-        <div className="rounded-xl bg-surface-container-low p-2.5 text-sm text-on-surface flex items-center justify-between gap-2">
+        <div className="rounded-xl bg-surface-container-low p-2.5 text-sm text-foreground flex items-center justify-between gap-2">
           <span>
             {linkedPatient.patient_name}{" "}
-            <span className="text-on-surface-variant text-xs">({linkedPatient.device_role})</span>
+            <span className="text-foreground-variant text-xs">({linkedPatient.device_role})</span>
           </span>
           <button
             type="button"
@@ -129,11 +137,11 @@ export default function PatientLinkSection({
           </button>
         </div>
       ) : (
-        <p className="text-xs text-on-surface-variant">{t("devicesDetail.noPatient")}</p>
+        <p className="text-xs text-foreground-variant">{t("devicesDetail.noPatient")}</p>
       )}
 
       <div className="rounded-xl border border-outline-variant/15 bg-surface-container-low/40 p-3 space-y-3">
-        <p className="text-xs text-on-surface-variant">{t("devicesDetail.linkPatientHint")}</p>
+        <p className="text-xs text-foreground-variant">{t("devicesDetail.linkPatientHint")}</p>
         <SearchableListboxPicker
           inputId="device-detail-patient-combobox"
           listboxId="device-detail-patient-listbox"
@@ -157,7 +165,7 @@ export default function PatientLinkSection({
         />
 
         {selectedPatientId && selectedRow ? (
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-on-surface">
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-foreground">
             <span className="truncate font-medium">
               {t("patients.deviceSelected")}:{" "}
               {`${selectedRow.first_name} ${selectedRow.last_name}`.trim() || `#${selectedRow.id}`}

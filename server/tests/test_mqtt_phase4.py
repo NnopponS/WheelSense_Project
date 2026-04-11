@@ -73,7 +73,7 @@ async def ws_with_patient():
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room", return_value=None)
+@patch("app.mqtt_handler.predict_room_with_strategy", return_value=None)
 async def test_unknown_device_telemetry_is_dropped(mock_predict, ws_with_patient):
     from app.mqtt_handler import _handle_telemetry
 
@@ -97,7 +97,7 @@ async def test_unknown_device_telemetry_is_dropped(mock_predict, ws_with_patient
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room", return_value=None)
+@patch("app.mqtt_handler.predict_room_with_strategy", return_value=None)
 async def test_polar_hr_creates_vital_reading(mock_predict, ws_with_patient):
     """When telemetry contains polar_hr, a VitalReading should be created."""
     from app.mqtt_handler import _handle_telemetry
@@ -129,7 +129,7 @@ async def test_polar_hr_creates_vital_reading(mock_predict, ws_with_patient):
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room", return_value=None)
+@patch("app.mqtt_handler.predict_room_with_strategy", return_value=None)
 async def test_polar_hr_publishes_vitals(mock_predict, ws_with_patient):
     """Should publish vitals to WheelSense/vitals/{patient_id}."""
     from app.mqtt_handler import _handle_telemetry
@@ -153,7 +153,7 @@ async def test_polar_hr_publishes_vitals(mock_predict, ws_with_patient):
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room", return_value=None)
+@patch("app.mqtt_handler.predict_room_with_strategy", return_value=None)
 async def test_polar_hr_no_assignment_skips(mock_predict, ws_with_patient):
     """If device has no patient assignment, skip vital reading creation."""
     from app.mqtt_handler import _handle_telemetry
@@ -179,7 +179,7 @@ async def test_polar_hr_no_assignment_skips(mock_predict, ws_with_patient):
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room")
+@patch("app.mqtt_handler.predict_room_with_strategy")
 async def test_room_transition_creates_timeline_events(mock_predict, ws_with_patient):
     """When room prediction changes, create room_exit + room_enter events."""
     from app.mqtt_handler import _handle_telemetry, _room_tracker
@@ -225,7 +225,7 @@ async def test_room_transition_creates_timeline_events(mock_predict, ws_with_pat
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room")
+@patch("app.mqtt_handler.predict_room_with_strategy")
 async def test_room_no_transition_no_duplicate_events(mock_predict, ws_with_patient):
     """Same room prediction twice should NOT create duplicate events."""
     from app.mqtt_handler import _handle_telemetry, _room_tracker
@@ -260,7 +260,7 @@ async def test_room_no_transition_no_duplicate_events(mock_predict, ws_with_pati
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room", return_value=None)
+@patch("app.mqtt_handler.predict_room_with_strategy", return_value=None)
 async def test_fall_detection_creates_alert(mock_predict, ws_with_patient):
     """|az| > 3g AND velocity < 0.05 should create a fall alert."""
     from app.mqtt_handler import _handle_telemetry
@@ -290,7 +290,7 @@ async def test_fall_detection_creates_alert(mock_predict, ws_with_patient):
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room", return_value=None)
+@patch("app.mqtt_handler.predict_room_with_strategy", return_value=None)
 async def test_no_fall_when_velocity_high(mock_predict, ws_with_patient):
     """High az BUT high velocity = just motion, not a fall."""
     from app.mqtt_handler import _handle_telemetry
@@ -312,7 +312,7 @@ async def test_no_fall_when_velocity_high(mock_predict, ws_with_patient):
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
-@patch("app.mqtt_handler.predict_room", return_value=None)
+@patch("app.mqtt_handler.predict_room_with_strategy", return_value=None)
 async def test_no_fall_when_az_low(mock_predict, ws_with_patient):
     """Low az regardless of velocity = normal motion."""
     from app.mqtt_handler import _handle_telemetry

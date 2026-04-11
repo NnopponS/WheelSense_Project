@@ -10,7 +10,7 @@ from app.db.session import AsyncSessionLocal
 from app.models import Alert, CareDirective, CareSchedule, CareTask
 from app.models.caregivers import CareGiver
 from app.models.core import Room
-from app.models.future_domains import DemoActorPosition
+from app.models.care import DemoActorPosition
 from app.models.patients import Patient
 from app.models.users import User
 from app.services import device_management as dm

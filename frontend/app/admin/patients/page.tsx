@@ -1,162 +1,629 @@
 "use client";
+"use no memo";
 
-import { useCallback, useState } from "react";
-import { Plus, Search } from "lucide-react";
 import Link from "next/link";
-import { useTranslation } from "@/lib/i18n";
-import { useQuery } from "@/hooks/useQuery";
-import type { Patient, User } from "@/lib/types";
-import AddPatientModal from "@/components/admin/patients/AddPatientModal";
-import { PatientsDataTable } from "@/components/admin/patients/PatientsDataTable";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Search, Users, Plus, Calendar, Clock, Heart, UserCheck, AlertCircle, Filter } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/lib/api";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type { ListPatientsResponse, CareScheduleOut, CaregiverOut } from "@/lib/api/task-scope-types";
 
-export default function PatientsPage() {
+type CaregiverPatientAccessOut = {
+  caregiver_id: number;
+  patient_id: number;
+  is_active: boolean;
+};
+
+type PatientRow = {
+  id: number;
+  fullName: string;
+  careLevel: "critical" | "special" | "standard";
+  roomId: number | null;
+  status: "active" | "inactive";
+  admissionDate: string | null;
+  lastSeen: string | null;
+  assignedCaregivers: string[];
+  assignedCaregiversCount: number;
+};
+
+type Routine = {
+  id: number;
+  title: string;
+  schedule_type: "medication" | "check_in" | "procedure" | "meal";
+  time: string;
+  frequency: string;
+  assigned_to: string;
+  status: "active" | "paused" | "completed";
+};
+
+type FilterType = "all" | "critical" | "unassigned" | "recent";
+
+function formatCaregiver(caregiver: CaregiverOut): string {
+  return `${caregiver.first_name} ${caregiver.last_name}`.trim() || `Caregiver #${caregiver.id}`;
+}
+
+function careLevelTranslationKey(level: PatientRow["careLevel"]): TranslationKey {
+  switch (level) {
+    case "critical":
+      return "patients.careLevelCritical";
+    case "special":
+      return "patients.careLevelSpecial";
+    default:
+      return "patients.careLevelStandard";
+  }
+}
+
+function routineScheduleTypeKey(type: Routine["schedule_type"]): TranslationKey {
+  switch (type) {
+    case "medication":
+      return "adminPatients.scheduleMedication";
+    case "check_in":
+      return "adminPatients.scheduleCheckIn";
+    case "procedure":
+      return "adminPatients.scheduleProcedure";
+    case "meal":
+      return "adminPatients.scheduleMeal";
+    default:
+      return "adminPatients.scheduleCheckIn";
+  }
+}
+
+function routineStatusKey(status: Routine["status"]): TranslationKey {
+  switch (status) {
+    case "active":
+      return "adminPatients.routineStatusActive";
+    case "paused":
+      return "adminPatients.routineStatusPaused";
+    case "completed":
+      return "adminPatients.routineStatusCompleted";
+    default:
+      return "adminPatients.routineStatusActive";
+  }
+}
+
+export default function AdminPatientsPage() {
   const { t } = useTranslation();
-  const { data: patients, isLoading, refetch } = useQuery<Patient[]>("/patients");
-  const { data: users } = useQuery<User[]>("/users");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [sharedSearch, setSharedSearch] = useState("");
-  const [careLevelFilter, setCareLevelFilter] = useState<"all" | Patient["care_level"]>("all");
-  const [activeStatusFilter, setActiveStatusFilter] = useState<"all" | "active" | "inactive">("all");
-  const [roomFilter, setRoomFilter] = useState<"all" | "assigned" | "unassigned">("all");
-  const unlinkedPatientAccounts =
-    users?.filter(
-      (item) => item.is_active && item.role === "patient" && item.patient_id == null,
-    ).length ?? 0;
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
-  const onCreated = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+  // Admin has workspace-wide patient access (no caregiver filtering)
+  const patientsQuery = useQuery({
+    queryKey: ["admin", "patients", "list"],
+    queryFn: () => api.listPatients({ limit: 1000 }),
+  });
+
+  const schedulesQuery = useQuery({
+    queryKey: ["admin", "patients", "schedules"],
+    queryFn: () => api.listWorkflowSchedules({ limit: 500 }),
+  });
+
+  const caregiversQuery = useQuery({
+    queryKey: ["admin", "patients", "caregivers"],
+    queryFn: () => api.listCaregivers({ limit: 1000 }),
+  });
+
+  const caregiverAccessQuery = useQuery({
+    queryKey: [
+      "admin",
+      "patients",
+      "caregiver-access",
+      (caregiversQuery.data ?? []).map((caregiver) => caregiver.id).join(","),
+    ],
+    queryFn: async () => {
+      const caregivers = (caregiversQuery.data ?? []) as CaregiverOut[];
+      const entries = await Promise.all(
+        caregivers.map(async (caregiver) => {
+          const assignments = await api
+            .get<CaregiverPatientAccessOut[]>(`/caregivers/${caregiver.id}/patients`)
+            .catch(() => []);
+          return { caregiver, assignments };
+        }),
+      );
+
+      const map = new Map<number, string[]>();
+      for (const { caregiver, assignments } of entries) {
+        const caregiverName = formatCaregiver(caregiver);
+        for (const assignment of assignments.filter((item) => item.is_active)) {
+          const list = map.get(assignment.patient_id) ?? [];
+          if (!list.includes(caregiverName)) {
+            list.push(caregiverName);
+          }
+          map.set(assignment.patient_id, list);
+        }
+      }
+
+      for (const list of map.values()) {
+        list.sort((left, right) => left.localeCompare(right));
+      }
+
+      return map;
+    },
+    enabled: caregiversQuery.isSuccess,
+  });
+
+  // Get routines for all patients
+  const allRoutines = useMemo((): Routine[] => {
+    const schedules = (schedulesQuery.data ?? []) as CareScheduleOut[];
+
+    return schedules.map((schedule) => ({
+      id: schedule.id,
+      title: schedule.title,
+      schedule_type: (schedule.schedule_type as Routine["schedule_type"]) || "check_in",
+      time: schedule.starts_at,
+      frequency: schedule.recurrence_rule || t("adminPatients.freqOnce"),
+      assigned_to:
+        schedule.assigned_person?.display_name ||
+        schedule.assigned_role ||
+        t("adminPatients.routineUnassigned"),
+      status: (schedule.status as Routine["status"]) || "active",
+    }));
+  }, [schedulesQuery.data, t]);
+
+  // Get upcoming routines (next 24 hours)
+  const upcomingRoutines = useMemo(() => {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    return allRoutines
+      .filter((r) => {
+        const routineTime = new Date(r.time);
+        return routineTime >= now && routineTime <= tomorrow && r.status === "active";
+      })
+      .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
+      .slice(0, 10);
+  }, [allRoutines]);
+
+  const patientRows = useMemo<PatientRow[]>(() => {
+    const source = (patientsQuery.data ?? []) as ListPatientsResponse;
+    const q = search.trim().toLowerCase();
+    const caregiverMap = caregiverAccessQuery.data ?? new Map<number, string[]>();
+
+    return source
+      .filter((patient) => {
+        if (!q) return true;
+        const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
+        return fullName.includes(q) || String(patient.id).includes(q);
+      })
+      .map((patient) => {
+        const assignedCaregivers = caregiverMap.get(patient.id) ?? [];
+        
+        return {
+          id: patient.id,
+          fullName: `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`,
+          careLevel: (patient.care_level as PatientRow["careLevel"]) || "standard",
+          roomId: patient.room_id,
+          status: patient.is_active ? "active" : "inactive",
+          admissionDate: (patient as { created_at?: string | null }).created_at || null,
+          lastSeen: null, // updated_at not available in current schema
+          assignedCaregivers,
+          assignedCaregiversCount: assignedCaregivers.length,
+        };
+      });
+  }, [caregiverAccessQuery.data, patientsQuery.data, search]);
+
+  // Apply quick filters
+  const filteredRows = useMemo(() => {
+    switch (activeFilter) {
+      case "critical":
+        return patientRows.filter((p) => p.careLevel === "critical");
+      case "unassigned":
+        return patientRows.filter((p) => p.roomId === null || p.assignedCaregiversCount === 0);
+      case "recent":
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return patientRows.filter((p) => {
+          if (!p.admissionDate) return false;
+          return new Date(p.admissionDate) >= weekAgo;
+        });
+      default:
+        return patientRows;
+    }
+  }, [patientRows, activeFilter]);
+
+  // Stats calculations
+  const stats = useMemo(() => {
+    const total = patientRows.length;
+    const critical = patientRows.filter((p) => p.careLevel === "critical").length;
+    const unassigned = patientRows.filter((p) => p.roomId === null).length;
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const recent = patientRows.filter((p) => {
+      if (!p.admissionDate) return false;
+      return new Date(p.admissionDate) >= weekAgo;
+    }).length;
+
+    return { total, critical, unassigned, recent };
+  }, [patientRows]);
+
+  const getCareLevelVariant = (level: PatientRow["careLevel"]) => {
+    switch (level) {
+      case "critical":
+        return "destructive";
+      case "special":
+        return "warning";
+      default:
+        return "success";
+    }
+  };
+
+  const getRoutineTypeColor = (type: Routine["schedule_type"]) => {
+    switch (type) {
+      case "medication":
+        return "bg-red-500/12 text-red-700 dark:text-red-300 border-red-500/30";
+      case "check_in":
+        return "bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/30";
+      case "procedure":
+        return "bg-purple-500/12 text-purple-700 dark:text-purple-300 border-purple-500/30";
+      case "meal":
+        return "bg-green-500/12 text-green-700 dark:text-green-300 border-green-500/30";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const columns = useMemo<ColumnDef<PatientRow>[]>(
+    () => [
+      {
+        accessorKey: "fullName",
+        header: t("patients.colPatient"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.fullName}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("patients.recordId")} #{row.original.id}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "careLevel",
+        header: t("patients.careLevel"),
+        cell: ({ row }) => (
+          <Badge variant={getCareLevelVariant(row.original.careLevel)}>
+            {t(careLevelTranslationKey(row.original.careLevel))}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "roomId",
+        header: t("patients.colRoom"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p>
+              {row.original.roomId != null
+                ? `${t("patients.roomPrefix")} #${row.original.roomId}`
+                : t("patients.unassignedShort")}
+            </p>
+            {row.original.roomId === null && (
+              <Badge variant="outline" className="text-xs">
+                {t("patients.needsAssignment")}
+              </Badge>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "assignedCaregivers",
+        header: t("patients.colCaregivers"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p>
+              {row.original.assignedCaregivers.length > 0
+                ? row.original.assignedCaregivers.join(", ")
+                : t("patients.unassignedShort")}
+            </p>
+            {row.original.assignedCaregiversCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {row.original.assignedCaregiversCount === 1
+                  ? t("adminPatients.caregiversAssignedOne")
+                  : t("adminPatients.caregiversAssignedMany").replace(
+                      "{count}",
+                      String(row.original.assignedCaregiversCount),
+                    )}
+              </p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "admissionDate",
+        header: t("patients.colAdmission"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p>{row.original.admissionDate ? formatDateTime(row.original.admissionDate) : "-"}</p>
+            {row.original.admissionDate && (
+              <p className="text-xs text-muted-foreground">
+                {formatRelativeTime(row.original.admissionDate)}
+              </p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "lastSeen",
+        header: t("patients.colLastUpdated"),
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p>{row.original.lastSeen ? formatRelativeTime(row.original.lastSeen) : "-"}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: t("patients.colStatus"),
+        cell: ({ row }) => (
+          <Badge variant={row.original.status === "active" ? "success" : "outline"}>
+            {row.original.status === "active" ? t("patients.statusActive") : t("patients.statusInactive")}
+          </Badge>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/admin/patients/${row.original.id}`}>{t("patients.viewProfile")}</Link>
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  const isLoading =
+    patientsQuery.isLoading || schedulesQuery.isLoading || caregiversQuery.isLoading || caregiverAccessQuery.isLoading;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">{t("patients.title")}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Standardized registry view with shared filters, sortable columns, and validated intake.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("adminPatients.subtitle")}</p>
         </div>
-        <Button type="button" onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4" />
-          {t("patients.addNew")}
+        <Button asChild>
+          <Link href="/admin/patients/new">
+            <Plus className="mr-1.5 h-4 w-4" />
+            {t("patients.addNew")}
+          </Link>
         </Button>
       </div>
 
-      {unlinkedPatientAccounts > 0 ? (
-        <div className="rounded-xl border border-amber-400/45 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span className="font-semibold">
-            {unlinkedPatientAccounts} active patient account(s) are not linked.
-          </span>{" "}
-          <Link href="/admin/account-management" className="font-semibold underline">
-            Open account management
-          </Link>
-          {" "}to assign them to the correct patient records.
-        </div>
-      ) : null}
+      {/* Stats Cards */}
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <SummaryStatCard
+          icon={Users}
+          label={t("adminPatients.statTotal")}
+          value={stats.total}
+          tone="info"
+        />
+        <SummaryStatCard
+          icon={Heart}
+          label={t("adminPatients.statCritical")}
+          value={stats.critical}
+          tone={stats.critical > 0 ? "critical" : "success"}
+        />
+        <SummaryStatCard
+          icon={AlertCircle}
+          label={t("adminPatients.statUnassignedRooms")}
+          value={stats.unassigned}
+          tone={stats.unassigned > 0 ? "warning" : "success"}
+        />
+        <SummaryStatCard
+          icon={Calendar}
+          label={t("adminPatients.statRecentAdmissions")}
+          value={stats.recent}
+          tone="info"
+        />
+      </section>
 
-      <Card>
-        <CardContent className="grid gap-4 pt-6 md:grid-cols-2 xl:grid-cols-4">
-          <div className="relative xl:col-span-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={t("patients.search")}
-              value={sharedSearch}
-              onChange={(event) => setSharedSearch(event.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <FilterSelect
-            value={careLevelFilter}
-            onValueChange={(value) =>
-              setCareLevelFilter(value as "all" | Patient["care_level"])
-            }
-            placeholder={t("patients.careLevel")}
-            options={[
-              { value: "all", label: t("devicesDetail.tabAll") },
-              { value: "normal", label: "normal" },
-              { value: "special", label: "special" },
-              { value: "critical", label: "critical" },
-            ]}
-          />
-          <FilterSelect
-            value={activeStatusFilter}
-            onValueChange={(value) =>
-              setActiveStatusFilter(value as "all" | "active" | "inactive")
-            }
-            placeholder={t("patients.accountStatus")}
-            options={[
-              { value: "all", label: t("devicesDetail.tabAll") },
-              { value: "active", label: t("patients.statusActive") },
-              { value: "inactive", label: t("patients.statusInactive") },
-            ]}
-          />
-          <FilterSelect
-            value={roomFilter}
-            onValueChange={(value) =>
-              setRoomFilter(value as "all" | "assigned" | "unassigned")
-            }
-            placeholder={t("patients.room")}
-            options={[
-              { value: "all", label: t("devicesDetail.tabAll") },
-              { value: "assigned", label: "Room assigned" },
-              { value: "unassigned", label: t("patients.noRoom") },
-            ]}
-          />
-        </CardContent>
-      </Card>
+      {/* Quick Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Filter className="h-4 w-4 text-muted-foreground mr-1" />
+        <Button
+          size="sm"
+          variant={activeFilter === "all" ? "default" : "outline"}
+          onClick={() => setActiveFilter("all")}
+        >
+          {t("adminPatients.filterAll")}
+        </Button>
+        <Button
+          size="sm"
+          variant={activeFilter === "critical" ? "destructive" : "outline"}
+          onClick={() => setActiveFilter("critical")}
+        >
+          <AlertCircle className="mr-1.5 h-4 w-4" />
+          {t("adminPatients.filterCritical")}
+        </Button>
+        <Button
+          size="sm"
+          variant={activeFilter === "unassigned" ? "default" : "outline"}
+          className={activeFilter === "unassigned" ? "bg-amber-600 hover:bg-amber-700" : ""}
+          onClick={() => setActiveFilter("unassigned")}
+        >
+          <UserCheck className="mr-1.5 h-4 w-4" />
+          {t("adminPatients.filterUnassigned")}
+        </Button>
+        <Button
+          size="sm"
+          variant={activeFilter === "recent" ? "default" : "outline"}
+          onClick={() => setActiveFilter("recent")}
+        >
+          <Clock className="mr-1.5 h-4 w-4" />
+          {t("adminPatients.filterRecent")}
+        </Button>
+      </div>
 
-      <PatientsDataTable
-        patients={patients}
-        isLoading={isLoading}
-        search={sharedSearch}
-        careLevel={careLevelFilter}
-        activeStatus={activeStatusFilter}
-        room={roomFilter}
-      />
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t("adminPatients.searchPlaceholder")}
+          className="pl-9"
+        />
+      </div>
 
-      <AddPatientModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onCreated={onCreated}
-      />
+      <Tabs defaultValue="patients" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="patients">{t("adminPatients.tabPatients")}</TabsTrigger>
+          <TabsTrigger value="routines">
+            {t("adminPatients.tabRoutines")}
+            {upcomingRoutines.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">
+                {upcomingRoutines.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="patients" className="space-y-6">
+          <DataTableCard
+            title={t("adminPatients.rosterTitle")}
+            description={t("adminPatients.rosterDescription")}
+            data={filteredRows}
+            columns={columns}
+            isLoading={isLoading}
+            emptyText={t("adminPatients.emptyRoster")}
+            rightSlot={<Users className="h-4 w-4 text-muted-foreground" />}
+          />
+        </TabsContent>
+
+        <TabsContent value="routines" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("adminPatients.upcomingRoutinesTitle")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex min-h-64 items-center justify-center">
+                  <div className="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                </div>
+              ) : upcomingRoutines.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  {t("adminPatients.noUpcomingRoutines")}
+                </p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {upcomingRoutines.map((routine) => (
+                    <Card key={routine.id} className="border-l-4" style={{ borderLeftColor: "var(--border)" }}>
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-medium">{routine.title}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {formatDateTime(routine.time)}
+                            </p>
+                          </div>
+                          <Badge className={getRoutineTypeColor(routine.schedule_type)}>
+                            {t(routineScheduleTypeKey(routine.schedule_type))}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{routine.frequency}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <UserCheck className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">{routine.assigned_to}</span>
+                        </div>
+                        <Badge variant={routine.status === "active" ? "success" : "outline"}>
+                          {t(routineStatusKey(routine.status))}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("adminPatients.allRoutinesTitle")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex min-h-64 items-center justify-center">
+                  <div className="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                </div>
+              ) : allRoutines.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  {t("adminPatients.noRoutinesDefined")}
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted/55">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-medium">
+                          {t("adminPatients.routineColTitle")}
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium">
+                          {t("adminPatients.routineColType")}
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium">
+                          {t("adminPatients.routineColTime")}
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium">
+                          {t("adminPatients.routineColFrequency")}
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium">
+                          {t("adminPatients.routineColAssigned")}
+                        </th>
+                        <th className="px-4 py-3 text-left text-sm font-medium">
+                          {t("adminPatients.routineColStatus")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allRoutines.map((routine) => (
+                        <tr key={routine.id} className="border-b border-border/70">
+                          <td className="px-4 py-3">
+                            <p className="font-medium">{routine.title}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge className={getRoutineTypeColor(routine.schedule_type)}>
+                              {t(routineScheduleTypeKey(routine.schedule_type))}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {formatDateTime(routine.time)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {routine.frequency}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            {routine.assigned_to}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={routine.status === "active" ? "success" : routine.status === "paused" ? "warning" : "outline"}>
+                              {t(routineStatusKey(routine.status))}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
-  );
-}
-
-function FilterSelect({
-  value,
-  onValueChange,
-  placeholder,
-  options,
-}: {
-  value: string;
-  onValueChange: (value: string) => void;
-  placeholder: string;
-  options: Array<{ value: string; label: string }>;
-}) {
-  return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={`${placeholder}-${option.value}`} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   );
 }

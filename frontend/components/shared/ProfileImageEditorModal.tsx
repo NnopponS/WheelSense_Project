@@ -202,13 +202,13 @@ export default function ProfileImageEditorModal({
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/15">
-          <h2 id={titleId} className="text-base font-semibold text-on-surface">
+          <h2 id={titleId} className="text-base font-semibold text-foreground">
             {t("profile.avatar.editorTitle")}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-smooth"
+            className="p-2 rounded-lg text-foreground-variant hover:bg-surface-container-high transition-smooth"
             aria-label={t("profile.avatar.cancel")}
           >
             <X className="w-5 h-5" />
@@ -226,10 +226,10 @@ export default function ProfileImageEditorModal({
             </div>
           )}
 
-          <p className="text-xs text-on-surface-variant">{t("profile.avatar.urlHint")}</p>
+          <p className="text-xs text-foreground-variant">{t("profile.avatar.urlHint")}</p>
 
           <div>
-            <label htmlFor={urlInputId} className="block text-sm font-medium text-on-surface mb-1">
+            <label htmlFor={urlInputId} className="block text-sm font-medium text-foreground mb-1">
               {t("profile.avatar.changePhoto")}
             </label>
             <input
@@ -246,7 +246,7 @@ export default function ProfileImageEditorModal({
           </div>
 
           <div>
-            <label htmlFor={fileInputId} className="block text-sm font-medium text-on-surface mb-1">
+            <label htmlFor={fileInputId} className="block text-sm font-medium text-foreground mb-1">
               {t("profile.avatar.localFileLabel")}
             </label>
             <input
@@ -255,15 +255,15 @@ export default function ProfileImageEditorModal({
               type="file"
               accept="image/*"
               disabled={saving}
-              className="block w-full text-sm text-on-surface-variant file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-surface-container-high file:text-on-surface disabled:opacity-60"
+              className="block w-full text-sm text-foreground-variant file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-surface-container-high file:text-foreground disabled:opacity-60"
               onChange={(e) => void handlePickFile(e)}
             />
             {fileLabel && (
-              <p className="mt-1 text-xs text-on-surface-variant truncate" title={fileLabel}>
+              <p className="mt-1 text-xs text-foreground-variant truncate" title={fileLabel}>
                 {fileLabel}
               </p>
             )}
-            <p className="mt-1 text-xs text-on-surface-variant">{t("profile.avatar.cropHint")}</p>
+            <p className="mt-1 text-xs text-foreground-variant">{t("profile.avatar.cropHint")}</p>
           </div>
 
           {error && (
@@ -285,7 +285,7 @@ export default function ProfileImageEditorModal({
             ) : null}
             <button
               type="button"
-              className="px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high transition-smooth"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-foreground-variant hover:bg-surface-container-high transition-smooth"
               onClick={onClose}
               disabled={saving}
             >

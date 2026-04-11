@@ -12,3 +12,7 @@ from .workflow import (  # noqa: F401
     care_directive_service,
     audit_trail_service,
 )
+from .floorplans import floorplan_service, floorplan_presence_service  # noqa: F401
+from .care import specialist_service  # noqa: F401
+from .medication import prescription_service, pharmacy_order_service  # noqa: F401
+from .service_requests import service_request_service  # noqa: F401

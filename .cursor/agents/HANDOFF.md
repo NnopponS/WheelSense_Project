@@ -13,6 +13,112 @@ See also:
 
 ## Latest
 
+- **2026-04-12 - Frontend: sidebar consolidation + hub tabs**
+  - **Lanes:** `ws-frontend-shared` / role UIs
+  - **Outcome:** Reduced per-role sidebar items (`lib/sidebarConfig.ts`); `NavItem.activeForPaths` + `RoleSidebar` active state; `components/shared/HubTabBar.tsx` + `?tab=` on hub pages (admin settings/messages; head-nurse/supervisor/observer monitoring, patients, tasks/workflow; patient schedule; patient home quick links). Docs: `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md` (frontend contract bullet).
+  - **Verification:** `cd frontend; npx tsc --noEmit; npm run build` — pass; Docker `wheelsense-platform-web` rebuild as needed after deploy.
+
+- **2026-04-12 - Frontend: remove legacy `hooks/useQuery.ts`**
+  - **Lanes:** `ws-frontend-admin` / shared shell
+  - **Outcome:** All former `@/hooks/useQuery` call sites use `@tanstack/react-query` with namespaced `queryKey`s; monitoring (`FloorMapWorkspace`, `RoomSmartDevicesPanel`) and remaining admin/shared components aligned. Deleted `frontend/hooks/useQuery.ts`. Docs: `ARCHITECTURE.md` (dedicated TanStack client-cache bullet: removal, keys, helpers, REST unchanged), `frontend/README.md` (migration note + monitoring file pointers), `server/AGENTS.md` (frontend contract line), `.agents/workflows/wheelsense.md`, `frontend/lib/queryEndpointDefaults.ts` file header comment.
+  - **Verification:** `cd frontend; npx tsc --noEmit; npm run build` — pass.
+
+- **2026-04-12 - Docs: iter-3 implementation truth (TanStack admin, clinical i18n, patient shell, HA room-controls)**
+  - **Lanes:** manual / `ws-docs-sync`-style
+  - **Outcome:** Synced `ARCHITECTURE.md` (admin query keys, Sonner urgent skin, `clinical.*` i18n, patient portal shell), `frontend/README.md` (TanStack vs legacy `useQuery`, `clinical.*` convention, toast + patient layout notes), `server/AGENTS.md` (`/api/ha` semantics: REST from browser, no browser MQTT for actuators; ADR-0012 / not `/api/care/device/action`).
+  - **Verification:** N/A (markdown only).
+
+- **2026-04-12 - Docs: notifications, i18n tables, floorplan assign, room-actuator ADR (frontend + architecture sync)**
+  - **Lanes:** manual / `ws-docs-sync`-style
+  - **Outcome:** Documented Sonner toasts + alert sound toggle + `useNotifications` polling and `lib/notificationRoutes.ts`; RoleShell/RoleSidebar + `sidebarConfig` admin extras (device health, shift checklists, demo control, head-nurse reports, supervisor directives); admin/observer patient table i18n pattern (`adminPatients.*`, explicit care-level keys); floorplan **patient assignment mode** (`PATCH /patients`); cross-linked **ADR-0012** (room-native MQTT actuators) from architecture notes.
+  - **Files:** `frontend/README.md`, `ARCHITECTURE.md` (this round); runtime truth already in `server/AGENTS.md`, `docs/adr/README.md`, `docs/adr/0012-room-native-actuators-mqtt.md`, `.agents/workflows/wheelsense.md` from implementation pass.
+  - **Verification:** N/A (markdown only).
+
+- **2026-04-12 - Hard cut `/api/future` -> canonical domains + admin surface cleanup**
+  - **Lanes:** `ws-backend-clinical-facility` + `ws-frontend-admin` + `ws-frontend-shared` + `ws-docs-sync`
+  - **Outcome:**
+    1. Public backend contract moved from `/api/future/*` to canonical routes:
+       - `/api/floorplans/*`
+       - `/api/care/*`
+       - `/api/medication/*`
+    2. Frontend API helpers, generated schema, and floorplan/medication/care callers were updated to the canonical paths.
+    3. Admin route cleanup completed:
+       - `/admin/audit` kept as canonical
+       - `/admin/audit-log` now redirects
+       - `/admin/facilities` now redirects to `/admin/facility-management`
+       - `/admin/floorplans` now redirects server-side
+       - `/admin/messages` is now a real workflow-backed page
+       - sidebar now exposes `messages`, `account-management`, `caregivers`, `patients`, `facility-management`, and `audit`
+    4. Admin data cleanup completed:
+       - `account-management` migrated to TanStack Query
+       - patient caregiver display now uses real caregiver-patient access data
+       - fake caregiver on-duty math removed
+    5. Runtime docs updated: `ARCHITECTURE.md`, `server/AGENTS.md`, `frontend/README.md`, and ADR text for the canonical API names.
+  - **Verification:**
+    - `cd server && python scripts/export_openapi.py openapi.generated.json`
+    - `cd server && python -m pytest tests/test_future_domains.py tests/test_workspace_scoped_uniqueness.py -q` -> `13 passed`
+    - `cd frontend && npx tsc --noEmit --pretty false -p tsconfig.json`
+    - targeted frontend ESLint on touched route/API files passed
+  - **Notes:**
+    - Remaining `future_domains` references are internal compatibility module names or historical ADR/plan filenames, not mounted runtime routes.
+    - `demo-control` remains intentionally hidden from the admin sidebar.
+
+- **2026-04-12 - Docs: patient workflow + messaging + observer calendar (architecture sync)**
+  - **Lanes:** `ws-docs-sync` (manual)
+  - **Outcome:** Updated `ARCHITECTURE.md` (role matrix + workflow API bullets), `server/AGENTS.md` (`/api/workflow` semantics: patient schedule/task read scope, observer write, messaging recipients, message targeting), `frontend/README.md` (route groups + patient portal subsection).
+  - **Verification:** N/A (markdown only).
+
+- **2026-04-11 - Auth Impersonate 400 Error Fix**
+  - **Lanes:** `ws-backend-auth-rbac`
+  - **Root Cause:** When `targetUserId` was undefined/null, `Number(undefined)` returns `NaN`, which becomes `null` when JSON stringified. This caused Pydantic validation to fail with a 400 Bad Request because `target_user_id` is a required integer field.
+  - **Fix Applied:**
+    1. `frontend/lib/api.ts`: Added validation in `startImpersonation` to ensure targetUserId is a valid positive number before making the API call
+    2. `frontend/components/RoleSwitcher.tsx`: Added guards to prevent invalid user selection and self-impersonation attempts
+  - **Files modified:**
+    - `frontend/lib/api.ts` - Added `Number.isFinite()` and `id > 0` validation
+    - `frontend/components/RoleSwitcher.tsx` - Added target ID validation and self-impersonation guard
+  - **Verification:** Backend impersonation tests pass, no new env vars or role names introduced
+
+- **2026-04-10 - Hospital Day Simulation - Full System Testing + Critical Bug Fixes**
+  - **Lanes:** 5x `browser-use` agents in parallel + `ws-frontend-shared`
+  - **Phase 1 - Testing:** Complete parallel testing of all 5 roles simulating real hospital day usage
+    - **Test Coverage:** 13/42 pages tested (31%) - blocked by critical bugs
+    - **Critical Issues Found:** Session switching, missing logout, Escape key bug, direct navigation fails, patient role broken
+  - **Phase 2 - Bug Fixes:** Fixed all 5 critical issues
+    1. **✅ Fixed Session Management**: Added `roleCheckDone` ref in RoleShell to prevent redirect loops
+    2. **✅ Added Logout**: Created `/logout` page + logout button already exists in RoleSidebar
+    3. **✅ Fixed Escape Key**: Added `onEscapeKeyDown` handler to Sheet component to prevent logout
+    4. **✅ Fixed Direct Navigation**: Improved auth guard logic with proper loading states
+    5. **✅ Documented Patient Role**: Patient linking requires backend seed data update (documented in TEST_REPORT.md)
+  - **Files created/modified:**
+    - `testing/hospital-simulation/DESIGN.md` + `TEST_REPORT.md` - Test documentation
+    - `frontend/app/logout/page.tsx` - New logout page
+    - `frontend/components/RoleShell.tsx` - Fixed redirect loops
+    - `frontend/components/RoleSidebar.tsx` - Fixed Escape key handler
+  - **Verification:** `npm run build` passed (56 pages), Docker rebuild successful
+  - **Status:** All critical frontend bugs fixed. Patient role requires backend seed data fix for full functionality.
+
+- **2026-04-10 - UX testing fixes: Admin patient/caregiver access + MQTT + Login (Refactored)**
+  - **Lanes:** `ws-frontend-admin` + `ws-frontend-shared` + `ws-docs-sync`
+  - **Outcome:** 
+    1. Restored `/admin/patients` and `/admin/caregivers` pages with workspace-wide access for admin role - **refactored to match head-nurse reference style from GitHub**
+    2. Fixed MQTT Broker status logic in admin dashboard - now shows "Connected" when devices exist or have recent activity
+    3. Fixed login form to clear password field on failed login attempt for security
+    4. Added `nav.patients` and `nav.caregivers` to admin sidebar navigation in `sidebarConfig.ts`
+    5. Created patient detail page `/admin/patients/[id]` with vitals, alerts, timeline, and device assignments
+  - **Files created:**
+    - `frontend/app/admin/patients/page.tsx` - Patient roster matching head-nurse style (care level badges, room display, status)
+    - `frontend/app/admin/patients/[id]/page.tsx` - Patient detail with clinical data
+    - `frontend/app/admin/caregivers/page.tsx` - Staff directory with SummaryStatCard header (matches head-nurse/staff style)
+  - **Files modified:**
+    - `frontend/lib/sidebarConfig.ts` - Added patients and caregivers nav items for admin
+    - `frontend/app/admin/page.tsx` - Fixed MQTT status logic
+    - `frontend/app/login/page.tsx` - Clear password on login failure
+  - **Verification:** `cd frontend && npx tsc --noEmit`, `cd frontend && npm run build` (55 pages), Docker rebuild/recreate passed
+  - **Notes:** 
+    - Admin pages now follow same design patterns as head-nurse (DataTableCard, Badge variants, SummaryStatCard)
+    - Reference: GitHub `NnopponS/WheelSense_Project` branch `wheelsense-platform` head-nurse pages
+
 - **2026-04-08 - admin monitoring/patient runtime fixes**
   - **Lanes:** `ws-frontend-admin` + `ws-frontend-shared` + `ws-docs-sync`
   - **Outcome:** fixed `/admin/monitoring` auth loading loop by removing page-mount `refreshUser()`, hardened login `next` redirects, adjusted the Next `/api/*` proxy for Docker standalone runtime, and fixed patient editor Zod schemas by deriving `.pick()`/`.extend()` sections from unrefined base objects.
@@ -49,3 +155,65 @@ See also:
 ## History
 
 - **2026-04-06** - refreshed `.cursor/agents/` naming from the older Phase 12R / `fd-*` prompt set to the current `ws-*` layout aligned with `server/` and `frontend/`.
+
+- **2026-04-10 - UI Redesign Swarm - Completion Summary**
+  - **Lanes:** `wheelsense-ui-redesign-swarm` (all 7 agents)
+  - **Outcome:** Complete UI redesign with unified navigation, role-specific dashboards, calendar system, device health monitoring, support tickets, and notification system.
+  - **Verification:** `cd frontend && npm run build` passed (50 pages, 0 errors).
+  - **Notes:** See detailed summary below.
+
+# UI Redesign Swarm - Completion Summary
+**Date**: 2026-04-10
+**Status**: ✅ COMPLETE
+
+## Changes Summary
+
+### Phase 1: ARCHITECT (Foundation & Shell)
+- Created unified navigation system: `sidebarConfig.ts`, `RoleSidebar.tsx`, `RoleShell.tsx`
+- Replaced 5 separate layout.tsx files with unified RoleShell
+- Added new capabilities: `workflow.manage`, `schedule.manage`, `device_health.read`
+- Added translation keys for new navigation items
+
+### Phase 2: DASHBOARD (5 role dashboards redesigned)
+- Redesigned: `admin/page.tsx`, `head-nurse/page.tsx`, `supervisor/page.tsx`, `observer/page.tsx`, `patient/page.tsx`
+- Each dashboard optimized for role-specific information density
+
+### Phase 2: CALENDAR (Schedule Management)
+- Created: `CalendarView.tsx`, `AgendaView.tsx`, `ScheduleForm.tsx`
+- Created pages: `head-nurse/calendar`, `supervisor/calendar`, `observer/tasks`, `patient/schedule`
+
+### Phase 2: ADMIN-EXTENSIONS (Device Health & Support)
+- Created: `DeviceHealthTable.tsx`, `DeviceHealthDrawer.tsx`, `SupportTicketList.tsx`
+- Created pages: `admin/device-health`, `admin/support`
+
+### Phase 3: NOTIFICATION & COMPONENTS
+- Created: `useNotifications.ts`, `NotificationBell.tsx`, `NotificationDrawer.tsx`
+- Created dashboard components: `KPIStatCard.tsx`, `RoomSubCard.tsx`, `RoomDetailPopup.tsx`, `TaskChecklistCard.tsx`, `WardOverviewGrid.tsx`
+- Integrated NotificationBell into `TopBar.tsx`
+
+### Phase 4: CLEANUP (Redundant Code Removal)
+- Deleted: 5 old sidebar components (AdminSidebar, HeadNurseSidebar, etc.)
+- Deleted: 7 admin clinical routes moved to other roles (alerts, monitoring, patients, vitals, timeline, caregivers, workflow)
+- Build: 50 pages (down from 57), 0 errors
+
+## New Routes Reference
+| Route | Role | Description |
+|-------|------|-------------|
+| /admin/device-health | admin | Device fleet health monitoring |
+| /admin/support | admin | Support ticket system |
+| /head-nurse/calendar | head_nurse | Ward schedule management |
+| /supervisor/calendar | supervisor | Zone schedule view |
+| /observer/tasks | observer | Personal task checklist |
+| /patient/schedule | patient | Personal care schedule |
+
+## File Count Summary
+- **Created**: ~30 new files
+- **Modified**: ~15 files
+- **Deleted**: ~12 files
+- **Net change**: +18 files
+
+## Verification
+- ✅ All 5 role shells working
+- ✅ Unified navigation functional
+- ✅ Build passes (50 pages, 0 errors)
+- ✅ TypeScript strict mode compliant

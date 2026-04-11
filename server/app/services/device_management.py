@@ -18,12 +18,20 @@ from app.models.base import utcnow
 from app.models.caregivers import CareGiver, CareGiverDeviceAssignment
 from app.models.core import Device, DeviceCommandDispatch, Room
 from app.models.patients import Patient, PatientDeviceAssignment
-from app.models.telemetry import IMUTelemetry, PhotoRecord, RoomPrediction
+from app.models.telemetry import (
+    IMUTelemetry,
+    MobileDeviceTelemetry,
+    NodeStatusTelemetry,
+    PhotoRecord,
+    RoomPrediction,
+    RSSIReading,
+)
 from app.models.vitals import VitalReading
 from app.schemas.devices import (
     HARDWARE_TYPES,
     DeviceCommandRequest,
     DeviceCreate,
+    MobileTelemetryIngest,
     DevicePatch,
 )
 
@@ -198,6 +206,36 @@ async def _latest_photo(session: AsyncSession, ws_id: int, device_id: str) -> Ph
     )
     return (await session.execute(q)).scalar_one_or_none()
 
+
+async def _latest_node_status(
+    session: AsyncSession, ws_id: int, device_id: str
+) -> NodeStatusTelemetry | None:
+    q = (
+        select(NodeStatusTelemetry)
+        .where(
+            NodeStatusTelemetry.workspace_id == ws_id,
+            NodeStatusTelemetry.device_id == device_id,
+        )
+        .order_by(desc(NodeStatusTelemetry.timestamp))
+        .limit(1)
+    )
+    return (await session.execute(q)).scalar_one_or_none()
+
+
+async def _latest_mobile_telemetry(
+    session: AsyncSession, ws_id: int, device_id: str
+) -> MobileDeviceTelemetry | None:
+    q = (
+        select(MobileDeviceTelemetry)
+        .where(
+            MobileDeviceTelemetry.workspace_id == ws_id,
+            MobileDeviceTelemetry.device_id == device_id,
+        )
+        .order_by(desc(MobileDeviceTelemetry.timestamp))
+        .limit(1)
+    )
+    return (await session.execute(q)).scalar_one_or_none()
+
 async def _room_for_node(session: AsyncSession, ws_id: int, device_id: str) -> Room | None:
     q = select(Room).where(
         Room.workspace_id == ws_id,
@@ -263,6 +301,8 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
     imu = await _latest_imu(session, ws_id, device_id)
     pred = await _latest_prediction(session, ws_id, device_id)
     photo = await _latest_photo(session, ws_id, device_id)
+    node_status = await _latest_node_status(session, ws_id, device_id)
+    mobile_status = await _latest_mobile_telemetry(session, ws_id, device_id)
     room = await _room_for_node(session, ws_id, device_id)
     pa, patient = await _active_patient_assignment(session, ws_id, device_id)
     ca, caregiver = await _active_caregiver_assignment(session, ws_id, device_id)
@@ -278,9 +318,9 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
         )
     ).scalar_one_or_none()
 
-    realtime: dict[str, Any] = {}
-    if imu:
-        realtime = {
+    wheelchair_metrics = None
+    if imu is not None:
+        wheelchair_metrics = {
             "timestamp": imu.timestamp.isoformat() if imu.timestamp else None,
             "battery_pct": imu.battery_pct,
             "battery_v": imu.battery_v,
@@ -296,6 +336,75 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
             "accel_ms2": imu.accel_ms2,
             "direction": imu.direction,
         }
+
+    cfg = dev.config or {}
+    camera_meta = cfg.get("camera_status") if isinstance(cfg.get("camera_status"), dict) else {}
+    node_payload = node_status.payload if node_status and isinstance(node_status.payload, dict) else {}
+    node_payload = node_payload or (
+        camera_meta.get("payload") if isinstance(camera_meta.get("payload"), dict) else {}
+    )
+    node_metrics = None
+    if dev.hardware_type == "node" or node_status or node_payload or photo:
+        node_metrics = {
+            "timestamp": (
+                node_status.timestamp.isoformat()
+                if node_status and node_status.timestamp
+                else camera_meta.get("updated_at")
+            ),
+            "status": (node_status.status if node_status else None) or node_payload.get("status"),
+            "battery_pct": node_status.battery_pct if node_status else node_payload.get("battery_pct"),
+            "battery_v": node_status.battery_v if node_status else node_payload.get("battery_v"),
+            "charging": node_status.charging if node_status else node_payload.get("charging"),
+            "stream_enabled": (
+                node_status.stream_enabled if node_status else node_payload.get("stream_enabled")
+            ),
+            "frames_captured": (
+                node_status.frames_captured if node_status else node_payload.get("frames_captured")
+            ),
+            "snapshots_captured": (
+                node_status.snapshots_captured if node_status else node_payload.get("snapshots_captured")
+            ),
+            "last_snapshot_id": (
+                node_status.last_snapshot_id if node_status else node_payload.get("last_snapshot_id")
+            ),
+            "heap": node_status.heap if node_status else node_payload.get("heap"),
+            "ip_address": (node_status.ip_address if node_status else None)
+            or node_payload.get("ip_address")
+            or dev.ip_address,
+        }
+        if photo:
+            node_metrics["latest_photo_id"] = photo.id
+            node_metrics["latest_photo_at"] = photo.timestamp.isoformat() if photo.timestamp else None
+
+    mobile_metrics = None
+    if mobile_status is not None:
+        mobile_metrics = {
+            "timestamp": mobile_status.timestamp.isoformat() if mobile_status.timestamp else None,
+            "battery_pct": mobile_status.battery_pct,
+            "battery_v": mobile_status.battery_v,
+            "charging": mobile_status.charging,
+            "steps": mobile_status.steps,
+            "polar_connected": mobile_status.polar_connected,
+            "linked_person_type": mobile_status.linked_person_type,
+            "linked_person_id": mobile_status.linked_person_id,
+            "rssi_vector": mobile_status.rssi_vector or {},
+        }
+
+    polar_metrics = (
+        {
+            "timestamp": vr.timestamp.isoformat() if vr and vr.timestamp else None,
+            "heart_rate_bpm": vr.heart_rate_bpm if vr else None,
+            "rr_interval_ms": vr.rr_interval_ms if vr else None,
+            "spo2": vr.spo2 if vr else None,
+            "sensor_battery": vr.sensor_battery if vr else None,
+            "source": vr.source if vr else None,
+            "ppg": (mobile_status.extra or {}).get("ppg")
+            if mobile_status and isinstance(mobile_status.extra, dict)
+            else None,
+        }
+        if vr
+        else None
+    )
 
     location = None
     if room:
@@ -339,31 +448,149 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
             "url": f"/api/cameras/photos/{photo.id}/content",
         }
 
-    cfg = dev.config or {}
-    camera_meta = cfg.get("camera_status") if isinstance(cfg.get("camera_status"), dict) else {}
-    polar_vitals = (
-        {
-            "timestamp": vr.timestamp.isoformat() if vr and vr.timestamp else None,
-            "heart_rate_bpm": vr.heart_rate_bpm if vr else None,
-            "rr_interval_ms": vr.rr_interval_ms if vr else None,
-            "sensor_battery": vr.sensor_battery if vr else None,
-            "source": vr.source if vr else None,
-        }
-        if vr
-        else None
+    realtime = (
+        wheelchair_metrics
+        or node_metrics
+        or polar_metrics
+        or mobile_metrics
+        or {}
     )
 
     out = {
         **device_summary_dict(dev),
         "realtime": realtime,
+        "wheelchair_metrics": wheelchair_metrics,
+        "node_metrics": node_metrics,
+        "polar_metrics": polar_metrics,
+        "mobile_metrics": mobile_metrics,
         "location": location,
         "patient": patient_link,
         "caregiver": caregiver_link,
         "latest_photo": latest_photo,
         "camera_status": camera_meta,
-        "polar_vitals": polar_vitals,
+        "polar_vitals": polar_metrics,  # compatibility
     }
     return out
+
+
+async def ingest_mobile_telemetry(
+    session: AsyncSession,
+    ws_id: int,
+    body: MobileTelemetryIngest,
+) -> dict[str, Any]:
+    dev = await get_device(session, ws_id, body.device_id)
+    if dev.hardware_type != "mobile_phone":
+        raise HTTPException(400, "Mobile ingest is only supported for mobile_phone hardware_type")
+
+    linked_person_type: str | None = None
+    linked_person_id: int | None = None
+    patient_id_for_vitals: int | None = None
+
+    if body.linked_person is not None:
+        linked_person_type = body.linked_person.type
+        linked_person_id = body.linked_person.id
+        if body.linked_person.type == "patient":
+            await assign_patient_from_device(
+                session,
+                ws_id,
+                body.device_id,
+                patient_id=body.linked_person.id,
+                device_role="mobile",
+            )
+            patient_id_for_vitals = body.linked_person.id
+        else:
+            await assign_caregiver_device(
+                session,
+                ws_id,
+                caregiver_id=body.linked_person.id,
+                device_id=body.device_id,
+                device_role="mobile_phone",
+            )
+
+    if patient_id_for_vitals is None:
+        active_pa, _ = await _active_patient_assignment(session, ws_id, body.device_id)
+        if active_pa is not None:
+            patient_id_for_vitals = active_pa.patient_id
+
+    ts = body.timestamp or utcnow()
+    rssi_vector = {obs.node_id: obs.rssi for obs in body.rssi_observations}
+
+    mobile_row = MobileDeviceTelemetry(
+        workspace_id=ws_id,
+        device_id=body.device_id,
+        timestamp=ts,
+        battery_pct=body.battery_pct,
+        battery_v=body.battery_v,
+        charging=body.charging,
+        steps=body.steps,
+        polar_connected=body.polar_connected,
+        linked_person_type=linked_person_type,
+        linked_person_id=linked_person_id,
+        rssi_vector=rssi_vector,
+        source="mobile_rest",
+        extra={"ppg": body.ppg} if body.ppg is not None else {},
+    )
+    session.add(mobile_row)
+
+    for obs in body.rssi_observations:
+        session.add(
+            RSSIReading(
+                workspace_id=ws_id,
+                device_id=body.device_id,
+                timestamp=ts,
+                node_id=obs.node_id,
+                rssi=obs.rssi,
+                mac=obs.mac or "",
+            )
+        )
+
+    has_polar_vitals = any(
+        value is not None
+        for value in (
+            body.polar_heart_rate_bpm,
+            body.polar_rr_interval_ms,
+            body.polar_spo2,
+        )
+    )
+    if patient_id_for_vitals is not None and has_polar_vitals:
+        session.add(
+            VitalReading(
+                workspace_id=ws_id,
+                patient_id=patient_id_for_vitals,
+                device_id=body.device_id,
+                timestamp=ts,
+                heart_rate_bpm=body.polar_heart_rate_bpm,
+                rr_interval_ms=body.polar_rr_interval_ms,
+                spo2=body.polar_spo2,
+                sensor_battery=body.polar_sensor_battery,
+                source="polar_sdk",
+            )
+        )
+
+    cfg = dict(dev.config or {})
+    cfg["mobile_status"] = {
+        "timestamp": ts.isoformat(),
+        "battery_pct": body.battery_pct,
+        "battery_v": body.battery_v,
+        "charging": body.charging,
+        "steps": body.steps,
+        "polar_connected": body.polar_connected,
+        "linked_person_type": linked_person_type,
+        "linked_person_id": linked_person_id,
+    }
+    dev.config = cfg
+    dev.last_seen = ts
+    session.add(dev)
+
+    await session.commit()
+    return {
+        "status": "ok",
+        "device_id": body.device_id,
+        "timestamp": ts,
+        "linked_person_type": linked_person_type,
+        "linked_person_id": linked_person_id,
+        "stored_rssi_samples": len(body.rssi_observations),
+    }
 
 async def publish_mqtt(topic: str, payload: dict[str, Any]) -> None:
     connect_kwargs: dict[str, Any] = {
@@ -430,7 +657,7 @@ async def camera_check_snapshot(
     dev = await get_device(session, ws_id, device_id)
     if dev.hardware_type != "node":
         raise HTTPException(400, "Camera check is only for node devices")
-    body = DeviceCommandRequest(channel="camera", payload={"command": "capture"})
+    body = DeviceCommandRequest(channel="camera", payload={"command": "capture_frame"})
     row = await dispatch_command(session, ws_id, device_id, body)
     return {
         "command_id": row.id,
@@ -506,4 +733,3 @@ async def apply_command_ack(session: AsyncSession, command_id: str, ack_payload:
     row.ack_payload = ack_payload
     await session.commit()
     return True
-

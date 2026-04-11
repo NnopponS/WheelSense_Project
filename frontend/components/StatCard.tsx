@@ -35,10 +35,10 @@ export default function StatCard({
           <Icon className="w-5 h-5" />
         </div>
         <div>
-          <p className="text-2xl font-bold text-on-surface tracking-tight">
+          <p className="text-2xl font-bold text-foreground tracking-tight">
             {value}
           </p>
-          <p className="text-xs text-on-surface-variant mt-0.5">{label}</p>
+          <p className="text-xs text-foreground-variant mt-0.5">{label}</p>
         </div>
       </div>
       {trend && (

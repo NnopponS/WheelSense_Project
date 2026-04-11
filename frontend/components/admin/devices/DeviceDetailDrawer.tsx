@@ -91,6 +91,64 @@ const deviceDetailSchema = z
         accel_ms2: z.number().nullable().optional(),
       })
       .optional(),
+    wheelchair_metrics: z
+      .object({
+        timestamp: z.string().nullable().optional(),
+        battery_pct: z.number().nullable().optional(),
+        battery_v: z.number().nullable().optional(),
+        charging: z.boolean().nullable().optional(),
+        velocity_ms: z.number().nullable().optional(),
+        distance_m: z.number().nullable().optional(),
+        accel_ms2: z.number().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    node_metrics: z
+      .object({
+        timestamp: z.string().nullable().optional(),
+        battery_pct: z.number().nullable().optional(),
+        battery_v: z.number().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    mobile_metrics: z
+      .object({
+        timestamp: z.string().nullable().optional(),
+        battery_pct: z.number().nullable().optional(),
+        battery_v: z.number().nullable().optional(),
+        charging: z.boolean().nullable().optional(),
+        steps: z.number().nullable().optional(),
+        polar_connected: z.boolean().nullable().optional(),
+        linked_person_type: z.string().nullable().optional(),
+        linked_person_id: z.number().nullable().optional(),
+        rssi_vector: z.record(z.string(), z.number()).nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    polar_metrics: z
+      .object({
+        timestamp: z.string().nullable().optional(),
+        heart_rate_bpm: z.number().nullable().optional(),
+        rr_interval_ms: z.number().nullable().optional(),
+        spo2: z.number().nullable().optional(),
+        sensor_battery: z.number().nullable().optional(),
+        source: z.string().nullable().optional(),
+        ppg: z.number().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    polar_vitals: z
+      .object({
+        timestamp: z.string().nullable().optional(),
+        heart_rate_bpm: z.number().nullable().optional(),
+        rr_interval_ms: z.number().nullable().optional(),
+        spo2: z.number().nullable().optional(),
+        sensor_battery: z.number().nullable().optional(),
+        source: z.string().nullable().optional(),
+        ppg: z.number().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
     latest_photo: z
       .object({
         url: z.string(),
@@ -372,6 +430,19 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     snapshotMutation.isPending;
 
   const online = detail ? isDeviceOnline(detail.last_seen ?? null, nowMs) : false;
+  const batteryPct =
+    detail?.realtime?.battery_pct ??
+    detail?.wheelchair_metrics?.battery_pct ??
+    detail?.node_metrics?.battery_pct ??
+    detail?.mobile_metrics?.battery_pct ??
+    detail?.polar_metrics?.sensor_battery ??
+    detail?.polar_vitals?.sensor_battery ??
+    null;
+  const healthStatus: "healthy" | "warning" | "critical" = !online
+    ? "critical"
+    : batteryPct != null && batteryPct < 20
+      ? "warning"
+      : "healthy";
 
   if (!deviceId) return null;
 
@@ -425,6 +496,24 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                     />
                     <Metric
                       label="Relative"
+                      value={detail.last_seen ? formatRelativeTime(detail.last_seen) : "-"}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Health Snapshot</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-3 sm:grid-cols-2">
+                    <Metric label="Status" value={healthStatus} />
+                    <Metric label="Connectivity" value={online ? "online" : "offline"} />
+                    <Metric
+                      label={t("devicesDetail.battery")}
+                      value={batteryPct != null ? `${batteryPct}%` : "-"}
+                    />
+                    <Metric
+                      label={t("devices.lastSeen")}
                       value={detail.last_seen ? formatRelativeTime(detail.last_seen) : "-"}
                     />
                   </CardContent>
@@ -540,32 +629,6 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                           </Button>
                         </div>
                       </form>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => snapshotMutation.mutate()}
-                      >
-                        {snapshotMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Camera className="h-4 w-4" />
-                        )}
-                        Capture Snapshot
-                      </Button>
-
-                      {detail.latest_photo?.url ? (
-                        <div className="space-y-2">
-                          <p className="text-xs text-muted-foreground">{t("devicesDetail.latestSnapshot")}</p>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={detail.latest_photo.url}
-                            alt="Latest camera snapshot"
-                            className="w-full rounded-xl border border-border object-contain"
-                          />
-                        </div>
-                      ) : null}
                     </CardContent>
                   </Card>
                 ) : null}

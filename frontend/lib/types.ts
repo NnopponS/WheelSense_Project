@@ -62,6 +62,7 @@ export interface Patient {
   height_cm: number | null;
   weight_kg: number | null;
   blood_type: string;
+  photo_url: string | null;
   medical_conditions: MedicalConditionEntry[];
   allergies: string[];
   medications: PatientMedication[];

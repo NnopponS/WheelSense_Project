@@ -175,7 +175,7 @@ export default function SearchableListboxPicker({
   const listboxBody = (
     <>
       {options.length === 0 ? (
-        <div className="px-3 py-4 text-center text-sm text-on-surface-variant">
+        <div className="px-3 py-4 text-center text-sm text-foreground-variant">
           {noMatchMessage}
         </div>
       ) : (
@@ -209,9 +209,9 @@ export default function SearchableListboxPicker({
                   : ""
               } ${highlighted && !selected ? "bg-surface-container-high/80" : ""}`}
             >
-              <span className="truncate font-medium text-on-surface">{opt.title}</span>
+              <span className="truncate font-medium text-foreground">{opt.title}</span>
               {opt.subtitle ? (
-                <span className="truncate font-mono text-xs text-on-surface-variant">
+                <span className="truncate font-mono text-xs text-foreground-variant">
                   {opt.subtitle}
                 </span>
               ) : null}
@@ -261,7 +261,7 @@ export default function SearchableListboxPicker({
     <div ref={rootRef} className="relative space-y-2">
       <div className="relative" ref={anchorRef}>
         <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-variant"
           aria-hidden
         />
         <input
@@ -330,7 +330,7 @@ export default function SearchableListboxPicker({
         {showClear ? (
           <button
             type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-foreground-variant hover:bg-surface-container-high hover:text-foreground"
             aria-label={trailingClearAriaLabel}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
@@ -345,7 +345,7 @@ export default function SearchableListboxPicker({
       </div>
 
       {emptyStateMessage != null && options.length === 0 ? (
-        <p className="text-sm text-on-surface-variant">{emptyStateMessage}</p>
+        <p className="text-sm text-foreground-variant">{emptyStateMessage}</p>
       ) : null}
 
       {listPresentation === "inline" && showDropdown ? (

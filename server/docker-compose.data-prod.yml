@@ -1,0 +1,28 @@
+# Production-mode Postgres (pgdata-prod). Merged with docker-compose.core.yml via docker-compose.yml.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wheelsense
+      POSTGRES_USER: wheelsense
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_dev}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wheelsense"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  wheelsense-platform-server:
+    environment:
+      ENV_MODE: production
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+
+volumes:
+  pgdata-prod:

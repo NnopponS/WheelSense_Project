@@ -26,9 +26,23 @@ This file reflects the variables currently read by `server/app/config.py` and th
 |----------|---------|---------|
 | `APP_NAME` | `WheelSense Server` | FastAPI title/name |
 | `DEBUG` | `false` | Runtime debug flag |
+| `ENV_MODE` | `production` | Environment mode: `simulator` (pre-populated demo data) or `production` (clean database) |
 | `SECRET_KEY` | insecure placeholder | JWT secret; must be changed outside local dev |
 | `ALGORITHM` | `HS256` | JWT algorithm |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` | Access token lifetime in minutes |
+
+### Environment Mode (ENV_MODE)
+
+WheelSense supports two runtime environments:
+
+- **`ENV_MODE=simulator`** — Pre-populated with demo patients, staff, devices, and synthetic MQTT data. Used for testing, demos, and development. Supports reset-to-baseline via Admin Settings.
+- **`ENV_MODE=production`** — Clean database for real-world deployment. No pre-seeded data.
+
+Both environments share the same MQTT broker but use **isolated PostgreSQL volumes**:
+- Simulator: `pgdata-sim` volume
+- Production: `pgdata-prod` volume
+
+See `RUNBOOK.md` for the dual-environment workflow.
 
 ## Bootstrap admin
 
@@ -91,6 +105,53 @@ MQTT_BROKER=localhost
 - If you enable the optional `ollama` service in Compose instead, set `OLLAMA_BASE_URL=http://ollama:11434/v1`
 - `PROFILE_IMAGE_STORAGE_DIR` is mounted to `/app/storage/profile_images` via the `profile_images` named volume
 - `BOOTSTRAP_ADMIN_SYNC_PASSWORD` and `BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE` are enabled in Compose
+
+## Docker Simulator (Compose-only)
+
+<!-- AUTO-GENERATED:sim-env — not read by server/app/config.py; consumed by wheelsense-simulator + sim_controller -->
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `SIM_WORKSPACE_ID` | empty | When set to a numeric workspace id, `sim_controller.py` uses that workspace (see `server/sim_controller.py` startup). Passed through Compose into the `wheelsense-simulator` service. |
+
+### Dual-Environment Docker Compose
+
+WheelSense uses **one shared app stack** ([`docker-compose.core.yml`](../docker-compose.core.yml)) and **two database fragments**; entry files pick the mode:
+
+| Environment | Compose entry | Database volume | Auto-seeded | MQTT simulator |
+|-------------|----------------|-----------------|--------------|------------------|
+| **Mock / simulator** | `docker-compose.sim.yml` (`include`: core + [`docker-compose.data-mock.yml`](../docker-compose.data-mock.yml)) | `pgdata-sim` | Yes | Yes (`wheelsense-simulator`) |
+| **Production DB** | `docker-compose.yml` (`include`: core + [`docker-compose.data-prod.yml`](../docker-compose.data-prod.yml)) | `pgdata-prod` | No | No |
+
+Both use Docker project name `wheelsense-platform` (same image names). Compose **`include`** requires Docker Compose **v2.20+**. Fallback: `docker compose -f docker-compose.core.yml -f docker-compose.data-mock.yml up -d` (or `data-prod`).
+
+**Quick Start (PowerShell):**
+```powershell
+cd server\scripts
+.\start-sim.ps1    # Mock/sim DB + simulator
+.\start-prod.ps1   # Production DB
+.\docker-up.ps1 -Mode mock -Detach
+```
+
+**Quick Start (Bash):**
+```bash
+cd server/scripts
+./start-sim.sh     # Start simulator environment
+./start-prod.sh    # Start production environment
+```
+
+**Manual Docker Compose:**
+```bash
+# Simulator (pre-populated demo data)
+docker compose -f docker-compose.sim.yml up -d --build
+
+# Production (clean database)
+docker compose up -d --build
+```
+
+**Important:** Only run ONE environment at a time to avoid port conflicts. The helper scripts automatically stop the other environment before starting.
+
+<!-- END AUTO-GENERATED:sim-env -->
 
 ## Security Checklist
 

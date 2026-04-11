@@ -5,17 +5,23 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import AsyncIterator
+from datetime import datetime, timezone
 from types import SimpleNamespace
+from typing import Any
 
+from fastapi import HTTPException
 from openai import AsyncOpenAI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.models.chat import WorkspaceAISettings
+from app.models.chat import ChatConversation, WorkspaceAISettings
+from app.models.chat_actions import ChatAction
 from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.chat import ChatMessagePart
+from app.schemas.chat_actions import ChatActionProposeIn
+from app.services.workflow import audit_trail_service
 
 logger = logging.getLogger("wheelsense.ai_chat")
 
@@ -55,6 +61,50 @@ ROLE_SYSTEM_PROMPTS: dict[str, str] = {
         "You are EaseAI for a patient user. Use simple language, be reassuring, "
         "and encourage contacting staff for emergencies."
     ),
+}
+
+WORKSPACE_ACTION_MANAGER_ROLES = {"admin", "head_nurse"}
+ROLE_MCP_TOOL_ALLOWLIST: dict[str, set[str]] = {
+    "admin": {
+        "get_system_health",
+        "list_workspaces",
+        "list_patients",
+        "get_patient_details",
+        "list_devices",
+        "list_active_alerts",
+        "acknowledge_alert",
+        "resolve_alert",
+        "list_rooms",
+        "trigger_camera_photo",
+    },
+    "head_nurse": {
+        "get_system_health",
+        "list_patients",
+        "get_patient_details",
+        "list_devices",
+        "list_active_alerts",
+        "acknowledge_alert",
+        "resolve_alert",
+        "list_rooms",
+        "trigger_camera_photo",
+    },
+    "supervisor": {
+        "get_system_health",
+        "list_patients",
+        "get_patient_details",
+        "list_devices",
+        "list_active_alerts",
+        "list_rooms",
+    },
+    "observer": {
+        "get_system_health",
+        "list_patients",
+        "get_patient_details",
+        "list_devices",
+        "list_active_alerts",
+        "list_rooms",
+    },
+    "patient": {"get_system_health"},
 }
 
 def _system_prompt_for_role(role: str) -> str:
@@ -109,19 +159,67 @@ async def get_workspace_copilot_token(
 
 async def resolve_effective_ai(
     db: AsyncSession,
-    user: User,
-    workspace: Workspace,
     *,
+    workspace_id: int,
     override_provider: str | None,
     override_model: str | None,
 ) -> tuple[str, str]:
-    """Merge request overrides, user prefs, and workspace defaults."""
-    ws_p, ws_m = await get_workspace_ai_defaults(db, workspace.id)
-    provider = override_provider or user.ai_provider or ws_p
-    model = override_model or user.ai_model or ws_m
+    """Resolve effective AI settings using workspace defaults only.
+
+    Request and user overrides are intentionally ignored.
+    """
+    _ = (override_provider, override_model)
+    ws_p, ws_m = await get_workspace_ai_defaults(db, workspace_id)
+    provider = ws_p
+    model = ws_m
     if provider not in ("ollama", "copilot"):
         provider = "ollama"
+    if not model:
+        model = settings.ai_default_model
     return provider, model
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _ensure_utc_datetime(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _normalize_action_timestamps(action: ChatAction) -> ChatAction:
+    action.created_at = _ensure_utc_datetime(action.created_at)
+    action.updated_at = _ensure_utc_datetime(action.updated_at)
+    action.confirmed_at = _ensure_utc_datetime(action.confirmed_at)
+    action.executed_at = _ensure_utc_datetime(action.executed_at)
+    return action
+
+
+def _is_action_visible_to_user(action: ChatAction, user: User) -> bool:
+    if user.role in WORKSPACE_ACTION_MANAGER_ROLES:
+        return True
+    return action.proposed_by_user_id == user.id
+
+
+def _ensure_action_visible_to_user(action: ChatAction, user: User) -> None:
+    if not _is_action_visible_to_user(action, user):
+        raise HTTPException(status_code=403, detail="Operation not permitted")
+
+
+def _ensure_tool_allowed_for_role(role: str, tool_name: str) -> None:
+    allowed = ROLE_MCP_TOOL_ALLOWLIST.get(role, set())
+    if tool_name not in allowed:
+        raise HTTPException(status_code=403, detail="Tool is not allowed for this role")
+
+
+def _normalize_execution_result(raw: Any) -> dict[str, Any]:
+    if isinstance(raw, dict):
+        return raw
+    return {"result": raw}
 
 def _messages_to_openai(
     messages: list[ChatMessagePart], system_text: str
@@ -340,8 +438,7 @@ async def stream_chat_response(
     """Yield text chunks for the assistant reply."""
     provider, model = await resolve_effective_ai(
         db,
-        user,
-        workspace,
+        workspace_id=workspace.id,
         override_provider=provider_override,
         override_model=model_override,
     )
@@ -369,4 +466,198 @@ async def stream_chat_response(
         github_token=github_token,
     ):
         yield part
+
+
+async def get_chat_action(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    action_id: int,
+) -> ChatAction | None:
+    result = await db.execute(
+        select(ChatAction).where(
+            ChatAction.workspace_id == ws_id,
+            ChatAction.id == action_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def list_chat_actions(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    user: User,
+    limit: int = 100,
+) -> list[ChatAction]:
+    stmt = select(ChatAction).where(ChatAction.workspace_id == ws_id)
+    if user.role not in WORKSPACE_ACTION_MANAGER_ROLES:
+        stmt = stmt.where(ChatAction.proposed_by_user_id == user.id)
+    result = await db.execute(stmt.order_by(ChatAction.created_at.desc()).limit(limit))
+    return list(result.scalars().all())
+
+
+async def propose_chat_action(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    actor: User,
+    payload: ChatActionProposeIn,
+) -> ChatAction:
+    if payload.conversation_id is not None:
+        conv = await db.get(ChatConversation, payload.conversation_id)
+        if conv is None or conv.workspace_id != ws_id:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        if actor.role not in WORKSPACE_ACTION_MANAGER_ROLES and conv.user_id != actor.id:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
+
+    if payload.action_type == "mcp_tool":
+        assert payload.tool_name is not None
+        _ensure_tool_allowed_for_role(actor.role, payload.tool_name)
+
+    row = ChatAction(
+        workspace_id=ws_id,
+        conversation_id=payload.conversation_id,
+        proposed_by_user_id=actor.id,
+        title=payload.title,
+        action_type=payload.action_type,
+        tool_name=payload.tool_name,
+        tool_arguments=dict(payload.tool_arguments),
+        summary=payload.summary,
+        proposed_changes=dict(payload.proposed_changes),
+        status="proposed",
+    )
+    db.add(row)
+    await db.flush()
+    await audit_trail_service.log_event(
+        db,
+        ws_id,
+        actor_user_id=actor.id,
+        domain="chat_action",
+        action="propose",
+        entity_type="chat_action",
+        entity_id=row.id,
+        details={
+            "action_type": row.action_type,
+            "tool_name": row.tool_name,
+            "conversation_id": row.conversation_id,
+        },
+    )
+    await db.commit()
+    await db.refresh(row)
+    return _normalize_action_timestamps(row)
+
+
+async def confirm_chat_action(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    action_id: int,
+    actor: User,
+    approved: bool,
+    note: str,
+) -> ChatAction:
+    action = await get_chat_action(db, ws_id=ws_id, action_id=action_id)
+    if action is None:
+        raise HTTPException(status_code=404, detail="Chat action not found")
+    _ensure_action_visible_to_user(action, actor)
+    if action.status not in {"proposed", "confirmed"}:
+        raise HTTPException(status_code=409, detail="Chat action cannot be confirmed")
+
+    action.confirmed_by_user_id = actor.id
+    action.confirmed_at = _utcnow()
+    action.confirmation_note = note or ""
+    action.status = "confirmed" if approved else "rejected"
+    db.add(action)
+    await audit_trail_service.log_event(
+        db,
+        ws_id,
+        actor_user_id=actor.id,
+        domain="chat_action",
+        action="confirm" if approved else "reject",
+        entity_type="chat_action",
+        entity_id=action.id,
+        details={"note": action.confirmation_note},
+    )
+    await db.commit()
+    await db.refresh(action)
+    return _normalize_action_timestamps(action)
+
+
+async def execute_chat_action(
+    db: AsyncSession,
+    *,
+    ws_id: int,
+    action_id: int,
+    actor: User,
+    force: bool = False,
+) -> tuple[ChatAction, dict[str, Any]]:
+    action = await get_chat_action(db, ws_id=ws_id, action_id=action_id)
+    if action is None:
+        raise HTTPException(status_code=404, detail="Chat action not found")
+    _ensure_action_visible_to_user(action, actor)
+
+    if action.status != "confirmed":
+        if not (force and action.status == "proposed"):
+            raise HTTPException(status_code=409, detail="Chat action must be confirmed first")
+
+    result_payload: dict[str, Any]
+    if action.action_type == "note":
+        result_payload = {"status": "noop", "message": "Note action recorded"}
+    elif action.action_type == "mcp_tool":
+        if not action.tool_name:
+            raise HTTPException(status_code=422, detail="tool_name is required")
+        _ensure_tool_allowed_for_role(actor.role, action.tool_name)
+        from app.mcp_server import execute_workspace_tool
+
+        try:
+            raw = await execute_workspace_tool(
+                tool_name=action.tool_name,
+                workspace_id=ws_id,
+                arguments=dict(action.tool_arguments or {}),
+            )
+            result_payload = _normalize_execution_result(raw)
+        except Exception as exc:
+            action.status = "failed"
+            action.executed_by_user_id = actor.id
+            action.executed_at = _utcnow()
+            action.error_message = str(exc)
+            action.execution_result = {"error": str(exc)}
+            db.add(action)
+            await audit_trail_service.log_event(
+                db,
+                ws_id,
+                actor_user_id=actor.id,
+                domain="chat_action",
+                action="execute_failed",
+                entity_type="chat_action",
+                entity_id=action.id,
+                details={"error": str(exc), "tool_name": action.tool_name},
+            )
+            await db.commit()
+            await db.refresh(action)
+            _normalize_action_timestamps(action)
+            raise HTTPException(status_code=500, detail="Chat action execution failed") from exc
+    else:
+        raise HTTPException(status_code=422, detail="Unsupported chat action type")
+
+    action.status = "executed"
+    action.executed_by_user_id = actor.id
+    action.executed_at = _utcnow()
+    action.error_message = ""
+    action.execution_result = result_payload
+    db.add(action)
+    await audit_trail_service.log_event(
+        db,
+        ws_id,
+        actor_user_id=actor.id,
+        domain="chat_action",
+        action="execute",
+        entity_type="chat_action",
+        entity_id=action.id,
+        details={"tool_name": action.tool_name, "result": result_payload},
+    )
+    await db.commit()
+    await db.refresh(action)
+    return _normalize_action_timestamps(action), result_payload
 

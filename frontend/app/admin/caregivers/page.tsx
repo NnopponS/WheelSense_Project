@@ -1,187 +1,860 @@
 "use client";
+"use no memo";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useTranslation } from "@/lib/i18n";
-import { useQuery } from "@/hooks/useQuery";
-import EmptyState from "@/components/EmptyState";
-import CaregiverCardGrid from "@/components/admin/caregivers/CaregiverCardGrid";
-import AddCaregiverModal from "@/components/admin/caregivers/AddCaregiverModal";
-import type { Caregiver, User } from "@/lib/types";
-import { Plus, Search, UserCog, X } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
+import { z } from "zod";
+import { CalendarClock, ClipboardList, Plus, Search, UserCog, Users, Briefcase } from "lucide-react";
+import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ApiError, api } from "@/lib/api";
+import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type {
+  CareTaskOut,
+  CareScheduleOut,
+  CreateWorkflowScheduleRequest,
+  CreateWorkflowTaskRequest,
+  ListCaregiversResponse,
+} from "@/lib/api/task-scope-types";
 
-type RoleFilter = "all" | "admin" | "head_nurse" | "supervisor" | "observer";
-type ActiveFilter = "all" | "active" | "inactive";
+const EMPTY_SELECT = "__empty__";
+const TASK_PRIORITY_OPTIONS = ["normal", "high", "critical"] as const;
+const SCHEDULE_TYPE_OPTIONS = ["round", "check_in", "medication", "handoff"] as const;
 
-function normalizeCaregiverRole(role: string): string {
-  return role.trim().toLowerCase();
+const taskFormSchema = z.object({
+  title: z.string().trim().min(1, "Title is required"),
+  description: z.string().trim().min(1, "Description is required"),
+  priority: z.enum(TASK_PRIORITY_OPTIONS),
+  dueAt: z.string(),
+  scheduleId: z.string(),
+  assignedUserId: z.string(),
+});
+
+const scheduleFormSchema = z.object({
+  title: z.string().trim().min(1, "Title is required"),
+  scheduleType: z.enum(SCHEDULE_TYPE_OPTIONS),
+  startsAt: z.string().min(1, "Start time is required"),
+  recurrenceRule: z.string().trim(),
+  notes: z.string().trim(),
+  assignedUserId: z.string(),
+});
+
+type TaskFormValues = z.infer<typeof taskFormSchema>;
+type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
+
+type CaregiverRow = {
+  id: number;
+  fullName: string;
+  role: string;
+  department: string;
+  phone: string;
+  email: string;
+  isActive: boolean;
+};
+
+type ScheduleRow = {
+  id: number;
+  title: string;
+  scheduleType: string;
+  status: string;
+  assignedRole: string | null;
+  assignedUserId: number | null;
+  startsAt: string;
+};
+
+type TaskRow = {
+  id: number;
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  dueAt: string | null;
+  assignedRole: string | null;
+  assignedUserId: number | null;
+};
+
+function parseRequestError(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Request failed.";
 }
 
-function matchesRoleFilter(c: Caregiver, roleFilter: RoleFilter): boolean {
-  if (roleFilter === "all") return true;
-  return normalizeCaregiverRole(c.role) === roleFilter;
+function toIsoDateTime(value: string): string {
+  return new Date(value).toISOString();
 }
 
-function matchesActiveFilter(c: Caregiver, activeFilter: ActiveFilter): boolean {
-  if (activeFilter === "all") return true;
-  if (activeFilter === "active") return c.is_active;
-  return !c.is_active;
+function getRoleBadgeVariant(role: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (role) {
+    case "admin":
+      return "destructive";
+    case "head_nurse":
+      return "default";
+    case "supervisor":
+      return "secondary";
+    case "observer":
+      return "outline";
+    default:
+      return "outline";
+  }
 }
 
-export default function CaregiversPage() {
-  const { t } = useTranslation();
-  const { data: caregivers, isLoading: loadingCaregivers, refetch } = useQuery<Caregiver[]>("/caregivers");
-  const { data: users, isLoading: loadingUsers } = useQuery<User[]>("/users");
+function getPriorityBadgeVariant(priority: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (priority) {
+    case "critical":
+      return "destructive";
+    case "high":
+      return "secondary";
+    case "normal":
+      return "outline";
+    default:
+      return "outline";
+  }
+}
 
+export default function AdminCaregiversPage() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
+  const [taskError, setTaskError] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    const list = caregivers ?? [];
-    const q = search.trim().toLowerCase();
-    return list.filter((c) => {
-      if (!matchesRoleFilter(c, roleFilter)) return false;
-      if (!matchesActiveFilter(c, activeFilter)) return false;
-      if (!q) return true;
-      const blob = `${c.first_name} ${c.last_name} ${c.role} ${c.phone} ${c.email} ${c.id}`
-        .toLowerCase();
-      return blob.includes(q);
+  // Admin has workspace-wide caregiver access
+  const caregiversQuery = useQuery({
+    queryKey: ["admin", "caregivers", "list"],
+    queryFn: () => api.listCaregivers({ limit: 400 }),
+  });
+
+  const schedulesQuery = useQuery({
+    queryKey: ["admin", "staff", "schedules"],
+    queryFn: () => api.listWorkflowSchedules({ limit: 200 }),
+  });
+
+  const tasksQuery = useQuery({
+    queryKey: ["admin", "staff", "tasks"],
+    queryFn: () => api.listWorkflowTasks({ limit: 240 }),
+  });
+
+  const taskForm = useForm<TaskFormValues>({
+    resolver: zodResolver(taskFormSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      priority: "normal",
+      dueAt: "",
+      scheduleId: EMPTY_SELECT,
+      assignedUserId: EMPTY_SELECT,
+    },
+  });
+
+  const scheduleForm = useForm<ScheduleFormValues>({
+    resolver: zodResolver(scheduleFormSchema),
+    defaultValues: {
+      title: "",
+      scheduleType: "round",
+      startsAt: "",
+      recurrenceRule: "RRULE:FREQ=DAILY",
+      notes: "",
+      assignedUserId: EMPTY_SELECT,
+    },
+  });
+
+  const createTaskMutation = useMutation({
+    mutationFn: async (values: TaskFormValues) => {
+      const payload = {
+        title: values.title.trim(),
+        description: values.description.trim(),
+        priority: values.priority,
+        due_at: values.dueAt ? toIsoDateTime(values.dueAt) : null,
+        schedule_id: values.scheduleId === EMPTY_SELECT ? null : Number(values.scheduleId),
+        assigned_user_id: values.assignedUserId === EMPTY_SELECT ? null : Number(values.assignedUserId),
+        assigned_role: null,
+      } satisfies CreateWorkflowTaskRequest;
+
+      await api.createWorkflowTask(payload);
+    },
+    onSuccess: async () => {
+      setTaskError(null);
+      taskForm.reset({
+        title: "",
+        description: "",
+        priority: "normal",
+        dueAt: "",
+        scheduleId: EMPTY_SELECT,
+        assignedUserId: EMPTY_SELECT,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "staff", "tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "dashboard", "tasks"] });
+    },
+    onError: (error) => {
+      setTaskError(parseRequestError(error));
+    },
+  });
+
+  const createScheduleMutation = useMutation({
+    mutationFn: async (values: ScheduleFormValues) => {
+      const payload = {
+        title: values.title.trim(),
+        schedule_type: values.scheduleType,
+        starts_at: toIsoDateTime(values.startsAt),
+        ends_at: null,
+        recurrence_rule: values.recurrenceRule.trim() || "RRULE:FREQ=DAILY",
+        assigned_role: null,
+        assigned_user_id: values.assignedUserId === EMPTY_SELECT ? null : Number(values.assignedUserId),
+        notes: values.notes.trim(),
+      } satisfies CreateWorkflowScheduleRequest;
+
+      await api.createWorkflowSchedule(payload);
+    },
+    onSuccess: async () => {
+      setScheduleError(null);
+      scheduleForm.reset({
+        title: "",
+        scheduleType: "round",
+        startsAt: "",
+        recurrenceRule: "RRULE:FREQ=DAILY",
+        notes: "",
+        assignedUserId: EMPTY_SELECT,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "staff", "schedules"] });
+    },
+    onError: (error) => {
+      setScheduleError(parseRequestError(error));
+    },
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: async (variables: { id: number; status: "in_progress" | "completed" }) => {
+      await api.updateWorkflowTask(variables.id, { status: variables.status });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "staff", "tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "dashboard", "tasks"] });
+    },
+    onSettled: () => {
+      setPendingTaskId(null);
+    },
+  });
+
+  const caregivers = useMemo(
+    () => (caregiversQuery.data ?? []) as ListCaregiversResponse,
+    [caregiversQuery.data],
+  );
+  const schedules = useMemo(
+    () => (schedulesQuery.data ?? []) as CareScheduleOut[],
+    [schedulesQuery.data],
+  );
+  const tasks = useMemo(
+    () => (tasksQuery.data ?? []) as CareTaskOut[],
+    [tasksQuery.data],
+  );
+
+  const caregiverRows = useMemo<CaregiverRow[]>(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    return caregivers
+      .filter((item) => {
+        if (!normalizedSearch) return true;
+        const corpus = `${item.first_name} ${item.last_name} ${item.role} ${item.department} ${item.email} ${item.phone}`.toLowerCase();
+        return corpus.includes(normalizedSearch);
+      })
+      .map((item) => ({
+        id: item.id,
+        fullName: `${item.first_name} ${item.last_name}`.trim() || `Caregiver #${item.id}`,
+        role: item.role,
+        department: item.department || "-",
+        phone: item.phone || "-",
+        email: item.email || "-",
+        isActive: item.is_active,
+      }));
+  }, [caregivers, search]);
+
+  const scheduleRows = useMemo<ScheduleRow[]>(() => {
+    return [...schedules]
+      .sort((left, right) => left.starts_at.localeCompare(right.starts_at))
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        scheduleType: item.schedule_type,
+        status: item.status,
+        assignedRole: item.assigned_role,
+        assignedUserId: item.assigned_user_id,
+        startsAt: item.starts_at,
+      }));
+  }, [schedules]);
+
+  const taskRows = useMemo<TaskRow[]>(() => {
+    return tasks
+      .filter((item) => item.status !== "completed" && item.status !== "cancelled")
+      .sort((left, right) => {
+        if (!left.due_at) return 1;
+        if (!right.due_at) return -1;
+        return left.due_at.localeCompare(right.due_at);
+      })
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        priority: item.priority,
+        status: item.status,
+        dueAt: item.due_at,
+        assignedRole: item.assigned_role,
+        assignedUserId: item.assigned_user_id,
+      }));
+  }, [tasks]);
+
+  const caregiversColumns = useMemo<ColumnDef<CaregiverRow>[]>(
+    () => [
+      {
+        accessorKey: "fullName",
+        header: "Caregiver",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.fullName}</p>
+            <p className="text-xs text-muted-foreground">{row.original.email}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "role",
+        header: "Role",
+        cell: ({ row }) => (
+          <Badge variant={getRoleBadgeVariant(row.original.role)}>
+            {row.original.role}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "department",
+        header: "Department",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-sm">{row.original.department}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "phone",
+        header: "Phone",
+        cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.phone}</span>,
+      },
+      {
+        accessorKey: "isActive",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge variant={row.original.isActive ? "default" : "outline"}>
+            {row.original.isActive ? "active" : "inactive"}
+          </Badge>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const schedulesColumns = useMemo<ColumnDef<ScheduleRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Schedule",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <Badge variant="outline" className="text-xs">
+              {row.original.scheduleType}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
+      },
+      {
+        id: "assignment",
+        header: "Assignment",
+        cell: ({ row }) =>
+          row.original.assignedRole
+            ? `Role: ${row.original.assignedRole}`
+            : row.original.assignedUserId
+              ? `User #${row.original.assignedUserId}`
+              : "Unassigned",
+      },
+      {
+        accessorKey: "startsAt",
+        header: "Starts",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="text-sm">{formatDateTime(row.original.startsAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.startsAt)}</p>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const tasksColumns = useMemo<ColumnDef<TaskRow>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "Task",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">{row.original.title}</p>
+            <p className="text-xs text-muted-foreground">{row.original.description}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "priority",
+        header: "Priority",
+        cell: ({ row }) => {
+          const priority = row.original.priority;
+          return (
+            <Badge variant={getPriorityBadgeVariant(priority)}>
+              {priority}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
+      },
+      {
+        accessorKey: "dueAt",
+        header: "Due",
+        cell: ({ row }) => (
+          <div className="space-y-1">
+            <p className="text-sm">{formatDateTime(row.original.dueAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.dueAt)}</p>
+          </div>
+        ),
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            {row.original.status === "pending" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pendingTaskId === row.original.id}
+                onClick={() => {
+                  setPendingTaskId(row.original.id);
+                  updateTaskMutation.mutate({ id: row.original.id, status: "in_progress" });
+                }}
+              >
+                Start
+              </Button>
+            ) : null}
+            {row.original.status === "in_progress" ? (
+              <Button
+                size="sm"
+                variant="default"
+                disabled={pendingTaskId === row.original.id}
+                onClick={() => {
+                  setPendingTaskId(row.original.id);
+                  updateTaskMutation.mutate({ id: row.original.id, status: "completed" });
+                }}
+              >
+                Complete
+              </Button>
+            ) : null}
+          </div>
+        ),
+      },
+    ],
+    [pendingTaskId, updateTaskMutation],
+  );
+
+  const activeStaffCount = useMemo(
+    () => caregiverRows.filter((item) => item.isActive).length,
+    [caregiverRows],
+  );
+
+  const openScheduleCount = useMemo(
+    () => scheduleRows.filter((item) => item.status !== "completed").length,
+    [scheduleRows],
+  );
+
+  const pendingTaskCount = useMemo(
+    () => taskRows.filter((item) => item.status === "pending").length,
+    [taskRows],
+  );
+
+  const staffByRole = useMemo(() => {
+    const counts: Record<string, number> = { admin: 0, head_nurse: 0, supervisor: 0, observer: 0 };
+    caregiverRows.forEach((cg) => {
+      if (counts[cg.role] !== undefined) {
+        counts[cg.role]++;
+      }
     });
-  }, [caregivers, search, roleFilter, activeFilter]);
+    return counts;
+  }, [caregiverRows]);
 
-  const isLoading = loadingCaregivers || loadingUsers;
-  const unlinkedStaffAccounts =
-    users?.filter(
-      (item) =>
-        item.is_active &&
-        (item.role === "admin" ||
-          item.role === "head_nurse" ||
-          item.role === "supervisor" ||
-          item.role === "observer") &&
-        item.caregiver_id == null,
-    ).length ?? 0;
+  const taskSaveError = taskError ?? (createTaskMutation.error ? parseRequestError(createTaskMutation.error) : null);
+  const scheduleSaveError =
+    scheduleError ?? (createScheduleMutation.error ? parseRequestError(createScheduleMutation.error) : null);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-on-surface">{t("caregivers.title")}</h2>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            {t("caregivers.directorySubtitle")}
+          <h2 className="text-2xl font-bold text-foreground">Staff & Caregivers</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Complete staff directory with routine management, schedules, and task coordination.
           </p>
         </div>
-        <button
-          type="button"
-          className="gradient-cta inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-smooth hover:opacity-90"
-          onClick={() => setAddModalOpen(true)}
-        >
-          <Plus className="h-4 w-4" aria-hidden />
-          {t("caregivers.addNew")}
-        </button>
+        <Button asChild>
+          <a href="/admin/users">
+            <Users className="mr-1.5 h-4 w-4" />
+            Manage Users
+          </a>
+        </Button>
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="relative max-w-lg flex-1">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-outline"
-            aria-hidden
+      {/* Stats Grid */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SummaryStatCard icon={Users} label="Total staff" value={caregiverRows.length} tone="info" />
+        <SummaryStatCard icon={UserCog} label="Active staff" value={activeStaffCount} tone="success" />
+        <SummaryStatCard icon={CalendarClock} label="Open schedules" value={openScheduleCount} tone="warning" />
+        <SummaryStatCard icon={ClipboardList} label="Pending tasks" value={pendingTaskCount} tone="critical" />
+      </section>
+
+      {/* Role Breakdown */}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Admins</p>
+            <p className="text-xl font-semibold">{staffByRole.admin}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Head Nurses</p>
+            <p className="text-xl font-semibold">{staffByRole.head_nurse}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Supervisors</p>
+            <p className="text-xl font-semibold">{staffByRole.supervisor}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Observers</p>
+            <p className="text-xl font-semibold">{staffByRole.observer}</p>
+          </CardContent>
+        </Card>
+      </section>
+
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="text"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search nurse, role, department, phone, email"
+          className="pl-9"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        {/* Staff List */}
+        <div className="xl:col-span-2">
+          <DataTableCard
+            title="Caregiver Roster"
+            description="Complete staff directory with department and role information."
+            data={caregiverRows}
+            columns={caregiversColumns}
+            isLoading={caregiversQuery.isLoading}
+            emptyText="No caregivers match this search."
           />
-          <input
-            type="search"
-            placeholder={t("caregivers.searchDetailed")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={`input-field input-field--leading-icon w-full rounded-xl py-2.5 text-sm ${search.trim() ? "pr-10" : ""}`}
-            aria-label={t("caregivers.search")}
-          />
-          {search.trim() ? (
-            <button
-              type="button"
-              aria-label={t("caregivers.clearSearchAria")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-              onClick={() => setSearch("")}
-            >
-              <X className="h-4 w-4" aria-hidden />
-            </button>
-          ) : null}
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="flex min-w-[160px] flex-col gap-1">
-            <label htmlFor="caregiver-role-filter" className="text-xs text-on-surface-variant">
-              {t("caregivers.filterRole")}
-            </label>
-            <select
-              id="caregiver-role-filter"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-              className="input-field rounded-xl py-2 text-sm"
-            >
-              <option value="all">{t("devicesDetail.tabAll")}</option>
-              <option value="admin">{t("shell.roleAdmin")}</option>
-              <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
-              <option value="supervisor">{t("shell.roleSupervisor")}</option>
-              <option value="observer">{t("shell.roleObserver")}</option>
-            </select>
-          </div>
-          <div className="flex min-w-[160px] flex-col gap-1">
-            <label htmlFor="caregiver-active-filter" className="text-xs text-on-surface-variant">
-              {t("caregivers.filterStatus")}
-            </label>
-            <select
-              id="caregiver-active-filter"
-              value={activeFilter}
-              onChange={(e) => setActiveFilter(e.target.value as ActiveFilter)}
-              className="input-field rounded-xl py-2 text-sm"
-            >
-              <option value="all">{t("alerts.all")}</option>
-              <option value="active">{t("common.active")}</option>
-              <option value="inactive">{t("common.inactive")}</option>
-            </select>
-          </div>
+
+        {/* Quick Create Forms */}
+        <div className="space-y-6">
+          {/* Quick Create Task */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Plus className="h-4 w-4" />
+                Quick Create Task
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Queue a ward action and assign it to a caregiver.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form
+                onSubmit={taskForm.handleSubmit((values) => {
+                  setTaskError(null);
+                  createTaskMutation.mutate(values);
+                })}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="task-title">Title</Label>
+                  <Input
+                    id="task-title"
+                    {...taskForm.register("title")}
+                    placeholder="e.g., Check vital signs"
+                  />
+                  {taskForm.formState.errors.title ? (
+                    <p className="text-xs text-destructive">{taskForm.formState.errors.title.message}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="task-description">Description</Label>
+                  <Textarea
+                    id="task-description"
+                    {...taskForm.register("description")}
+                    placeholder="Task details..."
+                    rows={2}
+                  />
+                  {taskForm.formState.errors.description ? (
+                    <p className="text-xs text-destructive">{taskForm.formState.errors.description.message}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <Controller
+                    name="priority"
+                    control={taskForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TASK_PRIORITY_OPTIONS.map((priority) => (
+                            <SelectItem key={priority} value={priority}>
+                              <Badge variant={getPriorityBadgeVariant(priority)} className="mr-2">
+                                {priority}
+                              </Badge>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="task-due">Due at</Label>
+                  <Input id="task-due" type="datetime-local" {...taskForm.register("dueAt")} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Schedule</Label>
+                  <Controller
+                    name="scheduleId"
+                    control={taskForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="No schedule" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>No schedule</SelectItem>
+                          {scheduleRows.map((schedule) => (
+                            <SelectItem key={schedule.id} value={String(schedule.id)}>
+                              #{schedule.id} {schedule.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Assigned caregiver</Label>
+                  <Controller
+                    name="assignedUserId"
+                    control={taskForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>Unassigned</SelectItem>
+                          {caregivers.map((caregiver) => (
+                            <SelectItem key={caregiver.id} value={String(caregiver.id)}>
+                              {caregiver.first_name} {caregiver.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                {taskSaveError ? <p className="text-xs text-destructive">{taskSaveError}</p> : null}
+
+                <Button type="submit" className="w-full" disabled={createTaskMutation.isPending}>
+                  {createTaskMutation.isPending ? "Creating..." : "Create task"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Quick Create Schedule */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CalendarClock className="h-4 w-4" />
+                Quick Create Schedule
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Publish a recurring ward schedule and optionally assign it to a caregiver.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form
+                onSubmit={scheduleForm.handleSubmit((values) => {
+                  setScheduleError(null);
+                  createScheduleMutation.mutate(values);
+                })}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-title">Title</Label>
+                  <Input
+                    id="schedule-title"
+                    {...scheduleForm.register("title")}
+                    placeholder="e.g., Morning rounds"
+                  />
+                  {scheduleForm.formState.errors.title ? (
+                    <p className="text-xs text-destructive">{scheduleForm.formState.errors.title.message}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Type</Label>
+                  <Controller
+                    name="scheduleType"
+                    control={scheduleForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCHEDULE_TYPE_OPTIONS.map((scheduleType) => (
+                            <SelectItem key={scheduleType} value={scheduleType}>
+                              {scheduleType}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-starts">Starts at</Label>
+                  <Input id="schedule-starts" type="datetime-local" {...scheduleForm.register("startsAt")} />
+                  {scheduleForm.formState.errors.startsAt ? (
+                    <p className="text-xs text-destructive">{scheduleForm.formState.errors.startsAt.message}</p>
+                  ) : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-recurrence">Recurrence rule</Label>
+                  <Input
+                    id="schedule-recurrence"
+                    {...scheduleForm.register("recurrenceRule")}
+                    placeholder="RRULE:FREQ=DAILY"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-notes">Notes</Label>
+                  <Textarea
+                    id="schedule-notes"
+                    {...scheduleForm.register("notes")}
+                    placeholder="Additional notes..."
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Assigned caregiver</Label>
+                  <Controller
+                    name="assignedUserId"
+                    control={scheduleForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={EMPTY_SELECT}>Unassigned</SelectItem>
+                          {caregivers.map((caregiver) => (
+                            <SelectItem key={caregiver.id} value={String(caregiver.id)}>
+                              {caregiver.first_name} {caregiver.last_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                {scheduleSaveError ? <p className="text-xs text-destructive">{scheduleSaveError}</p> : null}
+
+                <Button type="submit" className="w-full" disabled={createScheduleMutation.isPending}>
+                  {createScheduleMutation.isPending ? "Creating..." : "Create schedule"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {unlinkedStaffAccounts > 0 ? (
-        <div className="rounded-xl border border-amber-400/45 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <span className="font-semibold">
-            {unlinkedStaffAccounts} active staff account(s) are missing caregiver links.
-          </span>{" "}
-          <Link href="/admin/account-management" className="font-semibold underline">
-            Open account management
-          </Link>
-          {" "}to connect each account to the correct staff profile.
-        </div>
-      ) : null}
+      {/* Schedules Table */}
+      <DataTableCard
+        title="Schedules"
+        description="Recurring ward schedules and routines."
+        data={scheduleRows}
+        columns={schedulesColumns}
+        isLoading={schedulesQuery.isLoading}
+        emptyText="No schedules found."
+      />
 
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <div
-            className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent"
-            role="status"
-            aria-label={t("common.loading")}
-          />
-        </div>
-      ) : !caregivers?.length ? (
-        <EmptyState icon={UserCog} message={t("caregivers.empty")} />
-      ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 py-12 text-center text-sm text-on-surface-variant">
-          {t("caregivers.listNoMatches")}
-        </div>
-      ) : (
-        <div>
-          <h3 className="mb-3 text-sm font-semibold text-on-surface-variant">
-            {t("caregivers.allStaff")}
-          </h3>
-          <CaregiverCardGrid caregivers={filtered} users={users} basePath="/admin/caregivers" />
-        </div>
-      )}
-
-      <AddCaregiverModal
-        open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onCreated={() => void refetch()}
+      {/* Tasks Table */}
+      <DataTableCard
+        title="Tasks"
+        description="Pending and in-progress tasks with priority and status."
+        data={taskRows}
+        columns={tasksColumns}
+        isLoading={tasksQuery.isLoading}
+        emptyText="No active tasks found."
       />
     </div>
   );

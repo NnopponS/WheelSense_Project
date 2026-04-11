@@ -93,6 +93,7 @@ bool NetworkManager::connectMQTT() {
         // Subscribe to config and control topics
         String configTopic = String(DEFAULT_MQTT_TOPIC_CONFIG_PREFIX) + config.deviceName;
         mqttClient.subscribe(configTopic.c_str());
+        mqttClient.subscribe("WheelSense/config/all");
         String controlTopic = String("WheelSense/") + config.deviceName + "/control";
         mqttClient.subscribe(controlTopic.c_str());
         // Subscribe to room assignment
@@ -116,7 +117,7 @@ void NetworkManager::onMQTTMessage(char* topic, byte* payload, unsigned int leng
 
     // Config update
     String configTopic = String(DEFAULT_MQTT_TOPIC_CONFIG_PREFIX) + config.deviceName;
-    if (topicStr == configTopic) {
+    if (topicStr == configTopic || topicStr == "WheelSense/config/all") {
         StaticJsonDocument<1024> doc;
         if (deserializeJson(doc, msg) != DeserializationError::Ok) return;
         if (doc.containsKey("wifi_ssid"))     config.wifiSSID = doc["wifi_ssid"].as<String>();
