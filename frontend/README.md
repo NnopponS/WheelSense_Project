@@ -58,12 +58,13 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 - Shared i18n copy lives in `lib/i18n.tsx`
 - Shared form schemas and payload mapping helpers live under `lib/forms/`
 - Shared date formatting helpers live in `lib/datetime.ts`
+- **Next.js 16 (`app` router)**: Segment `params` / `searchParams` on **server** pages are async. **Client** pages that need a dynamic segment id or the query string should use **`useParams()`** and **`useSearchParams()`** (with **`Suspense`** at the page boundary when `useSearchParams` is used at page level), not `params` / `searchParams` props on `page.tsx`—this avoids `[browser] … must be unwrapped` warnings when props are inspected. See `/admin/settings`, `/admin/patients/[id]`, `/admin/caregivers/[id]`.
 
 ### In-app notifications and clinical toasts
 
-- **Hook**: `hooks/useNotifications.ts` merges active alerts, pending workflow tasks (clinical staff roles only), and unread workflow messages. Alert polling defaults to **10s**; tasks and messages use a slower interval.
-- **Role-correct deep links**: `lib/notificationRoutes.ts` maps `user.role` to alert inbox and task URLs (e.g. observer → `/observer/alerts`, supervisor → `/supervisor/emergency`, staff messages → role-appropriate inbox paths).
-- **Toast UX**: New **active** alerts at medium-or-higher severity enqueue a **Sonner** toast with a “View” action; higher severities may also play a short chime when **alert sound** is enabled in the TopBar (toggle persists in `localStorage`; enabling sound calls `primeAlertAudioFromUserGesture()` so browsers allow `AudioContext`). The strongest toast tier applies optional **`ws-toast-urgent`** styling (see `app/globals.css`) for border/shadow emphasis without replacing Sonner.
+- **Hook**: `hooks/useNotifications.tsx` merges active alerts, pending workflow tasks (clinical staff roles only), and unread workflow messages. Alert polling defaults to **10s**; tasks and messages use a slower interval.
+- **Role-correct deep links**: `lib/notificationRoutes.ts` maps `user.role` to alert inbox and task URLs (e.g. observer → `/observer/alerts`, supervisor → `/supervisor/emergency`, staff messages → role-appropriate inbox paths). **`alertsInboxUrl(role, alertId)`** appends `?alert=<id>` so the inbox table can scroll/highlight row `ws-alert-<id>` (see `hooks/useAlertRowHighlight.ts`).
+- **Toast UX**: New **active** alerts at medium-or-higher severity enqueue a **Sonner** `toast.custom` card (`components/notifications/AlertToastCard.tsx`): alert type, title, description; when the alert has **`patient_id`**, `useNotifications` resolves **`GET /patients/{id}`** and (if `room_id` is set) **`GET /rooms/{room_id}`** via `lib/api.ts` so the card shows **patient name** and **current room** (`facility · floor · room`), with i18n fallbacks for missing `room_id` or failed room load (`notifications.toastPatientNoRoomOnRecord`, `notifications.toastPatientLocationUnknown`). **Open in queue** (navigates with `?alert=`) and **Acknowledge** when the signed-in role matches server **`ROLE_ALERT_ACK`** (`admin` / `head_nurse` today). Higher severities may also play a short chime when **alert sound** is enabled in the TopBar (toggle persists in `localStorage`; enabling sound calls `primeAlertAudioFromUserGesture()` so browsers allow `AudioContext`). The strongest toast tier may apply **`ws-toast-urgent`** on the Sonner host for neutral elevation only—no red border (see `app/globals.css`); the custom card uses the same muted left accent as other severities.
 - **UI**: `components/NotificationBell.tsx` + `components/NotificationDrawer.tsx` for the drawer; sound toggle lives in `components/TopBar.tsx` (hidden for `patient` role).
 
 ## Internationalization (EN / TH)
@@ -113,7 +114,7 @@ Legacy routes that now redirect:
 - `hooks/useAuth.tsx` - auth state
 - `lib/queryEndpointDefaults.ts` - shared stale/poll defaults for `useQuery` options
 - `lib/refetchOrThrow.ts` - optional `refetch` wrapper for error-throwing awaits
-- `lib/api.ts` - API client
+- `lib/api.ts` - API client (includes **`getRoom`** for `GET /rooms/{id}` used by alert toast context and other room detail flows)
 - `lib/types.ts` - frontend mirror of backend schemas
 - `components/shared/UserAvatar.tsx` and `ProfileImageEditorModal.tsx` - profile image UX
 - `components/shared/SearchableListboxPicker.tsx` - searchable assign/link picker used by admin flows
@@ -125,7 +126,7 @@ Legacy routes that now redirect:
 - admin sidebar (2026-04): **Dashboard**, **People** (`/admin/personnel` + `activeForPaths` for caregivers/patients/account-management), **Devices**, **Facilities**, **System** (`/admin/settings` hub: profile, AI, server, audit, ML calibration), **Inbox** (`/admin/messages` hub: messages + support + demo control entry)
 - `/admin/messages` is now a real workflow-backed inbox/compose screen using the existing workflow messaging APIs
 - `/admin/audit` is the canonical workflow audit trail; `/admin/audit-log` is compatibility-only and redirects there. The table uses a **compact** typography scale for density (many rows per viewport).
-- `/admin/facility-management` is the canonical facilities route; `/admin/facilities` redirects there
+- `/admin/facility-management` is the canonical facilities route; `/admin/facilities` redirects there; the stats row **selected scope** card uses i18n `facilityMgmt.statsSelectedScope` / `facilityMgmt.statsNoSelection` and wraps long facility + floor names (avoid truncation on localized building titles)
 - `/admin/floorplans` is compatibility-only and redirects to `/admin/facility-management`
 - `/admin/personnel` lists staff, patients, and accounts; users with `patients.manage` + `users.manage` can open dialogs to **add staff + account** or **patient + account** in one flow
 - `/admin/users` is kept only as a compatibility redirect to `/admin/account-management`
@@ -141,6 +142,7 @@ Legacy routes that now redirect:
 - Profile image editing uses:
   - `PATCH /api/auth/me` for direct URL updates/clears
   - `POST /api/auth/me/profile-image` for platform-hosted JPEG uploads
+- `/admin/settings`: `app/admin/settings/page.tsx` is a **client** entry with `Suspense` → `SettingsClient.tsx`; active section follows `?tab=` via `useSearchParams()` (same tab keys as before: profile, ai, server, audit, system/ML).
 - `/admin/settings?tab=ai` treats backend AI endpoints as source of truth:
   - Copilot model options come from `GET /api/settings/ai/copilot/models`
   - installed Ollama models come from `GET /api/settings/ai/ollama/models`
@@ -151,8 +153,12 @@ Legacy routes that now redirect:
   - canvas uses a 1000-unit internal coordinate space with legacy 0-100 layout compatibility
   - drag/resize interactions snap to grid and use pointer capture to avoid stuck edits
   - room-node linking is standardized around `room.node_device_id` (device string id), not only numeric `devices.id`
+  - **`FloorplansPanel`** (`components/admin/FloorplansPanel.tsx`) is embedded on **`/admin/facility-management`** as the shared floor UI: room inspector tabs for **node** vs **smart** devices, **patient** assign/remove for the selected room, and **capture** preview/trigger; deep links from the panel can jump to **`/admin/devices`** and **`/admin/personnel?tab=`** hubs
   - monitoring workspace (`components/admin/monitoring/FloorMapWorkspace.tsx`) saves geometry to `/api/floorplans/layout` and syncs node links through `/api/rooms/{room_id}`
   - **Patient assignment (Phase A)**: optional “Patient assignment mode” on the same workspace loads workspace patients and, for canvas rooms backed by a real `room-{id}`, assigns **`PATCH /api/patients/{id}`** with `{ room_id }` after explicit picker + confirm (no drag-drop yet)
+- **Patient vs caregiver integration (avoid drift)**: show each patient’s linked room from the **`room_id`** field on patient APIs; staff responsibility for non-admin roles is **`GET/PUT /api/caregivers/{caregiver_id}/patients`** plus each user’s **`caregiver_id`** via **`PUT /api/users/{user_id}`**—mirror the same facts on admin patient detail, admin caregiver detail (`AdminCaregiverDetailPage` + `CaregiverDetailPane`), and observer-facing staff views so assignments are not edited in only one silo. Admin **patient detail** also uses **`GET/PUT /api/patients/{patient_id}/caregivers`** for the assigned-staff list (patient-centric view of the same access rows).
+- **`CaregiverDetailPane` head-nurse reference strip**: On `/admin/caregivers/[id]` overview, **Head nurses (reference)** appears for viewed roles **observer**, **supervisor**, and **head_nurse**; the roster lists workspace `head_nurse` rows and **omits the open profile** when it is itself a head nurse (peer navigation).
+  - **Integration cue**: embedded facility floorplan UX is the shared `FloorplansPanel` on `/admin/facility-management` (room drawer: node vs smart tabs, patient-in-room assign, manual capture). Patient **room** on detail screens should follow `room_id` from patient APIs; staff **patient rosters** use `GET`/`PUT /api/caregivers/{caregiver_id}/patients` or `GET`/`PUT /api/patients/{patient_id}/caregivers` (see `server/AGENTS.md` § patient visibility / “Patient facility room…”).
 - **Device health** and **shift checklists** are not separate sidebar rows; reach them from the admin dashboard quick actions or direct URLs (`/admin/device-health`, `/admin/shift-checklists`) as needed
 - `/admin` dashboard no longer shows the large account-link status card or AI/Copilot status card; those responsibilities moved closer to operational pages:
   - patient account-link gaps are surfaced on `/admin/patients`

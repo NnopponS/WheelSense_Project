@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Bell, Filter } from "lucide-react";
@@ -20,6 +21,7 @@ import {
 import { ApiError, api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
+import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
 
 type AlertRow = {
@@ -45,6 +47,7 @@ function parseRequestError(error: unknown): string {
 
 export default function HeadNurseAlertsPage() {
   const { t } = useTranslation();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<AlertStatusFilter>("all");
   const [severity, setSeverity] = useState<AlertSeverityFilter>("all");
@@ -232,6 +235,21 @@ export default function HeadNurseAlertsPage() {
     [pendingAlertId, t, updateAlertMutation],
   );
 
+  const highlightAlertId = useMemo(() => {
+    const raw = searchParams.get("alert");
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  }, [searchParams]);
+
+  const alertsTableLoading = alertsQuery.isLoading || patientsQuery.isLoading;
+  const highlightReady =
+    !alertsTableLoading &&
+    highlightAlertId != null &&
+    rows.some((r) => r.id === highlightAlertId);
+
+  const flashAlertId = useAlertRowHighlight(highlightAlertId, highlightReady);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -276,9 +294,16 @@ export default function HeadNurseAlertsPage() {
         description={t("headNurse.alerts.streamDesc")}
         data={rows}
         columns={columns}
-        isLoading={alertsQuery.isLoading || patientsQuery.isLoading}
+        isLoading={alertsTableLoading}
         emptyText={t("headNurse.alerts.empty")}
         rightSlot={<Filter className="h-4 w-4 text-muted-foreground" />}
+        pageSize={200}
+        getRowDomId={(row) => `ws-alert-${row.id}`}
+        getRowClassName={(row) =>
+          flashAlertId != null && flashAlertId === row.id
+            ? "bg-primary/10 ring-2 ring-primary/30 transition-colors"
+            : undefined
+        }
       />
 
       {actionError ? (

@@ -302,14 +302,23 @@ function FacilityManagementPageContent() {
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Selected</p>
-                <p className="text-lg font-medium truncate max-w-[140px]">
-                  {stats.selectedFacilityName || "None"}
-                </p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-sm text-muted-foreground">{t("facilityMgmt.statsSelectedScope")}</p>
+                {stats.selectedFacilityName ? (
+                  <>
+                    <p className="text-lg font-medium leading-snug text-foreground break-words">
+                      {stats.selectedFacilityName}
+                    </p>
+                    {stats.selectedFloorName ? (
+                      <p className="text-sm text-muted-foreground break-words">{stats.selectedFloorName}</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="text-lg font-medium text-muted-foreground">{t("facilityMgmt.statsNoSelection")}</p>
+                )}
               </div>
-              <div className="rounded-full bg-purple-50 p-3 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
+              <div className="shrink-0 rounded-full bg-purple-50 p-3 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
                 <Home className="h-6 w-6" />
               </div>
             </div>

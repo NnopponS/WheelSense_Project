@@ -3,7 +3,13 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 import { API_BASE } from "./constants";
-import type { DemoActorMoveRequest, WorkflowClaimRequest, WorkflowHandoffRequest } from "./types";
+import type {
+  DemoActorMoveRequest,
+  Room,
+  SmartDevice,
+  WorkflowClaimRequest,
+  WorkflowHandoffRequest,
+} from "./types";
 import type {
   AcknowledgeAlertRequest,
   AcknowledgeAlertResponse,
@@ -502,6 +508,9 @@ export const api = {
 
   listRooms: () => request<ListRoomsResponse>("/rooms"),
 
+  getRoom: (roomId: number | string) =>
+    request<Room>(`/rooms/${encodeURIComponent(String(roomId))}`),
+
   listCaregivers: (params?: { skip?: number; limit?: number }) => {
     const query = new URLSearchParams();
     if (typeof params?.skip === "number") query.set("skip", String(params.skip));
@@ -566,6 +575,22 @@ export const api = {
   },
 
   listSmartDevices: () => request<ListSmartDevicesResponse>("/ha/devices"),
+
+  patchSmartDevice: (
+    deviceId: number | string,
+    payload: {
+      name?: string | null;
+      ha_entity_id?: string | null;
+      device_type?: string | null;
+      room_id?: number | null;
+      is_active?: boolean | null;
+      config?: Record<string, unknown> | null;
+    },
+  ) =>
+    request<SmartDevice>(`/ha/devices/${encodeURIComponent(String(deviceId))}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
 
   getSmartDeviceState: (deviceId: number | string) =>
     request<GetSmartDeviceStateResponse>(

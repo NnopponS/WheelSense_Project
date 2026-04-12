@@ -19,6 +19,14 @@ export function alertsInboxPath(role: AppRole): string {
   }
 }
 
+/** Alerts inbox URL with optional `?alert=` deep link (row id `ws-alert-{id}` on queue tables). */
+export function alertsInboxUrl(role: AppRole, alertId?: number | null): string {
+  const base = alertsInboxPath(role);
+  if (alertId == null || !Number.isFinite(alertId)) return base;
+  const q = new URLSearchParams({ alert: String(alertId) });
+  return `${base}?${q.toString()}`;
+}
+
 export function workflowTasksPath(role: AppRole): string {
   switch (role) {
     case "observer":

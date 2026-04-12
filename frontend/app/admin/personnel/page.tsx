@@ -1,7 +1,8 @@
 "use client";
 
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, KeyRound, Search, Shield, UserCog, UserPlus, Users } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
@@ -32,6 +33,13 @@ import type {
 type ViewTab = "staff" | "patients" | "accounts";
 type User = ListUsersResponse[number];
 
+function personnelTabFromQuery(raw: string | null | undefined): ViewTab | null {
+  if (!raw) return null;
+  const s = raw.toLowerCase().trim();
+  if (s === "staff" || s === "patients" || s === "accounts") return s;
+  return null;
+}
+
 const STAFF_ROLES: User["role"][] = ["admin", "head_nurse", "supervisor", "observer"];
 const NEW_STAFF_ROLES: Array<"head_nurse" | "supervisor" | "observer"> = [
   "head_nurse",
@@ -47,6 +55,8 @@ const PERSONNEL_QK = {
 
 function PersonnelPageContent() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user: me } = useAuth();
   const queryClient = useQueryClient();
   const canProvision =
@@ -116,6 +126,20 @@ function PersonnelPageContent() {
     setPtPass("");
     setPtErr(null);
   }, []);
+
+  useEffect(() => {
+    const parsed = personnelTabFromQuery(searchParams.get("tab"));
+    if (parsed) setTab(parsed);
+  }, [searchParams]);
+
+  const onPersonnelTabChange = useCallback(
+    (v: ViewTab) => {
+      setTab(v);
+      const path = v === "staff" ? "/admin/personnel" : `/admin/personnel?tab=${encodeURIComponent(v)}`;
+      router.replace(path, { scroll: false });
+    },
+    [router],
+  );
 
   const onSubmitStaffPlusAccount = useCallback(async () => {
     if (!canProvision) return;
@@ -313,7 +337,7 @@ function PersonnelPageContent() {
 
       <Card>
         <CardContent className="pt-6">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as ViewTab)} className="space-y-4">
+          <Tabs value={tab} onValueChange={(v) => onPersonnelTabChange(v as ViewTab)} className="space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <TabsList className="grid w-full grid-cols-3 md:w-auto">
                 <TabsTrigger value="staff">Staff</TabsTrigger>

@@ -680,7 +680,17 @@ export default function CaregiverDetailPane({
   const canManageSchedule = Boolean(
     user && hasCapability(user.role, "caregivers.schedule.manage"),
   );
+  const canManagePatientAccess = Boolean(
+    user &&
+      (hasCapability(user.role, "patients.manage") ||
+        hasCapability(user.role, "caregivers.manage")),
+  );
   const canManageAccounts = Boolean(user && hasCapability(user.role, "users.manage"));
+  /** Ward-lead directory: useful for observers/supervisors and for head-nurse peer lookup (excludes self below). */
+  const showHeadNurseGuide =
+    caregiver.role === "observer" ||
+    caregiver.role === "supervisor" ||
+    caregiver.role === "head_nurse";
 
   const roomsEndpoint = "/rooms";
   const { data: rooms, isLoading: roomsLoading } = useQuery({
@@ -734,6 +744,26 @@ export default function CaregiverDetailPane({
     refetchInterval: getQueryPollingMs(patientAccessEndpoint),
     retry: 3,
   });
+  const staffRosterEndpoint = "/caregivers?limit=1000";
+  const { data: allStaffCaregivers, isLoading: headNursesLoading } = useQuery({
+    queryKey: ["admin", "caregivers", "workspace-staff-roster", caregiver.workspace_id],
+    queryFn: () => api.get<Caregiver[]>(staffRosterEndpoint),
+    staleTime: getQueryStaleTimeMs(staffRosterEndpoint),
+    refetchInterval: getQueryPollingMs(staffRosterEndpoint),
+    enabled: showHeadNurseGuide,
+    retry: 3,
+  });
+  const headNurses = useMemo(() => {
+    const all = (allStaffCaregivers ?? []).filter((c) => c.role === "head_nurse");
+    if (caregiver.role === "head_nurse") {
+      return all.filter((c) => c.id !== caregiver.id);
+    }
+    return all;
+  }, [allStaffCaregivers, caregiver.id, caregiver.role]);
+  const hasAnyHeadNurseInWorkspace = useMemo(
+    () => (allStaffCaregivers ?? []).some((c) => c.role === "head_nurse"),
+    [allStaffCaregivers],
+  );
   const refetchShifts = useCallback(() => refetchOrThrow(refetchShiftsBase), [refetchShiftsBase]);
   const refetchZones = useCallback(() => refetchOrThrow(refetchZonesBase), [refetchZonesBase]);
   const refetchPatientAccess = useCallback(() => refetchOrThrow(refetchPatientAccessBase), [refetchPatientAccessBase]);
@@ -856,7 +886,7 @@ export default function CaregiverDetailPane({
   }, [patientAccessDraftSet, patientAccessSearch, patients]);
 
   async function handleSavePatientAccess() {
-    if (!canManageSchedule) return;
+    if (!canManagePatientAccess) return;
     setPatientAccessSaving(true);
     setPatientAccessError(null);
     try {
@@ -1092,7 +1122,180 @@ export default function CaregiverDetailPane({
             </div>
           </section>
 
-                    <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
+          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 font-semibold text-foreground">
+                  <Shield className="h-5 w-5 text-primary" aria-hidden />
+                  {t("caregivers.sectionPatientAccess")}
+                </h2>
+                <p className="mt-1 text-sm text-foreground-variant">
+                  {patientAccessDraftIds.length}{" "}
+                  {patientAccessDraftIds.length === 1
+                    ? t("caregivers.patientAccessCountOne")
+                    : t("caregivers.patientAccessCountMany")}
+                </p>
+              </div>
+              {canManagePatientAccess ? (
+                <button
+                  type="button"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50"
+                  onClick={() => void handleSavePatientAccess()}
+                  disabled={patientAccessSaving}
+                >
+                  {patientAccessSaving
+                    ? t("caregivers.patientAccessSaving")
+                    : t("caregivers.patientAccessSave")}
+                </button>
+              ) : null}
+            </div>
+
+            {canManagePatientAccess ? (
+              <div className="mb-4">
+                <SearchableListboxPicker
+                  inputId={patientAccessInputId}
+                  listboxId={patientAccessListboxId}
+                  options={patientAccessOptions}
+                  search={patientAccessSearch}
+                  onSearchChange={setPatientAccessSearch}
+                  searchPlaceholder={t("caregivers.patientAccessSearchPlaceholder")}
+                  selectedOptionId={null}
+                  onSelectOption={(pid) => {
+                    const patientId = Number(pid);
+                    if (!Number.isFinite(patientId)) return;
+                    setPatientAccessDraftIds((prev) =>
+                      prev.includes(patientId) ? prev : [...prev, patientId],
+                    );
+                    setPatientAccessSearch("");
+                  }}
+                  disabled={patientAccessLoading}
+                  listboxAriaLabel={t("caregivers.patientAccessListbox")}
+                  noMatchMessage={t("caregivers.patientAccessNoMatch")}
+                  emptyStateMessage={
+                    patientAccessOptions.length === 0 ? t("caregivers.patientAccessNoPool") : null
+                  }
+                  emptyNoMatch={patientAccessSearch.trim().length > 0}
+                />
+              </div>
+            ) : null}
+
+            {patientAccessError ? (
+              <p className="mb-3 text-sm text-critical">{patientAccessError}</p>
+            ) : null}
+
+            {patientAccessLoading ? (
+              <div className="flex justify-center py-6">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            ) : patientAccessSelectedPatients.length === 0 ? (
+              <p className="text-sm text-foreground-variant">{t("caregivers.patientAccessEmpty")}</p>
+            ) : (
+              <ul className="space-y-2">
+                {patientAccessSelectedPatients.map((patient) => (
+                  <li
+                    key={patient.id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4"
+                  >
+                    <Link href={`/admin/patients/${patient.id}`} className="min-w-0">
+                      <p className="font-semibold text-foreground">{formatPatientLabel(patient)}</p>
+                      <p className="text-xs text-foreground-variant">
+                        {patient.room_id != null ? `Room #${patient.room_id}` : `Patient #${patient.id}`} ·{" "}
+                        {patient.care_level}
+                      </p>
+                    </Link>
+                    {canManagePatientAccess ? (
+                      <button
+                        type="button"
+                        className="shrink-0 text-xs font-semibold text-critical hover:underline"
+                        onClick={() =>
+                          setPatientAccessDraftIds((prev) => prev.filter((pid) => pid !== patient.id))
+                        }
+                      >
+                        {t("caregivers.patientAccessRemove")}
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
+              <Users className="h-5 w-5 text-primary" aria-hidden />
+              {t("caregivers.sectionLinkedPatients")}
+            </h2>
+            {linkedPatients.length === 0 ? (
+              <p className="text-sm text-foreground-variant">{t("caregivers.linkedPatientsEmpty")}</p>
+            ) : (
+              <ul className="space-y-2">
+                {linkedPatients.map((p) => (
+                  <li key={p.id}>
+                    <Link
+                      href={`/admin/patients/${p.id}`}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4 transition-smooth hover:border-primary/30 hover:shadow-sm"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground">
+                          {p.first_name} {p.last_name}
+                        </p>
+                        <p className="text-xs text-foreground-variant">
+                          {t("patients.age")}: {ageYears(p.date_of_birth, nowMs) ?? "—"} ·{" "}
+                          {p.care_level}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-outline" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {showHeadNurseGuide ? (
+            <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
+              <h2 className="mb-2 flex items-center gap-2 font-semibold text-foreground">
+                <Users className="h-5 w-5 text-primary" aria-hidden />
+                {t("caregivers.sectionHeadNurses")}
+              </h2>
+              <p className="mb-4 text-sm text-foreground-variant">{t("caregivers.headNursesHint")}</p>
+              {headNursesLoading ? (
+                <div className="flex justify-center py-6">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+              ) : headNurses.length === 0 ? (
+                <p className="text-sm text-foreground-variant">
+                  {caregiver.role === "head_nurse" && hasAnyHeadNurseInWorkspace
+                    ? t("caregivers.headNursesPeerOnlySelf")
+                    : t("caregivers.headNursesEmpty")}
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {headNurses.map((hn) => (
+                    <li key={hn.id}>
+                      <Link
+                        href={`/admin/caregivers/${hn.id}`}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4 transition-smooth hover:border-primary/30 hover:shadow-sm"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground">
+                            {hn.first_name} {hn.last_name}
+                          </p>
+                          <p className="text-xs text-foreground-variant">
+                            {formatStaffRoleLabel(hn.role, t)}
+                            {hn.employee_code?.trim() ? ` · ${hn.employee_code.trim()}` : ""}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-outline" aria-hidden />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          ) : null}
+
+          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
             <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
               <MapPin className="h-5 w-5 text-primary" aria-hidden />
               {t("caregivers.sectionZones")}
@@ -1183,129 +1386,6 @@ export default function CaregiverDetailPane({
                         </div>
                       );
                     })()}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="flex items-center gap-2 font-semibold text-foreground">
-                  <Shield className="h-5 w-5 text-primary" aria-hidden />
-                  Patient access
-                </h2>
-                <p className="mt-1 text-sm text-foreground-variant">
-                  {patientAccessDraftIds.length} assigned patient{patientAccessDraftIds.length === 1 ? "" : "s"}
-                </p>
-              </div>
-              {canManageSchedule ? (
-                <button
-                  type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50"
-                  onClick={() => void handleSavePatientAccess()}
-                  disabled={patientAccessSaving}
-                >
-                  {patientAccessSaving ? "Saving..." : "Save access"}
-                </button>
-              ) : null}
-            </div>
-
-            {canManageSchedule ? (
-              <div className="mb-4">
-                <SearchableListboxPicker
-                  inputId={patientAccessInputId}
-                  listboxId={patientAccessListboxId}
-                  options={patientAccessOptions}
-                  search={patientAccessSearch}
-                  onSearchChange={setPatientAccessSearch}
-                  searchPlaceholder="Search patients by name, id, or room"
-                  selectedOptionId={null}
-                  onSelectOption={(id) => {
-                    const patientId = Number(id);
-                    if (!Number.isFinite(patientId)) return;
-                    setPatientAccessDraftIds((prev) =>
-                      prev.includes(patientId) ? prev : [...prev, patientId],
-                    );
-                    setPatientAccessSearch("");
-                  }}
-                  disabled={patientAccessLoading}
-                  listboxAriaLabel="Add patient access"
-                  noMatchMessage="No matching patients"
-                  emptyStateMessage={patientAccessOptions.length === 0 ? "No patients available" : null}
-                  emptyNoMatch={patientAccessSearch.trim().length > 0}
-                />
-              </div>
-            ) : null}
-
-            {patientAccessError ? (
-              <p className="mb-3 text-sm text-critical">{patientAccessError}</p>
-            ) : null}
-
-            {patientAccessLoading ? (
-              <div className="flex justify-center py-6">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              </div>
-            ) : patientAccessSelectedPatients.length === 0 ? (
-              <p className="text-sm text-foreground-variant">No explicit patient access assigned.</p>
-            ) : (
-              <ul className="space-y-2">
-                {patientAccessSelectedPatients.map((patient) => (
-                  <li
-                    key={patient.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4"
-                  >
-                    <Link href={`/admin/patients/${patient.id}`} className="min-w-0">
-                      <p className="font-semibold text-foreground">{formatPatientLabel(patient)}</p>
-                      <p className="text-xs text-foreground-variant">
-                        {patient.room_id != null ? `Room #${patient.room_id}` : `Patient #${patient.id}`} ·{" "}
-                        {patient.care_level}
-                      </p>
-                    </Link>
-                    {canManageSchedule ? (
-                      <button
-                        type="button"
-                        className="shrink-0 text-xs font-semibold text-critical hover:underline"
-                        onClick={() =>
-                          setPatientAccessDraftIds((prev) => prev.filter((id) => id !== patient.id))
-                        }
-                      >
-                        Remove
-                      </button>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
-              <Users className="h-5 w-5 text-primary" aria-hidden />
-              {t("caregivers.sectionLinkedPatients")}
-            </h2>
-            {linkedPatients.length === 0 ? (
-              <p className="text-sm text-foreground-variant">{t("caregivers.linkedPatientsEmpty")}</p>
-            ) : (
-              <ul className="space-y-2">
-                {linkedPatients.map((p) => (
-                  <li key={p.id}>
-                    <Link
-                      href={`/admin/patients/${p.id}`}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4 transition-smooth hover:border-primary/30 hover:shadow-sm"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground">
-                          {p.first_name} {p.last_name}
-                        </p>
-                        <p className="text-xs text-foreground-variant">
-                          {t("patients.age")}: {ageYears(p.date_of_birth, nowMs) ?? "—"} ·{" "}
-                          {p.care_level}
-                        </p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-outline" aria-hidden />
-                    </Link>
                   </li>
                 ))}
               </ul>

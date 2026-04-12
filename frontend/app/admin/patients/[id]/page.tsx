@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback, use } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
+import { useEffect, useState, useCallback, useId, useMemo } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { api, ApiError } from "@/lib/api";
 import type {
   Patient,
   Caregiver,
+  Room,
   User as PortalUser,
   VitalReading,
   Alert,
@@ -28,10 +29,29 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import PatientEditorModal from "@/components/admin/patients/PatientEditorModal";
+import SearchableListboxPicker, {
+  type SearchableListboxOption,
+} from "@/components/shared/SearchableListboxPicker";
 import { ageYears } from "@/lib/age";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
+import { hasCapability } from "@/lib/permissions";
+import { formatStaffRoleLabel } from "@/lib/staffRoleLabel";
 import { bodyMassIndex, bmiCategory } from "@/lib/patientMetrics";
+
+function caregiverSearchText(c: Caregiver): string {
+  return [
+    `${c.first_name} ${c.last_name}`.trim(),
+    `#${c.id}`,
+    c.employee_code?.trim() || null,
+    c.role,
+    c.department?.trim() || null,
+  ]
+    .filter((v): v is string => Boolean(v && String(v).trim()))
+    .join(" ")
+    .toLowerCase();
+}
 
 function formatCondition(c: MedicalConditionEntry): string {
   if (typeof c === "string") return c;
@@ -42,20 +62,24 @@ function formatCondition(c: MedicalConditionEntry): string {
   return String(o.type ?? "—");
 }
 
-export default function PatientDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function PatientDetailPage() {
+  const params = useParams();
+  const id = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, locale } = useTranslation();
+  const { user: authUser } = useAuth();
   const nowMs = useFixedNowMs();
+  const staffSearchInputId = useId();
+  const staffSearchListboxId = useId();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [contacts, setContacts] = useState<PatientContact[]>([]);
-  const [roomName, setRoomName] = useState<string | null>(null);
-  const [caregivers, setCaregivers] = useState<Caregiver[]>([]);
+  const [roomDetail, setRoomDetail] = useState<Room | null>(null);
+  const [caregiverPool, setCaregiverPool] = useState<Caregiver[]>([]);
+  const [caregiverDraftIds, setCaregiverDraftIds] = useState<number[]>([]);
+  const [staffSearch, setStaffSearch] = useState("");
+  const [staffSaving, setStaffSaving] = useState(false);
+  const [staffError, setStaffError] = useState<string | null>(null);
   const [vitals, setVitals] = useState<VitalReading[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
@@ -71,7 +95,7 @@ export default function PatientDetailPage({
       const p = await api.get<Patient>(`/patients/${id}`);
       setPatient(p);
 
-      const [c, v, a, tl, d, users, cg] = await Promise.all([
+      const [c, v, a, tl, d, users, pool, assigned] = await Promise.all([
         api.get<PatientContact[]>(`/patients/${id}/contacts`).catch(() => []),
         api
           .get<VitalReading[]>(`/vitals/readings?patient_id=${id}&limit=20`)
@@ -81,26 +105,34 @@ export default function PatientDetailPage({
         api.get<DeviceAssignment[]>(`/patients/${id}/devices`).catch(() => []),
         api.get<PortalUser[]>("/users").catch(() => []),
         api.get<Caregiver[]>("/caregivers?limit=1000").catch(() => []),
+        api.get<Caregiver[]>(`/patients/${id}/caregivers`).catch(() => []),
       ]);
       setContacts(c);
       setVitals(v);
       setAlerts(a);
       setTimeline(tl);
       setAssignments(d);
-      setCaregivers(cg);
+      const poolMerged = new Map<number, Caregiver>();
+      (pool ?? []).forEach((c) => poolMerged.set(c.id, c));
+      (assigned ?? []).forEach((c) => {
+        if (!poolMerged.has(c.id)) poolMerged.set(c.id, c);
+      });
+      setCaregiverPool([...poolMerged.values()]);
+      setCaregiverDraftIds(assigned.map((cg) => cg.id));
+      setStaffError(null);
       setLinkedPortalUsers(
         Array.isArray(users) ? users.filter((u) => u.patient_id === pid) : [],
       );
 
       if (p.room_id != null) {
         try {
-          const room = await api.get<{ name?: string }>(`/rooms/${p.room_id}`);
-          setRoomName(room.name ?? null);
+          const room = await api.get<Room>(`/rooms/${p.room_id}`);
+          setRoomDetail(room);
         } catch {
-          setRoomName(null);
+          setRoomDetail(null);
         }
       } else {
-        setRoomName(null);
+        setRoomDetail(null);
       }
 
       setError("");
@@ -125,6 +157,59 @@ export default function PatientDetailPage({
     setEditorOpen(false);
     router.replace(`/admin/patients/${id}`);
   }, [router, id]);
+
+  const canManageResponsibleStaff = Boolean(
+    authUser &&
+      (hasCapability(authUser.role, "patients.manage") ||
+        hasCapability(authUser.role, "caregivers.manage")),
+  );
+
+  const caregiversById = useMemo(() => {
+    const m = new Map<number, Caregiver>();
+    caregiverPool.forEach((c) => m.set(c.id, c));
+    return m;
+  }, [caregiverPool]);
+
+  const caregiverDraftSet = useMemo(() => new Set(caregiverDraftIds), [caregiverDraftIds]);
+
+  const staffPickerOptions = useMemo<SearchableListboxOption[]>(() => {
+    const q = staffSearch.trim().toLowerCase();
+    return caregiverPool
+      .filter((c) => !caregiverDraftSet.has(c.id))
+      .filter((c) => !q || caregiverSearchText(c).includes(q))
+      .slice(0, 80)
+      .map((c) => ({
+        id: String(c.id),
+        title: `${c.first_name} ${c.last_name}`.trim() || `Staff #${c.id}`,
+        subtitle: [
+          formatStaffRoleLabel(c.role, t),
+          c.employee_code?.trim() || null,
+          `#${c.id}`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      }));
+  }, [caregiverPool, caregiverDraftSet, staffSearch, t]);
+
+  const draftCaregiversOrdered = useMemo(() => {
+    return caregiverDraftIds
+      .map((cid) => caregiversById.get(cid))
+      .filter((c): c is Caregiver => Boolean(c));
+  }, [caregiverDraftIds, caregiversById]);
+
+  const handleSaveResponsibleStaff = useCallback(async () => {
+    if (!canManageResponsibleStaff) return;
+    setStaffSaving(true);
+    setStaffError(null);
+    try {
+      await api.put(`/patients/${id}/caregivers`, { caregiver_ids: caregiverDraftIds });
+      await fetchData();
+    } catch (e) {
+      setStaffError(e instanceof ApiError ? e.message : t("patients.empty"));
+    } finally {
+      setStaffSaving(false);
+    }
+  }, [canManageResponsibleStaff, id, caregiverDraftIds, fetchData, t]);
 
   if (loading) {
     return (
@@ -247,12 +332,34 @@ export default function PatientDetailPage({
                   {" · "}
                   {genderLabel}
                 </p>
-                {roomName && (
-                  <p className="text-sm text-foreground-variant mt-2">
-                    {t("patients.room")}:{" "}
-                    <span className="font-medium text-foreground">{roomName}</span>
+                <div className="text-sm text-foreground-variant mt-2 space-y-1">
+                  <p>
+                    <span className="font-medium text-foreground-variant">{t("patients.room")}: </span>
+                    {patient.room_id == null ? (
+                      <span className="font-medium text-foreground">{t("patients.noRoom")}</span>
+                    ) : roomDetail ? (
+                      <span className="font-medium text-foreground">
+                        {roomDetail.name?.trim() || `Room #${roomDetail.id}`}
+                        {roomDetail.facility_name || roomDetail.floor_name
+                          ? ` · ${[roomDetail.facility_name, roomDetail.floor_name].filter(Boolean).join(" · ")}`
+                          : ""}
+                      </span>
+                    ) : (
+                      <span className="font-medium text-foreground">
+                        #{patient.room_id}
+                        <span className="text-foreground-variant font-normal"> — {t("patients.roomDetailsUnavailable")}</span>
+                      </span>
+                    )}
                   </p>
-                )}
+                  <p>
+                    <Link
+                      href="/admin/facility-management"
+                      className="text-primary text-sm font-semibold hover:underline"
+                    >
+                      {t("patients.roomOpenFacility")}
+                    </Link>
+                  </p>
+                </div>
                 <div className="flex flex-wrap gap-2 mt-4">
                   <span className={`text-xs px-3 py-1 rounded-full font-medium care-${patient.care_level}`}>
                     {patient.care_level}
@@ -555,28 +662,91 @@ export default function PatientDetailPage({
           </section>
 
           <section className="surface-card rounded-xl border border-outline-variant/20 p-5">
-            <h2 className="font-semibold text-foreground mb-4 flex items-center justify-between gap-2">
-              <span>{t("caregivers.title")}</span>
-              <span className="text-xs font-normal text-foreground-variant">{caregivers.length}</span>
-            </h2>
-            {caregivers.length === 0 ? (
-              <p className="text-sm text-foreground-variant">{t("caregivers.empty")}</p>
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <h2 className="font-semibold text-foreground flex items-center justify-between gap-2">
+                <span>{t("patients.sectionResponsibleStaff")}</span>
+                <span className="text-xs font-normal text-foreground-variant">{caregiverDraftIds.length}</span>
+              </h2>
+              {canManageResponsibleStaff ? (
+                <button
+                  type="button"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50 shrink-0"
+                  onClick={() => void handleSaveResponsibleStaff()}
+                  disabled={staffSaving}
+                >
+                  {staffSaving ? t("patients.responsibleStaffSaving") : t("patients.responsibleStaffSave")}
+                </button>
+              ) : null}
+            </div>
+            {!canManageResponsibleStaff ? (
+              <p className="text-xs text-foreground-variant mb-3">{t("patients.responsibleStaffReadOnlyHint")}</p>
+            ) : null}
+            {staffError ? <p className="text-sm text-critical mb-3">{staffError}</p> : null}
+            {canManageResponsibleStaff ? (
+              <div className="mb-4">
+                <SearchableListboxPicker
+                  inputId={staffSearchInputId}
+                  listboxId={staffSearchListboxId}
+                  options={staffPickerOptions}
+                  search={staffSearch}
+                  onSearchChange={setStaffSearch}
+                  searchPlaceholder={t("patients.searchStaffPlaceholder")}
+                  selectedOptionId={null}
+                  onSelectOption={(optId) => {
+                    const n = Number(optId);
+                    if (!Number.isFinite(n)) return;
+                    setCaregiverDraftIds((prev) => (prev.includes(n) ? prev : [...prev, n]));
+                    setStaffSearch("");
+                  }}
+                  disabled={staffSaving}
+                  listboxAriaLabel={t("patients.responsibleStaffListbox")}
+                  noMatchMessage={t("patients.responsibleStaffNoMatch")}
+                  emptyStateMessage={
+                    staffPickerOptions.length === 0 ? t("caregivers.empty") : null
+                  }
+                  emptyNoMatch={staffSearch.trim().length > 0}
+                />
+              </div>
+            ) : null}
+            {draftCaregiversOrdered.length === 0 ? (
+              <p className="text-sm text-foreground-variant">{t("patients.responsibleStaffEmpty")}</p>
             ) : (
               <ul className="space-y-2">
-                {caregivers.map((person) => (
+                {draftCaregiversOrdered.map((person) => (
                   <li
                     key={person.id}
                     className="rounded-lg border border-outline-variant/20 p-3 bg-surface-container-low text-sm hover:border-primary/30 transition-smooth"
                   >
-                    <Link
-                      href={`/admin/caregivers/${person.id}`}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <span className="font-medium text-foreground">
-                        {person.first_name} {person.last_name}
-                      </span>
-                      <span className="text-xs text-primary">{t("caregivers.openFullDetail")}</span>
-                    </Link>
+                    <div className="flex items-start justify-between gap-3">
+                      <Link href={`/admin/caregivers/${person.id}`} className="min-w-0 flex-1">
+                        <span className="font-medium text-foreground block">
+                          {person.first_name} {person.last_name}
+                        </span>
+                        <span className="text-xs text-foreground-variant">
+                          {formatStaffRoleLabel(person.role, t)}
+                          {person.employee_code?.trim() ? ` · ${person.employee_code.trim()}` : ""}
+                        </span>
+                      </Link>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <Link
+                          href={`/admin/caregivers/${person.id}`}
+                          className="text-xs text-primary font-semibold hover:underline"
+                        >
+                          {t("caregivers.openFullDetail")}
+                        </Link>
+                        {canManageResponsibleStaff ? (
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-critical hover:underline"
+                            onClick={() =>
+                              setCaregiverDraftIds((prev) => prev.filter((x) => x !== person.id))
+                            }
+                          >
+                            {t("patients.responsibleStaffRemove")}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>

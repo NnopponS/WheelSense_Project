@@ -1,17 +1,18 @@
-import AdminSettingsClient, { type SettingsTabKey } from "./SettingsClient";
+"use client";
 
-function parseTab(tab: string | undefined): SettingsTabKey {
-  if (tab === "ml" || tab === "system") return "system";
-  if (tab === "audit") return "audit";
-  if (tab === "ai" || tab === "server") return tab;
-  return "profile";
-}
+import { Suspense } from "react";
+import AdminSettingsClient from "./SettingsClient";
 
-export default async function AdminSettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
-  const sp = await searchParams;
-  return <AdminSettingsClient initialTab={parseTab(sp.tab)} />;
+export default function AdminSettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-5xl animate-fade-in px-4 py-8 text-sm text-muted-foreground">
+          Loading settings…
+        </div>
+      }
+    >
+      <AdminSettingsClient />
+    </Suspense>
+  );
 }

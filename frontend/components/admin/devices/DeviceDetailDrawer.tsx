@@ -330,7 +330,8 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
 
   const refreshAfterMutation = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["api"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", "devices"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] }),
       queryClient.invalidateQueries({ queryKey: ["device-detail-drawer"] }),
     ]);
     onMutate();

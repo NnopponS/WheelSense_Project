@@ -39,7 +39,7 @@ work. Use the fast/default model for copy tweaks and isolated UI edits.
 - `ScheduleForm.tsx` — Schedule creation/editing form
 
 ### Notification System
-- `useNotifications.ts` — Notification state hook
+- `useNotifications.tsx` — Notification state hook (JSX / Sonner `toast.custom`)
 - `NotificationBell.tsx` — Notification bell icon with badge (integrated in `TopBar.tsx`)
 - `NotificationDrawer.tsx` — Notification list drawer
 

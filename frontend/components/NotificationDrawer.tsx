@@ -22,7 +22,7 @@ import type { Notification, NotificationType } from "@/hooks/useNotifications";
 
 interface NotificationDrawerProps {
   isOpen: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   notifications: Notification[];
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
@@ -66,7 +66,7 @@ const priorityColors: Record<string, string> = {
 
 export function NotificationDrawer({
   isOpen,
-  onClose,
+  onOpenChange,
   notifications,
   onMarkAsRead,
   onMarkAllAsRead,
@@ -104,7 +104,7 @@ export function NotificationDrawer({
     }
     if (notification.link) {
       router.push(notification.link);
-      onClose();
+      onOpenChange(false);
     }
   };
 
@@ -115,10 +115,11 @@ export function NotificationDrawer({
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md">
         <SheetHeader className="space-y-4">
-          <div className="flex items-center justify-between">
+          {/* Reserve space for SheetContent’s default absolute close control (top-right). */}
+          <div className="flex items-center justify-between pr-12">
             <SheetTitle className="flex items-center gap-2">
               {t("shell.notifications")}
               {unreadCount > 0 && (

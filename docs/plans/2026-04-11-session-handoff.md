@@ -565,3 +565,11 @@
 สิ่งที่ยังไม่ปิดคือ requirement ใหญ่ฝั่ง calendar, support, full telemetry contracts, AI settings/popup, demo-control, และ role IA reorganization หลายหน้า
 
 เอกสารนี้ควรใช้เป็นจุดเริ่มต้นหลักของ agent ถัดไป
+
+---
+
+## Integration note (2026-04-12) — patient room + staff roster UX
+
+- Patient **facility room** on detail pages: show and edit via `Patient.room_id` (`GET`/`PATCH /api/patients/{id}`). Do not infer from device localization alone; `GET /api/floorplans/presence` reflects assigned patients where the backend joins `room_id`.
+- Caregiver/staff **patient responsibility** lists: `GET`/`PUT /api/caregivers/{caregiver_id}/patients`; account ↔ caregiver directory: `PUT /api/users/{user_id}` (`caregiver_id`, `role`). Cross-link admin patient and caregiver detail routes to these APIs.
+- Floorplan **room drawer** (node, smart home, patient assign, capture): single implementation `FloorplansPanel` embedded on `/admin/facility-management`; monitoring `FloorMapWorkspace` assign mode must keep the same `PATCH /api/patients/{id}` `{ room_id }` semantics. See `docs/adr/0013-patient-room-assignment-ux-surface.md` and `server/AGENTS.md` subsection “Patient facility room, roster assignment, and floorplan admin surface”.

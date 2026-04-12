@@ -25,6 +25,7 @@
   - supervisor/head-nurse/observer/patient smoke-test checklist pass
   - shared sidebar consolidation (`SharedSidebar.tsx`) with role navigation config
   - shared Zustand app store bootstrap (`frontend/store/useAppStore.ts`)
+  - Admin **patient detail** uses **`GET/PUT /api/patients/{id}/caregivers`** for the assigned-staff roster (not the full caregiver directory); **caregiver detail** edits explicit patient access with **`patients.manage` / `caregivers.manage`** (`CaregiverDetailPane`), not only `caregivers.schedule.manage` (see ADR 0013).
 
 🎨 1. หมวด UI Components & Styling (ตัวช่วยสร้างหน้าเว็บให้สวยเป๊ะในพริบตา)
 

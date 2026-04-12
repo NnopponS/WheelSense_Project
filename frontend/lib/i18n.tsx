@@ -851,6 +851,41 @@ const translations = {
   "patients.editTitle": { en: "Edit patient record", th: "แก้ไขข้อมูลผู้ป่วย" },
   "patients.editRoomDevices": { en: "Room & devices", th: "ห้องและอุปกรณ์" },
   "patients.noRoom": { en: "No room assigned", th: "ยังไม่ระบุห้อง" },
+  "patients.roomOpenFacility": {
+    en: "Open facility map",
+    th: "เปิดผังอาคารและห้อง",
+  },
+  "patients.sectionResponsibleStaff": {
+    en: "Assigned staff",
+    th: "เจ้าหน้าที่ที่รับผิดชอบ",
+  },
+  "patients.responsibleStaffEmpty": {
+    en: "No staff explicitly assigned to this patient yet.",
+    th: "ยังไม่มีเจ้าหน้าที่ที่ระบุรับผิดชอบผู้ป่วยรายนี้",
+  },
+  "patients.responsibleStaffSave": { en: "Save staff", th: "บันทึกเจ้าหน้าที่" },
+  "patients.responsibleStaffSaving": { en: "Saving…", th: "กำลังบันทึก…" },
+  "patients.searchStaffPlaceholder": {
+    en: "Search staff by name, ID, or role…",
+    th: "ค้นหาเจ้าหน้าที่ด้วยชื่อ รหัส หรือบทบาท…",
+  },
+  "patients.responsibleStaffNoMatch": {
+    en: "No matching staff",
+    th: "ไม่พบเจ้าหน้าที่ที่ตรงกัน",
+  },
+  "patients.responsibleStaffListbox": {
+    en: "Add assigned staff",
+    th: "เพิ่มเจ้าหน้าที่ที่รับผิดชอบ",
+  },
+  "patients.responsibleStaffReadOnlyHint": {
+    en: "You can view assignments; only patient managers can change them.",
+    th: "ดูรายการได้เท่านั้น — เฉพาะผู้จัดการผู้ป่วยเท่านั้นที่แก้ไขได้",
+  },
+  "patients.responsibleStaffRemove": { en: "Remove", th: "นำออก" },
+  "patients.roomDetailsUnavailable": {
+    en: "Could not load room details",
+    th: "โหลดรายละเอียดห้องไม่สำเร็จ",
+  },
   "patients.searchRoomsByNameFloorOrId": {
     en: "Search rooms by name, floor, or ID…",
     th: "ค้นหาห้องด้วยชื่อ ชั้น หรือรหัส…",
@@ -1511,6 +1546,57 @@ const translations = {
   },
   "caregivers.sectionAbout": { en: "About", th: "ข้อมูลทั่วไป" },
   "caregivers.sectionZones": { en: "Zone assignments", th: "พื้นที่รับผิดชอบ" },
+  "caregivers.sectionPatientAccess": {
+    en: "Explicit patient access",
+    th: "สิทธิ์เข้าถึงผู้ป่วยโดยตรง",
+  },
+  "caregivers.patientAccessCountOne": {
+    en: "patient on the access list",
+    th: "รายชื่อผู้ป่วยในรายการสิทธิ์",
+  },
+  "caregivers.patientAccessCountMany": {
+    en: "patients on the access list",
+    th: "รายชื่อผู้ป่วยในรายการสิทธิ์",
+  },
+  "caregivers.patientAccessSave": { en: "Save access", th: "บันทึกสิทธิ์" },
+  "caregivers.patientAccessSaving": { en: "Saving…", th: "กำลังบันทึก…" },
+  "caregivers.patientAccessSearchPlaceholder": {
+    en: "Search patients by name, id, or room…",
+    th: "ค้นหาผู้ป่วยด้วยชื่อ รหัส หรือห้อง…",
+  },
+  "caregivers.patientAccessListbox": {
+    en: "Add patient to access list",
+    th: "เพิ่มผู้ป่วยในรายการสิทธิ์",
+  },
+  "caregivers.patientAccessNoMatch": {
+    en: "No matching patients",
+    th: "ไม่พบผู้ป่วยที่ตรงกัน",
+  },
+  "caregivers.patientAccessNoPool": {
+    en: "No patients available",
+    th: "ไม่มีผู้ป่วยในระบบ",
+  },
+  "caregivers.patientAccessEmpty": {
+    en: "No explicit patient access assigned.",
+    th: "ยังไม่มีการระบุสิทธิ์เข้าถึงผู้ป่วยโดยตรง",
+  },
+  "caregivers.patientAccessRemove": { en: "Remove", th: "นำออก" },
+  "caregivers.sectionHeadNurses": {
+    en: "Head nurses (reference)",
+    th: "หัวหน้าพยาบาล (อ้างอิง)",
+  },
+  "caregivers.headNursesHint": {
+    en: "Contact or coordinate with head nurses for ward leadership and assignments.",
+    th: "ประสานงานหัวหน้าพยาบาลสำหรับภาระงานและการมอบหมายในหอผู้ป่วย",
+  },
+  "caregivers.headNursesEmpty": {
+    en: "No head nurse staff records in this workspace yet.",
+    th: "ยังไม่มีบันทึกหัวหน้าพยาบาลในเวิร์กสเปซนี้",
+  },
+  "caregivers.headNursesPeerOnlySelf": {
+    en: "No other head nurse profiles in this workspace (only this record matches).",
+    th: "ไม่มีโปรไฟล์หัวหน้าพยาบาลอื่นในเวิร์กสเปซนี้ (มีเพียงรายการนี้)",
+  },
   "caregivers.sectionLinkedPatients": {
     en: "Patients in assigned rooms",
     th: "ผู้ป่วยในห้องที่รับผิดชอบ",
@@ -1636,7 +1722,7 @@ const translations = {
     en: "Choose a device type, then search by name or ID to assign the room node.",
     th: "เลือกประเภทอุปกรณ์ แล้วค้นหาด้วยชื่อหรือรหัสเพื่อกำหนดโหนดของห้อง",
   },
-  "floorplan.deviceCategoryStep": { en: "1. Device type", th: "1. ประเภทอุปกรณ์" },
+  "floorplan.deviceCategoryStep": { en: "1. Link type", th: "1. ประเภทการเชื่อม" },
   "floorplan.deviceSearchStep": { en: "2. Find device", th: "2. ค้นหาอุปกรณ์" },
   "floorplan.searchNodeDevice": {
     en: "Search device name or ID…",
@@ -1652,6 +1738,62 @@ const translations = {
   },
   "floorplan.selectNodeDevice": { en: "Room node device", th: "อุปกรณ์โหนดของห้อง" },
   "floorplan.noNode": { en: "No node", th: "ไม่มีโหนด" },
+  "floorplan.linkTabNode": { en: "Node", th: "โหนด" },
+  "floorplan.linkTabSmart": { en: "Smart device", th: "อุปกรณ์อัจฉริยะ" },
+  "floorplan.smartInRoom": { en: "Smart devices in this room", th: "อุปกรณ์อัจฉริยะในห้องนี้" },
+  "floorplan.searchSmartDevice": {
+    en: "Search smart device name or entity…",
+    th: "ค้นหาชื่อหรือ entity ของอุปกรณ์อัจฉริยะ…",
+  },
+  "floorplan.smartUnlink": { en: "Remove from room", th: "เอาออกจากห้อง" },
+  "floorplan.smartAssignFailed": {
+    en: "Could not update smart device room.",
+    th: "อัปเดตห้องของอุปกรณ์อัจฉริยะไม่สำเร็จ",
+  },
+  "floorplan.captureLive": { en: "Capture preview", th: "จับภาพตัวอย่าง" },
+  "floorplan.captureLiveHint": {
+    en: "Requests a frame from the node camera; the image appears when the device reports it.",
+    th: "ขอเฟรมจากกล้องของโหนด ภาพจะแสดงเมื่ออุปกรณ์ส่งกลับมา",
+  },
+  "floorplan.captureNoPhotoYet": {
+    en: "No photo in device detail yet — try again in a moment.",
+    th: "ยังไม่มีภาพในรายละเอียดอุปกรณ์ ลองอีกครั้งในอีกสักครู่",
+  },
+  "floorplan.captureNeedsNodeHardware": {
+    en: "Camera capture is only available for registry devices with hardware type “node”.",
+    th: "จับภาพจากกล้องได้เฉพาะอุปกรณ์ในระบบที่ประเภทฮาร์ดแวร์เป็น “โหนด” เท่านั้น",
+  },
+  "floorplan.captureFailed": {
+    en: "Could not request camera capture.",
+    th: "ขอจับภาพจากกล้องไม่สำเร็จ",
+  },
+  "floorplan.savedPartialNodeLinks": {
+    en: "Layout saved, but some room node links could not be updated. Ensure those rooms exist in the workspace.",
+    th: "บันทึกผังแล้ว แต่บางห้องอัปเดตโหนดไม่สำเร็จ ตรวจสอบว่ามีห้องนั้นในระบบ",
+  },
+  "floorplan.roomLiveSummaryTitle": {
+    en: "Current room (live)",
+    th: "ห้องนี้ตอนนี้ (จากระบบ)",
+  },
+  "floorplan.summaryNodeCanvas": { en: "Node (floorplan)", th: "โหนด (ในผัง)" },
+  "floorplan.summaryNodeSaved": { en: "Node (saved to room)", th: "โหนด (บันทึกในห้องแล้ว)" },
+  "floorplan.summarySmart": { en: "Smart devices", th: "อุปกรณ์อัจฉริยะ" },
+  "floorplan.summaryPatients": { en: "Patients in room", th: "ผู้ป่วยในห้อง" },
+  "floorplan.summaryNone": { en: "None", th: "ไม่มี" },
+  "floorplan.summaryPendingSave": {
+    en: "Save layout to update the room record.",
+    th: "บันทึกผังเพื่ออัปเดตข้อมูลห้องในระบบ",
+  },
+  "floorplan.currentPatientsInRoom": {
+    en: "Patients currently assigned",
+    th: "ผู้ป่วยที่กำหนดในห้องนี้แล้ว",
+  },
+  "floorplan.adminDevicesLink": { en: "Devices admin", th: "จัดการอุปกรณ์" },
+  "floorplan.adminPersonnelLink": { en: "Personnel admin", th: "จัดการบุคลากรและผู้ป่วย" },
+  "floorplan.beforeSearchHint": {
+    en: "Current assignment is shown above; use search to change it.",
+    th: "ด้านบนแสดงค่าที่เชื่อมอยู่ ใช้ช่องค้นหาด้านล่างเพื่อเปลี่ยน",
+  },
   "floorplan.powerKw": { en: "Power (kW)", th: "กำลังไฟ (kW)" },
   "floorplan.removeRoom": { en: "Remove room", th: "ลบห้อง" },
   "floorplan.assignmentMode": { en: "Patient assignment mode", th: "โหมดกำหนดผู้ป่วยเข้าห้อง" },
@@ -1663,6 +1805,15 @@ const translations = {
   "floorplan.assignPatientSearch": { en: "Search patients", th: "ค้นหาผู้ป่วย" },
   "floorplan.assignPatientButton": { en: "Assign to room", th: "กำหนดเข้าห้องนี้" },
   "floorplan.assignPatientSuccess": { en: "Patient room updated.", th: "อัปเดตห้องผู้ป่วยแล้ว" },
+  "floorplan.removePatientFromRoom": { en: "Remove from room", th: "นำออกจากห้อง" },
+  "floorplan.removePatientFromRoomSuccess": {
+    en: "Patient removed from this room.",
+    th: "นำผู้ป่วยออกจากห้องนี้แล้ว",
+  },
+  "floorplan.removePatientFromRoomFailed": {
+    en: "Could not remove patient from room.",
+    th: "นำผู้ป่วยออกจากห้องไม่สำเร็จ",
+  },
   "floorplan.assignPatientPick": { en: "Select a patient below, then confirm.", th: "เลือกผู้ป่วยด้านล่างแล้วยืนยัน" },
   "floorplan.assignPatientNeedSavedRoom": {
     en: "Patient assignment needs a room linked to a facility room (saved layout).",
@@ -1737,6 +1888,11 @@ const translations = {
     th: "สร้างชั้นแล้วและเลือกให้แล้ว",
   },
   "floorplan.actions": { en: "Layout actions", th: "การจัดการผัง" },
+  "facilityMgmt.statsSelectedScope": {
+    en: "Selected for floor plan",
+    th: "ที่เลือกสำหรับผังชั้น",
+  },
+  "facilityMgmt.statsNoSelection": { en: "Not yet selected", th: "ยังไม่เลือก" },
 
   // ── Admin users ───────────────────────────────────────────────────────
   "admin.users.title": { en: "User management", th: "จัดการผู้ใช้" },
@@ -1989,6 +2145,21 @@ const translations = {
   "notifications.taskMissingDescription": { en: "No description", th: "ไม่มีคำอธิบาย" },
   "notifications.toastNewAlert": { en: "New alert", th: "แจ้งเตือนใหม่" },
   "notifications.toastView": { en: "View", th: "ดู" },
+  "notifications.toastOpenQueue": { en: "Open in queue", th: "เปิดในคิว" },
+  "notifications.toastAcknowledge": { en: "Acknowledge", th: "รับทราบ" },
+  "notifications.toastAckFailed": { en: "Could not acknowledge alert.", th: "รับทราบไม่สำเร็จ" },
+  "notifications.toastPatientNameFallback": {
+    en: "Patient #{id}",
+    th: "ผู้ป่วย #{id}",
+  },
+  "notifications.toastPatientNoRoomOnRecord": {
+    en: "No facility room assigned on patient record.",
+    th: "ยังไม่มีห้องตามบันทึกผู้ป่วย",
+  },
+  "notifications.toastPatientLocationUnknown": {
+    en: "Current room location could not be resolved.",
+    th: "ยังไม่พบตำแหน่งปัจจุบัน",
+  },
   "shell.alertSound": { en: "Alert sound", th: "เสียงแจ้งเตือน" },
   "shell.alertSoundOn": { en: "Sound on", th: "เปิดเสียง" },
   "shell.alertSoundOff": { en: "Sound off", th: "ปิดเสียง" },

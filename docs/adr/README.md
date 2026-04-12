@@ -20,3 +20,4 @@ details in code, `server/AGENTS.md`, and `.agents/workflows/wheelsense.md`.
 | [0010](0010-phase2-device-fleet-control-plane.md) | Phase 2 Device Fleet Control Plane | proposed | 2026-04-05 |
 | [0011](0011-phase2-map-person-presence-projection.md) | Phase 2 Map-Room-Person Presence Projection | accepted | 2026-04-05 |
 | [0012](0012-room-native-actuators-mqtt.md) | Room-native actuators (non-HA) via MQTT/TCP | proposed | 2026-04-12 |
+| [0013](0013-patient-room-staff-assignment-ux.md) | Patient room + staff–patient assignment UX surface | accepted | 2026-04-12 |

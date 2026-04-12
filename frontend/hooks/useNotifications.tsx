@@ -9,11 +9,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "@/lib/i18n";
 import { playAlertChime } from "@/lib/alertSound";
 import {
-  alertsInboxPath,
+  alertsInboxUrl,
   staffMessagesPath,
   workflowTasksPath,
   type AppRole,
 } from "@/lib/notificationRoutes";
+import { AlertToastCard } from "@/components/notifications/AlertToastCard";
+import type { TranslationKey } from "@/lib/i18n";
+import type { Room } from "@/lib/types";
 import type { AlertOut, CareTaskOut, RoleMessageOut } from "@/lib/api/task-scope-types";
 
 /** Matches server `ROLE_CLINICAL_STAFF` for `GET /api/workflow/tasks` (patients are forbidden). */
@@ -52,6 +55,45 @@ function severityNotifyLevel(severity: string | undefined): "none" | "toast" | "
   return "toastSound";
 }
 
+function formatRoomLocationLine(room: Room): string {
+  const facility = room.facility_name?.trim();
+  const floor =
+    room.floor_name?.trim() ||
+    (typeof room.floor_number === "number" && Number.isFinite(room.floor_number)
+      ? `Floor ${room.floor_number}`
+      : null);
+  const name = room.name?.trim() || `Room #${room.id}`;
+  return [facility, floor, name].filter(Boolean).join(" · ");
+}
+
+async function resolvePatientAlertContext(
+  patientId: number,
+  t: (key: TranslationKey) => string,
+): Promise<{ nameLine: string; roomLine: string }> {
+  const fallbackName = t("notifications.toastPatientNameFallback").replace("{id}", String(patientId));
+  const unknownRoom = t("notifications.toastPatientLocationUnknown");
+  const noRoom = t("notifications.toastPatientNoRoomOnRecord");
+
+  try {
+    const p = await api.getPatient(patientId);
+    const name = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || fallbackName;
+
+    if (p.room_id == null) {
+      return { nameLine: name, roomLine: noRoom };
+    }
+
+    try {
+      const room = await api.getRoom(p.room_id);
+      const line = formatRoomLocationLine(room);
+      return { nameLine: name, roomLine: line.trim() ? line : unknownRoom };
+    } catch {
+      return { nameLine: name, roomLine: unknownRoom };
+    }
+  } catch {
+    return { nameLine: fallbackName, roomLine: unknownRoom };
+  }
+}
+
 function transformAlert(alert: AlertOut, role: AppRole): Notification {
   return {
     id: `alert-${alert.id}`,
@@ -60,7 +102,7 @@ function transformAlert(alert: AlertOut, role: AppRole): Notification {
     message: alert.description || "",
     timestamp: alert.timestamp || alert.acknowledged_at || "",
     read: alert.status !== "active",
-    link: alertsInboxPath(role),
+    link: alertsInboxUrl(role, alert.id),
     priority: (alert.severity as Notification["priority"]) || "medium",
     data: alert,
   };
@@ -108,6 +150,7 @@ export function useNotifications(): UseNotificationsReturn {
   const authReady = Boolean(user);
   const role = (user?.role ?? "observer") as AppRole;
   const canListWorkflowTasks = Boolean(user?.role && WORKFLOW_TASKS_ROLES.has(user.role));
+  const canAcknowledgeAlerts = role === "admin" || role === "head_nurse";
 
   const alertToastBootstrap = useRef(false);
   const alertToastIds = useRef<Set<number>>(new Set());
@@ -136,7 +179,6 @@ export function useNotifications(): UseNotificationsReturn {
   useEffect(() => {
     if (!alertsData || !user) return;
     const active = alertsData.filter((a) => a.status === "active");
-    const inbox = alertsInboxPath(role);
 
     if (!alertToastBootstrap.current) {
       active.forEach((a) => alertToastIds.current.add(a.id));
@@ -146,9 +188,12 @@ export function useNotifications(): UseNotificationsReturn {
 
     for (const a of active) {
       if (alertToastIds.current.has(a.id)) continue;
-      alertToastIds.current.add(a.id);
       const level = severityNotifyLevel(a.severity);
-      if (level === "none") continue;
+      if (level === "none") {
+        alertToastIds.current.add(a.id);
+        continue;
+      }
+      alertToastIds.current.add(a.id);
 
       const title = a.title || a.alert_type || t("notifications.toastNewAlert");
       const description = a.description?.trim() || undefined;
@@ -157,16 +202,34 @@ export function useNotifications(): UseNotificationsReturn {
         playAlertChime();
       }
 
-      toast(title, {
-        id: `ws-alert-toast-${a.id}`,
-        description,
-        duration: level === "toastSound" ? 12_000 : 8000,
-        className: level === "toastSound" ? "ws-toast-urgent" : undefined,
-        action: {
-          label: t("notifications.toastView"),
-          onClick: () => router.push(inbox),
-        },
-      });
+      const inboxTarget = alertsInboxUrl(role, a.id);
+
+      void (async () => {
+        let patientContext: { nameLine: string; roomLine: string } | null = null;
+        if (a.patient_id != null) {
+          patientContext = await resolvePatientAlertContext(a.patient_id, t);
+        }
+
+        toast.custom(
+          (toastId) => (
+            <AlertToastCard
+              toastId={toastId}
+              alertId={a.id}
+              title={title}
+              description={description}
+              alertType={a.alert_type}
+              patientContext={patientContext}
+              canAcknowledge={canAcknowledgeAlerts}
+              onNavigateInbox={() => router.push(inboxTarget)}
+            />
+          ),
+          {
+            id: `ws-alert-toast-${a.id}`,
+            duration: level === "toastSound" ? 14_000 : 9000,
+            className: level === "toastSound" ? "ws-toast-urgent" : undefined,
+          },
+        );
+      })();
     }
 
     const activeIdSet = new Set(active.map((a) => a.id));
@@ -175,7 +238,7 @@ export function useNotifications(): UseNotificationsReturn {
         alertToastIds.current.delete(id);
       }
     }
-  }, [alertsData, user, role, router, t]);
+  }, [alertsData, user, role, router, t, canAcknowledgeAlerts]);
 
   const notifications: Notification[] = useMemo(() => {
     const rows: Notification[] = [

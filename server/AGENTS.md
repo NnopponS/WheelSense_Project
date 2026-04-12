@@ -161,8 +161,18 @@ The access assignment API is:
 
 - `GET /api/caregivers/{caregiver_id}/patients` lists active patient access rows.
 - `PUT /api/caregivers/{caregiver_id}/patients` replaces the active access set with `{ "patient_ids": [...] }`.
+- `GET /api/patients/{patient_id}/caregivers` lists caregivers with active access to that patient (same `CareGiverPatientAccess` rows); requires the same patient record access as `GET /api/patients/{patient_id}`.
+- `PUT /api/patients/{patient_id}/caregivers` replaces the active caregiver set for that patient with `{ "caregiver_ids": [...] }` (`ROLE_PATIENT_MANAGERS`).
+
+Canonical **patient→facility room** placement is `Patient.room_id` (nullable FK to `rooms.id`): read it from `GET /api/patients` / `GET /api/patients/{patient_id}` and persist with `PATCH /api/patients/{patient_id}` (`room_id` in JSON; `null` clears). Treat this as the roster source of truth for “which room the patient is linked to”; `GET /api/floorplans/presence` is a live projection for maps/monitoring and must not be the only place UIs infer a patient’s room when editing assignments.
 
 The current implementation applies this patient visibility policy to `/api/patients` list/get plus patient-linked workflow list/create/update paths. Alerts, vitals, timeline, and patient-linked reads in the floorplans, care, and medication domains should use the same helper when those endpoint files are touched.
+
+### Patient facility room, roster assignment, and floorplan admin surface
+
+- Canonical **facility room** for a patient is `Patient.room_id` (nullable FK to `rooms`). Persist it with `PATCH /api/patients/{patient_id}` (`PatientUpdate.room_id`). `GET /api/floorplans/presence` and other map surfaces derive occupants from this field where applicable; device localization / MQTT predicted room is telemetry and must not be treated as the sole source of truth for “which facility room is this patient assigned to” on clinical or admin detail pages.
+- **Caregiver ↔ patient roster** for non-admin staff visibility uses the same `CareGiverPatientAccess` table from either direction: `GET` / `PUT /api/caregivers/{caregiver_id}/patients` (per caregiver) and `GET` / `PUT /api/patients/{patient_id}/caregivers` (per patient). Linking user accounts to caregiver directory rows for people UX continues through `PUT /api/users/{user_id}` (`caregiver_id`, `role`, etc.). There is no separate DB relation today for “this observer reports to this head nurse”; UI may list head nurses as reference only until an explicit model is added. On **`/admin/caregivers/[id]`**, `CaregiverDetailPane` shows that **Head nurses (reference)** strip for viewed roles **observer**, **supervisor**, and **head_nurse** (workspace `GET /caregivers` filter); when the open row is a head nurse, the list **excludes self** for peer links.
+- **Floorplan room tooling** is centralized in `frontend/components/admin/FloorplansPanel.tsx`, embedded from `/admin/facility-management` (per-room node vs smart-home flows, patient-to-room assign via the same patient `room_id` PATCH, and `POST /api/floorplans/rooms/{room_id}/capture`). `/admin/monitoring` `FloorMapWorkspace` assignment mode should stay aligned with that contract instead of duplicating ad hoc room-assignment APIs.
 
 ### Device and telemetry domain
 
@@ -390,12 +400,14 @@ The frontend currently depends on:
 - `frontend/lib/types.ts` mirroring backend contracts
 - generated OpenAPI schema output in `frontend/lib/api/generated/schema.ts`
 - route areas for `admin`, `head_nurse`, `supervisor`, `observer`, `patient`; role sidebar is a short list in `frontend/lib/sidebarConfig.ts` with optional `activeForPaths` and in-page **`?tab=`** hubs (`HubTabBar`) so many screens stay on canonical paths without duplicating REST
+- Next.js **16** App Router: client `page` modules avoid Promise `params` / `searchParams` props—dynamic ids, `?tab=`, and **`?alert=`** on role alert inbox pages use **`useParams()`** / **`useSearchParams()`** (see admin settings, admin patient/caregiver detail, head-nurse/observer/supervisor alert queues). Clinical alert toasts: **`frontend/hooks/useNotifications.tsx`** (JSX; file must be `.tsx`) + **`components/notifications/AlertToastCard.tsx`** (`toast.custom`); before enqueueing a toast for an alert with **`patient_id`**, the client resolves **`GET /api/patients/{id}`** and **`GET /api/rooms/{room_id}`** (when `room_id` is set) for name + location copy; inbox URLs from **`alertsInboxUrl`** in `lib/notificationRoutes.ts`; toast **Acknowledge** is shown only for roles allowed by **`ROLE_ALERT_ACK`** on **`POST /api/alerts/{alert_id}/acknowledge`** (`admin`, `head_nurse` in `app/api/endpoints/alerts.py`).
 - legacy admin compatibility redirects for `/admin/users` and `/admin/smart-devices`
 - account-management flows that call `PUT /api/users/{user_id}` with patient/caregiver link fields
 - device fleet flows that call `GET /api/devices/activity` and `POST /api/devices/{device_id}/patient`
 - standardized admin patient create flow using `React Hook Form + Zod` in `frontend/components/admin/patients/AddPatientModal.tsx`
 - AI settings model discovery endpoints that soft-fail with `200` plus status metadata instead of surfacing provider bootstrap errors as hard HTTP failures
 - floorplan layout editing through `/api/floorplans/layout` with frontend SVG canvas compatibility for legacy 0-100 payloads and current map unit scaling
+- shared admin **`FloorplansPanel`** (embedded from `/admin/facility-management`) is the primary in-app floor editor: per-room **node** vs **smart** linking, **patient-in-room** assignment (`PATCH /api/patients/{patient_id}` with `room_id`), and **room capture** (`POST /api/floorplans/rooms/{room_id}/capture`); monitoring map assignment mode in `FloorMapWorkspace` uses the same patient `room_id` patch
 - room-node assignment semantics centered on `Room.node_device_id` (string device id), with frontend map editors syncing node links via `PATCH /api/rooms/{room_id}`
 - admin dashboard account-link and AI status details shifted out of the large overview cards and surfaced in context-specific operational pages
 

@@ -13,6 +13,27 @@ See also:
 
 ## Latest
 
+- **2026-04-12 - Docs: facility management + floorplan panel UX (architecture sync)**
+  - **Outcome:** Documented full-name stats card and **`FloorplansPanel`** scope/layout behavior in `ARCHITECTURE.md` and `frontend/README.md`; noted `api.getRoom` in README key files.
+  - **Verification:** N/A (markdown).
+
+- **2026-04-12 - Frontend: alert toast patient name + room context**
+  - **Outcome:** Before `toast.custom`, `useNotifications` resolves `GET /patients/{id}` and `GET /rooms/{room_id}` when present; `AlertToastCard` shows name + location line (or `notifications.toastPatientNoRoomOnRecord` / `notifications.toastPatientLocationUnknown`). Added `api.getRoom`. Docs: `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`.
+  - **Verification:** `cd frontend; npx tsc --noEmit` — pass.
+
+- **2026-04-12 - Admin caregiver detail: head nurse reference for HN profiles**
+  - **Outcome:** `CaregiverDetailPane` shows **Head nurses (reference)** for viewed roles **observer**, **supervisor**, and **head_nurse** (was only observer/supervisor). Peer list excludes self when the open profile is a head nurse; i18n `caregivers.headNursesPeerOnlySelf` for empty peer case. Docs: `ARCHITECTURE.md`, `frontend/README.md`.
+  - **Verification:** `cd frontend; npx tsc --noEmit` — pass.
+
+- **2026-04-12 - Frontend: alert toast chrome — no red frame**
+  - **Outcome:** Removed destructive/red borders from alert `toast.custom` UI: `AlertToastCard` no longer switches left accent to red for high severity; **`ws-toast-urgent`** in `globals.css` uses neutral `border` + elevated shadow only. Dropped unused `isUrgent` prop. Docs: `ARCHITECTURE.md`, `frontend/README.md`.
+  - **Verification:** `cd frontend; npx tsc --noEmit` — pass.
+
+- **2026-04-12 - Frontend: Next 16 sync dynamic APIs + doc sync**
+  - **Lanes:** `ws-frontend-shared` / docs
+  - **Outcome:** Client pages stop taking Promise `params` on the segment (`/admin/patients/[id]`, `/admin/caregivers/[id]` → `useParams()`). `/admin/settings` is client `Suspense` + `useSearchParams()` for `?tab=`. Renamed `hooks/useNotifications.ts` → **`useNotifications.tsx`** (JSX). Documented in `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`.
+  - **Verification:** `cd frontend; npx tsc --noEmit; npm run build` — pass.
+
 - **2026-04-12 - Frontend: sidebar consolidation + hub tabs**
   - **Lanes:** `ws-frontend-shared` / role UIs
   - **Outcome:** Reduced per-role sidebar items (`lib/sidebarConfig.ts`); `NavItem.activeForPaths` + `RoleSidebar` active state; `components/shared/HubTabBar.tsx` + `?tab=` on hub pages (admin settings/messages; head-nurse/supervisor/observer monitoring, patients, tasks/workflow; patient schedule; patient home quick links). Docs: `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md` (frontend contract bullet).

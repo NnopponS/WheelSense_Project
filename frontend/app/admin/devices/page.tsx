@@ -105,9 +105,11 @@ function DevicesPageContent() {
   }, [smartDevices, search]);
 
   const onMutate = useCallback(() => {
-    void refetchRegistry();
-    void refetchSmart();
-  }, [refetchRegistry, refetchSmart]);
+    // `refetch()` runs the queryFn even when `enabled` is false; registryEndpoint / smartEndpoint are null on the
+    // other tab, which would call `api.get(null)` and produce `/apinull`.
+    if (registryEndpoint) void refetchRegistry();
+    if (smartEndpoint) void refetchSmart();
+  }, [refetchRegistry, refetchSmart, registryEndpoint, smartEndpoint]);
 
   const registryStats = useMemo(() => {
     const source = devices ?? [];

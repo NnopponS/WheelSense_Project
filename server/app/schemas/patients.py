@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # JSON column may store legacy list[str] or structured {condition, severity, ...} dicts.
 MedicalConditionEntry = str | dict[str, Any]
@@ -77,6 +77,13 @@ class PatientOut(BaseModel):
 
 class ModeSwitchRequest(BaseModel):
     mode: str  # "wheelchair" | "walking"
+
+
+class PatientCaregiverAccessReplace(BaseModel):
+    """Replace active CareGiverPatientAccess rows for one patient (workspace-scoped)."""
+
+    caregiver_ids: list[int] = Field(default_factory=list)
+
 
 # ── Device Assignment ─────────────────────────────────────────────────────────
 

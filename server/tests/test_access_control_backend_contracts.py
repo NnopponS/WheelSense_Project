@@ -58,6 +58,41 @@ async def test_caregiver_patient_access_filters_patient_reads(
     assert listed_access.status_code == 200
     assert [row["patient_id"] for row in listed_access.json()] == [first_id]
 
+    from_patient = await client.get(f"/api/patients/{first_id}/caregivers")
+    assert from_patient.status_code == 200
+    assert [row["id"] for row in from_patient.json()] == [caregiver_id]
+
+    second_cg = await client.post(
+        "/api/caregivers",
+        json={"first_name": "Other", "last_name": "Nurse", "role": "observer"},
+    )
+    assert second_cg.status_code == 201
+    second_cg_id = second_cg.json()["id"]
+
+    replaced = await client.put(
+        f"/api/patients/{first_id}/caregivers",
+        json={"caregiver_ids": [second_cg_id]},
+    )
+    assert replaced.status_code == 200
+    assert sorted(row["id"] for row in replaced.json()) == [second_cg_id]
+
+    via_caregiver = await client.get(f"/api/caregivers/{second_cg_id}/patients")
+    assert via_caregiver.status_code == 200
+    assert [row["patient_id"] for row in via_caregiver.json()] == [first_id]
+
+    supervisor_put = await client.put(
+        f"/api/patients/{first_id}/caregivers",
+        json={"caregiver_ids": [caregiver_id]},
+        headers=supervisor_headers,
+    )
+    assert supervisor_put.status_code == 403
+
+    restore = await client.put(
+        f"/api/patients/{first_id}/caregivers",
+        json={"caregiver_ids": [caregiver_id]},
+    )
+    assert restore.status_code == 200
+
     assigned_list = await client.get("/api/patients", headers=supervisor_headers)
     assert assigned_list.status_code == 200
     assert [row["id"] for row in assigned_list.json()] == [first_id]

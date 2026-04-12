@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,26 +22,19 @@ function tabFromSearch(search: string): SettingsTabKey {
   return "profile";
 }
 
-export default function AdminSettingsClient({ initialTab }: { initialTab: SettingsTabKey }) {
+export default function AdminSettingsClient() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [tab, setTabState] = useState<SettingsTabKey>(initialTab);
-
-  useEffect(() => {
-    setTabState(initialTab);
-  }, [initialTab]);
-
-  useEffect(() => {
-    const onPopState = () => setTabState(tabFromSearch(window.location.search));
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  const searchParams = useSearchParams();
+  const tab = useMemo(
+    () => tabFromSearch(searchParams.toString()),
+    [searchParams],
+  );
 
   const setTab = useCallback(
     (next: SettingsTabKey) => {
-      setTabState(next);
       const query = next === "profile" ? "" : `?tab=${next}`;
       router.replace(`${pathname}${query}`, { scroll: false });
     },

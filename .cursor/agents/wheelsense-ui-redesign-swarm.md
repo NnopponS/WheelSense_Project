@@ -269,7 +269,7 @@ Use raw data validation for `device-health` via `api.getVitalsReadings()` and us
 **Mission**: Build the notification system AND reusable dashboard components.
 
 **File Ownership** (EXCLUSIVE):
-- `frontend/hooks/useNotifications.ts` ← **NEW**
+- `frontend/hooks/useNotifications.tsx` ← **NEW** (must be `.tsx` for JSX)
 - `frontend/components/NotificationBell.tsx` ← **NEW**
 - `frontend/components/NotificationDrawer.tsx` ← **NEW**
 - `frontend/components/dashboard/KPIStatCard.tsx` ← **NEW**

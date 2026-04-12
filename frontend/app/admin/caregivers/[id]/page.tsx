@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
@@ -16,12 +17,9 @@ function usersForCaregiver(users: User[] | null | undefined, caregiverId: number
   return users.filter((u) => u.caregiver_id === caregiverId);
 }
 
-export default function AdminCaregiverDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function AdminCaregiverDetailPage() {
+  const params = useParams();
+  const id = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const { t } = useTranslation();
   const numericId = Number(id);
   const { data: users, refetch: refetchUsers } = useQuery({

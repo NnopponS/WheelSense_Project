@@ -185,7 +185,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
 
       <NotificationDrawer
         isOpen={notificationsOpen}
-        onClose={() => setNotificationsOpen(false)}
+        onOpenChange={setNotificationsOpen}
         notifications={notifications}
         onMarkAsRead={markAsRead}
         onMarkAllAsRead={markAllAsRead}

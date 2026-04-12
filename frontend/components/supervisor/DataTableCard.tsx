@@ -32,6 +32,9 @@ type Props<TData> = {
   description?: string;
   rightSlot?: React.ReactNode;
   pageSize?: number;
+  /** When set, each body row gets this `id` (e.g. deep-link targets `ws-alert-12`). */
+  getRowDomId?: (row: TData) => string | undefined;
+  getRowClassName?: (row: TData) => string | undefined;
 };
 
 export function DataTableCard<TData>({
@@ -43,6 +46,8 @@ export function DataTableCard<TData>({
   description,
   rightSlot,
   pageSize = 10,
+  getRowDomId,
+  getRowClassName,
 }: Props<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { t } = useTranslation();
@@ -102,7 +107,11 @@ export function DataTableCard<TData>({
                 <TableBody>
                   {table.getRowModel().rows.length ? (
                     table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id}>
+                      <TableRow
+                        key={row.id}
+                        id={getRowDomId?.(row.original)}
+                        className={getRowClassName?.(row.original)}
+                      >
                         {row.getVisibleCells().map((cell) => (
                           <TableCell key={cell.id}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}

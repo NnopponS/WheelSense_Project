@@ -301,10 +301,8 @@ body {
   animation: slideInLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* High-contrast toast for sound-level (critical) alert notifications */
+/* Optional emphasis for sound-level (critical) alert toasts — keep chrome neutral (no red frame) */
 .ws-toast-urgent {
-  border: 2px solid var(--destructive);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--destructive) 40%, transparent),
-    var(--shadow-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-elevated);
 }

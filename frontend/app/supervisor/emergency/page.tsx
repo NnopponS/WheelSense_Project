@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { AlertTriangle, MapPin, Radio, Siren } from "lucide-react";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
+import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
 
 const roomSchema = z
@@ -65,6 +67,7 @@ type PredictionRow = {
 
 export default function SupervisorEmergencyPage() {
   const { t } = useTranslation();
+  const searchParams = useSearchParams();
   const alertsQuery = useQuery({
     queryKey: ["supervisor", "emergency", "alerts"],
     queryFn: () => api.listAlerts({ status: "active", limit: 200 }),
@@ -183,7 +186,15 @@ export default function SupervisorEmergencyPage() {
   }, [activeCriticalAlerts]);
 
   const alertRows = useMemo<AlertRow[]>(() => {
-    return activeCriticalAlerts
+    const severityRank = (s: string) => {
+      const v = s.toLowerCase();
+      if (v === "critical") return 0;
+      if (v === "warning" || v === "high") return 1;
+      return 2;
+    };
+    const sevMap = new Map(alerts.map((a) => [a.id, a.severity]));
+    return alerts
+      .filter((alert) => alert.status === "active")
       .map((alert) => {
         const patient = alert.patient_id ? patientById.get(alert.patient_id) : null;
         return {
@@ -197,8 +208,14 @@ export default function SupervisorEmergencyPage() {
           timestamp: alert.timestamp,
         };
       })
-      .sort((left, right) => right.timestamp.localeCompare(left.timestamp));
-  }, [activeCriticalAlerts, patientById, t]);
+      .sort((left, right) => {
+        const d =
+          severityRank(String(sevMap.get(left.alertId) ?? "")) -
+          severityRank(String(sevMap.get(right.alertId) ?? ""));
+        if (d !== 0) return d;
+        return right.timestamp.localeCompare(left.timestamp);
+      });
+  }, [alerts, patientById, t]);
 
   const roomRows = useMemo<RoomRow[]>(() => {
     return rooms.map((room) => {
@@ -341,6 +358,20 @@ export default function SupervisorEmergencyPage() {
   const isLoadingAny =
     alertsQuery.isLoading || roomsQuery.isLoading || predictionsQuery.isLoading || patientsQuery.isLoading;
 
+  const highlightAlertId = useMemo(() => {
+    const raw = searchParams.get("alert");
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  }, [searchParams]);
+
+  const highlightReady =
+    !isLoadingAny &&
+    highlightAlertId != null &&
+    alertRows.some((r) => r.alertId === highlightAlertId);
+
+  const flashAlertId = useAlertRowHighlight(highlightAlertId, highlightReady);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -377,6 +408,13 @@ export default function SupervisorEmergencyPage() {
         isLoading={isLoadingAny}
         emptyText={t("supervisor.emergency.alertQueueEmpty")}
         rightSlot={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
+        pageSize={200}
+        getRowDomId={(row) => `ws-alert-${row.alertId}`}
+        getRowClassName={(row) =>
+          flashAlertId != null && flashAlertId === row.alertId
+            ? "bg-primary/10 ring-2 ring-primary/30 transition-colors"
+            : undefined
+        }
       />
 
       <DataTableCard

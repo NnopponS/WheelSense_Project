@@ -126,6 +126,13 @@ For current frontend standardization work, prefer:
 - `npm run openapi:types` after backend contract changes that need regenerated schema output
 - run `npm run build` in `frontend/` after i18n key or consumer changes (types keys off the translation map)
 
+**Clinical shell notifications (2026-04)** — when changing alert UX or polling:
+
+- `frontend/hooks/useNotifications.tsx` (Sonner enqueue + drawer merge)
+- `frontend/components/notifications/AlertToastCard.tsx`, `frontend/lib/notificationRoutes.ts` (`alertsInboxUrl` + `?alert=`), `frontend/hooks/useAlertRowHighlight.ts`, `frontend/components/supervisor/DataTableCard.tsx` (row `id` / highlight class)
+- Role pages: `frontend/app/head-nurse/alerts/page.tsx`, `frontend/app/observer/alerts/page.tsx`, `frontend/app/supervisor/emergency/page.tsx`
+- Keep **toast Acknowledge** aligned with **`ROLE_ALERT_ACK`** in `server/app/api/endpoints/alerts.py`; document behavior in **`ARCHITECTURE.md`**, **`server/AGENTS.md`**, and **`frontend/README.md`** when it changes
+
 ## Docker And Runtime Verification
 
 After substantive runtime changes under `server/`:
@@ -216,3 +223,5 @@ Do not treat `HANDOFF.md` as canonical documentation; it is session state.
   - `/admin/facility-management` is canonical
   - `/admin/facilities`, `/admin/floorplans`, and `/admin/audit-log` are compatibility redirects
 - `demo-control` remains intentionally hidden from the sidebar unless a future task adds an explicit environment gate.
+- Clinical alert toasts use **`toast.custom`** with **`AlertToastCard`**; inbox navigation uses **`?alert=<id>`** for row highlight; supervisor **`/supervisor/emergency`** alert table lists **all active** alerts (severity-sorted) so toast deep links match visible rows.
+- **`Code_Review/iter-6/Full-Stack-Code-Review.md`** was corrected to repo truth: there is **no** deprecated `hooks/useQuery` wrapper—admin and other apps use **`@tanstack/react-query`** directly; §3 in that file is labeled **aspirational UX roadmap**, not current audit failures.
