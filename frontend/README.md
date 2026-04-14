@@ -57,7 +57,8 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 - Backend contracts are mirrored in `lib/types.ts`
 - Generated OpenAPI output lives in `lib/api/generated/schema.ts`
 - Shared page chrome lives in `components/RoleShell.tsx`, `components/RoleSidebar.tsx` (nav from `lib/sidebarConfig.ts`), `components/TopBar.tsx`, and `app/*/layout.tsx`
-- **Sidebar (2026-04)**: fewer top-level items per role; each `NavItem` may set `activeForPaths` so deep routes still highlight the right row. Hub pages group related UIs with `components/shared/HubTabBar.tsx` and **`?tab=`** (same route, different panel)—standalone routes such as `/admin/patients` or `/head-nurse/workflow` remain valid for links and bookmarks.
+- **Sidebar (2026-04)**: fewer top-level items per role; each `NavItem` may set `activeForPaths` so deep routes still highlight the right row. When two sidebar rows share one pathname (e.g. patient **Dashboard** vs **Support** on `/patient`), use **`inactiveWhenQueryMatch`** / **`activeWhenQueryMatch`** on `NavItem` so `RoleSidebar` can disambiguate with `useSearchParams()` (see patient role in `lib/sidebarConfig.ts`). Hub pages group related UIs with `components/shared/HubTabBar.tsx` and **`?tab=`** (same route, different panel)—standalone routes such as `/admin/patients` or `/head-nurse/workflow` remain valid for links and bookmarks.
+- **Live floorplan (2026-04)**: Role dashboards embed the full `components/floorplan/FloorplanRoleViewer.tsx` via `components/dashboard/DashboardFloorplanPanel.tsx`. Room-level detail opens in a **right-side Sheet** (not a permanent second column). Legacy **`/{role}/monitoring`** URLs **redirect** to the role home (`/head-nurse`, `/supervisor`, etc.) so bookmarks keep working.
 - Error containment is handled by `components/ui/ErrorBoundary.tsx`
 - Shared i18n copy lives in `lib/i18n.tsx`
 - Shared form schemas and payload mapping helpers live under `lib/forms/`
@@ -74,7 +75,7 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 ### In-app notifications and clinical toasts
 
 - **Hook**: `hooks/useNotifications.tsx` merges active alerts, pending workflow tasks (clinical staff roles only), and unread workflow messages. Alert polling defaults to **10s**; tasks and messages use a slower interval.
-- **Role-correct deep links**: `lib/notificationRoutes.ts` maps `user.role` to alert inbox and task URLs (e.g. observer → `/observer/alerts`, supervisor → `/supervisor/emergency`, staff messages → role-appropriate inbox paths). **`alertsInboxUrl(role, alertId)`** appends `?alert=<id>` so the inbox table can scroll/highlight row `ws-alert-<id>` (see `hooks/useAlertRowHighlight.ts`).
+- **Role-correct deep links**: `lib/notificationRoutes.ts` maps `user.role` to alert inbox and task URLs (e.g. observer → `/observer/alerts`, supervisor → `/supervisor/emergency`, staff workflow messages → **`staffMessagesPath(role)`**: admin → `/admin/messages`, head nurse → `/head-nurse/messages`, supervisor → **`/supervisor/messages`**). **`alertsInboxUrl(role, alertId)`** appends `?alert=<id>` so the inbox table can scroll/highlight row `ws-alert-<id>` (see `hooks/useAlertRowHighlight.ts`).
 - **Toast UX**: New **active** alerts at medium-or-higher severity enqueue a **Sonner** `toast.custom` card (`components/notifications/AlertToastCard.tsx`): alert type, title, description; when the alert has **`patient_id`**, `useNotifications` resolves **`GET /patients/{id}`** and (if `room_id` is set) **`GET /rooms/{room_id}`** via `lib/api.ts` so the card shows **patient name** and **current room** (`facility · floor · room`), with i18n fallbacks for missing `room_id` or failed room load (`notifications.toastPatientNoRoomOnRecord`, `notifications.toastPatientLocationUnknown`). **Open in queue** (navigates with `?alert=`) and **Acknowledge** when the signed-in role matches server **`ROLE_ALERT_ACK`** (`admin` / `head_nurse` today). Higher severities may also play a short chime when **alert sound** is enabled in the TopBar (toggle persists in `localStorage`; enabling sound calls `primeAlertAudioFromUserGesture()` so browsers allow `AudioContext`). The strongest toast tier may apply **`ws-toast-urgent`** on the Sonner host for neutral elevation only—no red border (see `app/globals.css`); the custom card uses a muted left accent by default, and **`ws-alert-toast-interrupt`** when `visualEmphasis="interrupt"` (observer + sound-tier).
 - **UI**: `components/NotificationBell.tsx` + `components/NotificationDrawer.tsx` for the drawer; sound toggle lives in `components/TopBar.tsx` (hidden for `patient` role).
 
@@ -105,15 +106,23 @@ npm run build
 
 ## Route Groups
 
-- `app/admin/` - admin dashboard, patients, alerts, devices, caregivers, facilities, timeline, settings, audit, monitoring
+- `app/admin/` - admin dashboard, patients, alerts, devices, caregivers, facilities, timeline, settings, audit (live map is on the dashboard; `/admin/monitoring` redirects to `/admin`)
 - `app/head-nurse/` - ward operations and staffing
-- `app/supervisor/` - command center, directives, emergency map, prescriptions
+
+### Shift checklist & head nurse Staff tab
+
+- **Observer / supervisor dashboard:** The shift checklist card uses **`GET /api/shift-checklist/me`** (merged template + daily state). Client helpers live in `lib/shiftChecklistDefaults.ts` (`mergeServerShiftChecklist` maps API items to UI rows; `DEFAULT_SHIFT_CHECKLIST` is only a **fallback** when the response has no items).
+- **Admin / head nurse oversight:** `GET /api/shift-checklist/workspace` powers `components/shift-checklist/ShiftChecklistWorkspaceClient.tsx` (and related head-nurse shift-checklist pages). Rows show **merged** items and completion **%** per staff user.
+- **Per-user template editing:** `lib/api.ts` exposes **`getShiftChecklistUserTemplate`** / **`putShiftChecklistUserTemplate`** (`GET/PUT /api/shift-checklist/users/{user_id}/template`). Types: `ShiftChecklistTemplateResponse` in `lib/api/task-scope-types.ts`.
+- **Head nurse Staff hub:** **`/head-nurse/patients?tab=staff`** loads `app/head-nurse/staff/page.tsx` (standalone **`/head-nurse/staff`** is the same page). The UI calls **`GET /api/users`** to map **`caregiver_id` → user id** for portal-linked staff. **Quick Create** task/schedule assignees must use **workspace user ids** (`assigned_user_id`), not caregiver primary keys. **`HeadNurseStaffMemberSheet`** opens from the roster: filtered tasks/schedules by assignee, read-only checklist preview (same grouped layout as the observer card), and template editor for that user’s checklist.
+- `app/supervisor/` - command center, directives, emergency map, prescriptions, **workflow messages** (`/supervisor/messages` — inbox/sent/compose via `api.listWorkflowMessages` / `sendWorkflowMessage` / `markWorkflowMessageRead`, same APIs as `/head-nurse/messages`)
 - `app/observer/` - monitoring, workflow, tasks, **calendar** (`/observer/calendar` — staff scheduling for assigned patients), patients, alerts
-- `app/patient/` - patient dashboard (**care roadmap**: past / now / next from workflow schedules + tasks), **schedule** (read-only calendar), messages (**recipient picker** = staff user accounts via `GET /api/workflow/messaging/recipients`), pharmacy, room controls, services, support
+- `app/patient/` - patient home **`/patient`** is a **hub** with **`HubTabBar`**: **Overview** (care roadmap `PatientCareRoadmap`, sensors `PatientMySensors`, assistance / SOS cards, **Shortcuts** to schedule / room / messages / services), **Profile** (read-only self-check), **Support** (`ReportIssueForm`). **Room** headline uses `GET /patients` + `GET /rooms/{room_id}` (`patientRoomQuickInfo`). **Schedule** (calendar hub), messages, pharmacy, room controls, services stay separate routes. Patient **sidebar**: Dashboard, My care, Messages, **Support** (`/patient?tab=support`), Settings. **`/patient/support`** redirects to **`/patient?tab=support`** for bookmarks.
 - `app/login/` - login flow
 
 Legacy routes that now redirect:
 
+- `/{admin|head-nurse|supervisor|observer}/monitoring` → same-role dashboard (`/admin`, `/head-nurse`, `/supervisor`, `/observer`)
 - `/admin/users` -> `/admin/account-management`
 - `/admin/smart-devices` -> `/admin/devices?tab=smart_home`
 - `middleware.ts` has been replaced by `proxy.ts`
@@ -129,7 +138,7 @@ Legacy routes that now redirect:
 - `lib/types.ts` - frontend mirror of backend schemas
 - `components/shared/UserAvatar.tsx` and `ProfileImageEditorModal.tsx` - profile image UX
 - `components/shared/SearchableListboxPicker.tsx` - searchable assign/link picker used by admin flows
-- `components/shared/HubTabBar.tsx` - shared `?tab=` underline tab bar for hub pages (admin settings/messages, clinical hubs, patient schedule)
+- `components/shared/HubTabBar.tsx` - shared `?tab=` underline tab bar for hub pages (admin settings/messages, clinical hubs, patient schedule, **patient dashboard** `/patient`)
 
 ## Admin Feature Notes
 
@@ -141,9 +150,9 @@ Legacy routes that now redirect:
 - `/admin/floorplans` is compatibility-only and redirects to `/admin/facility-management`
 - `/admin/personnel` lists staff, patients, and accounts; users with `patients.manage` + `users.manage` can open dialogs to **add staff + account** or **patient + account** in one flow
 - `/admin/users` is kept only as a compatibility redirect to `/admin/account-management`
-- `/admin/devices` is the canonical device fleet screen for registry edits, recent activity, command history, and patient-device linking
+- `/admin/devices` is the canonical device fleet screen for registry edits, recent activity, command history, patient-device linking, and **registry removal** (`DELETE /api/devices/{device_id}` from the device detail sheet; confirms via dialog; invalidates fleet queries after success)
 - `/admin/smart-devices` remains a compatibility redirect to the smart-home tab on `/admin/devices`
-- `DeviceDetailDrawer` (admin device sheet) uses `/api/devices/{device_id}`, `/api/devices/activity`, `/api/devices/{id}/patient`, `/api/devices/{id}/camera/check`, `/api/rooms`, and `/api/rooms/{id}` (PATCH `node_device_id`). Telemetry cards are **hardware-specific** (wheelchair shows battery + acceleration + velocity + distance, Polar HR/PPG, mobile Polar link + battery + steps; **nodes** omit motion realtime and instead expose **camera snapshot test** plus **building → floor → room** linking). For responsiveness, detail polling is tuned to 2.5s baseline, and camera snapshot requests trigger a short burst-poll window so `latest_photo` appears faster after command dispatch. `PatientLinkSection` covers combobox patient linking on the same flows.
+- `DeviceDetailDrawer` (admin device sheet) uses `/api/devices/{device_id}`, **`DELETE /api/devices/{device_id}`** (remove from registry — destructive, with confirmation), `/api/devices/activity`, `/api/devices/{id}/patient`, `/api/devices/{id}/camera/check`, `/api/rooms`, and `/api/rooms/{id}` (PATCH `node_device_id`). Telemetry cards are **hardware-specific** (wheelchair shows battery + acceleration + velocity + distance, Polar HR/PPG, mobile Polar link + battery + steps; **nodes** omit motion realtime and instead expose **camera snapshot test** plus **building → floor → room** linking). For responsiveness, detail polling is tuned to 2.5s baseline, and camera snapshot requests trigger a short burst-poll window so `latest_photo` appears faster after command dispatch. `PatientLinkSection` covers combobox patient linking on the same flows.
 - `/admin/patients` is the current standardized admin baseline:
   - filter toolbar uses shared input/select primitives
   - list view uses TanStack Table
@@ -167,7 +176,8 @@ Legacy routes that now redirect:
   - room-node linking is standardized around `room.node_device_id` (device string id), not only numeric `devices.id`
   - `GET /api/floorplans/presence` is treated as a live operations feed (assignment + prediction telemetry + optional manual staff presence), while canonical room assignment remains `Patient.room_id`
   - **`FloorplansPanel`** (`components/admin/FloorplansPanel.tsx`) is embedded on **`/admin/facility-management`** as the shared floor UI: room inspector tabs for **node** vs **smart** devices, **patient** assign/remove for the selected room, and **capture** preview/trigger; deep links from the panel can jump to **`/admin/devices`** and **`/admin/personnel?tab=`** hubs
-  - monitoring workspace (`components/admin/monitoring/FloorMapWorkspace.tsx`) saves geometry to `/api/floorplans/layout` and syncs node links through `/api/rooms/{room_id}`
+  - **`FloorplansPanel`** and **`FloorMapWorkspace`** (`components/admin/monitoring/FloorMapWorkspace.tsx`) share the same save pipeline: optional **`provisionRoomsForUnmappedFloorplanNodes`** (`POST /api/rooms`) when a labeled shape has a node but no matching facility room row; **`normalizeRoomShapeIds`** → stable `room-{dbId}` ids when possible; **`alignFloorplanShapesToRegistryDevices`** so each shape’s numeric **`device_id`** matches the registry row for the canvas **`node_device_id`**, or is cleared when that node key is not registered (avoids stale PKs that fail **`PUT /api/floorplans/layout`** validation); then **`PUT /api/floorplans/layout`** and **`PATCH /api/rooms/{room_id}`** for `node_device_id`. Save errors surface **`ApiError.message`** where available (not only a generic failed string).
+  - **`DeviceDetailDrawer`** room linking uses the same node key rules as the backend (`ble_node_id` / `WSN_*` label vs registry `device_id`) when calling `PATCH /api/rooms/{id}` (`frontend/lib/nodeDeviceRoomKey.ts`)
   - **Patient assignment (Phase A)**: optional “Patient assignment mode” on the same workspace loads workspace patients and, for canvas rooms backed by a real `room-{id}`, assigns **`PATCH /api/patients/{id}`** with `{ room_id }` after explicit picker + confirm (no drag-drop yet)
 - **Patient vs caregiver integration (avoid drift)**: show each patient’s linked room from the **`room_id`** field on patient APIs; staff responsibility for non-admin roles is **`GET/PUT /api/caregivers/{caregiver_id}/patients`** plus each user’s **`caregiver_id`** via **`PUT /api/users/{user_id}`**—mirror the same facts on admin patient detail, admin caregiver detail (`AdminCaregiverDetailPage` + `CaregiverDetailPane`), and observer-facing staff views so assignments are not edited in only one silo. Admin **patient detail** also uses **`GET/PUT /api/patients/{patient_id}/caregivers`** for the assigned-staff list (patient-centric view of the same access rows).
 - **`CaregiverDetailPane` head-nurse reference strip**: On `/admin/caregivers/[id]` overview, **Head nurses (reference)** appears for viewed roles **observer**, **supervisor**, and **head_nurse**; the roster lists workspace `head_nurse` rows and **omits the open profile** when it is itself a head nurse (peer navigation).
@@ -337,10 +347,17 @@ The app runs on `http://localhost:3000`.
 
 Admin users without a linked `patient_id` can open `/patient` and choose a patient, or navigate directly with `?previewAs=<patient_id>`. This is a preview path for the patient dashboard; it does not create a new patient session.
 
+## Staff workflow messaging (role inboxes)
+
+- **API**: `GET/POST /api/workflow/messages`, `POST /api/workflow/messages/{id}/read`, and `GET /api/workflow/messaging/recipients` (see `server/AGENTS.md`).
+- **UI routes**: `/admin/messages` (hub may include support tab), `/head-nurse/messages`, **`/supervisor/messages`** (`app/supervisor/messages/page.tsx`). Sidebar: `messages.manage` + `nav.messages` in `lib/sidebarConfig.ts`.
+- **i18n**: `supervisor.messages.*` for supervisor-only chrome; table/routing strings may reuse `headNurse.messages.*` and `clinical.table.*` where shared.
+
 ## Patient portal (workflow + messaging)
 
 - **Layout**: `app/patient/layout.tsx` wraps content in a scoped shell (gradient, larger button targets, focus rings) inside `RoleShell` — see `data-patient-shell` and related classes; does not change global fonts.
-- **Care roadmap** (`components/patient/PatientCareRoadmap.tsx` on `/patient`): reads `listWorkflowSchedules` + `listWorkflowTasks` + `listRooms` to show completed / in-progress / upcoming items; optional `room_id` on schedules is resolved to a room label; links to full schedule and room controls.
+- **Hub tabs** (`app/patient/page.tsx`): **Overview** | **Profile** | **Support** via **`?tab=`** (`overview` default; `support` holds **`ReportIssueForm`**). i18n: `patient.hub.*`.
+- **Care roadmap** (`components/patient/PatientCareRoadmap.tsx` on `/patient` Overview, above **PatientMySensors**): reads `listWorkflowSchedules` + `listWorkflowTasks` + `listRooms` to show before / now / next; optional `room_id` on schedules is resolved to a room label; links to full schedule and room controls.
 - **Messages** (`app/patient/messages/page.tsx`): compose uses **`recipient_user_id`** only (do not send `recipient_role` in the same request). Recipients are loaded with **`api.listWorkflowMessagingRecipients()`** → `GET /api/workflow/messaging/recipients` (available to authenticated roles, returns active staff user accounts). Inbox shows `recipient_person.display_name` when the API enriches the thread.
 - **Staff calendars**: `/head-nurse/calendar`, `/supervisor/calendar`, and **`/observer/calendar`** share the same scheduling patterns (`ScheduleForm`, workflow schedule APIs). Rebuild the web Docker image after changing these routes or shared calendar components.
 - **Floorplan presence + telemetry UI/API changes**: rebuild both Docker images (`wheelsense-platform-server` and `wheelsense-platform-web`) so `/api/floorplans/presence` contract and role viewers (`FloorplanRoleViewer` / facility-management map surfaces) remain aligned.
