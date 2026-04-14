@@ -2105,6 +2105,116 @@
         }
       }
     },
+    "/api/patients/{patient_id}/caregivers": {
+      "get": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "List Patient Caregivers",
+        "operationId": "list_patient_caregivers_api_patients__patient_id__caregivers_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CareGiverOut"
+                  },
+                  "title": "Response List Patient Caregivers Api Patients  Patient Id  Caregivers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "patients"
+        ],
+        "summary": "Replace Patient Caregiver Access",
+        "operationId": "replace_patient_caregiver_access_api_patients__patient_id__caregivers_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "patient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Patient Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatientCaregiverAccessReplace"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CareGiverOut"
+                  },
+                  "title": "Response Replace Patient Caregiver Access Api Patients  Patient Id  Caregivers Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/patients/{patient_id}/mode": {
       "post": {
         "tags": [
@@ -4817,6 +4927,33 @@
         }
       }
     },
+    "/api/auth/session": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Read Auth Session",
+        "description": "Return 200 for both guests and signed-in users so browsers do not log a spurious 401 on startup.\nThe Next proxy still forwards Authorization from the HttpOnly cookie when present.",
+        "operationId": "read_auth_session_api_auth_session_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthHydrateOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/auth/me": {
       "get": {
         "tags": [
@@ -5004,6 +5141,95 @@
             "OAuth2PasswordBearer": []
           }
         ]
+      }
+    },
+    "/api/auth/sessions": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "List Auth Sessions",
+        "operationId": "list_auth_sessions_api_auth_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuthSessionOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Auth Sessions Api Auth Sessions Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logout Current Session",
+        "operationId": "logout_current_session_api_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/auth/sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Delete Auth Session",
+        "operationId": "delete_auth_session_api_auth_sessions__session_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/auth/impersonate/start": {
@@ -7019,7 +7245,7 @@
           "workflow"
         ],
         "summary": "List Messaging Recipients",
-        "description": "Active staff user accounts in this workspace (for patient compose: pick a person, not only a role).",
+        "description": "Active staff user accounts in this workspace for message compose user-targeting.",
         "operationId": "list_messaging_recipients_api_workflow_messaging_recipients_get",
         "responses": {
           "200": {
@@ -10280,6 +10506,53 @@
         ]
       }
     },
+    "/api/demo/simulator/command": {
+      "post": {
+        "tags": [
+          "demo-control"
+        ],
+        "summary": "Publish Simulator Mqtt Command",
+        "description": "Publish a control message to the MQTT simulator (`sim_controller.py`).\n\nOnly available when `ENV_MODE=simulator`. The server injects `workspace_id` from the JWT\nworkspace so clients cannot target another tenant.",
+        "operationId": "publish_simulator_mqtt_command_api_demo_simulator_command_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulatorCommandIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulatorCommandOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/admin/database/clear": {
       "post": {
         "tags": [
@@ -10487,6 +10760,231 @@
         }
       }
     },
+    "/api/mcp/token": {
+      "post": {
+        "tags": [
+          "mcp-auth",
+          "MCP Authentication"
+        ],
+        "summary": "Create Mcp Token",
+        "description": "Create a new MCP access token for external MCP clients.\n\nIssues a short-lived (1 hour), scope-narrowed token specifically\nfor MCP operations. The token is linked to the current auth\nsession for cascade revocation.\n\nThe actual token string is only returned once on creation.\nStore it securely - it cannot be retrieved later.",
+        "operationId": "create_mcp_token_api_mcp_token_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MCPTokenCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPTokenWithSecret"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/mcp/tokens": {
+      "get": {
+        "tags": [
+          "mcp-auth",
+          "MCP Authentication"
+        ],
+        "summary": "List Mcp Tokens",
+        "description": "List MCP tokens for the current user.\n\nReturns all active (non-expired, non-revoked) tokens by default.\nSet include_revoked=true to see revoked/expired tokens.",
+        "operationId": "list_mcp_tokens_api_mcp_tokens_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "include_revoked",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Revoked"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPTokenList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/token/{token_id}": {
+      "delete": {
+        "tags": [
+          "mcp-auth",
+          "MCP Authentication"
+        ],
+        "summary": "Revoke Mcp Token",
+        "description": "Revoke an MCP token.\n\nUsers can only revoke their own tokens. Admin can revoke any token\nin their workspace by setting the X-Admin-Override header.",
+        "operationId": "revoke_mcp_token_api_mcp_token__token_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MCPTokenRevoke"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "mcp-auth",
+          "MCP Authentication"
+        ],
+        "summary": "Get Mcp Token",
+        "description": "Get details of a specific MCP token.\n\nUsers can only view their own tokens. Admin can view any token\nin their workspace.",
+        "operationId": "get_mcp_token_api_mcp_token__token_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MCPTokenOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/tokens/revoke-all": {
+      "post": {
+        "tags": [
+          "mcp-auth",
+          "MCP Authentication"
+        ],
+        "summary": "Revoke All Mcp Tokens",
+        "description": "Revoke all active MCP tokens for the current user.\n\nUseful when rotating credentials or responding to a security concern.",
+        "operationId": "revoke_all_mcp_tokens_api_mcp_tokens_revoke_all_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "tags": [
@@ -10510,6 +11008,22 @@
       "get": {
         "summary": "Root",
         "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/oauth-protected-resource/mcp": {
+      "get": {
+        "summary": "Mcp Oauth Protected Resource",
+        "operationId": "mcp_oauth_protected_resource__well_known_oauth_protected_resource_mcp_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -10895,6 +11409,30 @@
         ],
         "title": "AuditTrailEventOut"
       },
+      "AuthHydrateOut": {
+        "properties": {
+          "authenticated": {
+            "type": "boolean",
+            "title": "Authenticated"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuthMeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "authenticated"
+        ],
+        "title": "AuthHydrateOut",
+        "description": "Browser-friendly session probe: always HTTP 200, never 401 for missing/invalid tokens."
+      },
       "AuthMeOut": {
         "properties": {
           "username": {
@@ -11122,6 +11660,82 @@
         },
         "type": "object",
         "title": "AuthMeProfilePatch"
+      },
+      "AuthSessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user_agent": {
+            "type": "string",
+            "title": "User Agent"
+          },
+          "ip_address": {
+            "type": "string",
+            "title": "Ip Address"
+          },
+          "impersonated_by_user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impersonated By User Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Seen At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "current": {
+            "type": "boolean",
+            "title": "Current",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_agent",
+          "ip_address",
+          "created_at",
+          "updated_at",
+          "last_seen_at",
+          "expires_at"
+        ],
+        "title": "AuthSessionOut",
+        "description": "Server-tracked auth session visible to the signed-in user."
       },
       "Body_add_support_ticket_attachment_api_support_tickets__ticket_id__attachments_post": {
         "properties": {
@@ -13066,6 +13680,16 @@
             "type": "string",
             "title": "Error Message"
           },
+          "execution_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -13193,6 +13817,18 @@
             },
             "type": "array",
             "title": "Messages"
+          },
+          "page_patient_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Patient Id",
+            "description": "Optional patient id from the current UI page (e.g. admin patient detail) to seed agent-runtime context."
           }
         },
         "type": "object",
@@ -13203,6 +13839,15 @@
       },
       "ChatActionProposalResponse": {
         "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "answer",
+              "plan"
+            ],
+            "title": "Mode",
+            "default": "answer"
+          },
           "proposal_id": {
             "anyOf": [
               {
@@ -13235,6 +13880,16 @@
             },
             "type": "array",
             "title": "Actions"
+          },
+          "execution_plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutionPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -13263,6 +13918,7 @@
             "type": "string",
             "enum": [
               "mcp_tool",
+              "mcp_plan",
               "note"
             ],
             "title": "Action Type",
@@ -14274,6 +14930,129 @@
         },
         "type": "object",
         "title": "DevicePatientAssign"
+      },
+      "ExecutionPlan": {
+        "properties": {
+          "playbook": {
+            "type": "string",
+            "title": "Playbook"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "reasoning_target": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Reasoning Target",
+            "default": "medium"
+          },
+          "model_target": {
+            "type": "string",
+            "title": "Model Target"
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Risk Level",
+            "default": "low"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionPlanStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "permission_basis": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Permission Basis"
+          },
+          "affected_entities": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Affected Entities"
+          }
+        },
+        "type": "object",
+        "required": [
+          "playbook",
+          "summary",
+          "model_target"
+        ],
+        "title": "ExecutionPlan"
+      },
+      "ExecutionPlanStep": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "tool_name": {
+            "type": "string",
+            "title": "Tool Name"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Arguments"
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Risk Level",
+            "default": "low"
+          },
+          "permission_basis": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Permission Basis"
+          },
+          "affected_entities": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Affected Entities"
+          },
+          "requires_confirmation": {
+            "type": "boolean",
+            "title": "Requires Confirmation",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "tool_name"
+        ],
+        "title": "ExecutionPlanStep"
       },
       "FacilityCreate": {
         "properties": {
@@ -15942,6 +16721,207 @@
         ],
         "title": "LocalizationConfigUpdate"
       },
+      "MCPTokenCreate": {
+        "properties": {
+          "client_name": {
+            "type": "string",
+            "maxLength": 128,
+            "title": "Client Name",
+            "default": "MCP Client"
+          },
+          "requested_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Requested Scopes"
+          },
+          "ttl_minutes": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 1.0,
+            "title": "Ttl Minutes",
+            "default": 60
+          }
+        },
+        "type": "object",
+        "title": "MCPTokenCreate",
+        "description": "Request to create an MCP access token."
+      },
+      "MCPTokenList": {
+        "properties": {
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/MCPTokenOut"
+            },
+            "type": "array",
+            "title": "Tokens"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tokens",
+          "total"
+        ],
+        "title": "MCPTokenList",
+        "description": "List of MCP tokens for a user."
+      },
+      "MCPTokenOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "client_name": {
+            "type": "string",
+            "title": "Client Name"
+          },
+          "client_origin": {
+            "type": "string",
+            "title": "Client Origin"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scopes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "client_name",
+          "client_origin",
+          "scopes",
+          "created_at",
+          "updated_at",
+          "expires_at",
+          "is_active"
+        ],
+        "title": "MCPTokenOut",
+        "description": "MCP token response without the actual token value (for listing)."
+      },
+      "MCPTokenRevoke": {
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "title": "MCPTokenRevoke",
+        "description": "Request to revoke an MCP token (for audit)."
+      },
+      "MCPTokenWithSecret": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "const": "bearer",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "client_name": {
+            "type": "string",
+            "title": "Client Name"
+          },
+          "client_origin": {
+            "type": "string",
+            "title": "Client Origin"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scopes"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "access_token",
+          "client_name",
+          "client_origin",
+          "scopes",
+          "expires_at",
+          "expires_in"
+        ],
+        "title": "MCPTokenWithSecret",
+        "description": "MCP token response including the actual access token (only on creation)."
+      },
       "MePatch": {
         "properties": {
           "profile_image_url": {
@@ -16413,6 +17393,20 @@
           "name"
         ],
         "title": "OllamaPullIn"
+      },
+      "PatientCaregiverAccessReplace": {
+        "properties": {
+          "caregiver_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Caregiver Ids"
+          }
+        },
+        "type": "object",
+        "title": "PatientCaregiverAccessReplace",
+        "description": "Replace active CareGiverPatientAccess rows for one patient (workspace-scoped)."
       },
       "PatientContactCreate": {
         "properties": {
@@ -19301,6 +20295,67 @@
         "type": "object",
         "title": "ShiftPatch"
       },
+      "SimulatorCommandIn": {
+        "properties": {
+          "command": {
+            "type": "string",
+            "enum": [
+              "pause",
+              "resume",
+              "set_config",
+              "inject_abnormal_hr",
+              "inject_fall"
+            ],
+            "title": "Command"
+          },
+          "patient_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Patient Id"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimulatorRuntimeConfigPatch"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "command"
+        ],
+        "title": "SimulatorCommandIn",
+        "description": "Admin command published to `WheelSense/sim/control` for the workspace MQTT simulator."
+      },
+      "SimulatorCommandOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ok"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SimulatorCommandOut"
+      },
       "SimulatorResetResponse": {
         "properties": {
           "action": {
@@ -19343,6 +20398,63 @@
         ],
         "title": "SimulatorResetResponse",
         "description": "Response schema for simulator environment reset."
+      },
+      "SimulatorRuntimeConfigPatch": {
+        "properties": {
+          "vital_update_interval": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 600.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vital Update Interval"
+          },
+          "alert_probability": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alert Probability"
+          },
+          "enable_alerts": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enable Alerts"
+          },
+          "heart_rate_high": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 200.0,
+                "minimum": 60.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heart Rate High"
+          }
+        },
+        "type": "object",
+        "title": "SimulatorRuntimeConfigPatch",
+        "description": "Allowed runtime keys forwarded to the MQTT simulator worker."
       },
       "SimulatorStatusResponse": {
         "properties": {
@@ -20415,6 +21527,17 @@
             "type": "string",
             "title": "Token Type"
           },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
           "impersonation": {
             "type": "boolean",
             "title": "Impersonation",
@@ -21031,17 +22154,6 @@
               }
             ],
             "title": "Spo2 Avg"
-          },
-          "skin_temperature_avg": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Skin Temperature Avg"
           }
         },
         "type": "object",
@@ -21401,6 +22513,10 @@
             "tokenUrl": "/api/auth/login"
           }
         }
+      },
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

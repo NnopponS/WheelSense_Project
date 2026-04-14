@@ -9,7 +9,7 @@ from .endpoints import (
     patients, caregivers, facilities, vitals, timeline, alerts,
     auth, users, homeassistant, retention, cameras, analytics,
     chat, ai_settings, workflow, floorplans, care, medication, service_requests, profile_images, demo_control,
-    support, calendar, chat_actions, shift_checklist,
+    support, calendar, chat_actions, shift_checklist, mcp_auth,
 )
 from app.localization import is_model_ready
 
@@ -128,6 +128,14 @@ api_router.include_router(
     shift_checklist.router,
     prefix="/shift-checklist",
     tags=["shift-checklist"],
+    dependencies=[Depends(get_current_active_user)],
+)
+
+# MCP OAuth endpoints for external MCP clients
+api_router.include_router(
+    mcp_auth.router,
+    prefix="/mcp",
+    tags=["mcp-auth"],
     dependencies=[Depends(get_current_active_user)],
 )
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 """WheelSense Server — Configuration."""
 
+from typing import Literal
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -24,6 +26,14 @@ class Settings(BaseSettings):
     mqtt_user: str = ""
     mqtt_password: str = ""
     mqtt_tls: bool = False
+    # When true, first WheelSense/data telemetry for an unknown device_id creates a registry row.
+    # Workspace: MQTT_AUTO_REGISTER_WORKSPACE_ID if set, else the sole workspace when only one exists.
+    mqtt_auto_register_devices: bool = True
+    mqtt_auto_register_workspace_id: int | None = None
+    # When true, BLE nodes seen in WheelSense/data rssi[] (WSN_* + MAC) get a registry row in the same workspace as the wheelchair.
+    mqtt_auto_register_ble_nodes: bool = True
+    # When true, camera /registration JSON with ble_mac matching a BLE_* stub renames that row to the camera device_id (CAM_*).
+    mqtt_merge_ble_camera_by_mac: bool = True
 
     # App
     app_name: str = "WheelSense Server"
@@ -60,6 +70,24 @@ class Settings(BaseSettings):
     ai_default_model: str = "gemma4:e4b"
     ollama_base_url: str = "http://127.0.0.1:11434/v1"
     copilot_cli_url: str = ""  # e.g. copilot-cli:4321 or http://localhost:4321
+    server_base_url: str = "http://127.0.0.1:8000"
+    agent_runtime_url: str = "http://127.0.0.1:8010"
+    internal_service_secret: str = ""
+    mcp_allowed_origins: str = ""
+    mcp_require_origin: bool = False
+
+    # Agent runtime — multilingual intent (embeddings + optional LLM bridge)
+    intent_semantic_enabled: bool = True
+    intent_embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
+    intent_semantic_immediate_threshold: float = 0.72
+    intent_llm_normalize_enabled: bool = True
+    intent_llm_normalize_timeout_seconds: float = 12.0
+    # Skip intent + MCP for obvious greetings/thanks; go straight to the chat model.
+    intent_ai_conversation_fastpath_enabled: bool = True
+    # Agent propose_turn routing: intent (classifier) | llm_tools (workspace-primary AI picks MCP tools).
+    agent_routing_mode: Literal["intent", "llm_tools"] = "intent"
+    # When set, Ollama tool-calling leg uses this model name (OpenAI-compatible /v1); defaults to ai_default_model.
+    agent_llm_router_model: str = ""
     # GitHub OAuth App (Device Flow) — used for Copilot CLI token acquisition
     github_oauth_client_id: str = ""
     floorplan_storage_dir: str = "./storage/floorplans"
@@ -72,6 +100,14 @@ class Settings(BaseSettings):
         if u.endswith("/v1"):
             return u[:-3]
         return u
+
+    @property
+    def normalized_mcp_allowed_origins(self) -> list[str]:
+        return [
+            origin.strip().rstrip("/")
+            for origin in self.mcp_allowed_origins.split(",")
+            if origin.strip()
+        ]
 
     # Data Retention (Phase 6)
     retention_enabled: bool = True

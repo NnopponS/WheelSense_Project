@@ -116,7 +116,7 @@ void DisplayManager::drawMenu(
     drawHeader(title);
 
     if (itemCount <= 0) {
-        if (showGuideFooter) drawFooter("", "", "C:BACK");
+        if (showGuideFooter) drawFooter("", "", "Power:BACK");
         return;
     }
 
@@ -147,11 +147,11 @@ void DisplayManager::drawMenu(
     }
 
     if (showGuideFooter) {
-        drawFooter("A:SEL", "B:NEXT", "C:BACK");
+        drawFooter("M5:ENTER", "Side:NEXT", "Power:BACK");
     }
 }
 
-void DisplayManager::drawMessage(const char* title, const char* msg, uint16_t color) {
+void DisplayManager::drawMessage(const char* title, const char* msg, uint32_t color) {
     auto& g = getGfx();
     clear();
     drawHeader(title);

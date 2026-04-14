@@ -14,7 +14,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_db
 from app.config import settings
 from app.main import app
-from app.models.core import Workspace
+from app.models.facility import Facility, Floor
+from app.models.floorplans import FloorplanLayout
+from app.models.patients import Patient, PatientDeviceAssignment
+from app.models.telemetry import RSSIReading
+from app.models.users import AuthSession
+from app.models.core import Device, Room, Workspace
 from app.core.security import create_access_token, get_password_hash
 from app.models.users import User
 from app.services.simulator_reset import get_simulator_status
@@ -149,6 +154,150 @@ async def test_admin_impersonation_token_scopes_as_target_user(
     assert me_body["role"] == "observer"
     assert me_body["impersonation"] is True
     assert me_body["impersonated_by_user_id"] == admin_user.id
+
+
+@pytest.mark.asyncio
+async def test_login_creates_server_tracked_session(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    login = await client.post(
+        "/api/auth/login",
+        data={"username": admin_user.username, "password": "adminpass"},
+        headers={"content-type": "application/x-www-form-urlencoded"},
+    )
+    assert login.status_code == 200, login.text
+    body = login.json()
+    assert isinstance(body["session_id"], str) and body["session_id"]
+
+    auth_session = await db_session.get(AuthSession, body["session_id"])
+    assert auth_session is not None
+    assert auth_session.user_id == admin_user.id
+    assert auth_session.revoked_at is None
+
+    me = await client.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {body['access_token']}"},
+    )
+    assert me.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_auth_session_authenticated(client: AsyncClient, admin_user: User):
+    res = await client.get("/api/auth/session")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["authenticated"] is True
+    assert body["user"]["id"] == admin_user.id
+    assert body["user"]["username"] == admin_user.username
+
+
+@pytest.mark.asyncio
+async def test_auth_session_guest_no_authorization(db_session: AsyncSession):
+    async def _override_db():
+        yield db_session
+
+    with (
+        patch("app.db.session.init_db", new_callable=AsyncMock),
+        patch("app.mqtt_handler.mqtt_listener", new_callable=AsyncMock),
+    ):
+        from app.main import app
+
+        app.dependency_overrides[get_db] = _override_db
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+        ) as ac:
+            res = await ac.get("/api/auth/session")
+        app.dependency_overrides.clear()
+
+    assert res.status_code == 200
+    assert res.json()["authenticated"] is False
+
+
+@pytest.mark.asyncio
+async def test_auth_session_invalid_bearer_token(db_session: AsyncSession):
+    async def _override_db():
+        yield db_session
+
+    with (
+        patch("app.db.session.init_db", new_callable=AsyncMock),
+        patch("app.mqtt_handler.mqtt_listener", new_callable=AsyncMock),
+    ):
+        from app.main import app
+
+        app.dependency_overrides[get_db] = _override_db
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": "Bearer invalid-token"},
+        ) as ac:
+            res = await ac.get("/api/auth/session")
+        app.dependency_overrides.clear()
+
+    assert res.status_code == 200
+    assert res.json()["authenticated"] is False
+
+
+@pytest.mark.asyncio
+async def test_auth_sessions_list_logout_and_revoke(
+    client: AsyncClient,
+    admin_user: User,
+):
+    def login_headers(token: str) -> dict[str, str]:
+        return {"Authorization": f"Bearer {token}"}
+
+    first_login = await client.post(
+        "/api/auth/login",
+        data={"username": admin_user.username, "password": "adminpass"},
+        headers={"content-type": "application/x-www-form-urlencoded"},
+    )
+    second_login = await client.post(
+        "/api/auth/login",
+        data={"username": admin_user.username, "password": "adminpass"},
+        headers={"content-type": "application/x-www-form-urlencoded"},
+    )
+    assert first_login.status_code == 200, first_login.text
+    assert second_login.status_code == 200, second_login.text
+    first = first_login.json()
+    second = second_login.json()
+
+    listed = await client.get(
+        "/api/auth/sessions",
+        headers=login_headers(first["access_token"]),
+    )
+    assert listed.status_code == 200, listed.text
+    sessions = listed.json()
+    by_id = {row["id"]: row for row in sessions}
+    assert first["session_id"] in by_id
+    assert second["session_id"] in by_id
+    assert by_id[first["session_id"]]["current"] is True
+    assert by_id[second["session_id"]]["current"] is False
+
+    revoke_other = await client.delete(
+        f"/api/auth/sessions/{second['session_id']}",
+        headers=login_headers(first["access_token"]),
+    )
+    assert revoke_other.status_code == 204, revoke_other.text
+
+    second_me = await client.get(
+        "/api/auth/me",
+        headers=login_headers(second["access_token"]),
+    )
+    assert second_me.status_code == 401
+
+    logout = await client.post(
+        "/api/auth/logout",
+        headers=login_headers(first["access_token"]),
+    )
+    assert logout.status_code == 204, logout.text
+
+    first_me = await client.get(
+        "/api/auth/me",
+        headers=login_headers(first["access_token"]),
+    )
+    assert first_me.status_code == 401
 
 
 @pytest.mark.asyncio
@@ -482,11 +631,222 @@ async def test_predict_without_model_returns_200(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_predict_max_rssi_resolves_ble_node_alias_to_room(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    node = Device(
+        workspace_id=admin_user.workspace_id,
+        device_id="BLE_3485188BD77D",
+        device_type="camera",
+        hardware_type="node",
+        display_name="WSN_001",
+        config={
+            "ble_node_id": "WSN_001",
+            "ble_mac": "34:85:18:8b:d7:7d",
+        },
+    )
+    db_session.add(node)
+    await db_session.flush()
+
+    room = Room(
+        workspace_id=admin_user.workspace_id,
+        name="Room 101",
+        node_device_id=node.device_id,
+    )
+    db_session.add(room)
+    await db_session.commit()
+
+    res = await client.post(
+        "/api/localization/predict",
+        json={"rssi_vector": {"WSN_001": -41}},
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["room_id"] == room.id
+    assert body["room_name"] == "Room 101"
+    assert body["model_type"] == "max_rssi"
+    assert body["strongest_node_id"] == "WSN_001"
+    assert body["resolved_node_device_id"] == "BLE_3485188BD77D"
+
+
+@pytest.mark.asyncio
+async def test_predict_max_rssi_resolves_node_alias_case_insensitive(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    node = Device(
+        workspace_id=admin_user.workspace_id,
+        device_id="CAM_21AB",
+        device_type="camera",
+        hardware_type="node",
+        display_name="wsn_002",
+        config={
+            "ble_node_id": "wsn_002",
+            "node_id": "wsn_002",
+            "ble_mac": "68:b6:b3:21:9b:2d",
+        },
+    )
+    db_session.add(node)
+    await db_session.flush()
+
+    room = Room(
+        workspace_id=admin_user.workspace_id,
+        name="Room 102",
+        node_device_id=node.device_id,
+    )
+    db_session.add(room)
+    await db_session.commit()
+
+    res = await client.post(
+        "/api/localization/predict",
+        json={"rssi_vector": {"WSN_002": -35}},
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["room_id"] == room.id
+    assert body["room_name"] == "Room 102"
+    assert body["model_type"] == "max_rssi"
+    assert body["strongest_node_id"] == "WSN_002"
+    assert body["resolved_node_device_id"] == "CAM_21AB"
+
+
+@pytest.mark.asyncio
 async def test_retrain_without_data_returns_400(client: AsyncClient):
     ws_res = await client.post("/api/workspaces", json={"name": "LocalWS", "mode": "simulation"})
     await client.post(f"/api/workspaces/{ws_res.json()['id']}/activate")
     res = await client.post("/api/localization/retrain")
     assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_localization_readiness_and_repair(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    wheelchair = Device(
+        workspace_id=admin_user.workspace_id,
+        device_id="WS_01",
+        device_type="wheelchair",
+        hardware_type="wheelchair",
+        display_name="ws_01",
+    )
+    node = Device(
+        workspace_id=admin_user.workspace_id,
+        device_id="CAM_D77C",
+        device_type="camera",
+        hardware_type="node",
+        display_name="WSN_001",
+        config={
+            "ble_node_id": "WSN_001",
+            "node_id": "WSN_001",
+            "ble_mac": "34:85:18:8b:d7:7d",
+        },
+    )
+    patient = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="สมชาย",
+        last_name="ใจดี",
+    )
+    db_session.add_all([wheelchair, node, patient])
+    await db_session.flush()
+
+    patient_user = User(
+        workspace_id=admin_user.workspace_id,
+        username="somchai",
+        hashed_password=get_password_hash("demo1234"),
+        role="patient",
+        patient_id=patient.id,
+        is_active=True,
+    )
+    db_session.add(patient_user)
+    db_session.add(
+        PatientDeviceAssignment(
+            workspace_id=admin_user.workspace_id,
+            patient_id=patient.id,
+            device_id="WS_01",
+            device_role="wheelchair_sensor",
+            is_active=True,
+        )
+    )
+    db_session.add(
+        RSSIReading(
+            workspace_id=admin_user.workspace_id,
+            device_id="WS_01",
+            node_id="WSN_001",
+            rssi=-41,
+            mac="34:85:18:8B:D7:7D",
+        )
+    )
+    await db_session.commit()
+
+    before = await client.get("/api/localization/readiness")
+    assert before.status_code == 200, before.text
+    before_body = before.json()
+    assert before_body["ready"] is False
+    assert "room" in before_body["missing"]
+    assert before_body["wheelchair_device_id"] == "WS_01"
+    assert before_body["node_device_id"] == "CAM_D77C"
+    assert before_body["patient_name"] == "สมชาย ใจดี"
+
+    repair = await client.post("/api/localization/readiness/repair")
+    assert repair.status_code == 200, repair.text
+    repair_body = repair.json()
+    assert repair_body["ready"] is True
+    assert repair_body["strategy"] == "max_rssi"
+    assert repair_body["room_name"] == "Room 101"
+    assert repair_body["room_node_device_id"] == "CAM_D77C"
+    assert repair_body["patient_room_id"] == repair_body["room_id"]
+    assert repair_body["assignment_patient_id"] == patient.id
+    assert repair_body["floorplan_has_room"] is True
+
+    room = (
+        await db_session.execute(
+            select(Room).where(
+                Room.workspace_id == admin_user.workspace_id,
+                Room.name == "Room 101",
+            )
+        )
+    ).scalar_one()
+    assert room.node_device_id == "CAM_D77C"
+
+    patient_row = await db_session.get(Patient, patient.id)
+    assert patient_row is not None
+    assert patient_row.room_id == room.id
+
+    facility = (
+        await db_session.execute(
+            select(Facility).where(
+                Facility.workspace_id == admin_user.workspace_id,
+                Facility.name == "บ้านบางแค",
+            )
+        )
+    ).scalar_one()
+    floor = (
+        await db_session.execute(
+            select(Floor).where(
+                Floor.workspace_id == admin_user.workspace_id,
+                Floor.facility_id == facility.id,
+                Floor.floor_number == 1,
+            )
+        )
+    ).scalar_one()
+    layout = (
+        await db_session.execute(
+            select(FloorplanLayout).where(
+                FloorplanLayout.workspace_id == admin_user.workspace_id,
+                FloorplanLayout.facility_id == facility.id,
+                FloorplanLayout.floor_id == floor.id,
+            )
+        )
+    ).scalar_one()
+    assert any(
+        isinstance(item, dict) and item.get("id") == f"room-{room.id}"
+        for item in layout.layout_json.get("rooms", [])
+    )
 
 
 # ── Demo / simulator status ──────────────────────────────────────────────────
@@ -500,6 +860,68 @@ async def test_simulator_status_200_for_authenticated_admin(client: AsyncClient)
     assert "env_mode" in data
     assert "is_simulator" in data
     assert "workspace_exists" in data
+
+
+@pytest.mark.asyncio
+async def test_simulator_command_forbidden_when_not_simulator(client: AsyncClient, monkeypatch):
+    monkeypatch.setattr(settings, "env_mode", "production")
+    res = await client.post("/api/demo/simulator/command", json={"command": "pause"})
+    assert res.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_simulator_command_publishes_mqtt_in_simulator_mode(client: AsyncClient, monkeypatch):
+    monkeypatch.setattr(settings, "env_mode", "simulator")
+    with patch("app.api.endpoints.demo_control.publish_mqtt", new_callable=AsyncMock) as pub:
+        res = await client.post("/api/demo/simulator/command", json={"command": "pause"})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["status"] == "ok"
+    pub.assert_awaited_once()
+    args = pub.await_args[0]
+    assert args[0] == "WheelSense/sim/control"
+    assert args[1]["command"] == "pause"
+    assert isinstance(args[1]["workspace_id"], int)
+
+
+@pytest.mark.asyncio
+async def test_simulator_command_set_config_requires_payload(client: AsyncClient, monkeypatch):
+    monkeypatch.setattr(settings, "env_mode", "simulator")
+    res = await client.post("/api/demo/simulator/command", json={"command": "set_config"})
+    assert res.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_simulator_command_non_admin_forbidden(db_session: AsyncSession, admin_user: User, monkeypatch):
+    monkeypatch.setattr(settings, "env_mode", "simulator")
+    nurse = User(
+        username="nurse_sim_cmd",
+        hashed_password=get_password_hash("pass"),
+        role="head_nurse",
+        workspace_id=admin_user.workspace_id,
+        is_active=True,
+    )
+    db_session.add(nurse)
+    await db_session.commit()
+    token = create_access_token(subject=str(nurse.id), role=nurse.role)
+
+    async def _override_db():
+        yield db_session
+
+    with (
+        patch("app.db.session.init_db", new_callable=AsyncMock),
+        patch("app.mqtt_handler.mqtt_listener", new_callable=AsyncMock),
+    ):
+        app.dependency_overrides[get_db] = _override_db
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": f"Bearer {token}"},
+        ) as ac:
+            res = await ac.post("/api/demo/simulator/command", json={"command": "pause"})
+        app.dependency_overrides.clear()
+
+    assert res.status_code == 403
 
 
 @pytest.mark.asyncio

@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { type TranslationKey, useTranslation } from "@/lib/i18n";
 
 const EMPTY_SELECT_VALUE = "__empty__";
 const NO_ROOM_VALUE = "__no_room__";
@@ -59,115 +60,126 @@ const roomOptionSchema = z.object({
   floor_name: z.string().nullish(),
 });
 
-const editorObjectSchema = z.object({
-  firstName: z.string().trim().min(1, "First name is required"),
-  lastName: z.string().trim().min(1, "Last name is required"),
-  nickname: z.string(),
-  dateOfBirth: z.string(),
-  gender: z.enum(genderOptions),
-  careLevel: z.enum(careLevelOptions),
-  mobilityType: z.enum(mobilityTypeOptions),
-  bloodType: z.enum(bloodTypeOptions),
-  heightCm: z.string(),
-  weightKg: z.string(),
-  conditionsRaw: z.string(),
-  allergiesRaw: z.string(),
-  notes: z.string(),
-  roomId: z.string(),
-  isActive: z.boolean(),
-  emergencyContactType: z.string(),
-  emergencyContactName: z.string(),
-  emergencyContactRelationship: z.string(),
-  emergencyContactPhone: z.string(),
-  emergencyContactEmail: z.string(),
-  emergencyContactNotes: z.string(),
-  accountMode: z.enum(accountModeOptions),
-  existingUserId: z.number().nullable(),
-  newUsername: z.string(),
-  newPassword: z.string(),
-});
-
-const editorBaseSchema = editorObjectSchema.superRefine((value, ctx) => {
-  if (value.accountMode === "existing" && !value.existingUserId) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["existingUserId"],
-      message: "Select an existing patient account",
-    });
-  }
-
-  if (value.accountMode === "new") {
-    if (value.newUsername.trim().length < 3) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["newUsername"],
-        message: "Username must be at least 3 characters",
-      });
-    }
-    if (value.newPassword.trim().length < 6) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["newPassword"],
-        message: "Password must be at least 6 characters",
-      });
-    }
-  }
-
-  const hasEmergencyName = value.emergencyContactName.trim().length > 0;
-  const hasEmergencyPhone = value.emergencyContactPhone.trim().length > 0;
-  if (hasEmergencyName !== hasEmergencyPhone) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: [hasEmergencyName ? "emergencyContactPhone" : "emergencyContactName"],
-      message: "Emergency contact name and phone must be filled together",
-    });
-  }
-});
-
-const patientSectionSchema = editorObjectSchema.pick({
-  firstName: true,
-  lastName: true,
-  nickname: true,
-  dateOfBirth: true,
-  gender: true,
-  careLevel: true,
-  mobilityType: true,
-  bloodType: true,
-  heightCm: true,
-  weightKg: true,
-  conditionsRaw: true,
-  allergiesRaw: true,
-  notes: true,
-  roomId: true,
-  isActive: true,
-});
-
-const contactSectionSchema = editorObjectSchema.pick({
-  emergencyContactType: true,
-  emergencyContactName: true,
-  emergencyContactRelationship: true,
-  emergencyContactPhone: true,
-  emergencyContactEmail: true,
-  emergencyContactNotes: true,
-});
-
-const accountModeSchema = editorObjectSchema
-  .pick({
-    accountMode: true,
-    existingUserId: true,
-    newUsername: true,
-    newPassword: true,
-  })
-  .omit({
-    existingUserId: true,
-    newUsername: true,
-    newPassword: true,
+function createPatientEditorSchemas(t: (key: TranslationKey) => string) {
+  const editorObjectSchema = z.object({
+    firstName: z.string().trim().min(1, t("patients.editorErrFirstName")),
+    lastName: z.string().trim().min(1, t("patients.editorErrLastName")),
+    dateOfBirth: z.string(),
+    gender: z.enum(genderOptions),
+    careLevel: z.enum(careLevelOptions),
+    mobilityType: z.enum(mobilityTypeOptions),
+    bloodType: z.enum(bloodTypeOptions),
+    heightCm: z.string(),
+    weightKg: z.string(),
+    conditionsRaw: z.string(),
+    allergiesRaw: z.string(),
+    notes: z.string(),
+    roomId: z.string(),
+    isActive: z.boolean(),
+    emergencyContactType: z.string(),
+    emergencyContactName: z.string(),
+    emergencyContactRelationship: z.string(),
+    emergencyContactPhone: z.string(),
+    emergencyContactEmail: z.string(),
+    emergencyContactNotes: z.string(),
+    accountMode: z.enum(accountModeOptions),
+    existingUserId: z.number().nullable(),
+    newUsername: z.string(),
+    newPassword: z.string(),
   });
 
-const existingAccountSchema = editorObjectSchema.pick({ existingUserId: true });
-const newAccountSchema = editorObjectSchema.pick({ newUsername: true, newPassword: true });
+  const editorBaseSchema = editorObjectSchema.superRefine((value, ctx) => {
+    if (value.accountMode === "existing" && !value.existingUserId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["existingUserId"],
+        message: t("patients.editorErrSelectPatientAccount"),
+      });
+    }
 
-type PatientEditorFormValues = z.infer<typeof editorBaseSchema>;
+    if (value.accountMode === "new") {
+      if (value.newUsername.trim().length < 3) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["newUsername"],
+          message: t("patients.editorErrUsernameMin"),
+        });
+      }
+      if (value.newPassword.trim().length < 6) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["newPassword"],
+          message: t("patients.editorErrPasswordMin"),
+        });
+      }
+    }
+
+    const hasEmergencyName = value.emergencyContactName.trim().length > 0;
+    const hasEmergencyPhone = value.emergencyContactPhone.trim().length > 0;
+    if (hasEmergencyName !== hasEmergencyPhone) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [hasEmergencyName ? "emergencyContactPhone" : "emergencyContactName"],
+        message: t("patients.editorErrEmergencyPair"),
+      });
+    }
+  });
+
+  const patientSectionSchema = editorObjectSchema.pick({
+    firstName: true,
+    lastName: true,
+    dateOfBirth: true,
+    gender: true,
+    careLevel: true,
+    mobilityType: true,
+    bloodType: true,
+    heightCm: true,
+    weightKg: true,
+    conditionsRaw: true,
+    allergiesRaw: true,
+    notes: true,
+    roomId: true,
+    isActive: true,
+  });
+
+  const contactSectionSchema = editorObjectSchema.pick({
+    emergencyContactType: true,
+    emergencyContactName: true,
+    emergencyContactRelationship: true,
+    emergencyContactPhone: true,
+    emergencyContactEmail: true,
+    emergencyContactNotes: true,
+  });
+
+  const accountModeSchema = editorObjectSchema
+    .pick({
+      accountMode: true,
+      existingUserId: true,
+      newUsername: true,
+      newPassword: true,
+    })
+    .omit({
+      existingUserId: true,
+      newUsername: true,
+      newPassword: true,
+    });
+
+  const existingAccountSchema = editorObjectSchema.pick({ existingUserId: true });
+  const newAccountSchema = editorObjectSchema.pick({ newUsername: true, newPassword: true });
+
+  return {
+    editorBaseSchema,
+    patientSectionSchema,
+    contactSectionSchema,
+    accountModeSchema,
+    existingAccountSchema,
+    newAccountSchema,
+  };
+}
+
+type PatientEditorFormValues = z.infer<
+  ReturnType<typeof createPatientEditorSchemas>["editorBaseSchema"]
+>;
 
 type SaveStage = "idle" | "patient" | "contact" | "account";
 
@@ -197,7 +209,6 @@ function buildDefaultValues(
   return {
     firstName: patient.first_name ?? "",
     lastName: patient.last_name ?? "",
-    nickname: patient.nickname ?? "",
     dateOfBirth: patient.date_of_birth ? String(patient.date_of_birth).slice(0, 10) : "",
     gender: (patient.gender ?? "") as PatientEditorFormValues["gender"],
     careLevel: (patient.care_level ?? "normal") as PatientEditorFormValues["careLevel"],
@@ -207,8 +218,8 @@ function buildDefaultValues(
     weightKg: patient.weight_kg != null ? String(patient.weight_kg) : "",
     conditionsRaw: (patient.medical_conditions ?? [])
       .map((entry) => (typeof entry === "string" ? entry : JSON.stringify(entry)))
-      .join(", "),
-    allergiesRaw: (patient.allergies ?? []).join(", "),
+      .join("\n"),
+    allergiesRaw: (patient.allergies ?? []).join("\n"),
     notes: patient.notes ?? "",
     roomId: patient.room_id != null ? String(patient.room_id) : NO_ROOM_VALUE,
     isActive: patient.is_active !== false,
@@ -225,10 +236,10 @@ function buildDefaultValues(
   };
 }
 
-function extractErrorMessage(error: unknown): string {
+function extractErrorMessage(error: unknown, t: (key: TranslationKey) => string): string {
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error) return error.message;
-  return "Unexpected error";
+  return t("patients.editorUnexpectedError");
 }
 
 export default function PatientEditorModal({
@@ -237,17 +248,20 @@ export default function PatientEditorModal({
   onClose,
   onSaved,
 }: PatientEditorModalProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [initializedForOpen, setInitializedForOpen] = useState(false);
   const [saveStage, setSaveStage] = useState<SaveStage>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  const schemas = useMemo(() => createPatientEditorSchemas(t), [t]);
+  const resolver = useMemo(() => zodResolver(schemas.editorBaseSchema), [schemas]);
+
   const form = useForm<PatientEditorFormValues>({
-    resolver: zodResolver(editorBaseSchema),
+    resolver,
     defaultValues: {
       firstName: "",
       lastName: "",
-      nickname: "",
       dateOfBirth: "",
       gender: "",
       careLevel: "normal",
@@ -299,7 +313,8 @@ export default function PatientEditorModal({
     queryKey: ["patient-editor", "users"],
     enabled: open,
     queryFn: async () => api.listUsers(),
-    initialData: [] as ListUsersResponse,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const roomsQuery = useQuery({
@@ -316,9 +331,14 @@ export default function PatientEditorModal({
     initialData: [] as RoomOption[],
   });
 
+  const usersRows = useMemo(
+    () => usersQuery.data ?? ([] as ListUsersResponse),
+    [usersQuery.data],
+  );
+
   const linkedUser = useMemo(() => {
-    return usersQuery.data.find((user) => user.patient_id === patientId) ?? null;
-  }, [patientId, usersQuery.data]);
+    return usersRows.find((user) => user.patient_id === patientId) ?? null;
+  }, [patientId, usersRows]);
 
   const contact = useMemo(() => {
     const rows = contactsQuery.data;
@@ -327,11 +347,11 @@ export default function PatientEditorModal({
 
   const candidateUsers = useMemo(() => {
     const linkedUserId = linkedUser?.id ?? null;
-    return usersQuery.data.filter((user) => {
+    return usersRows.filter((user) => {
       if (user.id === linkedUserId) return true;
       return user.role === "patient" && user.patient_id == null;
     });
-  }, [linkedUser?.id, usersQuery.data]);
+  }, [linkedUser?.id, usersRows]);
 
   useEffect(() => {
     if (!open) {
@@ -343,6 +363,8 @@ export default function PatientEditorModal({
 
     if (initializedForOpen) return;
     if (!patientQuery.data) return;
+    // Wait for workspace users (including refetch-on-open) so linked portal account is not stale.
+    if (usersQuery.isLoading || usersQuery.isFetching) return;
 
     reset(buildDefaultValues(patientQuery.data, contact, linkedUser));
     setInitializedForOpen(true);
@@ -353,6 +375,8 @@ export default function PatientEditorModal({
     open,
     patientQuery.data,
     reset,
+    usersQuery.isFetching,
+    usersQuery.isLoading,
   ]);
 
   const updatePatientMutation = useMutation({
@@ -380,7 +404,7 @@ export default function PatientEditorModal({
 
   const syncAccountMutation = useMutation({
     mutationFn: async (values: PatientEditorFormValues) => {
-      const accountMode = accountModeSchema.parse(values).accountMode;
+      const accountMode = schemas.accountModeSchema.parse(values).accountMode;
       const currentLinkedUserId = linkedUser?.id ?? null;
 
       if (accountMode === "none") {
@@ -392,18 +416,18 @@ export default function PatientEditorModal({
       }
 
       if (accountMode === "existing") {
-        const parsed = existingAccountSchema.parse(values);
+        const parsed = schemas.existingAccountSchema.parse(values);
         const selectedUserId = parsed.existingUserId;
         if (!selectedUserId) {
-          throw new Error("Select an existing patient account");
+          throw new Error(t("patients.editorErrSelectExisting"));
         }
 
         const selectedUser = candidateUsers.find((user) => user.id === selectedUserId);
         if (!selectedUser) {
-          throw new Error("Selected account was not found");
+          throw new Error(t("patients.editorErrAccountNotFound"));
         }
         if (selectedUser.role !== "patient" && selectedUser.id !== currentLinkedUserId) {
-          throw new Error("Only patient role accounts can be linked");
+          throw new Error(t("patients.editorErrOnlyPatientRole"));
         }
 
         if (currentLinkedUserId && currentLinkedUserId !== selectedUserId) {
@@ -416,7 +440,7 @@ export default function PatientEditorModal({
         return;
       }
 
-      const parsed = newAccountSchema.parse(values);
+      const parsed = schemas.newAccountSchema.parse(values);
       if (currentLinkedUserId) {
         const unlinkPayload = { patient_id: null } satisfies UpdateUserRequest;
         await api.updateUser(currentLinkedUserId, unlinkPayload);
@@ -446,23 +470,23 @@ export default function PatientEditorModal({
 
   const saveLabel =
     saveStage === "patient"
-      ? "Saving patient..."
+      ? t("patients.editorSavingPatient")
       : saveStage === "contact"
-        ? "Saving contact..."
+        ? t("patients.editorSavingContact")
         : saveStage === "account"
-          ? "Saving account link..."
-          : "Save changes";
+          ? t("patients.editorSavingAccount")
+          : t("patients.editorSaveChanges");
 
   const submit = handleSubmit(async (values) => {
     setSaveError(null);
 
     try {
       setSaveStage("patient");
-      const patientValues = patientSectionSchema.parse(values);
+      const patientValues = schemas.patientSectionSchema.parse(values);
       const patientPayload = {
         first_name: patientValues.firstName.trim(),
         last_name: patientValues.lastName.trim(),
-        nickname: patientValues.nickname.trim(),
+        nickname: "",
         date_of_birth: patientValues.dateOfBirth.trim() || null,
         gender: patientValues.gender,
         care_level: patientValues.careLevel,
@@ -482,7 +506,7 @@ export default function PatientEditorModal({
       await updatePatientMutation.mutateAsync(patientPayload);
 
       setSaveStage("contact");
-      const contactValues = contactSectionSchema.parse(values);
+      const contactValues = schemas.contactSectionSchema.parse(values);
       const hasContact =
         contactValues.emergencyContactName.trim().length > 0 &&
         contactValues.emergencyContactPhone.trim().length > 0;
@@ -518,7 +542,7 @@ export default function PatientEditorModal({
       }
       onClose();
     } catch (error) {
-      setSaveError(extractErrorMessage(error));
+      setSaveError(extractErrorMessage(error, t));
     } finally {
       setSaveStage("idle");
     }
@@ -535,73 +559,91 @@ export default function PatientEditorModal({
     >
       <DialogContent className="w-[min(100%-2rem,64rem)] max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Patient</DialogTitle>
-          <DialogDescription>
-            Update profile, emergency contact, and linked portal account.
-          </DialogDescription>
+          <DialogTitle>{t("patients.editorTitle")}</DialogTitle>
+          <DialogDescription>{t("patients.editorDescription")}</DialogDescription>
         </DialogHeader>
 
         {loadingState ? (
-          <div className="py-10 text-center text-sm text-muted-foreground">Loading patient data...</div>
+          <div className="py-10 text-center text-sm text-muted-foreground">{t("patients.editorLoading")}</div>
         ) : null}
 
         {!loadingState && patientQuery.data ? (
           <form className="space-y-5" onSubmit={submit}>
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Patient Profile</CardTitle>
+                <CardTitle className="text-base">{t("patients.editorSectionProfile")}</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
-                <Field label="First name" error={errors.firstName?.message}>
+                <Field label={t("patients.firstName")} error={errors.firstName?.message}>
                   <Input {...register("firstName")} disabled={isSaving} />
                 </Field>
-                <Field label="Last name" error={errors.lastName?.message}>
+                <Field label={t("patients.lastName")} error={errors.lastName?.message}>
                   <Input {...register("lastName")} disabled={isSaving} />
                 </Field>
-                <Field label="Nickname" error={errors.nickname?.message}>
-                  <Input {...register("nickname")} disabled={isSaving} />
-                </Field>
-                <Field label="Date of birth" error={errors.dateOfBirth?.message}>
+                <Field label={t("patients.dateOfBirth")} error={errors.dateOfBirth?.message}>
                   <Input type="date" {...register("dateOfBirth")} disabled={isSaving} />
                 </Field>
                 <SelectField
                   control={control}
                   name="gender"
-                  label="Gender"
+                  label={t("patients.gender")}
                   disabled={isSaving}
                   options={genderOptions.map((value) => ({
                     value,
-                    label: value || "Not set",
+                    label:
+                      value === ""
+                        ? t("patients.genderUnset")
+                        : value === "male"
+                          ? t("patients.genderMale")
+                          : value === "female"
+                            ? t("patients.genderFemale")
+                            : t("patients.genderOther"),
                   }))}
                 />
                 <SelectField
                   control={control}
                   name="careLevel"
-                  label="Care level"
+                  label={t("patients.careLevel")}
                   disabled={isSaving}
-                  options={careLevelOptions.map((value) => ({ value, label: value }))}
+                  options={careLevelOptions.map((value) => ({
+                    value,
+                    label:
+                      value === "normal"
+                        ? t("patients.careLevelNormal")
+                        : value === "special"
+                          ? t("patients.careLevelSpecial")
+                          : t("patients.careLevelCritical"),
+                  }))}
                 />
                 <SelectField
                   control={control}
                   name="mobilityType"
-                  label="Mobility type"
+                  label={t("patients.mobilityType")}
                   disabled={isSaving}
-                  options={mobilityTypeOptions.map((value) => ({ value, label: value }))}
+                  options={mobilityTypeOptions.map((value) => ({
+                    value,
+                    label:
+                      value === "wheelchair"
+                        ? t("patients.mobilityWheelchair")
+                        : value === "walker"
+                          ? t("patients.mobilityWalker")
+                          : t("patients.mobilityIndependent"),
+                  }))}
                 />
                 <SelectField
                   control={control}
                   name="bloodType"
-                  label="Blood type"
+                  label={t("patients.bloodType")}
                   disabled={isSaving}
                   options={bloodTypeOptions.map((value) => ({ value, label: value || "-" }))}
                 />
-                <Field label="Height (cm)" error={errors.heightCm?.message}>
+                <Field label={t("patients.heightCm")} error={errors.heightCm?.message}>
                   <Input inputMode="decimal" {...register("heightCm")} disabled={isSaving} />
                 </Field>
-                <Field label="Weight (kg)" error={errors.weightKg?.message}>
+                <Field label={t("patients.weightKg")} error={errors.weightKg?.message}>
                   <Input inputMode="decimal" {...register("weightKg")} disabled={isSaving} />
                 </Field>
-                <Field label="Room" error={errors.roomId?.message}>
+                <Field label={t("patients.room")} error={errors.roomId?.message}>
                   <Controller
                     control={control}
                     name="roomId"
@@ -612,10 +654,10 @@ export default function PatientEditorModal({
                         disabled={isSaving}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select room" />
+                          <SelectValue placeholder={t("patients.editorSelectRoom")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={NO_ROOM_VALUE}>No room assigned</SelectItem>
+                          <SelectItem value={NO_ROOM_VALUE}>{t("patients.noRoom")}</SelectItem>
                           {roomsQuery.data.map((room) => (
                             <SelectItem key={room.id} value={String(room.id)}>
                               {roomTitle(room)}
@@ -626,7 +668,7 @@ export default function PatientEditorModal({
                     )}
                   />
                 </Field>
-                <Field label="Record status" error={errors.isActive?.message}>
+                <Field label={t("patients.editorRecordStatus")} error={errors.isActive?.message}>
                   <Controller
                     control={control}
                     name="isActive"
@@ -640,20 +682,40 @@ export default function PatientEditorModal({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="active">{t("patients.statusActive")}</SelectItem>
+                          <SelectItem value="inactive">{t("patients.statusInactive")}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
                   />
                 </Field>
-                <Field label="Medical conditions (comma-separated)" error={errors.conditionsRaw?.message} className="sm:col-span-2">
-                  <Textarea rows={3} {...register("conditionsRaw")} disabled={isSaving} />
+                <Field
+                  label={t("patients.sectionChronic")}
+                  hint={t("patients.chronicConditionsHint")}
+                  error={errors.conditionsRaw?.message}
+                  className="sm:col-span-2"
+                >
+                  <Textarea
+                    rows={4}
+                    placeholder={t("patients.chronicPlaceholder")}
+                    {...register("conditionsRaw")}
+                    disabled={isSaving}
+                  />
                 </Field>
-                <Field label="Allergies (comma-separated)" error={errors.allergiesRaw?.message} className="sm:col-span-2">
-                  <Textarea rows={3} {...register("allergiesRaw")} disabled={isSaving} />
+                <Field
+                  label={t("patients.sectionAllergies")}
+                  hint={t("patients.allergiesHint")}
+                  error={errors.allergiesRaw?.message}
+                  className="sm:col-span-2"
+                >
+                  <Textarea
+                    rows={4}
+                    placeholder={t("patients.allergiesPlaceholder")}
+                    {...register("allergiesRaw")}
+                    disabled={isSaving}
+                  />
                 </Field>
-                <Field label="Notes" error={errors.notes?.message} className="sm:col-span-2">
+                <Field label={t("patients.formSectionNotes")} error={errors.notes?.message} className="sm:col-span-2">
                   <Textarea rows={4} {...register("notes")} disabled={isSaving} />
                 </Field>
               </CardContent>
@@ -661,25 +723,25 @@ export default function PatientEditorModal({
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Emergency Contact</CardTitle>
+                <CardTitle className="text-base">{t("patients.editorSectionEmergency")}</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
-                <Field label="Contact type" error={errors.emergencyContactType?.message}>
+                <Field label={t("patients.contactType")} error={errors.emergencyContactType?.message}>
                   <Input {...register("emergencyContactType")} disabled={isSaving} />
                 </Field>
-                <Field label="Name" error={errors.emergencyContactName?.message}>
+                <Field label={t("patients.ecName")} error={errors.emergencyContactName?.message}>
                   <Input {...register("emergencyContactName")} disabled={isSaving} />
                 </Field>
-                <Field label="Relationship" error={errors.emergencyContactRelationship?.message}>
+                <Field label={t("patients.ecRelationship")} error={errors.emergencyContactRelationship?.message}>
                   <Input {...register("emergencyContactRelationship")} disabled={isSaving} />
                 </Field>
-                <Field label="Phone" error={errors.emergencyContactPhone?.message}>
+                <Field label={t("patients.ecPhone")} error={errors.emergencyContactPhone?.message}>
                   <Input {...register("emergencyContactPhone")} disabled={isSaving} />
                 </Field>
-                <Field label="Email" error={errors.emergencyContactEmail?.message}>
+                <Field label={t("patients.ecEmail")} error={errors.emergencyContactEmail?.message}>
                   <Input {...register("emergencyContactEmail")} disabled={isSaving} />
                 </Field>
-                <Field label="Notes" error={errors.emergencyContactNotes?.message}>
+                <Field label={t("patients.ecContactNotes")} error={errors.emergencyContactNotes?.message}>
                   <Input {...register("emergencyContactNotes")} disabled={isSaving} />
                 </Field>
               </CardContent>
@@ -687,14 +749,15 @@ export default function PatientEditorModal({
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Portal Account Linking</CardTitle>
+                <CardTitle className="text-base">{t("patients.editorSectionPortal")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-sm text-muted-foreground">
-                  Current linked user: {linkedUser ? `${linkedUser.username} (${linkedUser.role})` : "none"}
+                  {t("patients.editorLinkedUserPrefix")}:{" "}
+                  {linkedUser ? `${linkedUser.username} (${linkedUser.role})` : t("patients.editorLinkedUserNone")}
                 </div>
 
-                <Field label="Account mode" error={errors.accountMode?.message}>
+                <Field label={t("patients.accountMode")} error={errors.accountMode?.message}>
                   <Controller
                     control={control}
                     name="accountMode"
@@ -704,9 +767,9 @@ export default function PatientEditorModal({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Unlink account</SelectItem>
-                          <SelectItem value="existing">Link existing account</SelectItem>
-                          <SelectItem value="new">Create new account</SelectItem>
+                          <SelectItem value="none">{t("patients.accountModeUnlink")}</SelectItem>
+                          <SelectItem value="existing">{t("patients.accountModeLinkExisting")}</SelectItem>
+                          <SelectItem value="new">{t("patients.accountModeCreateNew")}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -714,7 +777,7 @@ export default function PatientEditorModal({
                 </Field>
 
                 {accountMode === "existing" ? (
-                  <Field label="Patient account" error={errors.existingUserId?.message}>
+                  <Field label={t("patients.editorPatientAccount")} error={errors.existingUserId?.message}>
                     <Controller
                       control={control}
                       name="existingUserId"
@@ -727,10 +790,12 @@ export default function PatientEditorModal({
                           disabled={isSaving}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select account" />
+                            <SelectValue placeholder={t("patients.editorSelectAccountPlaceholder")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={EMPTY_SELECT_VALUE}>Select account</SelectItem>
+                            <SelectItem value={EMPTY_SELECT_VALUE}>
+                              {t("patients.editorSelectAccountPlaceholder")}
+                            </SelectItem>
                             {candidateUsers.map((user) => (
                               <SelectItem key={user.id} value={String(user.id)}>
                                 {user.username} ({user.role})
@@ -745,10 +810,10 @@ export default function PatientEditorModal({
 
                 {accountMode === "new" ? (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Username" error={errors.newUsername?.message}>
+                    <Field label={t("auth.username")} error={errors.newUsername?.message}>
                       <Input {...register("newUsername")} disabled={isSaving} />
                     </Field>
-                    <Field label="Password" error={errors.newPassword?.message}>
+                    <Field label={t("auth.password")} error={errors.newPassword?.message}>
                       <Input type="password" {...register("newPassword")} disabled={isSaving} />
                     </Field>
                   </div>
@@ -764,10 +829,10 @@ export default function PatientEditorModal({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
-                Cancel
+                {t("patients.editorCancel")}
               </Button>
               <Button type="submit" disabled={isSaving || loadingState || !patientQuery.data}>
-                {isSaving ? saveLabel : "Save changes"}
+                {isSaving ? saveLabel : t("patients.editorSaveChanges")}
               </Button>
             </DialogFooter>
           </form>
@@ -779,11 +844,13 @@ export default function PatientEditorModal({
 
 function Field({
   label,
+  hint,
   error,
   className,
   children,
 }: {
   label: string;
+  hint?: string;
   error?: string;
   className?: string;
   children: React.ReactNode;
@@ -791,6 +858,7 @@ function Field({
   return (
     <div className={className}>
       <Label className="mb-2 block">{label}</Label>
+      {hint ? <p className="mb-2 text-xs text-muted-foreground">{hint}</p> : null}
       {children}
       {error ? <p className="mt-1 text-xs text-destructive">{error}</p> : null}
     </div>

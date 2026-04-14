@@ -34,6 +34,21 @@ import {
   X,
 } from "lucide-react";
 
+function normalizeRoomLabel(value: string | null | undefined): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function resolveShapeRoomId(shape: FloorplanRoomShape, floorRooms: Room[] | null | undefined): number | null {
+  const numericFromId = floorplanRoomIdToNumeric(shape.id);
+  if (numericFromId != null) return numericFromId;
+  if (!floorRooms?.length) return null;
+  const labelKey = normalizeRoomLabel(shape.label);
+  if (!labelKey) return null;
+  const matches = floorRooms.filter((room) => normalizeRoomLabel(room.name) === labelKey);
+  if (matches.length === 1) return matches[0].id;
+  return null;
+}
+
 function mergeRoomNodesFromFloor(
   shapes: FloorplanRoomShape[],
   floorRooms: Room[] | null | undefined,
@@ -41,7 +56,7 @@ function mergeRoomNodesFromFloor(
   if (!floorRooms?.length) return shapes;
   const byId = new Map(floorRooms.map((r) => [r.id, r]));
   return shapes.map((shape) => {
-    const n = floorplanRoomIdToNumeric(shape.id);
+    const n = resolveShapeRoomId(shape, floorRooms);
     if (n == null) return shape;
     const row = byId.get(n);
     if (!row?.node_device_id) return shape;
@@ -270,7 +285,10 @@ export default function FloorplansPanel({
   }, [floors, floorId, isExternalScope]);
 
   const selected = rooms.find((r) => r.id === selectedId) ?? null;
-  const selectedNumericRoomId = selected ? floorplanRoomIdToNumeric(selected.id) : null;
+  const selectedNumericRoomId = useMemo(
+    () => (selected ? resolveShapeRoomId(selected, floorRooms) : null),
+    [floorRooms, selected],
+  );
 
   const patientsAssignEndpoint =
     facilityId === "" || floorId === "" || selectedNumericRoomId == null
@@ -474,7 +492,7 @@ export default function FloorplansPanel({
       });
       const roomNodeUpdates = rooms
         .map((shape) => ({
-          roomId: floorplanRoomIdToNumeric(shape.id),
+          roomId: resolveShapeRoomId(shape, floorRooms),
           nodeDeviceId: shape.node_device_id ?? null,
         }))
         .filter((item): item is { roomId: number; nodeDeviceId: string | null } => item.roomId !== null);

@@ -50,7 +50,6 @@ class AnalyticsService:
             func.avg(VitalReading.heart_rate_bpm),
             func.avg(VitalReading.rr_interval_ms),
             func.avg(VitalReading.spo2),
-            func.avg(VitalReading.skin_temperature),
         ).where(
             VitalReading.workspace_id == ws_id,
             VitalReading.timestamp >= since,
@@ -65,7 +64,6 @@ class AnalyticsService:
             heart_rate_bpm_avg=float(row[0]) if row[0] else None,
             rr_interval_ms_avg=float(row[1]) if row[1] else None,
             spo2_avg=float(row[2]) if row[2] else None,
-            skin_temperature_avg=float(row[3]) if row[3] else None,
         )
 
     @staticmethod

@@ -9,7 +9,8 @@ from .core import (
     SmartDevice,
 )
 from .facility import Facility, Floor
-from .users import User
+from .users import AuthSession, User
+from .mcp_tokens import MCPToken
 from .patients import Patient, PatientDeviceAssignment, PatientContact
 from .caregivers import (
     CareGiver,
@@ -53,6 +54,8 @@ from .shift_checklist import ShiftChecklistState
 __all__ = [
     "Base",
     "User",
+    "AuthSession",
+    "MCPToken",
     # Core
     "Workspace",
     "Device",

@@ -13,8 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { ageYears } from "@/lib/age";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
+import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import type {
   CareDirectiveOut,
   CareTaskOut,
@@ -62,6 +64,7 @@ export default function SupervisorPatientDetailPage() {
   const { t } = useTranslation();
   const params = useParams();
   const queryClient = useQueryClient();
+  const nowMs = useFixedNowMs();
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
   const [pendingDirectiveId, setPendingDirectiveId] = useState<number | null>(null);
 
@@ -435,12 +438,35 @@ export default function SupervisorPatientDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">
-          {patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.patientDetail.pageSubtitle")}</p>
-      </div>
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">
+                {patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {[ageYears(patient?.date_of_birth ?? null, nowMs) != null ? `${ageYears(patient?.date_of_birth ?? null, nowMs)} ${t("patients.years")}` : null, patient?.gender || null]
+                  .filter(Boolean)
+                  .join(" · ") || t("supervisor.patientDetail.pageSubtitle")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{patient?.care_level || "normal"}</Badge>
+              <Badge variant="outline">{patient?.mobility_type || "wheelchair"}</Badge>
+              <Badge variant={patient?.is_active ? "success" : "secondary"}>
+                {patient?.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
+              </Badge>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            <QuickInfo label={t("patients.room")} value={patient?.room_id != null ? `Room ${patient.room_id}` : t("patients.noRoom")} />
+            <QuickInfo label={t("clinical.patientDetail.statRecentVitals")} value={String(vitalsRows.length)} />
+            <QuickInfo label={t("clinical.patientDetail.statActiveAlerts")} value={String(activeAlerts.length)} />
+            <QuickInfo label={t("supervisor.patientDetail.statOpenTasks")} value={String(taskRows.filter((task) => task.status !== "completed").length)} />
+          </div>
+        </CardContent>
+      </Card>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryStatCard
@@ -508,3 +534,11 @@ export default function SupervisorPatientDetailPage() {
   );
 }
 
+function QuickInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
+    </div>
+  );
+}

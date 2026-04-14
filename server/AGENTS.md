@@ -10,7 +10,14 @@ If you are changing backend behavior, read this first.
 - Database: PostgreSQL via SQLAlchemy async models
 - Message bus: MQTT
 - ML/localization: RSSI room prediction + motion training/prediction
-- AI surface: MCP server mounted at `/mcp`
+- AI surface: remote MCP server mounted at `/mcp` plus first-party `wheelsense-agent-runtime`
+- MCP transport: Streamable HTTP primary, SSE compatibility at `/mcp/sse`
+- 28 MCP workspace tools with scope-based authorization across 8 domains
+- 6 role-based prompts for safe AI assistance
+- 4 MCP resources for real-time workspace data
+- Agent runtime: plan/ground/execute flow with execution plan persistence; optional `AGENT_ROUTING_MODE=llm_tools` on `wheelsense-agent-runtime` (see `docker-compose.core.yml`, `docs/ENV.md`, ADR 0014)
+- Chat actions: 3-stage confirmation flow (propose → confirm → execute)
+- Remote MCP OAuth with scope narrowing support
 - Runtime version exposed by `app.main`: `3.2.0`
 
 ## Repository Truth Hierarchy
@@ -34,15 +41,17 @@ High-level flow:
 2. `firmware/Node_Tsimcam` publishes camera registration, status, and image payloads to MQTT
 3. `server/app/mqtt_handler.py` ingests MQTT data, resolves the registered device, writes DB rows, and triggers derived flows
 4. FastAPI exposes REST endpoints for the web app and operator tools
-5. `server/app/mcp_server.py` exposes AI/MCP tools
-6. `frontend/` consumes backend APIs through its own `/api/*` proxy
+5. `server/app/mcp_server.py` / `server/app/mcp/*` expose the authenticated MCP surface with 28 workspace tools in `_WORKSPACE_TOOL_REGISTRY`, 6 prompts, 4 resources
+6. `server/app/agent_runtime/*` acts as the first-party MCP client/orchestrator for chat: default **intent** routing (`IntentClassifier` + plan/execute), optional **`llm_tools`** routing (`llm_tool_router.py`: follows workspace primary AI — Copilot JSON tool list first when `AI_PROVIDER`/workspace is copilot, Ollama native `tools=` first when ollama; cross-fallback, then intent classifier)
+7. `frontend/` consumes backend APIs through its own `/api/*` proxy, including AI chat with 3-stage action flow
 
 ## Core Invariants
 
 - Protected APIs must scope by `current_user.workspace_id`
 - Do not use `Workspace.is_active` as runtime authorization scope
 - Do not accept client-supplied `workspace_id` for workspace-bound writes
-- MQTT ingestion must resolve an already-registered `Device` first
+- MQTT wheelchair telemetry (`WheelSense/data`): resolve an existing `Device`, or **auto-register** one when `MQTT_AUTO_REGISTER_DEVICES` is enabled and a target workspace is resolvable (see `server/docs/ENV.md`). When `MQTT_AUTO_REGISTER_BLE_NODES` is true, `rssi[]` entries with `WSN_*` + `mac` also **auto-register** a node (`device_id` `BLE_<12 hex MAC>`) in that wheelchair’s workspace. When `MQTT_MERGE_BLE_CAMERA_BY_MAC` is true, camera registration JSON with matching `ble_mac` **renames** that stub to the camera `device_id` (e.g. `CAM_*`) and updates `rooms.node_device_id` references. Camera topics then use the merged `device_id`.
+- Strongest-RSSI room prediction is operationally “ready” only when four records agree inside the same workspace: wheelchair device assignment (`PatientDeviceAssignment`), node alias resolution (`WSN_*` -> canonical node `device_id`), room-to-node binding (`Room.node_device_id`), and patient roster room (`Patient.room_id`). Admins can inspect and repair the default baseline from `GET/POST /api/localization/readiness*`; the repair path also forces workspace localization strategy to `max_rssi` and backfills `Room 101` into the floorplan layout when missing.
 - MQTT writes inherit scope from `device.workspace_id`
 - Business logic belongs in services, not in route handlers
 - Schema changes require Alembic migrations
@@ -58,7 +67,7 @@ High-level flow:
 4. optionally attaches that admin to the demo workspace
 5. starts the MQTT listener
 6. starts the retention scheduler when enabled
-7. mounts the MCP SSE app at `/mcp`
+7. mounts the authenticated MCP remote app at `/mcp` with Streamable HTTP + SSE transports
 
 ## Dual-Environment Docker Compose Setup
 
@@ -126,8 +135,18 @@ All API routes are under `/api`.
 ### Auth / identity
 
 - `GET /api/auth/me`
+- `GET /api/auth/sessions`
+- `POST /api/auth/logout`
+- `DELETE /api/auth/sessions/{session_id}`
 - `PATCH /api/auth/me`
 - `POST /api/auth/me/profile-image`
+
+Current auth/session rules:
+
+- Login creates a server-tracked `auth_sessions` row and returns a JWT with `sid`
+- Protected requests with `sid` must map to an existing non-revoked non-expired `AuthSession`
+- Browser auth for the web app is cookie-based through the Next `/api/*` proxy; client code should not depend on reading the JWT from `localStorage`
+- Admin impersonation still issues a short-lived act-as JWT, but the Next proxy preserves the pre-impersonation admin token in an HttpOnly backup cookie so `/api/auth/impersonate/stop` can restore it without exposing tokens to browser JS
 
 Current profile image rules:
 
@@ -165,6 +184,7 @@ The access assignment API is:
 - `PUT /api/patients/{patient_id}/caregivers` replaces the active caregiver set for that patient with `{ "caregiver_ids": [...] }` (`ROLE_PATIENT_MANAGERS`).
 
 Canonical **patient→facility room** placement is `Patient.room_id` (nullable FK to `rooms.id`): read it from `GET /api/patients` / `GET /api/patients/{patient_id}` and persist with `PATCH /api/patients/{patient_id}` (`room_id` in JSON; `null` clears). Treat this as the roster source of truth for “which room the patient is linked to”; `GET /api/floorplans/presence` is a live projection for maps/monitoring and must not be the only place UIs infer a patient’s room when editing assignments.
+`GET /api/floorplans/presence` currently composes room overlays from multiple sources in `FloorplanPresenceService`: layout-backed rooms, `Patient.room_id` assignment, latest `RoomPrediction` telemetry (`prediction_hint` / confidence / staleness), and optional manual staff presence rows (`DemoActorPosition`).
 
 The current implementation applies this patient visibility policy to `/api/patients` list/get plus patient-linked workflow list/create/update paths. Alerts, vitals, timeline, and patient-linked reads in the floorplans, care, and medication domains should use the same helper when those endpoint files are touched.
 
@@ -173,6 +193,7 @@ The current implementation applies this patient visibility policy to `/api/patie
 - Canonical **facility room** for a patient is `Patient.room_id` (nullable FK to `rooms`). Persist it with `PATCH /api/patients/{patient_id}` (`PatientUpdate.room_id`). `GET /api/floorplans/presence` and other map surfaces derive occupants from this field where applicable; device localization / MQTT predicted room is telemetry and must not be treated as the sole source of truth for “which facility room is this patient assigned to” on clinical or admin detail pages.
 - **Caregiver ↔ patient roster** for non-admin staff visibility uses the same `CareGiverPatientAccess` table from either direction: `GET` / `PUT /api/caregivers/{caregiver_id}/patients` (per caregiver) and `GET` / `PUT /api/patients/{patient_id}/caregivers` (per patient). Linking user accounts to caregiver directory rows for people UX continues through `PUT /api/users/{user_id}` (`caregiver_id`, `role`, etc.). There is no separate DB relation today for “this observer reports to this head nurse”; UI may list head nurses as reference only until an explicit model is added. On **`/admin/caregivers/[id]`**, `CaregiverDetailPane` shows that **Head nurses (reference)** strip for viewed roles **observer**, **supervisor**, and **head_nurse** (workspace `GET /caregivers` filter); when the open row is a head nurse, the list **excludes self** for peer links.
 - **Floorplan room tooling** is centralized in `frontend/components/admin/FloorplansPanel.tsx`, embedded from `/admin/facility-management` (per-room node vs smart-home flows, patient-to-room assign via the same patient `room_id` PATCH, and `POST /api/floorplans/rooms/{room_id}/capture`). `/admin/monitoring` `FloorMapWorkspace` assignment mode should stay aligned with that contract instead of duplicating ad hoc room-assignment APIs.
+- Presence visibility is role-filtered via `get_visible_patient_ids`; for `patient` role, `/api/floorplans/presence` also filters to visible rooms only.
 
 ### Device and telemetry domain
 
@@ -190,6 +211,8 @@ Important device management additions:
 - `POST /api/devices/{device_id}/patient` links or unlinks a patient assignment for a device
 - device activity logging is best-effort and should not block the main request path
 - device activity details must sanitize config secrets before persistence
+
+`GET /api/analytics/vitals/averages` returns **heart rate**, **RR interval**, and **SpO₂** averages only. **`vital_readings.skin_temperature` was removed** (Alembic `v6w7x8y9z0a1`); MQTT/simulator Polar payloads and REST/MCP vitals use HR, RR, SpO₂, and sensor battery only.
 
 ### Clinical and operations domain
 
@@ -244,6 +267,37 @@ Current AI settings/runtime notes:
 - `GET /api/settings/ai/copilot/models` returns the live Copilot model list from the backend SDK, not a hardcoded frontend list
 - `DELETE /api/settings/ai/ollama/models/{name}` deletes a local Ollama model through the Ollama HTTP API
 - chat runtime answers about provider/model should come from backend-provided runtime metadata rather than model self-reporting
+- first-party chat proposal/execution no longer dispatches MCP tools by direct import from the API layer; it calls the internal `wheelsense-agent-runtime` service, which connects back to `/mcp` as an MCP client using the acting user's bearer token
+- MCP auth/policy uses the same actor facts as REST (`workspace_id`, `role`, `patient_id`, `caregiver_id`, session-backed bearer auth) and derives effective MCP scopes from role plus optional token `scope`
+- MCP write tools must not trust caller-supplied actor identifiers such as `caregiver_id`
+
+### AI Chat Integration (Frontend)
+
+The frontend AI chat popup uses a 3-stage action flow via REST APIs:
+
+1. **Propose** (`POST /api/chat/actions/propose`)
+   - Sends user message to agent runtime
+   - Returns execution plan for mutating actions or immediate answer for reads
+   - Displays `ActionPlanPreview` component for plans requiring confirmation
+
+2. **Confirm** (`POST /api/chat/actions/{id}/confirm`)
+   - User approves or rejects the proposed action
+   - Updates action status to `confirmed` or `rejected`
+
+3. **Execute** (`POST /api/chat/actions/{id}/execute`)
+   - Executes the confirmed plan through MCP tools
+   - Returns execution results with step-by-step outcomes
+   - Displays `ExecutionStepList` component showing progress
+
+Key frontend components:
+- `frontend/components/ai/AIChatPopup.tsx` - Main chat interface
+- `frontend/components/ai/ActionPlanPreview.tsx` - Plan confirmation UI
+- `frontend/components/ai/ExecutionStepList.tsx` - Step execution visualization
+
+TypeScript types from generated schema:
+- `ExecutionPlan` - Full execution plan with steps and metadata
+- `ExecutionPlanStep` - Individual step with tool, arguments, risk level
+- `ChatActionProposalResponse` - Proposal response from API
 
 ## MQTT Topic Map
 
@@ -253,6 +307,7 @@ Topics currently used by runtime code:
 |-------|-----------|---------|
 | `WheelSense/data` | wheelchair -> server | IMU, motion, RSSI, battery telemetry |
 | `WheelSense/{device_id}/control` | server -> wheelchair | motion/device commands |
+| `WheelSense/{device_id}/ack` | wheelchair -> server | wheelchair command acknowledgement |
 | `WheelSense/room/{device_id}` | server -> subscribers | predicted room updates |
 | `WheelSense/camera/{device_id}/registration` | camera -> server | camera registration |
 | `WheelSense/camera/{device_id}/status` | camera -> server | camera heartbeat |
@@ -267,7 +322,12 @@ Topics currently used by runtime code:
 The wheelchair firmware also listens to:
 
 - `WheelSense/config/{device_id}`
+- `WheelSense/{device_id}/control`
 - `WheelSense/room/{device_id}`
+
+The wheelchair firmware also publishes:
+
+- `WheelSense/{device_id}/ack`
 
 The camera firmware also listens to:
 
@@ -281,7 +341,7 @@ The camera firmware also listens to:
 `WheelSense/data` -> `mqtt_handler._handle_telemetry()`
 
 - parse payload
-- resolve registered device
+- resolve registered device (or auto-create wheelchair row when settings allow)
 - update `last_seen` and firmware metadata
 - insert IMU telemetry
 - insert motion training rows when recording
@@ -301,7 +361,7 @@ The camera firmware also listens to:
 
 - frontend uses `/api/*`
 - Next.js proxy route forwards requests to FastAPI
-- `lib/api.ts` injects bearer auth from `ws_token`
+- the proxy injects bearer auth from the HttpOnly `ws_token` cookie and clears it on backend `401`
 
 ## Key Backend Files
 
@@ -319,12 +379,79 @@ The camera firmware also listens to:
 - `server/app/feature_engineering.py` - IMU feature extraction
 - `server/app/motion_classifier.py` - motion model lifecycle
 
-### AI
+### AI / MCP System
 
-- `server/app/mcp_server.py` - MCP tool surface
-- `server/app/services/ai_chat.py` - AI/chat integration
-- `server/app/api/endpoints/chat.py`
-- `server/app/api/endpoints/ai_settings.py`
+- `server/app/mcp_server.py` - MCP tool surface (legacy compatibility)
+- `server/app/mcp/server.py` - MCP resources, prompts, 28 workspace tools (`_WORKSPACE_TOOL_REGISTRY`), and remote app assembly
+- `server/app/mcp/auth.py` - MCP bearer auth + origin gate + OAuth scope narrowing
+- `server/app/mcp/context.py` - Actor context management via contextvars
+- `server/app/agent_runtime/main.py` - internal runtime HTTP service
+- `server/app/agent_runtime/service.py` - plan/ground/execute orchestration through MCP client calls
+- `server/app/agent_runtime/llm_tool_router.py` - optional LLM tool-calling router (`AGENT_ROUTING_MODE=llm_tools`)
+- `server/app/agent_runtime/intent.py` - intent classification (regex, optional multilingual embeddings, example bank)
+- `server/app/agent_runtime/language_bridge.py` - optional LLM paraphrase to English for one extra classify pass when routing misses (not used for MCP execution)
+- `server/app/agent_runtime/conversation_fastpath.py` - conservative greeting/thanks detection to skip MCP and call chat directly (`INTENT_AI_CONVERSATION_FASTPATH_ENABLED`)
+- `server/app/services/ai_chat.py` - AI/chat integration with 3-stage action flow
+- `server/app/api/endpoints/chat.py` - Chat endpoints
+- `server/app/api/endpoints/chat_actions.py` - 3-stage action proposal/confirmation/execution
+- `server/app/api/endpoints/ai_settings.py` - AI configuration endpoints
+- `server/app/api/endpoints/mcp_auth.py` - MCP OAuth token management
+
+**Agent runtime language routing:** MCP tools and schemas stay English. For each propose turn, obvious greetings/thanks (`INTENT_AI_CONVERSATION_FASTPATH_ENABLED`) go straight to the chat model and skip intent, MCP, and the LLM normalizer. Otherwise the runtime classifies with high-precision regex first, then optional multilingual similarity over `INTENT_EXAMPLES` (`INTENT_SEMANTIC_ENABLED`, `INTENT_EMBEDDING_MODEL`). If still unmatched and `INTENT_LLM_NORMALIZE_ENABLED` is on, it requests a short English paraphrase via the same workspace AI settings as chat (`resolve_effective_ai` / Ollama or Copilot), then classifies that string once. The paraphrase is for routing only; execution remains scoped MCP calls. See `server/docs/ENV.md` for `INTENT_*` variables.
+
+**Multi-turn patient context (intent mode):** `ConversationContext` in `agent_runtime/service.py` (keyed by chat `conversation_id`) stores `last_entities`, `last_patient_cards`, and `last_focused_patient_id` after successful immediate MCP reads (`list_visible_patients`, `get_patient_details`, `get_patient_vitals`, `get_patient_timeline`). Short Thai follow-ups (สัญญาณชีพ, **ประวัติสุขภาพ** → `get_patient_vitals` with readings + observations; ไทม์ไลน์ / ประวัติการรักษา → `get_patient_timeline`) resolve `patient_id` via `pick_patient_id_for_followup` in `intent.py`, including **substring matches on roster names** and **prior user lines** when the current message has no name (e.g. after ขอของคุณวิชัย). High-confidence patient-scoped reads still auto-execute in propose when the intent carries entity hints (`service.py` allowlist for vitals/timeline/details).
+
+**Page-scoped chat:** `POST /api/chat/actions/propose` accepts optional `page_patient_id` (UI: EaseAI on `/admin|head-nurse|supervisor|observer/patients/{id}` sends it). Agent runtime seeds that patient into context before classification so vitals/timeline/โรคเรื้อรัง-style questions resolve without an extra disambiguation turn.
+
+**MCP Server Details:**
+
+- **Mount point**: `/mcp` with Streamable HTTP primary transport, SSE at `/mcp/sse`
+- **Authentication**: Bearer tokens with same validation as REST + optional origin gating
+- **Actor context**: user_id, workspace_id, role, patient_id, caregiver_id, effective scopes
+- **OAuth protected resource metadata**: `/.well-known/oauth-protected-resource/mcp`
+
+**28 MCP workspace tools by domain** (see `_WORKSPACE_TOOL_REGISTRY` in `app/mcp/server.py`; tests in `tests/test_mcp_server.py` / `test_mcp_policy.py` cover registration and scope gates but do not exercise every tool against production data):
+
+| Domain | Tools |
+|--------|-------|
+| System | `get_system_health`, `get_current_user_context` |
+| Workspace | `list_workspaces`, `list_facilities`, `get_facility_details`, `get_workspace_analytics` |
+| Patients | `list_visible_patients`, `get_patient_details`, `update_patient_room`, `create_patient_record`, `get_patient_vitals`, `get_patient_timeline` |
+| Devices | `list_devices`, `send_device_command`, `trigger_camera_photo` |
+| Alerts | `list_active_alerts`, `acknowledge_alert`, `resolve_alert` |
+| Rooms | `list_rooms`, `get_floorplan_layout`, `control_room_smart_device` |
+| Workflow | `list_workflow_tasks`, `list_workflow_schedules`, `create_workflow_task`, `update_workflow_task_status` |
+| Messaging | `send_message`, `get_message_recipients` |
+| AI Settings | `get_ai_runtime_summary` |
+
+**6 Role-Based Prompts:**
+
+| Prompt | Purpose |
+|--------|---------|
+| `admin-operations` | Infrastructure, staffing, facilities, workspace actions |
+| `clinical-triage` | Patient state, alerts, workflow queue reading |
+| `observer-shift-assistant` | Floor staff tasking and alert follow-up |
+| `patient-support` | Patient-safe assistance with simple language |
+| `device-control` | Device and room-control operations |
+| `facility-ops` | Facilities, floorplans, room workflows |
+
+**4 MCP Resources:**
+
+| Resource | URI | Content |
+|----------|-----|---------|
+| current-user | `wheelsense://current-user` | Actor identity, workspace links, scopes |
+| visible-patients | `wheelsense://patients/visible` | Filtered patient list |
+| active-alerts | `wheelsense://alerts/active` | Workspace alerts by visibility |
+| rooms | `wheelsense://rooms` | Workspace room catalog |
+
+**17 MCP Scopes (Role-Based):**
+
+- `workspace.read`, `patients.read`, `patients.write`
+- `alerts.read`, `alerts.manage`
+- `devices.read`, `devices.manage`, `devices.command`
+- `rooms.read`, `rooms.manage`, `room_controls.use`
+- `workflow.read`, `workflow.write`
+- `cameras.capture`, `ai_settings.read`, `ai_settings.write`, `admin.audit.read`
 
 Current AI provider behavior:
 
@@ -332,6 +459,10 @@ Current AI provider behavior:
 - Copilot model validation now happens on the backend against the SDK-reported model list before session creation
 - the backend queries the active Copilot session model and injects runtime metadata so EaseAI does not claim a different provider/model than the one actually configured
 - frontend admin AI settings should treat backend model lists as source of truth
+- planner target defaults: `copilot:gpt-4.1` (`medium`) for plan synthesis, `ollama:gemma4:e4b` (`low`) for cheap summarization/grounding paths, and `copilot:gpt-4.1` (`high`) for escalated read-only investigations; these targets are runtime metadata today and do not require native provider support
+- first-party chat proposal/execution no longer dispatches MCP tools by direct import from the API layer; it calls the internal `wheelsense-agent-runtime` service, which connects back to `/mcp` as an MCP client using the acting user's bearer token
+- MCP auth/policy uses the same actor facts as REST (`workspace_id`, `role`, `patient_id`, `caregiver_id`, session-backed bearer auth) and derives effective MCP scopes from role plus optional token `scope`
+- MCP write tools must not trust caller-supplied actor identifiers such as `caregiver_id`
 
 ### Data/domain layers
 
@@ -386,14 +517,32 @@ Use focused suites after changes in these areas:
 - device flows -> `tests/test_devices_mvp.py`
 - model/schema behavior -> `tests/test_models.py`
 - service rules -> `tests/test_services/*`
-- MCP -> `tests/test_mcp_server.py`
+- MCP system -> `tests/test_mcp_server.py`, `tests/test_mcp_auth.py`, `tests/test_mcp_auth_extended.py`, `tests/test_mcp_policy.py`
+- chat actions -> `tests/test_chat_actions.py`, `tests/test_chat_actions_integration.py`
+- agent runtime -> `tests/test_agent_runtime.py`, `tests/test_agent_runtime_extended.py`
+
+**MCP Test Coverage (52+ test cases across 8 files):**
+
+| Test File | Focus Area |
+|-----------|------------|
+| `test_mcp_server.py` | Tool registry, tool execution, scope enforcement |
+| `test_mcp_auth.py` | Bearer authentication, origin validation |
+| `test_mcp_auth_extended.py` | OAuth flows, token revocation, scope narrowing |
+| `test_mcp_policy.py` | Workspace isolation, patient visibility, role-based access |
+| `test_chat_actions.py` | 3-stage flow (propose/confirm/execute), action persistence |
+| `test_chat_actions_integration.py` | End-to-end chat action workflows |
+| `test_agent_runtime.py` | Intent classification, plan generation |
+| `test_agent_runtime_extended.py` | Multi-turn conversations, compound intents |
+| `test_llm_tool_router.py` | Tool catalog, role allowlist filtering, read/write routing constants |
+
+**Coverage limits:** tests commonly use `create_all()` rather than exercising the full Alembic upgrade path end-to-end. Passing pytest does **not** imply every REST path in OpenAPI or every MCP tool invocation has been exercised on a production-sized database; use focused suites above plus smoke checks (`GET /api/health`, critical UI flows) after deploy or Docker image changes.
 
 ## Frontend Contract Notes
 
 The frontend currently depends on:
 
 - `/api/*` proxying through `frontend/app/api/[[...path]]/route.ts`
-- cookie + localStorage token model
+- HttpOnly cookie auth (`ws_token`) plus server-tracked backend sessions
 - root providers in `frontend/components/providers/AppProviders.tsx`
 - Zustand auth state in `frontend/lib/stores/auth-store.ts`
 - TanStack Query-backed reads via `@tanstack/react-query` (`useQuery` / `useMutation`) with `lib/api.ts` in `queryFn`, namespaced `queryKey`s, optional defaults from `frontend/lib/queryEndpointDefaults.ts`, and `frontend/lib/refetchOrThrow.ts` where a refetch must reject like the old client wrapper; the legacy `frontend/hooks/useQuery.ts` file is gone
@@ -401,6 +550,7 @@ The frontend currently depends on:
 - generated OpenAPI schema output in `frontend/lib/api/generated/schema.ts`
 - route areas for `admin`, `head_nurse`, `supervisor`, `observer`, `patient`; role sidebar is a short list in `frontend/lib/sidebarConfig.ts` with optional `activeForPaths` and in-page **`?tab=`** hubs (`HubTabBar`) so many screens stay on canonical paths without duplicating REST
 - Next.js **16** App Router: client `page` modules avoid Promise `params` / `searchParams` props—dynamic ids, `?tab=`, and **`?alert=`** on role alert inbox pages use **`useParams()`** / **`useSearchParams()`** (see admin settings, admin patient/caregiver detail, head-nurse/observer/supervisor alert queues). Clinical alert toasts: **`frontend/hooks/useNotifications.tsx`** (JSX; file must be `.tsx`) + **`components/notifications/AlertToastCard.tsx`** (`toast.custom`); before enqueueing a toast for an alert with **`patient_id`**, the client resolves **`GET /api/patients/{id}`** and **`GET /api/rooms/{room_id}`** (when `room_id` is set) for name + location copy; inbox URLs from **`alertsInboxUrl`** in `lib/notificationRoutes.ts`; toast **Acknowledge** is shown only for roles allowed by **`ROLE_ALERT_ACK`** on **`POST /api/alerts/{alert_id}/acknowledge`** (`admin`, `head_nurse` in `app/api/endpoints/alerts.py`).
+- **Observer alerts queue** uses **`useSuspenseQuery`** behind `<Suspense>` (`frontend/app/observer/alerts/ObserverAlertsQueue.tsx` + `page.tsx`); **`app/admin/loading.tsx`** provides segment loading for **`/admin/*`** navigations. **Observer** + chime-tier alert toasts set **`visualEmphasis="interrupt"`** on **`AlertToastCard`** with **`ws-alert-toast-interrupt`** in `frontend/app/globals.css`.
 - legacy admin compatibility redirects for `/admin/users` and `/admin/smart-devices`
 - account-management flows that call `PUT /api/users/{user_id}` with patient/caregiver link fields
 - device fleet flows that call `GET /api/devices/activity` and `POST /api/devices/{device_id}/patient`
@@ -420,7 +570,7 @@ When backend contracts change, update:
 
 ## Known Gotchas
 
-- Unknown devices are dropped from MQTT ingestion until registered
+- Unknown wheelchair devices on `WheelSense/data` are auto-registered when enabled; unknown devices on camera topics are still dropped until registered
 - Device scoping comes from the device row, not from request data
 - `scripts/` are helper scripts, not pytest modules
 - profile images are stored on disk and served from `/api/public/profile-images/*`

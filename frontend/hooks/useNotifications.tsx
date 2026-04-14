@@ -210,6 +210,9 @@ export function useNotifications(): UseNotificationsReturn {
           patientContext = await resolvePatientAlertContext(a.patient_id, t);
         }
 
+        const visualEmphasis =
+          role === "observer" && level === "toastSound" ? "interrupt" : "standard";
+
         toast.custom(
           (toastId) => (
             <AlertToastCard
@@ -219,6 +222,7 @@ export function useNotifications(): UseNotificationsReturn {
               description={description}
               alertType={a.alert_type}
               patientContext={patientContext}
+              visualEmphasis={visualEmphasis}
               canAcknowledge={canAcknowledgeAlerts}
               onNavigateInbox={() => router.push(inboxTarget)}
             />

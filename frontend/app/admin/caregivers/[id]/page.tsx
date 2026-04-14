@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { ROUTES } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import CaregiverDetailPane from "@/components/admin/caregivers/CaregiverDetailPane";
-import EditCaregiverModal from "@/components/admin/caregivers/EditCaregiverModal";
 import type { Caregiver, User } from "@/lib/types";
 
 function usersForCaregiver(users: User[] | null | undefined, caregiverId: number): User[] {
@@ -30,7 +29,6 @@ export default function AdminCaregiverDetailPage() {
   const [caregiver, setCaregiver] = useState<Caregiver | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -111,25 +109,12 @@ export default function AdminCaregiverDetailPage() {
               <ArrowLeft className="h-4 w-4" aria-hidden />
               {t("caregivers.backToDirectory")}
             </Link>
-            <button
-              type="button"
-              onClick={() => setEditorOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-outline-variant/30 text-foreground hover:bg-surface-container-high transition-smooth"
-            >
-              <Pencil className="h-4 w-4" aria-hidden />
-              {t("caregivers.editStaff")}
-            </button>
           </div>
-          <EditCaregiverModal
-            open={editorOpen}
-            caregiver={caregiver}
-            onClose={() => setEditorOpen(false)}
-            onSaved={(updated) => setCaregiver(updated)}
-          />
           <CaregiverDetailPane
             caregiver={caregiver}
             linkedUsers={linked}
             onUserUpdated={() => void refetchUsers()}
+            onCaregiverUpdated={setCaregiver}
           />
         </>
       )}

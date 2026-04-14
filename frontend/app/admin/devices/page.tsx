@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 
 function DevicesPageContent() {
   const { t } = useTranslation();
@@ -67,15 +68,15 @@ function DevicesPageContent() {
     queryKey: ["admin", "devices", "registry", registryEndpoint, tab],
     queryFn: () => api.get<Device[]>(registryEndpoint!),
     enabled: Boolean(registryEndpoint),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: registryEndpoint ? getQueryStaleTimeMs(registryEndpoint) : 30_000,
+    refetchInterval: registryEndpoint ? getQueryPollingMs(registryEndpoint) : false,
   });
   const { data: smartDevices, isLoading: loadingSmart, refetch: refetchSmart } = useQuery({
     queryKey: ["admin", "devices", "smart-ha", smartEndpoint],
     queryFn: () => api.get<SmartDevice[]>(smartEndpoint!),
     enabled: Boolean(smartEndpoint),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: smartEndpoint ? getQueryStaleTimeMs(smartEndpoint) : 30_000,
+    refetchInterval: smartEndpoint ? getQueryPollingMs(smartEndpoint) : false,
   });
 
   const isLoading = tab === "smart_ha" ? loadingSmart : loadingRegistry;
@@ -135,22 +136,20 @@ function DevicesPageContent() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h2 className="text-2xl font-bold text-foreground">{t("devices.title")}</h2>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Device health details are now shown inside each device detail panel.
-        </p>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("devices.healthNote")}</p>
       </div>
 
       {tab === "smart_ha" ? (
         <div className="grid gap-4 md:grid-cols-3">
-          <SummaryCard label="Smart Devices" value={smartStats.total} icon={Tablet} />
-          <SummaryCard label="Reachable" value={smartStats.reachable} icon={Wifi} />
-          <SummaryCard label="Inactive" value={smartStats.inactive} icon={WifiOff} />
+          <SummaryCard label={t("devices.summarySmartDevices")} value={smartStats.total} icon={Tablet} />
+          <SummaryCard label={t("devices.summaryReachable")} value={smartStats.reachable} icon={Wifi} />
+          <SummaryCard label={t("devices.summaryInactive")} value={smartStats.inactive} icon={WifiOff} />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
-          <SummaryCard label="Registry devices" value={registryStats.total} icon={Tablet} />
-          <SummaryCard label="Online registry" value={registryStats.online} icon={Wifi} />
-          <SummaryCard label="Offline registry" value={registryStats.offline} icon={WifiOff} />
+          <SummaryCard label={t("devices.summaryRegistryDevices")} value={registryStats.total} icon={Tablet} />
+          <SummaryCard label={t("devices.summaryOnlineRegistry")} value={registryStats.online} icon={Wifi} />
+          <SummaryCard label={t("devices.summaryOfflineRegistry")} value={registryStats.offline} icon={WifiOff} />
         </div>
       )}
 

@@ -19,6 +19,23 @@ This file reflects the variables currently read by `server/app/config.py` and th
 | `MQTT_USER` | empty | MQTT username |
 | `MQTT_PASSWORD` | empty | MQTT password |
 | `MQTT_TLS` | `false` | Enable TLS for MQTT |
+| `MQTT_AUTO_REGISTER_DEVICES` | `true` | When `true`, first `WheelSense/data` message for an unknown `device_id` creates a registry `Device` row (wheelchair path only). |
+| `MQTT_AUTO_REGISTER_BLE_NODES` | `true` | When `true`, BLE beacons reported in `WheelSense/data` `rssi[]` (`node` names like `WSN_*` plus `mac`) auto-create a **node** (`hardware_type=node`) in the **same workspace** as the wheelchair. Registry `device_id` is `BLE_<12 hex MAC>` (or `BLE_<sanitized node>` if MAC is missing). |
+| `MQTT_MERGE_BLE_CAMERA_BY_MAC` | `true` | When `true`, `WheelSense/camera/.../registration` JSON with `ble_mac` matching a `BLE_*` stub **renames** that registry row to the camera’s `device_id` (e.g. `CAM_*`) so MQTT topics and the web UI use one device. |
+| `MQTT_AUTO_REGISTER_WORKSPACE_ID` | empty | Optional integer workspace PK. When set, new devices from telemetry attach to this workspace. When unset and **exactly one** workspace exists, that workspace is used. If multiple workspaces exist and this is unset, auto-register is skipped (telemetry dropped until you register manually or set this variable). |
+
+### MQTT simulator worker (`sim_controller.py`)
+
+Used by the `wheelsense-simulator` Compose service (`python sim_controller.py --routine`). These are read at process startup (no FastAPI restart required for the sim container itself).
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `SIM_VITAL_UPDATE_INTERVAL` | (from JSON / 30) | Seconds between vital simulation cycles for all patients |
+| `SIM_ALERT_PROBABILITY` | (from JSON / 0.05) | Random contextual alert probability per patient per cycle |
+| `SIM_ENABLE_ALERTS` | `true` | Set `false` / `0` / `no` / `off` to disable automatic alert generation from vitals |
+| `SIM_HEART_RATE_HIGH` | 110 | BPM threshold above which consecutive readings can raise `abnormal_hr` |
+
+**Runtime control (no env change):** when `ENV_MODE=simulator`, admins can call `POST /api/demo/simulator/command`, which publishes JSON to MQTT topic `WheelSense/sim/control` with `workspace_id` plus `command`: `pause`, `resume`, `set_config`, `inject_abnormal_hr`, or `inject_fall`. The simulator only applies messages whose `workspace_id` matches its loaded workspace.
 
 ## App / auth
 
@@ -71,6 +88,29 @@ See `RUNBOOK.md` for the dual-environment workflow.
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434/v1` | OpenAI-compatible Ollama URL |
 | `COPILOT_CLI_URL` | empty | GitHub Copilot CLI bridge URL |
 | `GITHUB_OAUTH_CLIENT_ID` | empty | OAuth app client ID for Copilot device flow |
+
+## Agent runtime — multilingual intent
+
+Used by `wheelsense-agent-runtime` (`server/app/agent_runtime/`). MCP tool names stay English; these flags only affect **routing** toward those tools.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `INTENT_SEMANTIC_ENABLED` | `true` | When `true`, load `sentence-transformers` and match user text to `INTENT_EXAMPLES` via embeddings (set `false` in CI or slim images to skip download/load). |
+| `INTENT_EMBEDDING_MODEL` | `paraphrase-multilingual-MiniLM-L12-v2` | Hugging Face / Sentence-Transformers model id (multilingual recommended for Thai + English). |
+| `INTENT_SEMANTIC_IMMEDIATE_THRESHOLD` | `0.72` | Minimum cosine similarity to attach a safe read-only MCP tool from the semantic path (see `SEMANTIC_READ_IMMEDIATE` in `intent.py`). |
+| `INTENT_LLM_NORMALIZE_ENABLED` | `true` | When `true`, if regex+semantic yield no intent, call the workspace AI provider once for a compact English paraphrase and re-run classification (never used as tool arguments). |
+| `INTENT_LLM_NORMALIZE_TIMEOUT_SECONDS` | `12` | Hard cap for the normalizer call. |
+| `INTENT_AI_CONVERSATION_FASTPATH_ENABLED` | `true` | When `true`, very short greetings/thanks (EN/TH) skip intent + MCP and go straight to the workspace chat model for lower latency. |
+| `AGENT_ROUTING_MODE` | `intent` | `intent` uses the multilingual intent classifier; `llm_tools` uses the workspace **primary AI provider** (`WorkspaceAISettings` / `AI_PROVIDER`) to pick MCP tools: **Ollama** uses native `tools=` completions; **Copilot** uses a JSON tool-list prompt. On failure or no tool match, the router tries the other provider, then falls back to `intent`. |
+| `AGENT_LLM_ROUTER_MODEL` | empty | When set, forces that **Ollama** model name for the native `tools=` leg. When empty and the workspace primary provider is **ollama**, the router uses the workspace default model; when primary is **copilot**, the Ollama fallback leg uses `AI_DEFAULT_MODEL`. Used only when `AGENT_ROUTING_MODE=llm_tools`. |
+
+**Agent runtime conversation context:** There is no env toggle. The agent runtime process holds an in-memory `ConversationContext` per chat `conversation_id` (patient roster and last-focused patient for short clinical follow-ups). Multiple **`wheelsense-agent-runtime`** replicas would need a shared store for that map to stay consistent across instances.
+
+**`llm_tools` notes:** The router follows the same **effective provider** as normal chat (`resolve_effective_ai`). Copilot workspaces call Copilot first (JSON tool list); Ollama workspaces call Ollama first (OpenAI-style `tools=`). The other provider is used only as a fallback when the primary leg yields no tool calls. If both legs fail, routing falls back to the intent classifier.
+
+**Staging:** Prefer enabling `AGENT_ROUTING_MODE=llm_tools` on a non-production stack first; smoke the EaseAI popup and targeted pytest as described in `server/docs/RUNBOOK.md` § Agent runtime.
+
+**Compose:** override any of the above under the `wheelsense-agent-runtime` service `environment` block in `server/docker-compose.core.yml` if you need stricter defaults (for example `INTENT_SEMANTIC_ENABLED=false` on very small hosts). The core compose file wires `AGENT_ROUTING_MODE` / `AGENT_LLM_ROUTER_MODEL` through to that service (defaults preserve `intent`).
 
 ## Storage
 

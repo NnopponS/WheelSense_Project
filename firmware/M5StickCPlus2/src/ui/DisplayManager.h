@@ -17,7 +17,7 @@ public:
     
     // UI Elements
     void drawMenu(const char* title, const char* items[], int itemCount, int selectedIndex, bool showGuideFooter = true);
-    void drawMessage(const char* title, const char* msg, uint16_t color = COLOR_TEXT);
+    void drawMessage(const char* title, const char* msg, uint32_t color = COLOR_TEXT);
     void drawKeyboard(const char* title, char* buffer, int maxLength); // Logic handled in scene, this draws
     
     // Helper

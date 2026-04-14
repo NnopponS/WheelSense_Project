@@ -3,9 +3,20 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Search, Users, Plus, Calendar, Clock, Heart, UserCheck, AlertCircle, Filter } from "lucide-react";
+import {
+  Search,
+  Users,
+  Plus,
+  Calendar,
+  Clock,
+  Heart,
+  UserCheck,
+  AlertCircle,
+  Filter,
+  Trash2,
+} from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +24,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { api, ApiError } from "@/lib/api";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
+import { hasCapability } from "@/lib/permissions";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type { ListPatientsResponse, CareScheduleOut, CaregiverOut } from "@/lib/api/task-scope-types";
 
@@ -93,8 +115,21 @@ function routineStatusKey(status: Routine["status"]): TranslationKey {
 
 export default function AdminPatientsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [patientToDelete, setPatientToDelete] = useState<PatientRow | null>(null);
+
+  const canDeletePatient = user?.role ? hasCapability(user.role, "patients.manage") : false;
+
+  const deletePatientMutation = useMutation({
+    mutationFn: (patientId: number) => api.deletePatient(patientId),
+    onSuccess: async () => {
+      setPatientToDelete(null);
+      await queryClient.invalidateQueries({ queryKey: ["admin", "patients"] });
+    },
+  });
 
   // Admin has workspace-wide patient access (no caregiver filtering)
   const patientsQuery = useQuery({
@@ -371,15 +406,31 @@ export default function AdminPatientsPage() {
         id: "actions",
         header: "",
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button asChild size="sm" variant="outline">
               <Link href={`/admin/patients/${row.original.id}`}>{t("patients.viewProfile")}</Link>
             </Button>
+            {canDeletePatient ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                aria-label={t("adminPatients.deletePatient")}
+                disabled={deletePatientMutation.isPending}
+                onClick={() => {
+                  deletePatientMutation.reset();
+                  setPatientToDelete(row.original);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ) : null}
           </div>
         ),
       },
     ],
-    [t],
+    [t, canDeletePatient, deletePatientMutation.isPending],
   );
 
   const isLoading =
@@ -624,6 +675,68 @@ export default function AdminPatientsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog
+        open={patientToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPatientToDelete(null);
+            deletePatientMutation.reset();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("adminPatients.deletePatientDialogTitle")}</DialogTitle>
+            <DialogDescription>
+              {patientToDelete
+                ? t("adminPatients.deletePatientDialogDescription")
+                    .replace("{name}", patientToDelete.fullName)
+                    .replace("{id}", String(patientToDelete.id))
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          {deletePatientMutation.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {t("adminPatients.deletePatientError")}
+                {deletePatientMutation.error instanceof ApiError
+                  ? ` ${deletePatientMutation.error.message}`
+                  : deletePatientMutation.error instanceof Error
+                    ? ` ${deletePatientMutation.error.message}`
+                    : ""}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deletePatientMutation.isPending}
+              onClick={() => {
+                setPatientToDelete(null);
+                deletePatientMutation.reset();
+              }}
+            >
+              {t("adminPatients.deletePatientDialogCancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deletePatientMutation.isPending || !patientToDelete}
+              onClick={() => {
+                if (patientToDelete) {
+                  deletePatientMutation.mutate(patientToDelete.id);
+                }
+              }}
+            >
+              {deletePatientMutation.isPending
+                ? t("adminPatients.deletePatientDeleting")
+                : t("adminPatients.deletePatientDialogConfirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

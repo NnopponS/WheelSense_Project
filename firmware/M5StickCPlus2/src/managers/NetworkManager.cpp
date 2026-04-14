@@ -31,6 +31,30 @@ void NetworkManager::begin() {
     lastWiFiConnected = (WiFi.status() == WL_CONNECTED);
 }
 
+void NetworkManager::reconfigureFromConfig(bool reconnectWifi) {
+    mqttClient.disconnect();
+    AppConfig& config = ConfigMgr.getConfig();
+    String host = config.mqttBroker;
+    host.trim();
+    if (host.length() == 0) host = DEFAULT_MQTT_BROKER_PUBLIC;
+    uint16_t port = (config.mqttPort > 0 && config.mqttPort <= 65535)
+                    ? (uint16_t)config.mqttPort : (uint16_t)DEFAULT_MQTT_PORT;
+    mqttClient.setServer(host.c_str(), port);
+
+    lastMQTTAttempt = 0;
+    mqttRetryDelayMs = 2000;
+    wifiRetryDelayMs = 2000;
+
+    if (!reconnectWifi) return;
+
+    WiFi.disconnect(false, false);
+    lastWiFiConnected = false;
+    lastWiFiAttempt = 0;
+    if (config.wifiSSID.length() > 0) {
+        WiFi.begin(config.wifiSSID.c_str(), config.wifiPass.c_str());
+    }
+}
+
 void NetworkManager::update() {
     const unsigned long now = millis();
     const bool wifiOk = (WiFi.status() == WL_CONNECTED);
@@ -96,6 +120,8 @@ bool NetworkManager::connectMQTT() {
         mqttClient.subscribe("WheelSense/config/all");
         String controlTopic = String("WheelSense/") + config.deviceName + "/control";
         mqttClient.subscribe(controlTopic.c_str());
+        String ackTopic = String("WheelSense/") + config.deviceName + "/ack";
+        mqttClient.subscribe(ackTopic.c_str());
         // Subscribe to room assignment
         String roomTopic = String("WheelSense/room/") + config.deviceName;
         mqttClient.subscribe(roomTopic.c_str());
@@ -128,6 +154,7 @@ void NetworkManager::onMQTTMessage(char* topic, byte* payload, unsigned int leng
         if (doc.containsKey("mqtt_password")) config.mqttPass = doc["mqtt_password"].as<String>();
         if (doc.containsKey("wheel_radius"))  config.wheelRadiusM = doc["wheel_radius"].as<float>();
         ConfigMgr.saveConfig();
+        NetworkMgr.reconfigureFromConfig(true);
         Serial.println("[MQTT] Config updated");
         return;
     }
@@ -143,22 +170,70 @@ extern String currentRecordLabel;
         if (deserializeJson(doc, msg) != DeserializationError::Ok) return;
         String cmd = doc["cmd"] | doc["command"] | "";
         cmd.toLowerCase();
+        String commandId = doc["command_id"] | "";
+        StaticJsonDocument<256> ackDoc;
+        ackDoc["device_id"] = config.deviceName;
+        ackDoc["command"] = cmd;
+        if (commandId.length() > 0) ackDoc["command_id"] = commandId;
+        bool shouldAck = true;
         
         if (cmd == "reboot") {
+            ackDoc["status"] = "accepted";
+            ackDoc["message"] = "Reboot scheduled";
+            char ackBuf[256];
+            size_t ackLen = serializeJson(ackDoc, ackBuf, sizeof(ackBuf));
+            if (ackLen > 0) {
+                String ackTopic = String("WheelSense/") + config.deviceName + "/ack";
+                NetworkMgr.publish(ackTopic.c_str(), ackBuf);
+            }
             Serial.println("[MQTT] Reboot requested");
             delay(200);
             ESP.restart();
         } else if (cmd == "reset_distance") {
             SensorMgr.getData().distanceM = 0.0f;
+            ackDoc["status"] = "ok";
+            ackDoc["message"] = "Distance reset";
+            ackDoc["distance_m"] = 0.0f;
             Serial.println("[MQTT] Distance reset");
         } else if (cmd == "start_record") {
             requestStartRecord = true;
             currentRecordLabel = doc["label"] | "unknown";
+            ackDoc["status"] = "accepted";
+            ackDoc["message"] = "Recording start requested";
+            ackDoc["label"] = currentRecordLabel;
             Serial.printf("[MQTT] Start Record requested (%s)\n", currentRecordLabel.c_str());
         } else if (cmd == "stop_record") {
             requestStopRecord = true;
+            ackDoc["status"] = "accepted";
+            ackDoc["message"] = "Recording stop requested";
             Serial.println("[MQTT] Stop Record requested");
+        } else {
+            ackDoc["status"] = "unsupported";
+            ackDoc["message"] = "Unsupported command";
+            Serial.printf("[MQTT] Unsupported command: %s\n", cmd.c_str());
         }
+
+        if (shouldAck) {
+            char ackBuf[256];
+            size_t ackLen = serializeJson(ackDoc, ackBuf, sizeof(ackBuf));
+            if (ackLen > 0) {
+                String ackTopic = String("WheelSense/") + config.deviceName + "/ack";
+                NetworkMgr.publish(ackTopic.c_str(), ackBuf);
+            }
+        }
+        return;
+    }
+
+    String roomTopic = String("WheelSense/room/") + config.deviceName;
+    if (topicStr == roomTopic) {
+        StaticJsonDocument<256> doc;
+        if (deserializeJson(doc, msg) != DeserializationError::Ok) return;
+        NetworkMgr.latestRoomName = doc["room_name"] | "";
+        NetworkMgr.latestRoomConfidence = doc["confidence"] | 0.0f;
+        NetworkMgr.hasLatestRoom = NetworkMgr.latestRoomName.length() > 0;
+        Serial.printf("[MQTT] Room update: %s (%.2f)\n",
+                      NetworkMgr.latestRoomName.c_str(),
+                      NetworkMgr.latestRoomConfidence);
         return;
     }
 }
@@ -181,6 +256,18 @@ void NetworkManager::disconnect() {
 bool NetworkManager::isWiFiConnected() { return WiFi.status() == WL_CONNECTED; }
 bool NetworkManager::isMQTTConnected() { return mqttClient.connected(); }
 String NetworkManager::getIP() { return WiFi.localIP().toString(); }
+String NetworkManager::getBrokerEndpoint() const {
+    const AppConfig& config = ConfigMgr.getConfig();
+    String host = config.mqttBroker;
+    host.trim();
+    if (host.length() == 0) host = DEFAULT_MQTT_BROKER_PUBLIC;
+    uint16_t port = (config.mqttPort > 0 && config.mqttPort <= 65535)
+                    ? (uint16_t)config.mqttPort : (uint16_t)DEFAULT_MQTT_PORT;
+    return host + ":" + String(port);
+}
+String NetworkManager::getLatestRoomName() const { return latestRoomName; }
+float NetworkManager::getLatestRoomConfidence() const { return latestRoomConfidence; }
+bool NetworkManager::hasLatestRoomAssignment() const { return hasLatestRoom; }
 
 int NetworkManager::scanNetworks() { return WiFi.scanNetworks(); }
 String NetworkManager::getSSID(int i) { return WiFi.SSID(i); }

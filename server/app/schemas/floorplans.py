@@ -53,6 +53,7 @@ class FloorplanPresencePredictionHint(BaseModel):
     predicted_room_id: Optional[int] = None
     predicted_room_name: str = ""
     confidence: float = 0.0
+    model_type: str = ""
     computed_at: datetime
     staleness_seconds: int
 
@@ -102,7 +103,7 @@ class FloorplanPresenceOut(BaseModel):
 class RoomCaptureOut(BaseModel):
     room_id: int
     node_device_id: Optional[str] = None
-    command_id: Optional[int] = None
+    command_id: Optional[str] = None
     topic: Optional[str] = None
     message: str
 

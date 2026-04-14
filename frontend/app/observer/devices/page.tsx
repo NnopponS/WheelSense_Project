@@ -12,6 +12,7 @@ import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import type {
   ListAlertsResponse,
@@ -65,7 +66,8 @@ export default function ObserverDevicesPage() {
         .filter((result) => result.success)
         .map((result) => result.data);
     },
-    refetchInterval: 30_000,
+    staleTime: getQueryStaleTimeMs("/devices"),
+    refetchInterval: getQueryPollingMs("/devices"),
   });
 
   const predictionsQuery = useQuery({
@@ -78,7 +80,8 @@ export default function ObserverDevicesPage() {
         .filter((result) => result.success)
         .map((result) => result.data);
     },
-    refetchInterval: 30_000,
+    staleTime: 10_000,
+    refetchInterval: 12_000,
   });
 
   const alertsQuery = useQuery({

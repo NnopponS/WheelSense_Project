@@ -18,6 +18,38 @@ class LocalizationConfigUpdate(BaseModel):
     strategy: LocalizationStrategy
 
 
+class LocalizationReadinessOut(BaseModel):
+    workspace_id: int
+    ready: bool
+    missing: list[str] = Field(default_factory=list)
+    strategy: LocalizationStrategy
+    facility_id: int | None = None
+    facility_name: str | None = None
+    floor_id: int | None = None
+    floor_name: str | None = None
+    floor_number: int | None = None
+    room_id: int | None = None
+    room_name: str | None = None
+    room_node_device_id: str | None = None
+    node_device_id: str | None = None
+    node_display_name: str | None = None
+    wheelchair_device_id: str | None = None
+    patient_id: int | None = None
+    patient_name: str | None = None
+    patient_username: str | None = None
+    patient_room_id: int | None = None
+    assignment_patient_id: int | None = None
+    floorplan_has_room: bool = False
+    telemetry_detected: bool = False
+    changed: list[str] = Field(default_factory=list)
+
+
+class LocalizationReadinessRepairIn(BaseModel):
+    facility_id: int | None = Field(default=None, ge=1)
+    floor_id: int | None = Field(default=None, ge=1)
+    room_id: int | None = Field(default=None, ge=1)
+
+
 class LocalizationCalibrationSessionCreate(BaseModel):
     device_id: str = Field(..., min_length=1, max_length=32)
     notes: str = ""

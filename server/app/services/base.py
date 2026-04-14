@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
-from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,7 +39,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return list(result.scalars().all())
 
     async def create(self, session: AsyncSession, ws_id: int, obj_in: CreateSchemaType) -> ModelType:
-        obj_in_data = jsonable_encoder(obj_in)
+        # Preserve Python native types (date/datetime) for SQLAlchemy bind params.
+        obj_in_data = obj_in.model_dump(mode="python")
         db_obj = self.model(**obj_in_data)
         db_obj.workspace_id = ws_id  # Enforce workspace assignment
         session.add(db_obj)
@@ -59,7 +59,11 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if getattr(db_obj, "workspace_id", None) != ws_id:
             raise ValueError("Cross-workspace update is forbidden")
 
-        obj_data = jsonable_encoder(db_obj)
+        obj_data = {
+            key: value
+            for key, value in vars(db_obj).items()
+            if not key.startswith("_")
+        }
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:

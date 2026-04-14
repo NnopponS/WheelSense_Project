@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import get_password_hash
 from app.models.users import User
 from app.models.workflow import AuditTrailEvent
+from app.schemas.agent_runtime import AgentRuntimeExecuteResponse
 from app.schemas.chat_actions import ChatActionProposeIn
 from app.services import ai_chat
 
@@ -20,15 +21,23 @@ async def test_chat_action_lifecycle_records_audit(
     admin_user: User,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    async def fake_execute_workspace_tool(*, tool_name: str, workspace_id: int, arguments: dict):
-        return {
-            "tool": tool_name,
-            "workspace_id": workspace_id,
-            "arguments": arguments,
-            "ok": True,
-        }
+    async def fake_execute_plan(*, actor_access_token: str, execution_plan):
+        step = execution_plan.steps[0]
+        return AgentRuntimeExecuteResponse(
+            message="executed",
+            execution_result={
+                "steps": [
+                    {
+                        "tool": step.tool_name,
+                        "arguments": step.arguments,
+                        "ok": True,
+                    }
+                ],
+                "ok": True,
+            },
+        )
 
-    monkeypatch.setattr("app.mcp_server.execute_workspace_tool", fake_execute_workspace_tool)
+    monkeypatch.setattr("app.services.agent_runtime_client.execute_plan", fake_execute_plan)
 
     proposed = await ai_chat.propose_chat_action(
         db_session,
@@ -120,10 +129,14 @@ async def test_chat_action_force_execute_from_proposed_state(
     admin_user: User,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    async def fake_execute_workspace_tool(*, tool_name: str, workspace_id: int, arguments: dict):
-        return {"tool": tool_name, "workspace_id": workspace_id, "arguments": arguments}
+    async def fake_execute_plan(*, actor_access_token: str, execution_plan):
+        step = execution_plan.steps[0]
+        return AgentRuntimeExecuteResponse(
+            message="executed",
+            execution_result={"tool": step.tool_name, "arguments": step.arguments},
+        )
 
-    monkeypatch.setattr("app.mcp_server.execute_workspace_tool", fake_execute_workspace_tool)
+    monkeypatch.setattr("app.services.agent_runtime_client.execute_plan", fake_execute_plan)
 
     proposed = await ai_chat.propose_chat_action(
         db_session,

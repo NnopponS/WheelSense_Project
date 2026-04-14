@@ -40,6 +40,8 @@ unsigned long lastActivityMs = 0;
 uint8_t currentBrightness = LCD_BRIGHTNESS_FULL;
 bool lcdIsOff = false;
 bool requestManualSleep = false;
+// Set when the user wakes the LCD from dimmed (not off) with the M5/front button — do not treat as "sleep" tap
+bool suppressDashboardSleepFromA = false;
 
 // Buffers (static to avoid stack overflow)
 static StaticJsonDocument<2048> telDoc;
@@ -66,8 +68,10 @@ static void ensureTimeSync(unsigned long now) {
     }
 }
 
-static void registerActivity() {
-    lastActivityMs = millis();
+// Use the same `now` as the main loop and updateLCDPower() so lastActivityMs is never
+// ahead of `now` (unsigned elapsed = now - lastActivityMs would otherwise underflow).
+static void registerActivity(unsigned long now) {
+    lastActivityMs = now;
     if (lcdIsOff || currentBrightness != LCD_BRIGHTNESS_FULL) {
         M5.Lcd.setBrightness(LCD_BRIGHTNESS_FULL);
         currentBrightness = LCD_BRIGHTNESS_FULL;
@@ -99,7 +103,7 @@ static void updateLCDPower(unsigned long now) {
     }
 
     // Auto Sleep mode
-    unsigned long elapsed = now - lastActivityMs;
+    unsigned long elapsed = (now >= lastActivityMs) ? (now - lastActivityMs) : 0;
 
     if (elapsed >= LCD_OFF_TIMEOUT_MS) {
         if (!lcdIsOff) {
@@ -151,29 +155,34 @@ void loop() {
     M5.update();
     InputMgr.update();
 
-    // Any button press = register activity (wake LCD)
+    suppressDashboardSleepFromA = false;
+
+    // Button press: brighten LCD / count as activity.
+    // - Dimmed: first tap reaches UI (menu/page/sleep) after registerActivity() restores brightness.
+    // - Full off + M5(A): consume A only — Dashboard maps A to "sleep" and would re-blank immediately.
+    // - Full off + PWR/B: pass through so MENU / PAGE work on first press after wake.
     if (InputMgr.peekPressed(BTN_A) || InputMgr.peekPressed(BTN_B) || InputMgr.peekPressed(BTN_C)) {
-        bool wakeOnly = (lcdIsOff || currentBrightness != LCD_BRIGHTNESS_FULL);
-        registerActivity();
-        // If LCD was dim/off, consume the press just to wake (don't let UI navigate)
-        if (wakeOnly) {
+        const bool wasFullOff = lcdIsOff;
+        const bool wasDimmed = (!lcdIsOff && currentBrightness != LCD_BRIGHTNESS_FULL);
+        registerActivity(now);
+        if (wasFullOff && InputMgr.peekPressed(BTN_A)) {
             InputMgr.wasPressed(BTN_A);
-            InputMgr.wasPressed(BTN_B);
-            InputMgr.wasPressed(BTN_C);
             InputMgr.wasLongPressed(BTN_A);
-            InputMgr.wasLongPressed(BTN_B);
-            InputMgr.wasLongPressed(BTN_C);
+        }
+        if (wasDimmed && InputMgr.peekPressed(BTN_A)) {
+            suppressDashboardSleepFromA = true;
         }
     }
 
-    // Manual sleep from Dashboard (BtnA press sets this flag)
+    // Manual sleep from Dashboard (M5 / front button)
     if (requestManualSleep) {
         requestManualSleep = false;
         if (!lcdIsOff) {
             M5.Lcd.setBrightness(LCD_BRIGHTNESS_OFF);
             currentBrightness = LCD_BRIGHTNESS_OFF;
             lcdIsOff = true;
-            lastActivityMs = 0; // Reset so auto-sleep timer doesn't interfere with wake
+            // Anchor idle timer at sleep time so auto dim/off logic stays stable after wake
+            lastActivityMs = now;
         }
     }
 
@@ -217,7 +226,7 @@ void loop() {
         isRecording = true;
         recordStartMs = millis();
         checkZeroVelocity = false;
-        registerActivity();
+        registerActivity(now);
         SceneMgr.switchScene(SCENE_RECORDING);
         Serial.println("[Record] RECORDING STARTED.");
     }
@@ -227,7 +236,7 @@ void loop() {
         if (isRecording) {
             isRecording = false;
             BuzzerMgr.beepStopRecord();
-            registerActivity();
+            registerActivity(now);
             SceneMgr.switchScene(SCENE_DASHBOARD);
             Serial.println("[Record] RECORDING STOPPED manually.");
         }
@@ -244,7 +253,7 @@ void loop() {
                 // Auto stop!
                 isRecording = false;
                 BuzzerMgr.beepStopRecord();
-                registerActivity();
+                registerActivity(now);
                 SceneMgr.switchScene(SCENE_DASHBOARD);
                 Serial.println("[Record] RECORDING AUTO-STOPPED (stationary for 3s).");
             }

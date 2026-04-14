@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
@@ -49,6 +50,7 @@ type Props = {
   caregiver: Caregiver;
   linkedUsers: User[];
   onUserUpdated?: () => void;
+  onCaregiverUpdated?: (next: Caregiver) => void;
 };
 
 /* ── Backend DTO shapes ───────────────────────────────────────────────── */
@@ -538,10 +540,18 @@ function UserAccountItem({
 }) {
   const { t } = useTranslation();
   type UserManagePayload = {
+    username: string;
+    role: string;
     is_active: boolean;
+    caregiver_id: number | null;
+    patient_id: number | null;
     password?: string;
   };
   const [editing, setEditing] = useState(false);
+  const [username, setUsername] = useState(user.username);
+  const [role, setRole] = useState<User["role"]>(user.role);
+  const [caregiverId, setCaregiverId] = useState(user.caregiver_id != null ? String(user.caregiver_id) : "");
+  const [patientId, setPatientId] = useState(user.patient_id != null ? String(user.patient_id) : "");
   const [newPassword, setNewPassword] = useState("");
   const [isActive, setIsActive] = useState(user.is_active);
   const [saving, setSaving] = useState(false);
@@ -551,7 +561,13 @@ function UserAccountItem({
     setSaving(true);
     setError(null);
     try {
-      const payload: UserManagePayload = { is_active: isActive };
+      const payload: UserManagePayload = {
+        username: username.trim(),
+        role: role.trim(),
+        is_active: isActive,
+        caregiver_id: caregiverId.trim() ? Number(caregiverId) : null,
+        patient_id: patientId.trim() ? Number(patientId) : null,
+      };
       if (newPassword.trim().length >= 6) {
         payload.password = newPassword.trim();
       }
@@ -568,6 +584,10 @@ function UserAccountItem({
 
   function handleCancel() {
     setEditing(false);
+    setUsername(user.username);
+    setRole(user.role);
+    setCaregiverId(user.caregiver_id != null ? String(user.caregiver_id) : "");
+    setPatientId(user.patient_id != null ? String(user.patient_id) : "");
     setNewPassword("");
     setIsActive(user.is_active);
     setError(null);
@@ -577,10 +597,60 @@ function UserAccountItem({
     return (
       <li className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-3 py-3 text-sm animate-fade-in shadow-sm">
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-foreground">{user.username}</span>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div>
+              <label htmlFor={`username-${user.id}`} className="block text-[10px] uppercase font-bold text-foreground-variant">
+                {t("admin.users.username")}
+              </label>
+              <input
+                id={`username-${user.id}`}
+                className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-1.5 text-xs text-foreground"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor={`role-${user.id}`} className="block text-[10px] uppercase font-bold text-foreground-variant">
+                {t("admin.users.role")}
+              </label>
+              <select
+                id={`role-${user.id}`}
+                className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-1.5 text-xs text-foreground capitalize"
+                value={role}
+                onChange={(e) => setRole(e.target.value as User["role"])}
+              >
+                <option value="admin">{t("shell.roleAdmin")}</option>
+                <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
+                <option value="supervisor">{t("shell.roleSupervisor")}</option>
+                <option value="observer">{t("shell.roleObserver")}</option>
+                <option value="patient">{t("shell.rolePatient")}</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor={`caregiver-link-${user.id}`} className="block text-[10px] uppercase font-bold text-foreground-variant">
+                {t("accountMgmt.pickStaff")}
+              </label>
+              <input
+                id={`caregiver-link-${user.id}`}
+                className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-1.5 text-xs text-foreground"
+                value={caregiverId}
+                onChange={(e) => setCaregiverId(e.target.value)}
+                placeholder={t("accountMgmt.clearSelection")}
+              />
+            </div>
+            <div>
+              <label htmlFor={`patient-link-${user.id}`} className="block text-[10px] uppercase font-bold text-foreground-variant">
+                {t("accountMgmt.pickPatient")}
+              </label>
+              <input
+                id={`patient-link-${user.id}`}
+                className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-1.5 text-xs text-foreground"
+                value={patientId}
+                onChange={(e) => setPatientId(e.target.value)}
+                placeholder={t("accountMgmt.clearSelection")}
+              />
+            </div>
           </div>
-          
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -590,18 +660,18 @@ function UserAccountItem({
               className="h-4 w-4 rounded border-outline-variant text-primary focus:ring-primary"
             />
             <label htmlFor={`active-toggle-${user.id}`} className="text-xs font-medium text-foreground">
-              Account Active
+              {t("patients.statusActive")}
             </label>
           </div>
 
           <div>
             <label htmlFor={`pwd-${user.id}`} className="block text-[10px] uppercase font-bold text-foreground-variant">
-              New Password (Optional)
+              {t("settings.newPassword")}
             </label>
             <input
               id={`pwd-${user.id}`}
               type="password"
-              placeholder="Leave blank to keep same"
+              placeholder={t("patients.editorPasswordOptionalHint")}
               className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-1.5 text-xs text-foreground"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
@@ -616,14 +686,14 @@ function UserAccountItem({
               onClick={handleCancel}
               disabled={saving}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90 transition-smooth"
               onClick={() => void handleSave()}
               disabled={saving}
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </button>
           </div>
         </div>
@@ -634,7 +704,7 @@ function UserAccountItem({
   return (
     <li className="rounded-xl bg-surface-container-low px-3 py-2.5 text-sm group">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-foreground">{user.username}</span>
+            <span className="font-medium text-foreground">{username}</span>
         <div className="flex items-center gap-3">
           <span
             className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
@@ -643,7 +713,7 @@ function UserAccountItem({
                 : "bg-surface-container text-outline"
             }`}
           >
-            {user.is_active ? "Active" : "Inactive"}
+            {user.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
           </span>
           <button
             type="button"
@@ -651,7 +721,7 @@ function UserAccountItem({
             onClick={() => setEditing(true)}
             disabled={!canManage}
           >
-            Manage
+            {t("accountMgmt.editLinks")}
           </button>
         </div>
       </div>
@@ -671,6 +741,7 @@ export default function CaregiverDetailPane({
   caregiver,
   linkedUsers,
   onUserUpdated,
+  onCaregiverUpdated,
 }: Props) {
   const { t } = useTranslation();
   const nowMs = useFixedNowMs();
@@ -793,6 +864,26 @@ export default function CaregiverDetailPane({
   const [patientAccessDraftIds, setPatientAccessDraftIds] = useState<number[]>([]);
   const [patientAccessSaving, setPatientAccessSaving] = useState(false);
   const [patientAccessError, setPatientAccessError] = useState<string | null>(null);
+  const [aboutEditing, setAboutEditing] = useState(false);
+  const [contactEditing, setContactEditing] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileDraft, setProfileDraft] = useState({
+    first_name: caregiver.first_name ?? "",
+    last_name: caregiver.last_name ?? "",
+    role: caregiver.role ?? "observer",
+    employee_code: caregiver.employee_code ?? "",
+    department: caregiver.department ?? "",
+    specialty: caregiver.specialty ?? "",
+    license_number: caregiver.license_number ?? "",
+    emergency_contact_name: caregiver.emergency_contact_name ?? "",
+    emergency_contact_phone: caregiver.emergency_contact_phone ?? "",
+    is_active: caregiver.is_active,
+  });
+  const [contactDraft, setContactDraft] = useState({
+    phone: caregiver.phone ?? "",
+    email: caregiver.email ?? "",
+  });
   const patientAccessInputId = useId();
   const patientAccessListboxId = useId();
   const [mainTab, setMainTab] = useState<"overview" | "work">("overview");
@@ -800,6 +891,27 @@ export default function CaregiverDetailPane({
   useEffect(() => {
     setPatientAccessDraftIds(extractPatientAccessIds(patientAccess));
   }, [patientAccess]);
+  useEffect(() => {
+    setProfileDraft({
+      first_name: caregiver.first_name ?? "",
+      last_name: caregiver.last_name ?? "",
+      role: caregiver.role ?? "observer",
+      employee_code: caregiver.employee_code ?? "",
+      department: caregiver.department ?? "",
+      specialty: caregiver.specialty ?? "",
+      license_number: caregiver.license_number ?? "",
+      emergency_contact_name: caregiver.emergency_contact_name ?? "",
+      emergency_contact_phone: caregiver.emergency_contact_phone ?? "",
+      is_active: caregiver.is_active,
+    });
+    setContactDraft({
+      phone: caregiver.phone ?? "",
+      email: caregiver.email ?? "",
+    });
+    setProfileError(null);
+    setAboutEditing(false);
+    setContactEditing(false);
+  }, [caregiver]);
 
   const roomsById = useMemo(
     () => new Map((rooms ?? []).map((room) => [room.id, room] as const)),
@@ -1035,6 +1147,52 @@ export default function CaregiverDetailPane({
     }
   }
 
+  async function saveProfileSection() {
+    if (!profileDraft.first_name.trim() || !profileDraft.last_name.trim()) {
+      setProfileError(t("patients.editorErrFirstName"));
+      return;
+    }
+    setProfileSaving(true);
+    setProfileError(null);
+    try {
+      const updated = await api.patch<Caregiver>(`/caregivers/${caregiver.id}`, {
+        first_name: profileDraft.first_name.trim(),
+        last_name: profileDraft.last_name.trim(),
+        role: profileDraft.role,
+        employee_code: profileDraft.employee_code.trim(),
+        department: profileDraft.department.trim(),
+        specialty: profileDraft.specialty.trim(),
+        license_number: profileDraft.license_number.trim(),
+        emergency_contact_name: profileDraft.emergency_contact_name.trim(),
+        emergency_contact_phone: profileDraft.emergency_contact_phone.trim(),
+        is_active: profileDraft.is_active,
+      });
+      onCaregiverUpdated?.(updated);
+      setAboutEditing(false);
+    } catch (e) {
+      setProfileError(e instanceof ApiError ? e.message : t("caregivers.detailLoadError"));
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
+  async function saveContactSection() {
+    setProfileSaving(true);
+    setProfileError(null);
+    try {
+      const updated = await api.patch<Caregiver>(`/caregivers/${caregiver.id}`, {
+        phone: contactDraft.phone.trim(),
+        email: contactDraft.email.trim(),
+      });
+      onCaregiverUpdated?.(updated);
+      setContactEditing(false);
+    } catch (e) {
+      setProfileError(e instanceof ApiError ? e.message : t("caregivers.detailLoadError"));
+    } finally {
+      setProfileSaving(false);
+    }
+  }
+
   return (
     <div className="w-full space-y-6" aria-labelledby="caregiver-detail-heading">
       <Tabs
@@ -1054,19 +1212,51 @@ export default function CaregiverDetailPane({
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-foreground-variant">
-              {t("caregivers.sectionAbout")}
-            </p>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-foreground-variant">
+                {t("caregivers.sectionAbout")}
+              </p>
+              {aboutEditing ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high"
+                    onClick={() => setAboutEditing(false)}
+                    disabled={profileSaving}
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90"
+                    onClick={() => void saveProfileSection()}
+                    disabled={profileSaving}
+                  >
+                    {profileSaving ? t("common.saving") : t("common.save")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="rounded-lg border border-outline-variant/30 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high"
+                  onClick={() => setAboutEditing(true)}
+                >
+                  {t("common.edit")}
+                </button>
+              )}
+            </div>
             <div className="flex flex-col gap-5 sm:flex-row">
               <div className="relative flex aspect-[4/5] w-full shrink-0 items-end justify-start overflow-hidden rounded-xl border border-outline-variant/20 bg-gradient-to-br from-primary/20 to-primary/5 sm:w-40">
                 <span className="absolute bottom-2 left-2 rounded bg-black/35 px-2 py-0.5 font-mono text-[10px] font-semibold text-foreground/90">
                   Staff #{caregiver.id}
                 </span>
                 {caregiverPhotoUrl ? (
-                  <img
+                  <Image
                     src={caregiverPhotoUrl}
                     alt={fullName || `Staff #${caregiver.id}`}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    fill
+                    unoptimized
+                    className="object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-primary/40">
@@ -1079,36 +1269,145 @@ export default function CaregiverDetailPane({
                   id="caregiver-detail-heading"
                   className="text-2xl font-bold text-foreground"
                 >
-                  {fullName || `Staff #${caregiver.id}`}
+                  {aboutEditing
+                    ? `${profileDraft.first_name || ""} ${profileDraft.last_name || ""}`.trim() ||
+                      `Staff #${caregiver.id}`
+                    : fullName || `Staff #${caregiver.id}`}
                 </h1>
-                <p className="mt-1 text-sm text-foreground-variant">
-                  {t("admin.users.role")}:{" "}
-                  <span className="font-medium text-foreground">
-                    {formatStaffRoleLabel(caregiver.role, t)}
-                  </span>
-                </p>
-                <ul className="mt-3 space-y-1.5 text-sm text-foreground-variant">
-                  <li>
-                    {t("caregivers.employeeCode")}: {caregiver.employee_code?.trim() || "—"}
-                  </li>
-                  <li>
-                    {t("caregivers.department")}: {caregiver.department?.trim() || "—"}
-                  </li>
-                  <li>
-                    {t("caregivers.specialty")}: {caregiver.specialty?.trim() || "—"}
-                  </li>
-                  <li>
-                    {t("caregivers.licenseLabel")}: {caregiver.license_number?.trim() || "—"}
-                  </li>
-                  <li>
-                    {t("caregivers.emergencyContactName")}:{" "}
-                    {caregiver.emergency_contact_name?.trim() || "—"}
-                  </li>
-                  <li>
-                    {t("caregivers.emergencyContactPhone")}:{" "}
-                    {caregiver.emergency_contact_phone?.trim() || "—"}
-                  </li>
-                </ul>
+                {aboutEditing ? (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("personnel.firstName")}</span>
+                      <input
+                        className="input-field w-full text-sm"
+                        value={profileDraft.first_name}
+                        onChange={(event) =>
+                          setProfileDraft((prev) => ({ ...prev, first_name: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("personnel.lastName")}</span>
+                      <input
+                        className="input-field w-full text-sm"
+                        value={profileDraft.last_name}
+                        onChange={(event) =>
+                          setProfileDraft((prev) => ({ ...prev, last_name: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("admin.users.role")}</span>
+                      <select
+                        className="input-field w-full text-sm"
+                        value={profileDraft.role}
+                        onChange={(event) => setProfileDraft((prev) => ({ ...prev, role: event.target.value }))}
+                      >
+                        <option value="admin">{t("shell.roleAdmin")}</option>
+                        <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
+                        <option value="supervisor">{t("shell.roleSupervisor")}</option>
+                        <option value="observer">{t("shell.roleObserver")}</option>
+                      </select>
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("caregivers.employeeCode")}</span>
+                      <input
+                        className="input-field w-full text-sm"
+                        value={profileDraft.employee_code}
+                        onChange={(event) =>
+                          setProfileDraft((prev) => ({ ...prev, employee_code: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("caregivers.department")}</span>
+                      <input
+                        className="input-field w-full text-sm"
+                        value={profileDraft.department}
+                        onChange={(event) => setProfileDraft((prev) => ({ ...prev, department: event.target.value }))}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("caregivers.specialty")}</span>
+                      <input
+                        className="input-field w-full text-sm"
+                        value={profileDraft.specialty}
+                        onChange={(event) => setProfileDraft((prev) => ({ ...prev, specialty: event.target.value }))}
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("caregivers.licenseLabel")}</span>
+                      <input
+                        className="input-field w-full text-sm"
+                        value={profileDraft.license_number}
+                        onChange={(event) =>
+                          setProfileDraft((prev) => ({ ...prev, license_number: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("caregivers.emergencyContactName")}</span>
+                      <input
+                        className="input-field w-full text-sm"
+                        value={profileDraft.emergency_contact_name}
+                        onChange={(event) =>
+                          setProfileDraft((prev) => ({ ...prev, emergency_contact_name: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-foreground-variant">{t("caregivers.emergencyContactPhone")}</span>
+                      <input
+                        className="input-field w-full text-sm"
+                        value={profileDraft.emergency_contact_phone}
+                        onChange={(event) =>
+                          setProfileDraft((prev) => ({ ...prev, emergency_contact_phone: event.target.value }))
+                        }
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 pt-5 text-sm text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={profileDraft.is_active}
+                        onChange={(event) =>
+                          setProfileDraft((prev) => ({ ...prev, is_active: event.target.checked }))
+                        }
+                      />
+                      {t("common.active")}
+                    </label>
+                  </div>
+                ) : (
+                  <>
+                    <p className="mt-1 text-sm text-foreground-variant">
+                      {t("admin.users.role")}:{" "}
+                      <span className="font-medium text-foreground">
+                        {formatStaffRoleLabel(caregiver.role, t)}
+                      </span>
+                    </p>
+                    <ul className="mt-3 space-y-1.5 text-sm text-foreground-variant">
+                      <li>
+                        {t("caregivers.employeeCode")}: {caregiver.employee_code?.trim() || "—"}
+                      </li>
+                      <li>
+                        {t("caregivers.department")}: {caregiver.department?.trim() || "—"}
+                      </li>
+                      <li>
+                        {t("caregivers.specialty")}: {caregiver.specialty?.trim() || "—"}
+                      </li>
+                      <li>
+                        {t("caregivers.licenseLabel")}: {caregiver.license_number?.trim() || "—"}
+                      </li>
+                      <li>
+                        {t("caregivers.emergencyContactName")}:{" "}
+                        {caregiver.emergency_contact_name?.trim() || "—"}
+                      </li>
+                      <li>
+                        {t("caregivers.emergencyContactPhone")}:{" "}
+                        {caregiver.emergency_contact_phone?.trim() || "—"}
+                      </li>
+                    </ul>
+                  </>
+                )}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-medium uppercase ${
@@ -1120,6 +1419,7 @@ export default function CaregiverDetailPane({
                 </div>
               </div>
             </div>
+            {profileError ? <p className="mt-3 text-sm text-critical">{profileError}</p> : null}
           </section>
 
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
@@ -1498,24 +1798,75 @@ export default function CaregiverDetailPane({
             className="surface-card rounded-xl border border-outline-variant/20 p-5"
             style={{ background: "var(--color-primary)" }}
           >
-            <h2 className="mb-3 flex items-center gap-2 text-[var(--color-on-primary)] font-semibold">
-              <Phone className="h-5 w-5 opacity-90" aria-hidden />
-              Contact
-            </h2>
-            <ul className="space-y-3 text-sm text-[var(--color-on-primary)]">
-              <li className="flex items-start gap-2">
-                <Phone className="mt-0.5 h-4 w-4 shrink-0 opacity-90" aria-hidden />
-                <span>{caregiver.phone?.trim() || "—"}</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Mail className="mt-0.5 h-4 w-4 shrink-0 opacity-90" aria-hidden />
-                <span className="break-all">{caregiver.email?.trim() || "—"}</span>
-              </li>
-              <li className="flex items-start gap-2 opacity-90">
-                <Calendar className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                <span>Added {formatDate(caregiver.created_at)}</span>
-              </li>
-            </ul>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-[var(--color-on-primary)] font-semibold">
+                <Phone className="h-5 w-5 opacity-90" aria-hidden />
+                {t("caregivers.sectionContact")}
+              </h2>
+              {contactEditing ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="rounded-md bg-black/20 px-2 py-1 text-[11px] font-medium text-[var(--color-on-primary)]"
+                    onClick={() => setContactEditing(false)}
+                    disabled={profileSaving}
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md bg-black/30 px-2 py-1 text-[11px] font-semibold text-[var(--color-on-primary)]"
+                    onClick={() => void saveContactSection()}
+                    disabled={profileSaving}
+                  >
+                    {profileSaving ? t("common.saving") : t("common.save")}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="rounded-md bg-black/20 px-2 py-1 text-[11px] font-semibold text-[var(--color-on-primary)]"
+                  onClick={() => setContactEditing(true)}
+                >
+                  {t("common.edit")}
+                </button>
+              )}
+            </div>
+            {contactEditing ? (
+              <div className="space-y-2 text-sm text-[var(--color-on-primary)]">
+                <label className="block space-y-1">
+                  <span className="text-[11px] opacity-90">{t("clinical.table.phone")}</span>
+                  <input
+                    className="w-full rounded-lg border border-white/25 bg-black/10 px-3 py-1.5 text-sm text-[var(--color-on-primary)] placeholder:text-[var(--color-on-primary)]/70"
+                    value={contactDraft.phone}
+                    onChange={(event) => setContactDraft((prev) => ({ ...prev, phone: event.target.value }))}
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-[11px] opacity-90">{t("clinical.table.email")}</span>
+                  <input
+                    className="w-full rounded-lg border border-white/25 bg-black/10 px-3 py-1.5 text-sm text-[var(--color-on-primary)] placeholder:text-[var(--color-on-primary)]/70"
+                    value={contactDraft.email}
+                    onChange={(event) => setContactDraft((prev) => ({ ...prev, email: event.target.value }))}
+                  />
+                </label>
+              </div>
+            ) : (
+              <ul className="space-y-3 text-sm text-[var(--color-on-primary)]">
+                <li className="flex items-start gap-2">
+                  <Phone className="mt-0.5 h-4 w-4 shrink-0 opacity-90" aria-hidden />
+                  <span>{caregiver.phone?.trim() || "—"}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 opacity-90" aria-hidden />
+                  <span className="break-all">{caregiver.email?.trim() || "—"}</span>
+                </li>
+                <li className="flex items-start gap-2 opacity-90">
+                  <Calendar className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <span>{t("caregivers.addedAt")} {formatDate(caregiver.created_at)}</span>
+                </li>
+              </ul>
+            )}
           </section>
         </aside>
 

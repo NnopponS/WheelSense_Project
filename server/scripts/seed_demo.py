@@ -852,7 +852,6 @@ async def seed_vitals(
                 heart_rate_bpm=rng.randint(60, 100),
                 rr_interval_ms=float(rng.randint(600, 1050)),
                 spo2=rng.randint(95, 100),
-                skin_temperature=round(rng.uniform(36.1, 37.3), 1),
                 sensor_battery=rng.randint(55, 100),
                 # Same source tag as M5 Polar BLE relay so admin Vitals "Polar / Sense" filter matches demo rows.
                 source="ble",
@@ -1221,12 +1220,18 @@ async def attach_bootstrap_admin_to_workspace(
 async def seed_sim_team_caregivers_and_users(
     session: AsyncSession, workspace_id: int
 ) -> tuple[dict[str, CareGiver], dict[str, User]]:
-    """Head nurse, supervisor, and two observers — each with a linked User. No extra admin (use bootstrap admin)."""
+    """Head nurse, supervisor, and two observers — each with a linked User. No extra admin (use bootstrap admin).
+
+    Caregiver rows must NOT match demo seed by (first_name, last_name): full `seed_demo.py` already creates
+    staff with the same Thai names; sim Docker runs `seed_sim_team.py` on top of that workspace. We key
+    caregivers by unique `employee_code` and use distinct last names so account management never shows
+    two logins sharing one Staff # row.
+    """
     users_cfg: list[tuple[str, str, str, str]] = [
-        ("head_nurse", "sim_headnurse", "ศิริพร", "หัวหน้าวอร์ด"),
-        ("supervisor", "sim_supervisor", "มานะ", "เวชกิจ"),
-        ("observer", "sim_observer1", "สุดา", "ใจดี"),
-        ("observer", "sim_observer2", "วิมล", "รักษ์ไทย"),
+        ("head_nurse", "sim_headnurse", "ศิริพร", "หัวหน้าวอร์ด (ซิม MQTT)"),
+        ("supervisor", "sim_supervisor", "มานะ", "เวชกิจ (ซิม MQTT)"),
+        ("observer", "sim_observer1", "สุดา", "ใจดี (ซิม MQTT)"),
+        ("observer", "sim_observer2", "วิมล", "รักษ์ไทย (ซิม MQTT)"),
     ]
     profile_by_username = {
         "sim_headnurse": {
@@ -1284,11 +1289,11 @@ async def seed_sim_team_caregivers_and_users(
 
     for role, username, first_name, last_name in users_cfg:
         profile = profile_by_username[username]
+        emp_code = profile["employee_code"]
         cq = await session.execute(
             select(CareGiver).where(
                 CareGiver.workspace_id == workspace_id,
-                CareGiver.first_name == first_name,
-                CareGiver.last_name == last_name,
+                CareGiver.employee_code == emp_code,
             )
         )
         caregiver = cq.scalar_one_or_none()
@@ -1298,7 +1303,7 @@ async def seed_sim_team_caregivers_and_users(
                 first_name=first_name,
                 last_name=last_name,
                 role=role,
-                employee_code=profile["employee_code"],
+                employee_code=emp_code,
                 department=profile["department"],
                 employment_type=profile["employment_type"],
                 specialty=profile["specialty"],
@@ -1313,8 +1318,10 @@ async def seed_sim_team_caregivers_and_users(
             session.add(caregiver)
             await session.flush()
         else:
+            caregiver.first_name = first_name
+            caregiver.last_name = last_name
             caregiver.role = role
-            caregiver.employee_code = profile["employee_code"]
+            caregiver.employee_code = emp_code
             caregiver.department = profile["department"]
             caregiver.employment_type = profile["employment_type"]
             caregiver.specialty = profile["specialty"]

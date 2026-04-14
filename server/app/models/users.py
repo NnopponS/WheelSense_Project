@@ -55,3 +55,37 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
+
+class AuthSession(Base):
+    """Server-tracked web/API login session for a user."""
+
+    __tablename__ = "auth_sessions"
+    __table_args__ = (
+        Index("ix_auth_sessions_workspace_id", "workspace_id"),
+        Index("ix_auth_sessions_user_id", "user_id"),
+        Index("ix_auth_sessions_revoked_at", "revoked_at"),
+    )
+
+    id = Column(String(64), primary_key=True)
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    impersonated_by_user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    user_agent = Column(String(512), nullable=False, default="")
+    ip_address = Column(String(64), nullable=False, default="")
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+    last_seen_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)

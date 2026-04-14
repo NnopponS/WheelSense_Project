@@ -74,6 +74,12 @@ function PersonnelPageContent() {
   const [sfFirst, setSfFirst] = useState("");
   const [sfLast, setSfLast] = useState("");
   const [sfRole, setSfRole] = useState<"head_nurse" | "supervisor" | "observer">("observer");
+  const [sfEmployeeCode, setSfEmployeeCode] = useState("");
+  const [sfDepartment, setSfDepartment] = useState("Nursing");
+  const [sfSpecialty, setSfSpecialty] = useState("");
+  const [sfLicense, setSfLicense] = useState("");
+  const [sfPhone, setSfPhone] = useState("");
+  const [sfEmail, setSfEmail] = useState("");
   const [sfUser, setSfUser] = useState("");
   const [sfPass, setSfPass] = useState("");
   const [sfBusy, setSfBusy] = useState(false);
@@ -84,6 +90,13 @@ function PersonnelPageContent() {
   const [ptLast, setPtLast] = useState("");
   const [ptNick, setPtNick] = useState("");
   const [ptCare, setPtCare] = useState<"normal" | "special" | "critical">("normal");
+  const [ptDob, setPtDob] = useState("");
+  const [ptGender, setPtGender] = useState("");
+  const [ptMobility, setPtMobility] = useState<"wheelchair" | "walker" | "independent">("wheelchair");
+  const [ptHeight, setPtHeight] = useState("");
+  const [ptWeight, setPtWeight] = useState("");
+  const [ptBlood, setPtBlood] = useState("");
+  const [ptRoomId, setPtRoomId] = useState("");
   const [ptUser, setPtUser] = useState("");
   const [ptPass, setPtPass] = useState("");
   const [ptBusy, setPtBusy] = useState(false);
@@ -101,6 +114,10 @@ function PersonnelPageContent() {
     queryKey: PERSONNEL_QK.users,
     queryFn: () => api.listUsers(),
   });
+  const roomsQuery = useQuery({
+    queryKey: ["admin", "personnel", "rooms"],
+    queryFn: () => api.listRooms(),
+  });
 
   const invalidatePersonnel = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: [...PERSONNEL_QK.caregivers] });
@@ -112,6 +129,12 @@ function PersonnelPageContent() {
     setSfFirst("");
     setSfLast("");
     setSfRole("observer");
+    setSfEmployeeCode("");
+    setSfDepartment("Nursing");
+    setSfSpecialty("");
+    setSfLicense("");
+    setSfPhone("");
+    setSfEmail("");
     setSfUser("");
     setSfPass("");
     setSfErr(null);
@@ -122,6 +145,13 @@ function PersonnelPageContent() {
     setPtLast("");
     setPtNick("");
     setPtCare("normal");
+    setPtDob("");
+    setPtGender("");
+    setPtMobility("wheelchair");
+    setPtHeight("");
+    setPtWeight("");
+    setPtBlood("");
+    setPtRoomId("");
     setPtUser("");
     setPtPass("");
     setPtErr(null);
@@ -158,13 +188,13 @@ function PersonnelPageContent() {
         first_name: sfFirst.trim(),
         last_name: sfLast.trim(),
         role: sfRole,
-        employee_code: "",
-        department: "Nursing",
+        employee_code: sfEmployeeCode.trim(),
+        department: sfDepartment.trim(),
         employment_type: "full_time",
-        specialty: "",
-        license_number: "",
-        phone: "",
-        email: "",
+        specialty: sfSpecialty.trim(),
+        license_number: sfLicense.trim(),
+        phone: sfPhone.trim(),
+        email: sfEmail.trim(),
         emergency_contact_name: "",
         emergency_contact_phone: "",
         photo_url: "",
@@ -192,8 +222,14 @@ function PersonnelPageContent() {
     resetStaffForm,
     sfFirst,
     sfLast,
+    sfDepartment,
+    sfEmail,
+    sfEmployeeCode,
     sfPass,
+    sfPhone,
     sfRole,
+    sfSpecialty,
+    sfLicense,
     sfUser,
     t,
   ]);
@@ -215,19 +251,19 @@ function PersonnelPageContent() {
         first_name: ptFirst.trim(),
         last_name: ptLast.trim(),
         nickname: ptNick.trim(),
-        date_of_birth: null,
-        gender: "",
-        height_cm: null,
-        weight_kg: null,
-        blood_type: "",
+        date_of_birth: ptDob.trim() || null,
+        gender: ptGender.trim(),
+        height_cm: ptHeight.trim() ? Number(ptHeight) : null,
+        weight_kg: ptWeight.trim() ? Number(ptWeight) : null,
+        blood_type: ptBlood.trim(),
         medical_conditions: [],
         allergies: [],
         medications: [],
         past_surgeries: [],
         care_level: ptCare,
-        mobility_type: "wheelchair",
+        mobility_type: ptMobility,
         notes: "",
-        room_id: null,
+        room_id: ptRoomId.trim() ? Number(ptRoomId) : null,
       });
       await api.post<AppUser>("/users", {
         username: ptUser.trim(),
@@ -250,11 +286,18 @@ function PersonnelPageContent() {
     canProvision,
     invalidatePersonnel,
     ptCare,
+    ptDob,
     ptFirst,
+    ptGender,
+    ptHeight,
     ptLast,
+    ptMobility,
     ptNick,
     ptPass,
+    ptRoomId,
     ptUser,
+    ptWeight,
+    ptBlood,
     resetPatientForm,
     t,
   ]);
@@ -574,14 +617,17 @@ function PersonnelPageContent() {
       </div>
 
       <Dialog open={staffDialogOpen} onOpenChange={(o) => { setStaffDialogOpen(o); if (!o) resetStaffForm(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("personnel.addStaffTitle")}</DialogTitle>
-            <DialogDescription>{t("personnel.addStaffDescription")}</DialogDescription>
+        <DialogContent className="w-[min(100%-2rem,70rem)] max-h-[92vh] overflow-hidden rounded-3xl border border-outline-variant/25 bg-surface p-0 shadow-2xl">
+          <DialogHeader className="border-b border-outline-variant/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-4">
+            <DialogTitle className="text-xl font-bold text-foreground">{t("personnel.addStaffTitle")}</DialogTitle>
+            <DialogDescription className="text-sm text-foreground-variant">{t("personnel.addStaffDescription")}</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3 px-1 pb-2">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div>
+          <div className="max-h-[calc(92vh-9rem)] overflow-y-auto px-6 py-5">
+            <div className="space-y-5">
+              <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("caregivers.sectionAbout")}</p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
                 <Label htmlFor="ps-first">{t("personnel.firstName")}</Label>
                 <Input id="ps-first" value={sfFirst} onChange={(e) => setSfFirst(e.target.value)} className="mt-1" />
               </div>
@@ -589,8 +635,7 @@ function PersonnelPageContent() {
                 <Label htmlFor="ps-last">{t("personnel.lastName")}</Label>
                 <Input id="ps-last" value={sfLast} onChange={(e) => setSfLast(e.target.value)} className="mt-1" />
               </div>
-            </div>
-            <div>
+                  <div>
               <Label htmlFor="ps-role">{t("personnel.staffRole")}</Label>
               <select
                 id="ps-role"
@@ -604,18 +649,52 @@ function PersonnelPageContent() {
                   </option>
                 ))}
               </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="ps-employee">{t("caregivers.employeeCode")}</Label>
+                <Input id="ps-employee" value={sfEmployeeCode} onChange={(e) => setSfEmployeeCode(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="ps-department">{t("caregivers.department")}</Label>
+                <Input id="ps-department" value={sfDepartment} onChange={(e) => setSfDepartment(e.target.value)} className="mt-1" />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="ps-user">{t("personnel.username")}</Label>
-              <Input id="ps-user" value={sfUser} onChange={(e) => setSfUser(e.target.value)} autoComplete="off" className="mt-1" />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="ps-specialty">{t("caregivers.specialty")}</Label>
+                <Input id="ps-specialty" value={sfSpecialty} onChange={(e) => setSfSpecialty(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="ps-license">{t("caregivers.licenseLabel")}</Label>
+                <Input id="ps-license" value={sfLicense} onChange={(e) => setSfLicense(e.target.value)} className="mt-1" />
+              </div>
+                  <div>
+                    <Label htmlFor="ps-phone">{t("clinical.table.phone")}</Label>
+                <Input id="ps-phone" value={sfPhone} onChange={(e) => setSfPhone(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                    <Label htmlFor="ps-email">{t("clinical.table.email")}</Label>
+                <Input id="ps-email" type="email" value={sfEmail} onChange={(e) => setSfEmail(e.target.value)} className="mt-1" />
+              </div>
+                </div>
+              </section>
+              <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="ps-user">{t("personnel.username")}</Label>
+                    <Input id="ps-user" value={sfUser} onChange={(e) => setSfUser(e.target.value)} autoComplete="off" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="ps-pass">{t("personnel.password")}</Label>
+                    <Input id="ps-pass" type="password" value={sfPass} onChange={(e) => setSfPass(e.target.value)} autoComplete="new-password" className="mt-1" />
+                  </div>
+                </div>
+              </section>
+              {sfErr ? <p className="text-sm font-medium text-destructive">{sfErr}</p> : null}
             </div>
-            <div>
-              <Label htmlFor="ps-pass">{t("personnel.password")}</Label>
-              <Input id="ps-pass" type="password" value={sfPass} onChange={(e) => setSfPass(e.target.value)} autoComplete="new-password" className="mt-1" />
-            </div>
-            {sfErr ? <p className="text-sm text-destructive">{sfErr}</p> : null}
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-t border-outline-variant/20 bg-surface-container/40 px-6 py-4">
             <Button type="button" variant="outline" onClick={() => setStaffDialogOpen(false)}>
               {t("accountMgmt.cancel")}
             </Button>
@@ -627,14 +706,17 @@ function PersonnelPageContent() {
       </Dialog>
 
       <Dialog open={patientDialogOpen} onOpenChange={(o) => { setPatientDialogOpen(o); if (!o) resetPatientForm(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("personnel.addPatientTitle")}</DialogTitle>
-            <DialogDescription>{t("personnel.addPatientDescription")}</DialogDescription>
+        <DialogContent className="w-[min(100%-2rem,70rem)] max-h-[92vh] overflow-hidden rounded-3xl border border-outline-variant/25 bg-surface p-0 shadow-2xl">
+          <DialogHeader className="border-b border-outline-variant/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-4">
+            <DialogTitle className="text-xl font-bold text-foreground">{t("personnel.addPatientTitle")}</DialogTitle>
+            <DialogDescription className="text-sm text-foreground-variant">{t("personnel.addPatientDescription")}</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-3 px-1 pb-2">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <div>
+          <div className="max-h-[calc(92vh-9rem)] overflow-y-auto px-6 py-5">
+            <div className="space-y-5">
+              <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.detailAbout")}</p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
                 <Label htmlFor="pp-first">{t("personnel.firstName")}</Label>
                 <Input id="pp-first" value={ptFirst} onChange={(e) => setPtFirst(e.target.value)} className="mt-1" />
               </div>
@@ -642,12 +724,11 @@ function PersonnelPageContent() {
                 <Label htmlFor="pp-last">{t("personnel.lastName")}</Label>
                 <Input id="pp-last" value={ptLast} onChange={(e) => setPtLast(e.target.value)} className="mt-1" />
               </div>
-            </div>
-            <div>
+                  <div>
               <Label htmlFor="pp-nick">{t("personnel.nickname")}</Label>
               <Input id="pp-nick" value={ptNick} onChange={(e) => setPtNick(e.target.value)} className="mt-1" />
-            </div>
-            <div>
+                  </div>
+                  <div>
               <Label htmlFor="pp-care">{t("personnel.careLevel")}</Label>
               <select
                 id="pp-care"
@@ -659,18 +740,72 @@ function PersonnelPageContent() {
                 <option value="special">special</option>
                 <option value="critical">critical</option>
               </select>
+                  </div>
+                  <div>
+                <Label htmlFor="pp-dob">{t("patients.dateOfBirth")}</Label>
+                <Input id="pp-dob" type="date" value={ptDob} onChange={(e) => setPtDob(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="pp-gender">{t("patients.gender")}</Label>
+                <select id="pp-gender" className="input-field mt-1 w-full py-2 text-sm" value={ptGender} onChange={(e) => setPtGender(e.target.value)}>
+                  <option value="">{t("patients.genderUnset")}</option>
+                  <option value="male">{t("patients.genderMale")}</option>
+                  <option value="female">{t("patients.genderFemale")}</option>
+                  <option value="other">{t("patients.genderOther")}</option>
+                </select>
+              </div>
+                  <div>
+                <Label htmlFor="pp-height">{t("patients.heightCm")}</Label>
+                <Input id="pp-height" value={ptHeight} onChange={(e) => setPtHeight(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="pp-weight">{t("patients.weightKg")}</Label>
+                <Input id="pp-weight" value={ptWeight} onChange={(e) => setPtWeight(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="pp-blood">{t("patients.bloodType")}</Label>
+                <Input id="pp-blood" value={ptBlood} onChange={(e) => setPtBlood(e.target.value)} className="mt-1" />
+              </div>
+                  <div>
+                <Label htmlFor="pp-mobility">{t("patients.mobilityType")}</Label>
+                <select id="pp-mobility" className="input-field mt-1 w-full py-2 text-sm" value={ptMobility} onChange={(e) => setPtMobility(e.target.value as typeof ptMobility)}>
+                  <option value="wheelchair">{t("patients.mobilityWheelchair")}</option>
+                  <option value="walker">{t("patients.mobilityWalker")}</option>
+                  <option value="independent">{t("patients.mobilityIndependent")}</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="pp-room">{t("patients.room")}</Label>
+                <select id="pp-room" className="input-field mt-1 w-full py-2 text-sm" value={ptRoomId} onChange={(e) => setPtRoomId(e.target.value)}>
+                  <option value="">{t("patients.noRoom")}</option>
+                  {Array.isArray(roomsQuery.data)
+                    ? (roomsQuery.data as Array<{ id: number; name?: string | null }>).map((room) => (
+                        <option key={room.id} value={String(room.id)}>
+                          {room.name || `Room #${room.id}`}
+                        </option>
+                      ))
+                    : null}
+                </select>
+              </div>
+                </div>
+              </section>
+              <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="pp-user">{t("personnel.username")}</Label>
+                    <Input id="pp-user" value={ptUser} onChange={(e) => setPtUser(e.target.value)} autoComplete="off" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="pp-pass">{t("personnel.password")}</Label>
+                    <Input id="pp-pass" type="password" value={ptPass} onChange={(e) => setPtPass(e.target.value)} autoComplete="new-password" className="mt-1" />
+                  </div>
+                </div>
+              </section>
+              {ptErr ? <p className="text-sm font-medium text-destructive">{ptErr}</p> : null}
             </div>
-            <div>
-              <Label htmlFor="pp-user">{t("personnel.username")}</Label>
-              <Input id="pp-user" value={ptUser} onChange={(e) => setPtUser(e.target.value)} autoComplete="off" className="mt-1" />
-            </div>
-            <div>
-              <Label htmlFor="pp-pass">{t("personnel.password")}</Label>
-              <Input id="pp-pass" type="password" value={ptPass} onChange={(e) => setPtPass(e.target.value)} autoComplete="new-password" className="mt-1" />
-            </div>
-            {ptErr ? <p className="text-sm text-destructive">{ptErr}</p> : null}
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-t border-outline-variant/20 bg-surface-container/40 px-6 py-4">
             <Button type="button" variant="outline" onClick={() => setPatientDialogOpen(false)}>
               {t("accountMgmt.cancel")}
             </Button>

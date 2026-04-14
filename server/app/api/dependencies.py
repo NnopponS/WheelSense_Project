@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from datetime import datetime, timezone
 from typing import Final
 
 from fastapi import Depends, HTTPException, status
@@ -18,7 +19,7 @@ from app.models.core import Workspace
 from app.models.patients import PatientDeviceAssignment
 from app.models.users import User
 from app.schemas.users import TokenData
-from app.services.auth import UserService
+from app.services.auth import AuthService, UserService
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -29,11 +30,39 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
+def _as_utc(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 async def get_current_user(
     db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)
 ) -> User:
+    user, _, _ = await resolve_current_user_from_token(db, token)
+    return user
+
+
+def _parse_token_scope_claim(raw_scope: object) -> list[str]:
+    if raw_scope is None:
+        return []
+    if isinstance(raw_scope, str):
+        return [part for part in raw_scope.split() if part]
+    if isinstance(raw_scope, list):
+        return [str(part) for part in raw_scope if str(part)]
+    return []
+
+
+async def resolve_current_user_from_token(
+    db: AsyncSession,
+    token: str,
+) -> tuple[User, TokenData, dict]:
     set_impersonated_by_user_id(None)
     actor_admin_id: int | None = None
+    session_id: str | None = None
+    payload: dict
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         user_id: str | None = payload.get("sub")
@@ -42,12 +71,16 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
             )
-
-        token_data = TokenData(username=user_id, role=payload.get("role"))
+        token_data = TokenData(
+            username=user_id,
+            role=payload.get("role"),
+            session_id=payload.get("sid"),
+            actor_admin_id=payload.get("actor_admin_id"),
+            scopes=_parse_token_scope_claim(payload.get("scope")),
+        )
         user_id_int = int(token_data.username)
-        raw_actor_admin_id = payload.get("actor_admin_id")
-        if raw_actor_admin_id is not None:
-            actor_admin_id = int(raw_actor_admin_id)
+        actor_admin_id = token_data.actor_admin_id
+        session_id = token_data.session_id
     except (JWTError, ValidationError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -62,9 +95,37 @@ async def get_current_user(
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    if session_id:
+        auth_session = await AuthService.get_auth_session(db, session_id=session_id)
+        now = datetime.now(timezone.utc)
+        expires_at = _as_utc(auth_session.expires_at) if auth_session else None
+        if (
+            not auth_session
+            or auth_session.user_id != user.id
+            or auth_session.workspace_id != user.workspace_id
+            or auth_session.revoked_at is not None
+            or expires_at is None
+            or expires_at <= now
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session is no longer active",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
     set_impersonated_by_user_id(actor_admin_id)
     setattr(user, "_impersonated_by_user_id", actor_admin_id)
-    return user
+    setattr(user, "_session_id", session_id)
+    setattr(user, "_access_token", token)
+    setattr(user, "_token_scopes", resolve_effective_token_scopes(user.role, token_data.scopes))
+    return user, token_data, payload
+
+
+def resolve_effective_token_scopes(role: str, requested_scopes: list[str] | None = None) -> set[str]:
+    allowed = set(ROLE_TOKEN_SCOPES.get(role, set()))
+    requested = {scope for scope in (requested_scopes or []) if scope}
+    if not requested:
+        return allowed
+    return allowed.intersection(requested)
 
 
 async def get_current_active_user(
@@ -183,6 +244,69 @@ ROLE_CAPABILITIES: Final[dict[str, set[str]]] = {
         "alerts.read",
         "messages.manage",
         "devices.read",
+    },
+}
+
+ROLE_TOKEN_SCOPES: Final[dict[str, set[str]]] = {
+    ROLE_ADMIN: {
+        "workspace.read",
+        "patients.read",
+        "patients.write",
+        "alerts.read",
+        "alerts.manage",
+        "devices.read",
+        "devices.manage",
+        "devices.command",
+        "rooms.read",
+        "rooms.manage",
+        "room_controls.use",
+        "workflow.read",
+        "workflow.write",
+        "cameras.capture",
+        "ai_settings.read",
+        "ai_settings.write",
+        "admin.audit.read",
+    },
+    ROLE_HEAD_NURSE: {
+        "workspace.read",
+        "patients.read",
+        "patients.write",
+        "alerts.read",
+        "alerts.manage",
+        "devices.read",
+        "devices.manage",
+        "devices.command",
+        "rooms.read",
+        "workflow.read",
+        "workflow.write",
+        "cameras.capture",
+    },
+    ROLE_SUPERVISOR: {
+        "workspace.read",
+        "patients.read",
+        "alerts.read",
+        "alerts.manage",
+        "devices.read",
+        "rooms.read",
+        "workflow.read",
+        "workflow.write",
+    },
+    ROLE_OBSERVER: {
+        "workspace.read",
+        "patients.read",
+        "alerts.read",
+        "devices.read",
+        "rooms.read",
+        "workflow.read",
+        "workflow.write",
+    },
+    ROLE_PATIENT: {
+        "patients.read",
+        "alerts.read",
+        "devices.read",
+        "rooms.read",
+        "room_controls.use",
+        "workflow.read",
     },
 }
 

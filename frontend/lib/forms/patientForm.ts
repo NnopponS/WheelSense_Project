@@ -61,7 +61,6 @@ function emergencyContactRefine(
 const patientCreateObjectSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required"),
   lastName: z.string().trim().min(1, "Last name is required"),
-  nickname: z.string(),
   dateOfBirth: z.string(),
   gender: z.enum(GENDER_OPTIONS),
   careLevel: z.enum(CARE_LEVEL_OPTIONS),
@@ -99,7 +98,6 @@ export function createPatientFormDefaultValues(): PatientCreateFormValues {
   return {
     firstName: "",
     lastName: "",
-    nickname: "",
     dateOfBirth: "",
     gender: "",
     careLevel: "normal",
@@ -132,7 +130,7 @@ export function buildPatientCreatePayload(values: PatientCreateFormValues) {
   return {
     first_name: values.firstName.trim(),
     last_name: values.lastName.trim(),
-    nickname: values.nickname.trim(),
+    nickname: "",
     date_of_birth: values.dateOfBirth.trim() || null,
     gender: values.gender.trim(),
     care_level: values.careLevel,
@@ -181,7 +179,6 @@ export function createPatientEditorFormValues(
   return {
     firstName: patient.first_name ?? "",
     lastName: patient.last_name ?? "",
-    nickname: patient.nickname ?? "",
     dateOfBirth: patient.date_of_birth ? String(patient.date_of_birth).slice(0, 10) : "",
     gender: pickOption(GENDER_OPTIONS, patient.gender, ""),
     careLevel: pickOption(CARE_LEVEL_OPTIONS, patient.care_level, "normal"),

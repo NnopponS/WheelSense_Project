@@ -105,9 +105,13 @@ function safeRoomName(value: string | null | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
+function safeNodeDeviceId(value: string | null | undefined): string {
+  return (value ?? "").trim().toLowerCase();
+}
+
 function describePatientName(patient: PatientHint): string {
   const name = [patient.first_name, patient.last_name].filter(Boolean).join(" ").trim();
-  return patient.nickname?.trim() || name || `Patient #${patient.patient_id}`;
+  return name || `Patient #${patient.patient_id}`;
 }
 
 function formatSourceLabel(source: string | undefined): string {
@@ -135,6 +139,7 @@ function describeNodeStatus(room: PresenceRoom | null): string {
 
 function getPredictionChip(room: PresenceRoom): FloorplanRoomChip | null {
   if (!room.prediction_hint) return null;
+  if ((room.prediction_hint as { model_type?: string }).model_type === "max_rssi") return null;
   const confidence = Math.round((room.prediction_hint.confidence ?? 0) * 100);
   return {
     label: `${confidence}% prediction`,
@@ -251,6 +256,7 @@ function buildPresenceMeta(room: PresenceRoom): FloorplanRoomMeta {
   return {
     chips,
     detailLines,
+    presenceDots: occupants.slice(0, 3).map((item) => item.display_name),
     tone: getNodeTone(room),
   };
 }
@@ -456,7 +462,10 @@ export default function FloorplanRoleViewer({
     queryKey: ["shared", "floorplan-role-viewer", "presence", presenceEndpoint, compact],
     queryFn: () => api.get<PresenceResponse>(presenceEndpoint!),
     enabled: Boolean(presenceEndpoint),
-    refetchInterval: compact ? false : 15_000,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     staleTime: presenceEndpoint ? getQueryStaleTimeMs(presenceEndpoint) : 0,
     retry: false,
   });
@@ -480,22 +489,47 @@ export default function FloorplanRoleViewer({
   const roomEntries = useMemo(() => {
     const presenceRooms = presenceData?.rooms ?? [];
     const byNumericId = new Map<number, PresenceRoom>();
+    const byNodeDeviceId = new Map<string, PresenceRoom>();
     const byLabel = new Map<string, PresenceRoom>();
+    const dbRoomByNodeDeviceId = new Map<string, Room>();
+    const dbRoomByLabel = new Map<string, Room>();
 
     for (const room of presenceRooms) {
       byNumericId.set(room.room_id, room);
+      const nodeKey = safeNodeDeviceId(room.node_device_id);
+      if (nodeKey) {
+        byNodeDeviceId.set(nodeKey, room);
+      }
       byLabel.set(safeRoomName(room.room_name), room);
     }
 
+    for (const floorRoom of floorRooms ?? []) {
+      const nodeKey = safeNodeDeviceId(floorRoom.node_device_id);
+      if (nodeKey) {
+        dbRoomByNodeDeviceId.set(nodeKey, floorRoom);
+      }
+      const labelKey = safeRoomName(floorRoom.name);
+      if (labelKey) {
+        dbRoomByLabel.set(labelKey, floorRoom);
+      }
+    }
+
     return rooms.map((room) => {
-      const numericId = floorplanRoomIdToNumeric(room.id);
+      const parsedNumeric = floorplanRoomIdToNumeric(room.id);
+      const directNumeric =
+        parsedNumeric ?? (/^\d+$/.test(room.id.trim()) ? Number(room.id.trim()) : null);
+      const nodeKey = safeNodeDeviceId(room.node_device_id);
+      const roomFromNode = nodeKey ? dbRoomByNodeDeviceId.get(nodeKey) : null;
+      const roomFromLabel = dbRoomByLabel.get(safeRoomName(room.label));
+      const resolvedNumericId = directNumeric ?? roomFromNode?.id ?? roomFromLabel?.id ?? null;
       const presenceRoom =
-        (numericId !== null ? byNumericId.get(numericId) : null) ??
+        (resolvedNumericId !== null ? byNumericId.get(resolvedNumericId) : null) ??
+        (nodeKey ? byNodeDeviceId.get(nodeKey) : null) ??
         byLabel.get(safeRoomName(room.label)) ??
         null;
       return { room, presenceRoom };
     });
-  }, [presenceData?.rooms, rooms]);
+  }, [floorRooms, presenceData?.rooms, rooms]);
 
   const roomMetaById = useMemo<Record<string, FloorplanRoomMeta>>(() => {
     const next: Record<string, FloorplanRoomMeta> = {};
@@ -588,7 +622,7 @@ export default function FloorplanRoleViewer({
     setCaptureMessage(null);
     try {
       const response = await api.post<{ message?: string }>(
-        `/rooms/${encodeURIComponent(String(selectedPresenceRoom.room_id))}/capture`,
+        `/floorplans/rooms/${encodeURIComponent(String(selectedPresenceRoom.room_id))}/capture`,
       );
       setCaptureMessage(response?.message ?? "Capture requested.");
       await refetchPresence();
@@ -749,7 +783,7 @@ export default function FloorplanRoleViewer({
               ? "Live presence is unavailable. Layout remains readable while the feed recovers."
               : compact
                 ? "Tap a room card to preview its current occupancy."
-                : "Live occupancy and device summaries auto-refresh every 15 seconds."}
+                : "Live occupancy and device summaries auto-refresh every 5 seconds."}
         </div>
       </div>
 
@@ -881,9 +915,13 @@ export default function FloorplanRoleViewer({
                         {selectedPresenceRoom?.alert_count ?? 0} alerts
                       </Badge>
                       {selectedPresenceRoom?.prediction_hint ? (
-                        <Badge variant="outline">
-                          {Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}% prediction
-                        </Badge>
+                        (selectedPresenceRoom.prediction_hint as { model_type?: string }).model_type === "max_rssi" ? (
+                          <Badge variant="outline">Strongest RSSI</Badge>
+                        ) : (
+                          <Badge variant="outline">
+                            {Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}% prediction
+                          </Badge>
+                        )
                       ) : null}
                     </div>
                   </div>
@@ -914,8 +952,11 @@ export default function FloorplanRoleViewer({
                       </div>
                       {selectedPresenceRoom?.prediction_hint ? (
                         <p className="mt-2 text-xs text-foreground-variant">
-                          Confidence {Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}% |
-                          computed {formatRelativeTime(selectedPresenceRoom.prediction_hint.computed_at)}
+                          {(selectedPresenceRoom.prediction_hint as { model_type?: string }).model_type ===
+                          "max_rssi"
+                            ? "Source strongest RSSI"
+                            : `Confidence ${Math.round((selectedPresenceRoom.prediction_hint.confidence ?? 0) * 100)}%`}{" "}
+                          | computed {formatRelativeTime(selectedPresenceRoom.prediction_hint.computed_at)}
                         </p>
                       ) : null}
                       {selectedPresenceRoom?.computed_at ? (

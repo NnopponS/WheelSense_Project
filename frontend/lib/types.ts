@@ -234,7 +234,6 @@ export interface VitalReading {
   heart_rate_bpm: number | null;
   rr_interval_ms: number | null;
   spo2: number | null;
-  skin_temperature: number | null;
   sensor_battery: number | null;
   source: string;
 }

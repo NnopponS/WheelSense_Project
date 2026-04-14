@@ -43,7 +43,8 @@ private:
     ScanCallback scanCb;
 
     static constexpr unsigned long NODE_STALE_MS = 12000;
-    static constexpr unsigned long SCAN_REST_MS = 5000;
+    /** Pause between scan bursts; shorter = faster discovery at some power cost. */
+    static constexpr unsigned long SCAN_REST_MS = 2500;
 
     static void scanTask(void* param);
 };

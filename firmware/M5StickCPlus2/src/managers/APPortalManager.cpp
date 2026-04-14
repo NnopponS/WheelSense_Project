@@ -1,4 +1,5 @@
 #include "APPortalManager.h"
+#include "NetworkManager.h"
 
 APPortalManager APPortalMgr;
 
@@ -75,14 +76,14 @@ function toggleSSID() {
 <h2>&#x2699;&#xFE0F; Device Info</h2>
 <label>Device Name</label>
 <input name="device_name" value="%DEVICE_NAME%" maxlength="20">
-<p class="help">Used for BLE broadcasting and MQTT client ID.</p>
+<p class="help">Must match the pre-registered backend device_id. Also used for BLE broadcasting and MQTT client ID.</p>
 <label>Wheel Radius (m)</label>
 <input name="wheel_radius" type="number" step="0.001" value="%WHEEL_RADIUS%" min="0.01" max="2.0">
 </div>
 
 <button class="btn" type="submit">&#x1F4BE; Save &amp; Apply</button>
 </form>
-<p class="foot">Firmware v%FW_VER% &bull; Changes require reboot to apply.</p>
+<p class="foot">Firmware v%FW_VER% &bull; Save, then exit AP mode to reconnect with the new settings.</p>
 </body>
 </html>
 )rawhtml";
@@ -182,11 +183,7 @@ void APPortalManager::stop() {
     WiFi.mode(WIFI_STA);
     delay(100);
 
-    // Reconnect to saved WiFi
-    AppConfig& config = ConfigMgr.getConfig();
-    if (config.wifiSSID.length() > 0) {
-        WiFi.begin(config.wifiSSID.c_str(), config.wifiPass.c_str());
-    }
+    NetworkMgr.reconfigureFromConfig(true);
 
     running = false;
     Serial.println("[AP] Stopped, switching back to STA");

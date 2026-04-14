@@ -14,7 +14,7 @@ export default function PatientLayout({
     >
       <div
         data-patient-shell
-        className="space-y-8 md:space-y-10 [&_button]:min-h-11 [&_button]:px-5 [&_button]:text-base [&_button]:rounded-xl"
+        className="space-y-8 md:space-y-10 [&_button]:min-h-12 [&_button]:px-5 [&_button]:text-base [&_button]:rounded-xl"
       >
         {children}
       </div>

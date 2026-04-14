@@ -4,13 +4,16 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+import httpx
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_active_user, get_current_user_workspace, get_db
 from app.models.chat import ChatConversation, ChatMessage
 from app.models.core import Workspace
 from app.models.users import User
+from app.schemas.agent_runtime import ExecutionPlan
 from app.schemas.chat import ChatMessagePart
 from app.schemas.chat_actions import (
     ChatActionConfirmIn,
@@ -22,41 +25,13 @@ from app.schemas.chat_actions import (
     ChatActionProposalResponse,
     ChatActionProposeIn,
 )
-from app.services import ai_chat
+from app.services import agent_runtime_client, ai_chat
 
 router = APIRouter()
 
 
-ACTION_HINTS: tuple[tuple[tuple[str, ...], str, str, str], ...] = (
-    (("system health", "system status", "platform status"), "get_system_health", "Check system health", "Read current platform health and service readiness."),
-    (("list rooms", "show rooms", "room list"), "list_rooms", "List rooms", "Read the current room catalogue and availability."),
-    (("list devices", "show devices", "device list"), "list_devices", "List devices", "Read the current device inventory and realtime availability."),
-    (("alerts", "active alerts", "show alerts"), "list_active_alerts", "Review active alerts", "Read active alerts that may require follow-up."),
-    (("patients", "patient list", "show patients"), "list_patients", "List patients", "Read the visible patient roster for the current role."),
-)
-
-
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def _build_action_from_message(user: User, conversation_id: int | None, message: str) -> ChatActionProposeIn | None:
-    lowered = message.lower()
-    allowed = ai_chat.ROLE_MCP_TOOL_ALLOWLIST.get(user.role, set())
-    for keywords, tool_name, title, summary in ACTION_HINTS:
-        if tool_name not in allowed:
-            continue
-        if any(keyword in lowered for keyword in keywords):
-            return ChatActionProposeIn(
-                conversation_id=conversation_id,
-                title=title,
-                action_type="mcp_tool",
-                tool_name=tool_name,
-                tool_arguments={},
-                summary=summary,
-                proposed_changes={"intent": message},
-            )
-    return None
 
 
 async def _collect_assistant_reply(
@@ -81,14 +56,29 @@ async def _collect_assistant_reply(
 
 def _serialize_action_summary(row) -> ChatActionProposalItem:
     description = row.summary or f"Prepare `{row.tool_name}` for execution after confirmation."
+    proposed_changes = dict(row.proposed_changes or {})
+    plan_payload = proposed_changes.get("execution_plan")
+    permission_basis = []
+    if isinstance(plan_payload, dict):
+        permission_basis = list(plan_payload.get("permission_basis") or [])
+        if permission_basis:
+            description = f"{description} Permissions: {', '.join(permission_basis)}."
     return ChatActionProposalItem(
         action_id=row.id,
         title=row.title,
         description=description,
-        risk_level="low",
+        risk_level=(plan_payload or {}).get("risk_level", "low") if isinstance(plan_payload, dict) else "low",
         params=dict(row.tool_arguments or {}),
-        payload=dict(row.proposed_changes or {}),
+        payload=proposed_changes,
     )
+
+
+def _chat_action_out(row) -> ChatActionOut:
+    out = ChatActionOut.model_validate(row)
+    plan_payload = dict(row.proposed_changes or {}).get("execution_plan")
+    if isinstance(plan_payload, dict):
+        out.execution_plan = ExecutionPlan.model_validate(plan_payload)
+    return out
 
 
 def _build_execution_message(action, execution_result: dict) -> str:
@@ -113,7 +103,7 @@ async def list_actions(
         user=user,
         limit=limit,
     )
-    return [ChatActionOut.model_validate(row) for row in rows]
+    return [_chat_action_out(row) for row in rows]
 
 
 @router.get("/actions/{action_id}", response_model=ChatActionOut)
@@ -128,12 +118,13 @@ async def get_action(
         raise HTTPException(status_code=404, detail="Chat action not found")
     if user.role not in {"admin", "head_nurse"} and row.proposed_by_user_id != user.id:
         raise HTTPException(status_code=403, detail="Operation not permitted")
-    return ChatActionOut.model_validate(row)
+    return _chat_action_out(row)
 
 
 @router.post("/actions/propose", response_model=ChatActionProposalResponse, status_code=201)
 async def propose_action(
     body: ChatActionProposalRequest | ChatActionProposeIn,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
@@ -170,22 +161,54 @@ async def propose_action(
             )
         )
 
-    assistant_reply = await _collect_assistant_reply(
-        db=db,
-        user=user,
-        workspace=workspace,
-        messages=messages,
-    )
+    # Prefer token attached by auth dependency (always set after successful JWT validation).
+    # Parsing Authorization alone can miss edge cases; MCP/agent-runtime must receive the real JWT.
+    actor_access_token = (getattr(user, "_access_token", None) or "").strip()
+    if not actor_access_token:
+        auth_header = request.headers.get("authorization", "") or request.headers.get("Authorization", "")
+        _, _, actor_access_token = auth_header.partition(" ")
+        actor_access_token = actor_access_token.strip()
+    if not actor_access_token:
+        raise HTTPException(status_code=401, detail="Missing credentials for agent runtime")
+
+    try:
+        runtime = await agent_runtime_client.propose_turn(
+            actor_access_token=actor_access_token,
+            message=body.message,
+            messages=messages,
+            conversation_id=body.conversation_id,
+            page_patient_id=body.page_patient_id,
+        )
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Agent runtime is unavailable or returned an error. Check wheelsense-agent-runtime logs and AGENT_RUNTIME_URL.",
+        ) from exc
+
+    assistant_reply = runtime.assistant_reply
 
     action_row = None
-    action_payload = _build_action_from_message(user, body.conversation_id, body.message)
-    if action_payload is not None:
-        action_row = await ai_chat.propose_chat_action(
-            db,
-            ws_id=workspace.id,
-            actor=user,
-            payload=action_payload,
-        )
+    if runtime.action_payload is not None:
+        try:
+            payload = ChatActionProposeIn.model_validate(runtime.action_payload)
+            action_row = await ai_chat.propose_chat_action(
+                db,
+                ws_id=workspace.id,
+                actor=user,
+                payload=payload,
+            )
+        except ValidationError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="Agent runtime returned an invalid action payload.",
+            ) from exc
+        except HTTPException as exc:
+            if exc.status_code in {403, 422}:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Agent runtime proposed an unsupported action: {exc.detail}",
+                ) from exc
+            raise
 
     if conversation is not None and assistant_reply:
         conversation.updated_at = _utcnow()
@@ -206,11 +229,13 @@ async def propose_action(
         else "No system action is queued. The assistant reply is informational only."
     )
     return ChatActionProposalResponse(
+        mode=runtime.mode,
         proposal_id=action_row.id if action_row is not None else None,
         assistant_reply=assistant_reply,
         reply=assistant_reply,
         summary=summary,
         actions=actions,
+        execution_plan=runtime.plan,
     )
 
 
@@ -230,7 +255,7 @@ async def confirm_action(
         approved=body.approved,
         note=body.note,
     )
-    return ChatActionOut.model_validate(row)
+    return _chat_action_out(row)
 
 
 @router.post("/actions/{action_id}/execute", response_model=ChatActionExecuteOut)
@@ -267,7 +292,7 @@ async def execute_action(
             )
             await db.commit()
     return ChatActionExecuteOut(
-        action=ChatActionOut.model_validate(row),
+        action=_chat_action_out(row),
         execution_result=execution_result,
         message=reply,
         reply=reply,

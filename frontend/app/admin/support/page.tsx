@@ -25,7 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import type {
   ListPatientsResponse,
   ListServiceRequestsResponse,
@@ -75,8 +75,54 @@ function requestTypeLabelKey(type: string) {
 
 function buildPatientLabel(patient: ListPatientsResponse[number] | undefined) {
   if (!patient) return null;
-  const nickname = patient.nickname?.trim();
-  return nickname || `${patient.first_name} ${patient.last_name}`.trim();
+  return `${patient.first_name} ${patient.last_name}`.trim();
+}
+
+type Translate = (key: TranslationKey) => string;
+
+function ticketStatusLabel(status: string, t: Translate): string {
+  switch (status) {
+    case "open":
+      return t("admin.support.ticketStatusOpen");
+    case "in_progress":
+      return t("admin.support.ticketStatusInProgress");
+    case "resolved":
+      return t("admin.support.ticketStatusResolved");
+    case "closed":
+      return t("admin.support.ticketStatusClosed");
+    default:
+      return t("admin.support.ticketStatusUnknown");
+  }
+}
+
+function ticketPriorityLabel(priority: string, t: Translate): string {
+  switch (priority) {
+    case "low":
+      return t("support.priorityLow");
+    case "normal":
+      return t("support.priorityNormal");
+    case "high":
+      return t("support.priorityHigh");
+    case "critical":
+      return t("support.priorityCritical");
+    default:
+      return priority;
+  }
+}
+
+function serviceRequestStatusLabel(status: string, t: Translate): string {
+  switch (status) {
+    case "open":
+      return t("admin.support.svcStatusOpen");
+    case "in_progress":
+      return t("admin.support.svcStatusInProgress");
+    case "fulfilled":
+      return t("admin.support.svcStatusFulfilled");
+    case "cancelled":
+      return t("admin.support.svcStatusCancelled");
+    default:
+      return t("admin.support.ticketStatusUnknown");
+  }
 }
 
 export default function AdminSupportPage() {
@@ -256,14 +302,14 @@ export default function AdminSupportPage() {
                       >
                         <div className="mb-2 flex items-start justify-between gap-2">
                           <h4 className="truncate text-sm font-medium">{ticket.title}</h4>
-                          <Badge variant={statusVariant(ticket.status)} className="shrink-0 capitalize">
-                            {ticket.status.replace("_", " ")}
+                          <Badge variant={statusVariant(ticket.status)} className="shrink-0">
+                            {ticketStatusLabel(ticket.status, t)}
                           </Badge>
                         </div>
                         <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{ticket.description}</p>
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span className="rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-muted/60">
-                            {ticket.priority}
+                            {ticketPriorityLabel(ticket.priority, t)}
                           </span>
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
@@ -283,13 +329,15 @@ export default function AdminSupportPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="mb-2 flex items-center gap-2">
-                      <Badge variant={statusVariant(selectedTicket.status)} className="capitalize">
-                          {selectedTicket.status.replace("_", " ")}
+                      <Badge variant={statusVariant(selectedTicket.status)}>
+                          {ticketStatusLabel(selectedTicket.status, t)}
                         </Badge>
                         <span className="rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-muted/60">
-                          {selectedTicket.priority}
+                          {ticketPriorityLabel(selectedTicket.priority, t)}
                         </span>
-                        <span className="text-xs text-muted-foreground">ID: #{selectedTicket.id}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {t("admin.support.ticketIdLabel").replace("{id}", String(selectedTicket.id))}
+                        </span>
                       </div>
                       <CardTitle className="text-xl">{selectedTicket.title}</CardTitle>
                     </div>
@@ -476,12 +524,13 @@ export default function AdminSupportPage() {
                         <div className="mb-2 flex items-start justify-between gap-2">
                           <div className="space-y-1">
                             <h4 className="truncate text-sm font-medium">
-                              {patientLabelMap.get(request.patient_id ?? 0) ?? `Patient #${request.patient_id ?? "?"}`}
+                              {patientLabelMap.get(request.patient_id ?? 0) ??
+                                t("admin.support.patientNumber").replace("{id}", String(request.patient_id ?? "?"))}
                             </h4>
                             <p className="text-xs text-muted-foreground">{t(requestTypeLabelKey(request.service_type))}</p>
                           </div>
-                          <Badge variant={statusVariant(request.status)} className="shrink-0 capitalize">
-                            {request.status.replace("_", " ")}
+                          <Badge variant={statusVariant(request.status)} className="shrink-0">
+                            {serviceRequestStatusLabel(request.status, t)}
                           </Badge>
                         </div>
                         <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{request.note}</p>
@@ -506,16 +555,19 @@ export default function AdminSupportPage() {
                 <CardHeader className="shrink-0 border-b border-border/70 pb-4">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={statusVariant(selectedRequest.status)} className="capitalize">
-                        {selectedRequest.status.replace("_", " ")}
+                      <Badge variant={statusVariant(selectedRequest.status)}>
+                        {serviceRequestStatusLabel(selectedRequest.status, t)}
                       </Badge>
                       <Badge variant="outline" className="capitalize">
                         {t(requestTypeLabelKey(selectedRequest.service_type))}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">ID: #{selectedRequest.id}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {t("admin.support.ticketIdLabel").replace("{id}", String(selectedRequest.id))}
+                      </span>
                     </div>
                     <CardTitle className="text-xl">
-                      {patientLabelMap.get(selectedRequest.patient_id ?? 0) ?? `Patient #${selectedRequest.patient_id ?? "?"}`}
+                      {patientLabelMap.get(selectedRequest.patient_id ?? 0) ??
+                        t("admin.support.patientNumber").replace("{id}", String(selectedRequest.patient_id ?? "?"))}
                     </CardTitle>
                     <CardDescription>{formatDateTime(selectedRequest.created_at)}</CardDescription>
                   </div>

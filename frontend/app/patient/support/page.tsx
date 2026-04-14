@@ -1,5 +1,5 @@
-import ReportIssueForm from "@/components/support/ReportIssueForm";
+import { redirect } from "next/navigation";
 
 export default function PatientSupportPage() {
-  return <ReportIssueForm />;
+  redirect("/patient?tab=support");
 }

@@ -1,37 +1,33 @@
 "use client";
 
-import { Suspense } from "react";
-import { Activity, MapPin, Tablet } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Tablet } from "lucide-react";
 import StaffMonitoringPage from "@/components/floorplan/StaffMonitoringPage";
-import ObserverDevicesPage from "@/app/observer/devices/page";
-import ObserverFloorplansPage from "@/app/observer/floorplans/page";
-import { useHubTab, HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
+import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
 
-const TABS: HubTab[] = [
-  { key: "monitor", label: "Monitor", icon: Activity },
-  { key: "devices", label: "Devices", icon: Tablet },
-  { key: "floorplans", label: "Floorplans", icon: MapPin },
-];
-
 export default function ObserverMonitoringPage() {
-  const tab = useHubTab(TABS);
-  return (
-    <div>
-      <Suspense><HubTabBar tabs={TABS} /></Suspense>
-      {tab === "monitor" && <MonitorContent />}
-      {tab === "devices" && <ObserverDevicesPage />}
-      {tab === "floorplans" && <ObserverFloorplansPage />}
-    </div>
-  );
-}
-
-function MonitorContent() {
   const { t } = useTranslation();
   return (
     <StaffMonitoringPage
       title={t("observer.monitoring.title")}
       subtitle={t("observer.monitoring.subtitle")}
+      actions={(
+        <>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/observer/devices">
+              <Tablet className="mr-1.5 h-4 w-4" />
+              {t("nav.devices")}
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/observer/floorplans">
+              <MapPin className="mr-1.5 h-4 w-4" />
+              {t("nav.floorplans")}
+            </Link>
+          </Button>
+        </>
+      )}
     />
   );
 }

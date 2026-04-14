@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import LabelEncoder
 
+from app.models.core import Device
 from app.models.core import Room
 from app.models.telemetry import LocalizationConfig
 
@@ -178,6 +179,39 @@ def predict_room(rssi_vector: dict[str, int], workspace_id: int) -> dict[str, An
     }
 
 
+def _normalize_ble_mac_hex(raw: str | None) -> str | None:
+    if not raw:
+        return None
+    value = "".join(ch for ch in str(raw).strip() if ch.isalnum())
+    if len(value) != 12:
+        return None
+    return value.lower()
+
+
+def _alias_match_keys(raw: str | None) -> set[str]:
+    value = str(raw or "").strip()
+    if not value:
+        return set()
+    keys = {value, value.lower(), value.upper()}
+    mac_hex = _normalize_ble_mac_hex(value)
+    if mac_hex:
+        keys.add(mac_hex)
+        keys.add(mac_hex.upper())
+        keys.add(f"BLE_{mac_hex.upper()}")
+    return keys
+
+
+def _device_node_aliases(device: Device) -> set[str]:
+    aliases: set[str] = set()
+    for raw in (device.device_id, device.display_name):
+        aliases.update(_alias_match_keys(raw))
+
+    cfg = dict(device.config or {})
+    for key in ("ble_node_id", "node_id", "ble_mac", "ble_mac_reported"):
+        aliases.update(_alias_match_keys(cfg.get(key)))
+    return {alias for alias in aliases if alias}
+
+
 async def predict_room_max_rssi(
     session: AsyncSession,
     workspace_id: int,
@@ -194,6 +228,29 @@ async def predict_room_max_rssi(
             )
         )
     ).scalar_one_or_none()
+    resolved_node_device_id = node_device_id
+    if room is None:
+        strongest_node_candidates = _alias_match_keys(node_device_id)
+        node_rows = await session.execute(
+            select(Device).where(
+                Device.workspace_id == workspace_id,
+                Device.hardware_type == "node",
+            )
+        )
+        for device in node_rows.scalars().all():
+            if not strongest_node_candidates.intersection(_device_node_aliases(device)):
+                continue
+            resolved_node_device_id = device.device_id
+            room = (
+                await session.execute(
+                    select(Room).where(
+                        Room.workspace_id == workspace_id,
+                        Room.node_device_id == resolved_node_device_id,
+                    )
+                )
+            ).scalar_one_or_none()
+            if room is not None:
+                break
     room_id = room.id if room else None
     room_name = room.name if room else ""
     confidence = max(0.0, min(1.0, (float(strongest_rssi) + 100.0) / 60.0))
@@ -203,6 +260,7 @@ async def predict_room_max_rssi(
         "confidence": confidence,
         "model_type": "max_rssi",
         "strongest_node_id": node_device_id,
+        "resolved_node_device_id": resolved_node_device_id,
         "strongest_rssi": strongest_rssi,
     }
 

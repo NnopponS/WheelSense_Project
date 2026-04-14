@@ -117,10 +117,6 @@ function formatBytes(bytes?: number) {
   return `${mb.toFixed(0)} MB`;
 }
 
-function providerLabel(provider: "ollama" | "copilot") {
-  return provider === "ollama" ? "Ollama" : "GitHub Copilot";
-}
-
 function readStoredCopilotFlow(): CopilotDeviceFlow | null {
   if (typeof window === "undefined") return null;
   const raw = sessionStorage.getItem(COPILOT_FLOW_KEY);
@@ -174,10 +170,12 @@ function StatusRow({
   hint?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-muted/30 p-4">
+    <div className="min-w-0 rounded-2xl border border-border bg-muted/30 p-4">
       <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <div className="mt-2 text-sm font-medium text-foreground">{value}</div>
-      {hint ? <div className="mt-1 text-xs text-muted-foreground">{hint}</div> : null}
+      <div className="mt-2 min-w-0 break-all text-sm font-medium text-foreground">{value}</div>
+      {hint ? (
+        <div className="mt-1 min-w-0 break-words text-xs text-muted-foreground">{hint}</div>
+      ) : null}
     </div>
   );
 }
@@ -226,6 +224,7 @@ function ProviderModelSection({
   saveLabel: string;
   onSave: () => Promise<void>;
 }) {
+  const { t } = useTranslation();
   const ollamaNames = useMemo(
     () => (ollamaModels?.models ?? []).map((entry) => entry.name).sort((a, b) => a.localeCompare(b)),
     [ollamaModels],
@@ -245,32 +244,40 @@ function ProviderModelSection({
       <CardContent className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label>Provider</Label>
+            <Label>{t("settings.ai.providerField")}</Label>
             <Select value={provider} onValueChange={(value) => onProviderChange(value as "ollama" | "copilot")}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose provider" />
+                <SelectValue placeholder={t("settings.ai.chooseProviderPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ollama">Ollama</SelectItem>
-                <SelectItem value="copilot">GitHub Copilot</SelectItem>
+                <SelectItem value="ollama">{t("settings.ai.providerOllama")}</SelectItem>
+                <SelectItem value="copilot">{t("settings.ai.providerCopilot")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label>Model</Label>
+            <Label>{t("settings.ai.modelField")}</Label>
             <Select
               value={currentValueInList ? model : "__empty__"}
               onValueChange={(value) => onModelChange(value === "__empty__" ? "" : value)}
               disabled={options.length === 0}
             >
               <SelectTrigger>
-                <SelectValue placeholder={provider === "ollama" ? "No Ollama models available" : "No Copilot models available"} />
+                <SelectValue
+                  placeholder={
+                    provider === "ollama"
+                      ? t("settings.ai.noOllamaInstalledSelect")
+                      : t("settings.ai.noCopilotModelsAvailable")
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {options.length === 0 ? (
                   <SelectItem value="__empty__" disabled>
-                    {provider === "ollama" ? "No Ollama models available" : "No Copilot models available"}
+                    {provider === "ollama"
+                      ? t("settings.ai.noOllamaInstalledSelect")
+                      : t("settings.ai.noCopilotModelsAvailable")}
                   </SelectItem>
                 ) : (
                   options.map((option) => (
@@ -370,6 +377,66 @@ export default function AiSettingsPanel() {
       : copilotModels;
   const availableCopilotModels = sanitizedCopilotModels?.models ?? [];
   const availableOllamaModels = ollamaModels?.models ?? [];
+  const activeProvider = aiSettings?.provider ?? "ollama";
+  const runtimeRowLabel = activeProvider === "copilot" ? t("settings.ai.copilotRowLabel") : "OLLAMA";
+  const runtimeProviderState = useMemo(() => {
+    if (activeProvider === "copilot") {
+      const connected = Boolean(copilotStatus?.connected);
+      if (!connected) {
+        return {
+          badge: "warning" as const,
+          text: t("settings.ai.runtimeUnavailable"),
+          hint: sanitizedCopilotModels?.message || t("settings.ai.copilotDisconnected"),
+        };
+      }
+      if (availableCopilotModels.length === 0) {
+        return {
+          badge: "warning" as const,
+          text: t("settings.ai.runtimeUnavailable"),
+          hint: t("settings.ai.noCopilotModelsAvailable"),
+        };
+      }
+      return {
+        badge: "success" as const,
+        text: t("settings.ai.runtimeConnected"),
+        hint: t("settings.ai.copilotModelsBridgeHint"),
+      };
+    }
+
+    const ollamaReachable = ollamaModels?.reachable !== false;
+    if (!ollamaReachable) {
+      return {
+        badge: "warning" as const,
+        text: t("settings.ai.runtimeUnavailable"),
+        hint: ollamaModels?.message || t("settings.ai.ollamaNotReachable"),
+      };
+    }
+    if (availableOllamaModels.length === 0) {
+      return {
+        badge: "warning" as const,
+        text: t("settings.ai.runtimeUnavailable"),
+        hint: "No Ollama models installed",
+      };
+    }
+    return {
+      badge: "success" as const,
+      text: t("settings.ai.runtimeConnected"),
+      hint: t("settings.ai.ollamaWorkspaceUsesOrigin").replace(
+        "{origin}",
+        ollamaModels?.origin || "http://host.docker.internal:11434",
+      ),
+    };
+  }, [
+    activeProvider,
+    availableCopilotModels.length,
+    availableOllamaModels.length,
+    copilotStatus?.connected,
+    ollamaModels?.message,
+    ollamaModels?.origin,
+    ollamaModels?.reachable,
+    sanitizedCopilotModels?.message,
+    t,
+  ]);
 
   useEffect(() => {
     if (!aiSettings) return;
@@ -583,16 +650,10 @@ export default function AiSettingsPanel() {
     setPullProgress(0);
 
     try {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("ws_token") ??
-            document.cookie.match(/(?:^|;\s*)ws_token=([^;]*)/)?.[1]
-          : null;
       const response = await fetch("/api/settings/ai/ollama/pull", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${decodeURIComponent(token)}` } : {}),
         },
         body: JSON.stringify({ name }),
       });
@@ -648,7 +709,7 @@ export default function AiSettingsPanel() {
       await refetchOllamaModels();
       setPullLog(t("settings.ai.pullDoneSuccess"));
     } catch (error) {
-      setPullLog(error instanceof Error ? error.message : "Pull failed");
+      setPullLog(error instanceof Error ? error.message : t("settings.ai.pullFailedGeneric"));
       setPullProgress(null);
     } finally {
       setPulling(false);
@@ -677,36 +738,40 @@ export default function AiSettingsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <WandSparkles className="h-4 w-4" />
-            Active runtime summary
+            {t("settings.ai.runtimeSummaryTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatusRow
-            label="Current provider"
+            label={t("settings.ai.currentProvider")}
             value={
               <Badge variant={aiSettings?.provider === "copilot" ? "success" : "outline"}>
-                {aiSettings ? providerLabel(aiSettings.provider) : "-"}
+                {aiSettings
+                  ? aiSettings.provider === "ollama"
+                    ? t("settings.ai.providerOllama")
+                    : t("settings.ai.providerCopilot")
+                  : "-"}
               </Badge>
             }
-            hint="Resolved after user override + workspace default"
+            hint={t("settings.ai.currentProviderHint")}
           />
-          <StatusRow label="Current model" value={aiSettings?.model || "-"} />
+          <StatusRow label={t("settings.ai.currentModel")} value={aiSettings?.model || "-"} />
           <StatusRow
-            label="Copilot"
+            label={runtimeRowLabel}
             value={
-              <Badge variant={copilotStatus?.connected ? "success" : "warning"}>
-                {copilotStatus?.connected ? "Connected" : "Unavailable"}
+              <Badge variant={runtimeProviderState.badge}>
+                {runtimeProviderState.text}
               </Badge>
             }
-            hint={sanitizedCopilotModels?.message || "Model list comes from the backend bridge."}
+            hint={runtimeProviderState.hint}
           />
           <StatusRow
-            label="Ollama origin"
-            value={ollamaModels?.origin || "Host-native default"}
+            label={t("settings.ai.ollamaOriginLabel")}
+            value={ollamaModels?.origin || t("settings.ai.hostNativeDefault")}
             hint={
               ollamaModels?.reachable === false
                 ? ollamaModels.message
-                : "Docker backend should point to host.docker.internal:11434."
+                : t("settings.ai.dockerOllamaHint")
             }
           />
         </CardContent>
@@ -714,7 +779,7 @@ export default function AiSettingsPanel() {
 
       <ProviderModelSection
         title={t("settings.ai.workspaceDefaults")}
-        description="Global provider/model used by the AI popup across the entire workspace."
+        description={t("settings.ai.workspaceProviderDescription")}
         provider={workspaceProvider}
         onProviderChange={(value) => {
           setWorkspaceProvider(value);
@@ -806,12 +871,13 @@ export default function AiSettingsPanel() {
           <SectionMessage tone={ollamaModels?.reachable === false ? "warning" : "success"}>
             {ollamaModels?.reachable === false
               ? ollamaModels.message || t("settings.ai.ollamaNotReachable")
-              : `workspace นี้ตั้งค่าให้ใช้ Ollama บนเครื่องโฮสต์ที่ ${ollamaModels?.origin || "http://host.docker.internal:11434"}.`}
+              : t("settings.ai.ollamaWorkspaceUsesOrigin").replace(
+                  "{origin}",
+                  ollamaModels?.origin || "http://host.docker.internal:11434",
+                )}
           </SectionMessage>
 
-          <p className="text-sm text-muted-foreground">
-            Use the Ollama app running on this computer. Only switch to `http://ollama:11434/v1` if you intentionally restore the optional Compose service.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("settings.ai.ollamaUseHostApp")}</p>
 
           <div className="space-y-2">
             {availableOllamaModels.length > 0 ? (

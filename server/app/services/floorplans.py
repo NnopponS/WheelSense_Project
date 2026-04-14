@@ -24,6 +24,7 @@ from app.services.base import CRUDBase
 
 
 class FloorplanPresenceService:
+    LIVE_PREDICTION_WINDOW_SECONDS = 90
     @staticmethod
     def _seconds_since(value: datetime | None, now: datetime) -> int | None:
         if value is None:
@@ -53,11 +54,19 @@ class FloorplanPresenceService:
                 if raw_id.startswith("room-") and raw_id.removeprefix("room-").isdigit():
                     layout_room_ids.add(int(raw_id.removeprefix("room-")))
 
+        room_scope_filters = [Room.floor_id == floor_id]
+        if layout_room_ids:
+            # Keep presence aligned to the saved floorplan layout even if a room's floor_id
+            # is temporarily out of sync during room/node linking flows.
+            room_scope_filters.append(Room.id.in_(layout_room_ids))
         rooms = list(
             (
                 await session.execute(
                     select(Room)
-                    .where(Room.workspace_id == ws_id, Room.floor_id == floor_id)
+                    .where(
+                        Room.workspace_id == ws_id,
+                        or_(*room_scope_filters),
+                    )
                     .order_by(Room.id)
                 )
             )
@@ -94,20 +103,22 @@ class FloorplanPresenceService:
                 if patient.room_id is not None:
                     patient_by_room.setdefault(patient.room_id, patient)
 
-        latest_prediction_by_room: dict[int, RoomPrediction] = {}
-        if room_ids:
-            predictions = await session.execute(
-                select(RoomPrediction)
-                .where(
-                    RoomPrediction.workspace_id == ws_id,
-                    RoomPrediction.predicted_room_id.in_(room_ids),
-                )
-                .order_by(desc(RoomPrediction.timestamp))
-                .limit(500)
-            )
-            for prediction in predictions.scalars().all():
-                if prediction.predicted_room_id is not None:
-                    latest_prediction_by_room.setdefault(prediction.predicted_room_id, prediction)
+        # Get the latest prediction per device instead of per room to prevent stale devices
+        # from showing up in multiple rooms or lingering in their previous room.
+        latest_prediction_by_device: dict[str, RoomPrediction] = {}
+        predictions_query = await session.execute(
+            select(RoomPrediction)
+            .where(RoomPrediction.workspace_id == ws_id)
+            .order_by(desc(RoomPrediction.timestamp))
+            .limit(1000)
+        )
+        for prediction in predictions_query.scalars().all():
+            latest_prediction_by_device.setdefault(prediction.device_id, prediction)
+
+        predictions_by_room: dict[int, list[RoomPrediction]] = {}
+        for prediction in latest_prediction_by_device.values():
+            if prediction.predicted_room_id is not None and prediction.predicted_room_id in room_ids:
+                predictions_by_room.setdefault(prediction.predicted_room_id, []).append(prediction)
 
         assignment_by_device: dict[str, PatientDeviceAssignment] = {}
         assignments = await session.execute(
@@ -120,6 +131,39 @@ class FloorplanPresenceService:
             if visible_patient_ids is not None and assignment.patient_id not in visible_patient_ids:
                 continue
             assignment_by_device.setdefault(assignment.device_id, assignment)
+        assigned_patient_ids = {assignment.patient_id for assignment in assignment_by_device.values()}
+        assigned_patient_by_id: dict[int, Patient] = {}
+        if assigned_patient_ids:
+            assigned_patients_rows = await session.execute(
+                select(Patient).where(
+                    Patient.workspace_id == ws_id,
+                    Patient.id.in_(assigned_patient_ids),
+                    Patient.is_active.is_(True),
+                )
+            )
+            assigned_patient_by_id = {
+                patient.id: patient for patient in assigned_patients_rows.scalars().all()
+            }
+
+        latest_prediction_by_patient: dict[int, RoomPrediction] = {}
+        for prediction in latest_prediction_by_device.values():
+            assignment = assignment_by_device.get(prediction.device_id)
+            if assignment is None:
+                continue
+            patient_id = assignment.patient_id
+            previous = latest_prediction_by_patient.get(patient_id)
+            if previous is None or prediction.timestamp > previous.timestamp:
+                latest_prediction_by_patient[patient_id] = prediction
+
+        live_predicted_room_by_patient: dict[int, int] = {}
+        for patient_id, prediction in latest_prediction_by_patient.items():
+            predicted_room_id = prediction.predicted_room_id
+            if predicted_room_id is None or predicted_room_id not in room_ids:
+                continue
+            age = self._seconds_since(prediction.timestamp, now)
+            if age is None or age > self.LIVE_PREDICTION_WINDOW_SECONDS:
+                continue
+            live_predicted_room_by_patient[patient_id] = predicted_room_id
 
         room_alert_counts: dict[int, int] = {room_id: 0 for room_id in room_ids}
         if room_ids:
@@ -247,60 +291,113 @@ class FloorplanPresenceService:
             patient_hint = None
             occupants: list[dict] = []
             if patient is not None:
-                sources.append("assignment")
-                patient_hint = {
-                    "patient_id": patient.id,
-                    "first_name": patient.first_name,
-                    "last_name": patient.last_name,
-                    "nickname": patient.nickname or "",
-                    "source": "room_assignment",
-                }
-                occupants.append(
-                    {
-                        "actor_type": "patient",
-                        "actor_id": patient.id,
-                        "display_name": (
-                            patient.nickname
-                            or f"{patient.first_name} {patient.last_name}".strip()
-                            or f"Patient #{patient.id}"
-                        ),
-                        "subtitle": patient.care_level,
+                live_room_id = live_predicted_room_by_patient.get(patient.id)
+                if live_room_id is None or live_room_id == room.id:
+                    sources.append("assignment")
+                    patient_hint = {
                         "patient_id": patient.id,
-                        "room_id": room.id,
+                        "first_name": patient.first_name,
+                        "last_name": patient.last_name,
+                        "nickname": patient.nickname or "",
                         "source": "room_assignment",
-                        "updated_at": patient.updated_at,
                     }
-                )
+                    occupants.append(
+                        {
+                            "actor_type": "patient",
+                            "actor_id": patient.id,
+                            "display_name": (
+                                patient.nickname
+                                or f"{patient.first_name} {patient.last_name}".strip()
+                                or f"Patient #{patient.id}"
+                            ),
+                            "subtitle": patient.care_level,
+                            "patient_id": patient.id,
+                            "room_id": room.id,
+                            "source": "room_assignment",
+                            "updated_at": patient.updated_at,
+                        }
+                    )
 
             staff_occupants = staff_positions_by_room.get(room.id, [])
             if staff_occupants:
                 sources.append("manual_staff_presence")
                 occupants.extend(staff_occupants)
 
-            prediction = latest_prediction_by_room.get(room.id)
+            predictions = predictions_by_room.get(room.id, [])
             prediction_hint = None
             confidence = 0.0
             staleness_seconds = None
-            if prediction is not None:
+            
+            valid_predictions = []
+            for prediction in predictions:
                 assignment = assignment_by_device.get(prediction.device_id)
                 if visible_patient_ids is not None and (
                     assignment is None or assignment.patient_id not in visible_patient_ids
                 ):
-                    prediction = None
-            if prediction is not None:
+                    continue
+                valid_predictions.append(prediction)
+
+            if valid_predictions:
                 sources.append("prediction")
-                staleness_seconds = self._seconds_since(prediction.timestamp, now) or 0
-                confidence = float(prediction.confidence or 0.0)
-                assignment = assignment_by_device.get(prediction.device_id)
+                
+                # Sort descending by timestamp so primary prediction is the freshest
+                valid_predictions.sort(key=lambda p: p.timestamp, reverse=True)
+                primary_pred = valid_predictions[0]
+                primary_assignment = assignment_by_device.get(primary_pred.device_id)
+                
+                staleness_seconds = self._seconds_since(primary_pred.timestamp, now) or 0
+                confidence = float(primary_pred.confidence or 0.0)
+                
                 prediction_hint = {
-                    "device_id": prediction.device_id,
-                    "patient_id": assignment.patient_id if assignment else None,
-                    "predicted_room_id": prediction.predicted_room_id,
-                    "predicted_room_name": prediction.predicted_room_name or "",
+                    "device_id": primary_pred.device_id,
+                    "patient_id": primary_assignment.patient_id if primary_assignment else None,
+                    "predicted_room_id": primary_pred.predicted_room_id,
+                    "predicted_room_name": primary_pred.predicted_room_name or "",
                     "confidence": confidence,
-                    "computed_at": prediction.timestamp,
+                    "model_type": primary_pred.model_type or "",
+                    "computed_at": primary_pred.timestamp,
                     "staleness_seconds": staleness_seconds,
                 }
+                
+                for prediction in valid_predictions:
+                    assignment = assignment_by_device.get(prediction.device_id)
+                    predicted_patient = (
+                        assigned_patient_by_id.get(assignment.patient_id)
+                        if assignment is not None
+                        else None
+                    )
+                    
+                    if predicted_patient is not None and not any(
+                        item.get("actor_type") == "patient" and item.get("actor_id") == predicted_patient.id
+                        for item in occupants
+                    ):
+                        live_room_id = live_predicted_room_by_patient.get(predicted_patient.id)
+                        if live_room_id is not None and live_room_id != room.id:
+                            continue
+                        occupants.append(
+                            {
+                                "actor_type": "patient",
+                                "actor_id": predicted_patient.id,
+                                "display_name": (
+                                    predicted_patient.nickname
+                                    or f"{predicted_patient.first_name} {predicted_patient.last_name}".strip()
+                                    or f"Patient #{predicted_patient.id}"
+                                ),
+                                "subtitle": "highest_rssi",
+                                "patient_id": predicted_patient.id,
+                                "room_id": room.id,
+                                "source": "highest_rssi",
+                                "updated_at": prediction.timestamp,
+                            }
+                        )
+                        if patient_hint is None:
+                            patient_hint = {
+                                "patient_id": predicted_patient.id,
+                                "first_name": predicted_patient.first_name,
+                                "last_name": predicted_patient.last_name,
+                                "nickname": predicted_patient.nickname or "",
+                                "source": "highest_rssi",
+                            }
 
             smart_devices_summary = [
                 {

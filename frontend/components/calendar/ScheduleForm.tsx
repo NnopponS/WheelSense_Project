@@ -91,6 +91,10 @@ interface ScheduleFormProps {
   mode?: "create" | "edit";
   /** When creating, pre-select this workspace user as assignee (e.g. staff detail calendar). */
   defaultAssigneeUserId?: number | null;
+  /** Optional default patient for patient-scoped scheduling surfaces. */
+  defaultPatientId?: number | null;
+  /** Lock schedule to this patient and disable changing patient selection. */
+  lockedPatientId?: number | null;
 }
 
 const EMPTY_SELECT_VALUE = "__empty__";
@@ -103,6 +107,8 @@ export function ScheduleForm({
   schedule,
   mode = "create",
   defaultAssigneeUserId = null,
+  defaultPatientId = null,
+  lockedPatientId = null,
 }: ScheduleFormProps) {
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -158,7 +164,7 @@ export function ScheduleForm({
     return {
       title: "",
       scheduleType: "",
-      patientId: null,
+      patientId: lockedPatientId ?? defaultPatientId ?? null,
       roomId: null,
       assigneeId: defaultAssigneeUserId ?? null,
       startDate: format(start, "yyyy-MM-dd"),
@@ -168,7 +174,7 @@ export function ScheduleForm({
       recurrence: "",
       notes: "",
     };
-  }, [schedule, mode, initialDate, defaultAssigneeUserId]);
+  }, [schedule, mode, initialDate, defaultAssigneeUserId, defaultPatientId, lockedPatientId]);
 
   const {
     control,
@@ -202,7 +208,7 @@ export function ScheduleForm({
     return {
       title: values.title,
       schedule_type: values.scheduleType,
-      patient_id: values.patientId,
+      patient_id: lockedPatientId ?? values.patientId,
       room_id: values.roomId,
       assigned_user_id: values.assigneeId,
       assigned_role: null,
@@ -284,7 +290,7 @@ export function ScheduleForm({
                       onValueChange={(value) =>
                         field.onChange(value === EMPTY_SELECT_VALUE ? "" : value)
                       }
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || lockedPatientId != null}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select type..." />
@@ -322,9 +328,11 @@ export function ScheduleForm({
                         <SelectValue placeholder="Select patient..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={EMPTY_SELECT_VALUE}>
-                          <span className="text-muted-foreground">— No patient —</span>
-                        </SelectItem>
+                        {lockedPatientId == null ? (
+                          <SelectItem value={EMPTY_SELECT_VALUE}>
+                            <span className="text-muted-foreground">— No patient —</span>
+                          </SelectItem>
+                        ) : null}
                         {patients.map((patient) => (
                           <SelectItem key={patient.id} value={patient.id.toString()}>
                             {patient.first_name} {patient.last_name}

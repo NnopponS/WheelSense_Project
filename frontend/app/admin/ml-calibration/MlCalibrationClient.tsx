@@ -32,6 +32,7 @@ type TabKey = "localization" | "motion";
 interface Room {
   id: number;
   name: string;
+  floor_id: number;
   node_device_id: string | null;
 }
 
@@ -42,10 +43,47 @@ interface Device {
   display_name: string;
 }
 
+interface Facility {
+  id: number;
+  name: string;
+}
+
+interface Floor {
+  id: number;
+  facility_id: number;
+  floor_number: number;
+  name?: string | null;
+}
+
 interface LocalizationModelInfo {
   status?: string;
   rooms?: number;
   nodes?: string[];
+}
+
+interface LocalizationReadiness {
+  workspace_id: number;
+  ready: boolean;
+  missing: string[];
+  strategy: "knn" | "max_rssi";
+  facility_id: number | null;
+  facility_name: string | null;
+  floor_id: number | null;
+  floor_name: string | null;
+  floor_number: number | null;
+  room_id: number | null;
+  room_name: string | null;
+  room_node_device_id: string | null;
+  node_device_id: string | null;
+  node_display_name: string | null;
+  wheelchair_device_id: string | null;
+  patient_name: string | null;
+  patient_username: string | null;
+  patient_room_id: number | null;
+  assignment_patient_id: number | null;
+  floorplan_has_room: boolean;
+  telemetry_detected: boolean;
+  changed: string[];
 }
 
 interface MotionModelInfo {
@@ -72,20 +110,32 @@ export default function MlCalibrationClient() {
   const [trainingStatus, setTrainingStatus] = useState<string | null>(null);
 
   // States for Localization config & recording
-  const [locStrategy, setLocStrategy] = useState<"knn" | "max_rssi">("knn");
+  const [locStrategy, setLocStrategy] = useState<"knn" | "max_rssi">("max_rssi");
   const [selectedRoomId, setSelectedRoomId] = useState<number | "">("");
   const [selectedLocDevice, setSelectedLocDevice] = useState<string>("");
   const [locSessionId, setLocSessionId] = useState<number | null>(null);
   const [recordingLoc, setRecordingLoc] = useState(false);
   const [locSamplesCount, setLocSamplesCount] = useState(0);
+  const [repairingReadiness, setRepairingReadiness] = useState(false);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number | "">("");
+  const [selectedFloorId, setSelectedFloorId] = useState<number | "">("");
 
   // Queries
+  const facilitiesEndpoint = useMemo(() => withWorkspaceScope("/facilities", user?.workspace_id), [user?.workspace_id]);
   const roomsEndpoint = useMemo(() => withWorkspaceScope("/rooms", user?.workspace_id), [user?.workspace_id]);
   const devicesEndpoint = useMemo(() => withWorkspaceScope("/devices", user?.workspace_id), [user?.workspace_id]);
   const locModelEndpoint = useMemo(() => withWorkspaceScope("/localization", user?.workspace_id), [user?.workspace_id]);
   const locConfigEndpoint = useMemo(() => withWorkspaceScope("/localization/config", user?.workspace_id), [user?.workspace_id]);
+  const locReadinessEndpoint = useMemo(() => withWorkspaceScope("/localization/readiness", user?.workspace_id), [user?.workspace_id]);
   const motionModelEndpoint = useMemo(() => withWorkspaceScope("/motion/model", user?.workspace_id), [user?.workspace_id]);
 
+  const { data: facilities } = useQuery({
+    queryKey: ["admin", "ml-calibration", "facilities", facilitiesEndpoint],
+    queryFn: () => api.get<Facility[]>(facilitiesEndpoint!),
+    enabled: Boolean(facilitiesEndpoint),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
   const { data: rooms } = useQuery({
     queryKey: ["admin", "ml-calibration", "rooms", roomsEndpoint],
     queryFn: () => api.get<Room[]>(roomsEndpoint!),
@@ -112,11 +162,31 @@ export default function MlCalibrationClient() {
     enabled: Boolean(locConfigEndpoint),
     staleTime: 30_000,
   });
+  const { data: locReadiness, refetch: refetchLocReadiness } = useQuery({
+    queryKey: ["admin", "ml-calibration", "localization-readiness", locReadinessEndpoint],
+    queryFn: () => api.get<LocalizationReadiness>(locReadinessEndpoint!),
+    enabled: Boolean(locReadinessEndpoint),
+    staleTime: 15_000,
+  });
   const { data: motionModel, refetch: refetchMotion } = useQuery({
     queryKey: ["admin", "ml-calibration", "motion-model", motionModelEndpoint],
     queryFn: () => api.get<MotionModelInfo>(motionModelEndpoint!),
     enabled: Boolean(motionModelEndpoint),
     staleTime: 30_000,
+  });
+  const floorsEndpoint = useMemo(
+    () =>
+      selectedFacilityId === ""
+        ? null
+        : withWorkspaceScope(`/facilities/${selectedFacilityId}/floors`, user?.workspace_id),
+    [selectedFacilityId, user?.workspace_id],
+  );
+  const { data: floors } = useQuery({
+    queryKey: ["admin", "ml-calibration", "floors", floorsEndpoint],
+    queryFn: () => api.get<Floor[]>(floorsEndpoint!),
+    enabled: Boolean(floorsEndpoint),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
   });
 
   useEffect(() => {
@@ -124,6 +194,60 @@ export default function MlCalibrationClient() {
       setLocStrategy(locConfig.strategy);
     }
   }, [locConfig?.strategy]);
+
+  useEffect(() => {
+    if (!facilities?.length) {
+      setSelectedFacilityId("");
+      return;
+    }
+    if (selectedFacilityId !== "" && facilities.some((facility) => facility.id === selectedFacilityId)) {
+      return;
+    }
+    const readinessFacility = locReadiness?.facility_id ?? null;
+    if (readinessFacility && facilities.some((facility) => facility.id === readinessFacility)) {
+      setSelectedFacilityId(readinessFacility);
+      return;
+    }
+    setSelectedFacilityId(facilities[0].id);
+  }, [facilities, locReadiness?.facility_id, selectedFacilityId]);
+
+  useEffect(() => {
+    if (!floors?.length) {
+      setSelectedFloorId("");
+      return;
+    }
+    if (selectedFloorId !== "" && floors.some((floor) => floor.id === selectedFloorId)) {
+      return;
+    }
+    const readinessFloor = locReadiness?.floor_id ?? null;
+    if (readinessFloor && floors.some((floor) => floor.id === readinessFloor)) {
+      setSelectedFloorId(readinessFloor);
+      return;
+    }
+    setSelectedFloorId(floors[0].id);
+  }, [floors, locReadiness?.floor_id, selectedFloorId]);
+
+  const filteredRooms = useMemo(() => {
+    if (!rooms?.length) return [];
+    if (selectedFloorId === "") return rooms;
+    return rooms.filter((room) => room.floor_id === selectedFloorId);
+  }, [rooms, selectedFloorId]);
+
+  useEffect(() => {
+    if (!filteredRooms.length) {
+      setSelectedRoomId("");
+      return;
+    }
+    if (selectedRoomId !== "" && filteredRooms.some((room) => room.id === Number(selectedRoomId))) {
+      return;
+    }
+    const readinessRoom = locReadiness?.room_id ?? null;
+    if (readinessRoom && filteredRooms.some((room) => room.id === readinessRoom)) {
+      setSelectedRoomId(readinessRoom);
+      return;
+    }
+    setSelectedRoomId(filteredRooms[0].id);
+  }, [filteredRooms, locReadiness?.room_id, selectedRoomId]);
 
   const showMsg = (text: string, type: "success" | "error" | "info" = "info") => {
     setMessage({ text, type });
@@ -222,6 +346,32 @@ export default function MlCalibrationClient() {
     }
   };
 
+  const handleRepairReadiness = async () => {
+    try {
+      setRepairingReadiness(true);
+      const repaired = await api.post<LocalizationReadiness>("/localization/readiness/repair", {
+        facility_id: selectedFacilityId === "" ? null : selectedFacilityId,
+        floor_id: selectedFloorId === "" ? null : selectedFloorId,
+        room_id: selectedRoomId === "" ? null : Number(selectedRoomId),
+      });
+      showMsg(
+        repaired.ready
+          ? "Localization baseline repaired and connected."
+          : "Repair ran, but some required links are still missing.",
+        repaired.ready ? "success" : "info",
+      );
+      await Promise.all([
+        refetchLocReadiness(),
+        refetchLocConfig(),
+        refetchLoc(),
+      ]);
+    } catch (err) {
+      showMsg(err instanceof ApiError ? err.message : "Failed to repair localization readiness", "error");
+    } finally {
+      setRepairingReadiness(false);
+    }
+  };
+
   // Handlers for Motion
   const handleStartRecord = async () => {
     if (!selectedDevice) return showMsg("Please select a device first", "error");
@@ -290,7 +440,7 @@ export default function MlCalibrationClient() {
           className="rounded-full"
         >
           <MapPin className="w-4 h-4 mr-2" />
-          Localization (KNN)
+          Localization
         </Button>
         <Button 
           variant={activeTab === "motion" ? "default" : "ghost"}
@@ -329,13 +479,61 @@ export default function MlCalibrationClient() {
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label>Building</Label>
+                    <Select
+                      value={selectedFacilityId === "" ? "" : String(selectedFacilityId)}
+                      onValueChange={(v) => {
+                        setSelectedFacilityId(v ? Number(v) : "");
+                        setSelectedFloorId("");
+                        setSelectedRoomId("");
+                      }}
+                      disabled={recordingLoc}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select building..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {facilities?.map((facility) => (
+                          <SelectItem key={facility.id} value={String(facility.id)}>
+                            {facility.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Floor</Label>
+                    <Select
+                      value={selectedFloorId === "" ? "" : String(selectedFloorId)}
+                      onValueChange={(v) => {
+                        setSelectedFloorId(v ? Number(v) : "");
+                        setSelectedRoomId("");
+                      }}
+                      disabled={recordingLoc || selectedFacilityId === ""}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select floor..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {floors?.map((floor) => (
+                          <SelectItem key={floor.id} value={String(floor.id)}>
+                            {floor.name?.trim() || `Floor ${floor.floor_number}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
                     <Label>Room</Label>
                     <Select value={String(selectedRoomId)} onValueChange={v => setSelectedRoomId(Number(v))} disabled={recordingLoc}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select room..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {rooms?.map(r => (
+                        {filteredRooms.map(r => (
                           <SelectItem key={r.id} value={String(r.id)}>
                             {r.name}
                           </SelectItem>
@@ -369,7 +567,7 @@ export default function MlCalibrationClient() {
                     <Button 
                       className="flex-1 h-12 rounded-xl text-lg font-bold bg-primary text-white hover:bg-primary/90"
                       onClick={handleStartLocSession}
-                      disabled={!selectedLocDevice || !selectedRoomId}
+                      disabled={!selectedLocDevice || !selectedRoomId || selectedFacilityId === "" || selectedFloorId === ""}
                     >
                       <Play className="w-5 h-5 mr-2 fill-current" /> Start Calibration Session
                     </Button>
@@ -420,7 +618,7 @@ export default function MlCalibrationClient() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rooms?.map((room) => (
+                    {filteredRooms.map((room) => (
                       <TableRow key={room.id}>
                         <TableCell className="font-medium">{room.name}</TableCell>
                         <TableCell>
@@ -456,6 +654,60 @@ export default function MlCalibrationClient() {
               <CardTitle className="text-lg">Model Controls</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="surface-container-low p-4 rounded-xl space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Workspace Readiness</p>
+                    <p className="text-xs text-foreground-variant">
+                      {`Checks ${locReadiness?.wheelchair_device_id || "wheelchair"} -> ${
+                        locReadiness?.node_display_name || locReadiness?.node_device_id || "node"
+                      } -> ${locReadiness?.room_name || "room"} -> ${
+                        locReadiness?.patient_username || locReadiness?.patient_name || "patient"
+                      } and keeps strongest RSSI as default.`}
+                    </p>
+                  </div>
+                  <Badge variant={locReadiness?.ready ? "default" : "secondary"}>
+                    {locReadiness?.ready ? "Ready" : "Needs repair"}
+                  </Badge>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-foreground-variant">Wheelchair</span>
+                    <span className="font-medium">{locReadiness?.wheelchair_device_id || "Missing"}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-foreground-variant">Node alias</span>
+                    <span className="font-medium">{locReadiness?.node_display_name || locReadiness?.node_device_id || "Missing"}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-foreground-variant">Room</span>
+                    <span className="font-medium">{locReadiness?.room_name || "Missing"}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-foreground-variant">Patient</span>
+                    <span className="font-medium">{locReadiness?.patient_name || locReadiness?.patient_username || "Missing"}</span>
+                  </div>
+                </div>
+                {locReadiness && locReadiness.missing.length > 0 && (
+                  <p className="text-[11px] text-amber-700">
+                    Missing: {locReadiness.missing.join(", ")}
+                  </p>
+                )}
+                <Button
+                  className="w-full"
+                  variant={locReadiness?.ready ? "outline" : "default"}
+                  disabled={repairingReadiness}
+                  onClick={handleRepairReadiness}
+                >
+                  {repairingReadiness ? (
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  Repair and connect baseline
+                </Button>
+              </div>
+
               <div className="space-y-2">
                 <Label>Localization Strategy</Label>
                 <Select value={locStrategy} onValueChange={(v) => handleStrategyChange(v as "knn" | "max_rssi")}>
@@ -468,7 +720,9 @@ export default function MlCalibrationClient() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-foreground-variant italic">
-                  {locStrategy === "knn" ? "Uses machine learning on RSSI fingerprints." : "Falls back to nearest node if KNN is disabled."}
+                  {locStrategy === "knn"
+                    ? "Uses machine learning on RSSI fingerprints."
+                    : "Uses the strongest visible RSSI node as the default room signal."}
                 </p>
               </div>
 

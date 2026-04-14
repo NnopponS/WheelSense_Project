@@ -254,6 +254,66 @@ async def test_floorplan_presence_projection_includes_room_context(client: Async
 
 
 @pytest.mark.asyncio
+async def test_floorplan_presence_includes_layout_room_when_floor_link_missing(
+    client: AsyncClient,
+    db_session: AsyncSession,
+):
+    fac = Facility(workspace_id=1, name="Presence Layout Scope", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=1, facility_id=fac.id, floor_number=1, name="L1", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+
+    room = Room(
+        workspace_id=1,
+        floor_id=None,
+        name="Layout Scoped Room",
+        room_type="bedroom",
+        node_device_id="NODE-LAYOUT-1",
+    )
+    patient = Patient(
+        workspace_id=1,
+        first_name="Layout",
+        last_name="Scoped",
+        room_id=None,
+        care_level="normal",
+    )
+    db_session.add_all([room, patient])
+    await db_session.flush()
+    patient.room_id = room.id
+    await db_session.commit()
+
+    layout_payload = {
+        "facility_id": fac.id,
+        "floor_id": fl.id,
+        "version": 1,
+        "rooms": [
+            {
+                "id": f"room-{room.id}",
+                "label": room.name,
+                "x": 8,
+                "y": 8,
+                "w": 20,
+                "h": 20,
+                "device_id": None,
+                "power_kw": None,
+            }
+        ],
+    }
+    layout_res = await client.put("/api/floorplans/layout", json=layout_payload)
+    assert layout_res.status_code == 200, layout_res.text
+
+    response = await client.get(
+        f"/api/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}"
+    )
+    assert response.status_code == 200, response.text
+    rooms = response.json()["rooms"]
+    assert [row["room_id"] for row in rooms] == [room.id]
+    assert rooms[0]["patient_hint"]["patient_id"] == patient.id
+
+
+@pytest.mark.asyncio
 async def test_floorplan_presence_patient_scope(
     client: AsyncClient,
     db_session: AsyncSession,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 export interface HubTab {
   key: string;
@@ -17,19 +18,22 @@ interface HubTabBarProps {
   /** Currently active tab key; falls back to first tab if not provided */
   currentTab?: string;
   className?: string;
+  /** Overrides default translated `aria-label` for the tab nav */
+  ariaLabel?: string;
 }
 
 /**
  * Underline-style tab bar for hub pages that consolidate multiple functions.
  * Uses ?tab= query param so sidebar item stays active across all tabs.
  */
-export function HubTabBar({ tabs, currentTab, className }: HubTabBarProps) {
+export function HubTabBar({ tabs, currentTab, className, ariaLabel }: HubTabBarProps) {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const activeTab = currentTab ?? searchParams.get("tab") ?? tabs[0]?.key ?? "";
 
   return (
     <nav
-      aria-label="Page sections"
+      aria-label={ariaLabel ?? t("common.pageSectionsAria")}
       className={cn("flex gap-0.5 border-b border-border mb-6 overflow-x-auto no-scrollbar", className)}
     >
       {tabs.map((tab) => {

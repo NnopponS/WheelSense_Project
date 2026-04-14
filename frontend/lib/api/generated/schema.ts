@@ -599,6 +599,24 @@ export interface paths {
         patch: operations["update_patient_api_patients__patient_id__patch"];
         trace?: never;
     };
+    "/api/patients/{patient_id}/caregivers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patient Caregivers */
+        get: operations["list_patient_caregivers_api_patients__patient_id__caregivers_get"];
+        /** Replace Patient Caregiver Access */
+        put: operations["replace_patient_caregiver_access_api_patients__patient_id__caregivers_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/patients/{patient_id}/mode": {
         parameters: {
             query?: never;
@@ -1159,6 +1177,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Auth Session
+         * @description Return 200 for both guests and signed-in users so browsers do not log a spurious 401 on startup.
+         *     The Next proxy still forwards Authorization from the HttpOnly cookie when present.
+         */
+        get: operations["read_auth_session_api_auth_session_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/me": {
         parameters: {
             query?: never;
@@ -1224,6 +1263,57 @@ export interface paths {
          */
         post: operations["change_password_api_auth_change_password_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Auth Sessions */
+        get: operations["list_auth_sessions_api_auth_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout Current Session */
+        post: operations["logout_current_session_api_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Auth Session */
+        delete: operations["delete_auth_session_api_auth_sessions__session_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1885,7 +1975,7 @@ export interface paths {
         };
         /**
          * List Messaging Recipients
-         * @description Active staff user accounts in this workspace (for patient compose: pick a person, not only a role).
+         * @description Active staff user accounts in this workspace for message compose user-targeting.
          */
         get: operations["list_messaging_recipients_api_workflow_messaging_recipients_get"];
         put?: never;
@@ -2721,6 +2811,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/demo/simulator/command": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish Simulator Mqtt Command
+         * @description Publish a control message to the MQTT simulator (`sim_controller.py`).
+         *
+         *     Only available when `ENV_MODE=simulator`. The server injects `workspace_id` from the JWT
+         *     workspace so clients cannot target another tenant.
+         */
+        post: operations["publish_simulator_mqtt_command_api_demo_simulator_command_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/database/clear": {
         parameters: {
             query?: never;
@@ -2778,6 +2891,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/mcp/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Mcp Token
+         * @description Create a new MCP access token for external MCP clients.
+         *
+         *     Issues a short-lived (1 hour), scope-narrowed token specifically
+         *     for MCP operations. The token is linked to the current auth
+         *     session for cascade revocation.
+         *
+         *     The actual token string is only returned once on creation.
+         *     Store it securely - it cannot be retrieved later.
+         */
+        post: operations["create_mcp_token_api_mcp_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Mcp Tokens
+         * @description List MCP tokens for the current user.
+         *
+         *     Returns all active (non-expired, non-revoked) tokens by default.
+         *     Set include_revoked=true to see revoked/expired tokens.
+         */
+        get: operations["list_mcp_tokens_api_mcp_tokens_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/token/{token_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Mcp Token
+         * @description Get details of a specific MCP token.
+         *
+         *     Users can only view their own tokens. Admin can view any token
+         *     in their workspace.
+         */
+        get: operations["get_mcp_token_api_mcp_token__token_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Revoke Mcp Token
+         * @description Revoke an MCP token.
+         *
+         *     Users can only revoke their own tokens. Admin can revoke any token
+         *     in their workspace by setting the X-Admin-Override header.
+         */
+        delete: operations["revoke_mcp_token_api_mcp_token__token_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mcp/tokens/revoke-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke All Mcp Tokens
+         * @description Revoke all active MCP tokens for the current user.
+         *
+         *     Useful when rotating credentials or responding to a security concern.
+         */
+        post: operations["revoke_all_mcp_tokens_api_mcp_tokens_revoke_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -2804,6 +3019,23 @@ export interface paths {
         };
         /** Root */
         get: operations["root__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/.well-known/oauth-protected-resource/mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mcp Oauth Protected Resource */
+        get: operations["mcp_oauth_protected_resource__well_known_oauth_protected_resource_mcp_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2969,6 +3201,15 @@ export interface components {
             created_at: string;
         };
         /**
+         * AuthHydrateOut
+         * @description Browser-friendly session probe: always HTTP 200, never 401 for missing/invalid tokens.
+         */
+        AuthHydrateOut: {
+            /** Authenticated */
+            authenticated: boolean;
+            user?: components["schemas"]["AuthMeOut"] | null;
+        };
+        /**
          * AuthMeOut
          * @description Current authenticated user, with optional impersonation context.
          */
@@ -3037,6 +3278,47 @@ export interface components {
             user?: components["schemas"]["SelfUserProfilePatch"] | null;
             linked_caregiver?: components["schemas"]["SelfCaregiverProfilePatch"] | null;
             linked_patient?: components["schemas"]["SelfPatientProfilePatch"] | null;
+        };
+        /**
+         * AuthSessionOut
+         * @description Server-tracked auth session visible to the signed-in user.
+         */
+        AuthSessionOut: {
+            /** Id */
+            id: string;
+            /** User Agent */
+            user_agent: string;
+            /** Ip Address */
+            ip_address: string;
+            /** Impersonated By User Id */
+            impersonated_by_user_id?: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /**
+             * Current
+             * @default false
+             */
+            current: boolean;
         };
         /** Body_add_support_ticket_attachment_api_support_tickets__ticket_id__attachments_post */
         Body_add_support_ticket_attachment_api_support_tickets__ticket_id__attachments_post: {
@@ -3694,6 +3976,7 @@ export interface components {
             } | null;
             /** Error Message */
             error_message: string;
+            execution_plan?: components["schemas"]["ExecutionPlan"] | null;
             /**
              * Created At
              * Format: date-time
@@ -3743,9 +4026,20 @@ export interface components {
             message: string;
             /** Messages */
             messages?: components["schemas"]["ChatMessagePart"][];
+            /**
+             * Page Patient Id
+             * @description Optional patient id from the current UI page (e.g. admin patient detail) to seed agent-runtime context.
+             */
+            page_patient_id?: number | null;
         };
         /** ChatActionProposalResponse */
         ChatActionProposalResponse: {
+            /**
+             * Mode
+             * @default answer
+             * @enum {string}
+             */
+            mode: "answer" | "plan";
             /** Proposal Id */
             proposal_id?: number | null;
             /**
@@ -3765,6 +4059,7 @@ export interface components {
             summary: string;
             /** Actions */
             actions?: components["schemas"]["ChatActionProposalItem"][];
+            execution_plan?: components["schemas"]["ExecutionPlan"] | null;
         };
         /** ChatActionProposeIn */
         ChatActionProposeIn: {
@@ -3777,7 +4072,7 @@ export interface components {
              * @default mcp_tool
              * @enum {string}
              */
-            action_type: "mcp_tool" | "note";
+            action_type: "mcp_tool" | "mcp_plan" | "note";
             /** Tool Name */
             tool_name?: string | null;
             /** Tool Arguments */
@@ -4178,6 +4473,65 @@ export interface components {
              * @default wheelchair_sensor
              */
             device_role: string;
+        };
+        /** ExecutionPlan */
+        ExecutionPlan: {
+            /** Playbook */
+            playbook: string;
+            /** Summary */
+            summary: string;
+            /**
+             * Reasoning Target
+             * @default medium
+             * @enum {string}
+             */
+            reasoning_target: "low" | "medium" | "high";
+            /** Model Target */
+            model_target: string;
+            /**
+             * Risk Level
+             * @default low
+             * @enum {string}
+             */
+            risk_level: "low" | "medium" | "high";
+            /** Steps */
+            steps?: components["schemas"]["ExecutionPlanStep"][];
+            /** Permission Basis */
+            permission_basis?: string[];
+            /** Affected Entities */
+            affected_entities?: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** ExecutionPlanStep */
+        ExecutionPlanStep: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Tool Name */
+            tool_name: string;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Risk Level
+             * @default low
+             * @enum {string}
+             */
+            risk_level: "low" | "medium" | "high";
+            /** Permission Basis */
+            permission_basis?: string[];
+            /** Affected Entities */
+            affected_entities?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Requires Confirmation
+             * @default true
+             */
+            requires_confirmation: boolean;
         };
         /** FacilityCreate */
         FacilityCreate: {
@@ -4814,6 +5168,106 @@ export interface components {
             strategy: "knn" | "max_rssi";
         };
         /**
+         * MCPTokenCreate
+         * @description Request to create an MCP access token.
+         */
+        MCPTokenCreate: {
+            /**
+             * Client Name
+             * @default MCP Client
+             */
+            client_name: string;
+            /** Requested Scopes */
+            requested_scopes?: string[];
+            /**
+             * Ttl Minutes
+             * @default 60
+             */
+            ttl_minutes: number;
+        };
+        /**
+         * MCPTokenList
+         * @description List of MCP tokens for a user.
+         */
+        MCPTokenList: {
+            /** Tokens */
+            tokens: components["schemas"]["MCPTokenOut"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * MCPTokenOut
+         * @description MCP token response without the actual token value (for listing).
+         */
+        MCPTokenOut: {
+            /** Id */
+            id: string;
+            /** Client Name */
+            client_name: string;
+            /** Client Origin */
+            client_origin: string;
+            /** Scopes */
+            scopes: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Revoked At */
+            revoked_at?: string | null;
+            /** Last Used At */
+            last_used_at?: string | null;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /**
+         * MCPTokenRevoke
+         * @description Request to revoke an MCP token (for audit).
+         */
+        MCPTokenRevoke: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /**
+         * MCPTokenWithSecret
+         * @description MCP token response including the actual access token (only on creation).
+         */
+        MCPTokenWithSecret: {
+            /** Id */
+            id: string;
+            /** Access Token */
+            access_token: string;
+            /**
+             * Token Type
+             * @default bearer
+             * @constant
+             */
+            token_type: "bearer";
+            /** Client Name */
+            client_name: string;
+            /** Client Origin */
+            client_origin: string;
+            /** Scopes */
+            scopes: string[];
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Expires In */
+            expires_in: number;
+        };
+        /**
          * MePatch
          * @description Self-service profile update (PATCH /api/auth/me). Only fields listed here apply.
          */
@@ -4965,6 +5419,14 @@ export interface components {
         OllamaPullIn: {
             /** Name */
             name: string;
+        };
+        /**
+         * PatientCaregiverAccessReplace
+         * @description Replace active CareGiverPatientAccess rows for one patient (workspace-scoped).
+         */
+        PatientCaregiverAccessReplace: {
+            /** Caregiver Ids */
+            caregiver_ids?: number[];
         };
         /** PatientContactCreate */
         PatientContactCreate: {
@@ -5958,6 +6420,30 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * SimulatorCommandIn
+         * @description Admin command published to `WheelSense/sim/control` for the workspace MQTT simulator.
+         */
+        SimulatorCommandIn: {
+            /**
+             * Command
+             * @enum {string}
+             */
+            command: "pause" | "resume" | "set_config" | "inject_abnormal_hr" | "inject_fall";
+            /** Patient Id */
+            patient_id?: number | null;
+            config?: components["schemas"]["SimulatorRuntimeConfigPatch"] | null;
+        };
+        /** SimulatorCommandOut */
+        SimulatorCommandOut: {
+            /**
+             * Status
+             * @default ok
+             */
+            status: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * SimulatorResetResponse
          * @description Response schema for simulator environment reset.
          */
@@ -5974,6 +6460,20 @@ export interface components {
             } | null;
             /** Message */
             message: string;
+        };
+        /**
+         * SimulatorRuntimeConfigPatch
+         * @description Allowed runtime keys forwarded to the MQTT simulator worker.
+         */
+        SimulatorRuntimeConfigPatch: {
+            /** Vital Update Interval */
+            vital_update_interval?: number | null;
+            /** Alert Probability */
+            alert_probability?: number | null;
+            /** Enable Alerts */
+            enable_alerts?: boolean | null;
+            /** Heart Rate High */
+            heart_rate_high?: number | null;
         };
         /**
          * SimulatorStatusResponse
@@ -6368,6 +6868,8 @@ export interface components {
             access_token: string;
             /** Token Type */
             token_type: string;
+            /** Session Id */
+            session_id?: string | null;
             /**
              * Impersonation
              * @default false
@@ -6585,8 +7087,6 @@ export interface components {
             rr_interval_ms_avg?: number | null;
             /** Spo2 Avg */
             spo2_avg?: number | null;
-            /** Skin Temperature Avg */
-            skin_temperature_avg?: number | null;
         };
         /**
          * WardSummaryOut
@@ -8069,6 +8569,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatientOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_patient_caregivers_api_patients__patient_id__caregivers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareGiverOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replace_patient_caregiver_access_api_patients__patient_id__caregivers_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatientCaregiverAccessReplace"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareGiverOut"][];
                 };
             };
             /** @description Validation Error */
@@ -9753,6 +10319,26 @@ export interface operations {
             };
         };
     };
+    read_auth_session_api_auth_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthHydrateOut"];
+                };
+            };
+        };
+    };
     read_users_me_api_auth_me_get: {
         parameters: {
             query?: never;
@@ -9880,6 +10466,73 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_auth_sessions_api_auth_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthSessionOut"][];
+                };
+            };
+        };
+    };
+    logout_current_session_api_auth_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_auth_session_api_auth_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -13003,6 +13656,39 @@ export interface operations {
             };
         };
     };
+    publish_simulator_mqtt_command_api_demo_simulator_command_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulatorCommandIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulatorCommandOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     clear_entire_database_api_admin_database_clear_post: {
         parameters: {
             query?: never;
@@ -13133,6 +13819,152 @@ export interface operations {
             };
         };
     };
+    create_mcp_token_api_mcp_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MCPTokenCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MCPTokenWithSecret"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_mcp_tokens_api_mcp_tokens_get: {
+        parameters: {
+            query?: {
+                include_revoked?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MCPTokenList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_mcp_token_api_mcp_token__token_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MCPTokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_mcp_token_api_mcp_token__token_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MCPTokenRevoke"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_all_mcp_tokens_api_mcp_tokens_revoke_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -13154,6 +13986,26 @@ export interface operations {
         };
     };
     root__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    mcp_oauth_protected_resource__well_known_oauth_protected_resource_mcp_get: {
         parameters: {
             query?: never;
             header?: never;

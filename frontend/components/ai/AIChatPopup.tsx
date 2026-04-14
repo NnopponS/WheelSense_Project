@@ -1,20 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
-  AlertTriangle,
   History,
   MessageCircle,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
   Send,
-  ShieldCheck,
   Trash2,
   X,
+  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { API_BASE } from "@/lib/constants";
+import { useTranslation } from "@/lib/i18n";
+import { ActionPlanPreview } from "./ActionPlanPreview";
+import { ExecutionStepList, type StepResult } from "./ExecutionStepList";
+import type { components } from "@/lib/api/generated/schema";
+
+type ExecutionPlan = components["schemas"]["ExecutionPlan"];
 
 function renderMarkdown(text: string): string {
   const html = text
@@ -49,16 +55,58 @@ type ActionProposal = {
   assistant_reply?: string | null;
   summary?: string | null;
   actions?: ProposedAction[] | null;
+  mode?: "answer" | "plan";
+  execution_plan?: ExecutionPlan | null;
 };
 
 type ExecuteResponse = {
   reply?: string | null;
   result?: unknown;
   message?: string | null;
+  step_results?: Array<{
+    step_id: string;
+    success: boolean;
+    message?: string;
+    error?: string;
+    executed_at?: string;
+  }>;
 };
 
+function coerceExecutionPlan(proposal: ActionProposal | null): ExecutionPlan | null {
+  if (!proposal) return null;
+  const top = proposal.execution_plan;
+  if (top && Array.isArray(top.steps) && top.steps.length > 0) return top;
+  const payload = proposal.actions?.[0]?.payload as Record<string, unknown> | undefined;
+  const nested = payload?.execution_plan as ExecutionPlan | undefined;
+  if (nested && Array.isArray(nested.steps) && nested.steps.length > 0) return nested;
+  return null;
+}
+
+function ThinkingIndicator() {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-outline-variant/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.82),rgba(244,248,255,0.96))] px-3 py-2 shadow-sm backdrop-blur-sm">
+      <div className="flex items-center gap-1.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-sky-500/80 animate-bounce [animation-delay:0ms]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-cyan-500/80 animate-bounce [animation-delay:150ms]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80 animate-bounce [animation-delay:300ms]" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/70">EaseAI</p>
+        <p className="text-xs text-foreground-variant">Analyzing your request</p>
+      </div>
+    </div>
+  );
+}
+
 export default function AIChatPopup() {
+  const pathname = usePathname();
+  const pagePatientId = useMemo(() => {
+    const m = pathname?.match(/^\/(?:admin|head-nurse|supervisor|observer)\/patients\/(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }, [pathname]);
+
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -70,6 +118,15 @@ export default function AIChatPopup() {
   const [showHistory, setShowHistory] = useState(false);
   const [proposal, setProposal] = useState<ActionProposal | null>(null);
   const [confirmingActions, setConfirmingActions] = useState(false);
+
+  // Execution tracking state
+  const [executing, setExecuting] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [failedSteps, setFailedSteps] = useState<number[]>([]);
+  const [stepResults, setStepResults] = useState<StepResult[]>([]);
+  const [executionFinished, setExecutionFinished] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const quickPrompts = useMemo(() => {
@@ -88,10 +145,8 @@ export default function AIChatPopup() {
   }, [user?.role]);
 
   const authHeaders = useCallback((): HeadersInit => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("ws_token") : null;
     return {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
   }, []);
 
@@ -158,6 +213,16 @@ export default function AIChatPopup() {
     setHistoryNotice("");
     setShowHistory(false);
     setProposal(null);
+    resetExecutionState();
+  }
+
+  function resetExecutionState() {
+    setExecuting(false);
+    setCurrentStepIndex(0);
+    setCompletedSteps([]);
+    setFailedSteps([]);
+    setStepResults([]);
+    setExecutionFinished(false);
   }
 
   async function handleDeleteConversation(id: number) {
@@ -245,6 +310,7 @@ export default function AIChatPopup() {
           conversation_id: convId,
           message: userMessage.content,
           messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
+          ...(pagePatientId != null ? { page_patient_id: pagePatientId } : {}),
         }),
       });
 
@@ -263,7 +329,7 @@ export default function AIChatPopup() {
       if (reply) {
         setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
       }
-      if (data.actions && data.actions.length > 0) {
+      if ((data.actions && data.actions.length > 0) || coerceExecutionPlan(data)) {
         setProposal(data);
       }
       void loadConversations();
@@ -272,15 +338,28 @@ export default function AIChatPopup() {
     } finally {
       setLoading(false);
     }
-  }, [authHeaders, conversationId, input, loadConversations, messages]);
+  }, [authHeaders, conversationId, input, loadConversations, messages, pagePatientId]);
+
+  const activeExecutionPlan = proposal ? coerceExecutionPlan(proposal) : null;
 
   const confirmAndExecuteActions = useCallback(async () => {
     if (!proposal?.proposal_id) {
-      setError("Action proposal id is missing.");
+      setError(t("aiChat.actionPlan.missingProposalId"));
       return;
     }
     setConfirmingActions(true);
     setError("");
+    setExecuting(true);
+
+    // Initialize execution tracking from the plan
+    const plan = coerceExecutionPlan(proposal);
+    if (plan?.steps) {
+      setCurrentStepIndex(0);
+      setCompletedSteps([]);
+      setFailedSteps([]);
+      setStepResults([]);
+    }
+
     try {
       const proposalId = encodeURIComponent(String(proposal.proposal_id));
       const confirmRes = await fetch(`${API_BASE}/chat/actions/${proposalId}/confirm`, {
@@ -298,21 +377,67 @@ export default function AIChatPopup() {
       if (!executeRes.ok) {
         throw new Error(`Could not execute actions (${executeRes.status}).`);
       }
+
       const result = (await executeRes.json()) as ExecuteResponse;
+
+      // Map step results from the response
+      if (result.step_results && plan?.steps) {
+        const mappedResults: StepResult[] = result.step_results.map((sr) => ({
+          stepId: sr.step_id,
+          success: sr.success,
+          message: sr.message,
+          error: sr.error,
+          executedAt: sr.executed_at,
+        }));
+        setStepResults(mappedResults);
+
+        // Update completed and failed steps
+        const completed: number[] = [];
+        const failed: number[] = [];
+        result.step_results.forEach((sr, idx) => {
+          if (sr.success) {
+            completed.push(idx);
+          } else {
+            failed.push(idx);
+          }
+        });
+        setCompletedSteps(completed);
+        setFailedSteps(failed);
+        setCurrentStepIndex(plan.steps.length);
+      } else if (plan?.steps) {
+        // No detailed step results, mark all as completed
+        setCompletedSteps(plan.steps.map((_, i) => i));
+        setCurrentStepIndex(plan.steps.length);
+      }
+
+      setExecutionFinished(true);
+
       const reply = result.reply || result.message || "Action executed.";
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-      setProposal(null);
       void loadConversations();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Action execution failed.");
+      // Mark any remaining steps as failed
+      if (plan?.steps) {
+        const remaining = plan.steps
+          .map((_, i) => i)
+          .filter((i) => !completedSteps.includes(i));
+        setFailedSteps((prev) => [...prev, ...remaining]);
+      }
     } finally {
       setConfirmingActions(false);
+      setExecuting(false);
     }
-  }, [proposal?.proposal_id, authHeaders, loadConversations]);
+  }, [proposal, authHeaders, loadConversations, completedSteps, t]);
 
   if (!user) return null;
 
   const activeTitle = conversations.find((row) => row.id === conversationId)?.title || null;
+  const showThinkingBubble =
+    loading &&
+    (messages.length === 0 ||
+      messages[messages.length - 1]?.role !== "assistant" ||
+      Boolean(messages[messages.length - 1]?.content));
 
   return (
     <>
@@ -456,66 +581,68 @@ export default function AIChatPopup() {
                   }`}
                 >
                   {m.role === "assistant" ? (
-                    <div
-                      className="prose-sm [&_pre]:my-1 [&_code]:text-xs [&_li]:my-0"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content || "") }}
-                    />
+                    m.content ? (
+                      <div
+                        className="prose-sm [&_pre]:my-1 [&_code]:text-xs [&_li]:my-0"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
+                      />
+                    ) : loading ? (
+                      <ThinkingIndicator />
+                    ) : null
                   ) : (
                     <span>{m.content}</span>
                   )}
                 </div>
               ))}
+              {showThinkingBubble ? (
+                <div className="mr-8">
+                  <ThinkingIndicator />
+                </div>
+              ) : null}
               {error ? <p className="text-critical text-xs">{error}</p> : null}
               <div ref={messagesEndRef} />
             </div>
 
-            {proposal?.actions && proposal.actions.length > 0 ? (
-              <div className="border-t border-outline-variant/15 bg-amber-50/60 px-3 py-3 dark:bg-amber-950/20">
-                <div className="mb-2 flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-amber-700 dark:text-amber-300" />
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                    Confirm AI actions
-                  </p>
-                </div>
-                <p className="text-xs text-foreground-variant">
-                  {proposal.summary || "The assistant prepared changes and needs your confirmation before execution."}
-                </p>
-                <div className="mt-2 max-h-28 space-y-2 overflow-y-auto rounded-xl border border-outline-variant/20 bg-surface p-2">
-                  {proposal.actions.map((action, index) => (
-                    <div key={`${action.action_id ?? "a"}-${index}`} className="rounded-lg border border-outline-variant/15 p-2">
-                      <p className="text-xs font-semibold text-foreground">
-                        {action.title || `Action ${index + 1}`}
-                      </p>
-                      {action.description ? (
-                        <p className="mt-0.5 text-[11px] text-foreground-variant">{action.description}</p>
-                      ) : null}
-                      {action.risk_level ? (
-                        <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                          <AlertTriangle className="h-3 w-3" />
-                          {action.risk_level}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex gap-2">
+            {/* Action plan: unified preview (top-level or nested in action payload) */}
+            {activeExecutionPlan && proposal?.mode === "plan" && !executionFinished ? (
+              <div className="border-t border-outline-variant/15 px-3 py-3">
+                <ActionPlanPreview
+                  plan={activeExecutionPlan}
+                  proposalId={typeof proposal.proposal_id === "number" ? proposal.proposal_id : null}
+                  onConfirm={() => void confirmAndExecuteActions()}
+                  onCancel={() => {
+                    setProposal(null);
+                    resetExecutionState();
+                  }}
+                  isConfirming={confirmingActions}
+                />
+              </div>
+            ) : null}
+
+            {/* Execution Step List - shown during and after execution */}
+            {activeExecutionPlan?.steps && (executing || executionFinished) ? (
+              <div className="border-t border-outline-variant/15 px-3 py-3">
+                <ExecutionStepList
+                  steps={activeExecutionPlan.steps}
+                  executing={executing}
+                  currentStepIndex={currentStepIndex}
+                  completedSteps={completedSteps}
+                  failedSteps={failedSteps}
+                  stepResults={stepResults}
+                />
+                {executionFinished && (
                   <button
                     type="button"
-                    className="flex-1 rounded-xl border border-outline-variant/25 px-3 py-2 text-xs font-medium text-foreground hover:bg-surface-container-low transition-smooth"
-                    onClick={() => setProposal(null)}
-                    disabled={confirmingActions}
+                    className="mt-3 w-full rounded-xl border border-outline-variant/25 px-3 py-2 text-xs font-medium text-foreground hover:bg-surface-container-low transition-smooth"
+                    onClick={() => {
+                      setProposal(null);
+                      resetExecutionState();
+                    }}
                   >
-                    Cancel
+                    <CheckCircle2 className="inline h-4 w-4 mr-1" />
+                    Done
                   </button>
-                  <button
-                    type="button"
-                    className="flex-1 rounded-xl gradient-cta px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                    onClick={() => void confirmAndExecuteActions()}
-                    disabled={confirmingActions}
-                  >
-                    {confirmingActions ? "Executing..." : "Confirm and Execute"}
-                  </button>
-                </div>
+                )}
               </div>
             ) : null}
 

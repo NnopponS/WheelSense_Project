@@ -133,7 +133,19 @@ For current frontend standardization work, prefer:
 - Role pages: `frontend/app/head-nurse/alerts/page.tsx`, `frontend/app/observer/alerts/page.tsx`, `frontend/app/supervisor/emergency/page.tsx`
 - Keep **toast Acknowledge** aligned with **`ROLE_ALERT_ACK`** in `server/app/api/endpoints/alerts.py`; document behavior in **`ARCHITECTURE.md`**, **`server/AGENTS.md`**, and **`frontend/README.md`** when it changes
 
+**Floorplan live presence (2026-04)** — when changing room telemetry/presence semantics:
+
+- Keep the distinction explicit in docs: canonical room assignment is `Patient.room_id`; `/api/floorplans/presence` is a live projection that may combine assignment, prediction telemetry (`RoomPrediction`), and optional manual staff presence.
+- Update `server/AGENTS.md`, `server/docs/RUNBOOK.md`, and `frontend/README.md` together when this behavior changes.
+
 ## Docker And Runtime Verification
+
+**Mock / simulator stack** (pre-seeded DB + MQTT simulator; same images as prod entry):
+
+```bash
+cd server
+docker compose -f docker-compose.sim.yml up -d --build
+```
 
 After substantive runtime changes under `server/`:
 
@@ -148,6 +160,8 @@ If frontend runtime behavior also changed:
 cd server
 docker compose up -d --build wheelsense-platform-server wheelsense-platform-web
 ```
+
+For floorplan presence/room telemetry changes (backend projection + frontend room overlays), use the same dual-image rebuild command above even if the visible change seems UI-only.
 
 To run backend without the dockerized frontend:
 
@@ -225,3 +239,4 @@ Do not treat `HANDOFF.md` as canonical documentation; it is session state.
 - `demo-control` remains intentionally hidden from the sidebar unless a future task adds an explicit environment gate.
 - Clinical alert toasts use **`toast.custom`** with **`AlertToastCard`**; inbox navigation uses **`?alert=<id>`** for row highlight; supervisor **`/supervisor/emergency`** alert table lists **all active** alerts (severity-sorted) so toast deep links match visible rows.
 - **`Code_Review/iter-6/Full-Stack-Code-Review.md`** was corrected to repo truth: there is **no** deprecated `hooks/useQuery` wrapper—admin and other apps use **`@tanstack/react-query`** directly; §3 in that file is labeled **aspirational UX roadmap**, not current audit failures.
+- **Iter-6 implementation tracker:** `docs/plans/iter-6-ux-implementation.md` (observer Suspense queue, admin `loading.tsx`, patient touch targets, supervisor emergency density, toast interrupt CSS).

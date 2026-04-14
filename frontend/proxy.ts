@@ -9,14 +9,14 @@ const ROLE_HOME: Record<string, string> = {
   patient: "/patient",
 };
 
-function decodeJwtRole(token: string): string | null {
+function decodeJwtPayload(token: string): { role?: string; exp?: number } | null {
   try {
     const parts = token.split(".");
     if (parts.length < 2) return null;
-    const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(payload);
-    const obj = JSON.parse(json) as { role?: string };
-    return obj.role ?? null;
+    const normalized = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const json = atob(padded);
+    return JSON.parse(json) as { role?: string; exp?: number };
   } catch {
     return null;
   }
@@ -62,7 +62,12 @@ export function proxy(request: NextRequest) {
     return redirectToLogin(request, nextPath);
   }
 
-  const role = decodeJwtRole(token);
+  const payload = decodeJwtPayload(token);
+  const role = payload?.role ?? null;
+  const exp = typeof payload?.exp === "number" ? payload.exp : null;
+  if (exp !== null && exp * 1000 <= Date.now()) {
+    return redirectToLogin(request, nextPath, true);
+  }
   if (!role || !(role in ROLE_HOME)) {
     return redirectToLogin(request, nextPath, true);
   }

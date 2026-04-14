@@ -13,8 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { ageYears } from "@/lib/age";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
+import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import type {
   GetPatientResponse,
   ListAlertsResponse,
@@ -59,9 +61,15 @@ type AssignmentRow = {
   isActive: boolean;
 };
 
+function asTimestampMs(value: string): number {
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : 0;
+}
+
 export default function HeadNursePatientDetailPage() {
   const { t } = useTranslation();
   const params = useParams();
+  const nowMs = useFixedNowMs();
 
   const rawId = Array.isArray(params.id) ? params.id[0] : params.id;
   const patientId = Number(rawId);
@@ -169,13 +177,35 @@ export default function HeadNursePatientDetailPage() {
   }, [timeline]);
 
   const assignmentRows = useMemo<AssignmentRow[]>(() => {
-    return assignments.map((item) => ({
-      id: item.id,
-      deviceId: item.device_id,
-      deviceRole: item.device_role,
-      assignedAt: item.assigned_at,
-      isActive: item.is_active,
-    }));
+    const byDevice = new Map<string, AssignmentRow>();
+    for (const item of assignments) {
+      const nextRow: AssignmentRow = {
+        id: item.id,
+        deviceId: item.device_id,
+        deviceRole: item.device_role,
+        assignedAt: item.assigned_at,
+        isActive: item.is_active,
+      };
+      const prev = byDevice.get(item.device_id);
+      if (!prev) {
+        byDevice.set(item.device_id, nextRow);
+        continue;
+      }
+      // Keep the currently active row first; fall back to the most recently assigned record.
+      if (nextRow.isActive && !prev.isActive) {
+        byDevice.set(item.device_id, nextRow);
+        continue;
+      }
+      if (
+        nextRow.isActive === prev.isActive &&
+        asTimestampMs(nextRow.assignedAt) > asTimestampMs(prev.assignedAt)
+      ) {
+        byDevice.set(item.device_id, nextRow);
+      }
+    }
+    return [...byDevice.values()].sort(
+      (left, right) => asTimestampMs(right.assignedAt) - asTimestampMs(left.assignedAt),
+    );
   }, [assignments]);
 
   const vitalsColumns = useMemo<ColumnDef<VitalsRow>[]>(
@@ -343,12 +373,35 @@ export default function HeadNursePatientDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">
-          {patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">{t("headNurse.patientDetail.pageSubtitle")}</p>
-      </div>
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">
+                {patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {[ageYears(patient?.date_of_birth ?? null, nowMs) != null ? `${ageYears(patient?.date_of_birth ?? null, nowMs)} ${t("patients.years")}` : null, patient?.gender || null]
+                  .filter(Boolean)
+                  .join(" · ") || t("headNurse.patientDetail.pageSubtitle")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{patient?.care_level || "normal"}</Badge>
+              <Badge variant="outline">{patient?.mobility_type || "wheelchair"}</Badge>
+              <Badge variant={patient?.is_active ? "success" : "secondary"}>
+                {patient?.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
+              </Badge>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            <QuickInfo label={t("patients.room")} value={patient?.room_id != null ? `Room ${patient.room_id}` : t("patients.noRoom")} />
+            <QuickInfo label={t("clinical.patientDetail.statRecentVitals")} value={String(vitalsRows.length)} />
+            <QuickInfo label={t("clinical.patientDetail.statActiveAlerts")} value={String(activeAlerts.length)} />
+            <QuickInfo label={t("clinical.patientDetail.statLinkedDevices")} value={String(assignmentRows.length)} />
+          </div>
+        </CardContent>
+      </Card>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <SummaryStatCard
@@ -412,6 +465,15 @@ export default function HeadNursePatientDetailPage() {
         isLoading={isLoadingAny}
         emptyText={t("headNurse.patientDetail.assignmentsEmpty")}
       />
+    </div>
+  );
+}
+
+function QuickInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

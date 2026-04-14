@@ -17,6 +17,7 @@ export type FloorplanRoomMeta = {
   chips?: FloorplanRoomChip[];
   detailLines?: string[];
   tone?: FloorplanRoomTone;
+  presenceDots?: string[];
 };
 
 const CANVAS_BASE_VIEW = 1000;
@@ -52,6 +53,14 @@ function snapRoom(room: FloorplanRoomShape): FloorplanRoomShape {
     w: snapToGrid(room.w),
     h: snapToGrid(room.h),
   });
+}
+
+function initialsFromPresenceLabel(value: string): string {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+  }
+  return (parts[0]?.slice(0, 2) ?? "?").toUpperCase();
 }
 
 /** One-time camera: frame all rooms with padding (matches admin floorplan editor UX vs full 5000 canvas). */
@@ -173,6 +182,7 @@ export default function FloorplanCanvas({
 }) {
   const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const [draftRooms, setDraftRooms] = useState(rooms);
   const draftRoomsRef = useRef(rooms);
   const dragRef = useRef<DragState>(null);
@@ -200,8 +210,11 @@ export default function FloorplanCanvas({
     if (rooms.length === 0) return;
     didFitContentOnMount.current = true;
     const next = computeFitViewToRooms(rooms);
-    setZoom(next.zoom);
-    setPan(next.pan);
+    const frame = window.requestAnimationFrame(() => {
+      setZoom(next.zoom);
+      setPan(next.pan);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [fitContentOnMount, rooms]);
 
   const toSvgPoint = useCallback((clientX: number, clientY: number) => {
@@ -361,12 +374,22 @@ export default function FloorplanCanvas({
     };
   }
 
-  const onWheelZoom = useCallback((e: React.WheelEvent) => {
-    if (!zoomEnabled) return;
-    if (!e.ctrlKey && !e.metaKey) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setZoom((z) => clampZoom(z - e.deltaY * 0.002));
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const onWheelZoom = (event: WheelEvent) => {
+      if (!zoomEnabled) return;
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setZoom((z) => clampZoom(z - event.deltaY * 0.002));
+    };
+
+    viewport.addEventListener("wheel", onWheelZoom, { passive: false });
+    return () => {
+      viewport.removeEventListener("wheel", onWheelZoom);
+    };
   }, [zoomEnabled]);
 
   return (
@@ -406,12 +429,12 @@ export default function FloorplanCanvas({
       )}
 
       <div
+        ref={viewportRef}
         className={`overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container-low/40 ${
           compact
             ? "max-h-[min(44vh,420px)] min-h-[280px]"
             : "max-h-[min(85vh,960px)] min-h-[min(78vh,720px)]"
         }`}
-        onWheel={onWheelZoom}
       >
         <svg
           ref={svgRef}
@@ -439,6 +462,7 @@ export default function FloorplanCanvas({
             const tone = roomToneClasses(meta?.tone);
             const chips = meta?.chips?.slice(0, compact ? 2 : 3) ?? [];
             const detail = meta?.detailLines?.[0] ?? null;
+            const presenceDots = meta?.presenceDots?.slice(0, compact ? 2 : 3) ?? [];
 
             return (
               <g
@@ -482,7 +506,21 @@ export default function FloorplanCanvas({
                       <p className="truncate text-xs font-semibold text-slate-900">{room.label}</p>
                       {detail ? <p className="mt-0.5 truncate text-[10px] text-slate-600">{detail}</p> : null}
                     </div>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="space-y-1">
+                      {presenceDots.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-1">
+                          {presenceDots.map((label) => (
+                            <span
+                              key={`${room.id}-presence-${label}`}
+                              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/80 bg-slate-900/80 text-[8px] font-bold text-white"
+                              title={label}
+                            >
+                              {initialsFromPresenceLabel(label)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="flex flex-wrap gap-1">
                       {chips.map((chip) => (
                         <span
                           key={`${room.id}-${chip.label}`}
@@ -496,6 +534,7 @@ export default function FloorplanCanvas({
                           layout
                         </span>
                       ) : null}
+                      </div>
                     </div>
                   </div>
                 </foreignObject>

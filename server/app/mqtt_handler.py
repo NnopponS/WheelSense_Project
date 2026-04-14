@@ -15,6 +15,13 @@ from sqlalchemy import select
 from .config import settings
 from .localization import predict_room_with_strategy
 from app.db.session import AsyncSessionLocal
+from app.services.device_management import (
+    ensure_ble_node_devices_from_wheelchair_rssi,
+    ensure_wheelchair_device_from_telemetry,
+    get_registered_device_for_ingest,
+    remove_ble_stubs_superseded_by_camera_payload,
+    try_merge_ble_row_for_camera_registration,
+)
 from app.models.activity import ActivityTimeline, Alert
 from app.models.base import utcnow
 from app.models.core import Device
@@ -40,17 +47,6 @@ FALL_AZ_THRESHOLD = 3.0
 FALL_VELOCITY_THRESHOLD = 0.05
 
 PHOTO_SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "photos")
-
-
-async def _get_registered_device(session, device_id: str) -> Device | None:
-    result = await session.execute(select(Device).where(Device.device_id == device_id))
-    devices = list(result.scalars().all())
-    if len(devices) > 1:
-        raise RuntimeError(
-            f"Device ID '{device_id}' exists in multiple workspaces. "
-            "MQTT device resolution is ambiguous."
-        )
-    return devices[0] if devices else None
 
 
 async def _lookup_patient_for_device(session, ws_id: int, device_id: str) -> int | None:
@@ -162,7 +158,9 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
     prediction: dict | None = None
 
     async with AsyncSessionLocal() as session:
-        device = await _get_registered_device(session, device_id)
+        device = await get_registered_device_for_ingest(session, device_id)
+        if not device:
+            device = await ensure_wheelchair_device_from_telemetry(session, device_id, data)
         if not device:
             logger.warning("Telemetry dropped for unregistered device: %s", device_id)
             return
@@ -225,6 +223,8 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
                     mac=r.get("mac", ""),
                 )
             )
+
+        await ensure_ble_node_devices_from_wheelchair_rssi(session, ws_id, rssi_list)
 
         patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
         if polar_hr and patient_id is not None:
@@ -492,7 +492,7 @@ async def _persist_photo_bytes(device_id: str, photo_id: str, payload: bytes, sa
     logger.info("Photo assembled: %s (%d bytes)", filepath, len(payload))
 
     async with AsyncSessionLocal() as session:
-        device = await _get_registered_device(session, device_id)
+        device = await get_registered_device_for_ingest(session, device_id)
         if not device:
             logger.warning("Discarding photo for unregistered device: %s", device_id)
             return
@@ -593,7 +593,9 @@ async def _handle_camera_registration(payload: bytes):
         return
 
     async with AsyncSessionLocal() as session:
-        device = await _get_registered_device(session, device_id)
+        device = await get_registered_device_for_ingest(session, device_id)
+        if not device:
+            device = await try_merge_ble_row_for_camera_registration(session, device_id, data)
         if not device:
             logger.warning("Camera registration dropped for unregistered device: %s", device_id)
             return
@@ -605,7 +607,13 @@ async def _handle_camera_registration(payload: bytes):
         device.last_seen = utcnow()  # type: ignore[assignment]
         cfg = dict(device.config or {})
         cfg["node_id"] = data.get("node_id", cfg.get("node_id", ""))
+        ble_raw = data.get("ble_mac") or data.get("ble_mac_address")
+        if ble_raw:
+            cfg["ble_mac"] = str(ble_raw).strip()
         device.config = cfg  # type: ignore[assignment]
+        await remove_ble_stubs_superseded_by_camera_payload(
+            session, device.workspace_id, device_id, data
+        )
         await _upsert_node_status_snapshot(
             session,
             device,
@@ -633,9 +641,21 @@ async def _handle_camera_status(payload: bytes):
         return
 
     async with AsyncSessionLocal() as session:
-        device = await _get_registered_device(session, device_id)
+        device = await get_registered_device_for_ingest(session, device_id)
+        if not device:
+            # After DB reset, status packets may arrive before /registration replay.
+            # Try recovering by merging a BLE_* discovery stub via ble_mac.
+            device = await try_merge_ble_row_for_camera_registration(session, device_id, data)
         if not device:
             logger.warning("Camera status dropped for unregistered device: %s", device_id)
             return
+        ble_raw = data.get("ble_mac") or data.get("ble_mac_address")
+        if ble_raw:
+            cfg = dict(device.config or {})
+            cfg["ble_mac"] = str(ble_raw).strip()
+            device.config = cfg  # type: ignore[assignment]
+        await remove_ble_stubs_superseded_by_camera_payload(
+            session, device.workspace_id, device_id, data
+        )
         await _upsert_node_status_snapshot(session, device, _normalize_node_status_payload(data))
         await session.commit()

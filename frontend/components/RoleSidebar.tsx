@@ -13,7 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { LogOut, Activity, type LucideIcon } from "lucide-react";
+import { LogOut, Activity } from "lucide-react";
 import UserAvatar from "@/components/shared/UserAvatar";
 import { cn } from "@/lib/utils";
 
@@ -78,9 +78,11 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
   function isActive(item: NavItem): boolean {
     if (item.activeForPaths?.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
     const base = item.href.split("?")[0];
-    if (base === `/${user?.role}` || (user?.role === "admin" && base === "/admin")) {
-      return pathname === base;
-    }
+    const rolePath = user?.role ? user.role.replaceAll("_", "-") : "";
+    const isRoleRoot =
+      base === `/${rolePath}` ||
+      (user?.role === "admin" && base === "/admin");
+    if (isRoleRoot) return pathname === base;
     return pathname === base || pathname.startsWith(`${base}/`);
   }
 
@@ -112,7 +114,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
     );
   }
 
-  function renderContent(isMobile = false) {
+  function renderContent() {
     return (
       <>
         {/* Header - Logo and Platform Name */}
@@ -182,7 +184,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
     <>
       {/* Desktop Sidebar - Fixed at left */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-width)] shrink-0 flex-col border-r bg-card lg:flex">
-        {renderContent(false)}
+        {renderContent()}
       </aside>
 
       {/* Mobile Sidebar - Sheet component */}
@@ -203,7 +205,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
             <SheetTitle>{t("shell.navigation")}</SheetTitle>
             <SheetDescription>{t("shell.navigationSheetDescription")}</SheetDescription>
           </SheetHeader>
-          <div className="flex h-full flex-col">{renderContent(true)}</div>
+          <div className="flex h-full flex-col">{renderContent()}</div>
         </SheetContent>
       </Sheet>
     </>

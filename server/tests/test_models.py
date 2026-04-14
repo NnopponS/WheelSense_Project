@@ -480,7 +480,6 @@ class TestVitalReading:
             heart_rate_bpm=68,
             rr_interval_ms=882.0,
             spo2=98,
-            skin_temperature=36.5,
             source="polar_sdk",
         )
         db_session.add(vital)
@@ -488,7 +487,6 @@ class TestVitalReading:
         await db_session.refresh(vital)
 
         assert vital.spo2 == 98
-        assert vital.skin_temperature == 36.5
         assert vital.source == "polar_sdk"
 
 

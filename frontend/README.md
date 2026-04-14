@@ -24,7 +24,9 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 
 ### Authentication and routing
 
-- JWT is stored in both `localStorage` and a same-site `ws_token` cookie
+- Browser auth is cookie-based: the Next proxy stores the backend JWT in an **HttpOnly** same-site `ws_token` cookie
+- Client components do **not** read the auth token from `localStorage`; `AuthProvider` hydrates state from `GET /api/auth/me`
+- Admin impersonation uses an additional HttpOnly backup cookie so `stopImpersonation()` can restore the admin session without exposing raw tokens to browser JavaScript
 - `proxy.ts` performs role-aware route guarding for:
   - `/admin/*`
   - `/head-nurse/*`
@@ -39,7 +41,9 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 
 - `lib/constants.ts` sets `API_BASE = "/api"`
 - `app/api/[[...path]]/route.ts` proxies frontend `/api/*` requests to the FastAPI backend
-- `lib/api.ts` adds the bearer token, normalizes errors, and supports JSON + multipart flows
+- The proxy injects `Authorization` from the HttpOnly auth cookie for normal browser requests, sets/clears cookies on login/logout, and clears stale cookies on backend `401`
+- `lib/api.ts` uses same-origin fetches, normalizes errors, and supports JSON + multipart flows without directly handling raw JWT storage
+- Backend login sessions are server-tracked through `/api/auth/sessions`, `/api/auth/logout`, and `DELETE /api/auth/sessions/{session_id}`
 - **TanStack Query** is the standard for reads: `useQuery` / `useMutation` from `@tanstack/react-query` with explicit `queryKey` arrays (for example `["admin", "devices", ...]`) and `queryFn` calling `lib/api.ts`
 - `lib/queryEndpointDefaults.ts` centralizes default `staleTime` / `refetchInterval` heuristics keyed by endpoint path (same rules the old single-file wrapper used). `lib/refetchOrThrow.ts` wraps TanStack `refetch` when a caller needs “throw on error after `await refetch()`” (used after mutations in several admin panels).
 - **Completed migration (2026-04):** `hooks/useQuery.ts` was deleted after every import moved to `@tanstack/react-query`; grep the tree for `@/hooks/useQuery` should return nothing. Monitoring map queries live in `components/admin/monitoring/FloorMapWorkspace.tsx` and `RoomSmartDevicesPanel.tsx` with `["admin", "monitoring", ...]` keys.
@@ -60,11 +64,18 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 - Shared date formatting helpers live in `lib/datetime.ts`
 - **Next.js 16 (`app` router)**: Segment `params` / `searchParams` on **server** pages are async. **Client** pages that need a dynamic segment id or the query string should use **`useParams()`** and **`useSearchParams()`** (with **`Suspense`** at the page boundary when `useSearchParams` is used at page level), not `params` / `searchParams` props on `page.tsx`—this avoids `[browser] … must be unwrapped` warnings when props are inspected. See `/admin/settings`, `/admin/patients/[id]`, `/admin/caregivers/[id]`.
 
+### Iter-6 UX roadmap (from `Code_Review/iter-6`)
+
+- **Tracker:** `docs/plans/iter-6-ux-implementation.md` (epic checklist + inventory).
+- **Admin segment loading:** `app/admin/loading.tsx` shows a spinner while **navigating between `/admin/*` routes** (App Router `loading.tsx` pattern).
+- **Observer alerts + Suspense:** `app/observer/alerts/page.tsx` wraps **`ObserverAlertsQueue`** in `<Suspense>`; the queue uses **`useSuspenseQuery`** for alerts and patients so the fallback (`observer.alerts.loadingQueue`) shows until both queries resolve.
+- **Observer toast emphasis:** For **observer** + **sound-tier** alert toasts, `AlertToastCard` receives `visualEmphasis="interrupt"` and **`ws-alert-toast-interrupt`** in `app/globals.css` (stronger border/shadow; still one Sonner toaster).
+
 ### In-app notifications and clinical toasts
 
 - **Hook**: `hooks/useNotifications.tsx` merges active alerts, pending workflow tasks (clinical staff roles only), and unread workflow messages. Alert polling defaults to **10s**; tasks and messages use a slower interval.
 - **Role-correct deep links**: `lib/notificationRoutes.ts` maps `user.role` to alert inbox and task URLs (e.g. observer → `/observer/alerts`, supervisor → `/supervisor/emergency`, staff messages → role-appropriate inbox paths). **`alertsInboxUrl(role, alertId)`** appends `?alert=<id>` so the inbox table can scroll/highlight row `ws-alert-<id>` (see `hooks/useAlertRowHighlight.ts`).
-- **Toast UX**: New **active** alerts at medium-or-higher severity enqueue a **Sonner** `toast.custom` card (`components/notifications/AlertToastCard.tsx`): alert type, title, description; when the alert has **`patient_id`**, `useNotifications` resolves **`GET /patients/{id}`** and (if `room_id` is set) **`GET /rooms/{room_id}`** via `lib/api.ts` so the card shows **patient name** and **current room** (`facility · floor · room`), with i18n fallbacks for missing `room_id` or failed room load (`notifications.toastPatientNoRoomOnRecord`, `notifications.toastPatientLocationUnknown`). **Open in queue** (navigates with `?alert=`) and **Acknowledge** when the signed-in role matches server **`ROLE_ALERT_ACK`** (`admin` / `head_nurse` today). Higher severities may also play a short chime when **alert sound** is enabled in the TopBar (toggle persists in `localStorage`; enabling sound calls `primeAlertAudioFromUserGesture()` so browsers allow `AudioContext`). The strongest toast tier may apply **`ws-toast-urgent`** on the Sonner host for neutral elevation only—no red border (see `app/globals.css`); the custom card uses the same muted left accent as other severities.
+- **Toast UX**: New **active** alerts at medium-or-higher severity enqueue a **Sonner** `toast.custom` card (`components/notifications/AlertToastCard.tsx`): alert type, title, description; when the alert has **`patient_id`**, `useNotifications` resolves **`GET /patients/{id}`** and (if `room_id` is set) **`GET /rooms/{room_id}`** via `lib/api.ts` so the card shows **patient name** and **current room** (`facility · floor · room`), with i18n fallbacks for missing `room_id` or failed room load (`notifications.toastPatientNoRoomOnRecord`, `notifications.toastPatientLocationUnknown`). **Open in queue** (navigates with `?alert=`) and **Acknowledge** when the signed-in role matches server **`ROLE_ALERT_ACK`** (`admin` / `head_nurse` today). Higher severities may also play a short chime when **alert sound** is enabled in the TopBar (toggle persists in `localStorage`; enabling sound calls `primeAlertAudioFromUserGesture()` so browsers allow `AudioContext`). The strongest toast tier may apply **`ws-toast-urgent`** on the Sonner host for neutral elevation only—no red border (see `app/globals.css`); the custom card uses a muted left accent by default, and **`ws-alert-toast-interrupt`** when `visualEmphasis="interrupt"` (observer + sound-tier).
 - **UI**: `components/NotificationBell.tsx` + `components/NotificationDrawer.tsx` for the drawer; sound toggle lives in `components/TopBar.tsx` (hidden for `patient` role).
 
 ## Internationalization (EN / TH)
@@ -76,7 +87,7 @@ The app ships **English** and **Thai** for static UI. Default locale is **Englis
 1. **Dictionary**: Add a key to the `translations` object in `lib/i18n.tsx` with **both** `en` and `th` string values. TypeScript derives `TranslationKey` from that object; missing keys fail the build.
 2. **Consumption**: In Client Components, `import { useTranslation } from "@/lib/i18n"`, then `const { t } = useTranslation()` and render `t("your.key")`.
 3. **Navigation labels**: Sidebar items use keys from `lib/sidebarConfig.ts`; ensure matching `nav.*` (and role-specific `nav.*`) entries exist in `i18n.tsx`. Hub tab labels inside pages are often plain strings or local keys—keep them consistent with `nav.*` where users see both.
-4. **Conventions** (merge-friendly): Prefer existing namespaces before inventing duplicates — `common.*`, `dash.*`, `calendar.*`, `tasks.*`, `devices.*`, `shell.*`, `notifications.*`, then role-scoped prefixes such as `admin.*`, `adminPatients.*` (admin patient roster + routines table chrome), `admin.auditLog.*` (system audit log page), `admin.audit.*` (workflow audit trail page), **`clinical.*`** (shared head-nurse/supervisor patient rosters, vitals/alert table headers, and other cross-role clinical UI chrome), `headNurse.*`, `supervisor.*`, `observer.*`, `patient.*`. Append new blocks under a short comment header per area. Agent guidance: `.cursor/agents/wheelsense-admin-i18n.md`.
+4. **Conventions** (merge-friendly): Prefer existing namespaces before inventing duplicates — `common.*`, `dash.*`, `calendar.*`, `tasks.*`, `devices.*`, `shell.*`, `notifications.*`, then role-scoped prefixes such as `admin.*`, **`admin.workflowMessaging.*`** (admin `/admin/messages` inbox + compose hub), `adminPatients.*` (admin patient roster + routines table chrome), `admin.auditLog.*` (system audit log page), `admin.audit.*` (workflow audit trail page), **`clinical.*`** (shared head-nurse/supervisor patient rosters, vitals/alert table headers, and other cross-role clinical UI chrome), `headNurse.*`, `supervisor.*`, `observer.*`, `patient.*`. Append new blocks under a short comment header per area. Agent guidance: `.cursor/agents/wheelsense-admin-i18n.md`.
 
 ### What to translate vs leave raw
 
@@ -132,11 +143,12 @@ Legacy routes that now redirect:
 - `/admin/users` is kept only as a compatibility redirect to `/admin/account-management`
 - `/admin/devices` is the canonical device fleet screen for registry edits, recent activity, command history, and patient-device linking
 - `/admin/smart-devices` remains a compatibility redirect to the smart-home tab on `/admin/devices`
-- `DeviceDetailDrawer` and `PatientLinkSection` use `/api/devices/{device_id}/patient` and `/api/devices/activity`
+- `DeviceDetailDrawer` (admin device sheet) uses `/api/devices/{device_id}`, `/api/devices/activity`, `/api/devices/{id}/patient`, `/api/devices/{id}/camera/check`, `/api/rooms`, and `/api/rooms/{id}` (PATCH `node_device_id`). Telemetry cards are **hardware-specific** (wheelchair shows battery + acceleration + velocity + distance, Polar HR/PPG, mobile Polar link + battery + steps; **nodes** omit motion realtime and instead expose **camera snapshot test** plus **building → floor → room** linking). For responsiveness, detail polling is tuned to 2.5s baseline, and camera snapshot requests trigger a short burst-poll window so `latest_photo` appears faster after command dispatch. `PatientLinkSection` covers combobox patient linking on the same flows.
 - `/admin/patients` is the current standardized admin baseline:
   - filter toolbar uses shared input/select primitives
   - list view uses TanStack Table
   - create modal uses React Hook Form + Zod
+  - roster **Delete** (confirm dialog) calls **`DELETE /api/patients/{id}`** for roles with **`patients.manage`** (same capability gate as backend `ROLE_PATIENT_MANAGERS`); invalidates admin patient queries after success
 - `/admin/alerts` now uses the same standardized admin table/card system for alert operations
 - `/admin/devices` now uses the shared card/filter shell for registry and smart-home fleet tabs
 - Profile image editing uses:
@@ -153,6 +165,7 @@ Legacy routes that now redirect:
   - canvas uses a 1000-unit internal coordinate space with legacy 0-100 layout compatibility
   - drag/resize interactions snap to grid and use pointer capture to avoid stuck edits
   - room-node linking is standardized around `room.node_device_id` (device string id), not only numeric `devices.id`
+  - `GET /api/floorplans/presence` is treated as a live operations feed (assignment + prediction telemetry + optional manual staff presence), while canonical room assignment remains `Patient.room_id`
   - **`FloorplansPanel`** (`components/admin/FloorplansPanel.tsx`) is embedded on **`/admin/facility-management`** as the shared floor UI: room inspector tabs for **node** vs **smart** devices, **patient** assign/remove for the selected room, and **capture** preview/trigger; deep links from the panel can jump to **`/admin/devices`** and **`/admin/personnel?tab=`** hubs
   - monitoring workspace (`components/admin/monitoring/FloorMapWorkspace.tsx`) saves geometry to `/api/floorplans/layout` and syncs node links through `/api/rooms/{room_id}`
   - **Patient assignment (Phase A)**: optional “Patient assignment mode” on the same workspace loads workspace patients and, for canvas rooms backed by a real `room-{id}`, assigns **`PATCH /api/patients/{id}`** with `{ room_id }` after explicit picker + confirm (no drag-drop yet)
@@ -163,6 +176,137 @@ Legacy routes that now redirect:
 - `/admin` dashboard no longer shows the large account-link status card or AI/Copilot status card; those responsibilities moved closer to operational pages:
   - patient account-link gaps are surfaced on `/admin/patients`
   - staff account-link gaps are surfaced on `/admin/caregivers`
+
+## AI Chat Integration
+
+The WheelSense AI chat popup provides a natural language interface to workspace data and operations through a secure 3-stage action flow.
+
+### Architecture
+
+```
+User Message
+    ↓
+POST /api/chat/actions/propose
+    ↓
+Agent Runtime (routing: `intent` classifier or `llm_tools` — see `ARCHITECTURE.md` / `server/docs/ENV.md`)
+    ↓
+MCP workspace tools (first-party `execute_workspace_tool` path from agent runtime)
+    ↓
+Execution Plan (if mutating) or Direct Answer (if read-only)
+    ↓
+ActionPlanPreview Component (user confirmation)
+    ↓
+POST /api/chat/actions/{id}/confirm
+    ↓
+POST /api/chat/actions/{id}/execute
+    ↓
+ExecutionStepList Component (progress visualization)
+```
+
+### Key Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `AIChatPopup` | `components/ai/AIChatPopup.tsx` | Main chat interface with message history |
+| `ActionPlanPreview` | `components/ai/ActionPlanPreview.tsx` | Plan confirmation with entity resolution |
+| `ExecutionStepList` | `components/ai/ExecutionStepList.tsx` | Step-by-step execution progress |
+
+### What EaseAI can do (tools behind the popup)
+
+The popup calls the same **propose → confirm → execute** API as other clients. The backend may route with **regex/intent** (`AGENT_ROUTING_MODE=intent`, default) or **LLM + tool schema** (`AGENT_ROUTING_MODE=llm_tools`). In both cases, only **workspace MCP tools** are executed, with JWT scope checks.
+
+- **Canonical tool list (28 names):** `server/app/mcp/server.py` → `_WORKSPACE_TOOL_REGISTRY`.
+- **Which tools appear for which role in the LLM catalog / chat policy:** `server/app/services/ai_chat.py` → `ROLE_MCP_TOOL_ALLOWLIST` (admin: all 28; other roles are subsets aligned with `ROLE_TOKEN_SCOPES` in `server/app/api/dependencies.py`).
+- **Reads** (e.g. `get_system_health`, `list_visible_patients`, `get_patient_vitals`): may run during **propose** when the router returns only read tools (`llm_tools`) or when the intent classifier picks a high-confidence immediate read (`intent`); the assistant reply is grounded on tool JSON.
+- **Writes** (e.g. `acknowledge_alert`, `update_patient_room`, `send_message`): always produce **`mode: "plan"`** until the user **Confirm & Execute** (or **Reject**) in `ActionPlanPreview`.
+
+**Staging / production:** set `AGENT_ROUTING_MODE=llm_tools` on the **`wheelsense-agent-runtime`** service (see `server/docker-compose.core.yml`) and ensure `OLLAMA_BASE_URL` is reachable from that container (defaults to `http://host.docker.internal:11434/v1` in compose). Validate on staging before enabling in production.
+
+### 3-Stage Flow
+
+**Stage 1: Propose** (`POST /api/chat/actions/propose`)
+- User sends message through chat interface
+- Agent runtime routes the message (`intent` or `llm_tools`) and may call MCP reads or build an execution plan
+- Returns `mode: "answer"` for read-only or `mode: "plan"` for mutations
+- For plans: displays `ActionPlanPreview` with playbook, risk level, affected entities
+
+**Stage 2: Confirm** (`POST /api/chat/actions/{id}/confirm`)
+- User reviews the proposed action in the preview card
+- Can approve or reject with optional note
+- Updates action status to `confirmed` or `rejected`
+
+**Stage 3: Execute** (`POST /api/chat/actions/{id}/execute`)
+- Executes confirmed plan through MCP tool calls
+- `ExecutionStepList` shows real-time progress (pending → executing → completed/failed)
+- Returns final results and completion message
+
+### TypeScript Types
+
+Types are auto-generated from OpenAPI schema in `lib/api/generated/schema.ts`:
+
+```typescript
+// Execution plan with metadata
+type ExecutionPlan = components["schemas"]["ExecutionPlan"];
+// { playbook, summary, risk_level, steps[], affected_entities, permission_basis }
+
+// Individual execution step
+type ExecutionPlanStep = components["schemas"]["ExecutionPlanStep"];
+// { id, title, tool_name, arguments, risk_level, permission_basis, affected_entities }
+
+// Proposal response
+type ChatActionProposalResponse = components["schemas"]["ChatActionProposalResponse"];
+// { mode, proposal_id, assistant_reply, execution_plan, actions[] }
+```
+
+### Example Usage
+
+```typescript
+import { ActionPlanPreview } from "@/components/ai/ActionPlanPreview";
+import { ExecutionStepList } from "@/components/ai/ExecutionStepList";
+import type { components } from "@/lib/api/generated/schema";
+
+type ExecutionPlan = components["schemas"]["ExecutionPlan"];
+
+// In chat component
+{plan && (
+  <ActionPlanPreview
+    plan={plan}
+    proposalId={proposalId}
+    onConfirm={handleConfirm}
+    onCancel={handleCancel}
+    isConfirming={isConfirming}
+  />
+)}
+
+{executing && (
+  <ExecutionStepList
+    steps={plan.steps}
+    executing={executing}
+    currentStepIndex={currentStep}
+    completedSteps={completed}
+    stepResults={results}
+    failedSteps={failed}
+  />
+)}
+```
+
+### Risk Levels
+
+| Level | Color | Description |
+|-------|-------|-------------|
+| `low` | Green/emerald | Read-only operations, safe to auto-execute |
+| `medium` | Yellow/amber | Mutations requiring confirmation |
+| `high` | Red | Destructive operations, strict confirmation |
+
+### Entity Resolution
+
+`ActionPlanPreview` automatically resolves entity references:
+- `patient_id` → `GET /api/patients/{id}` → display first/last name
+- `/patient?tab=profile` mirrors the linked patient record and account contact fields in read-only mode; age is derived from `date_of_birth`
+- `room_id` → `GET /api/rooms/{id}` → room name + facility
+- `caregiver_id` → `GET /api/caregivers` lookup → staff name + role
+
+This ensures users see human-readable names (e.g., "John Smith" instead of "patient #123") before confirming actions.
 
 ## Development
 
@@ -199,3 +343,4 @@ Admin users without a linked `patient_id` can open `/patient` and choose a patie
 - **Care roadmap** (`components/patient/PatientCareRoadmap.tsx` on `/patient`): reads `listWorkflowSchedules` + `listWorkflowTasks` + `listRooms` to show completed / in-progress / upcoming items; optional `room_id` on schedules is resolved to a room label; links to full schedule and room controls.
 - **Messages** (`app/patient/messages/page.tsx`): compose uses **`recipient_user_id`** only (do not send `recipient_role` in the same request). Recipients are loaded with **`api.listWorkflowMessagingRecipients()`** → `GET /api/workflow/messaging/recipients` (available to authenticated roles, returns active staff user accounts). Inbox shows `recipient_person.display_name` when the API enriches the thread.
 - **Staff calendars**: `/head-nurse/calendar`, `/supervisor/calendar`, and **`/observer/calendar`** share the same scheduling patterns (`ScheduleForm`, workflow schedule APIs). Rebuild the web Docker image after changing these routes or shared calendar components.
+- **Floorplan presence + telemetry UI/API changes**: rebuild both Docker images (`wheelsense-platform-server` and `wheelsense-platform-web`) so `/api/floorplans/presence` contract and role viewers (`FloorplanRoleViewer` / facility-management map surfaces) remain aligned.

@@ -36,10 +36,14 @@ import argparse
 import random
 import json
 import logging
+import threading
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
+
+SIM_CONTROL_TOPIC = "WheelSense/sim/control"
 
 import paho.mqtt.client as mqtt
 
@@ -108,21 +112,18 @@ VITAL_RANGES = {
         "heart_rate": (85, 120),
         "heart_rate_variability": 15,  # Higher variability
         "spo2": (88, 95),
-        "skin_temp": (36.5, 38.0),
         "movement_volatility": 0.4,  # More erratic movement
     },
     "special": {
         "heart_rate": (70, 110),
         "heart_rate_variability": 10,
         "spo2": (90, 97),
-        "skin_temp": (36.3, 37.5),
         "movement_volatility": 0.25,
     },
     "normal": {
         "heart_rate": (60, 90),
         "heart_rate_variability": 5,
         "spo2": (95, 100),
-        "skin_temp": (36.1, 37.2),
         "movement_volatility": 0.15,
     },
 }
@@ -132,8 +133,6 @@ ALERT_THRESHOLDS = {
     "heart_rate_high": 110,
     "heart_rate_low": 50,
     "spo2_low": 90,
-    "skin_temp_high": 38.0,
-    "skin_temp_low": 35.5,
 }
 
 
@@ -212,9 +211,6 @@ class VitalSimulator:
         elif care_level == "special":
             spo2 = min(spo2, random.randint(92, 97))
         
-        # Skin temperature
-        skin_temp = round(random.uniform(*ranges["skin_temp"]), 1)
-        
         # RR interval inversely related to heart rate
         rr_interval = int(60000 / heart_rate) if heart_rate > 0 else 800
         rr_interval += random.randint(-50, 50)
@@ -231,7 +227,6 @@ class VitalSimulator:
             "heart_rate_bpm": heart_rate,
             "rr_interval_ms": rr_interval,
             "spo2": spo2,
-            "skin_temperature": skin_temp,
             "sensor_battery": battery,
         }
     
@@ -327,10 +322,13 @@ class RoomSimulator:
 
 class AlertSimulator:
     """Generates alerts based on vital thresholds and care level."""
-    
+
     def __init__(self, config: dict):
         self.config = config
-        self.thresholds = ALERT_THRESHOLDS
+        self.thresholds = dict(ALERT_THRESHOLDS)
+        hr = config.get("heart_rate_high")
+        if isinstance(hr, (int, float)):
+            self.thresholds["heart_rate_high"] = int(hr)
     
     def check_vitals_for_alerts(self, patient_state: PatientState, vitals: dict) -> list[dict]:
         """Check vitals against thresholds and return alert configs."""
@@ -530,7 +528,10 @@ class SimulationEngine:
         # Control
         self.status = SimulationStatus.STOPPED
         self.loop_task: asyncio.Task | None = None
-        
+        self._control_lock = threading.Lock()
+        self._mqtt_paused = False
+        self._pending_inject_events: deque[tuple[str, int | None]] = deque()
+
         # Logging
         self._setup_logging()
         self.logger.info("SimulationEngine initialized")
@@ -562,7 +563,96 @@ class SimulationEngine:
             path = Path(filename)
             if path.exists():
                 path.unlink()
-    
+
+    def _is_mqtt_paused(self) -> bool:
+        with self._control_lock:
+            return self._mqtt_paused
+
+    def _apply_runtime_config_updates(self, updates: dict) -> None:
+        if not isinstance(updates, dict):
+            return
+        with self._control_lock:
+            if "vital_update_interval" in updates and updates["vital_update_interval"] is not None:
+                try:
+                    v = int(updates["vital_update_interval"])
+                    self.config["vital_update_interval"] = max(5, min(600, v))
+                except (TypeError, ValueError):
+                    pass
+            if "alert_probability" in updates and updates["alert_probability"] is not None:
+                try:
+                    v = float(updates["alert_probability"])
+                    self.config["alert_probability"] = max(0.0, min(1.0, v))
+                except (TypeError, ValueError):
+                    pass
+            if "enable_alerts" in updates and updates["enable_alerts"] is not None:
+                self.config["enable_alerts"] = bool(updates["enable_alerts"])
+            if "heart_rate_high" in updates and updates["heart_rate_high"] is not None:
+                try:
+                    v = int(updates["heart_rate_high"])
+                    v = max(60, min(200, v))
+                    self.config["heart_rate_high"] = v
+                    if self.alert_sim is not None:
+                        self.alert_sim.thresholds["heart_rate_high"] = v
+                except (TypeError, ValueError):
+                    pass
+        self.logger.info("[SIM-CONTROL] Runtime config updated from MQTT")
+
+    def _apply_control_command_sync(self, payload: dict) -> None:
+        cmd = str(payload.get("command", "")).strip().lower()
+        if cmd == "pause":
+            with self._control_lock:
+                self._mqtt_paused = True
+            self.logger.info("[SIM-CONTROL] MQTT pause enabled")
+        elif cmd == "resume":
+            with self._control_lock:
+                self._mqtt_paused = False
+            self.logger.info("[SIM-CONTROL] MQTT pause cleared")
+        elif cmd == "set_config":
+            cfg = payload.get("config")
+            if isinstance(cfg, dict):
+                self._apply_runtime_config_updates(cfg)
+        elif cmd == "inject_abnormal_hr":
+            pid = payload.get("patient_id")
+            pid_i = int(pid) if pid is not None and str(pid).strip().isdigit() else None
+            with self._control_lock:
+                self._pending_inject_events.append(("abnormal_hr", pid_i))
+            self.logger.info("[SIM-CONTROL] Queued inject_abnormal_hr patient_id=%s", pid_i)
+        elif cmd == "inject_fall":
+            pid = payload.get("patient_id")
+            pid_i = int(pid) if pid is not None and str(pid).strip().isdigit() else None
+            with self._control_lock:
+                self._pending_inject_events.append(("fall", pid_i))
+            self.logger.info("[SIM-CONTROL] Queued inject_fall patient_id=%s", pid_i)
+
+    def _handle_control_mqtt_message(self, msg: Any) -> None:
+        try:
+            payload = json.loads(msg.payload.decode("utf-8"))
+        except Exception:
+            self.logger.debug("[SIM-CONTROL] Ignored non-JSON MQTT message")
+            return
+        if not isinstance(payload, dict):
+            return
+        wid = payload.get("workspace_id")
+        if self.workspace is None or wid is None:
+            return
+        try:
+            if int(wid) != int(self.workspace.id):
+                return
+        except (TypeError, ValueError):
+            return
+        self._apply_control_command_sync(payload)
+
+    async def _drain_pending_inject_events(self) -> None:
+        pending: list[tuple[str, int | None]] = []
+        with self._control_lock:
+            while self._pending_inject_events:
+                pending.append(self._pending_inject_events.popleft())
+        for ev_type, pid in pending:
+            try:
+                await self.trigger_event(ev_type, pid)
+            except Exception as exc:
+                self.logger.warning("[SIM-CONTROL] inject %s failed: %s", ev_type, exc)
+
     async def initialize_data(self, workspace_id: int | None = None):
         """Load workspace data from database."""
         self.logger.info("Loading workspace data from database...")
@@ -698,9 +788,11 @@ class SimulationEngine:
             self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
             if MQTT_USER:
                 self.mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD or "")
+            self.mqtt_client.on_message = lambda _c, _u, m: self._handle_control_mqtt_message(m)
             self.mqtt_client.connect(BROKER, PORT, 60)
+            self.mqtt_client.subscribe(SIM_CONTROL_TOPIC, qos=0)
             self.mqtt_client.loop_start()
-            self.logger.info("MQTT connected successfully")
+            self.logger.info("MQTT connected; subscribed to %s", SIM_CONTROL_TOPIC)
         except Exception as e:
             self.logger.error(f"Failed to connect to MQTT: {e}")
             sys.exit(1)
@@ -960,27 +1052,27 @@ class SimulationEngine:
         
         self.status = SimulationStatus.RUNNING
         self._remove_control_files()
-        
-        vital_interval = self.config.get("vital_update_interval", 30)
-        routine_interval = self.config.get("routine_check_interval", 300)
-        
+
         last_vital_time = datetime.now(timezone.utc)
         last_routine_time = datetime.now(timezone.utc)
-        
+
         try:
             while self.status == SimulationStatus.RUNNING:
+                await self._drain_pending_inject_events()
                 now = datetime.now(timezone.utc)
-                
+                vital_interval = int(self.config.get("vital_update_interval", 30))
+                routine_interval = int(self.config.get("routine_check_interval", 300))
+
                 # Check for control files
                 control_status = self._check_control_files()
                 if control_status == SimulationStatus.EMERGENCY_STOP:
                     self.logger.critical("EMERGENCY STOP triggered via control file")
                     break
-                if control_status == SimulationStatus.PAUSED:
-                    self.logger.info("Simulation paused (checking again in 5s)...")
+                if control_status == SimulationStatus.PAUSED or self._is_mqtt_paused():
+                    self.logger.info("Simulation paused (file or MQTT; checking again in 5s)...")
                     await asyncio.sleep(5)
                     continue
-                
+
                 # Vital simulation cycle
                 if (now - last_vital_time).seconds >= vital_interval:
                     success = await self._simulation_cycle()
@@ -1081,7 +1173,6 @@ class SimulationEngine:
                 "heart_rate_bpm": random.randint(120, 150),
                 "rr_interval_ms": random.randint(400, 500),
                 "spo2": random.randint(90, 95),
-                "skin_temperature": round(random.uniform(37.5, 38.5), 1),
                 "sensor_battery": random.randint(50, 100),
             }
             payload = self.generate_payload(
@@ -1222,16 +1313,54 @@ async def interactive_menu(engine: SimulationEngine):
 # Main Entry Point
 # =============================================================================
 
+def merge_env_sim_overrides(config: dict) -> None:
+    """Apply SIM_* environment overrides (Docker / host tuning without editing JSON)."""
+
+    def _parse_int(raw: str, default: int, lo: int, hi: int) -> int:
+        try:
+            return max(lo, min(hi, int(raw)))
+        except ValueError:
+            return default
+
+    def _parse_float(raw: str, default: float, lo: float, hi: float) -> float:
+        try:
+            return max(lo, min(hi, float(raw)))
+        except ValueError:
+            return default
+
+    vi = os.environ.get("SIM_VITAL_UPDATE_INTERVAL", "").strip()
+    if vi:
+        config["vital_update_interval"] = _parse_int(
+            vi, int(config.get("vital_update_interval", 30)), 5, 600
+        )
+    ap = os.environ.get("SIM_ALERT_PROBABILITY", "").strip()
+    if ap:
+        config["alert_probability"] = _parse_float(
+            ap, float(config.get("alert_probability", 0.05)), 0.0, 1.0
+        )
+    ea = os.environ.get("SIM_ENABLE_ALERTS", "").strip().lower()
+    if ea in ("0", "false", "no", "off"):
+        config["enable_alerts"] = False
+    elif ea in ("1", "true", "yes", "on"):
+        config["enable_alerts"] = True
+    hr = os.environ.get("SIM_HEART_RATE_HIGH", "").strip()
+    if hr:
+        config["heart_rate_high"] = _parse_int(
+            hr, int(ALERT_THRESHOLDS["heart_rate_high"]), 60, 200
+        )
+
+
 def load_config(config_path: str | None) -> dict:
     """Load simulation configuration from file or use defaults."""
     config = SIMULATION_CONFIG.copy()
-    
+
     if config_path and Path(config_path).exists():
         with open(config_path) as f:
             user_config = json.load(f)
             config.update(user_config)
         print(f"[OK] Loaded config from {config_path}")
-    
+
+    merge_env_sim_overrides(config)
     return config
 
 

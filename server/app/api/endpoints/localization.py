@@ -26,6 +26,10 @@ from app.models.telemetry import (
     RSSITrainingData,
     RoomPrediction,
 )
+from app.services.localization_setup import (
+    get_localization_readiness,
+    repair_localization_readiness,
+)
 from app.models.users import User
 from app.schemas.core import PredictRequest, TrainRequest
 from app.schemas.localization import (
@@ -36,6 +40,8 @@ from app.schemas.localization import (
     LocalizationCalibrationTrainOut,
     LocalizationConfigOut,
     LocalizationConfigUpdate,
+    LocalizationReadinessRepairIn,
+    LocalizationReadinessOut,
 )
 
 router = APIRouter()
@@ -66,6 +72,38 @@ async def get_localization_config(
         strategy=row.strategy,  # type: ignore[arg-type]
         updated_at=row.updated_at,
     )
+
+
+@router.get("/readiness", response_model=LocalizationReadinessOut)
+async def get_readiness(
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_LOCALIZATION_MANAGERS)),
+):
+    return LocalizationReadinessOut.model_validate(
+        await get_localization_readiness(db, ws.id)
+    )
+
+
+@router.post("/readiness/repair", response_model=LocalizationReadinessOut)
+async def repair_readiness(
+    body: LocalizationReadinessRepairIn | None = None,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_LOCALIZATION_MANAGERS)),
+):
+    try:
+        payload = await repair_localization_readiness(
+            db,
+            ws.id,
+            updated_by_user_id=current_user.id,
+            facility_id=body.facility_id if body else None,
+            floor_id=body.floor_id if body else None,
+            room_id=body.room_id if body else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return LocalizationReadinessOut.model_validate(payload)
 
 
 @router.put("/config", response_model=LocalizationConfigOut)

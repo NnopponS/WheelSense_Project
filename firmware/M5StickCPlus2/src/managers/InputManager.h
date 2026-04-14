@@ -4,9 +4,9 @@
 #include <M5StickCPlus2.h>
 
 enum ButtonID {
-    BTN_A,    // Front button - Select/Confirm
-    BTN_B,    // Side button  - Scroll/Next
-    BTN_C,    // Power button - Back/Menu
+    BTN_A,    // M5 (front) — Enter / sleep on dashboard
+    BTN_B,    // B — Next / page
+    BTN_C,    // C (power key) — Back / menu from dashboard
     BTN_NONE
 };
 

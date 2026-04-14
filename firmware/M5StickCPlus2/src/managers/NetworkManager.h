@@ -25,6 +25,13 @@ public:
     bool isMQTTConnected();
     void publish(const char* topic, const char* payload);
     bool connectMQTT();
+    void reconfigureFromConfig(bool reconnectWifi = true);
+
+    // Runtime status
+    String getBrokerEndpoint() const;
+    String getLatestRoomName() const;
+    float getLatestRoomConfidence() const;
+    bool hasLatestRoomAssignment() const;
 
     // Health
     uint32_t getWiFiReconnectAttempts() const;
@@ -45,6 +52,9 @@ private:
     uint32_t mqttReconnectAttempts = 0;
     uint32_t droppedPublishCount = 0;
     bool lastWiFiConnected = false;
+    String latestRoomName;
+    float latestRoomConfidence = 0.0f;
+    bool hasLatestRoom = false;
 };
 
 extern NetworkManager NetworkMgr;

@@ -37,6 +37,12 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       COPILOT_CLI_URL: ${COPILOT_CLI_URL:-copilot-cli:4321}
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
+      INTENT_SEMANTIC_ENABLED: ${INTENT_SEMANTIC_ENABLED:-false}
+      INTENT_LLM_NORMALIZE_ENABLED: ${INTENT_LLM_NORMALIZE_ENABLED:-false}
+      SERVER_BASE_URL: ${SERVER_BASE_URL:-http://wheelsense-platform-server:8000}
+      AGENT_RUNTIME_URL: ${AGENT_RUNTIME_URL:-http://wheelsense-agent-runtime:8010}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-wheelsense-internal-dev-secret}
+      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-http://localhost:3000}
       GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:-}
       BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-true}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
@@ -51,6 +57,36 @@ services:
         condition: service_healthy
       mosquitto:
         condition: service_healthy
+
+  wheelsense-agent-runtime:
+    container_name: wheelsense-agent-runtime
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["uvicorn", "app.agent_runtime.main:app", "--host", "0.0.0.0", "--port", "8010"]
+    ports:
+      - "8010:8010"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-wheelsense-local-dev-secret-key}
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      SERVER_BASE_URL: ${SERVER_BASE_URL:-http://wheelsense-platform-server:8000}
+      AGENT_RUNTIME_URL: ${AGENT_RUNTIME_URL:-http://wheelsense-agent-runtime:8010}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-wheelsense-internal-dev-secret}
+      AI_PROVIDER: ${AI_PROVIDER:-ollama}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gemma4:e4b}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      COPILOT_CLI_URL: ${COPILOT_CLI_URL:-copilot-cli:4321}
+      COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
+      INTENT_SEMANTIC_ENABLED: ${INTENT_SEMANTIC_ENABLED:-false}
+      INTENT_LLM_NORMALIZE_ENABLED: ${INTENT_LLM_NORMALIZE_ENABLED:-false}
+      # Agent routing: `intent` (classifier) or `llm_tools` (Ollama tool-calling router; needs OLLAMA_BASE_URL).
+      AGENT_ROUTING_MODE: ${AGENT_ROUTING_MODE:-intent}
+      AGENT_LLM_ROUTER_MODEL: ${AGENT_LLM_ROUTER_MODEL:-}
+    depends_on:
+      wheelsense-platform-server:
+        condition: service_started
 
   wheelsense-platform-web:
     container_name: wheelsense-platform-web

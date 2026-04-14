@@ -153,16 +153,21 @@ export default function ServerSettingsPanel() {
   };
 
   const handleSimulatorReset = async () => {
-    if (!window.confirm("Reset simulator to baseline state? This will clear all dynamic data and re-seed demo data.")) return;
+    if (!window.confirm(t("settings.server.simResetConfirm"))) return;
     setSimResetBusy(true);
     setSimResetMessage(null);
     try {
       const result = await api.post<SimulatorResetResult>("/demo/simulator/reset");
-      setSimResetMessage(`Reset complete: ${result.message} (Cleared ${Object.keys(result.cleared_counts || {}).length} tables)`);
+      const count = Object.keys(result.cleared_counts || {}).length;
+      setSimResetMessage(
+        t("settings.server.simResetDone")
+          .replace("{message}", result.message)
+          .replace("{count}", String(count)),
+      );
       await refetchSimStatus();
       await refreshUser();
     } catch (e) {
-      setSimResetMessage(e instanceof ApiError ? e.message : "Simulator reset failed");
+      setSimResetMessage(e instanceof ApiError ? e.message : t("settings.server.simResetFailed"));
     } finally {
       setSimResetBusy(false);
     }
@@ -214,39 +219,38 @@ export default function ServerSettingsPanel() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg text-orange-600">
               <Beaker className="h-5 w-5" />
-              Simulator Environment
-              <Badge variant="secondary" className="bg-orange-100 text-orange-700">SIM MODE</Badge>
+              {t("settings.server.simulatorSectionTitle")}
+              <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                {t("settings.server.simModeBadge")}
+              </Badge>
             </CardTitle>
-            <CardDescription>
-              This environment is running in simulator mode with pre-populated demo data.
-              Use the reset button to restore baseline state after testing.
-            </CardDescription>
+            <CardDescription>{t("settings.server.simulatorDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {simulatorStatus.statistics ? (
               <div className="grid grid-cols-3 gap-2 text-sm">
                 <div className="rounded-lg border border-border/60 p-2">
-                  <p className="text-xs text-muted-foreground">Patients</p>
+                  <p className="text-xs text-muted-foreground">{t("settings.server.simStatPatients")}</p>
                   <p className="font-medium">{simulatorStatus.statistics.patients}</p>
                 </div>
                 <div className="rounded-lg border border-border/60 p-2">
-                  <p className="text-xs text-muted-foreground">Caregivers</p>
+                  <p className="text-xs text-muted-foreground">{t("settings.server.simStatCaregivers")}</p>
                   <p className="font-medium">{simulatorStatus.statistics.caregivers}</p>
                 </div>
                 <div className="rounded-lg border border-border/60 p-2">
-                  <p className="text-xs text-muted-foreground">Devices</p>
+                  <p className="text-xs text-muted-foreground">{t("settings.server.simStatDevices")}</p>
                   <p className="font-medium">{simulatorStatus.statistics.devices}</p>
                 </div>
                 <div className="rounded-lg border border-border/60 p-2">
-                  <p className="text-xs text-muted-foreground">Alerts</p>
+                  <p className="text-xs text-muted-foreground">{t("settings.server.simStatAlerts")}</p>
                   <p className="font-medium">{simulatorStatus.statistics.alerts}</p>
                 </div>
                 <div className="rounded-lg border border-border/60 p-2">
-                  <p className="text-xs text-muted-foreground">Tasks</p>
+                  <p className="text-xs text-muted-foreground">{t("settings.server.simStatTasks")}</p>
                   <p className="font-medium">{simulatorStatus.statistics.tasks}</p>
                 </div>
                 <div className="rounded-lg border border-border/60 p-2">
-                  <p className="text-xs text-muted-foreground">Vitals</p>
+                  <p className="text-xs text-muted-foreground">{t("settings.server.simStatVitals")}</p>
                   <p className="font-medium">{simulatorStatus.statistics.vitals}</p>
                 </div>
               </div>
@@ -261,7 +265,7 @@ export default function ServerSettingsPanel() {
                 className="border-orange-500/50 text-orange-700 hover:bg-orange-50"
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
-                {simResetBusy ? "Resetting..." : "Reset Simulator Data"}
+                {simResetBusy ? t("settings.server.simResetting") : t("settings.server.simResetButton")}
               </Button>
               {simResetMessage ? <p className="text-sm text-muted-foreground">{simResetMessage}</p> : null}
             </div>
@@ -302,7 +306,9 @@ export default function ServerSettingsPanel() {
               </div>
               <div className="flex justify-between gap-2 sm:col-span-2">
                 <dt className="text-muted-foreground">{t("settings.server.retentionInterval")}</dt>
-                <dd className="font-medium">{retentionConfig.retention_interval_hours} h</dd>
+                <dd className="font-medium">
+                  {retentionConfig.retention_interval_hours} {t("settings.server.retentionHoursSuffix")}
+                </dd>
               </div>
             </dl>
           ) : (

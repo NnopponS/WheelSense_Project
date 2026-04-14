@@ -121,5 +121,6 @@ extern bool isRecording;
 extern String currentRecordLabel;
 extern unsigned long recordStartMs;
 extern bool requestManualSleep;
+extern bool suppressDashboardSleepFromA;
 
 #endif

@@ -69,6 +69,8 @@ Switching sim vs prod: change `COMPOSE_FILE` in `server/.env` (or unset) and run
 - **Backend only (local):** run Postgres + Mosquitto in Docker and `uvicorn app.main:app --reload` on the host against `DATABASE_URL` pointing at `localhost:5433` (see `server/docs/ENV.md`).
 - **Cached rebuilds:** normal `docker compose up --build -d` reuses layers; use `build --no-cache` only when dependencies or base image must be refreshed.
 
+**Post-rebuild check (quick):** with the stack up, `GET /api/health` on the FastAPI port; from `server/` on the dev host run `python -m pytest tests/test_mcp_server.py tests/test_mcp_policy.py -q` to regress MCP tool registry and policy (pytest uses its own DB fixtures—see `server/AGENTS.md` Testing Guidance for full-suite limits).
+
 ### Manual Docker Compose Commands
 
 **Start Simulator Environment:**
@@ -130,6 +132,17 @@ cd server
 docker compose up -d --build
 ```
 
+### Floorplan presence / room telemetry behavior changes
+
+When backend floorplan presence logic or floorplan viewer telemetry rendering changes, rebuild both app images so API + web UI stay in sync:
+
+```bash
+cd server
+docker compose up -d --build wheelsense-platform-server wheelsense-platform-web
+```
+
+`/api/floorplans/presence` is a live operations projection (room assignment + telemetry prediction + optional manual staff presence), not the canonical patient-room assignment record.
+
 ### Run backend without the Dockerized frontend
 
 ```bash
@@ -190,12 +203,19 @@ docker compose logs -f homeassistant
 
 `model_ready: false` is expected until RSSI training data has been collected and the localization model has been trained.
 
+### Agent runtime (EaseAI chat popup)
+
+- Default routing is **`AGENT_ROUTING_MODE=intent`** (classifier). To trial **LLM tool routing** on a staging stack, set **`AGENT_ROUTING_MODE=llm_tools`** on the **`wheelsense-agent-runtime`** service (see `server/docker-compose.core.yml`). The router uses the **same workspace AI provider** as chat (Copilot vs Ollama); keep **`OLLAMA_BASE_URL`** reachable if you rely on Ollama (primary or fallback). See `server/docs/ENV.md` for behavior and fallback order.
+- **Thai / multi-turn patient reads:** After `list_visible_patients` or `get_patient_details`, the runtime updates in-memory context for that `conversation_id` so follow-ups like vitals or **ประวัติสุขภาพ** map to `get_patient_vitals` (and timeline-style phrases map to `get_patient_timeline`) with a resolved `patient_id`, including names embedded in earlier user lines (Thai often has no spaces). Regression coverage: `python -m pytest tests/test_agent_runtime.py tests/test_agent_runtime_extended.py -q` from `server/`.
+- After changing routing: smoke **POST `/api/chat/actions/propose`** from the web app with a read-only question (e.g. system health) and a mutation (e.g. acknowledge alert) to verify `answer` vs `plan` modes; run `python -m pytest tests/test_llm_tool_propose_integration.py tests/test_chat_actions_integration.py -q` from `server/` when convenient.
+
 ## Active MQTT Topic Map
 
 | Topic | Direction | Notes |
 |-------|-----------|-------|
 | `WheelSense/data` | wheelchair -> server | IMU, motion, RSSI, battery telemetry |
 | `WheelSense/{device_id}/control` | server -> wheelchair | motion recording and device control |
+| `WheelSense/{device_id}/ack` | wheelchair -> server | wheelchair command acknowledgement |
 | `WheelSense/room/{device_id}` | server -> subscribers | predicted room updates |
 | `WheelSense/camera/{device_id}/registration` | camera -> server | camera registration |
 | `WheelSense/camera/{device_id}/status` | camera -> server | camera heartbeat/status |
@@ -204,6 +224,20 @@ docker compose logs -f homeassistant
 | `WheelSense/camera/{device_id}/control` | server -> camera | capture/stream/resolution commands |
 | `WheelSense/vitals/{patient_id}` | server -> subscribers | vital broadcasts derived from telemetry |
 | `WheelSense/alerts/{patient_id}` or `WheelSense/alerts/{device_id}` | server -> subscribers | fall/alert broadcasts |
+
+`WheelSense/data` **`polar_hr`** payloads and persisted `vital_readings` rows use heart rate, R-R, SpO₂, and sensor battery only—the **`skin_temperature` column was dropped** (Alembic revision **`v6w7x8y9z0a1`**). After upgrading images or pulling main, run `alembic upgrade head` so PostgreSQL matches the ORM.
+
+## Live Firmware Bring-Up Checklist
+
+1. Register the wheelchair device through `/api/devices` with the exact `device_id`, **or** rely on **MQTT auto-register** (default `MQTT_AUTO_REGISTER_DEVICES=true`): first telemetry on `WheelSense/data` creates the row when the server can pick a workspace (single workspace, or `MQTT_AUTO_REGISTER_WORKSPACE_ID` set). If you have multiple workspaces and no env set, register manually.
+2. Optionally link the device to a patient through `/api/devices/{device_id}/patient`.
+3. Flash `firmware/M5StickCPlus2`.
+4. Open AP mode on the device, then set WiFi, MQTT broker/port/credentials, and the final `device_id`.
+5. Exit AP mode and wait for the device to reconnect on WiFi and MQTT.
+6. Confirm `/admin/devices` shows the expected firmware version and a fresh `last_seen`.
+7. Open the device detail drawer and verify realtime telemetry is updating.
+8. Send at least one wheelchair command and confirm command history transitions from `sent` to `acked`.
+9. If room prediction is enabled in the workspace, verify `WheelSense/room/{device_id}` updates are visible on the device and in backend-derived location views.
 
 ## Common Issues
 

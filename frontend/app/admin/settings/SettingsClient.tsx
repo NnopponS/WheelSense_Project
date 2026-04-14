@@ -76,12 +76,9 @@ export default function AdminSettingsClient() {
         <div className="space-y-6">
           <Card>
             <CardContent className="space-y-4 pt-6">
-              <p className="text-sm text-muted-foreground">
-                Profile editing has moved to the shared account page so every role uses the same
-                self-service flow.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("settings.profileRedirectBody")}</p>
               <Button type="button" onClick={() => router.push("/account")}>
-                Open /account
+                {t("settings.profileOpenAccount")}
               </Button>
             </CardContent>
           </Card>

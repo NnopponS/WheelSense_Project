@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/sheet";
 
 const EMPTY_SELECT_VALUE = "__empty__";
+const UNASSIGNED_FACILITY_KEY = "__facility_unassigned__";
+const UNASSIGNED_FLOOR_KEY = "__floor_unassigned__";
 
 const hardwareTypeSchema = z.enum(["node", "wheelchair", "mobile_phone", "polar_sense"]);
 
@@ -46,7 +48,11 @@ const roomOptionSchema = z
   .object({
     id: z.number(),
     name: z.string(),
+    floor_id: z.number().nullable().optional(),
     floor_name: z.string().nullish(),
+    floor_number: z.number().nullable().optional(),
+    facility_id: z.number().nullable().optional(),
+    facility_name: z.string().nullish(),
     node_device_id: z.string().nullish(),
   })
   .passthrough();
@@ -199,8 +205,42 @@ function mapApiError(error: unknown): string {
   return "Unexpected error";
 }
 
+/** Short BLE beacon label (WSN_001) — avoid long MAC in UI when config has ble_node_id. */
+function nodeBeaconShortLabel(detail: {
+  device_id: string;
+  display_name?: string | null;
+  config?: unknown;
+}): string {
+  const cfg = detail.config as { ble_node_id?: string } | undefined;
+  if (cfg?.ble_node_id?.trim()) return cfg.ble_node_id.trim();
+  const dn = detail.display_name?.trim();
+  if (dn) {
+    const head = dn.split(/\s+/)[0];
+    if (head.startsWith("WSN_")) return head;
+  }
+  return detail.device_id;
+}
+
 function roomLabel(room: RoomOption): string {
   return room.floor_name ? `${room.name} - ${room.floor_name}` : room.name;
+}
+
+function facilityKey(room: RoomOption): string {
+  return room.facility_id != null ? String(room.facility_id) : UNASSIGNED_FACILITY_KEY;
+}
+
+function floorKey(room: RoomOption): string {
+  return room.floor_id != null ? String(room.floor_id) : UNASSIGNED_FLOOR_KEY;
+}
+
+function roomMatchesBuilding(room: RoomOption, buildingSel: string): boolean {
+  if (buildingSel === EMPTY_SELECT_VALUE) return false;
+  return facilityKey(room) === buildingSel;
+}
+
+function roomMatchesFloor(room: RoomOption, buildingSel: string, floorSel: string): boolean {
+  if (floorSel === EMPTY_SELECT_VALUE) return false;
+  return roomMatchesBuilding(room, buildingSel) && floorKey(room) === floorSel;
 }
 
 function EventItem({ event }: { event: DeviceActivityEventOut }) {
@@ -231,11 +271,20 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const queryClient = useQueryClient();
   const nowMs = useFixedNowMs();
   const [feedback, setFeedback] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [scopeBuilding, setScopeBuilding] = useState(EMPTY_SELECT_VALUE);
+  const [scopeFloor, setScopeFloor] = useState(EMPTY_SELECT_VALUE);
+  const [fastPollUntilMs, setFastPollUntilMs] = useState(0);
 
   const deviceQuery = useQuery({
     queryKey: ["device-detail-drawer", "detail", deviceId],
     enabled: Boolean(deviceId),
-    refetchInterval: 30_000,
+    staleTime: 1_500,
+    refetchInterval: () => {
+      // Keep node/camera cards fresher, especially right after snapshot requests.
+      if (Date.now() < fastPollUntilMs) return 1_000;
+      return 2_500;
+    },
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const raw = await api.getDeviceDetailRaw(deviceId as string);
       return deviceDetailSchema.parse(raw);
@@ -251,6 +300,9 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const activityQuery = useQuery({
     queryKey: ["device-detail-drawer", "activity", deviceId],
     enabled: Boolean(deviceId),
+    staleTime: 3_000,
+    refetchInterval: () => (Date.now() < fastPollUntilMs ? 2_000 : 8_000),
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const rows = await api.listDeviceActivity(80);
       return rows.filter((row) => row.registry_device_id === deviceId).slice(0, 20);
@@ -316,6 +368,55 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     return null;
   }, [detail, roomsQuery.data]);
 
+  const facilityOptions = useMemo(() => {
+    const rooms = roomsQuery.data ?? [];
+    const labels = new Map<string, string>();
+    for (const room of rooms) {
+      const key = facilityKey(room);
+      const label =
+        room.facility_id != null
+          ? (room.facility_name?.trim() || `${t("devicesDetail.building")} #${room.facility_id}`)
+          : t("devicesDetail.buildingUnassigned");
+      if (!labels.has(key)) labels.set(key, label);
+    }
+    return [...labels.entries()]
+      .map(([id, label]) => ({ id, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [roomsQuery.data, t]);
+
+  const floorOptions = useMemo(() => {
+    if (scopeBuilding === EMPTY_SELECT_VALUE) return [];
+    const rooms = roomsQuery.data ?? [];
+    const rows = new Map<string, { label: string; sort: number }>();
+    for (const room of rooms) {
+      if (!roomMatchesBuilding(room, scopeBuilding)) continue;
+      const key = floorKey(room);
+      const sort = room.floor_number ?? room.floor_id ?? 999_999;
+      const label =
+        room.floor_id != null
+          ? (room.floor_name?.trim() ||
+              (room.floor_number != null
+                ? `${t("devicesDetail.floor")} ${room.floor_number}`
+                : `${t("devicesDetail.floor")} #${room.floor_id}`))
+          : t("devicesDetail.floorUnassigned");
+      const prev = rows.get(key);
+      if (!prev || label.length < prev.label.length) rows.set(key, { label, sort });
+    }
+    return [...rows.entries()]
+      .map(([id, meta]) => ({ id, label: meta.label, sort: meta.sort }))
+      .sort((a, b) => a.sort - b.sort || a.label.localeCompare(b.label));
+  }, [roomsQuery.data, scopeBuilding, t]);
+
+  const filteredRooms = useMemo(() => {
+    if (scopeFloor === EMPTY_SELECT_VALUE) return [];
+    const rooms = roomsQuery.data ?? [];
+    return rooms
+      .filter((room) => roomMatchesFloor(room, scopeBuilding, scopeFloor))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [roomsQuery.data, scopeBuilding, scopeFloor]);
+
+  const polarSnapshot = detail?.polar_metrics ?? detail?.polar_vitals ?? null;
+
   useEffect(() => {
     if (!detail) return;
 
@@ -323,9 +424,19 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
       patientId: detail.patient?.patient_id ? String(detail.patient.patient_id) : EMPTY_SELECT_VALUE,
     });
 
-    roomForm.reset({
-      roomId: currentRoom ? String(currentRoom.id) : EMPTY_SELECT_VALUE,
-    });
+    if (currentRoom) {
+      setScopeBuilding(facilityKey(currentRoom));
+      setScopeFloor(floorKey(currentRoom));
+      roomForm.reset({
+        roomId: String(currentRoom.id),
+      });
+    } else {
+      setScopeBuilding(EMPTY_SELECT_VALUE);
+      setScopeFloor(EMPTY_SELECT_VALUE);
+      roomForm.reset({
+        roomId: EMPTY_SELECT_VALUE,
+      });
+    }
   }, [currentRoom, detail, patientForm, roomForm]);
 
   const refreshAfterMutation = async () => {
@@ -416,6 +527,8 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     },
     onSuccess: async () => {
       setFeedback({ tone: "success", text: t("devicesDetail.cameraCheckSent") });
+      // Burst-poll for a short window so new image/status appears quickly.
+      setFastPollUntilMs(Date.now() + 20_000);
       await refreshAfterMutation();
     },
     onError: (error) => {
@@ -452,7 +565,11 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
       <SheetContent side="right" className="p-0">
         <div className="flex h-full flex-col">
           <SheetHeader>
-            <SheetTitle>{detail?.display_name?.trim() || detail?.device_id || deviceId}</SheetTitle>
+            <SheetTitle>
+              {detail && hardwareType === "node"
+                ? nodeBeaconShortLabel(detail)
+                : detail?.display_name?.trim() || detail?.device_id || deviceId}
+            </SheetTitle>
             <SheetDescription>
               Device assignment and recent IoT activity.
             </SheetDescription>
@@ -488,7 +605,11 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   <CardContent className="grid gap-3 sm:grid-cols-2">
                     <Metric
                       label={t("devicesDetail.displayName")}
-                      value={detail.display_name?.trim() || detail.device_id}
+                      value={
+                        hardwareType === "node"
+                          ? nodeBeaconShortLabel(detail)
+                          : detail.display_name?.trim() || detail.device_id
+                      }
                     />
                     <Metric label={t("devicesDetail.hardware")} value={hardwareType} />
                     <Metric
@@ -520,7 +641,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   </CardContent>
                 </Card>
 
-                {detail.realtime ? (
+                {hardwareType === "wheelchair" && detail.wheelchair_metrics ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">{t("devicesDetail.realtime")}</CardTitle>
@@ -529,32 +650,105 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                       <Metric
                         label={t("devicesDetail.battery")}
                         value={
-                          detail.realtime.battery_pct != null
-                            ? `${detail.realtime.battery_pct}%`
+                          detail.wheelchair_metrics.battery_pct != null
+                            ? `${detail.wheelchair_metrics.battery_pct}%`
                             : "-"
                         }
                       />
                       <Metric
-                        label="Voltage"
+                        label={t("patient.sensors.acceleration")}
                         value={
-                          detail.realtime.battery_v != null
-                            ? `${detail.realtime.battery_v.toFixed(2)} V`
+                          detail.wheelchair_metrics.accel_ms2 != null
+                            ? `${detail.wheelchair_metrics.accel_ms2.toFixed(2)} m/s²`
                             : "-"
                         }
                       />
                       <Metric
-                        label="Velocity"
+                        label={t("patient.sensors.velocity")}
                         value={
-                          detail.realtime.velocity_ms != null
-                            ? `${detail.realtime.velocity_ms.toFixed(2)} m/s`
+                          detail.wheelchair_metrics.velocity_ms != null
+                            ? `${detail.wheelchair_metrics.velocity_ms.toFixed(2)} m/s`
                             : "-"
                         }
                       />
                       <Metric
-                        label="Distance"
+                        label={t("patient.sensors.distance")}
                         value={
-                          detail.realtime.distance_m != null
-                            ? `${detail.realtime.distance_m.toFixed(2)} m`
+                          detail.wheelchair_metrics.distance_m != null
+                            ? `${detail.wheelchair_metrics.distance_m.toFixed(2)} m`
+                            : "-"
+                        }
+                      />
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                {hardwareType === "polar_sense" ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">{t("devicesDetail.realtime")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 sm:grid-cols-2">
+                      <Metric
+                        label={t("patient.sensors.heartRate")}
+                        value={
+                          polarSnapshot?.heart_rate_bpm != null
+                            ? `${Math.round(polarSnapshot.heart_rate_bpm)} bpm`
+                            : "-"
+                        }
+                      />
+                      <Metric
+                        label={t("patient.sensors.ppg")}
+                        value={
+                          typeof polarSnapshot?.ppg === "number" && !Number.isNaN(polarSnapshot.ppg)
+                            ? polarSnapshot.ppg.toFixed(3)
+                            : polarSnapshot?.ppg != null && typeof polarSnapshot.ppg !== "object"
+                              ? String(polarSnapshot.ppg)
+                              : "-"
+                        }
+                      />
+                      <Metric
+                        label={t("patient.sensors.sensorBattery")}
+                        value={
+                          polarSnapshot?.sensor_battery != null
+                            ? `${Math.round(polarSnapshot.sensor_battery)}%`
+                            : "-"
+                        }
+                      />
+                      <Metric label={t("devicesDetail.spo2")} value={polarSnapshot?.spo2 != null ? `${polarSnapshot.spo2}%` : "-"} />
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                {hardwareType === "mobile_phone" ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">{t("devicesDetail.mobileTelemetry")}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-3 sm:grid-cols-2">
+                      <Metric
+                        label={t("devicesDetail.polarConnected")}
+                        value={
+                          detail.mobile_metrics?.polar_connected === true
+                            ? t("devicesDetail.polarConnectedYes")
+                            : detail.mobile_metrics?.polar_connected === false
+                              ? t("devicesDetail.polarConnectedNo")
+                              : "-"
+                        }
+                      />
+                      <Metric
+                        label={t("devicesDetail.battery")}
+                        value={
+                          detail.mobile_metrics?.battery_pct != null
+                            ? `${Math.round(detail.mobile_metrics.battery_pct)}%`
+                            : "-"
+                        }
+                      />
+                      <Metric
+                        label={t("devicesDetail.steps")}
+                        value={
+                          detail.mobile_metrics?.steps != null
+                            ? String(Math.round(detail.mobile_metrics.steps))
                             : "-"
                         }
                       />
@@ -566,46 +760,149 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">
+                        <Camera className="h-4 w-4" />
+                        {t("devicesDetail.camera")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">{t("devicesDetail.cameraCheckHint")}</p>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() => snapshotMutation.mutate()}
+                      >
+                        {snapshotMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Camera className="h-4 w-4" />
+                        )}
+                        {t("devicesDetail.cameraCheck")}
+                      </Button>
+                      {detail.latest_photo?.url ? (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground">{t("devicesDetail.latestSnapshot")}</p>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={detail.latest_photo.url}
+                            alt=""
+                            className="max-h-56 w-full rounded-xl border border-border object-contain bg-muted/20"
+                            loading="eager"
+                            fetchPriority="high"
+                            decoding="async"
+                          />
+                          {detail.latest_photo.timestamp ? (
+                            <p className="text-xs text-muted-foreground">
+                              {formatDateTime(detail.latest_photo.timestamp)} ·{" "}
+                              {formatRelativeTime(detail.latest_photo.timestamp)}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">{t("devicesDetail.noSnapshotYet")}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                {isNodeDevice ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
                         <MapPin className="h-4 w-4" />
-                        Room Assignment
+                        {t("devicesDetail.roomAssignment")}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        Current room: {currentRoom ? roomLabel(currentRoom) : t("devicesDetail.noRoom")}
+                        {t("devicesDetail.currentRoomLabel")}{" "}
+                        {currentRoom ? roomLabel(currentRoom) : t("devicesDetail.noRoom")}
                       </p>
 
                       <form
-                        className="space-y-2"
+                        className="space-y-3"
                         onSubmit={roomForm.handleSubmit((values) => assignRoomMutation.mutate(values))}
                       >
-                        <Label>{t("devicesDetail.selectRoom")}</Label>
-                        <Controller
-                          control={roomForm.control}
-                          name="roomId"
-                          render={({ field }) => (
-                            <Select
-                              value={field.value || EMPTY_SELECT_VALUE}
-                              onValueChange={field.onChange}
-                              disabled={busy || roomsQuery.isLoading}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={t("devicesDetail.selectRoom")} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value={EMPTY_SELECT_VALUE}>Select room</SelectItem>
-                                {(roomsQuery.data ?? []).map((room) => (
-                                  <SelectItem key={room.id} value={String(room.id)}>
-                                    {roomLabel(room)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                        {roomForm.formState.errors.roomId ? (
-                          <p className="text-xs text-destructive">{roomForm.formState.errors.roomId.message}</p>
-                        ) : null}
+                        <div className="space-y-2">
+                          <Label>{t("devicesDetail.selectBuilding")}</Label>
+                          <Select
+                            value={scopeBuilding}
+                            onValueChange={(value) => {
+                              setScopeBuilding(value);
+                              setScopeFloor(EMPTY_SELECT_VALUE);
+                              roomForm.setValue("roomId", EMPTY_SELECT_VALUE);
+                            }}
+                            disabled={busy || roomsQuery.isLoading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("devicesDetail.selectBuilding")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={EMPTY_SELECT_VALUE}>{t("devicesDetail.selectBuilding")}</SelectItem>
+                              {facilityOptions.map((opt) => (
+                                <SelectItem key={opt.id} value={opt.id}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>{t("devicesDetail.selectFloor")}</Label>
+                          <Select
+                            value={scopeFloor}
+                            onValueChange={(value) => {
+                              setScopeFloor(value);
+                              roomForm.setValue("roomId", EMPTY_SELECT_VALUE);
+                            }}
+                            disabled={busy || roomsQuery.isLoading || scopeBuilding === EMPTY_SELECT_VALUE}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("devicesDetail.selectFloor")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={EMPTY_SELECT_VALUE}>{t("devicesDetail.selectFloor")}</SelectItem>
+                              {floorOptions.map((opt) => (
+                                <SelectItem key={opt.id} value={opt.id}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>{t("devicesDetail.selectRoom")}</Label>
+                          <Controller
+                            control={roomForm.control}
+                            name="roomId"
+                            render={({ field }) => (
+                              <Select
+                                value={field.value || EMPTY_SELECT_VALUE}
+                                onValueChange={field.onChange}
+                                disabled={
+                                  busy || roomsQuery.isLoading || scopeFloor === EMPTY_SELECT_VALUE
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={t("devicesDetail.selectRoom")} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={EMPTY_SELECT_VALUE}>{t("devicesDetail.selectRoom")}</SelectItem>
+                                  {filteredRooms.map((room) => (
+                                    <SelectItem key={room.id} value={String(room.id)}>
+                                      {room.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                          {roomForm.formState.errors.roomId ? (
+                            <p className="text-xs text-destructive">{roomForm.formState.errors.roomId.message}</p>
+                          ) : null}
+                        </div>
                         <div className="flex flex-wrap gap-2 pt-1">
                           <Button type="submit" disabled={busy}>
                             {assignRoomMutation.isPending ? (

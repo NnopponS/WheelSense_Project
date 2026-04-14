@@ -132,7 +132,7 @@ export default function AddPatientModal({
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && closeModal()}>
       <DialogContent className="w-[min(100%-2rem,72rem)]">
-        <form onSubmit={submit} className="flex max-h-[88vh] flex-col">
+        <form onSubmit={submit} className="flex max-h-[88vh] min-h-0 flex-col">
           <DialogHeader>
             <DialogTitle>{t("patients.createTitle")}</DialogTitle>
             <DialogDescription>
@@ -140,7 +140,7 @@ export default function AddPatientModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 overflow-y-auto px-6 py-5">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
             <FormSection title={t("patients.formSectionIdentity")}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <TextField
@@ -154,9 +154,6 @@ export default function AddPatientModal({
                   error={errors.lastName?.message}
                 >
                   <Input {...register("lastName")} disabled={isSubmitting} />
-                </TextField>
-                <TextField label={t("patients.nickname")} error={errors.nickname?.message}>
-                  <Input {...register("nickname")} disabled={isSubmitting} />
                 </TextField>
                 <TextField
                   label={t("patients.dateOfBirth")}

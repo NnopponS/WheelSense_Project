@@ -214,6 +214,16 @@ export function PatientMySensors({ patientId }: { patientId: number }) {
             body = (
               <div className="space-y-2 pt-1 border-t border-border/60">
                 <MetricRow
+                  label={t("patient.sensors.polarConnected")}
+                  value={
+                    mm?.polar_connected === true
+                      ? t("devicesDetail.polarConnectedYes")
+                      : mm?.polar_connected === false
+                        ? t("devicesDetail.polarConnectedNo")
+                        : "—"
+                  }
+                />
+                <MetricRow
                   label={t("patient.sensors.walkSteps")}
                   value={
                     <span className="inline-flex items-center gap-1">

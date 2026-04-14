@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { ApiError } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -78,8 +79,10 @@ export default function LoginPage() {
       // Wait for useAuth's fetchMe to populate `user` which will trigger the `if (user)` block.
       // But just in case, we don't immediately push here without knowing the role.
       // The `if (user)` effect at the top level handles it perfectly on next render.
-    } catch {
-      setError(t("auth.failed"));
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : err instanceof Error ? err.message : t("auth.failed");
+      setError(message);
       setPassword(""); // Clear password on failed login for security
     } finally {
       setSubmitting(false);
@@ -232,6 +235,10 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground leading-relaxed px-1">
+            {t("auth.devCredentialHint")}
+          </p>
 
           <p className="mt-8 text-center text-xs text-outline">
             WheelSense Smart Care Platform v1.0

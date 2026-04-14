@@ -114,31 +114,7 @@ function clampPositiveInt(value: number, max: number): number {
   return Math.min(normalized, max);
 }
 
-function readCookieToken(): string | null {
-  if (typeof document === "undefined") return null;
-  const m = document.cookie.match(/(?:^|;\s*)ws_token=([^;]*)/);
-  return m ? decodeURIComponent(m[1]) : null;
-}
-
-export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("ws_token") ?? readCookieToken();
-}
-
-/** Persist JWT for client `fetch` + Edge `middleware` (same-site cookie). */
-export function setToken(token: string): void {
-  localStorage.setItem("ws_token", token);
-  const maxAge = 60 * 60 * 24 * 7;
-  document.cookie = `ws_token=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
-}
-
-export function clearToken(): void {
-  localStorage.removeItem("ws_token");
-  if (typeof document !== "undefined") {
-    document.cookie =
-      "ws_token=; path=/; max-age=0; SameSite=Lax";
-  }
-}
+type ApiRequestOptions = ApiRequestInit & { suppressUnauthorizedRedirect?: boolean };
 
 export type ImpersonationTokenResponse = {
   access_token: string;
@@ -212,17 +188,16 @@ export type WorkflowItemDetail = {
 
 async function request<T>(
   endpoint: string,
-  options: ApiRequestInit = {},
+  options: ApiRequestOptions = {},
 ): Promise<T> {
-  const { timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS, ...fetchInit } = options;
-  const token = getToken();
+  const {
+    timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS,
+    suppressUnauthorizedRedirect = false,
+    ...fetchInit
+  } = options;
   const headers: Record<string, string> = {
     ...(fetchInit.headers as Record<string, string>),
   };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
 
   // Don't set Content-Type for FormData (browser sets multipart boundary)
   if (!(fetchInit.body instanceof FormData)) {
@@ -238,6 +213,7 @@ async function request<T>(
       ...fetchInit,
       signal: controller.signal,
       headers,
+      credentials: "same-origin",
     });
   } catch (err) {
     clearTimeout(timer);
@@ -253,8 +229,7 @@ async function request<T>(
   clearTimeout(timer);
 
   if (res.status === 401) {
-    clearToken();
-    if (typeof window !== "undefined") {
+    if (!suppressUnauthorizedRedirect && typeof window !== "undefined") {
       window.location.href = "/login";
     }
     throw new ApiError(401, "Unauthorized");
@@ -305,7 +280,7 @@ async function request<T>(
 export async function login(
   username: string,
   password: string,
-): Promise<{ access_token: string; token_type: string }> {
+): Promise<{ access_token: string; token_type: string; session_id?: string | null }> {
   const form = new URLSearchParams();
   form.append("username", username);
   form.append("password", password);
@@ -319,6 +294,7 @@ export async function login(
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: form,
       signal: controller.signal,
+      credentials: "same-origin",
     });
   } catch (err) {
     clearTimeout(timer);
@@ -344,7 +320,7 @@ export async function login(
 // ── Convenience methods ─────────────────────────────────────────────────────
 
 export const api = {
-  get: <T>(endpoint: string) => request<T>(endpoint),
+  get: <T>(endpoint: string, options?: ApiRequestOptions) => request<T>(endpoint, options),
 
   post: <T>(endpoint: string, data?: unknown) =>
     request<T>(endpoint, {
@@ -373,6 +349,18 @@ export const api = {
       body,
     }),
 
+  logout: () =>
+    request<void>("/auth/logout", {
+      method: "POST",
+      suppressUnauthorizedRedirect: true,
+    }),
+
+  stopImpersonation: () =>
+    request<void>("/auth/impersonate/stop", {
+      method: "POST",
+      suppressUnauthorizedRedirect: true,
+    }),
+
   // Task scope typed helpers (Step 3 Tasks 1-2)
   getPatient: (patientId: number | string) =>
     request<GetPatientResponse>(`/patients/${encodeURIComponent(String(patientId))}`),
@@ -382,6 +370,9 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),
+
+  deletePatient: (patientId: number | string) =>
+    request<void>(`/patients/${encodeURIComponent(String(patientId))}`, { method: "DELETE" }),
 
   listPatientContacts: (patientId: number | string) =>
     request<ListPatientContactsResponse>(

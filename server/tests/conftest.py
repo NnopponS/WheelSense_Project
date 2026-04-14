@@ -17,6 +17,9 @@ os.environ["SECRET_KEY"] = "test-secret-key"
 os.environ["BOOTSTRAP_ADMIN_ENABLED"] = "false"
 os.environ["PROFILE_IMAGE_STORAGE_DIR"] = tempfile.mkdtemp(prefix="ws_profile_img_")
 os.environ["WHEELSENSE_ENABLE_MCP"] = "0"
+# Keep pytest fast: skip sentence-transformers download/load unless a test enables it.
+os.environ["INTENT_SEMANTIC_ENABLED"] = "false"
+os.environ["INTENT_LLM_NORMALIZE_ENABLED"] = "false"
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -134,6 +137,30 @@ async def make_token_headers():
         return {"Authorization": f"Bearer {token}"}
 
     return _make
+
+
+@pytest_asyncio.fixture()
+async def runtime_test_workspace(db_session: AsyncSession) -> Workspace:
+    """Workspace for agent-runtime integration tests (admin role user)."""
+    ws = Workspace(name="runtime_test_workspace", is_active=True)
+    db_session.add(ws)
+    await db_session.flush()
+    return ws
+
+
+@pytest_asyncio.fixture()
+async def runtime_test_user(db_session: AsyncSession, runtime_test_workspace: Workspace) -> User:
+    """Admin user tied to `runtime_test_workspace` for propose_turn / MCP tests."""
+    user = User(
+        username="runtime_test_user",
+        hashed_password=get_password_hash("testpass"),
+        role="admin",
+        workspace_id=runtime_test_workspace.id,
+        is_active=True,
+    )
+    db_session.add(user)
+    await db_session.flush()
+    return user
 
 
 # ── HTTP client fixture — lifespan bypassed, DB overridden ──────────────────

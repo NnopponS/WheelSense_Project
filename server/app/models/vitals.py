@@ -48,7 +48,6 @@ class VitalReading(Base):
 
     # Future: from Polar SDK via mobile app
     spo2 = Column(SmallInteger, nullable=True)  # Blood oxygen %
-    skin_temperature = Column(Float, nullable=True)  # °C
 
     # Battery of the wearable
     sensor_battery = Column(SmallInteger, nullable=True)

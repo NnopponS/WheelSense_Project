@@ -34,6 +34,7 @@ The strategy is configurable via `POST /api/localization/config` with body `{"st
 - Max RSSI works immediately without training — useful for new deployments
 - KNN available for higher accuracy when training data exists
 - Easy A/B comparison of strategies in the same environment
+- Admins now have an operational readiness surface (`/api/localization/readiness` and `/admin/ml-calibration`) to verify the non-ML dependencies of Max RSSI: wheelchair assignment, node alias resolution, room binding, patient room assignment, and floorplan visibility.
 
 ### Negative
 - Two code paths to maintain
@@ -41,3 +42,4 @@ The strategy is configurable via `POST /api/localization/config` with body `{"st
 
 ### Risks
 - **Strategy mismatch**: User might forget which strategy is active. Mitigation: include active strategy in `/api/localization` info endpoint response.
+- **Data mismatch**: Max RSSI can still return no room if the workspace has telemetry but no room/node/patient binding. Mitigation: expose readiness inspection/repair and keep the repair path idempotent.

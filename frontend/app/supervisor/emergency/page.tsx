@@ -373,13 +373,13 @@ export default function SupervisorEmergencyPage() {
   const flashAlertId = useAlertRowHighlight(highlightAlertId, highlightReady);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       <div>
         <h2 className="text-2xl font-bold text-foreground">{t("supervisor.emergency.pageTitle")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.emergency.pageSubtitle")}</p>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <SummaryStatCard
           icon={Siren}
           label={t("supervisor.emergency.statCriticalAlerts")}

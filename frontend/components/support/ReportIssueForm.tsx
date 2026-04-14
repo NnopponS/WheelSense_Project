@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,14 +27,12 @@ type CreatedTicket = {
   title: string;
 };
 
-const reportIssueBaseSchema = z.object({
-  title: z.string().trim().min(3, "Title must be at least 3 characters."),
-  description: z.string(),
-  category: z.enum(["bug", "general", "device"]),
-  priority: z.enum(["low", "normal", "high", "critical"]),
-});
-
-type ReportIssueFormValues = z.infer<typeof reportIssueBaseSchema>;
+type ReportIssueFormValues = {
+  title: string;
+  description: string;
+  category: "bug" | "general" | "device";
+  priority: "low" | "normal" | "high" | "critical";
+};
 
 export default function ReportIssueForm() {
   const { t } = useTranslation();
@@ -44,8 +42,19 @@ export default function ReportIssueForm() {
 
   const endpoint = withWorkspaceScope("/support/tickets", user?.workspace_id);
 
+  const reportIssueSchema = useMemo(
+    () =>
+      z.object({
+        title: z.string().trim().min(3, t("support.titleMin")),
+        description: z.string(),
+        category: z.enum(["bug", "general", "device"]),
+        priority: z.enum(["low", "normal", "high", "critical"]),
+      }),
+    [t],
+  );
+
   const form = useForm<ReportIssueFormValues>({
-    resolver: zodResolver(reportIssueBaseSchema),
+    resolver: zodResolver(reportIssueSchema),
     defaultValues: {
       title: "",
       description: "",

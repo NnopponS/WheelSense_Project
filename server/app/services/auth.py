@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
+import secrets
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,11 +13,12 @@ from fastapi import HTTPException, status
 from sqlalchemy import and_, func, or_
 from sqlalchemy.future import select
 
+from app.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.caregivers import CareGiver
 from app.models.patients import Patient
-from app.models.users import User
-from app.schemas.users import AuthMeProfilePatch, UserCreate, Token
+from app.models.users import AuthSession, User
+from app.schemas.users import AuthMeProfilePatch, AuthSessionOut, UserCreate, Token
 from app.services.profile_image_storage import remove_hosted_profile_file_if_any
 
 class UserService:
@@ -457,6 +459,120 @@ class AuthService:
     """Business logic for Authentication."""
 
     @staticmethod
+    def _expires_at(expires_delta: timedelta | None = None) -> datetime:
+        ttl = expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
+        return datetime.now(timezone.utc) + ttl
+
+    @staticmethod
+    async def _create_auth_session(
+        session: AsyncSession,
+        *,
+        user: User,
+        expires_at: datetime,
+        user_agent: str | None = None,
+        ip_address: str | None = None,
+        impersonated_by_user_id: int | None = None,
+    ) -> AuthSession:
+        db_session = AuthSession(
+            id=secrets.token_urlsafe(24),
+            workspace_id=user.workspace_id,
+            user_id=user.id,
+            impersonated_by_user_id=impersonated_by_user_id,
+            user_agent=(user_agent or "")[:512],
+            ip_address=(ip_address or "")[:64],
+            expires_at=expires_at,
+        )
+        session.add(db_session)
+        await session.commit()
+        await session.refresh(db_session)
+        return db_session
+
+    @staticmethod
+    async def create_auth_session(
+        session: AsyncSession,
+        *,
+        user_id: int,
+        workspace_id: int,
+        expires_minutes: int,
+        user_agent: str | None = None,
+        ip_address: str | None = None,
+        impersonated_by_user_id: int | None = None,
+    ) -> str:
+        user = await UserService.get_user(session, user_id=user_id)
+        if not user or user.workspace_id != workspace_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        auth_session = await AuthService._create_auth_session(
+            session,
+            user=user,
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=expires_minutes),
+            user_agent=user_agent,
+            ip_address=ip_address,
+            impersonated_by_user_id=impersonated_by_user_id,
+        )
+        return auth_session.id
+
+    @staticmethod
+    async def get_auth_session(
+        session: AsyncSession,
+        *,
+        session_id: str,
+    ) -> AuthSession | None:
+        row = await session.get(AuthSession, session_id)
+        return row
+
+    @staticmethod
+    async def list_auth_sessions(
+        session: AsyncSession,
+        *,
+        ws_id: int,
+        user_id: int,
+        current_session_id: str | None,
+    ) -> list[AuthSessionOut]:
+        rows = list(
+            (
+                await session.execute(
+                    select(AuthSession)
+                    .where(
+                        AuthSession.workspace_id == ws_id,
+                        AuthSession.user_id == user_id,
+                        AuthSession.revoked_at.is_(None),
+                    )
+                    .order_by(AuthSession.created_at.desc())
+                )
+            ).scalars().all()
+        )
+        return [
+            AuthSessionOut.model_validate(row).model_copy(
+                update={"current": current_session_id == row.id}
+            )
+            for row in rows
+        ]
+
+    @staticmethod
+    async def revoke_auth_session(
+        session: AsyncSession,
+        *,
+        ws_id: int,
+        user_id: int,
+        session_id: str,
+    ) -> AuthSession:
+        row = await AuthService.get_auth_session(session, session_id=session_id)
+        if not row or row.workspace_id != ws_id or row.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session not found",
+            )
+        if row.revoked_at is None:
+            row.revoked_at = datetime.now(timezone.utc)
+            session.add(row)
+            await session.commit()
+            await session.refresh(row)
+        return row
+
+    @staticmethod
     async def authenticate_user(
         session: AsyncSession, username: str, password: str
     ) -> User | None:
@@ -470,7 +586,12 @@ class AuthService:
 
     @staticmethod
     async def login_for_access_token(
-        session: AsyncSession, username: str, password: str
+        session: AsyncSession,
+        username: str,
+        password: str,
+        *,
+        user_agent: str | None = None,
+        ip_address: str | None = None,
     ) -> Token:
         """Authenticate and generate JWT."""
         user = await AuthService.authenticate_user(session, username, password)
@@ -485,11 +606,24 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
             )
 
+        expires_at = AuthService._expires_at()
+        auth_session = await AuthService._create_auth_session(
+            session,
+            user=user,
+            expires_at=expires_at,
+            user_agent=user_agent,
+            ip_address=ip_address,
+        )
         access_token = create_access_token(
             subject=user.id,
             role=user.role,
+            extra_claims={"sid": auth_session.id},
         )
-        return Token(access_token=access_token, token_type="bearer")
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            session_id=auth_session.id,
+        )
 
     @staticmethod
     async def start_impersonation(
@@ -497,6 +631,8 @@ class AuthService:
         *,
         actor_admin: User,
         target_user_id: int,
+        user_agent: str | None = None,
+        ip_address: str | None = None,
     ) -> Token:
         """Create a short-lived token that acts as another workspace user."""
         if actor_admin.role != "admin":
@@ -521,11 +657,21 @@ class AuthService:
                 detail="Cannot act as the current admin user",
             )
 
+        expires_at = AuthService._expires_at(timedelta(minutes=60))
+        auth_session = await AuthService._create_auth_session(
+            session,
+            user=target,
+            expires_at=expires_at,
+            user_agent=user_agent,
+            ip_address=ip_address,
+            impersonated_by_user_id=actor_admin.id,
+        )
         access_token = create_access_token(
             subject=target.id,
             role=target.role,
             expires_delta=timedelta(minutes=60),
             extra_claims={
+                "sid": auth_session.id,
                 "impersonation": True,
                 "actor_admin_id": actor_admin.id,
                 "impersonated_user_id": target.id,
@@ -534,6 +680,7 @@ class AuthService:
         return Token(
             access_token=access_token,
             token_type="bearer",
+            session_id=auth_session.id,
             impersonation=True,
             actor_admin_id=actor_admin.id,
             impersonated_user_id=target.id,

@@ -16,7 +16,6 @@ class VitalsAverageOut(BaseModel):
     heart_rate_bpm_avg: Optional[float] = None
     rr_interval_ms_avg: Optional[float] = None
     spo2_avg: Optional[float] = None
-    skin_temperature_avg: Optional[float] = None
 
 class WardSummaryOut(BaseModel):
     """Sumaries of patients in a ward."""

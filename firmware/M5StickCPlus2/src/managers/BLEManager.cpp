@@ -83,9 +83,11 @@ void BLEManager::begin() {
         return;
     }
     pBLEScan->setAdvertisedDeviceCallbacks(&scanCb);
-    pBLEScan->setActiveScan(false);  // Passive to save power
-    pBLEScan->setInterval(160);
-    pBLEScan->setWindow(30);          // Reduced from 50 for power saving
+    // Active scan so peripherals that put the local name in the scan response still
+    // populate getName() (passive-only often leaves name empty on ESP-IDF / NimBLE).
+    pBLEScan->setActiveScan(true);
+    pBLEScan->setInterval(100);
+    pBLEScan->setWindow(50);
 
     xTaskCreatePinnedToCore(scanTask, "BLE_Scan", 4096, this, 1, &scanTaskHandle, 0);
     Serial.println("[BLE] Started");

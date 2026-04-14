@@ -5,10 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
+import { useTranslation } from "@/lib/i18n";
 import DemoPanel from "@/components/admin/demo-control/DemoPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -32,6 +34,17 @@ type Tone = "success" | "error" | "info";
 type ActorType = "patient" | "staff";
 type ItemType = "task" | "schedule" | "directive";
 type TargetMode = "role" | "user";
+
+type SimulatorStatusResp = {
+  env_mode: string;
+  is_simulator: boolean;
+  workspace_exists: boolean;
+  workspace_id?: number | null;
+};
+
+type DemoAlertType = "manual_test" | "abnormal_hr" | "fall" | "low_battery" | "device_offline";
+
+const SIM_PATIENT_ANY = "__any__";
 
 const WORKFLOW_ITEM_OPTIONS: Array<{ value: ItemType; label: string }> = [
   { value: "task", label: "Tasks" },
@@ -68,6 +81,7 @@ function valueFromItem(item: CareTaskOut | CareScheduleOut | CareDirectiveOut) {
 
 export default function AdminDemoControlPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const patients = useQuery<Patient[]>({
@@ -99,6 +113,12 @@ export default function AdminDemoControlPage() {
     queryFn: () => api.get(withWorkspaceScope("/alerts?status=active&limit=20", user?.workspace_id) as string)
   }).data ?? [];
 
+  const simStatus = useQuery<SimulatorStatusResp>({
+    queryKey: ["demo-control", "simulator-status", user?.workspace_id],
+    queryFn: () => api.get("/demo/simulator/status"),
+    enabled: user?.role === "admin",
+  });
+
   const [actorType, setActorType] = useState<ActorType>("patient");
   const [actorId, setActorId] = useState("");
   const [roomId, setRoomId] = useState("");
@@ -113,8 +133,17 @@ export default function AdminDemoControlPage() {
   
   // Custom Event States
   const [alertPatientId, setAlertPatientId] = useState("");
+  const [alertType, setAlertType] = useState<DemoAlertType>("manual_test");
   const [alertSeverity, setAlertSeverity] = useState("warning");
   const [alertTitle, setAlertTitle] = useState("Manual Test Alert");
+  const [alertDescription, setAlertDescription] = useState("Triggered from Manual Testing Panel");
+  const [alertHrBpm, setAlertHrBpm] = useState("120");
+
+  const [simVitalInterval, setSimVitalInterval] = useState("30");
+  const [simAlertProbability, setSimAlertProbability] = useState("0.05");
+  const [simHrHigh, setSimHrHigh] = useState("110");
+  const [simEnableAlerts, setSimEnableAlerts] = useState(true);
+  const [simInjectPatientId, setSimInjectPatientId] = useState(SIM_PATIENT_ANY);
 
   const [logs, setLogs] = useState<Array<{ id: string; title: string; detail: string; tone: Tone; at: string }>>([
     { id: logId("seed"), title: "Ready", detail: "Manual Testing Control Panel loaded.", tone: "info", at: ts() },
@@ -133,6 +162,8 @@ export default function AdminDemoControlPage() {
       ? `Role: ${targetValue || "unset"}`
       : `Person: ${targetUser ? displayName(targetUser) : "unset"}`;
 
+  const selectedAlertPatient = activePatients.find((p) => String(p.id) === alertPatientId);
+
   function pushLog(title: string, detail: string, tone: Tone) {
     setLogs((current) => [{ id: logId("log"), title, detail, tone, at: ts() }, ...current.slice(0, 11)]);
   }
@@ -150,16 +181,43 @@ export default function AdminDemoControlPage() {
 
   const handleCreateAlert = () => {
     if (!alertPatientId) return;
+    const care = selectedAlertPatient?.care_level ?? "normal";
+    const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
+    let title = alertTitle.trim() || "Alert";
+    let description = alertDescription.trim() || "Triggered from Manual Testing Panel";
+    let severity = alertSeverity as "low" | "warning" | "critical";
+    if (alertType === "abnormal_hr") {
+      title = alertTitle.trim() || `High Heart Rate: ${bpm} BPM`;
+      description =
+        alertDescription.trim() ||
+        `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`;
+      if (severity === "low") severity = "warning";
+    }
     const payload: CreateAlertRequest = {
       patient_id: Number(alertPatientId),
-      alert_type: "manual_test",
-      severity: alertSeverity as "low" | "warning" | "critical",
-      title: alertTitle,
-      description: "Triggered from Manual Testing Panel",
-      data: { source: "demo_control" }
+      alert_type: alertType,
+      severity,
+      title,
+      description,
+      data:
+        alertType === "abnormal_hr"
+          ? { source: "demo_control", heart_rate_bpm: bpm, care_level: care }
+          : { source: "demo_control" },
     };
-    run("Create Alert", `Created ${alertSeverity} alert for Patient #${alertPatientId}`, () => api.createAlert(payload));
+    run(
+      "Create Alert",
+      `Created ${severity} ${alertType} for Patient #${alertPatientId}`,
+      () => api.createAlert(payload),
+    );
   };
+
+  const isSimulatorUi = Boolean(simStatus.data?.is_simulator);
+
+  function buildSimInjectBody(patientId: string) {
+    if (!patientId || patientId === SIM_PATIENT_ANY) return {};
+    const pid = Number(patientId);
+    return Number.isFinite(pid) && pid > 0 ? { patient_id: pid } : {};
+  }
 
   return (
     <div className="space-y-6 pb-8 animate-fade-in">
@@ -194,7 +252,11 @@ export default function AdminDemoControlPage() {
           <Button
             variant="outline"
             className="border-2 border-foreground"
-            onClick={() => void run("Reset Workspace", "Cleared all dynamic data to starting state.", () => api.post("/demo/reset", { profile: "clean-slate" }))}
+            onClick={() =>
+              void run("Reset Workspace", "Re-seeded the show-demo workspace baseline.", () =>
+                api.post("/demo/reset", { profile: "show-demo" }),
+              )
+            }
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Clean Slate (Reset)
@@ -206,16 +268,71 @@ export default function AdminDemoControlPage() {
         <div className="space-y-4">
           
           <DemoPanel
-            badge="Inject Events"
-            title="Trigger System Alerts"
-            description="Manually push alerts into the system to test responsive UI components for nurses and supervisors."
+            badge={t("demoControl.alertPanelBadge")}
+            title={t("demoControl.alertPanelTitle")}
+            description={t("demoControl.alertPanelDesc")}
             action={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
           >
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="space-y-2">
+                <Label>{t("demoControl.alertType")}</Label>
+                <Select
+                  value={alertType}
+                  onValueChange={(v) => {
+                    const next = v as DemoAlertType;
+                    setAlertType(next);
+                    if (next === "abnormal_hr") {
+                      const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
+                      const care = selectedAlertPatient?.care_level ?? "normal";
+                      setAlertTitle(`High Heart Rate: ${bpm} BPM`);
+                      setAlertDescription(
+                        `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`,
+                      );
+                      setAlertSeverity("warning");
+                    } else if (next === "manual_test") {
+                      setAlertTitle("Manual Test Alert");
+                      setAlertDescription("Triggered from Manual Testing Panel");
+                    } else if (next === "fall") {
+                      setAlertTitle("Fall detected");
+                      setAlertDescription("Triggered from Manual Testing Panel");
+                      setAlertSeverity("critical");
+                    } else {
+                      setAlertTitle(`${next.replace(/_/g, " ")} alert`);
+                      setAlertDescription("Triggered from Manual Testing Panel");
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual_test">{t("demoControl.alertTypeManualTest")}</SelectItem>
+                    <SelectItem value="abnormal_hr">{t("demoControl.alertTypeAbnormalHr")}</SelectItem>
+                    <SelectItem value="fall">{t("demoControl.alertTypeFall")}</SelectItem>
+                    <SelectItem value="low_battery">{t("demoControl.alertTypeLowBattery")}</SelectItem>
+                    <SelectItem value="device_offline">{t("demoControl.alertTypeDeviceOffline")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label>Patient</Label>
-                <Select value={alertPatientId} onValueChange={setAlertPatientId}>
-                  <SelectTrigger><SelectValue placeholder="Select patient" /></SelectTrigger>
+                <Select
+                  value={alertPatientId}
+                  onValueChange={(v) => {
+                    setAlertPatientId(v);
+                    if (alertType === "abnormal_hr") {
+                      const p = activePatients.find((x) => String(x.id) === v);
+                      const care = p?.care_level ?? "normal";
+                      const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
+                      setAlertDescription(
+                        `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`,
+                      );
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select patient" />
+                  </SelectTrigger>
                   <SelectContent>
                     {activePatients.map((item) => (
                       <SelectItem key={item.id} value={String(item.id)}>
@@ -228,7 +345,9 @@ export default function AdminDemoControlPage() {
               <div className="space-y-2">
                 <Label>Severity</Label>
                 <Select value={alertSeverity} onValueChange={setAlertSeverity}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="warning">Warning</SelectItem>
@@ -236,25 +355,180 @@ export default function AdminDemoControlPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              {alertType === "abnormal_hr" ? (
+                <div className="space-y-2">
+                  <Label>{t("demoControl.alertHrBpm")}</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={alertHrBpm}
+                    onChange={(e) => setAlertHrBpm(e.target.value)}
+                  />
+                </div>
+              ) : null}
+              <div className="space-y-2 sm:col-span-2 lg:col-span-2">
                 <Label>Title</Label>
-                <input 
-                  type="text" 
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={alertTitle}
-                  onChange={(e) => setAlertTitle(e.target.value)}
-                />
+                <Input value={alertTitle} onChange={(e) => setAlertTitle(e.target.value)} />
+              </div>
+              <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+                <Label>{t("demoControl.alertDescription")}</Label>
+                <Textarea rows={3} value={alertDescription} onChange={(e) => setAlertDescription(e.target.value)} />
               </div>
             </div>
-            <Button
-              className="w-full mt-2"
-              disabled={!alertPatientId}
-              onClick={handleCreateAlert}
-            >
+            <Button className="mt-2 w-full" disabled={!alertPatientId} onClick={handleCreateAlert}>
               <AlertTriangle className="mr-2 h-4 w-4" />
-              Inject Alert
+              {t("demoControl.injectAlert")}
             </Button>
           </DemoPanel>
+
+          {isSimulatorUi ? (
+            <DemoPanel
+              badge={t("demoControl.simPanelBadge")}
+              title={t("demoControl.simPanelTitle")}
+              description={t("demoControl.simPanelDesc")}
+              action={<Route className="h-4 w-4 text-muted-foreground" />}
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>{t("demoControl.simVitalInterval")}</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={simVitalInterval}
+                    onChange={(e) => setSimVitalInterval(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("demoControl.simAlertProbability")}</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={simAlertProbability}
+                    onChange={(e) => setSimAlertProbability(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("demoControl.simHrHigh")}</Label>
+                  <Input inputMode="numeric" value={simHrHigh} onChange={(e) => setSimHrHigh(e.target.value)} />
+                </div>
+                <div className="flex items-center gap-2 pt-8">
+                  <input
+                    id="sim-enable-alerts"
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={simEnableAlerts}
+                    onChange={(e) => setSimEnableAlerts(e.target.checked)}
+                  />
+                  <Label htmlFor="sim-enable-alerts" className="cursor-pointer font-normal">
+                    {t("demoControl.simEnableAlerts")}
+                  </Label>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    void run(
+                      t("demoControl.simPause"),
+                      "MQTT pause",
+                      () => api.post("/demo/simulator/command", { command: "pause" }),
+                    )
+                  }
+                >
+                  {t("demoControl.simPause")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    void run(
+                      t("demoControl.simResume"),
+                      "MQTT resume",
+                      () => api.post("/demo/simulator/command", { command: "resume" }),
+                    )
+                  }
+                >
+                  {t("demoControl.simResume")}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const vi = Math.max(5, Math.min(600, Math.floor(Number(simVitalInterval) || 30)));
+                    const ap = Math.max(0, Math.min(1, Number(simAlertProbability)));
+                    const hh = Math.max(60, Math.min(200, Math.floor(Number(simHrHigh) || 110)));
+                    void run(
+                      t("demoControl.simApplyRuntime"),
+                      `vital_interval=${vi}, alert_probability=${ap}, hr_high=${hh}, enable_alerts=${simEnableAlerts}`,
+                      () =>
+                        api.post("/demo/simulator/command", {
+                          command: "set_config",
+                          config: {
+                            vital_update_interval: vi,
+                            alert_probability: Number.isFinite(ap) ? ap : 0.05,
+                            enable_alerts: simEnableAlerts,
+                            heart_rate_high: hh,
+                          },
+                        }),
+                    );
+                  }}
+                >
+                  {t("demoControl.simApplyRuntime")}
+                </Button>
+              </div>
+              <div className="mt-4 grid gap-3 border-t border-border/60 pt-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>{t("demoControl.simPatientOptional")}</Label>
+                  <Select value={simInjectPatientId} onValueChange={setSimInjectPatientId}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={SIM_PATIENT_ANY}>{t("demoControl.simPatientAny")}</SelectItem>
+                      {activePatients.map((item) => (
+                        <SelectItem key={item.id} value={String(item.id)}>
+                          {item.first_name} {item.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2 sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      void run(
+                        t("demoControl.simInjectHr"),
+                        "MQTT inject_abnormal_hr",
+                        () =>
+                          api.post("/demo/simulator/command", {
+                            command: "inject_abnormal_hr",
+                            ...buildSimInjectBody(simInjectPatientId),
+                          }),
+                      )
+                    }
+                  >
+                    {t("demoControl.simInjectHr")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      void run(
+                        t("demoControl.simInjectFall"),
+                        "MQTT inject_fall",
+                        () =>
+                          api.post("/demo/simulator/command", {
+                            command: "inject_fall",
+                            ...buildSimInjectBody(simInjectPatientId),
+                          }),
+                      )
+                    }
+                  >
+                    {t("demoControl.simInjectFall")}
+                  </Button>
+                </div>
+              </div>
+            </DemoPanel>
+          ) : null}
 
           <div className="grid gap-4 lg:grid-cols-2">
             <DemoPanel badge="Movement" title="Move an actor" description="Place a patient or staff member in a room." action={<Route className="h-4 w-4 text-muted-foreground" />}>

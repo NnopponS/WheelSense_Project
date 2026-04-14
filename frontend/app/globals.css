@@ -301,8 +301,24 @@ body {
   animation: slideInLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Optional emphasis for sound-level (critical) alert toasts — keep chrome neutral (no red frame) */
+/*
+ * Sound-level (critical) alert toasts: className applies to Sonner's outer <li>.
+ * Strip outer chrome so only AlertToastCard (rounded border/shadow) shows — avoids a square
+ * wrapper around the rounded inner card.
+ */
 .ws-toast-urgent {
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-elevated);
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Observer + critical-tier in-toast card: high-visibility “floor interrupt” without second toaster */
+.ws-alert-toast-interrupt {
+  border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
+  border-left-width: 4px;
+  border-left-color: var(--destructive);
+  box-shadow:
+    0 14px 42px -10px color-mix(in srgb, var(--destructive) 28%, transparent),
+    var(--shadow-elevated);
 }

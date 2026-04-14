@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { useTranslation } from "@/lib/i18n";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import { isDeviceOnline } from "@/lib/deviceOnline";
@@ -13,6 +14,7 @@ import { isSmartDeviceOnline } from "@/lib/smartDeviceOnline";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import {
   Activity,
   ArrowRight,
@@ -68,22 +70,22 @@ export default function AdminDashboardPage() {
     queryKey: ["admin", "dashboard", "devices", devicesEndpoint],
     queryFn: () => api.get<Device[]>(devicesEndpoint!),
     enabled: Boolean(devicesEndpoint),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: devicesEndpoint ? getQueryStaleTimeMs(devicesEndpoint) : 30_000,
+    refetchInterval: devicesEndpoint ? getQueryPollingMs(devicesEndpoint) : false,
   });
   const { data: smartDevices } = useQuery({
     queryKey: ["admin", "dashboard", "ha-devices", smartEndpoint],
     queryFn: () => api.get<SmartDevice[]>(smartEndpoint!),
     enabled: Boolean(smartEndpoint),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: smartEndpoint ? getQueryStaleTimeMs(smartEndpoint) : 30_000,
+    refetchInterval: smartEndpoint ? getQueryPollingMs(smartEndpoint) : false,
   });
   const { data: activity } = useQuery({
     queryKey: ["admin", "dashboard", "device-activity", activityEndpoint],
     queryFn: () => api.get<ListDeviceActivityResponse>(activityEndpoint!),
     enabled: Boolean(activityEndpoint),
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: activityEndpoint ? getQueryStaleTimeMs(activityEndpoint) : 30_000,
+    refetchInterval: activityEndpoint ? getQueryPollingMs(activityEndpoint) : false,
   });
   const { data: users } = useQuery({
     queryKey: ["admin", "dashboard", "users", usersEndpoint],
@@ -188,6 +190,9 @@ export default function AdminDashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
+            <Link href="/admin/monitoring">{t("admin.openLiveMap")}</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
             <Link href="/admin/devices">{t("admin.openDevices")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
@@ -202,8 +207,16 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* System Status Grid */}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h3 className="text-lg font-semibold text-foreground">{t("admin.monitoringTitle")}</h3>
+          <p className="text-sm text-muted-foreground">{t("admin.monitoringSubtitle")}</p>
+        </div>
+        <DashboardFloorplanPanel className="min-w-0" openHref="/admin/monitoring" />
+      </section>
+
+      {/* System Status Grid — grouped chrome for at-a-glance ops (iter-6 admin precision) */}
+      <section className="grid gap-3 rounded-xl border border-border/60 bg-muted/10 p-3 sm:p-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-start gap-4">

@@ -1331,15 +1331,12 @@ async def seed_vitals(
             if patient.care_level == "critical":
                 heart_rate = rng.randint(75, 110)
                 spo2 = rng.randint(93, 98)
-                temp = round(rng.uniform(36.5, 37.8), 1)
             elif patient.care_level == "special":
                 heart_rate = rng.randint(70, 100)
                 spo2 = rng.randint(95, 99)
-                temp = round(rng.uniform(36.2, 37.4), 1)
             else:
                 heart_rate = rng.randint(65, 90)
                 spo2 = rng.randint(96, 100)
-                temp = round(rng.uniform(36.0, 37.2), 1)
 
             vital = VitalReading(
                 workspace_id=workspace_id,
@@ -1349,7 +1346,6 @@ async def seed_vitals(
                 heart_rate_bpm=heart_rate,
                 rr_interval_ms=float(rng.randint(600, 1000)),
                 spo2=spo2,
-                skin_temperature=temp,
                 sensor_battery=rng.randint(40, 100),
                 source="ble",
             )

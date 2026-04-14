@@ -85,10 +85,38 @@ async def root():
         "mcp": "/mcp" if MCP_ENABLED else None,
     }
 
+
+@app.get("/.well-known/oauth-protected-resource/mcp")
+async def mcp_oauth_protected_resource():
+    return {
+        "resource": f"{settings.server_base_url.rstrip('/')}/mcp",
+        "authorization_servers": [f"{settings.server_base_url.rstrip('/')}/api/auth/login"],
+        "bearer_methods_supported": ["header"],
+        "scopes_supported": [
+            "workspace.read",
+            "patients.read",
+            "patients.write",
+            "alerts.read",
+            "alerts.manage",
+            "devices.read",
+            "devices.manage",
+            "devices.command",
+            "rooms.read",
+            "rooms.manage",
+            "room_controls.use",
+            "workflow.read",
+            "workflow.write",
+            "cameras.capture",
+            "ai_settings.read",
+            "ai_settings.write",
+            "admin.audit.read",
+        ],
+    }
+
 # Mount MCP only when enabled so tests and local tooling can run without MCP side-effects.
 if MCP_ENABLED:
-    from app.mcp_server import mcp
+    from app.mcp_server import create_remote_mcp_app
 
-    app.mount("/mcp", mcp.sse_app())
+    app.mount("/mcp", create_remote_mcp_app())
 else:
     logger.info("MCP server mount disabled via WHEELSENSE_ENABLE_MCP=0")

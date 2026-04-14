@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 
+export type AlertToastVisualEmphasis = "standard" | "interrupt";
+
 export interface AlertToastCardProps {
   toastId: string | number;
   alertId: number;
@@ -16,6 +18,8 @@ export interface AlertToastCardProps {
   alertType: string;
   /** Resolved from `GET /patients/{id}` (+ room when `room_id` is set); null when alert has no patient. */
   patientContext: { nameLine: string; roomLine: string } | null;
+  /** Observer + sound-tier: stronger shadow / border for floor-staff “interrupt” pattern (iter-6 §3.B). */
+  visualEmphasis?: AlertToastVisualEmphasis;
   /** Server allows POST /alerts/{id}/acknowledge only for admin + head_nurse today. */
   canAcknowledge: boolean;
   onNavigateInbox: () => void;
@@ -28,6 +32,7 @@ export function AlertToastCard({
   description,
   alertType,
   patientContext,
+  visualEmphasis = "standard",
   canAcknowledge,
   onNavigateInbox,
 }: AlertToastCardProps) {
@@ -61,12 +66,20 @@ export function AlertToastCard({
       className={cn(
         "pointer-events-auto w-[min(100vw-1.5rem,22rem)] rounded-lg border border-border bg-card p-3 text-left shadow-lg",
         "border-l-[3px] border-l-muted-foreground/35",
+        visualEmphasis === "interrupt" && "ws-alert-toast-interrupt p-3.5",
       )}
     >
       <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
         {alertType}
       </p>
-      <p className="mt-1 text-sm font-semibold leading-snug text-foreground">{title}</p>
+      <p
+        className={cn(
+          "mt-1 font-semibold leading-snug text-foreground",
+          visualEmphasis === "interrupt" ? "text-base" : "text-sm",
+        )}
+      >
+        {title}
+      </p>
       {description ? (
         <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{description}</p>
       ) : null}

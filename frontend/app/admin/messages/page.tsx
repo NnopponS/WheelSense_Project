@@ -22,8 +22,9 @@ import type {
   ListWorkflowMessagesResponse,
   SendWorkflowMessageRequest,
 } from "@/lib/api/task-scope-types";
-import { HubTabBar } from "@/components/shared/HubTabBar";
+import { HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
 import AdminSupportPage from "@/app/admin/support/page";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 
 type RecipientTarget = "role" | "user";
 type MessageTab = "all" | "inbox" | "sent";
@@ -54,31 +55,45 @@ type MessageRow = {
 const ROLE_OPTIONS = ["admin", "head_nurse", "supervisor", "observer", "patient"] as const;
 const TARGET_USER_NONE = "__none__";
 
-const HUB_TABS = [
-  { key: "messages", label: "Messages", icon: Inbox },
-  { key: "support", label: "Support", icon: ShieldCheck },
-];
-
-function parseError(error: unknown, fallback = "Request failed.") {
+function parseError(error: unknown, t: (key: TranslationKey) => string) {
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error) return error.message;
-  return fallback;
+  return t("common.requestFailed");
 }
 
-function roleLabel(role: string) {
-  return role
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+function workflowRoleDisplay(role: string, t: (key: TranslationKey) => string): string {
+  switch (role) {
+    case "admin":
+      return t("admin.workflowMessaging.roleLabelAdmin");
+    case "head_nurse":
+      return t("admin.workflowMessaging.roleLabelHeadNurse");
+    case "supervisor":
+      return t("admin.workflowMessaging.roleLabelSupervisor");
+    case "observer":
+      return t("admin.workflowMessaging.roleLabelObserver");
+    case "patient":
+      return t("admin.workflowMessaging.roleLabelPatient");
+    default:
+      return role;
+  }
 }
 
 function AdminMessagesHub() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") ?? "messages";
 
+  const hubTabs = useMemo<HubTab[]>(
+    () => [
+      { key: "messages", label: t("nav.messages"), icon: Inbox },
+      { key: "support", label: t("nav.support"), icon: ShieldCheck },
+    ],
+    [t],
+  );
+
   return (
     <div className="space-y-0">
-      <HubTabBar tabs={HUB_TABS} />
+      <HubTabBar tabs={hubTabs} />
       {tab === "support" ? <AdminSupportPage /> : <MessagesContent />}
     </div>
   );
@@ -93,6 +108,7 @@ export default function AdminMessagesPage() {
 }
 
 function MessagesContent() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<MessageTab>("inbox");
@@ -120,14 +136,14 @@ function MessagesContent() {
       if (recipientTarget === "user") {
         const rid = Number(recipientUserId);
         if (recipientUserId === TARGET_USER_NONE || !Number.isFinite(rid) || rid <= 0) {
-          throw new Error("Select a recipient user.");
+          throw new Error(t("admin.workflowMessaging.selectRecipientUser"));
         }
       }
 
       const payload = {
         recipient_role: recipientTarget === "role" ? recipientRole : null,
         recipient_user_id: recipientTarget === "user" ? Number(recipientUserId) : null,
-        subject: subject.trim() || "Admin message",
+        subject: subject.trim() || t("admin.workflowMessaging.defaultSubject"),
         body: body.trim(),
       } satisfies SendWorkflowMessageRequest;
 
@@ -174,13 +190,15 @@ function MessagesContent() {
         const recipientPerson = message.recipient_person ?? null;
         const recipientLabel =
           recipientPerson?.display_name?.trim() ||
-          (message.recipient_user_id != null ? `User #${message.recipient_user_id}` : null) ||
-          (message.recipient_role ? roleLabel(message.recipient_role) : null) ||
-          "All recipients";
+          (message.recipient_user_id != null
+            ? t("admin.workflowMessaging.userNumber").replace("{id}", String(message.recipient_user_id))
+            : null) ||
+          (message.recipient_role ? workflowRoleDisplay(message.recipient_role, t) : null) ||
+          t("admin.workflowMessaging.allRecipients");
 
         return {
           id: message.id,
-          subject: message.subject || "Admin message",
+          subject: message.subject || t("admin.workflowMessaging.defaultSubject"),
           body: message.body,
           senderUserId: message.sender_user_id,
           recipientRole: message.recipient_role,
@@ -191,7 +209,7 @@ function MessagesContent() {
         };
       })
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  }, [messages]);
+  }, [messages, t]);
 
   const inboxRows = useMemo(
     () => rows.filter((message) => message.senderUserId !== user?.id),
@@ -210,7 +228,7 @@ function MessagesContent() {
     () => [
       {
         accessorKey: "subject",
-        header: "Message",
+        header: t("admin.workflowMessaging.colMessage"),
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.subject}</p>
@@ -220,27 +238,36 @@ function MessagesContent() {
       },
       {
         accessorKey: "recipientLabel",
-        header: "Routing",
+        header: t("admin.workflowMessaging.colRouting"),
         cell: ({ row }) => (
           <div className="space-y-1 text-xs text-muted-foreground">
-            <p>From user #{row.original.senderUserId}</p>
+            <p>
+              {t("admin.workflowMessaging.fromUser").replace("{id}", String(row.original.senderUserId))}
+            </p>
             <p>{row.original.recipientLabel}</p>
-            <p>{row.original.recipientRole ? `Role: ${row.original.recipientRole}` : "Direct message"}</p>
+            <p>
+              {row.original.recipientRole
+                ? t("admin.workflowMessaging.roleLine").replace(
+                    "{role}",
+                    workflowRoleDisplay(row.original.recipientRole, t),
+                  )
+                : t("admin.workflowMessaging.directMessage")}
+            </p>
           </div>
         ),
       },
       {
         accessorKey: "isRead",
-        header: "Status",
+        header: t("admin.workflowMessaging.colStatus"),
         cell: ({ row }) => (
           <Badge variant={row.original.isRead ? "success" : "warning"}>
-            {row.original.isRead ? "read" : "unread"}
+            {row.original.isRead ? t("admin.workflowMessaging.statusRead") : t("admin.workflowMessaging.statusUnread")}
           </Badge>
         ),
       },
       {
         accessorKey: "createdAt",
-        header: "Created",
+        header: t("admin.workflowMessaging.colCreated"),
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.createdAt)}</p>
@@ -264,18 +291,18 @@ function MessagesContent() {
               }}
             >
               <UserRoundCheck className="h-4 w-4" />
-              Mark read
+              {t("admin.workflowMessaging.markRead")}
             </Button>
           ),
       },
     ],
-    [activeTab, markReadMutation, pendingReadId],
+    [activeTab, markReadMutation, pendingReadId, t],
   );
 
-  const sendError = sendMessageMutation.error ? parseError(sendMessageMutation.error) : null;
+  const sendError = sendMessageMutation.error ? parseError(sendMessageMutation.error, t) : null;
   const recipientError =
     recipientTarget === "user" && recipientsQuery.isSuccess && !recipients.length
-      ? "No recipients were returned by the messaging API."
+      ? t("admin.workflowMessaging.noRecipientsFromApi")
       : null;
 
   return (
@@ -284,60 +311,57 @@ function MessagesContent() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             <Mail className="h-3.5 w-3.5" />
-            Workflow Messaging
+            {t("admin.workflowMessaging.badge")}
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">Messages</h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              Use the shared workflow messaging APIs to send role-targeted or user-targeted messages and
-              keep the inbox moving.
-            </p>
+            <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{t("admin.workflowMessaging.title")}</h2>
+            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t("admin.workflowMessaging.subtitle")}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">{rows.length} total</Badge>
-          <Badge variant="warning">{unreadCount} unread</Badge>
-          <Badge variant="success">{sentRows.length} sent</Badge>
+          <Badge variant="outline">{t("admin.workflowMessaging.countTotal").replace("{count}", String(rows.length))}</Badge>
+          <Badge variant="warning">{t("admin.workflowMessaging.countUnread").replace("{count}", String(unreadCount))}</Badge>
+          <Badge variant="success">{t("admin.workflowMessaging.countSent").replace("{count}", String(sentRows.length))}</Badge>
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Card className="border-border/70">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Compose message</CardTitle>
-            <CardDescription>Send to a role or a specific workflow recipient.</CardDescription>
+            <CardTitle className="text-base">{t("admin.workflowMessaging.composeTitle")}</CardTitle>
+            <CardDescription>{t("admin.workflowMessaging.composeDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="targetMode">Target type</Label>
+              <Label htmlFor="targetMode">{t("admin.workflowMessaging.targetType")}</Label>
               <Select
                 value={recipientTarget}
                 onValueChange={(value) => setRecipientTarget(value as RecipientTarget)}
               >
                 <SelectTrigger id="targetMode">
-                  <SelectValue placeholder="Select target type" />
+                  <SelectValue placeholder={t("admin.workflowMessaging.targetTypePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="role">Role</SelectItem>
-                  <SelectItem value="user">Specific user</SelectItem>
+                  <SelectItem value="role">{t("admin.workflowMessaging.targetRole")}</SelectItem>
+                  <SelectItem value="user">{t("admin.workflowMessaging.targetUser")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {recipientTarget === "role" ? (
               <div className="space-y-2">
-                <Label htmlFor="recipientRole">Recipient role</Label>
+                <Label htmlFor="recipientRole">{t("admin.workflowMessaging.recipientRole")}</Label>
                 <Select
                   value={recipientRole}
                   onValueChange={(value) => setRecipientRole(value as (typeof ROLE_OPTIONS)[number])}
                 >
                   <SelectTrigger id="recipientRole">
-                    <SelectValue placeholder="Select a role" />
+                    <SelectValue placeholder={t("admin.workflowMessaging.recipientRolePlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {ROLE_OPTIONS.map((role) => (
                       <SelectItem key={role} value={role}>
-                        {roleLabel(role)}
+                        {workflowRoleDisplay(role, t)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -345,54 +369,58 @@ function MessagesContent() {
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="recipientUser">Recipient user</Label>
+                <Label htmlFor="recipientUser">{t("admin.workflowMessaging.recipientUser")}</Label>
                 <Select value={recipientUserId} onValueChange={setRecipientUserId} disabled={!recipients.length}>
                   <SelectTrigger id="recipientUser">
                     <SelectValue
-                      placeholder={recipientsQuery.isLoading ? "Loading recipients..." : "Choose a user"}
+                      placeholder={
+                        recipientsQuery.isLoading
+                          ? t("admin.workflowMessaging.loadingRecipients")
+                          : t("admin.workflowMessaging.chooseUserPlaceholder")
+                      }
                     />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={TARGET_USER_NONE} className="text-muted-foreground">
-                      Choose a user
+                      {t("admin.workflowMessaging.chooseUserPlaceholder")}
                     </SelectItem>
                     {recipients.map((recipient) => (
                       <SelectItem key={recipient.id} value={String(recipient.id)}>
-                        {recipient.display_name} (@{recipient.username}) | {recipient.role}
+                        {recipient.display_name} (@{recipient.username}) | {workflowRoleDisplay(recipient.role, t)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {recipientsQuery.isError ? (
-                  <p className="text-xs text-destructive">Unable to load workflow recipients.</p>
+                  <p className="text-xs text-destructive">{t("admin.workflowMessaging.recipientsLoadError")}</p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
                     {recipients.length
-                      ? "Pick any staff or patient recipient returned by the shared messaging API."
-                      : "No recipients available yet."}
+                      ? t("admin.workflowMessaging.recipientsHint")
+                      : t("admin.workflowMessaging.noRecipientsYet")}
                   </p>
                 )}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
+              <Label htmlFor="subject">{t("admin.workflowMessaging.subject")}</Label>
               <Input
                 id="subject"
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
-                placeholder="Status update, follow-up, request, ..."
+                placeholder={t("admin.workflowMessaging.subjectPlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="body">Message</Label>
+              <Label htmlFor="body">{t("admin.workflowMessaging.body")}</Label>
               <Textarea
                 id="body"
                 rows={6}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
-                placeholder="Write the workflow message here."
+                placeholder={t("admin.workflowMessaging.bodyPlaceholder")}
               />
             </div>
 
@@ -410,7 +438,7 @@ function MessagesContent() {
               onClick={() => sendMessageMutation.mutate()}
             >
               <Send className="h-4 w-4" />
-              {sendMessageMutation.isPending ? "Sending..." : "Send message"}
+              {sendMessageMutation.isPending ? t("admin.workflowMessaging.sending") : t("admin.workflowMessaging.send")}
             </Button>
           </CardContent>
         </Card>
@@ -419,49 +447,55 @@ function MessagesContent() {
           <Card className="border-border/70">
             <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
               <div>
-                <CardTitle className="text-base">Inbox and sent</CardTitle>
-                <CardDescription>Latest workflow messages across the current workspace.</CardDescription>
+                <CardTitle className="text-base">{t("admin.workflowMessaging.inboxCardTitle")}</CardTitle>
+                <CardDescription>{t("admin.workflowMessaging.inboxCardDescription")}</CardDescription>
               </div>
               <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as MessageTab)}>
                 <TabsList>
                   <TabsTrigger value="inbox">
                     <Inbox className="mr-1.5 h-3.5 w-3.5" />
-                    Inbox
+                    {t("admin.workflowMessaging.tabInbox")}
                   </TabsTrigger>
                   <TabsTrigger value="sent">
                     <Send className="mr-1.5 h-3.5 w-3.5" />
-                    Sent
+                    {t("admin.workflowMessaging.tabSent")}
                   </TabsTrigger>
                   <TabsTrigger value="all">
                     <Users className="mr-1.5 h-3.5 w-3.5" />
-                    All
+                    {t("admin.workflowMessaging.tabAll")}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-wrap gap-2">
-                <Badge variant={activeTab === "inbox" ? "default" : "outline"}>{inboxRows.length} inbox</Badge>
-                <Badge variant={activeTab === "sent" ? "default" : "outline"}>{sentRows.length} sent</Badge>
-                <Badge variant={activeTab === "all" ? "default" : "outline"}>{rows.length} total</Badge>
+                <Badge variant={activeTab === "inbox" ? "default" : "outline"}>
+                  {t("admin.workflowMessaging.badgeInboxCount").replace("{count}", String(inboxRows.length))}
+                </Badge>
+                <Badge variant={activeTab === "sent" ? "default" : "outline"}>
+                  {t("admin.workflowMessaging.badgeSentCount").replace("{count}", String(sentRows.length))}
+                </Badge>
+                <Badge variant={activeTab === "all" ? "default" : "outline"}>
+                  {t("admin.workflowMessaging.badgeTotalCount").replace("{count}", String(rows.length))}
+                </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {activeTab === "inbox"
-                  ? "Messages received by other workflow users."
+                  ? t("admin.workflowMessaging.filterHelpInbox")
                   : activeTab === "sent"
-                    ? "Messages sent by the current admin account."
-                    : "All workflow messages visible in this workspace."}
+                    ? t("admin.workflowMessaging.filterHelpSent")
+                    : t("admin.workflowMessaging.filterHelpAll")}
               </p>
             </CardContent>
           </Card>
 
           <DataTableCard
-            title="Workflow messages"
-            description="Inbox, sent, and workspace-wide message activity."
+            title={t("admin.workflowMessaging.tableTitle")}
+            description={t("admin.workflowMessaging.tableDescription")}
             data={filteredRows}
             columns={columns}
             isLoading={messagesQuery.isLoading || messagesQuery.isFetching}
-            emptyText="No workflow messages found."
+            emptyText={t("admin.workflowMessaging.tableEmpty")}
             pageSize={8}
             rightSlot={<Badge variant="outline">{filteredRows.length}</Badge>}
           />

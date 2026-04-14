@@ -34,6 +34,7 @@ class Token(BaseModel):
     """JWT Token response."""
     access_token: str
     token_type: str
+    session_id: Optional[str] = None
     impersonation: bool = False
     actor_admin_id: Optional[int] = None
     impersonated_user_id: Optional[int] = None
@@ -42,6 +43,9 @@ class TokenData(BaseModel):
     """Data extracted from JWT."""
     username: Optional[str] = None
     role: Optional[str] = None
+    session_id: Optional[str] = None
+    actor_admin_id: Optional[int] = None
+    scopes: list[str] = Field(default_factory=list)
 
 class UserBase(BaseModel):
     """Base user attributes."""
@@ -161,6 +165,14 @@ class AuthMeOut(UserOut):
     email: Optional[str] = None
     phone: Optional[str] = None
 
+
+class AuthHydrateOut(BaseModel):
+    """Browser-friendly session probe: always HTTP 200, never 401 for missing/invalid tokens."""
+
+    authenticated: bool
+    user: Optional[AuthMeOut] = None
+
+
 class LinkedCaregiverProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -212,6 +224,23 @@ class ImpersonationStart(BaseModel):
     """Request body for admin act-as token creation."""
 
     target_user_id: int
+
+
+class AuthSessionOut(BaseModel):
+    """Server-tracked auth session visible to the signed-in user."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    user_agent: str
+    ip_address: str
+    impersonated_by_user_id: Optional[int] = None
+    created_at: datetime
+    updated_at: datetime
+    last_seen_at: datetime
+    expires_at: datetime
+    revoked_at: Optional[datetime] = None
+    current: bool = False
 
 class UserSearchOut(BaseModel):
     """Search result shape for person-target assignment controls."""

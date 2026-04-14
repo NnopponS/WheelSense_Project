@@ -131,8 +131,30 @@ void SceneManager::updateBoot() {
 // ===== DASHBOARD =====
 void SceneManager::updateDashboard() {
     const unsigned long now = millis();
+
+    // Input every frame — throttling only the expensive redraw below.
+    if (InputMgr.wasLongPressed(BTN_A)) {
+        switchScene(SCENE_MAIN_MENU);
+        return;
+    }
+    if (InputMgr.wasPressed(BTN_A)) {
+        if (suppressDashboardSleepFromA) {
+            suppressDashboardSleepFromA = false;
+        } else {
+            requestManualSleep = true;
+        }
+    }
+    if (InputMgr.wasPressed(BTN_B)) {
+        dashboardPage = (dashboardPage + 1) % 2;
+        needsRedraw = true;
+    }
+    if (InputMgr.wasPressed(BTN_C)) {
+        switchScene(SCENE_MAIN_MENU);
+        return;
+    }
+
     if (!needsRedraw && (now - lastDrawMs) < DISPLAY_UPDATE_INTERVAL) return;
-    
+
     SensorData& d = SensorMgr.getData();
     BLENode nodes[MAX_BLE_NODES];
     int nodeCount = BLEMgr.copyNodes(nodes, MAX_BLE_NODES);
@@ -148,17 +170,17 @@ void SceneManager::updateDashboard() {
         // --- Page 0: Motion + Connectivity + Orientation ---
         int y = 30;
         
-        // Status bar
-        g.fillRoundRect(4, y, 52, 12, 3, NetworkMgr.isWiFiConnected() ? 0x0480 : 0x6000);
-        g.fillRoundRect(58, y, 52, 12, 3, NetworkMgr.isMQTTConnected() ? 0x0480 : 0x6000);
-        
+        // Status bar — green = OK / connected, red = error / disconnected
+        g.fillRoundRect(4, y, 52, 12, 3, NetworkMgr.isWiFiConnected() ? COLOR_PRIMARY : COLOR_ERROR);
+        g.fillRoundRect(58, y, 52, 12, 3, NetworkMgr.isMQTTConnected() ? COLOR_PRIMARY : COLOR_ERROR);
+
         // BLE node count
         BLENode bleCheck[MAX_BLE_NODES];
         int bleCount = BLEMgr.copyNodes(bleCheck, MAX_BLE_NODES);
-        uint32_t bleColor = (bleCount > 0) ? 0x0480 : 0x6000;
+        uint32_t bleColor = (bleCount > 0) ? COLOR_PRIMARY : COLOR_ERROR;
         g.fillRoundRect(112, y, 42, 12, 3, bleColor);
 
-        // Orientation check
+        // Orientation check — OK = green, ERR = red
         bool orientOk = (fabsf(d.accelZ) < 0.45f);
         uint32_t orientColor = orientOk ? COLOR_PRIMARY : COLOR_ERROR;
         g.fillRoundRect(156, y, w - 160, 12, 3, orientColor);
@@ -168,8 +190,23 @@ void SceneManager::updateDashboard() {
         g.drawString(NetworkMgr.isWiFiConnected() ? "WiFi" : "NoWi", 30, y + 6);
         g.drawString(NetworkMgr.isMQTTConnected() ? "MQTT" : "NoMQ", 84, y + 6);
         g.drawString("B:" + String(bleCount), 133, y + 6);
+        g.setTextColor(COLOR_BG);
         g.drawString(orientOk ? "OK" : "ERR", 156 + (w - 160) / 2, y + 6);
         y += 16;
+
+        g.setTextDatum(TL_DATUM);
+        g.setTextSize(1);
+        if (nodeCount > 0) {
+            String bleTxt = nodes[0].nodeKey + " " + String(nodes[0].rssi) + "dBm";
+            if (nodeCount > 1) bleTxt += " +" + String(nodeCount - 1);
+            if (bleTxt.length() > 22) bleTxt = bleTxt.substring(0, 20) + "..";
+            g.setTextColor(COLOR_PRIMARY);
+            g.drawString(bleTxt, 4, y);
+        } else {
+            g.setTextColor(COLOR_WARNING);
+            g.drawString("BLE: no WSN nodes", 4, y);
+        }
+        y += 12;
 
         // Big equally prominent Speed, Distance, Accel
         int rowH = 26;
@@ -238,39 +275,27 @@ void SceneManager::updateDashboard() {
         g.drawString("Dir: " + String(d.direction == 1 ? "FWD" : d.direction == -1 ? "BWD" : "STP"),
                      10, y + 74);
         g.drawString("IP: " + NetworkMgr.getIP(), w/2, y + 74);
+        String roomLabel = NetworkMgr.hasLatestRoomAssignment()
+                           ? NetworkMgr.getLatestRoomName()
+                           : "Awaiting room";
+        if (roomLabel.length() > 18) roomLabel = roomLabel.substring(0, 18) + "..";
+        g.setTextColor(COLOR_CYAN);
+        g.drawString("Room: " + roomLabel, 10, h - 28);
+        g.setTextColor(COLOR_TEXT);
     }
 
-    // Footer guide — new button mapping
-    DisplayMgr.drawFooter("M5:SLEEP", "B:PAGE", "C:MENU");
+    // Footer: M5 = front (dim/off or wake), Side = page, Power = menu
+    DisplayMgr.drawFooter("M5:SLEEP", "Side:PAGE", "Power:MENU");
 
     needsRedraw = false;
     lastDrawMs = now;
-
-    // === Button handling ===
-    // BtnA short press = manual sleep
-    if (InputMgr.wasPressed(BTN_A)) {
-        requestManualSleep = true;
-    }
-    // BtnA long press = open menu (shortcut)
-    if (InputMgr.wasLongPressed(BTN_A)) {
-        switchScene(SCENE_MAIN_MENU);
-        return;
-    }
-    // BtnB = change page
-    if (InputMgr.wasPressed(BTN_B)) {
-        dashboardPage = (dashboardPage + 1) % 2;
-        needsRedraw = true;
-    }
-    // BtnC = open menu
-    if (InputMgr.wasPressed(BTN_C)) {
-        switchScene(SCENE_MAIN_MENU);
-    }
 }
 
 // ===== MAIN MENU =====
 void SceneManager::updateMainMenu() {
     AppConfig& config = ConfigMgr.getConfig();
-    const char* dispModeStr = (config.displayMode == DISPLAY_MODE_ALWAYS_ON) ? "Display: AlwaysOn" : "Display: AutoSleep";
+    const char* dispModeStr =
+        (config.displayMode == DISPLAY_MODE_ALWAYS_ON) ? "Display: Always on" : "Display: Dim / auto off";
     const char* items[] = {
         "WiFi Settings",
         "MQTT Config",
@@ -349,7 +374,7 @@ void SceneManager::updateMainMenu() {
                 return;
             case 8: // Factory Reset
                 startConfirm("Factory Reset",
-                             "Erase all settings?\nA=Yes  C=Cancel",
+                             "Erase all settings?\nM5=Yes Power=Cancel",
                              CONFIRM_FACTORY_RESET, SCENE_MAIN_MENU);
                 return;
             case 9: // Exit
@@ -395,7 +420,7 @@ void SceneManager::updateWiFiScan() {
 
     if (scanFailed) {
         if (needsRedraw) {
-            DisplayMgr.drawMessage("WiFi", "Scan failed\nA=Retry C=Back", COLOR_ERROR);
+            DisplayMgr.drawMessage("WiFi", "Scan failed\nM5=Retry Pwr=Back", COLOR_ERROR);
             needsRedraw = false;
         }
         if (InputMgr.wasPressed(BTN_A)) { scanFailed = false; wifiScanCount = -1; needsRedraw = true; }
@@ -405,7 +430,7 @@ void SceneManager::updateWiFiScan() {
 
     if (wifiScanCount <= 0) {
         if (needsRedraw) {
-            DisplayMgr.drawMessage("WiFi", "No networks\nA=Rescan C=Back", COLOR_WARNING);
+            DisplayMgr.drawMessage("WiFi", "No networks\nM5=Rescan Pwr=Back", COLOR_WARNING);
             needsRedraw = false;
         }
         if (InputMgr.wasPressed(BTN_A)) { wifiScanCount = -1; needsRedraw = true; }
@@ -452,7 +477,7 @@ void SceneManager::updateWiFiScan() {
             g.setTextDatum(MR_DATUM);
             g.drawString(String(NetworkMgr.getRSSI(idx)), g.width() - 8, py + itemH / 2);
         }
-        DisplayMgr.drawFooter("A:SEL", "B:NEXT", "C:BACK");
+        DisplayMgr.drawFooter("M5:SEL", "Side:NEXT", "Power:BACK");
         needsRedraw = false;
         lastDrawMs = millis();
     }
@@ -486,8 +511,7 @@ void SceneManager::updateKeyboard() {
                     // Apply context
                     if (keyboardReturnContext == KBD_CTX_WIFI_PASS) {
                         ConfigMgr.saveConfig();
-                        NetworkMgr.connect(ConfigMgr.getConfig().wifiSSID.c_str(),
-                                          ConfigMgr.getConfig().wifiPass.c_str());
+                        NetworkMgr.reconfigureFromConfig(true);
                     } else if (keyboardReturnContext == KBD_CTX_MQTT_BROKER ||
                                keyboardReturnContext == KBD_CTX_MQTT_PORT ||
                                keyboardReturnContext == KBD_CTX_MQTT_USER ||
@@ -496,8 +520,10 @@ void SceneManager::updateKeyboard() {
                             ConfigMgr.getConfig().mqttPort = String(keyboardBuffer).toInt();
                         }
                         ConfigMgr.saveConfig();
+                        NetworkMgr.reconfigureFromConfig(true);
                     } else if (keyboardReturnContext == KBD_CTX_DEVICE_NAME) {
                         ConfigMgr.saveConfig();
+                        NetworkMgr.reconfigureFromConfig(true);
                     } else if (keyboardReturnContext == KBD_CTX_WHEEL_RADIUS) {
                         ConfigMgr.getConfig().wheelRadiusM = String(keyboardBuffer).toFloat();
                         ConfigMgr.saveConfig();
@@ -584,8 +610,8 @@ void SceneManager::updateKeyboard() {
 
         g.setTextColor(0x7BEF);
         g.setTextDatum(TL_DATUM);
-        g.drawString(keyboardSelectAction ? "A:DO  B:NEXT" : "A:TYPE  B:CHAR", 4, g.height() - 12);
-        g.drawString("C:TOGGLE", g.width() / 2 + 20, g.height() - 12);
+        g.drawString(keyboardSelectAction ? "M5:Act Side:Next" : "M5:Type Side:Char", 4, g.height() - 12);
+        g.drawString("Power:Mode", g.width() / 2 + 20, g.height() - 12);
         
         needsRedraw = false;
         lastDrawMs = millis();
@@ -656,12 +682,23 @@ void SceneManager::updateDeviceInfo() {
         
         g.setTextColor(COLOR_TEXT);
         g.drawString("IP: " + NetworkMgr.getIP(), 8, y + 2); y += 14;
-        g.drawString("MQTT: " + config.mqttBroker, 8, y + 2); y += 14;
+        g.drawString("WiFi: " + String(NetworkMgr.isWiFiConnected() ? "Connected" : "Disconnected"), 8, y + 2); y += 14;
+        g.drawString("MQTT: " + String(NetworkMgr.isMQTTConnected() ? "Connected" : "Disconnected"), 8, y + 2); y += 14;
+        String broker = NetworkMgr.getBrokerEndpoint();
+        if (broker.length() > 22) broker = broker.substring(0, 22) + "..";
+        g.drawString("Broker: " + broker, 8, y + 2); y += 14;
+        String roomLabel = NetworkMgr.hasLatestRoomAssignment()
+                           ? NetworkMgr.getLatestRoomName() + " " + String((int)roundf(NetworkMgr.getLatestRoomConfidence() * 100.0f)) + "%"
+                           : "Awaiting room update";
+        if (roomLabel.length() > 24) roomLabel = roomLabel.substring(0, 24) + "..";
+        g.drawString("Room: " + roomLabel, 8, y + 2); y += 14;
         g.drawString("Bat: " + String(d.batPercentage) + "% " +
                      String(d.batVoltage, 2) + "V", 8, y + 2); y += 14;
-        g.drawString("FW: " FIRMWARE_VERSION, 8, y + 2);
+        g.drawString("FW: " FIRMWARE_VERSION, 8, y + 2); y += 14;
+        g.setTextColor(COLOR_CYAN);
+        g.drawString("Must match backend device_id", 8, y + 2);
 
-        DisplayMgr.drawFooter("A:EDIT", "B:NEXT", "C:BACK");
+        DisplayMgr.drawFooter("M5:EDIT", "Side:NEXT", "Power:BACK");
         
         needsRedraw = false;
         lastDrawMs = millis();
@@ -727,6 +764,15 @@ void SceneManager::updateAPPortal() {
         g.drawString("192.168.4.1", 8, y);
         y += 14;
 
+        g.setTextColor(COLOR_CYAN);
+        g.drawString("ID:", 8, y);
+        y += 12;
+        g.setTextColor(COLOR_PRIMARY);
+        String deviceName = ConfigMgr.getConfig().deviceName;
+        if (deviceName.length() > 14) deviceName = deviceName.substring(0, 14) + "..";
+        g.drawString(deviceName, 8, y);
+        y += 14;
+
         g.setTextColor(COLOR_TEXT);
         g.drawString("Scan QR ->", 8, y);
         y += 16;
@@ -737,9 +783,12 @@ void SceneManager::updateAPPortal() {
         g.fillCircle(16, y + 4, 3, dotColor);
         g.setTextColor(COLOR_TEXT);
         g.drawString("Clients:" + String(WiFi.softAPgetStationNum()), 24, y);
+        y += 14;
+        g.setTextColor(COLOR_CYAN);
+        g.drawString("Match backend device_id", 8, y);
 
         // Footer
-        DisplayMgr.drawFooter("A:STOP", "", "C:STOP");
+        DisplayMgr.drawFooter("M5:STOP", "", "Power:STOP");
 
         needsRedraw = false;
         lastDrawMs = millis();
@@ -783,7 +832,7 @@ void SceneManager::updateConfirm() {
         }
 
         // Footer
-        DisplayMgr.drawFooter("A:YES", "", "C:NO");
+        DisplayMgr.drawFooter("M5:YES", "", "Power:NO");
 
         needsRedraw = false;
         lastDrawMs = millis();

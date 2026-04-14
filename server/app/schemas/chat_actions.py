@@ -7,10 +7,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.schemas.agent_runtime import ExecutionPlan
 from app.schemas.chat import ChatMessagePart
 
 ChatActionStatus = Literal["proposed", "confirmed", "executed", "rejected", "failed"]
-ChatActionType = Literal["mcp_tool", "note"]
+ChatActionType = Literal["mcp_tool", "mcp_plan", "note"]
 
 
 class ChatActionProposeIn(BaseModel):
@@ -42,6 +43,10 @@ class ChatActionProposalRequest(BaseModel):
     conversation_id: int | None = None
     message: str = Field(..., min_length=1)
     messages: list[ChatMessagePart] = Field(default_factory=list)
+    page_patient_id: int | None = Field(
+        default=None,
+        description="Optional patient id from the current UI page (e.g. admin patient detail) to seed agent-runtime context.",
+    )
 
 
 class ChatActionProposalItem(BaseModel):
@@ -72,6 +77,7 @@ class ChatActionOut(BaseModel):
     confirmation_note: str
     execution_result: dict[str, Any] | None
     error_message: str
+    execution_plan: ExecutionPlan | None = None
     created_at: datetime
     updated_at: datetime
     confirmed_at: datetime | None
@@ -86,8 +92,10 @@ class ChatActionExecuteOut(BaseModel):
 
 
 class ChatActionProposalResponse(BaseModel):
+    mode: Literal["answer", "plan"] = "answer"
     proposal_id: int | None = None
     assistant_reply: str = ""
     reply: str = ""
     summary: str = ""
     actions: list[ChatActionProposalItem] = Field(default_factory=list)
+    execution_plan: ExecutionPlan | None = None

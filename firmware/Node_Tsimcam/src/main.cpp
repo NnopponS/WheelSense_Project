@@ -17,6 +17,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "mbedtls/base64.h"
 #include "esp_system.h"
+#include "esp_mac.h"
 
 // ===== Camera Pins (T-SIMCam) =====
 #define PWDN_GPIO     -1
@@ -87,6 +88,18 @@ unsigned long lastSnapshotMs = 0;
 size_t lastSnapshotBytes = 0;
 String lastSnapshotMode = "none";
 String lastSnapshotError = "";
+
+/** BLE radio MAC (matches M5 BLE scan); used by server to merge BLE_* stub with CAM_* registry. */
+String getBleMacString() {
+    uint8_t m[6];
+    if (esp_read_mac(m, ESP_MAC_BT) == ESP_OK) {
+        char buf[24];
+        snprintf(buf, sizeof(buf), "%02X:%02X:%02X:%02X:%02X:%02X",
+                 m[0], m[1], m[2], m[3], m[4], m[5]);
+        return String(buf);
+    }
+    return WiFi.macAddress();
+}
 
 // ===== Config Load/Save =====
 void loadConfig() {
@@ -672,6 +685,12 @@ bool connectMQTT() {
         reg["hardware_type"] = "node";
         reg["ip_address"] = WiFi.localIP().toString();
         reg["firmware"] = FIRMWARE_VERSION;
+        {
+            String bmac = getBleMacString();
+            if (bmac.length() > 0) {
+                reg["ble_mac"] = bmac;
+            }
+        }
         String body;
         serializeJson(reg, body);
         String regTopic = "WheelSense/camera/" + deviceId + "/registration";
@@ -711,6 +730,12 @@ void sendStatus() {
     if (hasBattery) {
         doc["battery_pct"] = batteryPct;
         doc["battery_voltage_v"] = batteryV;
+    }
+    {
+        String bmac = getBleMacString();
+        if (bmac.length() > 0) {
+            doc["ble_mac"] = bmac;
+        }
     }
 
     String body;

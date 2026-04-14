@@ -6,6 +6,7 @@ This document describes the firmware-side MQTT contract implemented in this lane
 
 - Publish telemetry topic: `WheelSense/data`
 - Subscribe control topic: `WheelSense/{device_id}/control`
+- Publish command ack topic: `WheelSense/{device_id}/ack`
 - Subscribe config topics:
   - `WheelSense/config/{device_id}`
   - `WheelSense/config/all`
@@ -19,6 +20,17 @@ Payload highlights:
 - `motion.{distance_m,velocity_ms,accel_ms2,direction}`
 - `battery.{percentage,voltage_v,charging}`
 - `rssi[]` entries with `node`, `rssi`, `mac`
+
+Wheelchair command ack payload:
+- `command_id` when the backend supplied one
+- `device_id`
+- `status`
+- `command`
+- optional `message`
+- optional command-specific fields such as `label` or `distance_m`
+
+Provisioning note:
+- `device_id` should match the backend registry. When the server has **MQTT auto-register** enabled and can resolve exactly one target workspace (or `MQTT_AUTO_REGISTER_WORKSPACE_ID` is set), the first `WheelSense/data` payload for a new id creates the device row automatically. Otherwise telemetry is dropped until the device is registered via `/api/devices`.
 
 ## Node_Tsimcam (camera node)
 

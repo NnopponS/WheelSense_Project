@@ -13,6 +13,53 @@ See also:
 
 ## Latest
 
+- **2026-04-12 - MCP OAuth authentication flow implementation**
+  - **Outcome:** Implemented remote MCP OAuth authentication flow for external MCP clients:
+    1. **Protected Resource Metadata** - `/.well-known/oauth-protected-resource/mcp` returns correct metadata with authorization server URL and supported scopes (already existed, verified working)
+    2. **MCP Token Model** - Created `server/app/models/mcp_tokens.py` with `MCPToken` model for tracking issued tokens, linked to parent `AuthSession` for cascade revocation
+    3. **MCP Auth Endpoints** - Created `server/app/api/endpoints/mcp_auth.py`:
+       - `POST /api/mcp/token` - Issue MCP access token with scope narrowing
+       - `DELETE /api/mcp/token/{token_id}` - Revoke MCP token
+       - `GET /api/mcp/tokens` - List active MCP tokens
+       - `GET /api/mcp/token/{token_id}` - Get single token details
+       - `POST /api/mcp/tokens/revoke-all` - Revoke all user tokens
+    4. **MCP Auth Schemas** - Created `server/app/schemas/mcp_auth.py` with:
+       - All MCP scopes documented: patients.read/write, alerts.read/manage, devices.read/manage/command, rooms.read/manage, room_controls.use, workflow.read/write, cameras.capture, ai_settings.read/write, admin.audit.read
+       - Role-to-scope mapping (ROLE_MCP_SCOPES)
+       - Token request/response schemas
+    5. **Enhanced MCP Auth** - Updated `server/app/mcp/auth.py` to validate MCP-specific tokens and extract their narrowed scopes
+    6. **Database Migration** - Created `server/alembic/versions/u5v6w7x8y9z0_add_mcp_tokens_table.py` for mcp_tokens table
+    7. **Router Registration** - Added MCP auth endpoints to `server/app/api/router.py`
+    8. **Model Exports** - Updated `server/app/models/__init__.py` to export MCPToken
+    9. **Test Suite** - Created comprehensive tests in `server/tests/test_mcp_auth.py` (14 tests, all passing)
+  - **Key Features:**
+    - Short-lived MCP tokens (1 hour expiry, capped at 60 minutes)
+    - Scope narrowing (tokens only get scopes the role allows)
+    - Invalid scope rejection
+    - Tokens linked to parent AuthSession for cascade revocation
+    - Users can only access/revoke their own tokens (admin exception for viewing any in workspace)
+  - **Files Modified:**
+    - `server/app/mcp/auth.py` - Enhanced scope validation
+    - `server/app/api/router.py` - Registered MCP auth routes
+    - `server/app/models/__init__.py` - Added MCPToken export
+  - **Files Created:**
+    - `server/app/models/mcp_tokens.py`
+    - `server/app/schemas/mcp_auth.py`
+    - `server/app/api/endpoints/mcp_auth.py`
+    - `server/alembic/versions/u5v6w7x8y9z0_add_mcp_tokens_table.py`
+    - `server/tests/test_mcp_auth.py`
+  - **Verification:** `cd server && python -m pytest tests/test_mcp_auth.py -v` (14 passed)
+  - **New Env Vars:** None
+  - **New Role Names:** None
+
+- **2026-04-12 - MCP architecture pivot: authenticated remote MCP + agent runtime orchestration**
+  - **Outcome:** Replaced the old “chat -> direct internal `execute_workspace_tool()`” path with a server-to-server `wheelsense-agent-runtime` service and authenticated remote MCP surface. `/mcp` now mounts the remote MCP app with **Streamable HTTP** as primary transport and temporary **SSE** compatibility at `/mcp/sse`; unauthenticated MCP requests return `401` with protected-resource metadata at `/.well-known/oauth-protected-resource/mcp`. Split MCP code into `server/app/mcp/*` (auth/context/server), added scoped actor context from bearer auth, added MCP resources/prompts/tool annotations, and removed caller-controlled caregiver attribution from MCP alert acknowledgement. `POST /api/chat/actions/propose` now calls the runtime service, which plans/grounds/executes through MCP as the acting user; `chat_actions` now supports `mcp_plan` payloads with normalized execution plan metadata. Added `wheelsense-agent-runtime` service to `server/docker-compose.core.yml`. Synced `ARCHITECTURE.md` and `server/AGENTS.md`.
+  - **Verification:** `cd server && python -m pytest tests/test_chat_actions.py tests/test_mcp_server.py tests/test_chat.py -q`
+
+- **2026-04-12 - Auth hardening: server-tracked sessions + HttpOnly web auth**
+  - **Outcome:** Added backend `auth_sessions` model/migration and auth APIs (`GET /api/auth/sessions`, `POST /api/auth/logout`, `DELETE /api/auth/sessions/{session_id}`); JWTs issued by login/impersonation now carry `sid` and are rejected when the tracked session is revoked/expired. Frontend auth no longer stores JWTs in `localStorage`; Next `/api/*` proxy now manages HttpOnly `ws_token` cookies, clears them on logout/401, and preserves an HttpOnly admin backup cookie for impersonation restore. Updated `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`, and auth copy in `frontend/lib/i18n.tsx`.
+  - **Verification:** `cd server && python -m pytest tests/test_api.py tests/e2e/test_system_flows.py tests/test_future_domains.py tests/test_devices_mvp.py -q`; `cd server && python scripts/export_openapi.py openapi.generated.json`; `cd frontend && npm run openapi:types`; `cd frontend && npm run build`.
+
 - **2026-04-12 - Docs: facility management + floorplan panel UX (architecture sync)**
   - **Outcome:** Documented full-name stats card and **`FloorplansPanel`** scope/layout behavior in `ARCHITECTURE.md` and `frontend/README.md`; noted `api.getRoom` in README key files.
   - **Verification:** N/A (markdown).

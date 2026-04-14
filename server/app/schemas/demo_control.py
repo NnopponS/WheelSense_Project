@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -69,7 +69,7 @@ class DemoRoomCaptureResponse(BaseModel):
     message: str
     room_id: int
     node_device_id: Optional[str] = None
-    command_id: Optional[int] = None
+    command_id: Optional[str] = None
 
 
 class DemoScenarioResponse(BaseModel):
@@ -121,3 +121,37 @@ class SimulatorStatusResponse(BaseModel):
     workspace_id: int | None = None
     workspace_name: str | None = None
     statistics: dict[str, int] | None = None
+
+
+SimulatorCommandName = Literal["pause", "resume", "set_config", "inject_abnormal_hr", "inject_fall"]
+
+
+class SimulatorRuntimeConfigPatch(BaseModel):
+    """Allowed runtime keys forwarded to the MQTT simulator worker."""
+
+    vital_update_interval: int | None = Field(default=None, ge=5, le=600)
+    alert_probability: float | None = Field(default=None, ge=0.0, le=1.0)
+    enable_alerts: bool | None = None
+    heart_rate_high: int | None = Field(default=None, ge=60, le=200)
+
+
+class SimulatorCommandIn(BaseModel):
+    """Admin command published to `WheelSense/sim/control` for the workspace MQTT simulator."""
+
+    command: SimulatorCommandName
+    patient_id: int | None = Field(default=None, ge=1)
+    config: SimulatorRuntimeConfigPatch | None = None
+
+    @model_validator(mode="after")
+    def validate_set_config(self):
+        if self.command == "set_config":
+            if self.config is None:
+                raise ValueError("config is required when command is set_config")
+            if not self.config.model_dump(exclude_none=True):
+                raise ValueError("config must include at least one field for set_config")
+        return self
+
+
+class SimulatorCommandOut(BaseModel):
+    status: str = "ok"
+    message: str

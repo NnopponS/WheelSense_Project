@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 // Version
-#define FIRMWARE_VERSION "3.2.0"
+#define FIRMWARE_VERSION "3.2.1"
 
 // Default Settings
 #define DEFAULT_DEVICE_NAME "WS_01"
@@ -30,15 +30,15 @@
 #define SCREEN_ROTATION 1
 
 // Colors
-#define COLOR_PRIMARY 0x07E0   // Green
-#define COLOR_WARNING 0xFD20   // Orange
-#define COLOR_ERROR   0xF800   // Red
-#define COLOR_TEXT    0xFFFF   // White
-#define COLOR_BG      0x0000   // Black
-#define COLOR_BG_LIGHT 0xCE79
-#define COLOR_HEADER  0x18E3   // Dark Grey
-#define COLOR_CYAN    0x07FF
-#define COLOR_BLUE    0x001F
+#define COLOR_PRIMARY 0x00FF00   // Green
+#define COLOR_WARNING 0xFFA500   // Orange
+#define COLOR_ERROR   0xFF0000   // Red
+#define COLOR_TEXT    0xFFFFFF   // White
+#define COLOR_BG      0x000000   // Black
+#define COLOR_BG_LIGHT 0xAAAAAA   // Light gray
+#define COLOR_HEADER  0x444444   // Dark Grey
+#define COLOR_CYAN    0x00FFFF
+#define COLOR_BLUE    0x0000FF
 
 // Timing
 #define MQTT_PUBLISH_INTERVAL 1000

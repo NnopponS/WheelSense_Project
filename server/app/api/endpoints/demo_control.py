@@ -23,6 +23,8 @@ from app.schemas.demo_control import (
     DemoScenarioStopRequest,
     DemoWorkflowAdvanceRequest,
     DemoWorkflowAdvanceResponse,
+    SimulatorCommandIn,
+    SimulatorCommandOut,
     SimulatorResetResponse,
     SimulatorStatusResponse,
 )
@@ -31,8 +33,11 @@ from app.services.demo_control import (
     start_demo_scenario,
     stop_demo_scenario,
 )
+from app.services.device_management import publish_mqtt
 
 router = APIRouter()
+
+SIMULATOR_MQTT_CONTROL_TOPIC = "WheelSense/sim/control"
 
 
 def _bad_request(exc: ValueError) -> HTTPException:
@@ -54,8 +59,12 @@ async def reset_demo_workspace(
     ws: Workspace = Depends(get_current_user_workspace),
     _: User = Depends(RequireRole(["admin"])),
 ):
-    if payload.profile != "show-demo":
-        raise HTTPException(status_code=400, detail="Only the 'show-demo' profile is supported")
+    # Frontend historically sent "clean-slate"; both names run the same seed path.
+    if payload.profile not in ("show-demo", "clean-slate"):
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported profile; use 'show-demo' or 'clean-slate'.",
+        )
 
     from scripts.seed_demo import run_seed
 
@@ -293,4 +302,43 @@ async def get_simulator_environment_status(
         workspace_id=result.get("workspace_id"),
         workspace_name=result.get("workspace_name"),
         statistics=result.get("statistics"),
+    )
+
+
+@router.post("/simulator/command", response_model=SimulatorCommandOut)
+async def publish_simulator_mqtt_command(
+    payload: SimulatorCommandIn,
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(["admin"])),
+):
+    """Publish a control message to the MQTT simulator (`sim_controller.py`).
+
+    Only available when `ENV_MODE=simulator`. The server injects `workspace_id` from the JWT
+    workspace so clients cannot target another tenant.
+    """
+    from app.config import settings
+
+    if not settings.is_simulator_mode:
+        raise HTTPException(
+            status_code=403,
+            detail="Simulator commands are only available in simulator mode (ENV_MODE=simulator)",
+        )
+
+    body: dict = {"workspace_id": ws.id, "command": payload.command}
+    if payload.patient_id is not None:
+        body["patient_id"] = payload.patient_id
+    if payload.config is not None:
+        body["config"] = payload.config.model_dump(exclude_none=True)
+
+    try:
+        await publish_mqtt(SIMULATOR_MQTT_CONTROL_TOPIC, body)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to publish simulator command: {exc}",
+        ) from exc
+
+    return SimulatorCommandOut(
+        status="ok",
+        message=f"Published {payload.command} to {SIMULATOR_MQTT_CONTROL_TOPIC}",
     )
