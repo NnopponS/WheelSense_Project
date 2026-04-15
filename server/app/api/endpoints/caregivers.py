@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 """CareGiver CRUD, zone assignment, and shift endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.api.dependencies import (
     RequireRole,
@@ -39,6 +39,7 @@ from app.schemas.caregivers import (
 from app.schemas.devices import CaregiverDeviceAssignmentCreate, CaregiverDeviceAssignmentOut
 from app.services import device_management as caregiver_device_service
 from app.services.base import CRUDBase
+from app.services.profile_image_storage import remove_hosted_profile_file_if_any, store_hosted_profile_jpeg_bytes
 
 caregiver_service = CRUDBase[CareGiver, CareGiverCreate, CareGiverPatch](CareGiver)
 
@@ -228,6 +229,32 @@ async def update_caregiver(
         if field in patch and patch[field] is None:
             patch[field] = ""
     return await caregiver_service.update(db, ws_id=ws.id, db_obj=cg, obj_in=patch)
+
+
+@router.post("/{caregiver_id}/profile-image", response_model=CareGiverOut)
+async def upload_caregiver_profile_image(
+    caregiver_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    """Store a JPEG and set caregiver.photo_url to a platform-hosted path."""
+    cg = await caregiver_service.get(db, ws_id=ws.id, id=caregiver_id)
+    if not cg:
+        raise HTTPException(404, "Caregiver not found")
+    data = await file.read()
+    try:
+        relative = store_hosted_profile_jpeg_bytes(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    remove_hosted_profile_file_if_any((cg.photo_url or "").strip() or None)
+    cg.photo_url = relative
+    db.add(cg)
+    await db.commit()
+    await db.refresh(cg)
+    return cg
+
 
 @router.delete("/{caregiver_id}", status_code=204)
 async def delete_caregiver(

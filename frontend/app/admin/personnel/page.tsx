@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -20,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { hasCapability } from "@/lib/permissions";
 import type { Caregiver, Patient, User as AppUser } from "@/lib/types";
@@ -53,6 +54,19 @@ const PERSONNEL_QK = {
   users: ["admin", "personnel", "users"] as const,
 };
 
+const USER_ROLE_TO_I18N: Record<string, TranslationKey> = {
+  admin: "personnel.role.admin",
+  head_nurse: "personnel.role.headNurse",
+  supervisor: "personnel.role.supervisor",
+  observer: "personnel.role.observer",
+  patient: "personnel.role.patient",
+};
+
+function formatUserRole(role: string, t: (key: TranslationKey) => string): string {
+  const key = USER_ROLE_TO_I18N[role];
+  return key ? t(key) : role.replace(/_/g, " ");
+}
+
 function PersonnelPageContent() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -82,6 +96,7 @@ function PersonnelPageContent() {
   const [sfEmail, setSfEmail] = useState("");
   const [sfUser, setSfUser] = useState("");
   const [sfPass, setSfPass] = useState("");
+  const [sfCreateLogin, setSfCreateLogin] = useState(false);
   const [sfBusy, setSfBusy] = useState(false);
   const [sfErr, setSfErr] = useState<string | null>(null);
 
@@ -99,6 +114,7 @@ function PersonnelPageContent() {
   const [ptRoomId, setPtRoomId] = useState("");
   const [ptUser, setPtUser] = useState("");
   const [ptPass, setPtPass] = useState("");
+  const [ptCreateLogin, setPtCreateLogin] = useState(false);
   const [ptBusy, setPtBusy] = useState(false);
   const [ptErr, setPtErr] = useState<string | null>(null);
 
@@ -137,6 +153,7 @@ function PersonnelPageContent() {
     setSfEmail("");
     setSfUser("");
     setSfPass("");
+    setSfCreateLogin(false);
     setSfErr(null);
   }, []);
 
@@ -154,6 +171,7 @@ function PersonnelPageContent() {
     setPtRoomId("");
     setPtUser("");
     setPtPass("");
+    setPtCreateLogin(false);
     setPtErr(null);
   }, []);
 
@@ -177,7 +195,7 @@ function PersonnelPageContent() {
       setSfErr(t("personnel.formRequiredNames"));
       return;
     }
-    if (sfUser.trim().length < 3 || sfPass.trim().length < 6) {
+    if (sfCreateLogin && (sfUser.trim().length < 3 || sfPass.trim().length < 6)) {
       setSfErr(t("personnel.formRequiredCredentials"));
       return;
     }
@@ -199,15 +217,17 @@ function PersonnelPageContent() {
         emergency_contact_phone: "",
         photo_url: "",
       });
-      await api.post<AppUser>("/users", {
-        username: sfUser.trim(),
-        password: sfPass.trim(),
-        role: sfRole,
-        is_active: true,
-        caregiver_id: cg.id,
-        patient_id: null,
-        profile_image_url: "",
-      });
+      if (sfCreateLogin) {
+        await api.post<AppUser>("/users", {
+          username: sfUser.trim(),
+          password: sfPass.trim(),
+          role: sfRole,
+          is_active: true,
+          caregiver_id: cg.id,
+          patient_id: null,
+          profile_image_url: "",
+        });
+      }
       resetStaffForm();
       setStaffDialogOpen(false);
       await invalidatePersonnel();
@@ -225,6 +245,7 @@ function PersonnelPageContent() {
     sfDepartment,
     sfEmail,
     sfEmployeeCode,
+    sfCreateLogin,
     sfPass,
     sfPhone,
     sfRole,
@@ -240,7 +261,7 @@ function PersonnelPageContent() {
       setPtErr(t("personnel.formRequiredNames"));
       return;
     }
-    if (ptUser.trim().length < 3 || ptPass.trim().length < 6) {
+    if (ptCreateLogin && (ptUser.trim().length < 3 || ptPass.trim().length < 6)) {
       setPtErr(t("personnel.formRequiredCredentials"));
       return;
     }
@@ -265,15 +286,17 @@ function PersonnelPageContent() {
         notes: "",
         room_id: ptRoomId.trim() ? Number(ptRoomId) : null,
       });
-      await api.post<AppUser>("/users", {
-        username: ptUser.trim(),
-        password: ptPass.trim(),
-        role: "patient",
-        is_active: true,
-        caregiver_id: null,
-        patient_id: patient.id,
-        profile_image_url: "",
-      });
+      if (ptCreateLogin) {
+        await api.post<AppUser>("/users", {
+          username: ptUser.trim(),
+          password: ptPass.trim(),
+          role: "patient",
+          is_active: true,
+          caregiver_id: null,
+          patient_id: patient.id,
+          profile_image_url: "",
+        });
+      }
       resetPatientForm();
       setPatientDialogOpen(false);
       await invalidatePersonnel();
@@ -285,6 +308,7 @@ function PersonnelPageContent() {
   }, [
     canProvision,
     invalidatePersonnel,
+    ptCreateLogin,
     ptCare,
     ptDob,
     ptFirst,
@@ -366,15 +390,19 @@ function PersonnelPageContent() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Personnel Workspace</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            One workspace for staff, patients, and accounts with searchable ID/name filters.
-          </p>
+          <h2 className="text-2xl font-bold text-foreground">{t("personnel.workspaceTitle")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("personnel.workspaceSubtitle")}</p>
         </div>
         <div className="flex gap-2">
-          <Badge variant="outline">Staff {stats.staff}</Badge>
-          <Badge variant="outline">Patients {stats.patients}</Badge>
-          <Badge variant="outline">Accounts {stats.accounts}</Badge>
+          <Badge variant="outline">
+            {t("nav.staff")} {stats.staff}
+          </Badge>
+          <Badge variant="outline">
+            {t("nav.patients")} {stats.patients}
+          </Badge>
+          <Badge variant="outline">
+            {t("personnel.tabAccounts")} {stats.accounts}
+          </Badge>
         </div>
       </div>
 
@@ -383,9 +411,9 @@ function PersonnelPageContent() {
           <Tabs value={tab} onValueChange={(v) => onPersonnelTabChange(v as ViewTab)} className="space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <TabsList className="grid w-full grid-cols-3 md:w-auto">
-                <TabsTrigger value="staff">Staff</TabsTrigger>
-                <TabsTrigger value="patients">Patients</TabsTrigger>
-                <TabsTrigger value="accounts">Accounts</TabsTrigger>
+                <TabsTrigger value="staff">{t("nav.staff")}</TabsTrigger>
+                <TabsTrigger value="patients">{t("nav.patients")}</TabsTrigger>
+                <TabsTrigger value="accounts">{t("personnel.tabAccounts")}</TabsTrigger>
               </TabsList>
 
               <div className="flex flex-wrap gap-2">
@@ -395,10 +423,10 @@ function PersonnelPageContent() {
                     value={roleFilter}
                     onChange={(event) => setRoleFilter(event.target.value as "all" | User["role"])}
                   >
-                    <option value="all">All Roles</option>
+                    <option value="all">{t("personnel.filterAllRoles")}</option>
                     {[...STAFF_ROLES, "patient"].map((role) => (
                       <option key={role} value={role}>
-                        {role.replace(/_/g, " ")}
+                        {formatUserRole(role, t)}
                       </option>
                     ))}
                   </select>
@@ -411,9 +439,9 @@ function PersonnelPageContent() {
                       setPatientStatusFilter(event.target.value as "all" | "active" | "inactive")
                     }
                   >
-                    <option value="all">All patients</option>
-                    <option value="active">Active only</option>
-                    <option value="inactive">Inactive only</option>
+                    <option value="all">{t("personnel.filterAllPatients")}</option>
+                    <option value="active">{t("personnel.filterActiveOnly")}</option>
+                    <option value="inactive">{t("personnel.filterInactiveOnly")}</option>
                   </select>
                 ) : null}
                 {tab === "accounts" ? (
@@ -424,9 +452,9 @@ function PersonnelPageContent() {
                       setAccountKindFilter(event.target.value as "all" | "staff" | "patient")
                     }
                   >
-                    <option value="all">All account types</option>
-                    <option value="staff">Staff accounts</option>
-                    <option value="patient">Patient accounts</option>
+                    <option value="all">{t("personnel.filterAllAccountTypes")}</option>
+                    <option value="staff">{t("personnel.filterStaffAccounts")}</option>
+                    <option value="patient">{t("personnel.filterPatientAccounts")}</option>
                   </select>
                 ) : null}
                 <div className="relative min-w-[16rem]">
@@ -434,7 +462,11 @@ function PersonnelPageContent() {
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder={tab === "accounts" ? "Search by ID, username, linked name" : "Search by ID or name"}
+                    placeholder={
+                      tab === "accounts"
+                        ? t("personnel.searchPlaceholderAccounts")
+                        : t("personnel.searchPlaceholderDefault")
+                    }
                     className="pl-9"
                   />
                 </div>
@@ -461,29 +493,33 @@ function PersonnelPageContent() {
                       </div>
                       <div>
                         <p className="font-medium">{row.first_name} {row.last_name}</p>
-                        <p className="text-xs text-muted-foreground">{row.role} - {row.department || "No department"} - #{row.id}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatUserRole(row.role, t)} - {row.department || t("personnel.noDepartment")} - #{row.id}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={row.is_active ? "success" : "outline"}>
-                        {row.is_active ? "Active" : "Inactive"}
+                        {row.is_active ? t("common.active") : t("common.inactive")}
                       </Badge>
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/admin/caregivers/${row.id}`}>
-                          Open
+                          {t("personnel.rowOpen")}
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/admin/account-management?kind=staff&q=${encodeURIComponent(linkedAccount?.username || String(row.id))}`}>
-                          {linkedAccount ? "Account" : "Create account"}
+                          {linkedAccount ? t("personnel.accountLinked") : t("personnel.accountCreate")}
                         </Link>
                       </Button>
                     </div>
                   </div>
                 )})}
                 {staffRows.length === 0 ? (
-                  <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No staff found.</p>
+                  <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    {t("personnel.emptyStaff")}
+                  </p>
                 ) : null}
               </TabsContent>
 
@@ -501,29 +537,34 @@ function PersonnelPageContent() {
                       </div>
                       <div>
                         <p className="font-medium">{row.first_name} {row.last_name}</p>
-                        <p className="text-xs text-muted-foreground">Patient #{row.id}{row.nickname ? ` - ${row.nickname}` : ""}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("personnel.role.patient")} #{row.id}
+                          {row.nickname ? ` - ${row.nickname}` : ""}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={row.is_active ? "success" : "outline"}>
-                        {row.is_active ? "Active" : "Inactive"}
+                        {row.is_active ? t("common.active") : t("common.inactive")}
                       </Badge>
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/admin/patients/${row.id}`}>
-                          Open
+                          {t("personnel.rowOpen")}
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/admin/account-management?kind=patient&q=${encodeURIComponent(linkedAccount?.username || String(row.id))}`}>
-                          {linkedAccount ? "Account" : "Create account"}
+                          {linkedAccount ? t("personnel.accountLinked") : t("personnel.accountCreate")}
                         </Link>
                       </Button>
                     </div>
                   </div>
                 )})}
                 {patientRows.length === 0 ? (
-                  <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No patients found.</p>
+                  <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    {t("personnel.emptyPatients")}
+                  </p>
                 ) : null}
               </TabsContent>
 
@@ -540,27 +581,29 @@ function PersonnelPageContent() {
                       <div>
                         <p className="font-medium">{row.username}</p>
                         <p className="text-xs text-muted-foreground">
-                          Account #{row.id} - {row.role.replace(/_/g, " ")}
-                          {row.caregiver_id ? ` - Staff #${row.caregiver_id}` : ""}
-                          {row.patient_id ? ` - Patient #${row.patient_id}` : ""}
+                          {t("personnel.accountLineAccount")} #{row.id} - {formatUserRole(row.role, t)}
+                          {row.caregiver_id ? ` - ${t("personnel.lineStaffRef")}${row.caregiver_id}` : ""}
+                          {row.patient_id ? ` - ${t("personnel.linePatientRef")}${row.patient_id}` : ""}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={row.is_active ? "success" : "outline"}>
-                        {row.is_active ? "Active" : "Inactive"}
+                        {row.is_active ? t("common.active") : t("common.inactive")}
                       </Badge>
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/admin/account-management?kind=${row.role === "patient" ? "patient" : "staff"}&q=${encodeURIComponent(row.username)}`}>
                           <Shield className="h-3.5 w-3.5" />
-                          Manage
+                          {t("personnel.manage")}
                         </Link>
                       </Button>
                     </div>
                   </div>
                 ))}
                 {accountRows.length === 0 ? (
-                  <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">No accounts found.</p>
+                  <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                    {t("personnel.emptyAccounts")}
+                  </p>
                 ) : null}
               </TabsContent>
               </>
@@ -573,13 +616,13 @@ function PersonnelPageContent() {
         <Button asChild variant="outline">
           <Link href="/admin/caregivers">
             <UserCog className="h-4 w-4" />
-            Staff directory
+            {t("personnel.linkStaffDirectory")}
           </Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/admin/patients">
             <Users className="h-4 w-4" />
-            Patient roster
+            {t("personnel.linkPatientRoster")}
           </Link>
         </Button>
         {canProvision ? (
@@ -617,12 +660,12 @@ function PersonnelPageContent() {
       </div>
 
       <Dialog open={staffDialogOpen} onOpenChange={(o) => { setStaffDialogOpen(o); if (!o) resetStaffForm(); }}>
-        <DialogContent className="w-[min(100%-2rem,70rem)] max-h-[92vh] overflow-hidden rounded-3xl border border-outline-variant/25 bg-surface p-0 shadow-2xl">
-          <DialogHeader className="border-b border-outline-variant/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-4">
+        <DialogContent className="flex max-h-[92vh] min-h-0 w-[min(100%-2rem,70rem)] flex-col gap-0 overflow-hidden rounded-3xl border border-outline-variant/25 bg-surface p-0 shadow-2xl">
+          <DialogHeader className="shrink-0 border-b border-outline-variant/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-4">
             <DialogTitle className="text-xl font-bold text-foreground">{t("personnel.addStaffTitle")}</DialogTitle>
             <DialogDescription className="text-sm text-foreground-variant">{t("personnel.addStaffDescription")}</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[calc(92vh-9rem)] overflow-y-auto px-6 py-5">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             <div className="space-y-5">
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("caregivers.sectionAbout")}</p>
@@ -680,38 +723,57 @@ function PersonnelPageContent() {
               </section>
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="ps-user">{t("personnel.username")}</Label>
-                    <Input id="ps-user" value={sfUser} onChange={(e) => setSfUser(e.target.value)} autoComplete="off" className="mt-1" />
-                  </div>
-                  <div>
-                    <Label htmlFor="ps-pass">{t("personnel.password")}</Label>
-                    <Input id="ps-pass" type="password" value={sfPass} onChange={(e) => setSfPass(e.target.value)} autoComplete="new-password" className="mt-1" />
+                <div className="mb-4 flex items-start gap-3">
+                  <Checkbox
+                    id="ps-create-login"
+                    checked={sfCreateLogin}
+                    onCheckedChange={(v) => setSfCreateLogin(v === true)}
+                  />
+                  <div className="space-y-1">
+                    <Label htmlFor="ps-create-login" className="cursor-pointer font-medium leading-snug">
+                      {t("personnel.createLoginLabel")}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">{t("personnel.createLoginHint")}</p>
                   </div>
                 </div>
+                {sfCreateLogin ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="ps-user">{t("personnel.username")}</Label>
+                      <Input id="ps-user" value={sfUser} onChange={(e) => setSfUser(e.target.value)} autoComplete="off" className="mt-1" />
+                    </div>
+                    <div>
+                      <Label htmlFor="ps-pass">{t("personnel.password")}</Label>
+                      <Input id="ps-pass" type="password" value={sfPass} onChange={(e) => setSfPass(e.target.value)} autoComplete="new-password" className="mt-1" />
+                    </div>
+                  </div>
+                ) : null}
               </section>
               {sfErr ? <p className="text-sm font-medium text-destructive">{sfErr}</p> : null}
             </div>
           </div>
-          <DialogFooter className="border-t border-outline-variant/20 bg-surface-container/40 px-6 py-4">
+          <DialogFooter className="shrink-0 border-t border-outline-variant/20 bg-surface-container/40 px-6 py-4">
             <Button type="button" variant="outline" onClick={() => setStaffDialogOpen(false)}>
               {t("accountMgmt.cancel")}
             </Button>
             <Button type="button" disabled={sfBusy} onClick={() => void onSubmitStaffPlusAccount()}>
-              {sfBusy ? t("common.loading") : t("personnel.createStaffUser")}
+              {sfBusy
+                ? t("common.loading")
+                : sfCreateLogin
+                  ? t("personnel.submitStaffWithLogin")
+                  : t("personnel.submitStaffSave")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={patientDialogOpen} onOpenChange={(o) => { setPatientDialogOpen(o); if (!o) resetPatientForm(); }}>
-        <DialogContent className="w-[min(100%-2rem,70rem)] max-h-[92vh] overflow-hidden rounded-3xl border border-outline-variant/25 bg-surface p-0 shadow-2xl">
-          <DialogHeader className="border-b border-outline-variant/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-4">
+        <DialogContent className="flex max-h-[92vh] min-h-0 w-[min(100%-2rem,70rem)] flex-col gap-0 overflow-hidden rounded-3xl border border-outline-variant/25 bg-surface p-0 shadow-2xl">
+          <DialogHeader className="shrink-0 border-b border-outline-variant/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-4">
             <DialogTitle className="text-xl font-bold text-foreground">{t("personnel.addPatientTitle")}</DialogTitle>
             <DialogDescription className="text-sm text-foreground-variant">{t("personnel.addPatientDescription")}</DialogDescription>
           </DialogHeader>
-          <div className="max-h-[calc(92vh-9rem)] overflow-y-auto px-6 py-5">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             <div className="space-y-5">
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.detailAbout")}</p>
@@ -791,26 +853,45 @@ function PersonnelPageContent() {
               </section>
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="pp-user">{t("personnel.username")}</Label>
-                    <Input id="pp-user" value={ptUser} onChange={(e) => setPtUser(e.target.value)} autoComplete="off" className="mt-1" />
-                  </div>
-                  <div>
-                    <Label htmlFor="pp-pass">{t("personnel.password")}</Label>
-                    <Input id="pp-pass" type="password" value={ptPass} onChange={(e) => setPtPass(e.target.value)} autoComplete="new-password" className="mt-1" />
+                <div className="mb-4 flex items-start gap-3">
+                  <Checkbox
+                    id="pp-create-login"
+                    checked={ptCreateLogin}
+                    onCheckedChange={(v) => setPtCreateLogin(v === true)}
+                  />
+                  <div className="space-y-1">
+                    <Label htmlFor="pp-create-login" className="cursor-pointer font-medium leading-snug">
+                      {t("personnel.createLoginLabel")}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">{t("personnel.createLoginHint")}</p>
                   </div>
                 </div>
+                {ptCreateLogin ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="pp-user">{t("personnel.username")}</Label>
+                      <Input id="pp-user" value={ptUser} onChange={(e) => setPtUser(e.target.value)} autoComplete="off" className="mt-1" />
+                    </div>
+                    <div>
+                      <Label htmlFor="pp-pass">{t("personnel.password")}</Label>
+                      <Input id="pp-pass" type="password" value={ptPass} onChange={(e) => setPtPass(e.target.value)} autoComplete="new-password" className="mt-1" />
+                    </div>
+                  </div>
+                ) : null}
               </section>
               {ptErr ? <p className="text-sm font-medium text-destructive">{ptErr}</p> : null}
             </div>
           </div>
-          <DialogFooter className="border-t border-outline-variant/20 bg-surface-container/40 px-6 py-4">
+          <DialogFooter className="shrink-0 border-t border-outline-variant/20 bg-surface-container/40 px-6 py-4">
             <Button type="button" variant="outline" onClick={() => setPatientDialogOpen(false)}>
               {t("accountMgmt.cancel")}
             </Button>
             <Button type="button" disabled={ptBusy} onClick={() => void onSubmitPatientPlusAccount()}>
-              {ptBusy ? t("common.loading") : t("personnel.createPatientUser")}
+              {ptBusy
+                ? t("common.loading")
+                : ptCreateLogin
+                  ? t("personnel.submitPatientWithLogin")
+                  : t("personnel.submitPatientSave")}
             </Button>
           </DialogFooter>
         </DialogContent>

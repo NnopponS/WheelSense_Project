@@ -40,3 +40,22 @@ class ShiftChecklistWorkspaceRowOut(BaseModel):
     items: list[ShiftChecklistItem]
     percent_complete: int = 0
     updated_at: datetime | None = None
+
+
+class ShiftChecklistTemplatePutIn(BaseModel):
+    """Replace per-user checklist rows (Head nurse / admin). `checked` is ignored."""
+
+    items: list[ShiftChecklistItem] = Field(default_factory=list)
+
+    @field_validator("items")
+    @classmethod
+    def _limit_items(cls, v: list[ShiftChecklistItem]) -> list[ShiftChecklistItem]:
+        if len(v) > 48:
+            raise ValueError("Too many checklist items")
+        return v
+
+
+class ShiftChecklistTemplateOut(BaseModel):
+    user_id: int
+    items: list[ShiftChecklistItem]
+    updated_at: datetime | None = None

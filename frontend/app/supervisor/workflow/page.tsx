@@ -1,23 +1,28 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { Calendar, ClipboardList, Clock } from "lucide-react";
 import { OperationsConsole } from "@/components/workflow/OperationsConsole";
 import SupervisorCalendarPage from "@/app/supervisor/calendar/page";
 import { useHubTab, HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
 import { useTranslation } from "@/lib/i18n";
 
-const TABS: HubTab[] = [
-  { key: "workflow", label: "Workflow", icon: Clock },
-  { key: "calendar", label: "Calendar", icon: Calendar },
-  { key: "directives", label: "Directives", icon: ClipboardList },
-];
-
 export default function SupervisorWorkflowPage() {
-  const tab = useHubTab(TABS);
+  const { t } = useTranslation();
+  const tabs = useMemo<HubTab[]>(
+    () => [
+      { key: "workflow", label: t("supervisor.workflow.hubTabWorkflow"), icon: Clock },
+      { key: "calendar", label: t("supervisor.workflow.hubTabCalendar"), icon: Calendar },
+      { key: "directives", label: t("supervisor.workflow.hubTabDirectives"), icon: ClipboardList },
+    ],
+    [t],
+  );
+  const tab = useHubTab(tabs);
   return (
     <div>
-      <Suspense><HubTabBar tabs={TABS} /></Suspense>
+      <Suspense>
+        <HubTabBar tabs={tabs} />
+      </Suspense>
       {tab === "workflow" && <WorkflowContent />}
       {tab === "calendar" && <SupervisorCalendarPage />}
       {tab === "directives" && <WorkflowContent />}

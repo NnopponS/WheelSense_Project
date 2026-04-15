@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { addMinutes, format } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, ClipboardList, ShieldCheck } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Calendar, CalendarClock, ClipboardList, LayoutGrid, ShieldCheck } from "lucide-react";
 import { api } from "@/lib/api";
 import type {
   CareDirectiveOut,
@@ -25,6 +25,13 @@ import {
   buildPatientNameMap,
   schedulesToCalendarEvents,
 } from "@/components/calendar/scheduleEventMapper";
+import { Button } from "@/components/ui/button";
+import { WorkflowTasksKanban } from "@/components/workflow/WorkflowTasksKanban";
+import { useTranslation } from "@/lib/i18n";
+import {
+  boardColumnToApiStatus,
+  type WorkflowTaskBoardColumn,
+} from "@/lib/workflowTaskBoard";
 
 const ALL_FILTER = "__all__";
 
@@ -43,12 +50,16 @@ function normalizeTaskStatus(status: string): CalendarEvent["status"] {
 }
 
 export default function SupervisorCalendarPage() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedPatientId, setSelectedPatientId] = useState<string>(ALL_FILTER);
   const [selectedLayer, setSelectedLayer] = useState<"combined" | "schedules" | "tasks" | "directives">(
     "combined",
   );
+  const [tasksView, setTasksView] = useState<"calendar" | "kanban">("calendar");
+  const [savingTaskIds, setSavingTaskIds] = useState<Set<number>>(() => new Set());
 
   const schedulesQuery = useQuery({
     queryKey: ["supervisor", "calendar", "schedules"],
@@ -67,6 +78,27 @@ export default function SupervisorCalendarPage() {
     queryFn: () => api.listPatients({ limit: 400 }),
   });
 
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ taskId, status }: { taskId: number; status: string }) =>
+      api.updateWorkflowTask(taskId, { status }),
+    onMutate: ({ taskId }) => {
+      setSavingTaskIds((prev) => new Set(prev).add(taskId));
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["supervisor", "calendar", "tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "tasks"] });
+    },
+    onSettled: (_d, _e, variables) => {
+      if (variables) {
+        setSavingTaskIds((prev) => {
+          const n = new Set(prev);
+          n.delete(variables.taskId);
+          return n;
+        });
+      }
+    },
+  });
+
   const tasks = useMemo(() => (tasksQuery.data ?? []) as CareTaskOut[], [tasksQuery.data]);
   const directives = useMemo(
     () => (directivesQuery.data ?? []) as CareDirectiveOut[],
@@ -78,6 +110,12 @@ export default function SupervisorCalendarPage() {
   );
 
   const patientNameById = useMemo(() => buildPatientNameMap(patients), [patients]);
+
+  const filteredBoardTasks = useMemo(() => {
+    if (selectedPatientId === ALL_FILTER) return tasks;
+    const pid = Number(selectedPatientId);
+    return tasks.filter((x) => x.patient_id === pid);
+  }, [tasks, selectedPatientId]);
 
   const scheduleEvents = useMemo(() => {
     const source = schedulesQuery.data ?? [];
@@ -158,6 +196,8 @@ export default function SupervisorCalendarPage() {
       activeDirectives: directives.filter((directive) => directive.status === "active").length,
     };
   }, [filteredEvents, taskEvents, directives]);
+
+  const showTaskViewToggle = selectedLayer === "tasks";
 
   return (
     <div className="space-y-6 pb-6 animate-fade-in">
@@ -243,54 +283,91 @@ export default function SupervisorCalendarPage() {
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <CalendarView
-          events={filteredEvents}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          currentDate={currentDate}
-          onDateChange={setCurrentDate}
-          showCreateButton={false}
-          readOnly
-        />
+      {showTaskViewToggle ? (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant={tasksView === "calendar" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTasksView("calendar")}
+          >
+            <Calendar className="mr-2 h-4 w-4" />
+            {t("workflowTasks.kanban.viewCalendar")}
+          </Button>
+          <Button
+            type="button"
+            variant={tasksView === "kanban" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTasksView("kanban")}
+          >
+            <LayoutGrid className="mr-2 h-4 w-4" />
+            {t("workflowTasks.kanban.viewBoard")}
+          </Button>
+        </div>
+      ) : null}
 
-        <div className="space-y-4">
-          <AgendaView
+      {showTaskViewToggle && tasksView === "kanban" ? (
+        <WorkflowTasksKanban
+          tasks={filteredBoardTasks}
+          pendingTaskIds={savingTaskIds}
+          getPatientLabel={(pid) => (pid != null ? patientNameById.get(pid) : undefined)}
+          onColumnChange={(taskId, column: WorkflowTaskBoardColumn) => {
+            updateTaskMutation.mutate({
+              taskId,
+              status: boardColumnToApiStatus(column),
+            });
+          }}
+        />
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
+          <CalendarView
             events={filteredEvents}
-            maxDays={7}
-            title="7-day agenda"
-            emptyMessage="No events in current filter."
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+            showCreateButton={false}
+            readOnly
           />
 
-          <Card>
-            <CardContent className="space-y-3 p-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <ShieldCheck className="h-4 w-4" />
-                Supervisor Focus
-              </div>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p className="inline-flex items-center gap-2">
-                  <CalendarClock className="h-4 w-4" />
-                  Schedules are read-only here for faster monitoring.
-                </p>
-                <p className="inline-flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4" />
-                  Tasks and directives are projected into the same timeline to reduce page switches.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <AgendaView
+              events={filteredEvents}
+              maxDays={7}
+              title="7-day agenda"
+              emptyMessage="No events in current filter."
+            />
 
-          <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Legend</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Badge variant="outline">[Schedule]</Badge>
-              <Badge variant="outline">[Task]</Badge>
-              <Badge variant="outline">[Directive]</Badge>
+            <Card>
+              <CardContent className="space-y-3 p-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <ShieldCheck className="h-4 w-4" />
+                  Supervisor Focus
+                </div>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p className="inline-flex items-center gap-2">
+                    <CalendarClock className="h-4 w-4" />
+                    Schedules are read-only here for faster monitoring.
+                  </p>
+                  <p className="inline-flex items-center gap-2">
+                    <ClipboardList className="h-4 w-4" />
+                    Tasks and directives are projected into the same timeline to reduce page switches.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Legend</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge variant="outline">[Schedule]</Badge>
+                <Badge variant="outline">[Task]</Badge>
+                <Badge variant="outline">[Directive]</Badge>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

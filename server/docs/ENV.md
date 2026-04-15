@@ -19,8 +19,8 @@ This file reflects the variables currently read by `server/app/config.py` and th
 | `MQTT_USER` | empty | MQTT username |
 | `MQTT_PASSWORD` | empty | MQTT password |
 | `MQTT_TLS` | `false` | Enable TLS for MQTT |
-| `MQTT_AUTO_REGISTER_DEVICES` | `true` | When `true`, first `WheelSense/data` message for an unknown `device_id` creates a registry `Device` row (wheelchair path only). |
-| `MQTT_AUTO_REGISTER_BLE_NODES` | `true` | When `true`, BLE beacons reported in `WheelSense/data` `rssi[]` (`node` names like `WSN_*` plus `mac`) auto-create a **node** (`hardware_type=node`) in the **same workspace** as the wheelchair. Registry `device_id` is `BLE_<12 hex MAC>` (or `BLE_<sanitized node>` if MAC is missing). |
+| `MQTT_AUTO_REGISTER_DEVICES` | `true` | When `true`, first `WheelSense/data` message for an unknown `device_id` creates a registry `Device` row (wheelchair path only). Deleting a device in the admin UI removes the row; if telemetry for that id still arrives, a **new** row may be created again while this flag is on. |
+| `MQTT_AUTO_REGISTER_BLE_NODES` | `true` | When `true`, BLE beacons reported in `WheelSense/data` `rssi[]` (`node` names like `WSN_*` plus `mac`) auto-create a **node** (`hardware_type=node`) in the **same workspace** as the wheelchair. Registry `device_id` is `BLE_<12 hex MAC>` (or `BLE_<sanitized node>` if MAC is missing). Same note as above: deleted rows can reappear if the broker still publishes those beacons. |
 | `MQTT_MERGE_BLE_CAMERA_BY_MAC` | `true` | When `true`, `WheelSense/camera/.../registration` JSON with `ble_mac` matching a `BLE_*` stub **renames** that registry row to the camera’s `device_id` (e.g. `CAM_*`) so MQTT topics and the web UI use one device. |
 | `MQTT_AUTO_REGISTER_WORKSPACE_ID` | empty | Optional integer workspace PK. When set, new devices from telemetry attach to this workspace. When unset and **exactly one** workspace exists, that workspace is used. If multiple workspaces exist and this is unset, auto-register is skipped (telemetry dropped until you register manually or set this variable). |
 
@@ -153,6 +153,7 @@ MQTT_BROKER=localhost
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `SIM_WORKSPACE_ID` | empty | When set to a numeric workspace id, `sim_controller.py` uses that workspace (see `server/sim_controller.py` startup). Passed through Compose into the `wheelsense-simulator` service. |
+| `SIM_FORCE_SEED` | empty | When `1` / `true` / `yes`, `scripts/seed_sim_team.py` runs the **full** baseline seed even if the workspace already has devices or patients. When unset, the seed step **skips** after the first population so deleting registry rows is not undone on every `wheelsense-simulator` restart. |
 
 ### Dual-Environment Docker Compose
 

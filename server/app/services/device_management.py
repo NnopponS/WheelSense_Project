@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 from typing import Any
-from sqlalchemy import and_, desc, select
+
+from sqlalchemy import and_, delete, desc, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import json
 import logging
+import re
 import uuid
 
 import aiomqtt
@@ -16,12 +19,16 @@ from fastapi import HTTPException
 
 import app.config as config
 from app.models.base import utcnow
+from app.models.activity import Alert
 from app.models.caregivers import CareGiver, CareGiverDeviceAssignment
-from app.models.core import Device, DeviceCommandDispatch, Room, Workspace
+from app.models.core import Device, DeviceActivityEvent, DeviceCommandDispatch, Room, Workspace
 from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.telemetry import (
     IMUTelemetry,
+    LocalizationCalibrationSample,
+    LocalizationCalibrationSession,
     MobileDeviceTelemetry,
+    MotionTrainingData,
     NodeStatusTelemetry,
     PhotoRecord,
     RoomPrediction,
@@ -35,6 +42,7 @@ from app.schemas.devices import (
     MobileTelemetryIngest,
     DevicePatch,
 )
+from app.services.node_device_alias import resolve_registry_node_device
 
 logger = logging.getLogger("wheelsense.devices")
 settings = config.settings
@@ -58,6 +66,20 @@ def _public_config(cfg: dict[str, Any]) -> dict[str, Any]:
         for k, v in cfg.items()
         if k not in NON_PUBLIC_DEVICE_CONFIG_KEYS
     }
+
+
+# T-SIMCam (Node_Tsimcam) applies `node_id` from WheelSense/config/{deviceId} JSON payloads.
+_WSN_BLE_LABEL_RE = re.compile(r"\b(WSN_\d+)\b", re.IGNORECASE)
+
+
+def extract_ble_node_label_from_display_name(display_name: str | None) -> str | None:
+    """Return canonical WSN_nnn token from a registry display name, if present."""
+    if not display_name:
+        return None
+    m = _WSN_BLE_LABEL_RE.search(display_name.strip())
+    if not m:
+        return None
+    return m.group(1).upper()
 
 def _normalize_hardware_type(device_type: str, hardware_type: str | None) -> str:
     if hardware_type:
@@ -191,6 +213,62 @@ async def ensure_wheelchair_device_from_telemetry(
     return resolved
 
 
+async def ensure_camera_device_from_mqtt_registration(
+    session: AsyncSession,
+    device_id: str,
+    data: dict[str, Any],
+) -> Device | None:
+    """Create a CAM_* node row on first MQTT registration/status when auto-register resolves a workspace."""
+    if not settings.mqtt_auto_register_devices:
+        return None
+    if not _is_valid_mqtt_device_id(device_id):
+        return None
+    did = str(device_id).strip()
+    if not did.upper().startswith("CAM_"):
+        return None
+    existing = await get_registered_device_for_ingest(session, did)
+    if existing is not None:
+        return existing
+    ws_id = await resolve_mqtt_auto_register_workspace_id(session)
+    if ws_id is None:
+        logger.warning("Camera auto-register skipped for %s: workspace could not be resolved", did)
+        return None
+    disp = str(data.get("node_id", "") or "").strip() or did
+    cfg: dict[str, Any] = {}
+    nid = str(data.get("node_id", "") or "").strip()
+    if nid:
+        cfg["node_id"] = nid
+    ble_raw = data.get("ble_mac") or data.get("ble_mac_address")
+    if ble_raw:
+        cfg["ble_mac"] = str(ble_raw).strip()
+    now = utcnow()
+    dev = Device(
+        workspace_id=ws_id,
+        device_id=did,
+        device_type="camera",
+        hardware_type="node",
+        display_name=disp[:128],
+        firmware=str(data.get("firmware", "") or "")[:16],
+        ip_address=str(data.get("ip_address", "") or "")[:45],
+        last_seen=now,
+        config=cfg,
+    )
+    try:
+        async with session.begin_nested():
+            session.add(dev)
+            await session.flush()
+    except IntegrityError:
+        logger.debug("Camera MQTT auto-register race for device_id=%s, reloading", did)
+    resolved = await get_registered_device_for_ingest(session, did)
+    if resolved is not None:
+        logger.info(
+            "MQTT auto-registered camera %s in workspace_id=%s",
+            did,
+            resolved.workspace_id,
+        )
+    return resolved
+
+
 def _normalize_ble_mac_hex(mac: str | None) -> str | None:
     if not mac:
         return None
@@ -198,6 +276,17 @@ def _normalize_ble_mac_hex(mac: str | None) -> str | None:
     if len(s) != 12:
         return None
     return s.lower()
+
+
+def _infer_normalized_ble_mac_for_stub(device_id: str, cfg: dict[str, Any]) -> str | None:
+    """Prefer config ble_mac; else parse 12 hex nibbles from id BLE_<MAC> (wheelchair RSSI stubs)."""
+    bm = _normalize_ble_mac_hex(str(cfg.get("ble_mac", "") or "").strip())
+    if bm:
+        return bm
+    did = str(device_id).strip().upper()
+    if not did.startswith("BLE_"):
+        return None
+    return _normalize_ble_mac_hex(did[4:])
 
 
 def _ble_node_device_id_from_rssi(node: str, mac: str | None) -> str | None:
@@ -284,6 +373,18 @@ async def ensure_ble_node_devices_from_wheelchair_rssi(
                 workspace_id,
             )
 
+    macs_seen: set[str] = set()
+    for raw in rssi_list:
+        if not isinstance(raw, dict):
+            continue
+        mac = raw.get("mac")
+        mac_s = str(mac).strip() if mac is not None else ""
+        mh = _normalize_ble_mac_hex(mac_s)
+        if mh:
+            macs_seen.add(mh)
+    for mh in macs_seen:
+        await prune_ble_stub_if_canonical_node_claims_mac(session, workspace_id, mh)
+
 
 def mqtt_camera_control_device_id(dev: Device) -> str:
     """MQTT topic id for WheelSense/camera/.../control (may differ from registry id when config overrides)."""
@@ -309,12 +410,25 @@ async def _move_room_node_device_references(
         room.node_device_id = new_device_id  # type: ignore[assignment]
 
 
+def _config_ble_mac_norms(cfg: dict[str, Any]) -> set[str]:
+    """Normalized 12-hex BLE addresses stored on canonical (non–BLE_*) node rows."""
+    out: set[str] = set()
+    for key in ("ble_mac", "ble_mac_reported"):
+        raw = cfg.get(key)
+        if raw is None:
+            continue
+        bm = _normalize_ble_mac_hex(str(raw).strip())
+        if bm:
+            out.add(bm)
+    return out
+
+
 async def _canonical_non_ble_node_claims_mac(
     session: AsyncSession,
     workspace_id: int,
     mac_hex: str,
 ) -> bool:
-    """True if a non–BLE_* node (e.g. CAM_*) already has this ble_mac in config."""
+    """True if a non–BLE_* node (e.g. CAM_*) already claims this radio MAC in config."""
     res = await session.execute(
         select(Device).where(
             Device.workspace_id == workspace_id,
@@ -325,10 +439,41 @@ async def _canonical_non_ble_node_claims_mac(
         if str(row.device_id).startswith("BLE_"):
             continue
         cfg = dict(row.config or {})
-        bm = _normalize_ble_mac_hex(str(cfg.get("ble_mac", "")).strip())
-        if bm == mac_hex:
+        if mac_hex in _config_ble_mac_norms(cfg):
             return True
     return False
+
+
+async def prune_ble_stub_if_canonical_node_claims_mac(
+    session: AsyncSession,
+    workspace_id: int,
+    mac_hex: str,
+) -> None:
+    """Drop BLE_<MAC> stub when a CAM_* (or merged) row already claims the same MAC (fixes duplicate fleet cards)."""
+    if not mac_hex:
+        return
+    if not await _canonical_non_ble_node_claims_mac(session, workspace_id, mac_hex):
+        return
+    stub_id = f"BLE_{mac_hex.upper()}"
+    res = await session.execute(
+        select(Device).where(
+            and_(
+                Device.workspace_id == workspace_id,
+                Device.device_id == stub_id,
+            )
+        )
+    )
+    row = res.scalar_one_or_none()
+    if row is None:
+        return
+    if not str(row.device_id).startswith("BLE_"):
+        return
+    await session.delete(row)
+    logger.info(
+        "Removed redundant BLE stub %s; canonical node already claims ble_mac (workspace_id=%s)",
+        stub_id,
+        workspace_id,
+    )
 
 
 async def remove_ble_stubs_superseded_by_camera_payload(
@@ -355,7 +500,7 @@ async def remove_ble_stubs_superseded_by_camera_payload(
         if did == canonical_device_id:
             continue
         cfg = dict(row.config or {})
-        bm = _normalize_ble_mac_hex(str(cfg.get("ble_mac", "")).strip())
+        bm = _infer_normalized_ble_mac_for_stub(did, cfg)
         if bm != n_in:
             continue
         await session.delete(row)
@@ -390,7 +535,7 @@ async def try_merge_ble_row_for_camera_registration(
         if not str(row.device_id).startswith("BLE_"):
             continue
         cfg = dict(row.config or {})
-        bm = _normalize_ble_mac_hex(str(cfg.get("ble_mac", "")).strip())
+        bm = _infer_normalized_ble_mac_for_stub(str(row.device_id), cfg)
         if bm != n_in:
             continue
         candidates.append(row)
@@ -486,6 +631,136 @@ async def get_device(session: AsyncSession, ws_id: int, device_id: str) -> Devic
         raise HTTPException(404, "Device not found in current workspace")
     return dev
 
+
+async def delete_registry_device(session: AsyncSession, ws_id: int, device_id: str) -> None:
+    """Remove a registry device and workspace-scoped rows that reference its device_id.
+
+    Also clears :class:`DeviceActivityEvent` rows and unlinks :class:`Room` rows where
+    ``node_device_id`` matches this device exactly **or** via the same alias rules as
+    presence (e.g. room stores ``WSN_*``, registry id is ``CAM_*``).
+    """
+    await get_device(session, ws_id, device_id)
+
+    photo_paths = (
+        await session.execute(
+            select(PhotoRecord.filepath).where(
+                PhotoRecord.workspace_id == ws_id,
+                PhotoRecord.device_id == device_id,
+            )
+        )
+    ).all()
+    for row in photo_paths:
+        path = row[0]
+        if not path:
+            continue
+        try:
+            if os.path.isfile(path):
+                os.remove(path)
+        except OSError as exc:
+            logger.warning("Could not remove photo file %s: %s", path, exc)
+
+    await session.execute(
+        delete(LocalizationCalibrationSession).where(
+            LocalizationCalibrationSession.workspace_id == ws_id,
+            LocalizationCalibrationSession.device_id == device_id,
+        )
+    )
+    await session.execute(
+        delete(LocalizationCalibrationSample).where(
+            LocalizationCalibrationSample.workspace_id == ws_id,
+            LocalizationCalibrationSample.device_id == device_id,
+        )
+    )
+
+    for model in (
+        IMUTelemetry,
+        RSSIReading,
+        RoomPrediction,
+        MotionTrainingData,
+        PhotoRecord,
+        NodeStatusTelemetry,
+        MobileDeviceTelemetry,
+        VitalReading,
+    ):
+        await session.execute(
+            delete(model).where(
+                model.workspace_id == ws_id,
+                model.device_id == device_id,
+            )
+        )
+
+    await session.execute(
+        delete(Alert).where(Alert.workspace_id == ws_id, Alert.device_id == device_id)
+    )
+    await session.execute(
+        delete(DeviceCommandDispatch).where(
+            DeviceCommandDispatch.workspace_id == ws_id,
+            DeviceCommandDispatch.device_id == device_id,
+        )
+    )
+    await session.execute(
+        delete(PatientDeviceAssignment).where(
+            PatientDeviceAssignment.workspace_id == ws_id,
+            PatientDeviceAssignment.device_id == device_id,
+        )
+    )
+    await session.execute(
+        delete(CareGiverDeviceAssignment).where(
+            CareGiverDeviceAssignment.workspace_id == ws_id,
+            CareGiverDeviceAssignment.device_id == device_id,
+        )
+    )
+
+    await session.execute(
+        delete(DeviceActivityEvent).where(
+            DeviceActivityEvent.workspace_id == ws_id,
+            DeviceActivityEvent.registry_device_id == device_id,
+        )
+    )
+
+    node_candidates = list(
+        (
+            await session.execute(
+                select(Device)
+                .where(
+                    Device.workspace_id == ws_id,
+                    Device.hardware_type == "node",
+                )
+                .order_by(Device.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    rooms_with_node = list(
+        (
+            await session.execute(
+                select(Room).where(
+                    Room.workspace_id == ws_id,
+                    Room.node_device_id.isnot(None),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for room in rooms_with_node:
+        raw = room.node_device_id
+        if not raw:
+            continue
+        if raw == device_id:
+            await session.execute(update(Room).where(Room.id == room.id).values(node_device_id=None))
+            continue
+        resolved = resolve_registry_node_device(raw, node_candidates)
+        if resolved is not None and resolved.device_id == device_id:
+            await session.execute(update(Room).where(Room.id == room.id).values(node_device_id=None))
+
+    await session.execute(
+        delete(Device).where(Device.workspace_id == ws_id, Device.device_id == device_id)
+    )
+    await session.commit()
+
+
 async def patch_device(
     session: AsyncSession, ws_id: int, device_id: str, body: DevicePatch
 ) -> Device:
@@ -502,8 +777,27 @@ async def patch_device(
             else:
                 merged[k] = v
         dev.config = merged
+    if body.display_name is not None and dev.hardware_type == "node":
+        wsn = extract_ble_node_label_from_display_name(dev.display_name)
+        if wsn:
+            merged = dict(dev.config or {})
+            merged["ble_node_id"] = wsn
+            dev.config = merged
     await session.commit()
     await session.refresh(dev)
+    if body.display_name is not None and dev.hardware_type == "node":
+        wsn = extract_ble_node_label_from_display_name(dev.display_name)
+        if wsn:
+            topic = f"WheelSense/config/{mqtt_camera_control_device_id(dev)}"
+            try:
+                await publish_mqtt(topic, {"node_id": wsn, "sync_only": False})
+            except Exception as e:
+                logger.warning(
+                    "MQTT config push failed (device_id=%s topic=%s): %s",
+                    device_id,
+                    topic,
+                    e,
+                )
     return dev
 
 async def assign_patient_from_device(
@@ -566,6 +860,7 @@ async def _latest_prediction(
     return (await session.execute(q)).scalar_one_or_none()
 
 async def _latest_photo(session: AsyncSession, ws_id: int, device_id: str) -> PhotoRecord | None:
+    """Most recent photo whose file still exists (avoids 404 on /cameras/photos/{id}/content)."""
     q = (
         select(PhotoRecord)
         .where(
@@ -573,9 +868,14 @@ async def _latest_photo(session: AsyncSession, ws_id: int, device_id: str) -> Ph
             PhotoRecord.device_id == device_id,
         )
         .order_by(desc(PhotoRecord.timestamp))
-        .limit(1)
+        .limit(30)
     )
-    return (await session.execute(q)).scalar_one_or_none()
+    rows = (await session.execute(q)).scalars().all()
+    for rec in rows:
+        fp = (rec.filepath or "").strip()
+        if fp and os.path.exists(fp):
+            return rec
+    return None
 
 
 async def _latest_node_status(
@@ -608,11 +908,57 @@ async def _latest_mobile_telemetry(
     return (await session.execute(q)).scalar_one_or_none()
 
 async def _room_for_node(session: AsyncSession, ws_id: int, device_id: str) -> Room | None:
-    q = select(Room).where(
-        Room.workspace_id == ws_id,
-        Room.node_device_id == device_id,
+    direct = (
+        await session.execute(
+            select(Room).where(
+                Room.workspace_id == ws_id,
+                Room.node_device_id == device_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if direct is not None:
+        return direct
+
+    nodes = list(
+        (
+            await session.execute(
+                select(Device)
+                .where(
+                    Device.workspace_id == ws_id,
+                    or_(
+                        Device.hardware_type == "node",
+                        Device.hardware_type == "camera",
+                    ),
+                )
+                .order_by(Device.id)
+            )
+        )
+        .scalars()
+        .all()
     )
-    return (await session.execute(q)).scalar_one_or_none()
+    if not nodes:
+        return None
+
+    rooms = list(
+        (
+            await session.execute(
+                select(Room).where(
+                    Room.workspace_id == ws_id,
+                    Room.node_device_id.isnot(None),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for room in rooms:
+        raw = room.node_device_id
+        if not raw or not str(raw).strip():
+            continue
+        resolved = resolve_registry_node_device(raw, nodes)
+        if resolved is not None and resolved.device_id == device_id:
+            return room
+    return None
 
 async def _active_patient_assignment(
     session: AsyncSession, ws_id: int, device_id: str

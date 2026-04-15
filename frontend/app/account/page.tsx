@@ -50,6 +50,7 @@ type MeProfileResponse = {
     first_name?: string | null;
     last_name?: string | null;
     nickname?: string | null;
+    photo_url?: string | null;
   } | null;
 };
 
@@ -170,6 +171,8 @@ export default function AccountPage() {
     localPreviewUrl ||
     (trimmedUrl && isAllowedProfileImageUrlInput(trimmedUrl) ? trimmedUrl : null) ||
     activeUser?.profile_image_url?.trim() ||
+    profile?.linked_patient?.photo_url?.trim() ||
+    profile?.linked_caregiver?.photo_url?.trim() ||
     null;
 
   const hasSavedImage = Boolean(activeUser?.profile_image_url?.trim());
@@ -457,7 +460,7 @@ export default function AccountPage() {
             <div className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-center gap-4">
                 <UserAvatar
-                  username={activeUser.username}
+                  username={linkedPatientLabel || activeUser.username}
                   profileImageUrl={previewForAvatar}
                   sizePx={96}
                 />

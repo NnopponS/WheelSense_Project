@@ -17,6 +17,7 @@ from .localization import predict_room_with_strategy
 from app.db.session import AsyncSessionLocal
 from app.services.device_management import (
     ensure_ble_node_devices_from_wheelchair_rssi,
+    ensure_camera_device_from_mqtt_registration,
     ensure_wheelchair_device_from_telemetry,
     get_registered_device_for_ingest,
     remove_ble_stubs_superseded_by_camera_payload,
@@ -597,6 +598,8 @@ async def _handle_camera_registration(payload: bytes):
         if not device:
             device = await try_merge_ble_row_for_camera_registration(session, device_id, data)
         if not device:
+            device = await ensure_camera_device_from_mqtt_registration(session, device_id, data)
+        if not device:
             logger.warning("Camera registration dropped for unregistered device: %s", device_id)
             return
 
@@ -646,6 +649,8 @@ async def _handle_camera_status(payload: bytes):
             # After DB reset, status packets may arrive before /registration replay.
             # Try recovering by merging a BLE_* discovery stub via ble_mac.
             device = await try_merge_ble_row_for_camera_registration(session, device_id, data)
+        if not device:
+            device = await ensure_camera_device_from_mqtt_registration(session, device_id, data)
         if not device:
             logger.warning("Camera status dropped for unregistered device: %s", device_id)
             return

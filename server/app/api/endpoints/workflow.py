@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 """Workflow domain endpoints (Wave P1)."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 
 from app.api.dependencies import (
     RequireRole,
@@ -36,6 +37,7 @@ from app.schemas.workflow import (
     CareTaskUpdate,
     HandoverNoteCreate,
     HandoverNoteOut,
+    PendingWorkflowAttachmentUploadOut,
     RoleMessageCreate,
     RoleMessageOut,
     WorkflowClaimRequest,
@@ -43,6 +45,7 @@ from app.schemas.workflow import (
     WorkflowItemDetailOut,
 )
 from app.services.auth import UserService
+from app.services.workflow_message_attachments import resolve_attachment_path, save_pending_upload
 from app.services.workflow import (
     WORKFLOW_AUDIT_ENTITY_TYPES,
     audit_trail_service,
@@ -63,7 +66,7 @@ router = APIRouter()
 # Observer may create patient-linked schedules/tasks for assigned patients (same DB checks as staff).
 ROLE_WORKFLOW_WRITE = ["admin", "head_nurse", "supervisor", "observer"]
 ROLE_DIRECTIVE_WRITE = ["admin", "head_nurse"]
-ROLE_AUDIT_QUERY = ["admin", "head_nurse", "supervisor"]
+ROLE_AUDIT_QUERY = ["admin", "head_nurse", "supervisor", "observer"]
 
 @router.get("/schedules", response_model=list[CareScheduleOut])
 async def list_schedules(
@@ -225,15 +228,31 @@ async def list_messaging_recipients(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
-    """Active staff user accounts in this workspace for message compose user-targeting."""
-    rows = await UserService.search_users(
+    """Workspace users for workflow compose: clinical staff plus patient-linked accounts (user-targeted sends)."""
+    staff_rows = await UserService.search_users(
         db,
         ws.id,
         kind="staff",
         roles=["admin", "head_nurse", "supervisor", "observer"],
         limit=200,
     )
-    return [UserSearchOut.model_validate(row) for row in rows if row.get("kind") == "staff"]
+    patient_rows = await UserService.search_users(
+        db,
+        ws.id,
+        kind="patient",
+        limit=200,
+    )
+    out: list[UserSearchOut] = []
+    seen: set[int] = set()
+    for row in staff_rows:
+        if row.get("kind") == "staff" and row["id"] not in seen:
+            seen.add(row["id"])
+            out.append(UserSearchOut.model_validate(row))
+    for row in patient_rows:
+        if row.get("kind") == "patient" and row["id"] not in seen:
+            seen.add(row["id"])
+            out.append(UserSearchOut.model_validate(row))
+    return out
 
 
 @router.post("/messages", response_model=RoleMessageOut, status_code=201)
@@ -264,6 +283,68 @@ async def mark_message_read(
     if not message:
         raise HTTPException(404, "Message not found")
     return message
+
+
+@router.post(
+    "/messages/attachments",
+    response_model=PendingWorkflowAttachmentUploadOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_workflow_message_attachment(
+    file: UploadFile = File(...),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
+):
+    meta = await save_pending_upload(
+        workspace_id=ws.id,
+        user_id=current_user.id,
+        file=file,
+    )
+    return PendingWorkflowAttachmentUploadOut(
+        pending_id=meta["pending_id"],
+        filename=meta["filename"],
+        content_type=meta["content_type"],
+        byte_size=meta["byte_size"],
+    )
+
+
+@router.get("/messages/{message_id}/attachments/{attachment_id}/content")
+async def get_workflow_message_attachment_content(
+    message_id: int,
+    attachment_id: str,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
+):
+    message = await role_message_service.get(db, ws_id=ws.id, id=message_id)
+    if not message:
+        raise HTTPException(404, "Message not found")
+    if not role_message_service.user_can_read_message_attachment(
+        message, current_user.id, current_user.role
+    ):
+        raise HTTPException(403, "Operation not permitted")
+    path, media_type, filename = resolve_attachment_path(message.attachments, attachment_id)
+    return FileResponse(path=path, media_type=media_type, filename=filename)
+
+
+@router.delete("/messages/{message_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_workflow_message(
+    message_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
+):
+    deleted = await role_message_service.delete_message(
+        db,
+        ws.id,
+        user_id=current_user.id,
+        user_role=current_user.role,
+        message_id=message_id,
+    )
+    if not deleted:
+        raise HTTPException(404, "Message not found")
+    return None
+
 
 @router.get("/handovers", response_model=list[HandoverNoteOut])
 async def list_handover_notes(

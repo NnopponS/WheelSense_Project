@@ -41,6 +41,10 @@ class LocalizationReadinessOut(BaseModel):
     assignment_patient_id: int | None = None
     floorplan_has_room: bool = False
     telemetry_detected: bool = False
+    telemetry_strongest_node_id: str | None = None
+    telemetry_predicted_room_id: int | None = None
+    telemetry_predicted_room_name: str | None = None
+    telemetry_rssi_preview: dict[str, int] = Field(default_factory=dict)
     changed: list[str] = Field(default_factory=list)
 
 

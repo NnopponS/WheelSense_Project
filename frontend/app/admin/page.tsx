@@ -212,7 +212,7 @@ export default function AdminDashboardPage() {
           <h3 className="text-lg font-semibold text-foreground">{t("admin.monitoringTitle")}</h3>
           <p className="text-sm text-muted-foreground">{t("admin.monitoringSubtitle")}</p>
         </div>
-        <DashboardFloorplanPanel className="min-w-0" openHref="/admin/monitoring" />
+        <DashboardFloorplanPanel className="min-w-0" />
       </section>
 
       {/* System Status Grid — grouped chrome for at-a-glance ops (iter-6 admin precision) */}

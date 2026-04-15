@@ -1,13 +1,15 @@
-"""Shift checklist persistence — workspace-scoped, one row per user per day."""
+"""Shift checklist persistence — workspace-scoped; per-user template + daily state."""
 
 from __future__ import annotations
 
 from datetime import date
+from typing import Literal
 
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.shift_checklist import ShiftChecklistState
+from app.models.shift_checklist_user_template import ShiftChecklistUserTemplate
 from app.models.users import User
 from app.schemas.shift_checklist import ShiftChecklistItem, ShiftChecklistWorkspaceRowOut
 
@@ -17,6 +19,24 @@ def _percent(items: list[ShiftChecklistItem]) -> int:
         return 0
     done = sum(1 for i in items if i.checked)
     return int(round(100 * done / len(items)))
+
+
+def default_shift_template() -> list[ShiftChecklistItem]:
+    """Canonical default when no per-user template row exists (matches frontend legacy DEFAULT)."""
+    specs: list[tuple[str, str, Literal["shift", "room", "patient"]]] = [
+        ("1", "observer.checklist.signIn", "shift"),
+        ("2", "observer.checklist.emergencyEquip", "shift"),
+        ("3", "observer.checklist.reviewPatients", "shift"),
+        ("4", "observer.checklist.room101", "room"),
+        ("5", "observer.checklist.room102", "room"),
+        ("6", "observer.checklist.room103", "room"),
+        ("7", "observer.checklist.docObs", "patient"),
+        ("8", "observer.checklist.careLog", "patient"),
+    ]
+    return [
+        ShiftChecklistItem(id=i, label_key=k, checked=False, category=c)
+        for i, k, c in specs
+    ]
 
 
 class ShiftChecklistService:
@@ -37,6 +57,75 @@ class ShiftChecklistService:
         return res.scalar_one_or_none()
 
     @staticmethod
+    async def get_template_for_user(
+        db: AsyncSession,
+        workspace_id: int,
+        user_id: int,
+    ) -> list[ShiftChecklistItem]:
+        res = await db.execute(
+            select(ShiftChecklistUserTemplate).where(
+                ShiftChecklistUserTemplate.workspace_id == workspace_id,
+                ShiftChecklistUserTemplate.user_id == user_id,
+            )
+        )
+        row = res.scalar_one_or_none()
+        if row is None or not row.items:
+            return default_shift_template()
+        parsed = [ShiftChecklistItem.model_validate(x) for x in row.items]
+        return [
+            ShiftChecklistItem(id=x.id, label_key=x.label_key, category=x.category, checked=False)
+            for x in parsed
+        ]
+
+    @staticmethod
+    def merge_template_with_state(
+        template: list[ShiftChecklistItem],
+        state_items: list | None,
+    ) -> list[ShiftChecklistItem]:
+        by_id: dict[str, dict] = {}
+        if state_items:
+            for x in state_items:
+                d = x if isinstance(x, dict) else ShiftChecklistItem.model_validate(x).model_dump()
+                by_id[str(d["id"])] = d
+        out: list[ShiftChecklistItem] = []
+        for t in template:
+            s = by_id.get(t.id)
+            checked = bool(s.get("checked")) if s else False
+            out.append(
+                ShiftChecklistItem(
+                    id=t.id,
+                    label_key=t.label_key,
+                    category=t.category,
+                    checked=checked,
+                )
+            )
+        return out
+
+    @staticmethod
+    def validate_put_against_template(
+        template: list[ShiftChecklistItem],
+        body: list[ShiftChecklistItem],
+    ) -> list[ShiftChecklistItem]:
+        tmap = {x.id: x for x in template}
+        incoming = {x.id: x for x in body}
+        if set(incoming.keys()) != set(tmap.keys()):
+            raise ValueError("Checklist items must match the template for this user.")
+        out: list[ShiftChecklistItem] = []
+        for base in template:
+            inc = incoming[base.id]
+            if inc.label_key != base.label_key or inc.category != base.category:
+                raise ValueError("Cannot change checklist row identity via this endpoint.")
+            out.append(
+                ShiftChecklistItem(
+                    id=base.id,
+                    label_key=base.label_key,
+                    category=base.category,
+                    checked=inc.checked,
+                )
+            )
+        return out
+
+    @staticmethod
     async def upsert_me(
         db: AsyncSession,
         workspace_id: int,
@@ -45,7 +134,6 @@ class ShiftChecklistService:
         items: list[ShiftChecklistItem],
     ) -> ShiftChecklistState:
         payload = [i.model_dump() for i in items]
-        # SQLite tests: merge via SELECT then INSERT/UPDATE
         existing = await ShiftChecklistService.get_me(db, workspace_id, user_id, shift_date)
         if existing:
             existing.items = payload
@@ -57,6 +145,52 @@ class ShiftChecklistService:
             workspace_id=workspace_id,
             user_id=user_id,
             shift_date=shift_date,
+            items=payload,
+        )
+        db.add(row)
+        await db.flush()
+        await db.refresh(row)
+        return row
+
+    @staticmethod
+    async def get_user_template_row(
+        db: AsyncSession,
+        workspace_id: int,
+        user_id: int,
+    ) -> ShiftChecklistUserTemplate | None:
+        res = await db.execute(
+            select(ShiftChecklistUserTemplate).where(
+                ShiftChecklistUserTemplate.workspace_id == workspace_id,
+                ShiftChecklistUserTemplate.user_id == user_id,
+            )
+        )
+        return res.scalar_one_or_none()
+
+    @staticmethod
+    async def upsert_user_template(
+        db: AsyncSession,
+        workspace_id: int,
+        user_id: int,
+        items: list[ShiftChecklistItem],
+    ) -> ShiftChecklistUserTemplate:
+        payload = [
+            {
+                "id": x.id,
+                "label_key": x.label_key,
+                "category": x.category,
+                "checked": False,
+            }
+            for x in items
+        ]
+        existing = await ShiftChecklistService.get_user_template_row(db, workspace_id, user_id)
+        if existing:
+            existing.items = payload
+            await db.flush()
+            await db.refresh(existing)
+            return existing
+        row = ShiftChecklistUserTemplate(
+            workspace_id=workspace_id,
+            user_id=user_id,
             items=payload,
         )
         db.add(row)
@@ -91,16 +225,17 @@ class ShiftChecklistService:
         rows = (await db.execute(stmt)).all()
         out: list[ShiftChecklistWorkspaceRowOut] = []
         for user, state in rows:
-            raw_items = state.items if state is not None else []
-            items = [ShiftChecklistItem.model_validate(x) for x in raw_items]
+            template = await ShiftChecklistService.get_template_for_user(db, workspace_id, user.id)
+            raw_state = state.items if state is not None else []
+            merged = ShiftChecklistService.merge_template_with_state(template, raw_state)
             out.append(
                 ShiftChecklistWorkspaceRowOut(
                     user_id=user.id,
                     username=user.username,
                     role=user.role,
                     shift_date=shift_date,
-                    items=items,
-                    percent_complete=_percent(items),
+                    items=merged,
+                    percent_complete=_percent(merged),
                     updated_at=state.updated_at if state else None,
                 )
             )

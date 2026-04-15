@@ -3,12 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.localization import (
     _device_node_aliases,
     get_localization_strategy,
+    predict_room_max_rssi,
     set_localization_strategy,
 )
 from app.models.core import Device, Room
@@ -47,6 +48,8 @@ class _ResolvedBaseline:
     floorplan_layout: FloorplanLayout | None
     floorplan_has_room: bool
     telemetry_detected: bool
+    telemetry_rssi_vector: dict[str, int] | None
+    telemetry_prediction: dict[str, Any] | None
 
 
 def _room_box(index: int) -> dict[str, float | str | None]:
@@ -69,6 +72,38 @@ def _room_box(index: int) -> dict[str, float | str | None]:
 def _room_matches(room: Room, aliases: tuple[str, ...]) -> bool:
     room_name = (room.name or "").strip().lower()
     return any(room_name == alias.strip().lower() for alias in aliases)
+
+
+async def _latest_rssi_vector_for_wheelchair(
+    session: AsyncSession,
+    workspace_id: int,
+    wheelchair_device_id: str,
+    *,
+    limit: int = 400,
+) -> dict[str, int]:
+    """Latest RSSI per node_id from recent wheelchair readings (desc timestamp, first wins per node)."""
+    rows = list(
+        (
+            await session.execute(
+                select(RSSIReading)
+                .where(
+                    RSSIReading.workspace_id == workspace_id,
+                    RSSIReading.device_id == wheelchair_device_id,
+                )
+                .order_by(desc(RSSIReading.timestamp))
+                .limit(limit),
+            )
+        )
+        .scalars()
+        .all(),
+    )
+    by_node: dict[str, int] = {}
+    for row in rows:
+        nid = (row.node_id or "").strip()
+        if not nid or nid in by_node:
+            continue
+        by_node[nid] = int(row.rssi)
+    return by_node
 
 
 def _layout_has_room(layout_json: dict[str, Any] | None, room: Room) -> bool:
@@ -242,6 +277,56 @@ async def _resolve_baseline(
         if floorplan_layout is not None and room is not None:
             floorplan_has_room = _layout_has_room(floorplan_layout.layout_json or {}, room)
 
+    telemetry_rssi_vector: dict[str, int] | None = None
+    telemetry_prediction: dict[str, Any] | None = None
+
+    if wheelchair_device is not None:
+        telemetry_rssi_vector = await _latest_rssi_vector_for_wheelchair(
+            session, workspace_id, wheelchair_device.device_id,
+        )
+        if telemetry_rssi_vector:
+            pred = await predict_room_max_rssi(session, workspace_id, telemetry_rssi_vector)
+            if pred:
+                telemetry_prediction = dict(pred)
+                rid = pred.get("room_id")
+                tele_room = None
+                if isinstance(rid, int):
+                    tele_room = next((r for r in rooms if r.id == rid), None)
+                    if tele_room is None:
+                        tele_room = await session.get(Room, rid)
+                res_id = str(pred.get("resolved_node_device_id") or pred.get("strongest_node_id") or "")
+                tele_node = None
+                if res_id:
+                    tele_node = next((d for d in devices if d.device_id == res_id), None)
+                    if tele_node is None:
+                        tele_node = next(
+                            (d for d in devices if res_id in _device_node_aliases(d)),
+                            None,
+                        )
+                if tele_room is not None:
+                    room = tele_room
+                    if tele_node is not None:
+                        node_device = tele_node
+                    elif tele_room.node_device_id:
+                        nd = next(
+                            (d for d in devices if d.device_id == tele_room.node_device_id),
+                            None,
+                        )
+                        if nd is not None:
+                            node_device = nd
+                    if room.floor_id is not None:
+                        rf = floor_by_id.get(room.floor_id)
+                        if rf is not None:
+                            floor = rf
+                            facility = next(
+                                (item for item in facilities if item.id == rf.facility_id),
+                                facility,
+                            )
+                    if floorplan_layout is not None and room is not None:
+                        floorplan_has_room = _layout_has_room(
+                            floorplan_layout.layout_json or {}, room,
+                        )
+
     telemetry_detected = False
     if wheelchair_device is not None:
         telemetry_detected = (
@@ -249,7 +334,7 @@ async def _resolve_baseline(
                 select(RSSIReading.id).where(
                     RSSIReading.workspace_id == workspace_id,
                     RSSIReading.device_id == wheelchair_device.device_id,
-                )
+                ),
             )
         ).first() is not None
 
@@ -266,6 +351,8 @@ async def _resolve_baseline(
         floorplan_layout=floorplan_layout,
         floorplan_has_room=floorplan_has_room,
         telemetry_detected=telemetry_detected,
+        telemetry_rssi_vector=telemetry_rssi_vector,
+        telemetry_prediction=telemetry_prediction,
     )
 
 
@@ -302,6 +389,19 @@ def _build_readiness_payload(resolved: _ResolvedBaseline) -> dict[str, Any]:
         ).strip()
 
     ready = len(missing) == 0
+    preview: dict[str, int] = {}
+    if resolved.telemetry_rssi_vector:
+        preview = dict(list(resolved.telemetry_rssi_vector.items())[:16])
+    tele_strongest = None
+    tele_room_id = None
+    tele_room_name = None
+    if resolved.telemetry_prediction:
+        tele_strongest = resolved.telemetry_prediction.get("strongest_node_id")
+        rid = resolved.telemetry_prediction.get("room_id")
+        if isinstance(rid, int):
+            tele_room_id = rid
+        tele_room_name = resolved.telemetry_prediction.get("room_name") or None
+
     return {
         "ready": ready,
         "missing": missing,
@@ -324,6 +424,10 @@ def _build_readiness_payload(resolved: _ResolvedBaseline) -> dict[str, Any]:
         "assignment_patient_id": resolved.active_assignment.patient_id if resolved.active_assignment else None,
         "floorplan_has_room": resolved.floorplan_has_room,
         "telemetry_detected": resolved.telemetry_detected,
+        "telemetry_strongest_node_id": tele_strongest,
+        "telemetry_predicted_room_id": tele_room_id,
+        "telemetry_predicted_room_name": tele_room_name,
+        "telemetry_rssi_preview": preview,
     }
 
 
@@ -412,7 +516,17 @@ async def repair_localization_readiness(
         await session.flush()
         changed.append("floor_created")
 
+    pred: dict[str, Any] | None = None
+    if resolved.wheelchair_device is not None:
+        vec = await _latest_rssi_vector_for_wheelchair(
+            session, workspace_id, resolved.wheelchair_device.device_id,
+        )
+        if vec:
+            pred = await predict_room_max_rssi(session, workspace_id, vec)
+
     room = selected_room or resolved.room
+    if pred and isinstance(pred.get("room_id"), int) and room is None:
+        room = await session.get(Room, pred["room_id"])
     if room is None:
         room = Room(
             workspace_id=workspace_id,
@@ -430,23 +544,31 @@ async def repair_localization_readiness(
         room.floor_id = floor.id
         changed.append("room_floor_updated")
 
-    node_device = resolved.node_device
-    if node_device is None:
-        raise ValueError("Could not find node device alias WSN_001 in this workspace")
+    node_id_bind: str | None = None
+    if pred:
+        raw_bind = pred.get("resolved_node_device_id") or pred.get("strongest_node_id")
+        if raw_bind is not None:
+            node_id_bind = str(raw_bind)
+    if node_id_bind is None and resolved.node_device is not None:
+        node_id_bind = resolved.node_device.device_id
+    if node_id_bind is None:
+        raise ValueError(
+            "Could not resolve a node from wheelchair RSSI or the demo baseline; register node devices and publish RSSI.",
+        )
 
-    if room.node_device_id != node_device.device_id:
+    if room.node_device_id != node_id_bind:
         other_rooms = (
             await session.execute(
                 select(Room).where(
                     Room.workspace_id == workspace_id,
-                    Room.node_device_id == node_device.device_id,
+                    Room.node_device_id == node_id_bind,
                     Room.id != room.id,
                 )
             )
         ).scalars().all()
         for other_room in other_rooms:
             other_room.node_device_id = None
-        room.node_device_id = node_device.device_id
+        room.node_device_id = node_id_bind
         changed.append("room_node_bound")
 
     patient = resolved.patient

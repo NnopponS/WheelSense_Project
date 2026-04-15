@@ -31,6 +31,26 @@ import { Input } from "@/components/ui/input";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 
+function registryDeviceLabelSortKey(device: Device): string {
+  return (device.display_name?.trim() || device.device_id).toLocaleLowerCase();
+}
+
+function compareRegistryDevices(a: Device, b: Device): number {
+  const byLabel = registryDeviceLabelSortKey(a).localeCompare(registryDeviceLabelSortKey(b), undefined, {
+    sensitivity: "base",
+  });
+  if (byLabel !== 0) return byLabel;
+  return a.device_id.localeCompare(b.device_id);
+}
+
+function compareSmartFleetDevices(a: SmartDevice, b: SmartDevice): number {
+  const byName = a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase(), undefined, {
+    sensitivity: "base",
+  });
+  if (byName !== 0) return byName;
+  return String(a.id).localeCompare(String(b.id));
+}
+
 function DevicesPageContent() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -84,25 +104,29 @@ function DevicesPageContent() {
   const filteredRegistry = useMemo(() => {
     const list = devices ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
-      (device) =>
-        device.device_id.toLowerCase().includes(q) ||
-        (device.display_name || "").toLowerCase().includes(q) ||
-        device.hardware_type.toLowerCase().includes(q),
-    );
+    const filtered = !q
+      ? list
+      : list.filter(
+          (device) =>
+            device.device_id.toLowerCase().includes(q) ||
+            (device.display_name || "").toLowerCase().includes(q) ||
+            device.hardware_type.toLowerCase().includes(q),
+        );
+    return [...filtered].sort(compareRegistryDevices);
   }, [devices, search]);
 
   const filteredSmart = useMemo(() => {
     const list = smartDevices ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
-      (device) =>
-        device.name.toLowerCase().includes(q) ||
-        device.ha_entity_id.toLowerCase().includes(q) ||
-        device.device_type.toLowerCase().includes(q),
-    );
+    const filtered = !q
+      ? list
+      : list.filter(
+          (device) =>
+            device.name.toLowerCase().includes(q) ||
+            device.ha_entity_id.toLowerCase().includes(q) ||
+            device.device_type.toLowerCase().includes(q),
+        );
+    return [...filtered].sort(compareSmartFleetDevices);
   }, [smartDevices, search]);
 
   const onMutate = useCallback(() => {

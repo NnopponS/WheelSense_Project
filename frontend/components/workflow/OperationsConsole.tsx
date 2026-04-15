@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, api, type UserSearchResult } from "@/lib/api";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type { Alert, VitalReading } from "@/lib/types";
 import type {
@@ -240,38 +241,10 @@ const defaultHandoverForm: HandoverFormState = {
   note: "",
 };
 
-const REPORT_TEMPLATES: Array<{ id: ReportTemplateId; title: string; description: string }> = [
-  {
-    id: "ward-overview",
-    title: "Ward overview",
-    description: "Patients, care load, and current operational pressure.",
-  },
-  {
-    id: "alert-summary",
-    title: "Alert summary",
-    description: "Active alerts grouped into an escalation-ready list.",
-  },
-  {
-    id: "vitals-window",
-    title: "Vitals window",
-    description: "Recent physiological readings across the selected window.",
-  },
-  {
-    id: "handover-notes",
-    title: "Handover notes",
-    description: "Recent handovers organized for continuity of care.",
-  },
-  {
-    id: "workflow-audit",
-    title: "Workflow audit",
-    description: "Trace changes across tasks, schedules, directives, and messaging.",
-  },
-];
-
-function parseError(error: unknown): string {
+function formatConsoleError(error: unknown, fallback: string): string {
   if (error instanceof ApiError) return error.message;
   if (error instanceof Error) return error.message;
-  return "Request failed.";
+  return fallback;
 }
 
 function tabFromSearch(value: string | null): ConsoleTab {
@@ -281,8 +254,28 @@ function tabFromSearch(value: string | null): ConsoleTab {
   return "queue";
 }
 
-function labelPatient(patient: PatientLike | undefined): string {
-  if (!patient) return "Unit-wide";
+/** Hub pages (`/head-nurse/tasks`, `/observer/tasks`) use `?tab=` for the top tab bar; inner console panels must use a different key. */
+const WORKFLOW_CONSOLE_TAB_QP = "wtab";
+
+const LEGACY_CONSOLE_TAB_IN_TAB_QP = new Set(["transfer", "coordination", "audit", "reports"]);
+
+function consoleTabFromSearchParams(searchParams: URLSearchParams): ConsoleTab {
+  const wtab = searchParams.get(WORKFLOW_CONSOLE_TAB_QP);
+  if (wtab !== null) return tabFromSearch(wtab);
+  const hubTab = searchParams.get("tab");
+  if (hubTab !== null && LEGACY_CONSOLE_TAB_IN_TAB_QP.has(hubTab)) {
+    return hubTab as ConsoleTab;
+  }
+  return "queue";
+}
+
+function stripLegacyConsoleTabFromTabQP(next: URLSearchParams) {
+  const t = next.get("tab");
+  if (t !== null && LEGACY_CONSOLE_TAB_IN_TAB_QP.has(t)) next.delete("tab");
+}
+
+function labelPatient(patient: PatientLike | undefined, unitWideLabel: string): string {
+  if (!patient) return unitWideLabel;
   return `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`;
 }
 
@@ -383,6 +376,8 @@ function buildReportView(params: {
   vitalsAverage: GetVitalsAveragesResponse | null;
   tasks: ListWorkflowTasksResponse;
   directives: ListWorkflowDirectivesResponse;
+  unitWide: string;
+  t: (key: TranslationKey) => string;
 }): ReportView {
   const {
     templateId,
@@ -398,6 +393,8 @@ function buildReportView(params: {
     vitalsAverage,
     tasks,
     directives,
+    unitWide,
+    t,
   } = params;
 
   const nowMs = Date.now();
@@ -421,13 +418,13 @@ function buildReportView(params: {
 
   if (templateId === "alert-summary") {
     return {
-      title: "Alert summary",
-      subtitle: "Recent active alerts in the selected reporting window.",
+      title: t("workflow.console.report.alertSummary.title"),
+      subtitle: t("workflow.console.report.alertSummary.subtitle"),
       columns: [
-        { key: "alert", label: "Alert" },
-        { key: "patient", label: "Patient" },
-        { key: "severity", label: "Severity" },
-        { key: "time", label: "Time", className: "whitespace-normal" },
+        { key: "alert", label: t("workflow.console.report.alertSummary.col.alert") },
+        { key: "patient", label: t("workflow.console.report.alertSummary.col.patient") },
+        { key: "severity", label: t("workflow.console.report.alertSummary.col.severity") },
+        { key: "time", label: t("workflow.console.report.alertSummary.col.time"), className: "whitespace-normal" },
       ],
       rows: recentActiveAlerts
         .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
@@ -435,92 +432,152 @@ function buildReportView(params: {
         .map((alert) => ({
           id: alert.id,
           alert: alert.title,
-          patient: alert.patient_id ? labelPatient(patientMap.get(alert.patient_id)) : "Unit-wide",
+          patient: alert.patient_id ? labelPatient(patientMap.get(alert.patient_id), unitWide) : unitWide,
           severity: alert.severity,
           time: `${formatDateTime(alert.timestamp)} | ${formatRelativeTime(alert.timestamp)}`,
         })),
       metrics: [
-        { label: "Active alerts", value: alertSummary?.total_active ?? activeAlerts.length, tone: reportToneForCount(activeAlerts.length), icon: Bell },
-        { label: "Critical alerts", value: activeAlerts.filter((alert) => alert.severity === "critical").length, tone: "critical", icon: AlertTriangle },
-        { label: "Recent alerts", value: recentActiveAlerts.length, tone: "warning", icon: Bell },
-        { label: "Resolved alerts", value: alertSummary?.total_resolved ?? 0, tone: "success", icon: ShieldCheck },
+        {
+          label: t("workflow.console.report.alertSummary.metric.activeAlerts"),
+          value: alertSummary?.total_active ?? activeAlerts.length,
+          tone: reportToneForCount(activeAlerts.length),
+          icon: Bell,
+        },
+        {
+          label: t("workflow.console.report.alertSummary.metric.criticalAlerts"),
+          value: activeAlerts.filter((alert) => alert.severity === "critical").length,
+          tone: "critical",
+          icon: AlertTriangle,
+        },
+        {
+          label: t("workflow.console.report.alertSummary.metric.recentAlerts"),
+          value: recentActiveAlerts.length,
+          tone: "warning",
+          icon: Bell,
+        },
+        {
+          label: t("workflow.console.report.alertSummary.metric.resolvedAlerts"),
+          value: alertSummary?.total_resolved ?? 0,
+          tone: "success",
+          icon: ShieldCheck,
+        },
       ],
-      note: "Use this report for active escalation review and handoff prep.",
+      note: t("workflow.console.report.alertSummary.note"),
     };
   }
 
   if (templateId === "vitals-window") {
     return {
-      title: "Vitals window",
-      subtitle: "Latest readings captured inside the selected reporting window.",
+      title: t("workflow.console.report.vitalsWindow.title"),
+      subtitle: t("workflow.console.report.vitalsWindow.subtitle"),
       columns: [
-        { key: "patient", label: "Patient" },
-        { key: "heartRate", label: "HR" },
-        { key: "spo2", label: "SpO2" },
-        { key: "captured", label: "Captured", className: "whitespace-normal" },
+        { key: "patient", label: t("workflow.console.report.vitalsWindow.col.patient") },
+        { key: "heartRate", label: t("workflow.console.report.vitalsWindow.col.hr") },
+        { key: "spo2", label: t("workflow.console.report.vitalsWindow.col.spo2") },
+        { key: "captured", label: t("workflow.console.report.vitalsWindow.col.captured"), className: "whitespace-normal" },
       ],
       rows: Array.from(latestVitalsByPatient.values())
         .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
         .slice(0, 16)
         .map((reading) => ({
           id: reading.id,
-          patient: labelPatient(patientMap.get(reading.patient_id)),
+          patient: labelPatient(patientMap.get(reading.patient_id), unitWide),
           heartRate: reading.heart_rate_bpm != null ? `${reading.heart_rate_bpm} bpm` : "-",
           spo2: reading.spo2 != null ? `${reading.spo2}%` : "-",
           captured: `${formatDateTime(reading.timestamp)} | ${formatRelativeTime(reading.timestamp)}`,
         })),
       metrics: [
-        { label: "Vitals captured", value: recentVitals.length, tone: recentVitals.length ? "info" : "success", icon: Stethoscope },
-        { label: "Patients with vitals", value: latestVitalsByPatient.size, tone: latestVitalsByPatient.size ? "warning" : "success", icon: Users },
-        { label: "Avg SpO2", value: Math.round(vitalsAverage?.spo2_avg ?? 0), tone: "info", icon: ShieldCheck },
-        { label: "Avg HR", value: Math.round(vitalsAverage?.heart_rate_bpm_avg ?? 0), tone: "info", icon: CalendarClock },
+        {
+          label: t("workflow.console.report.vitalsWindow.metric.vitalsCaptured"),
+          value: recentVitals.length,
+          tone: recentVitals.length ? "info" : "success",
+          icon: Stethoscope,
+        },
+        {
+          label: t("workflow.console.report.vitalsWindow.metric.patientsWithVitals"),
+          value: latestVitalsByPatient.size,
+          tone: latestVitalsByPatient.size ? "warning" : "success",
+          icon: Users,
+        },
+        {
+          label: t("workflow.console.report.vitalsWindow.metric.avgSpo2"),
+          value: Math.round(vitalsAverage?.spo2_avg ?? 0),
+          tone: "info",
+          icon: ShieldCheck,
+        },
+        {
+          label: t("workflow.console.report.vitalsWindow.metric.avgHr"),
+          value: Math.round(vitalsAverage?.heart_rate_bpm_avg ?? 0),
+          tone: "info",
+          icon: CalendarClock,
+        },
       ],
-      note: "Readings are limited to the active workspace and the current reporting window.",
+      note: t("workflow.console.report.vitalsWindow.note"),
     };
   }
 
   if (templateId === "handover-notes") {
     return {
-      title: "Handover notes",
-      subtitle: "Recent handovers prepared for shift continuity.",
+      title: t("workflow.console.report.handoverNotes.title"),
+      subtitle: t("workflow.console.report.handoverNotes.subtitle"),
       columns: [
-        { key: "patient", label: "Patient" },
-        { key: "target", label: "Target" },
-        { key: "priority", label: "Priority" },
-        { key: "note", label: "Note", className: "whitespace-normal" },
-        { key: "created", label: "Created", className: "whitespace-normal" },
+        { key: "patient", label: t("workflow.console.report.handoverNotes.col.patient") },
+        { key: "target", label: t("workflow.console.report.handoverNotes.col.target") },
+        { key: "priority", label: t("workflow.console.report.handoverNotes.col.priority") },
+        { key: "note", label: t("workflow.console.report.handoverNotes.col.note"), className: "whitespace-normal" },
+        { key: "created", label: t("workflow.console.report.handoverNotes.col.created"), className: "whitespace-normal" },
       ],
       rows: recentHandovers
         .sort((left, right) => right.created_at.localeCompare(left.created_at))
         .slice(0, 16)
         .map((item) => ({
           id: item.id,
-          patient: item.patient_id ? labelPatient(patientMap.get(item.patient_id)) : "Unit-wide",
-          target: item.target_role || "Open handoff",
+          patient: item.patient_id ? labelPatient(patientMap.get(item.patient_id), unitWide) : unitWide,
+          target: item.target_role || t("workflow.console.openHandoff"),
           priority: item.priority,
           note: item.note,
           created: `${formatDateTime(item.created_at)} | ${formatRelativeTime(item.created_at)}`,
         })),
       metrics: [
-        { label: "Handovers", value: recentHandovers.length, tone: recentHandovers.length ? "warning" : "success", icon: ArrowRightLeft },
-        { label: "Critical notes", value: recentHandovers.filter((item) => item.priority === "critical").length, tone: "critical", icon: AlertTriangle },
-        { label: "Open targets", value: recentHandovers.filter((item) => !item.target_role).length, tone: "info", icon: Users },
-        { label: "Shift tagged", value: recentHandovers.filter((item) => Boolean(item.shift_label)).length, tone: "info", icon: CalendarClock },
+        {
+          label: t("workflow.console.report.handoverNotes.metric.handovers"),
+          value: recentHandovers.length,
+          tone: recentHandovers.length ? "warning" : "success",
+          icon: ArrowRightLeft,
+        },
+        {
+          label: t("workflow.console.report.handoverNotes.metric.criticalNotes"),
+          value: recentHandovers.filter((item) => item.priority === "critical").length,
+          tone: "critical",
+          icon: AlertTriangle,
+        },
+        {
+          label: t("workflow.console.report.handoverNotes.metric.openTargets"),
+          value: recentHandovers.filter((item) => !item.target_role).length,
+          tone: "info",
+          icon: Users,
+        },
+        {
+          label: t("workflow.console.report.handoverNotes.metric.shiftTagged"),
+          value: recentHandovers.filter((item) => Boolean(item.shift_label)).length,
+          tone: "info",
+          icon: CalendarClock,
+        },
       ],
-      note: "Handover notes are the recommended place for shift-to-shift continuity, not long-form discussion.",
+      note: t("workflow.console.report.handoverNotes.note"),
     };
   }
 
   if (templateId === "workflow-audit") {
     return {
-      title: "Workflow audit",
-      subtitle: "Recent auditable workflow changes, filtered by domain when needed.",
+      title: t("workflow.console.report.workflowAudit.title"),
+      subtitle: t("workflow.console.report.workflowAudit.subtitle"),
       columns: [
-        { key: "domain", label: "Domain" },
-        { key: "action", label: "Action" },
-        { key: "entity", label: "Entity" },
-        { key: "patient", label: "Patient" },
-        { key: "created", label: "Created", className: "whitespace-normal" },
+        { key: "domain", label: t("workflow.console.report.workflowAudit.col.domain") },
+        { key: "action", label: t("workflow.console.report.workflowAudit.col.action") },
+        { key: "entity", label: t("workflow.console.report.workflowAudit.col.entity") },
+        { key: "patient", label: t("workflow.console.report.workflowAudit.col.patient") },
+        { key: "created", label: t("workflow.console.report.workflowAudit.col.created"), className: "whitespace-normal" },
       ],
       rows: filteredAudit
         .sort((left, right) => right.created_at.localeCompare(left.created_at))
@@ -530,29 +587,49 @@ function buildReportView(params: {
           domain: event.domain,
           action: event.action,
           entity: `${event.entity_type}${event.entity_id != null ? ` #${event.entity_id}` : ""}`,
-          patient: event.patient_id ? labelPatient(patientMap.get(event.patient_id)) : "Unit-wide",
+          patient: event.patient_id ? labelPatient(patientMap.get(event.patient_id), unitWide) : unitWide,
           created: `${formatDateTime(event.created_at)} | ${formatRelativeTime(event.created_at)}`,
         })),
       metrics: [
-        { label: "Audit events", value: filteredAudit.length, tone: filteredAudit.length ? "warning" : "success", icon: History },
-        { label: "Task changes", value: recentAudit.filter((event) => event.domain === "task").length, tone: "info", icon: ClipboardList },
-        { label: "Directive changes", value: recentAudit.filter((event) => event.domain === "directive").length, tone: "warning", icon: FileText },
-        { label: "Messaging events", value: recentAudit.filter((event) => event.domain === "messaging").length, tone: "info", icon: MessageSquare },
+        {
+          label: t("workflow.console.report.workflowAudit.metric.auditEvents"),
+          value: filteredAudit.length,
+          tone: filteredAudit.length ? "warning" : "success",
+          icon: History,
+        },
+        {
+          label: t("workflow.console.report.workflowAudit.metric.taskChanges"),
+          value: recentAudit.filter((event) => event.domain === "task").length,
+          tone: "info",
+          icon: ClipboardList,
+        },
+        {
+          label: t("workflow.console.report.workflowAudit.metric.directiveChanges"),
+          value: recentAudit.filter((event) => event.domain === "directive").length,
+          tone: "warning",
+          icon: FileText,
+        },
+        {
+          label: t("workflow.console.report.workflowAudit.metric.messagingEvents"),
+          value: recentAudit.filter((event) => event.domain === "messaging").length,
+          tone: "info",
+          icon: MessageSquare,
+        },
       ],
-      note: "This report is derived from workflow audit records and does not replace the immutable backend audit log.",
+      note: t("workflow.console.report.workflowAudit.note"),
     };
   }
 
   return {
-    title: "Ward overview",
-    subtitle: "Operational patient load with current workflow pressure.",
+    title: t("workflow.console.report.wardOverview.title"),
+    subtitle: t("workflow.console.report.wardOverview.subtitle"),
     columns: [
-      { key: "patient", label: "Patient" },
-      { key: "careLevel", label: "Care level" },
-      { key: "alerts", label: "Alerts" },
-      { key: "taskLoad", label: "Open tasks" },
-      { key: "directiveLoad", label: "Directives" },
-      { key: "lastVitals", label: "Latest vitals", className: "whitespace-normal" },
+      { key: "patient", label: t("workflow.console.report.wardOverview.col.patient") },
+      { key: "careLevel", label: t("workflow.console.report.wardOverview.col.careLevel") },
+      { key: "alerts", label: t("workflow.console.report.wardOverview.col.alerts") },
+      { key: "taskLoad", label: t("workflow.console.report.wardOverview.col.openTasks") },
+      { key: "directiveLoad", label: t("workflow.console.report.wardOverview.col.directives") },
+      { key: "lastVitals", label: t("workflow.console.report.wardOverview.col.lastVitals"), className: "whitespace-normal" },
     ],
     rows: patients
       .slice()
@@ -561,7 +638,7 @@ function buildReportView(params: {
         const latestVitals = latestVitalsByPatient.get(patient.id);
         return {
           id: patient.id,
-          patient: labelPatient(patient),
+          patient: labelPatient(patient, unitWide),
           careLevel: patient.care_level,
           alerts: activeAlerts.filter((alert) => alert.patient_id === patient.id).length,
           taskLoad: openTasks.filter((task) => task.patient_id === patient.id).length,
@@ -572,12 +649,32 @@ function buildReportView(params: {
         };
       }),
     metrics: [
-      { label: "Patients", value: wardSummary?.total_patients ?? patients.length, tone: "info", icon: Users },
-      { label: "Open tasks", value: openTasks.length, tone: reportToneForCount(openTasks.length), icon: ClipboardList },
-      { label: "Active directives", value: activeDirectives.length, tone: reportToneForCount(activeDirectives.length), icon: FileText },
-      { label: "Active alerts", value: wardSummary?.active_alerts ?? activeAlerts.length, tone: reportToneForCount(activeAlerts.length), icon: Bell },
+      {
+        label: t("workflow.console.report.wardOverview.metric.patients"),
+        value: wardSummary?.total_patients ?? patients.length,
+        tone: "info",
+        icon: Users,
+      },
+      {
+        label: t("workflow.console.report.wardOverview.metric.openTasks"),
+        value: openTasks.length,
+        tone: reportToneForCount(openTasks.length),
+        icon: ClipboardList,
+      },
+      {
+        label: t("workflow.console.report.wardOverview.metric.activeDirectives"),
+        value: activeDirectives.length,
+        tone: reportToneForCount(activeDirectives.length),
+        icon: FileText,
+      },
+      {
+        label: t("workflow.console.report.wardOverview.metric.activeAlerts"),
+        value: wardSummary?.active_alerts ?? activeAlerts.length,
+        tone: reportToneForCount(activeAlerts.length),
+        icon: Bell,
+      },
     ],
-    note: "This overview blends patient, alert, vitals, and workflow signals into a single operational snapshot.",
+    note: t("workflow.console.report.wardOverview.note"),
   };
 }
 
@@ -590,13 +687,20 @@ export function OperationsConsole({
   title: string;
   subtitle: string;
 }) {
+  const { t } = useTranslation();
+  const unitWide = t("workflow.console.unitWide");
+  const unassignedLabel = t("workflow.console.unassigned");
+  const requestFailedMsg = t("workflow.console.requestFailed");
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const activeTab = tabFromSearch(searchParams.get("tab"));
+  const activeTab = consoleTabFromSearchParams(searchParams);
 
   const baseKey = [role, "workflow"] as const;
+  /** Matches `GET /api/analytics/wards/summary` — observer is not authorized for workspace-wide ward totals. */
+  const canLoadWardSummary =
+    role === "admin" || role === "head_nurse" || role === "supervisor";
   const [queueSearch, setQueueSearch] = useState("");
   const [queueTypeFilter, setQueueTypeFilter] = useState<"all" | WorkflowItemType>("all");
   const [queueStatusFilter, setQueueStatusFilter] = useState("all");
@@ -619,6 +723,38 @@ export function OperationsConsole({
   const [reportTemplateId, setReportTemplateId] = useState<ReportTemplateId>("ward-overview");
   const [reportWindowHours, setReportWindowHours] = useState("24");
   const [auditDomain, setAuditDomain] = useState("all");
+
+  const reportTemplates = useMemo(
+    () =>
+      [
+        {
+          id: "ward-overview" as const,
+          title: t("workflow.console.reportTemplate.wardOverview.title"),
+          description: t("workflow.console.reportTemplate.wardOverview.description"),
+        },
+        {
+          id: "alert-summary" as const,
+          title: t("workflow.console.reportTemplate.alertSummary.title"),
+          description: t("workflow.console.reportTemplate.alertSummary.description"),
+        },
+        {
+          id: "vitals-window" as const,
+          title: t("workflow.console.reportTemplate.vitalsWindow.title"),
+          description: t("workflow.console.reportTemplate.vitalsWindow.description"),
+        },
+        {
+          id: "handover-notes" as const,
+          title: t("workflow.console.reportTemplate.handoverNotes.title"),
+          description: t("workflow.console.reportTemplate.handoverNotes.description"),
+        },
+        {
+          id: "workflow-audit" as const,
+          title: t("workflow.console.reportTemplate.workflowAudit.title"),
+          description: t("workflow.console.reportTemplate.workflowAudit.description"),
+        },
+      ] satisfies Array<{ id: ReportTemplateId; title: string; description: string }>,
+    [t],
+  );
 
   const patientsQuery = useQuery({
     queryKey: [...baseKey, "patients"],
@@ -678,6 +814,7 @@ export function OperationsConsole({
   const wardSummaryQuery = useQuery({
     queryKey: [...baseKey, "ward-summary"],
     queryFn: () => api.getWardSummary(),
+    enabled: canLoadWardSummary,
   });
 
   const alertSummaryQuery = useQuery({
@@ -753,9 +890,9 @@ export function OperationsConsole({
       id: task.id,
       itemType: "task" as const,
       title: task.title,
-      patientName: task.patient_id ? labelPatient(patientMap.get(task.patient_id)) : "Unit-wide",
+      patientName: task.patient_id ? labelPatient(patientMap.get(task.patient_id), unitWide) : unitWide,
       patientId: task.patient_id,
-      ownerLabel: task.assigned_person?.display_name || task.assigned_role || "Unassigned",
+      ownerLabel: task.assigned_person?.display_name || task.assigned_role || unassignedLabel,
       status: task.status,
       timestamp: task.due_at || task.updated_at || task.created_at,
       secondaryLabel: task.priority,
@@ -768,9 +905,9 @@ export function OperationsConsole({
       id: schedule.id,
       itemType: "schedule" as const,
       title: schedule.title,
-      patientName: schedule.patient_id ? labelPatient(patientMap.get(schedule.patient_id)) : "Unit-wide",
+      patientName: schedule.patient_id ? labelPatient(patientMap.get(schedule.patient_id), unitWide) : unitWide,
       patientId: schedule.patient_id,
-      ownerLabel: schedule.assigned_person?.display_name || schedule.assigned_role || "Unassigned",
+      ownerLabel: schedule.assigned_person?.display_name || schedule.assigned_role || unassignedLabel,
       status: schedule.status,
       timestamp: schedule.starts_at || schedule.updated_at || schedule.created_at,
       secondaryLabel: schedule.schedule_type,
@@ -783,9 +920,9 @@ export function OperationsConsole({
       id: directive.id,
       itemType: "directive" as const,
       title: directive.title,
-      patientName: directive.patient_id ? labelPatient(patientMap.get(directive.patient_id)) : "Unit-wide",
+      patientName: directive.patient_id ? labelPatient(patientMap.get(directive.patient_id), unitWide) : unitWide,
       patientId: directive.patient_id,
-      ownerLabel: directive.target_person?.display_name || directive.target_role || "Unassigned",
+      ownerLabel: directive.target_person?.display_name || directive.target_role || unassignedLabel,
       status: directive.status,
       timestamp: directive.effective_from || directive.updated_at || directive.created_at,
       secondaryLabel: directive.target_role || "person",
@@ -797,7 +934,7 @@ export function OperationsConsole({
     return [...taskRows, ...scheduleRows, ...directiveRows].sort(
       (left, right) => right.timestamp.localeCompare(left.timestamp),
     );
-  }, [directives, patientMap, schedules, tasks]);
+  }, [directives, patientMap, schedules, tasks, unitWide, unassignedLabel]);
 
   const openQueueRows = useMemo(
     () => queueRows.filter((row) => isOpenWorkflowStatus(row.status)),
@@ -845,6 +982,8 @@ export function OperationsConsole({
         vitalsAverage,
         tasks,
         directives,
+        unitWide,
+        t,
       }),
     [
       alertSummary,
@@ -856,7 +995,9 @@ export function OperationsConsole({
       patients,
       reportTemplateId,
       reportWindowHours,
+      t,
       tasks,
+      unitWide,
       vitals,
       vitalsAverage,
       wardSummary,
@@ -887,7 +1028,7 @@ export function OperationsConsole({
       setCreateError(null);
       await invalidateConsoleData();
     },
-    onError: (error) => setCreateError(parseError(error)),
+    onError: (error) => setCreateError(formatConsoleError(error, requestFailedMsg)),
   });
 
   const createScheduleMutation = useMutation({
@@ -917,7 +1058,7 @@ export function OperationsConsole({
       setCreateError(null);
       await invalidateConsoleData();
     },
-    onError: (error) => setCreateError(parseError(error)),
+    onError: (error) => setCreateError(formatConsoleError(error, requestFailedMsg)),
   });
 
   const createDirectiveMutation = useMutation({
@@ -942,7 +1083,7 @@ export function OperationsConsole({
       setCreateError(null);
       await invalidateConsoleData();
     },
-    onError: (error) => setCreateError(parseError(error)),
+    onError: (error) => setCreateError(formatConsoleError(error, requestFailedMsg)),
   });
 
   const claimMutation = useMutation({
@@ -956,7 +1097,7 @@ export function OperationsConsole({
       setTransferNote("");
       await invalidateConsoleData();
     },
-    onError: (error) => setCoordinationError(parseError(error)),
+    onError: (error) => setCoordinationError(formatConsoleError(error, requestFailedMsg)),
   });
 
   const handoffMutation = useMutation({
@@ -985,7 +1126,7 @@ export function OperationsConsole({
       setTransferNote("");
       await invalidateConsoleData();
     },
-    onError: (error) => setCoordinationError(parseError(error)),
+    onError: (error) => setCoordinationError(formatConsoleError(error, requestFailedMsg)),
   });
 
   const sendThreadMessageMutation = useMutation({
@@ -1015,7 +1156,7 @@ export function OperationsConsole({
         });
       }
     },
-    onError: (error) => setDetailError(parseError(error)),
+    onError: (error) => setDetailError(formatConsoleError(error, requestFailedMsg)),
   });
 
   const sendMessageMutation = useMutation({
@@ -1036,7 +1177,7 @@ export function OperationsConsole({
       setCoordinationError(null);
       await invalidateConsoleData();
     },
-    onError: (error) => setCoordinationError(parseError(error)),
+    onError: (error) => setCoordinationError(formatConsoleError(error, requestFailedMsg)),
   });
 
   const createHandoverMutation = useMutation({
@@ -1056,7 +1197,7 @@ export function OperationsConsole({
       setCoordinationError(null);
       await invalidateConsoleData();
     },
-    onError: (error) => setCoordinationError(parseError(error)),
+    onError: (error) => setCoordinationError(formatConsoleError(error, requestFailedMsg)),
   });
 
   const summaryMetrics = useMemo<Array<{
@@ -1068,13 +1209,13 @@ export function OperationsConsole({
     () => [
       {
         icon: ClipboardList,
-        label: "Open items",
+        label: t("workflow.console.summary.openItems"),
         value: openQueueRows.length,
         tone: openQueueRows.length > 0 ? "warning" : "success",
       },
       {
         icon: Bell,
-        label: "Active alerts",
+        label: t("workflow.console.summary.activeAlerts"),
         value: wardSummary?.active_alerts ?? alertSummary?.total_active ?? alerts.length,
         tone:
           (wardSummary?.active_alerts ?? alertSummary?.total_active ?? alerts.length) > 0
@@ -1083,18 +1224,18 @@ export function OperationsConsole({
       },
       {
         icon: MessageSquare,
-        label: "Messages",
+        label: t("workflow.console.summary.messages"),
         value: recentMessages.length,
         tone: recentMessages.length > 0 ? "info" : "success",
       },
       {
         icon: ArrowRightLeft,
-        label: "Handovers",
+        label: t("workflow.console.summary.handovers"),
         value: handovers.length,
         tone: handovers.length > 0 ? "warning" : "info",
       },
     ],
-    [alertSummary?.total_active, alerts.length, handovers.length, openQueueRows.length, recentMessages.length, wardSummary?.active_alerts],
+    [alertSummary?.total_active, alerts.length, handovers.length, openQueueRows.length, recentMessages.length, t, wardSummary?.active_alerts],
   );
 
   const queueColumns = useMemo<ColumnDef<WorkflowListRow>[]>(
@@ -1238,7 +1379,7 @@ export function OperationsConsole({
         accessorKey: "patient_id",
         header: "Patient",
         cell: ({ row }) =>
-          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id)) : "Unit-wide",
+          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
       },
       {
         accessorKey: "created_at",
@@ -1251,7 +1392,7 @@ export function OperationsConsole({
         ),
       },
     ],
-    [patientMap],
+    [patientMap, unitWide],
   );
 
   const handoverColumns = useMemo<ColumnDef<HandoverNoteOut>[]>(
@@ -1273,7 +1414,7 @@ export function OperationsConsole({
         accessorKey: "patient_id",
         header: "Patient",
         cell: ({ row }) =>
-          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id)) : "Unit-wide",
+          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
       },
       {
         accessorKey: "target_role",
@@ -1291,7 +1432,7 @@ export function OperationsConsole({
         ),
       },
     ],
-    [patientMap],
+    [patientMap, unitWide],
   );
 
   const auditColumns = useMemo<ColumnDef<AuditTrailEventOut>[]>(
@@ -1308,7 +1449,7 @@ export function OperationsConsole({
         accessorKey: "patient_id",
         header: "Patient",
         cell: ({ row }) =>
-          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id)) : "Unit-wide",
+          row.original.patient_id ? labelPatient(patientMap.get(row.original.patient_id), unitWide) : unitWide,
       },
       {
         accessorKey: "created_at",
@@ -1321,7 +1462,7 @@ export function OperationsConsole({
         ),
       },
     ],
-    [patientMap],
+    [patientMap, unitWide],
   );
 
   const isLoadingAny =
@@ -1340,7 +1481,7 @@ export function OperationsConsole({
             <p className="max-w-3xl text-sm text-muted-foreground">{subtitle}</p>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={() => void invalidateConsoleData()}>
-            Refresh
+            {t("workflow.console.refresh")}
           </Button>
         </div>
       </div>
@@ -1360,11 +1501,11 @@ export function OperationsConsole({
       <Card className="border-border/70">
         <CardContent className="flex flex-wrap gap-2 p-3">
           {([
-            ["queue", "Queue"],
-            ["transfer", "Transfer"],
-            ["coordination", "Coordination"],
-            ["audit", "Audit"],
-            ["reports", "Reports"],
+            ["queue", t("workflow.console.tab.queue")],
+            ["transfer", t("workflow.console.tab.transfer")],
+            ["coordination", t("workflow.console.tab.coordination")],
+            ["audit", t("workflow.console.tab.audit")],
+            ["reports", t("workflow.console.tab.reports")],
           ] as const).map(([tab, label]) => (
             <Button
               key={tab}
@@ -1373,8 +1514,13 @@ export function OperationsConsole({
               size="sm"
               onClick={() => {
                 const next = new URLSearchParams(searchParams.toString());
-                if (tab === "queue") next.delete("tab");
-                else next.set("tab", tab);
+                if (tab === "queue") {
+                  next.delete(WORKFLOW_CONSOLE_TAB_QP);
+                  stripLegacyConsoleTabFromTabQP(next);
+                } else {
+                  next.set(WORKFLOW_CONSOLE_TAB_QP, tab);
+                  stripLegacyConsoleTabFromTabQP(next);
+                }
                 const query = next.toString();
                 router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
               }}
@@ -1501,13 +1647,13 @@ export function OperationsConsole({
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Unit-wide" />
+                            <SelectValue placeholder={unitWide} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={EMPTY_SELECT}>Unit-wide</SelectItem>
+                            <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
                             {patients.map((patient) => (
                               <SelectItem key={patient.id} value={String(patient.id)}>
-                                {labelPatient(patient)}
+                                {labelPatient(patient, unitWide)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1654,13 +1800,13 @@ export function OperationsConsole({
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Unit-wide" />
+                            <SelectValue placeholder={unitWide} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={EMPTY_SELECT}>Unit-wide</SelectItem>
+                            <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
                             {patients.map((patient) => (
                               <SelectItem key={patient.id} value={String(patient.id)}>
-                                {labelPatient(patient)}
+                                {labelPatient(patient, unitWide)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1853,13 +1999,13 @@ export function OperationsConsole({
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Unit-wide" />
+                            <SelectValue placeholder={unitWide} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={EMPTY_SELECT}>Unit-wide</SelectItem>
+                            <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
                             {patients.map((patient) => (
                               <SelectItem key={patient.id} value={String(patient.id)}>
-                                {labelPatient(patient)}
+                                {labelPatient(patient, unitWide)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -2030,13 +2176,13 @@ export function OperationsConsole({
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Unit-wide" />
+                          <SelectValue placeholder={unitWide} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={EMPTY_SELECT}>Unit-wide</SelectItem>
+                          <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
                           {patients.map((patient) => (
                             <SelectItem key={patient.id} value={String(patient.id)}>
-                              {labelPatient(patient)}
+                              {labelPatient(patient, unitWide)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -2143,13 +2289,13 @@ export function OperationsConsole({
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Unit-wide" />
+                          <SelectValue placeholder={unitWide} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={EMPTY_SELECT}>Unit-wide</SelectItem>
+                          <SelectItem value={EMPTY_SELECT}>{unitWide}</SelectItem>
                           {patients.map((patient) => (
                             <SelectItem key={patient.id} value={String(patient.id)}>
-                              {labelPatient(patient)}
+                              {labelPatient(patient, unitWide)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -2276,7 +2422,7 @@ export function OperationsConsole({
           <Card className="border-border/70">
             <CardContent className="grid gap-4 p-4 lg:grid-cols-[1.1fr_0.8fr_0.8fr_auto]">
               <div className="space-y-2">
-                <Label>Report template</Label>
+                <Label>{t("workflow.console.reports.reportTemplate")}</Label>
                 <Select
                   value={reportTemplateId}
                   onValueChange={(value) => setReportTemplateId(value as ReportTemplateId)}
@@ -2285,7 +2431,7 @@ export function OperationsConsole({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {REPORT_TEMPLATES.map((template) => (
+                    {reportTemplates.map((template) => (
                       <SelectItem key={template.id} value={template.id}>
                         {template.title}
                       </SelectItem>
@@ -2293,25 +2439,25 @@ export function OperationsConsole({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  {REPORT_TEMPLATES.find((item) => item.id === reportTemplateId)?.description}
+                  {reportTemplates.find((item) => item.id === reportTemplateId)?.description}
                 </p>
               </div>
               <div className="space-y-2">
-                <Label>Window</Label>
+                <Label>{t("workflow.console.reports.window")}</Label>
                 <Select value={reportWindowHours} onValueChange={setReportWindowHours}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="6">Last 6 hours</SelectItem>
-                    <SelectItem value="12">Last 12 hours</SelectItem>
-                    <SelectItem value="24">Last 24 hours</SelectItem>
-                    <SelectItem value="72">Last 72 hours</SelectItem>
+                    <SelectItem value="6">{t("workflow.console.reports.window6h")}</SelectItem>
+                    <SelectItem value="12">{t("workflow.console.reports.window12h")}</SelectItem>
+                    <SelectItem value="24">{t("workflow.console.reports.window24h")}</SelectItem>
+                    <SelectItem value="72">{t("workflow.console.reports.window72h")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Audit domain</Label>
+                <Label>{t("workflow.console.reports.auditDomain")}</Label>
                 <Select value={auditDomain} onValueChange={setAuditDomain}>
                   <SelectTrigger>
                     <SelectValue />
@@ -2340,11 +2486,11 @@ export function OperationsConsole({
                   }
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  CSV
+                  {t("workflow.console.reports.csv")}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => window.print()}>
                   <Printer className="mr-2 h-4 w-4" />
-                  Print
+                  {t("workflow.console.reports.print")}
                 </Button>
               </div>
             </CardContent>
@@ -2371,7 +2517,7 @@ export function OperationsConsole({
               <ReportPreviewTable
                 columns={reportView.columns}
                 rows={reportView.rows}
-                emptyText="No data in the current report window."
+                emptyText={t("workflow.console.reports.emptyTable")}
                 caption={reportView.note}
               />
             </CardContent>
@@ -2400,7 +2546,7 @@ export function OperationsConsole({
             {detailQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">Loading workflow detail...</p>
             ) : detailQuery.isError ? (
-              <p className="text-sm text-destructive">{parseError(detailQuery.error)}</p>
+              <p className="text-sm text-destructive">{formatConsoleError(detailQuery.error, requestFailedMsg)}</p>
             ) : detailQuery.data != null &&
               detailQuery.data.item != null &&
               typeof detailQuery.data.item === "object" ? (
@@ -2421,7 +2567,7 @@ export function OperationsConsole({
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Patient</p>
                     <p className="mt-2 text-sm font-medium text-foreground">
-                      {selectedRow?.patientName ?? "Unit-wide"}
+                      {selectedRow?.patientName ?? unitWide}
                     </p>
                   </div>
                 </section>

@@ -47,6 +47,8 @@ export type AlertSummaryOut = components["schemas"]["AlertSummaryOut"];
 export type VitalsAverageOut = components["schemas"]["VitalsAverageOut"];
 export type WardSummaryOut = components["schemas"]["WardSummaryOut"];
 export type RoleMessageOut = components["schemas"]["RoleMessageOut"];
+export type RoleMessageAttachmentOut = components["schemas"]["RoleMessageAttachmentOut"];
+export type PendingWorkflowAttachmentUploadOut = components["schemas"]["PendingWorkflowAttachmentUploadOut"];
 export type RoleMessageCreateInput = components["schemas"]["RoleMessageCreate"];
 export type HandoverNoteOut = components["schemas"]["HandoverNoteOut"];
 export type PharmacyOrderOut = components["schemas"]["PharmacyOrderOut"];
@@ -308,5 +310,11 @@ export type ShiftChecklistWorkspaceRow = {
   shift_date: string;
   items: ShiftChecklistItemApi[];
   percent_complete: number;
+  updated_at: string | null;
+};
+
+export type ShiftChecklistTemplateResponse = {
+  user_id: number;
+  items: ShiftChecklistItemApi[];
   updated_at: string | null;
 };

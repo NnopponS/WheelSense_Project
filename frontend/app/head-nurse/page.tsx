@@ -19,7 +19,7 @@ import {
   Calendar,
 } from "lucide-react";
 import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
   CareDirectiveOut,
+  CaregiverOut,
   CareScheduleOut,
   CareTaskOut,
   GetWardSummaryResponse,
@@ -35,6 +36,24 @@ import type {
   ListCaregiversResponse,
   ListTimelineEventsResponse,
 } from "@/lib/api/task-scope-types";
+
+function caregiverRoleLabel(role: string, translate: (key: TranslationKey) => string): string {
+  const map: Record<string, TranslationKey> = {
+    admin: "personnel.role.admin",
+    head_nurse: "personnel.role.headNurse",
+    supervisor: "personnel.role.supervisor",
+    observer: "personnel.role.observer",
+    patient: "personnel.role.patient",
+  };
+  const key = map[role];
+  return key ? translate(key) : role.replace(/_/g, " ");
+}
+
+function staffInitials(c: CaregiverOut): string {
+  const a = (c.first_name?.trim()?.[0] ?? "").toUpperCase();
+  const b = (c.last_name?.trim()?.[0] ?? "").toUpperCase();
+  return (a + b) || "?";
+}
 
 export default function HeadNurseDashboardPage() {
   const { t } = useTranslation();
@@ -146,10 +165,14 @@ export default function HeadNurseDashboardPage() {
     [schedules],
   );
 
-  const onDutyStaff = useMemo(
-    () => caregivers.filter((c) => c.is_active).slice(0, 8),
+  const activeCaregivers = useMemo(
+    () => caregivers.filter((c) => c.is_active),
     [caregivers],
   );
+
+  const onDutyStaff = useMemo(() => activeCaregivers.slice(0, 8), [activeCaregivers]);
+
+  const staffStripPreview = useMemo(() => activeCaregivers.slice(0, 5), [activeCaregivers]);
 
   const sortedAlerts = useMemo(
     () =>
@@ -318,7 +341,7 @@ export default function HeadNurseDashboardPage() {
 
       {/* Floorplan & Staff Grid */}
       <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
-        <DashboardFloorplanPanel className="min-w-0" openHref="/head-nurse/monitoring" />
+        <DashboardFloorplanPanel className="min-w-0" />
 
         {/* On-Duty Staff */}
         <Card className="border-border/70">
@@ -364,6 +387,69 @@ export default function HeadNurseDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Staff context strip — ties coverage to alerts/tasks section without duplicating the full roster card */}
+      <section
+        aria-label={t("headNurse.onDutyStaffTitle")}
+        className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-muted/25 shadow-sm"
+      >
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-sky-500/70 to-primary/50"
+          aria-hidden
+        />
+        <div className="flex flex-col gap-4 p-4 pl-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="flex min-w-0 items-start gap-3 sm:items-center">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold leading-tight text-foreground">
+                {t("headNurse.onDutyStaffTitle")}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t("headNurse.dashStaffContextLine")}</p>
+            </div>
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:items-end">
+            {staffStripPreview.length ? (
+              <div className="flex w-full flex-wrap items-center gap-2 sm:justify-end">
+                {staffStripPreview.map((c) => (
+                  <div
+                    key={c.id}
+                    className="inline-flex max-w-[200px] items-center gap-2 rounded-full border border-border/80 bg-background/90 py-1 pl-1 pr-2.5 shadow-sm"
+                  >
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
+                      aria-hidden
+                    >
+                      {staffInitials(c)}
+                    </span>
+                    <span className="min-w-0 truncate text-xs font-medium text-foreground">
+                      {c.first_name} {c.last_name}
+                    </span>
+                    <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-[10px] font-normal">
+                      {caregiverRoleLabel(c.role, t)}
+                    </Badge>
+                  </div>
+                ))}
+                {activeCaregivers.length > staffStripPreview.length ? (
+                  <Badge variant="outline" className="shrink-0 text-xs font-medium tabular-nums">
+                    +{activeCaregivers.length - staffStripPreview.length}
+                  </Badge>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t("headNurse.noStaffOnDuty")}</p>
+            )}
+            <Button asChild size="sm" variant="outline" className="w-full shrink-0 sm:w-auto">
+              <Link href="/head-nurse/staff">
+                {t("dash.viewAll")}
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
       {/* Alerts & Tasks Grid */}
       <div className="grid gap-4 xl:grid-cols-2">

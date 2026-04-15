@@ -13,6 +13,10 @@ See also:
 
 ## Latest
 
+- **2026-04-15 - Docs: workflow task Kanban + head nurse dashboard staff strip**
+  - **Outcome:** Documented frontend-only workflow task **calendar / Kanban / list** surfaces and **Operations Console** boundary; **PATCH** contract unchanged. Documented head nurse **staff context strip** above priority alerts/tasks.
+  - **Files:** `frontend/README.md` (stack + conventions + route notes + key files), `ARCHITECTURE.md` (frontend bullet), `docs/adr/0008-workflow-domains-for-role-operations.md` (supplementary section).
+
 - **2026-04-12 - MCP OAuth authentication flow implementation**
   - **Outcome:** Implemented remote MCP OAuth authentication flow for external MCP clients:
     1. **Protected Resource Metadata** - `/.well-known/oauth-protected-resource/mcp` returns correct metadata with authorization server URL and supported scopes (already existed, verified working)

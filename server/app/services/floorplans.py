@@ -21,6 +21,12 @@ from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.telemetry import PhotoRecord, RoomPrediction
 from app.models.users import User
 from app.services.base import CRUDBase
+from app.services.node_device_alias import resolve_registry_node_device
+
+
+def _profile_photo_url(value: str | None) -> str | None:
+    u = (value or "").strip()
+    return u or None
 
 
 class FloorplanPresenceService:
@@ -75,16 +81,73 @@ class FloorplanPresenceService:
         )
         room_ids = {room.id for room in rooms}
 
-        node_device_ids = [room.node_device_id for room in rooms if room.node_device_id]
-        device_by_id: dict[str, Device] = {}
-        if node_device_ids:
-            devices = await session.execute(
-                select(Device).where(
-                    Device.workspace_id == ws_id,
-                    Device.device_id.in_(node_device_ids),
+        # Latest prediction per device — loaded before patient_by_room so we can expand `rooms`
+        # to include predicted_room_id targets. Otherwise live_predicted_room_by_patient is empty
+        # when that room row was missing from the floor/layout slice, and assignment wins (wrong room).
+        latest_prediction_by_device: dict[str, RoomPrediction] = {}
+        predictions_query = await session.execute(
+            select(RoomPrediction)
+            .where(RoomPrediction.workspace_id == ws_id)
+            .order_by(desc(RoomPrediction.timestamp))
+            .limit(1000),
+        )
+        for prediction in predictions_query.scalars().all():
+            latest_prediction_by_device.setdefault(prediction.device_id, prediction)
+
+        predicted_room_ids = {
+            p.predicted_room_id
+            for p in latest_prediction_by_device.values()
+            if p.predicted_room_id is not None
+        }
+        missing_pred_rooms = predicted_room_ids - room_ids
+        if missing_pred_rooms:
+            extra_rooms = list(
+                (
+                    await session.execute(
+                        select(Room).where(Room.workspace_id == ws_id, Room.id.in_(missing_pred_rooms)),
+                    )
+                )
+                .scalars()
+                .all(),
+            )
+            to_add = [
+                er
+                for er in extra_rooms
+                if er.floor_id == floor_id or er.id in layout_room_ids
+            ]
+            if to_add:
+                rooms.extend(to_add)
+                rooms.sort(key=lambda r: r.id)
+                room_ids = {room.id for room in rooms}
+
+        raw_node_ids = list({room.node_device_id for room in rooms if room.node_device_id})
+        all_node_devices = list(
+            (
+                await session.execute(
+                    select(Device)
+                    .where(
+                        Device.workspace_id == ws_id,
+                        Device.hardware_type == "node",
+                    )
+                    .order_by(Device.id)
                 )
             )
-            device_by_id = {device.device_id: device for device in devices.scalars().all()}
+            .scalars()
+            .all()
+        )
+        resolved_device_by_room_key: dict[str, Device] = {}
+        for raw in raw_node_ids:
+            resolved = resolve_registry_node_device(raw, all_node_devices)
+            if resolved is not None:
+                resolved_device_by_room_key[raw] = resolved
+
+        photo_device_ids: list[str] = []
+        for raw in raw_node_ids:
+            photo_device_ids.append(raw)
+            mapped = resolved_device_by_room_key.get(raw)
+            if mapped is not None:
+                photo_device_ids.append(mapped.device_id)
+        photo_device_ids = list(dict.fromkeys(photo_device_ids))
 
         patient_by_room: dict[int, Patient] = {}
         if room_ids:
@@ -102,18 +165,6 @@ class FloorplanPresenceService:
             for patient in patients.scalars().all():
                 if patient.room_id is not None:
                     patient_by_room.setdefault(patient.room_id, patient)
-
-        # Get the latest prediction per device instead of per room to prevent stale devices
-        # from showing up in multiple rooms or lingering in their previous room.
-        latest_prediction_by_device: dict[str, RoomPrediction] = {}
-        predictions_query = await session.execute(
-            select(RoomPrediction)
-            .where(RoomPrediction.workspace_id == ws_id)
-            .order_by(desc(RoomPrediction.timestamp))
-            .limit(1000)
-        )
-        for prediction in predictions_query.scalars().all():
-            latest_prediction_by_device.setdefault(prediction.device_id, prediction)
 
         predictions_by_room: dict[int, list[RoomPrediction]] = {}
         for prediction in latest_prediction_by_device.values():
@@ -200,12 +251,12 @@ class FloorplanPresenceService:
                     smart_devices_by_room.setdefault(device.room_id, []).append(device)
 
         latest_photo_by_device: dict[str, PhotoRecord] = {}
-        if node_device_ids:
+        if photo_device_ids:
             photo_rows = await session.execute(
                 select(PhotoRecord)
                 .where(
                     PhotoRecord.workspace_id == ws_id,
-                    PhotoRecord.device_id.in_(node_device_ids),
+                    PhotoRecord.device_id.in_(photo_device_ids),
                 )
                 .order_by(PhotoRecord.timestamp.desc())
                 .limit(500)
@@ -268,6 +319,7 @@ class FloorplanPresenceService:
                         "room_id": position.room_id,
                         "source": position.source or "manual_control",
                         "updated_at": position.updated_at,
+                        "photo_url": _profile_photo_url(caregiver.photo_url) if caregiver else None,
                     }
                 )
 
@@ -277,10 +329,11 @@ class FloorplanPresenceService:
             if room.id in layout_room_ids:
                 sources.append("layout")
 
+            device: Device | None = None
             node_status = "unmapped"
             if room.node_device_id:
                 sources.append("node")
-                device = device_by_id.get(room.node_device_id)
+                device = resolved_device_by_room_key.get(room.node_device_id)
                 if device is None:
                     node_status = "unknown"
                 else:
@@ -300,6 +353,7 @@ class FloorplanPresenceService:
                         "last_name": patient.last_name,
                         "nickname": patient.nickname or "",
                         "source": "room_assignment",
+                        "photo_url": _profile_photo_url(patient.photo_url),
                     }
                     occupants.append(
                         {
@@ -315,6 +369,7 @@ class FloorplanPresenceService:
                             "room_id": room.id,
                             "source": "room_assignment",
                             "updated_at": patient.updated_at,
+                            "photo_url": _profile_photo_url(patient.photo_url),
                         }
                     )
 
@@ -388,6 +443,7 @@ class FloorplanPresenceService:
                                 "room_id": room.id,
                                 "source": "highest_rssi",
                                 "updated_at": prediction.timestamp,
+                                "photo_url": _profile_photo_url(predicted_patient.photo_url),
                             }
                         )
                         if patient_hint is None:
@@ -397,6 +453,7 @@ class FloorplanPresenceService:
                                 "last_name": predicted_patient.last_name,
                                 "nickname": predicted_patient.nickname or "",
                                 "source": "highest_rssi",
+                                "photo_url": _profile_photo_url(predicted_patient.photo_url),
                             }
 
             smart_devices_summary = [
@@ -411,9 +468,15 @@ class FloorplanPresenceService:
                 for device in smart_devices_by_room.get(room.id, [])
             ]
 
-            photo = latest_photo_by_device.get(room.node_device_id or "")
+            photo = None
+            if room.node_device_id:
+                if device is not None:
+                    photo = latest_photo_by_device.get(device.device_id)
+                if photo is None:
+                    photo = latest_photo_by_device.get(room.node_device_id)
+            effective_cam_id = device.device_id if device is not None else room.node_device_id
             camera_summary = {
-                "device_id": room.node_device_id,
+                "device_id": effective_cam_id,
                 "latest_photo_id": photo.id if photo else None,
                 "latest_photo_url": f"/api/cameras/photos/{photo.id}/content" if photo else None,
                 "captured_at": photo.timestamp if photo else None,

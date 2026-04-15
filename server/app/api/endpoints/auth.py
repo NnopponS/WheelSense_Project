@@ -4,9 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 """Authentication endpoints: Login and Token generation."""
 
-import secrets
-from pathlib import Path
-
 from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordRequestForm
 
@@ -17,7 +14,6 @@ from app.api.dependencies import (
     get_db,
     resolve_current_user_from_token,
 )
-from app.config import settings
 from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.users import (
@@ -33,7 +29,7 @@ from app.schemas.users import (
     UserOut,
 )
 from app.services.auth import AuthService, UserService
-from app.services.profile_image_storage import remove_hosted_profile_file_if_any
+from app.services.profile_image_storage import remove_hosted_profile_file_if_any, store_hosted_profile_jpeg_bytes
 
 router = APIRouter(tags=["Authentication"])
 
@@ -251,8 +247,6 @@ async def patch_users_me(
         await session.refresh(current_user)
     return current_user
 
-_PROFILE_UPLOAD_MAX_BYTES = 600 * 1024
-
 @router.post("/me/profile-image", response_model=UserOut)
 async def upload_profile_image(
     file: UploadFile = File(...),
@@ -261,19 +255,12 @@ async def upload_profile_image(
 ):
     """Store a JPEG avatar (e.g. after client-side crop/resize) and set `profile_image_url`."""
     data = await file.read()
-    if len(data) > _PROFILE_UPLOAD_MAX_BYTES:
-        raise HTTPException(status_code=400, detail="Image too large")
-    if len(data) < 3 or data[:3] != b"\xff\xd8\xff":
-        raise HTTPException(status_code=400, detail="Please upload a JPEG image")
+    try:
+        relative = store_hosted_profile_jpeg_bytes(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    token = f"{secrets.token_hex(16)}.jpg"
-    dirpath = Path(settings.profile_image_storage_dir)
-    dirpath.mkdir(parents=True, exist_ok=True)
     remove_hosted_profile_file_if_any(current_user.profile_image_url)
-    out_path = dirpath / token
-    out_path.write_bytes(data)
-
-    relative = f"/api/public/profile-images/{token}"
     current_user.profile_image_url = relative
     session.add(current_user)
     await session.commit()

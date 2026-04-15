@@ -11,13 +11,14 @@ from __future__ import annotations
 import argparse
 import asyncio
 import base64
+import os
 import random
 import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -388,6 +389,9 @@ async def seed_room_node_mappings(
         if idx >= len(rooms):
             break
         room = rooms[idx]
+        if room.node_device_id and str(room.node_device_id).strip():
+            # User or prior run already linked this room — do not overwrite.
+            continue
 
         dq = await session.execute(
             select(Device).where(
@@ -1405,6 +1409,21 @@ async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
     """Minimal seed for MQTT simulator + role UX: rooms, 5 patients + wheelchair assignments, 4 staff users, bootstrap admin on workspace."""
     async with AsyncSessionLocal() as session:
         ws = await ensure_workspace(session, workspace_name, reset)
+
+        force = os.environ.get("SIM_FORCE_SEED", "").lower() in ("1", "true", "yes")
+        dcount = await session.scalar(
+            select(func.count()).select_from(Device).where(Device.workspace_id == ws.id)
+        )
+        pcount = await session.scalar(
+            select(func.count()).select_from(Patient).where(Patient.workspace_id == ws.id)
+        )
+        if ((dcount or 0) > 0 or (pcount or 0) > 0) and not force:
+            print(
+                "[skip] Sim team seed skipped: workspace already has devices or patients. "
+                "Set SIM_FORCE_SEED=1 to re-run full baseline seed."
+            )
+            return ws.id
+
         await clear_workspace_event_data(session, ws.id)
 
         facility, floors = await seed_facility(session, ws.id)

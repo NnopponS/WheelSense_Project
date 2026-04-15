@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Clock,
@@ -19,17 +19,12 @@ import {
 import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import {
-  mergeServerShiftChecklist,
-  rowsToApiPayload,
-  utcShiftDateString,
-} from "@/lib/shiftChecklistDefaults";
-import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
-import { useAuth } from "@/hooks/useAuth";
+import { mergeServerShiftChecklist, utcShiftDateString } from "@/lib/shiftChecklistDefaults";
+import { formatRelativeTime } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { ShiftChecklistMePanel } from "@/components/shift-checklist/ShiftChecklistMePanel";
 import type {
   CareTaskOut,
   ListAlertsResponse,
@@ -69,21 +64,11 @@ function careLevelLabel(t: (key: TranslationKey) => string, level: string): stri
 
 export default function ObserverDashboardPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [shiftDate] = useState(() => utcShiftDateString());
 
   const shiftChecklistQuery = useQuery({
     queryKey: ["shift-checklist", "me", shiftDate],
     queryFn: () => api.getShiftChecklistMe({ shift_date: shiftDate }),
-  });
-
-  const shiftChecklistMutation = useMutation({
-    mutationFn: (items: ReturnType<typeof mergeServerShiftChecklist>) =>
-      api.putShiftChecklistMe({ shift_date: shiftDate, items: rowsToApiPayload(items) }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["shift-checklist", "me", shiftDate] });
-    },
   });
 
   // Data queries
@@ -183,20 +168,6 @@ export default function ObserverDashboardPage() {
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { total, completed, remaining, percent };
   }, [checklist]);
-
-  const toggleChecklistItem = (id: string) => {
-    const next = checklist.map((item) =>
-      item.id === id ? { ...item, checked: !item.checked } : item,
-    );
-    shiftChecklistMutation.mutate(next);
-  };
-
-  const isLoadingAny =
-    patientsQuery.isLoading ||
-    alertsQuery.isLoading ||
-    tasksQuery.isLoading ||
-    shiftChecklistQuery.isLoading ||
-    vitalsQuery.isLoading;
 
   return (
     <div className="space-y-6 pb-6 animate-fade-in">
@@ -316,114 +287,9 @@ export default function ObserverDashboardPage() {
       {/* Zone Map & Shift Checklist Grid */}
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         {/* Zone Map */}
-        <DashboardFloorplanPanel openHref="/observer/monitoring" />
+        <DashboardFloorplanPanel />
 
-        {/* Shift Checklist */}
-        <Card className="border-border/70">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">{t("observer.page.shiftChecklistTitle")}</CardTitle>
-                <CardDescription>{t("observer.page.shiftChecklistDesc")}</CardDescription>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-foreground">{shiftStats.percent}%</p>
-                <p className="text-xs text-muted-foreground">{t("observer.page.completeLabel")}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Shift Tasks */}
-            <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("observer.page.shiftStart")}
-              </h4>
-              <div className="space-y-2">
-                {checklist
-                  .filter((item) => item.category === "shift")
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
-                    >
-                      <Checkbox
-                        checked={item.checked}
-                        disabled={shiftChecklistMutation.isPending}
-                        onCheckedChange={() => toggleChecklistItem(item.id)}
-                      />
-                      <span
-                        className={`text-sm ${
-                          item.checked ? "text-muted-foreground line-through" : "text-foreground"
-                        }`}
-                      >
-                        {t(item.labelKey)}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            {/* Room Tasks */}
-            <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("observer.page.roomRounds")}
-              </h4>
-              <div className="space-y-2">
-                {checklist
-                  .filter((item) => item.category === "room")
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
-                    >
-                      <Checkbox
-                        checked={item.checked}
-                        disabled={shiftChecklistMutation.isPending}
-                        onCheckedChange={() => toggleChecklistItem(item.id)}
-                      />
-                      <span
-                        className={`text-sm ${
-                          item.checked ? "text-muted-foreground line-through" : "text-foreground"
-                        }`}
-                      >
-                        {t(item.labelKey)}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            {/* Documentation */}
-            <div>
-              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("observer.page.documentation")}
-              </h4>
-              <div className="space-y-2">
-                {checklist
-                  .filter((item) => item.category === "patient")
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 rounded-lg border border-border/70 px-3 py-2"
-                    >
-                      <Checkbox
-                        checked={item.checked}
-                        disabled={shiftChecklistMutation.isPending}
-                        onCheckedChange={() => toggleChecklistItem(item.id)}
-                      />
-                      <span
-                        className={`text-sm ${
-                          item.checked ? "text-muted-foreground line-through" : "text-foreground"
-                        }`}
-                      >
-                        {t(item.labelKey)}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ShiftChecklistMePanel shiftDate={shiftDate} />
       </div>
 
       {/* My Tasks & Patient Cards Grid */}

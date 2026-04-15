@@ -62,6 +62,7 @@ import type {
   ListVitalReadingsResponse,
   ListWorkflowHandoversResponse,
   ListWorkflowMessagesResponse,
+  PendingWorkflowAttachmentUploadOut,
   ListWorkflowAuditResponse,
   ListWorkflowDirectivesResponse,
   ListWorkflowSchedulesResponse,
@@ -71,6 +72,8 @@ import type {
   ServiceRequestCreateInput,
   ShiftChecklistMeResponse,
   ShiftChecklistPutRequest,
+  ShiftChecklistItemApi,
+  ShiftChecklistTemplateResponse,
   ShiftChecklistWorkspaceRow,
   SendWorkflowMessageRequest,
   SendWorkflowMessageResponse,
@@ -597,6 +600,18 @@ export const api = {
   getDeviceDetailRaw: (deviceId: string) =>
     request<unknown>(`/devices/${encodeURIComponent(deviceId)}`),
 
+  patchRegistryDevice: (
+    deviceId: string,
+    payload: { display_name?: string | null; config?: Record<string, unknown> | null },
+  ) =>
+    request<unknown>(`/devices/${encodeURIComponent(deviceId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteRegistryDevice: (deviceId: string) =>
+    request<void>(`/devices/${encodeURIComponent(deviceId)}`, { method: "DELETE" }),
+
   assignPatientFromDevice: (deviceId: string, payload: AssignPatientFromDeviceRequest) =>
     request<unknown>(`/devices/${encodeURIComponent(deviceId)}/patient`, {
       method: "POST",
@@ -848,6 +863,18 @@ export const api = {
       { method: "POST" },
     ),
 
+  uploadWorkflowMessageAttachment: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return request<PendingWorkflowAttachmentUploadOut>("/workflow/messages/attachments", {
+      method: "POST",
+      body: fd,
+    });
+  },
+
+  deleteWorkflowMessage: (messageId: number | string) =>
+    request<void>(`/workflow/messages/${encodeURIComponent(String(messageId))}`, { method: "DELETE" }),
+
   listWorkflowHandovers: (params?: { patient_id?: number; limit?: number }) => {
     const query = new URLSearchParams();
     if (typeof params?.patient_id === "number") query.set("patient_id", String(params.patient_id));
@@ -911,6 +938,18 @@ export const api = {
       suffix ? `/shift-checklist/workspace?${suffix}` : "/shift-checklist/workspace",
     );
   },
+
+  getShiftChecklistUserTemplate: (userId: number) =>
+    request<ShiftChecklistTemplateResponse>(`/shift-checklist/users/${encodeURIComponent(String(userId))}/template`),
+
+  putShiftChecklistUserTemplate: (userId: number, payload: { items: ShiftChecklistItemApi[] }) =>
+    request<ShiftChecklistTemplateResponse>(
+      `/shift-checklist/users/${encodeURIComponent(String(userId))}/template`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      },
+    ),
 };
 
 export { ApiError };

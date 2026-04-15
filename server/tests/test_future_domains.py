@@ -151,6 +151,50 @@ async def test_floorplan_presence_projection(client: AsyncClient, db_session: As
 
 
 @pytest.mark.asyncio
+async def test_floorplan_presence_resolves_wsn_alias_to_camera_node(
+    client: AsyncClient, db_session: AsyncSession
+):
+    """Room stores WSN_* label while registry row is CAM_* with ble_node_id — presence must still resolve."""
+    fac = Facility(workspace_id=1, name="Alias Main", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=1, facility_id=fac.id, floor_number=1, name="L1", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    now = datetime.now(timezone.utc)
+    cam = Device(
+        workspace_id=1,
+        device_id="CAM_ALIAS01",
+        device_type="camera",
+        hardware_type="node",
+        display_name="WSN_004 Camera",
+        ip_address="",
+        firmware="sim",
+        last_seen=now,
+        config={"ble_node_id": "WSN_004"},
+    )
+    room = Room(
+        workspace_id=1,
+        floor_id=fl.id,
+        name="Alias Room",
+        room_type="bedroom",
+        node_device_id="WSN_004",
+    )
+    db_session.add_all([cam, room])
+    await db_session.commit()
+
+    response = await client.get(f"/api/floorplans/presence?facility_id={fac.id}&floor_id={fl.id}")
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert len(body["rooms"]) == 1
+    row = body["rooms"][0]
+    assert row["room_id"] == room.id
+    assert row["node_device_id"] == "WSN_004"
+    assert row["node_status"] == "online"
+    assert row["camera_summary"]["device_id"] == "CAM_ALIAS01"
+
+
+@pytest.mark.asyncio
 async def test_floorplan_presence_projection_includes_room_context(client: AsyncClient, db_session: AsyncSession):
     fac = Facility(workspace_id=1, name="Presence Rich", address="", description="", config={})
     db_session.add(fac)

@@ -8,6 +8,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Activity, Bell, ClipboardList, HeartPulse, MessageSquare, NotebookPen } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import {
+  WorkflowMessageDetailDialog,
+  WorkflowMessagePreviewTrigger,
+} from "@/components/messaging/WorkflowMessageDetailDialog";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +32,7 @@ import type {
   ListVitalReadingsResponse,
   ListWorkflowHandoversResponse,
   ListWorkflowMessagesResponse,
+  RoleMessageAttachmentOut,
   SendWorkflowMessageRequest,
 } from "@/lib/api/task-scope-types";
 
@@ -63,8 +68,12 @@ type MessageRow = {
   id: number;
   subject: string;
   body: string;
+  senderUserId: number;
+  recipientRole: string | null;
+  recipientUserId: number | null;
   isRead: boolean;
   createdAt: string;
+  attachments: RoleMessageAttachmentOut[];
 };
 
 type HandoverRow = {
@@ -120,6 +129,7 @@ export default function ObserverPatientDetailPage() {
   const [messageText, setMessageText] = useState("");
   const [handoverText, setHandoverText] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [messageDetail, setMessageDetail] = useState<MessageRow | null>(null);
 
   const patientQuery = useQuery({
     queryKey: ["observer", "patient-detail", patientId, "patient"],
@@ -346,8 +356,12 @@ export default function ObserverPatientDetailPage() {
         id: message.id,
         subject: message.subject || t("observer.patientDetail.defaultCareSubject"),
         body: message.body,
+        senderUserId: message.sender_user_id,
+        recipientRole: message.recipient_role,
+        recipientUserId: message.recipient_user_id,
         isRead: message.is_read,
         createdAt: message.created_at,
+        attachments: message.attachments ?? [],
       }));
   }, [patientMessages, t]);
 
@@ -519,10 +533,11 @@ export default function ObserverPatientDetailPage() {
         accessorKey: "subject",
         header: t("observer.patientDetail.colMessage"),
         cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.subject}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.body}</p>
-          </div>
+          <WorkflowMessagePreviewTrigger
+            subject={row.original.subject}
+            body={row.original.body}
+            onOpen={() => setMessageDetail(row.original)}
+          />
         ),
       },
       {
@@ -562,6 +577,36 @@ export default function ObserverPatientDetailPage() {
     ],
     [markReadMutation, t],
   );
+
+  const observerMessageMeta =
+    messageDetail != null ? (
+      <div className="space-y-3">
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <p>
+            {t("headNurse.messages.fromUserPrefix")}
+            {messageDetail.senderUserId}
+          </p>
+          <p>
+            {messageDetail.recipientRole
+              ? `${t("headNurse.messages.recipientRolePrefix")}${messageDetail.recipientRole}`
+              : t("headNurse.messages.directMessage")}
+          </p>
+          {messageDetail.recipientUserId ? (
+            <p>
+              {t("headNurse.messages.toUserPrefix")}
+              {messageDetail.recipientUserId}
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-1 text-sm">
+          <p className="text-foreground">{formatDateTime(messageDetail.createdAt)}</p>
+          <p className="text-xs text-muted-foreground">{formatRelativeTime(messageDetail.createdAt)}</p>
+        </div>
+        <Badge variant={messageDetail.isRead ? "success" : "warning"}>
+          {messageDetail.isRead ? t("observer.patientDetail.readBadge") : t("observer.patientDetail.unreadBadge")}
+        </Badge>
+      </div>
+    ) : null;
 
   const handoversColumns = useMemo<ColumnDef<HandoverRow>[]>(
     () => [
@@ -759,6 +804,20 @@ export default function ObserverPatientDetailPage() {
         emptyText={t("observer.patientDetail.noHandovers")}
         rightSlot={<NotebookPen className="h-4 w-4 text-muted-foreground" />}
       />
+
+      {messageDetail ? (
+        <WorkflowMessageDetailDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setMessageDetail(null);
+          }}
+          subject={messageDetail.subject}
+          body={messageDetail.body}
+          meta={observerMessageMeta}
+          messageId={messageDetail.id}
+          attachments={messageDetail.attachments}
+        />
+      ) : null}
     </div>
   );
 }

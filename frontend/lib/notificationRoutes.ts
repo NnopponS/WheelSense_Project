@@ -32,7 +32,7 @@ export function workflowTasksPath(role: AppRole): string {
     case "observer":
       return "/observer/tasks";
     case "supervisor":
-      return "/supervisor/workflow";
+      return "/supervisor/tasks";
     case "admin":
     case "head_nurse":
       return "/head-nurse/tasks";
@@ -50,9 +50,9 @@ export function staffMessagesPath(role: AppRole): string {
     case "head_nurse":
       return "/head-nurse/messages";
     case "observer":
-      return "/observer/workflow";
+      return "/observer/messages";
     case "supervisor":
-      return "/supervisor/workflow";
+      return "/supervisor/messages";
     case "patient":
       return "/patient/messages";
     default:

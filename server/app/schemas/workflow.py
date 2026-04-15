@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 class WorkflowPersonOut(BaseModel):
     user_id: int
@@ -120,6 +120,20 @@ class CareTaskOut(BaseModel):
     assigned_person: Optional[WorkflowPersonOut] = None
     created_by_person: Optional[WorkflowPersonOut] = None
 
+class RoleMessageAttachmentOut(BaseModel):
+    id: str
+    filename: str
+    content_type: str
+    byte_size: int
+
+
+class PendingWorkflowAttachmentUploadOut(BaseModel):
+    pending_id: str
+    filename: str
+    content_type: str
+    byte_size: int
+
+
 class RoleMessageCreate(BaseModel):
     recipient_role: Optional[str] = None
     recipient_user_id: Optional[int] = None
@@ -127,12 +141,19 @@ class RoleMessageCreate(BaseModel):
     workflow_item_type: Optional[str] = None
     workflow_item_id: Optional[int] = None
     subject: str = ""
-    body: str
+    body: str = ""
+    pending_attachment_ids: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def require_a_recipient(self):
         if self.recipient_role is None and self.recipient_user_id is None:
             raise ValueError("recipient_role or recipient_user_id is required")
+        return self
+
+    @model_validator(mode="after")
+    def require_body_or_attachment(self):
+        if (not self.body or not str(self.body).strip()) and not self.pending_attachment_ids:
+            raise ValueError("body or pending_attachment_ids is required")
         return self
 
 class RoleMessageOut(BaseModel):
@@ -147,11 +168,31 @@ class RoleMessageOut(BaseModel):
     workflow_item_id: Optional[int]
     subject: str
     body: str
+    attachments: list[RoleMessageAttachmentOut] = Field(default_factory=list)
     is_read: bool
     read_at: Optional[datetime]
     created_at: datetime
     sender_person: Optional[WorkflowPersonOut] = None
     recipient_person: Optional[WorkflowPersonOut] = None
+
+    @field_validator("attachments", mode="before")
+    @classmethod
+    def normalize_attachments(cls, v: Any) -> Any:
+        if v is None:
+            return []
+        out: list[dict[str, Any]] = []
+        for item in v:
+            if not isinstance(item, dict):
+                continue
+            out.append(
+                {
+                    "id": str(item.get("id", "")),
+                    "filename": str(item.get("filename", "")),
+                    "content_type": str(item.get("content_type", "")),
+                    "byte_size": int(item.get("byte_size") or 0),
+                }
+            )
+        return out
 
 class HandoverNoteCreate(BaseModel):
     patient_id: Optional[int] = None

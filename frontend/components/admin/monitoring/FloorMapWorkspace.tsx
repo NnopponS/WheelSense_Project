@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import { useTranslation } from "@/lib/i18n";
@@ -21,10 +21,33 @@ import {
   type FloorplanLayoutResponse,
   type FloorplanRoomShape,
 } from "@/lib/floorplanLayout";
+import {
+  normalizeRoomShapeIds,
+  resolveLayoutShapeToFloorRoomId,
+} from "@/lib/floorplanRoomResolve";
+import {
+  alignFloorplanShapesToRegistryDevices,
+  provisionRoomsForUnmappedFloorplanNodes,
+} from "@/lib/floorplanSaveProvision";
 import { floorplanRoomIdToNumeric } from "@/lib/monitoringWorkspace";
 import { Plus, Save, Trash2, UserPlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+
+function mergeRoomNodesFromFloor(
+  shapes: FloorplanRoomShape[],
+  floorRooms: Room[] | null | undefined,
+): FloorplanRoomShape[] {
+  if (!floorRooms?.length) return shapes;
+  const byId = new Map(floorRooms.map((r) => [r.id, r]));
+  return shapes.map((shape) => {
+    const n = resolveLayoutShapeToFloorRoomId(shape, floorRooms);
+    if (n == null) return shape;
+    const row = byId.get(n);
+    if (!row?.node_device_id) return shape;
+    return { ...shape, node_device_id: row.node_device_id };
+  });
+}
 
 function newRoom(): FloorplanRoomShape {
   const id =
@@ -59,6 +82,7 @@ export default function FloorMapWorkspace({
 }: FloorMapWorkspaceProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const layoutEndpoint = useMemo(
     () => {
@@ -182,7 +206,7 @@ export default function FloorMapWorkspace({
 
     const fromLayout = normalizeFloorplanRooms(layoutRes.layout_json);
     if (fromLayout.length > 0) {
-      setRooms(fromLayout);
+      setRooms(mergeRoomNodesFromFloor(fromLayout, floorRooms ?? undefined));
       setFromDbBootstrap(false);
       setSelectedId(null);
       return;
@@ -298,7 +322,13 @@ export default function FloorMapWorkspace({
       }));
   }, [assignPatients, patientAssignSearch, t]);
 
-  const selectedNumericRoomId = selected ? floorplanRoomIdToNumeric(selected.id) : null;
+  const selectedNumericRoomId = useMemo(() => {
+    if (!selected) return null;
+    const refs = (floorRooms ?? []).map((r) => ({ id: r.id, name: r.name }));
+    return (
+      resolveLayoutShapeToFloorRoomId(selected, refs) ?? floorplanRoomIdToNumeric(selected.id)
+    );
+  }, [selected, floorRooms]);
 
   useEffect(() => {
     if (!devicesList.length) return;
@@ -326,11 +356,44 @@ export default function FloorMapWorkspace({
     setSaving(true);
     setMessage(null);
     try {
+      const floorRoomRefs = (floorRooms ?? []).map((r) => ({ id: r.id, name: r.name }));
+      let mergedRefs = floorRoomRefs;
+      let roomsForNormalize = rooms;
+      try {
+        const provisioned = await provisionRoomsForUnmappedFloorplanNodes(
+          (body) => api.post<{ id: number; name: string }>("/rooms", body),
+          rooms,
+          floorRoomRefs,
+          floorId,
+        );
+        mergedRefs = provisioned.mergedRefs;
+        roomsForNormalize = provisioned.workingShapes;
+        if (provisioned.mergedRefs.length > floorRoomRefs.length) {
+          setRooms(provisioned.workingShapes);
+        }
+      } catch (e) {
+        setMessage(e instanceof ApiError ? e.message : t("floorplan.saveFailed"));
+        return;
+      }
+
+      const { shapes: normalizedRooms, idRemap } = normalizeRoomShapeIds(
+        roomsForNormalize,
+        mergedRefs,
+      );
+
+      const skippedNodePatches = normalizedRooms.filter((s) => {
+        const hasNode = s.node_device_id != null && String(s.node_device_id).trim() !== "";
+        if (!hasNode) return false;
+        return resolveLayoutShapeToFloorRoomId(s, mergedRefs) == null;
+      }).length;
+
+      const alignedForLayout = alignFloorplanShapesToRegistryDevices(normalizedRooms, devicesList);
+
       await api.put<FloorplanLayoutResponse>("/floorplans/layout", {
         facility_id: facilityId,
         floor_id: floorId,
         version: FLOORPLAN_LAYOUT_VERSION,
-        rooms: rooms.map((r) => ({
+        rooms: alignedForLayout.map((r) => ({
           id: r.id,
           label: r.label,
           x: canvasUnitsToPercent(r.x),
@@ -338,12 +401,13 @@ export default function FloorMapWorkspace({
           w: canvasUnitsToPercent(r.w),
           h: canvasUnitsToPercent(r.h),
           device_id: r.device_id,
+          node_device_id: r.node_device_id ?? null,
           power_kw: r.power_kw,
         })),
       });
-      const roomNodeUpdates = rooms
+      const roomNodeUpdates = alignedForLayout
         .map((shape) => ({
-          roomId: floorplanRoomIdToNumeric(shape.id),
+          roomId: resolveLayoutShapeToFloorRoomId(shape, mergedRefs),
           nodeDeviceId: shape.node_device_id ?? null,
         }))
         .filter((item): item is { roomId: number; nodeDeviceId: string | null } => item.roomId !== null);
@@ -355,15 +419,22 @@ export default function FloorMapWorkspace({
         ),
       );
       const failedNodePatches = nodePatchResults.filter((result) => result.status === "rejected").length;
+      if (selectedId && idRemap.has(selectedId)) {
+        setSelectedId(idRemap.get(selectedId)!);
+      }
       if (failedNodePatches > 0) {
-        setMessage(`Layout saved, but ${failedNodePatches} room node link(s) could not be updated.`);
+        setMessage(t("floorplan.savedPartialNodeLinks"));
+      } else if (skippedNodePatches > 0) {
+        setMessage(t("floorplan.savedWithUnmappedNodeLinks"));
       } else {
         setMessage(t("floorplan.saved"));
       }
       await refetch();
       setFromDbBootstrap(false);
-    } catch {
-      setMessage(t("floorplan.saveFailed"));
+      await queryClient.invalidateQueries({ queryKey: ["device-detail-drawer", "rooms"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "monitoring", "floor-map", "floor-rooms"] });
+    } catch (err) {
+      setMessage(err instanceof ApiError ? err.message : t("floorplan.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -431,7 +502,13 @@ export default function FloorMapWorkspace({
       {message && (
         <p
           className={`text-sm ${
-            message === t("floorplan.saved") ? "text-primary" : "text-error"
+            [
+              t("floorplan.saved"),
+              t("floorplan.savedPartialNodeLinks"),
+              t("floorplan.savedWithUnmappedNodeLinks"),
+            ].includes(message)
+              ? "text-primary"
+              : "text-error"
           }`}
         >
           {message}

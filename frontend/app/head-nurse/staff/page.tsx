@@ -1,13 +1,15 @@
 "use client";
 "use no memo";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { z } from "zod";
 import { CalendarClock, ClipboardList, Plus, Search, UserCog } from "lucide-react";
+import { HeadNurseStaffMemberSheet } from "@/components/head-nurse/HeadNurseStaffMemberSheet";
+import type { User } from "@/lib/types";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
@@ -95,6 +97,24 @@ function parseRequestError(error: unknown): string {
   return "Request failed.";
 }
 
+function portalUsersLinkedToCaregivers(users: User[]): User[] {
+  return [...users]
+    .filter((u) => typeof u.caregiver_id === "number" && u.caregiver_id > 0)
+    .sort((a, b) => a.username.localeCompare(b.username));
+}
+
+function labelPortalUser(
+  user: User,
+  caregiverById: Map<number, { first_name: string; last_name: string }>,
+): string {
+  const cid = user.caregiver_id;
+  if (cid) {
+    const cg = caregiverById.get(cid);
+    if (cg) return `${cg.first_name} ${cg.last_name}`.trim();
+  }
+  return user.username;
+}
+
 function toIsoDateTime(value: string): string {
   return new Date(value).toISOString();
 }
@@ -106,6 +126,13 @@ export default function HeadNurseStaffPage() {
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
   const [taskError, setTaskError] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [staffSheetOpen, setStaffSheetOpen] = useState(false);
+  const [sheetCaregiver, setSheetCaregiver] = useState<CaregiverRow | null>(null);
+
+  const usersQuery = useQuery({
+    queryKey: ["head-nurse", "staff", "users"],
+    queryFn: () => api.listUsers(),
+  });
 
   const caregiversQuery = useQuery({
     queryKey: ["head-nurse", "staff", "caregivers"],
@@ -236,6 +263,50 @@ export default function HeadNurseStaffPage() {
     [tasksQuery.data],
   );
 
+  const portalUsers = useMemo(() => (usersQuery.data ?? []) as User[], [usersQuery.data]);
+
+  const caregiverById = useMemo(() => {
+    const map = new Map<number, { first_name: string; last_name: string }>();
+    for (const item of caregivers) {
+      map.set(item.id, { first_name: item.first_name, last_name: item.last_name });
+    }
+    return map;
+  }, [caregivers]);
+
+  const assignablePortalUsers = useMemo(
+    () => portalUsersLinkedToCaregivers(portalUsers),
+    [portalUsers],
+  );
+
+  const userById = useMemo(() => {
+    const map = new Map<number, User>();
+    for (const u of portalUsers) map.set(u.id, u);
+    return map;
+  }, [portalUsers]);
+
+  const caregiverIdToUser = useMemo(() => {
+    const map = new Map<number, User>();
+    for (const u of portalUsers) {
+      if (typeof u.caregiver_id === "number" && u.caregiver_id > 0) {
+        map.set(u.caregiver_id, u);
+      }
+    }
+    return map;
+  }, [portalUsers]);
+
+  const assignmentLabel = useCallback(
+    (assignedRole: string | null, assignedUserId: number | null) => {
+      if (assignedRole) return `${t("headNurse.staff.rolePrefix")}${assignedRole}`;
+      if (assignedUserId) {
+        const u = userById.get(assignedUserId);
+        if (u) return labelPortalUser(u, caregiverById);
+        return `${t("headNurse.staff.userPrefix")}${assignedUserId}`;
+      }
+      return t("headNurse.staff.unassigned");
+    },
+    [t, userById, caregiverById],
+  );
+
   const caregiverRows = useMemo<CaregiverRow[]>(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
@@ -289,6 +360,21 @@ export default function HeadNurseStaffPage() {
       }));
   }, [tasks]);
 
+  const linkedUserForSheet = useMemo(() => {
+    if (!sheetCaregiver) return null;
+    return caregiverIdToUser.get(sheetCaregiver.id) ?? null;
+  }, [sheetCaregiver, caregiverIdToUser]);
+
+  const tasksForMemberSheet = useMemo(() => {
+    if (!linkedUserForSheet) return [];
+    return tasks.filter((item) => item.assigned_user_id === linkedUserForSheet.id);
+  }, [tasks, linkedUserForSheet]);
+
+  const schedulesForMemberSheet = useMemo(() => {
+    if (!linkedUserForSheet) return [];
+    return schedules.filter((item) => item.assigned_user_id === linkedUserForSheet.id);
+  }, [schedules, linkedUserForSheet]);
+
   const caregiversColumns = useMemo<ColumnDef<CaregiverRow>[]>(
     () => [
       {
@@ -316,6 +402,23 @@ export default function HeadNurseStaffPage() {
           </Badge>
         ),
       },
+      {
+        id: "workChecklist",
+        header: "",
+        cell: ({ row }) => (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSheetCaregiver(row.original);
+              setStaffSheetOpen(true);
+            }}
+          >
+            {t("headNurse.staff.viewWork")}
+          </Button>
+        ),
+      },
     ],
     [t],
   );
@@ -341,11 +444,7 @@ export default function HeadNurseStaffPage() {
         id: "assignment",
         header: t("clinical.table.assignment"),
         cell: ({ row }) =>
-          row.original.assignedRole
-            ? `${t("headNurse.staff.rolePrefix")}${row.original.assignedRole}`
-            : row.original.assignedUserId
-              ? `${t("headNurse.staff.userPrefix")}${row.original.assignedUserId}`
-              : t("headNurse.staff.unassigned"),
+          assignmentLabel(row.original.assignedRole, row.original.assignedUserId),
       },
       {
         accessorKey: "startsAt",
@@ -358,7 +457,7 @@ export default function HeadNurseStaffPage() {
         ),
       },
     ],
-    [t],
+    [t, assignmentLabel],
   );
 
   const tasksColumns = useMemo<ColumnDef<TaskRow>[]>(
@@ -393,6 +492,15 @@ export default function HeadNurseStaffPage() {
         accessorKey: "status",
         header: t("clinical.table.status"),
         cell: ({ row }) => <Badge variant="outline">{row.original.status}</Badge>,
+      },
+      {
+        id: "assignee",
+        header: t("headNurse.staff.tableAssignee"),
+        cell: ({ row }) => (
+          <span className="text-sm text-foreground">
+            {assignmentLabel(row.original.assignedRole, row.original.assignedUserId)}
+          </span>
+        ),
       },
       {
         accessorKey: "dueAt",
@@ -438,7 +546,7 @@ export default function HeadNurseStaffPage() {
         ),
       },
     ],
-    [pendingTaskId, t, updateTaskMutation],
+    [assignmentLabel, pendingTaskId, t, updateTaskMutation],
   );
 
   const openTaskCount = taskRows.length;
@@ -451,7 +559,11 @@ export default function HeadNurseStaffPage() {
     [scheduleRows],
   );
 
-  const isLoadingAny = caregiversQuery.isLoading || schedulesQuery.isLoading || tasksQuery.isLoading;
+  const isLoadingAny =
+    usersQuery.isLoading ||
+    caregiversQuery.isLoading ||
+    schedulesQuery.isLoading ||
+    tasksQuery.isLoading;
 
   const taskSaveError = taskError ?? (createTaskMutation.error ? parseRequestError(createTaskMutation.error) : null);
   const scheduleSaveError =
@@ -571,7 +683,7 @@ export default function HeadNurseStaffPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Assigned caregiver</Label>
+                  <Label>{t("headNurse.staff.assignPortalUser")}</Label>
                   <Controller
                     control={taskForm.control}
                     name="assignedUserId"
@@ -582,9 +694,9 @@ export default function HeadNurseStaffPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value={EMPTY_SELECT}>Unassigned</SelectItem>
-                          {caregivers.map((caregiver) => (
-                            <SelectItem key={caregiver.id} value={String(caregiver.id)}>
-                              {caregiver.first_name} {caregiver.last_name}
+                          {assignablePortalUsers.map((user) => (
+                            <SelectItem key={user.id} value={String(user.id)}>
+                              {labelPortalUser(user, caregiverById)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -670,7 +782,7 @@ export default function HeadNurseStaffPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Assigned caregiver</Label>
+                <Label>{t("headNurse.staff.assignPortalUser")}</Label>
                 <Controller
                   control={scheduleForm.control}
                   name="assignedUserId"
@@ -681,9 +793,9 @@ export default function HeadNurseStaffPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={EMPTY_SELECT}>Unassigned</SelectItem>
-                        {caregivers.map((caregiver) => (
-                          <SelectItem key={caregiver.id} value={String(caregiver.id)}>
-                            {caregiver.first_name} {caregiver.last_name}
+                        {assignablePortalUsers.map((user) => (
+                          <SelectItem key={user.id} value={String(user.id)}>
+                            {labelPortalUser(user, caregiverById)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -728,6 +840,26 @@ export default function HeadNurseStaffPage() {
         columns={tasksColumns}
         isLoading={isLoadingAny}
         emptyText="No open tasks."
+      />
+
+      <HeadNurseStaffMemberSheet
+        open={staffSheetOpen}
+        onOpenChange={(open) => {
+          setStaffSheetOpen(open);
+          if (!open) setSheetCaregiver(null);
+        }}
+        caregiver={
+          sheetCaregiver
+            ? {
+                id: sheetCaregiver.id,
+                fullName: sheetCaregiver.fullName,
+                role: sheetCaregiver.role,
+              }
+            : null
+        }
+        linkedUser={linkedUserForSheet}
+        tasksForUser={tasksForMemberSheet}
+        schedulesForUser={schedulesForMemberSheet}
       />
     </div>
   );

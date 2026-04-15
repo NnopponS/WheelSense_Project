@@ -31,6 +31,7 @@ class FloorplanPresencePatientHint(BaseModel):
     last_name: str
     nickname: str = ""
     source: str
+    photo_url: Optional[str] = None
 
 
 class RoomOccupantOut(BaseModel):
@@ -45,6 +46,7 @@ class RoomOccupantOut(BaseModel):
     room_id: Optional[int] = None
     source: str
     updated_at: Optional[datetime] = None
+    photo_url: Optional[str] = None
 
 
 class FloorplanPresencePredictionHint(BaseModel):
@@ -118,6 +120,7 @@ class FloorplanRoomShape(BaseModel):
     w: float = Field(gt=0, le=100)
     h: float = Field(gt=0, le=100)
     device_id: Optional[int] = None
+    node_device_id: Optional[str] = Field(default=None, max_length=128)
     power_kw: Optional[float] = Field(default=None, ge=0)
 
 

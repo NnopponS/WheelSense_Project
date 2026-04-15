@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
+"use client";
 
-/** Legacy URL: shift checklist is now per staff under Personnel → staff → "Shift checklist & calendar". */
-export default function AdminShiftChecklistsRedirectPage() {
-  redirect("/admin/personnel");
+import { ShiftChecklistWorkspaceClient } from "@/components/shift-checklist/ShiftChecklistWorkspaceClient";
+
+export default function AdminShiftChecklistsPage() {
+  return <ShiftChecklistWorkspaceClient />;
 }

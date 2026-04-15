@@ -11,11 +11,9 @@ import {
   Users,
   MapPin,
   Tablet,
-  Activity,
   MessageSquare,
   Bug,
   Inbox,
-  LayoutGrid,
   ClipboardEdit,
 } from "lucide-react";
 import type { Capability } from "./permissions";
@@ -34,6 +32,16 @@ export interface NavItem {
   badge?: "alerts" | "tasks" | "messages" | "devices";
   /** Additional path prefixes that should mark this nav item as active */
   activeForPaths?: string[];
+  /**
+   * When pathname matches this item's href base (no query), require this query param
+   * (e.g. hub tab on `/patient?tab=support`).
+   */
+  activeWhenQueryMatch?: { param: string; value: string };
+  /**
+   * When pathname matches the role root exactly, suppress active if query param matches
+   * (e.g. patient dashboard vs Support both use `/patient`).
+   */
+  inactiveWhenQueryMatch?: { param: string; value: string };
 }
 
 export interface NavGroup {
@@ -54,7 +62,11 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
   admin: [
     {
       items: [
-        { key: "nav.dashboard", href: "/admin", icon: LayoutDashboard },
+        {
+          key: "nav.dashboard",
+          href: "/admin",
+          icon: LayoutDashboard,
+        },
         {
           key: "nav.personnel",
           href: "/admin/personnel",
@@ -73,7 +85,6 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           href: "/admin/facility-management",
           icon: MapPin,
           requiredCapability: "facilities.read",
-          activeForPaths: ["/admin/monitoring"],
         },
         {
           key: "nav.settings",
@@ -96,16 +107,15 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
   head_nurse: [
     {
       items: [
-        { key: "nav.dashboard", href: "/head-nurse", icon: LayoutDashboard },
         {
-          key: "nav.monitoring",
-          href: "/head-nurse/monitoring",
-          icon: Activity,
-          activeForPaths: ["/head-nurse/floorplans", "/head-nurse/alerts", "/head-nurse/reports"],
+          key: "nav.dashboard",
+          href: "/head-nurse",
+          icon: LayoutDashboard,
           badge: "alerts",
+          activeForPaths: ["/head-nurse/floorplans", "/head-nurse/alerts", "/head-nurse/reports"],
         },
         {
-          key: "nav.patients",
+          key: "nav.personnel",
           href: "/head-nurse/patients",
           icon: Users,
           requiredCapability: "patients.read",
@@ -134,15 +144,14 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
     },
   ],
 
-  /** Supervisor role — 5 items (down from 11) */
+  /** Supervisor role — 6 primary nav items */
   supervisor: [
     {
       items: [
-        { key: "nav.dashboard", href: "/supervisor", icon: LayoutDashboard },
         {
-          key: "nav.monitoring",
-          href: "/supervisor/monitoring",
-          icon: LayoutGrid,
+          key: "nav.dashboard",
+          href: "/supervisor",
+          icon: LayoutDashboard,
           activeForPaths: ["/supervisor/emergency", "/supervisor/floorplans"],
         },
         {
@@ -154,10 +163,20 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
         },
         {
           key: "nav.workflow",
-          href: "/supervisor/workflow",
+          href: "/supervisor/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
-          activeForPaths: ["/supervisor/calendar", "/supervisor/directives"],
+          activeForPaths: [
+            "/supervisor/workflow",
+            "/supervisor/calendar",
+            "/supervisor/directives",
+          ],
+        },
+        {
+          key: "nav.messages",
+          href: "/supervisor/messages",
+          icon: Inbox,
+          requiredCapability: "messages.manage",
         },
         { key: "nav.support", href: "/supervisor/support", icon: Bug },
         { key: "nav.settings", href: "/supervisor/settings", icon: Settings },
@@ -169,11 +188,10 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
   observer: [
     {
       items: [
-        { key: "nav.dashboard", href: "/observer", icon: LayoutDashboard },
         {
-          key: "nav.monitoring",
-          href: "/observer/monitoring",
-          icon: Activity,
+          key: "nav.dashboard",
+          href: "/observer",
+          icon: LayoutDashboard,
           activeForPaths: ["/observer/devices", "/observer/floorplans"],
         },
         {
@@ -195,17 +213,28 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           ],
           badge: "alerts",
         },
+        {
+          key: "nav.messages",
+          href: "/observer/messages",
+          icon: Inbox,
+          requiredCapability: "messages.manage",
+        },
         { key: "nav.support", href: "/observer/support", icon: Bug },
         { key: "nav.settings", href: "/observer/settings", icon: Settings },
       ],
     },
   ],
 
-  /** Patient role — 4 items (down from 8) */
+  /** Patient role — hub dashboard + care + messages + support + settings */
   patient: [
     {
       items: [
-        { key: "nav.dashboard", href: "/patient", icon: LayoutDashboard },
+        {
+          key: "nav.dashboard",
+          href: "/patient",
+          icon: LayoutDashboard,
+          inactiveWhenQueryMatch: { param: "tab", value: "support" },
+        },
         {
           key: "nav.myCare",
           href: "/patient/schedule",
@@ -217,8 +246,18 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           href: "/patient/messages",
           icon: MessageSquare,
         },
-        { key: "nav.support", href: "/patient/support", icon: Bug },
-        { key: "nav.settings", href: "/patient/settings", icon: Settings },
+        {
+          key: "nav.support",
+          href: "/patient?tab=support",
+          icon: Bug,
+          activeWhenQueryMatch: { param: "tab", value: "support" },
+        },
+        {
+          key: "nav.settings",
+          href: "/patient/settings",
+          icon: Settings,
+          activeForPaths: ["/account"],
+        },
       ],
     },
   ],

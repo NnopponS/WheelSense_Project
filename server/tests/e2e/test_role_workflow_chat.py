@@ -105,7 +105,8 @@ async def test_cross_role_workflow_and_audit_permissions(
     assert any(e["domain"] == "directive" for e in supervisor_audit.json())
 
     observer_audit = await client.get("/api/workflow/audit", headers=observer_headers)
-    assert observer_audit.status_code == 403
+    assert observer_audit.status_code == 200
+    assert isinstance(observer_audit.json(), list)
 
 
 @pytest.mark.asyncio

@@ -163,7 +163,7 @@ export default function SupervisorDashboardPage() {
             <Link href="/supervisor/patients">{t("nav.patients")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/supervisor/workflow">{t("supervisor.page.workflowLink")}</Link>
+            <Link href="/supervisor/tasks">{t("supervisor.page.workflowLink")}</Link>
           </Button>
           <Button asChild size="sm">
             <Link href="/supervisor/monitoring">
@@ -257,7 +257,7 @@ export default function SupervisorDashboardPage() {
 
       {/* Zone Map & Directives Grid */}
       <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
-        <DashboardFloorplanPanel className="min-w-0" openHref="/supervisor/monitoring" />
+        <DashboardFloorplanPanel className="min-w-0" />
 
         {/* Directives */}
         <Card className="border-border/70">
@@ -330,7 +330,7 @@ export default function SupervisorDashboardPage() {
             <CardDescription>{t("supervisor.page.taskQueueDesc")}</CardDescription>
           </div>
           <Button asChild size="sm" variant="ghost">
-            <Link href="/supervisor/workflow">
+            <Link href="/supervisor/tasks">
               {t("supervisor.page.viewAll")}
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>

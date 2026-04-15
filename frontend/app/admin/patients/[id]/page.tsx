@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useId, useMemo } from "react";
+import { useEffect, useState, useCallback, useId, useMemo, type ChangeEvent } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
@@ -46,6 +46,7 @@ import { AgendaView } from "@/components/calendar/AgendaView";
 import { ScheduleForm } from "@/components/calendar/ScheduleForm";
 import { schedulesToCalendarEvents } from "@/components/calendar/scheduleEventMapper";
 import type { CareScheduleOut } from "@/lib/api/task-scope-types";
+import { imageFileToResizedSquareJpegBlob, looksLikeImageFile } from "@/lib/profileImageProcess";
 
 function caregiverSearchText(c: Caregiver): string {
   return [
@@ -146,6 +147,7 @@ export default function PatientDetailPage() {
   const nowMs = useFixedNowMs();
   const staffSearchInputId = useId();
   const staffSearchListboxId = useId();
+  const patientPhotoInputId = useId();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [contacts, setContacts] = useState<PatientContact[]>([]);
   const [roomDetail, setRoomDetail] = useState<Room | null>(null);
@@ -202,6 +204,8 @@ export default function PatientDetailPage() {
   const [scheduleFormOpen, setScheduleFormOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<CareScheduleOut | null>(null);
   const [schedulePickerDate, setSchedulePickerDate] = useState<Date | undefined>();
+  const [patientPhotoBusy, setPatientPhotoBusy] = useState(false);
+  const [patientPhotoErr, setPatientPhotoErr] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -334,6 +338,53 @@ export default function PatientDetailPage() {
   const canManageSchedules = Boolean(authUser && hasCapability(authUser.role, "workflow.manage"));
   const canManageAccounts = Boolean(authUser && hasCapability(authUser.role, "users.manage"));
   const canEditPatient = Boolean(authUser && hasCapability(authUser.role, "patients.manage"));
+
+  const onPickPatientPhoto = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !patient) return;
+      if (!canEditPatient) return;
+      if (!looksLikeImageFile(file)) {
+        setPatientPhotoErr(t("profile.avatar.errorFileType"));
+        return;
+      }
+      setPatientPhotoBusy(true);
+      setPatientPhotoErr(null);
+      try {
+        const blob = await imageFileToResizedSquareJpegBlob(file);
+        const fd = new FormData();
+        fd.append("file", blob, "avatar.jpg");
+        const updated = await api.postForm<Patient>(`/patients/${patient.id}/profile-image`, fd);
+        setPatient(updated);
+        await fetchData();
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404 && e.message === "Not Found") {
+          setPatientPhotoErr(t("profile.avatar.errorUploadEndpointMissing"));
+        } else {
+          setPatientPhotoErr(e instanceof ApiError ? e.message : t("profile.avatar.errorUpload"));
+        }
+      } finally {
+        setPatientPhotoBusy(false);
+        event.target.value = "";
+      }
+    },
+    [patient, canEditPatient, fetchData, t],
+  );
+
+  const onRemovePatientPhoto = useCallback(async () => {
+    if (!patient || !canEditPatient) return;
+    setPatientPhotoBusy(true);
+    setPatientPhotoErr(null);
+    try {
+      const updated = await api.patch<Patient>(`/patients/${patient.id}`, { photo_url: "" });
+      setPatient(updated);
+      await fetchData();
+    } catch (e) {
+      setPatientPhotoErr(e instanceof ApiError ? e.message : t("profile.avatar.errorUpload"));
+    } finally {
+      setPatientPhotoBusy(false);
+    }
+  }, [patient, canEditPatient, fetchData, t]);
 
   const schedulesQuery = useQuery({
     queryKey: ["admin", "patient-detail", "schedules", id],
@@ -660,24 +711,68 @@ export default function PatientDetailPage() {
             ) : null}
             {cardErrors.about ? <p className="mb-3 text-sm text-error">{cardErrors.about}</p> : null}
             <div className="flex flex-col sm:flex-row gap-5">
-              <div className="relative w-full sm:w-40 aspect-[4/5] rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-end justify-start overflow-hidden shrink-0 border border-outline-variant/20">
-                <span className="absolute bottom-2 left-2 text-[10px] font-mono font-semibold text-foreground/90 bg-black/35 px-2 py-0.5 rounded">
-                  {t("patients.detailPatientId")} #{patient.id}
-                </span>
-                {patientPhotoUrl ? (
-                  <Image
-                    src={patientPhotoUrl}
-                    alt={`${patient.first_name} ${patient.last_name}`}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-primary/40">
-                    {patient.first_name?.[0]}
-                    {patient.last_name?.[0]}
+              <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
+                <div className="relative w-full sm:w-40 aspect-[4/5] rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-end justify-start overflow-hidden border border-outline-variant/20">
+                  {canEditPatient ? (
+                    <label
+                      htmlFor={patientPhotoInputId}
+                      className={`absolute inset-0 z-[5] cursor-pointer ${patientPhotoBusy ? "pointer-events-none" : ""}`}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  <span className="absolute bottom-2 left-2 z-10 text-[10px] font-mono font-semibold text-foreground/90 bg-black/35 px-2 py-0.5 rounded">
+                    {t("patients.detailPatientId")} #{patient.id}
+                  </span>
+                  {canEditPatient && patientPhotoUrl ? (
+                    <div className="absolute top-2 right-2 z-10">
+                      <button
+                        type="button"
+                        className="rounded-lg bg-black/45 px-2 py-1 text-[10px] font-semibold text-white hover:bg-black/60 disabled:opacity-50"
+                        disabled={patientPhotoBusy}
+                        onClick={() => void onRemovePatientPhoto()}
+                      >
+                        {t("profile.avatar.removePhoto")}
+                      </button>
+                    </div>
+                  ) : null}
+                  {patientPhotoUrl ? (
+                    <Image
+                      src={patientPhotoUrl}
+                      alt={`${patient.first_name} ${patient.last_name}`}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-primary/40">
+                      {patient.first_name?.[0]}
+                      {patient.last_name?.[0]}
+                    </div>
+                  )}
+                </div>
+                {canEditPatient ? (
+                  <div className="w-full sm:w-40">
+                    <label
+                      htmlFor={patientPhotoInputId}
+                      className="mb-1 block text-xs text-foreground-variant"
+                    >
+                      {t("profile.avatar.localFileLabel")}
+                    </label>
+                    <input
+                      id={patientPhotoInputId}
+                      type="file"
+                      accept="image/*"
+                      disabled={patientPhotoBusy}
+                      onChange={(e) => void onPickPatientPhoto(e)}
+                      className="block w-full min-w-0 cursor-pointer text-xs text-foreground file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
                   </div>
-                )}
+                ) : null}
+                {patientPhotoErr ? (
+                  <p className="max-w-[min(100%,20rem)] text-xs text-destructive" role="alert">
+                    {patientPhotoErr}
+                  </p>
+                ) : null}
               </div>
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl font-bold text-foreground">

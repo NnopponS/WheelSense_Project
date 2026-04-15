@@ -2257,13 +2257,23 @@ async def update_service_request(request_id: int, status: str, resolution_note: 
 @mcp.tool(name="get_my_shift_checklist", description="Get the shift checklist for the current user for today.",
           annotations=mcp_types.ToolAnnotations(title="Get My Shift Checklist", readOnlyHint=True))
 async def get_my_shift_checklist(shift_date: str | None = None) -> dict[str, Any]:
-    from datetime import date, datetime
+    from datetime import date
     actor = require_actor_context()
     today = date.fromisoformat(shift_date) if shift_date else date.today()
     async with AsyncSessionLocal() as db:
+        template = await shift_checklist_service.get_template_for_user(
+            db, actor.workspace_id, actor.user_id
+        )
         state = await shift_checklist_service.get_me(db, actor.workspace_id, actor.user_id, today)
-        items = state.items if state else []
-        return {"shift_date": str(today), "items": items, "percent_complete": sum(1 for i in items if i.get("checked")) * 100 // max(len(items), 1)}
+        raw = state.items if state else []
+        merged = shift_checklist_service.merge_template_with_state(template, raw)
+        items_out = [m.model_dump() for m in merged]
+        pct = (
+            int(round(100 * sum(1 for i in merged if i.checked) / len(merged)))
+            if merged
+            else 0
+        )
+        return {"shift_date": str(today), "items": items_out, "percent_complete": pct}
 
 
 @mcp.tool(name="update_my_shift_checklist", description="Update shift checklist items for the current user.",
@@ -2275,7 +2285,16 @@ async def update_my_shift_checklist(items: list[dict[str, Any]], shift_date: str
     today = date.fromisoformat(shift_date) if shift_date else date.today()
     parsed = [ShiftChecklistItem(**i) for i in items]
     async with AsyncSessionLocal() as db:
-        state = await shift_checklist_service.upsert_me(db, actor.workspace_id, actor.user_id, today, parsed)
+        template = await shift_checklist_service.get_template_for_user(
+            db, actor.workspace_id, actor.user_id
+        )
+        try:
+            validated = shift_checklist_service.validate_put_against_template(template, parsed)
+        except ValueError as exc:
+            raise PermissionError(str(exc)) from exc
+        state = await shift_checklist_service.upsert_me(
+            db, actor.workspace_id, actor.user_id, today, validated
+        )
         await db.commit()
         return {"shift_date": str(today), "items": state.items, "updated": True}
 

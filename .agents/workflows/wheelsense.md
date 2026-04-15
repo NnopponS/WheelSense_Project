@@ -59,6 +59,8 @@ select(Model).where(Model.workspace_id == ws.id)
 
 Patient accounts (`role=patient`) must not receive workspace-wide device registry reads unless the route explicitly filters to their active `PatientDeviceAssignment` rows (see `GET /api/devices` and `GET /api/devices/{device_id}`).
 
+Registry **delete** (`DELETE /api/devices/{device_id}`) is workspace-scoped and restricted to the same device-manager roles as create/patch (`admin`, `head_nurse`); it is separate from Home Assistant device deletion under `/api/ha/devices/*`.
+
 ### AI settings and provider pattern
 
 - treat backend AI settings endpoints as runtime truth for provider/model state
@@ -138,6 +140,11 @@ For current frontend standardization work, prefer:
 - Keep the distinction explicit in docs: canonical room assignment is `Patient.room_id`; `/api/floorplans/presence` is a live projection that may combine assignment, prediction telemetry (`RoomPrediction`), and optional manual staff presence.
 - Update `server/AGENTS.md`, `server/docs/RUNBOOK.md`, and `frontend/README.md` together when this behavior changes.
 
+**Floorplan layout save** — when changing `PUT /api/floorplans/layout`, `FloorplansPanel`, or `FloorMapWorkspace`:
+
+- Backend validates optional per-shape `device_id` (registry PK, unique in the payload). Room rows use `PATCH /api/rooms/{id}` for `node_device_id` (string); `POST /api/rooms` does not require the node to exist in the device registry.
+- Web editors use `alignFloorplanShapesToRegistryDevices` (`frontend/lib/floorplanSaveProvision.ts`) before PUT. Keep `ARCHITECTURE.md`, `server/AGENTS.md`, and `frontend/README.md` aligned when this contract or the save pipeline changes.
+
 ## Docker And Runtime Verification
 
 **Mock / simulator stack** (pre-seeded DB + MQTT simulator; same images as prod entry):
@@ -170,7 +177,7 @@ cd server
 docker compose -f docker-compose.yml -f docker-compose.no-web.yml up -d
 ```
 
-Synthetic MQTT (`wheelsense-simulator`) is opt-in: `docker compose --profile simulator up -d` runs `seed_sim_team.py` inside the simulator container before `sim_controller.py` (see `server/docs/RUNBOOK.md`). Optional `SIM_WORKSPACE_ID` in `.env` pins the workspace.
+Synthetic MQTT (`wheelsense-simulator`) is opt-in: `docker compose --profile simulator up -d` runs `seed_sim_team.py` inside the simulator container before `sim_controller.py` (see `server/docs/RUNBOOK.md`). Optional `SIM_WORKSPACE_ID` in `.env` pins the workspace. After the workspace already has devices or patients, the seed step **skips** unless `SIM_FORCE_SEED=1` (see `server/docs/ENV.md`) so admin registry deletes are not reverted on every restart.
 
 ## Testing
 
@@ -223,6 +230,10 @@ Do not treat `HANDOFF.md` as canonical documentation; it is session state.
 
 ## Current Memory
 
+- **Workflow role messages:** support **image/PDF attachments** (pending upload → `pending_attachment_ids` on send), download, and **delete** with sender/recipient/admin policy; `role_messages.attachments` JSON in DB. See `server/AGENTS.md` § `/api/workflow` and `server/app/services/workflow_message_attachments.py`.
+- **Admin personnel:** add staff/patient dialogs allow **directory-only** creation with optional **Create login** (`POST /api/users` only when toggled).
+- **Shift checklist workspace:** `/admin/shift-checklists` and head-nurse workspace use **`ShiftChecklistWorkspaceClient`**; **admin** / **head_nurse** row click opens **`HeadNurseStaffMemberSheet`** for per-user template edit.
+- **Supervisor workflow hub + Operations Console i18n:** `/supervisor/workflow` hub tab labels use **`supervisor.workflow.hubTab*`**; console chrome/reports use **`workflow.console.*`** in `frontend/lib/i18n.tsx` (EN/TH).
 - The misleading public `/api/future/*` namespace has been removed from runtime routing.
 - `GET /api/workflow/messaging/recipients` is no longer patient-only; it now allows all authenticated roles and returns staff-user recipients for user-targeted compose surfaces.
 - Facility/floor read endpoints (`/api/facilities`, `/api/facilities/{id}/floors`) allow observer read access so shared floorplan viewers can load role-appropriate metadata without 403 churn.
@@ -234,6 +245,7 @@ Do not treat `HANDOFF.md` as canonical documentation; it is session state.
 - Admin route ownership is now clearer:
   - `/admin/audit` is canonical
   - `/admin/messages` is a real workflow-backed page
+  - `/supervisor/messages` is the supervisor workflow inbox (same `/api/workflow/messages` contract as head nurse); `staffMessagesPath(supervisor)` → `/supervisor/messages`
   - `/admin/facility-management` is canonical
   - `/admin/facilities`, `/admin/floorplans`, and `/admin/audit-log` are compatibility redirects
 - `demo-control` remains intentionally hidden from the sidebar unless a future task adds an explicit environment gate.

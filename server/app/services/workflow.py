@@ -32,6 +32,10 @@ from app.schemas.workflow import (
     RoleMessageCreate,
 )
 from app.services.base import CRUDBase
+from app.services.workflow_message_attachments import (
+    delete_attachment_files,
+    finalize_pending_attachments,
+)
 
 CANONICAL_WORKFLOW_ROLES = {"admin", "head_nurse", "supervisor", "observer", "patient"}
 CANONICAL_WORKFLOW_ITEM_TYPES = {"task", "schedule", "directive"}
@@ -830,6 +834,32 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         await enrich_task_people(session, ws_id, [task])
         return task
 
+def _user_can_access_message_row(
+    message: RoleMessage, user_id: int, user_role: str
+) -> bool:
+    return (
+        message.sender_user_id == user_id
+        or message.recipient_user_id == user_id
+        or (
+            message.recipient_user_id is None
+            and message.recipient_role is not None
+            and message.recipient_role == user_role
+        )
+    )
+
+
+def _user_can_delete_message_row(
+    message: RoleMessage, user_id: int, user_role: str
+) -> bool:
+    if user_role in ("admin", "head_nurse"):
+        return True
+    if message.sender_user_id == user_id:
+        return True
+    if message.recipient_user_id is not None and message.recipient_user_id == user_id:
+        return True
+    return False
+
+
 class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCreate]):
     async def send_message(
         self, session: AsyncSession, ws_id: int, sender_user_id: int, obj_in: RoleMessageCreate
@@ -868,9 +898,20 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
             workflow_item_id=obj_in.workflow_item_id,
             subject=obj_in.subject,
             body=obj_in.body,
+            attachments=[],
         )
         session.add(db_obj)
         await session.flush()
+        if obj_in.pending_attachment_ids:
+            finalized = finalize_pending_attachments(
+                workspace_id=ws_id,
+                user_id=sender_user_id,
+                message_id=db_obj.id,
+                pending_ids=obj_in.pending_attachment_ids,
+            )
+            db_obj.attachments = finalized
+            session.add(db_obj)
+            await session.flush()
         await audit_trail_service.log_event(
             session,
             ws_id,
@@ -885,6 +926,7 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
                 "recipient_user_id": db_obj.recipient_user_id,
                 "workflow_item_type": db_obj.workflow_item_type,
                 "workflow_item_id": db_obj.workflow_item_id,
+                "attachment_count": len(db_obj.attachments or []),
             },
         )
         await session.commit()
@@ -954,6 +996,30 @@ class RoleMessageService(CRUDBase[RoleMessage, RoleMessageCreate, RoleMessageCre
         await session.refresh(message)
         await enrich_message_people(session, ws_id, [message])
         return message
+
+    async def delete_message(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        user_id: int,
+        user_role: str,
+        message_id: int,
+    ) -> bool:
+        message = await self.get(session, ws_id=ws_id, id=message_id)
+        if not message:
+            return False
+        if not _user_can_delete_message_row(message, user_id, user_role):
+            raise HTTPException(status_code=403, detail="Operation not permitted")
+        delete_attachment_files(message.attachments if message.attachments else [])
+        await session.delete(message)
+        await session.commit()
+        return True
+
+    def user_can_read_message_attachment(
+        self, message: RoleMessage, user_id: int, user_role: str
+    ) -> bool:
+        return _user_can_access_message_row(message, user_id, user_role)
 
 class HandoverNoteService(CRUDBase[HandoverNote, HandoverNoteCreate, HandoverNoteCreate]):
     async def create_note(

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { hasCapability, type AppRole } from "@/lib/permissions";
@@ -59,6 +59,7 @@ function NavSkeleton() {
  */
 export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: RoleSidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, logout } = useAuth();
   const { t } = useTranslation();
@@ -78,11 +79,24 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
   function isActive(item: NavItem): boolean {
     if (item.activeForPaths?.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
     const base = item.href.split("?")[0];
+
+    if (item.activeWhenQueryMatch) {
+      const { param, value } = item.activeWhenQueryMatch;
+      if (!(pathname === base || pathname.startsWith(`${base}/`))) return false;
+      return searchParams.get(param) === value;
+    }
+
     const rolePath = user?.role ? user.role.replaceAll("_", "-") : "";
     const isRoleRoot =
       base === `/${rolePath}` ||
       (user?.role === "admin" && base === "/admin");
-    if (isRoleRoot) return pathname === base;
+    if (isRoleRoot) {
+      if (item.inactiveWhenQueryMatch && pathname === base) {
+        const { param, value } = item.inactiveWhenQueryMatch;
+        if (searchParams.get(param) === value) return false;
+      }
+      return pathname === base;
+    }
     return pathname === base || pathname.startsWith(`${base}/`);
   }
 

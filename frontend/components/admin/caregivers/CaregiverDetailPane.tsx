@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "@/lib/i18n";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
@@ -45,6 +45,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { hasCapability } from "@/lib/permissions";
 import { formatStaffRoleLabel } from "@/lib/staffRoleLabel";
+import { imageFileToResizedSquareJpegBlob, looksLikeImageFile } from "@/lib/profileImageProcess";
 
 type Props = {
   caregiver: Caregiver;
@@ -757,6 +758,7 @@ export default function CaregiverDetailPane({
         hasCapability(user.role, "caregivers.manage")),
   );
   const canManageAccounts = Boolean(user && hasCapability(user.role, "users.manage"));
+  const canEditCaregiverPhoto = Boolean(user && hasCapability(user.role, "patients.manage"));
   /** Ward-lead directory: useful for observers/supervisors and for head-nurse peer lookup (excludes self below). */
   const showHeadNurseGuide =
     caregiver.role === "observer" ||
@@ -868,6 +870,9 @@ export default function CaregiverDetailPane({
   const [contactEditing, setContactEditing] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [caregiverPhotoBusy, setCaregiverPhotoBusy] = useState(false);
+  const [caregiverPhotoErr, setCaregiverPhotoErr] = useState<string | null>(null);
+  const caregiverPhotoInputId = useId();
   const [profileDraft, setProfileDraft] = useState({
     first_name: caregiver.first_name ?? "",
     last_name: caregiver.last_name ?? "",
@@ -909,6 +914,7 @@ export default function CaregiverDetailPane({
       email: caregiver.email ?? "",
     });
     setProfileError(null);
+    setCaregiverPhotoErr(null);
     setAboutEditing(false);
     setContactEditing(false);
   }, [caregiver]);
@@ -1193,6 +1199,50 @@ export default function CaregiverDetailPane({
     }
   }
 
+  const onPickCaregiverPhoto = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !canEditCaregiverPhoto) return;
+      if (!looksLikeImageFile(file)) {
+        setCaregiverPhotoErr(t("profile.avatar.errorFileType"));
+        return;
+      }
+      setCaregiverPhotoBusy(true);
+      setCaregiverPhotoErr(null);
+      try {
+        const blob = await imageFileToResizedSquareJpegBlob(file);
+        const fd = new FormData();
+        fd.append("file", blob, "avatar.jpg");
+        const updated = await api.postForm<Caregiver>(`/caregivers/${caregiver.id}/profile-image`, fd);
+        onCaregiverUpdated?.(updated);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404 && e.message === "Not Found") {
+          setCaregiverPhotoErr(t("profile.avatar.errorUploadEndpointMissing"));
+        } else {
+          setCaregiverPhotoErr(e instanceof ApiError ? e.message : t("profile.avatar.errorUpload"));
+        }
+      } finally {
+        setCaregiverPhotoBusy(false);
+        event.target.value = "";
+      }
+    },
+    [canEditCaregiverPhoto, caregiver.id, onCaregiverUpdated, t],
+  );
+
+  const onRemoveCaregiverPhoto = useCallback(async () => {
+    if (!canEditCaregiverPhoto) return;
+    setCaregiverPhotoBusy(true);
+    setCaregiverPhotoErr(null);
+    try {
+      const updated = await api.patch<Caregiver>(`/caregivers/${caregiver.id}`, { photo_url: "" });
+      onCaregiverUpdated?.(updated);
+    } catch (e) {
+      setCaregiverPhotoErr(e instanceof ApiError ? e.message : t("profile.avatar.errorUpload"));
+    } finally {
+      setCaregiverPhotoBusy(false);
+    }
+  }, [canEditCaregiverPhoto, caregiver.id, onCaregiverUpdated, t]);
+
   return (
     <div className="w-full space-y-6" aria-labelledby="caregiver-detail-heading">
       <Tabs
@@ -1246,23 +1296,68 @@ export default function CaregiverDetailPane({
               )}
             </div>
             <div className="flex flex-col gap-5 sm:flex-row">
-              <div className="relative flex aspect-[4/5] w-full shrink-0 items-end justify-start overflow-hidden rounded-xl border border-outline-variant/20 bg-gradient-to-br from-primary/20 to-primary/5 sm:w-40">
-                <span className="absolute bottom-2 left-2 rounded bg-black/35 px-2 py-0.5 font-mono text-[10px] font-semibold text-foreground/90">
-                  Staff #{caregiver.id}
-                </span>
-                {caregiverPhotoUrl ? (
-                  <Image
-                    src={caregiverPhotoUrl}
-                    alt={fullName || `Staff #${caregiver.id}`}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-primary/40">
-                    {(caregiver.first_name?.[0] || caregiver.last_name?.[0] || "S").toUpperCase()}
+              <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
+                <div className="relative flex aspect-[4/5] w-full items-end justify-start overflow-hidden rounded-xl border border-outline-variant/20 bg-gradient-to-br from-primary/20 to-primary/5 sm:w-40">
+                  {canEditCaregiverPhoto ? (
+                    <label
+                      htmlFor={caregiverPhotoInputId}
+                      className={`absolute inset-0 z-[5] cursor-pointer ${caregiverPhotoBusy ? "pointer-events-none" : ""}`}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  <span className="absolute bottom-2 left-2 z-10 rounded bg-black/35 px-2 py-0.5 font-mono text-[10px] font-semibold text-foreground/90">
+                    Staff #{caregiver.id}
+                  </span>
+                  {canEditCaregiverPhoto && caregiverPhotoUrl ? (
+                    <div className="absolute top-2 right-2 z-10">
+                      <button
+                        type="button"
+                        className="rounded-lg bg-black/45 px-2 py-1 text-[10px] font-semibold text-white hover:bg-black/60 disabled:opacity-50"
+                        disabled={caregiverPhotoBusy}
+                        onClick={() => void onRemoveCaregiverPhoto()}
+                      >
+                        {t("profile.avatar.removePhoto")}
+                      </button>
+                    </div>
+                  ) : null}
+                  {caregiverPhotoUrl ? (
+                    <Image
+                      src={caregiverPhotoUrl}
+                      alt={fullName || `Staff #${caregiver.id}`}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-primary/40">
+                      {caregiver.first_name?.[0]}
+                      {caregiver.last_name?.[0]}
+                    </div>
+                  )}
+                </div>
+                {canEditCaregiverPhoto ? (
+                  <div className="w-full sm:w-40">
+                    <label
+                      htmlFor={caregiverPhotoInputId}
+                      className="mb-1 block text-xs text-foreground-variant"
+                    >
+                      {t("profile.avatar.localFileLabel")}
+                    </label>
+                    <input
+                      id={caregiverPhotoInputId}
+                      type="file"
+                      accept="image/*"
+                      disabled={caregiverPhotoBusy}
+                      onChange={(e) => void onPickCaregiverPhoto(e)}
+                      className="block w-full min-w-0 cursor-pointer text-xs text-foreground file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
                   </div>
-                )}
+                ) : null}
+                {caregiverPhotoErr ? (
+                  <p className="max-w-[min(100%,20rem)] text-xs text-destructive" role="alert">
+                    {caregiverPhotoErr}
+                  </p>
+                ) : null}
               </div>
               <div className="min-w-0 flex-1">
                 <h1

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { percentToCanvasUnits, type FloorplanRoomShape } from "@/lib/floorplanLayout";
@@ -18,6 +19,10 @@ export type FloorplanRoomMeta = {
   detailLines?: string[];
   tone?: FloorplanRoomTone;
   presenceDots?: string[];
+  /** Same length as presenceDots when set: profile links for map initials */
+  presenceHrefs?: (string | null)[];
+  /** Same length as presenceDots: hosted profile image URL or null (initials fallback) */
+  presenceAvatarUrls?: (string | null)[];
 };
 
 const CANVAS_BASE_VIEW = 1000;
@@ -61,6 +66,26 @@ function initialsFromPresenceLabel(value: string): string {
     return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
   }
   return (parts[0]?.slice(0, 2) ?? "?").toUpperCase();
+}
+
+function PresenceFace({ label, avatarUrl }: { label: string; avatarUrl: string | null }) {
+  const [broken, setBroken] = useState(false);
+  const trimmed = avatarUrl?.trim() ?? "";
+  const showImg = trimmed.length > 0 && !broken;
+  if (showImg) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- same-origin /api/public profile paths
+      <img
+        src={trimmed}
+        alt=""
+        width={20}
+        height={20}
+        className="h-5 w-5 rounded-full object-cover border border-white/80"
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+  return <span className="leading-none">{initialsFromPresenceLabel(label)}</span>;
 }
 
 /** One-time camera: frame all rooms with padding (matches admin floorplan editor UX vs full 5000 canvas). */
@@ -463,6 +488,8 @@ export default function FloorplanCanvas({
             const chips = meta?.chips?.slice(0, compact ? 2 : 3) ?? [];
             const detail = meta?.detailLines?.[0] ?? null;
             const presenceDots = meta?.presenceDots?.slice(0, compact ? 2 : 3) ?? [];
+            const presenceHrefs = meta?.presenceHrefs?.slice(0, compact ? 2 : 3) ?? [];
+            const presenceAvatarUrls = meta?.presenceAvatarUrls?.slice(0, compact ? 2 : 3) ?? [];
 
             return (
               <g
@@ -509,15 +536,33 @@ export default function FloorplanCanvas({
                     <div className="space-y-1">
                       {presenceDots.length > 0 ? (
                         <div className="flex flex-wrap items-center gap-1">
-                          {presenceDots.map((label) => (
-                            <span
-                              key={`${room.id}-presence-${label}`}
-                              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/80 bg-slate-900/80 text-[8px] font-bold text-white"
-                              title={label}
-                            >
-                              {initialsFromPresenceLabel(label)}
-                            </span>
-                          ))}
+                          {presenceDots.map((label, idx) => {
+                            const href = presenceHrefs[idx] ?? null;
+                            const avatarUrl = (presenceAvatarUrls[idx] ?? null)?.trim() || null;
+                            const inner = <PresenceFace label={label} avatarUrl={avatarUrl} />;
+                            const className =
+                              "inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-white/80 bg-slate-900/80 text-[8px] font-bold text-white hover:bg-slate-800";
+                            return href ? (
+                              <Link
+                                key={`${room.id}-presence-${idx}-${label}`}
+                                href={href}
+                                className={className}
+                                title={label}
+                                onClick={(event) => event.stopPropagation()}
+                                onPointerDown={(event) => event.stopPropagation()}
+                              >
+                                {inner}
+                              </Link>
+                            ) : (
+                              <span
+                                key={`${room.id}-presence-${idx}-${label}`}
+                                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/80 bg-slate-900/80 text-[8px] font-bold text-white overflow-hidden"
+                                title={label}
+                              >
+                                {inner}
+                              </span>
+                            );
+                          })}
                         </div>
                       ) : null}
                       <div className="flex flex-wrap gap-1">

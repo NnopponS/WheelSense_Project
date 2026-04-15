@@ -47,3 +47,12 @@ All endpoints bind scope from `current_user.workspace_id` and do not accept clie
 - `pytest tests/test_workflow_domains.py -q`
 - `pytest tests/e2e/test_role_workflow_chat.py -q`
 - role-route pages now use live workflow APIs instead of placeholder content
+
+## Supplementary — frontend task surfaces (2026-04)
+
+The backend contract for care tasks is unchanged (`GET/PATCH /api/workflow/tasks`, workspace scope from the authenticated user). The Next.js app adds **presentation-only** variants:
+
+- **Task-focused pages** may offer **calendar**, **list**, and **Kanban** views; column moves use **`PATCH`** with `status` values aligned to ward execution (`pending`, `in_progress`, `completed`). Implementation: `frontend/components/workflow/WorkflowTasksKanban.tsx`, `frontend/lib/workflowTaskBoard.ts` (see **`frontend/README.md`** — “Workflow care tasks — calendar vs board”).
+- **Operations Console** (`frontend/components/workflow/OperationsConsole.tsx`) remains the **mixed queue** (tasks + schedules + directives) and is **not** the Kanban host — avoids conflating incompatible workflow item types on one board.
+
+**Head nurse dashboard** (`frontend/app/head-nurse/page.tsx`) adds a compact **staff context strip** above priority alerts/tasks for at-a-glance coverage; full roster remains in the existing **On-Duty Staff** card next to the floorplan. Documented in **`frontend/README.md`** (“Head nurse dashboard — staff context strip”).

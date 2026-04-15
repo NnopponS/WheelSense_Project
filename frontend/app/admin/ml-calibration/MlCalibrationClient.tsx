@@ -83,6 +83,10 @@ interface LocalizationReadiness {
   assignment_patient_id: number | null;
   floorplan_has_room: boolean;
   telemetry_detected: boolean;
+  telemetry_strongest_node_id?: string | null;
+  telemetry_predicted_room_id?: number | null;
+  telemetry_predicted_room_name?: string | null;
+  telemetry_rssi_preview?: Record<string, number>;
   changed: string[];
 }
 
@@ -111,6 +115,7 @@ export default function MlCalibrationClient() {
 
   // States for Localization config & recording
   const [locStrategy, setLocStrategy] = useState<"knn" | "max_rssi">("max_rssi");
+  const [locStrategyDirty, setLocStrategyDirty] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState<number | "">("");
   const [selectedLocDevice, setSelectedLocDevice] = useState<string>("");
   const [locSessionId, setLocSessionId] = useState<number | null>(null);
@@ -192,6 +197,7 @@ export default function MlCalibrationClient() {
   useEffect(() => {
     if (locConfig?.strategy) {
       setLocStrategy(locConfig.strategy);
+      setLocStrategyDirty(false);
     }
   }, [locConfig?.strategy]);
 
@@ -322,14 +328,19 @@ export default function MlCalibrationClient() {
     }
   };
 
-  const handleStrategyChange = async (strategy: "knn" | "max_rssi") => {
+  const handleSaveLocalizationStrategy = async () => {
     try {
-      await api.put("/localization/config", { strategy });
-      setLocStrategy(strategy);
-      showMsg(`Localization strategy changed to ${strategy}`, "success");
+      await api.put("/localization/config", { strategy: locStrategy });
+      setLocStrategyDirty(false);
+      showMsg(
+        locStrategy === "max_rssi"
+          ? "Saved: localization uses strongest RSSI node → room mapping for MQTT predictions."
+          : "Saved: localization uses trained KNN fingerprints when available.",
+        "success",
+      );
       await refetchLocConfig();
     } catch (err) {
-      showMsg(err instanceof ApiError ? err.message : "Failed to change strategy", "error");
+      showMsg(err instanceof ApiError ? err.message : "Failed to save strategy", "error");
     }
   };
 
@@ -659,11 +670,22 @@ export default function MlCalibrationClient() {
                   <div>
                     <p className="text-sm font-semibold text-foreground">Workspace Readiness</p>
                     <p className="text-xs text-foreground-variant">
-                      {`Checks ${locReadiness?.wheelchair_device_id || "wheelchair"} -> ${
-                        locReadiness?.node_display_name || locReadiness?.node_device_id || "node"
-                      } -> ${locReadiness?.room_name || "room"} -> ${
-                        locReadiness?.patient_username || locReadiness?.patient_name || "patient"
-                      } and keeps strongest RSSI as default.`}
+                      {locReadiness?.telemetry_strongest_node_id
+                        ? `Latest wheelchair RSSI: strongest node ${locReadiness.telemetry_strongest_node_id} → predicted room ${
+                            locReadiness.telemetry_predicted_room_name ||
+                            (locReadiness.telemetry_predicted_room_id != null
+                              ? `#${locReadiness.telemetry_predicted_room_id}`
+                              : "?")
+                          }. Baseline chain: ${locReadiness.wheelchair_device_id || "wheelchair"} → ${
+                            locReadiness.node_device_id || "node"
+                          } → ${locReadiness.room_name || "room"} → ${
+                            locReadiness.patient_username || locReadiness.patient_name || "patient"
+                          }.`
+                        : `Baseline chain: ${locReadiness?.wheelchair_device_id || "wheelchair"} → ${
+                            locReadiness?.node_display_name || locReadiness?.node_device_id || "node"
+                          } → ${locReadiness?.room_name || "room"} → ${
+                            locReadiness?.patient_username || locReadiness?.patient_name || "patient"
+                          }. Publish RSSI from the wheelchair to see strongest-node preview.`}
                     </p>
                   </div>
                   <Badge variant={locReadiness?.ready ? "default" : "secondary"}>
@@ -674,6 +696,12 @@ export default function MlCalibrationClient() {
                   <div className="flex justify-between gap-3">
                     <span className="text-foreground-variant">Wheelchair</span>
                     <span className="font-medium">{locReadiness?.wheelchair_device_id || "Missing"}</span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-foreground-variant">Strongest RSSI (live)</span>
+                    <span className="font-medium">
+                      {locReadiness?.telemetry_strongest_node_id || "—"}
+                    </span>
                   </div>
                   <div className="flex justify-between gap-3">
                     <span className="text-foreground-variant">Node alias</span>
@@ -709,8 +737,20 @@ export default function MlCalibrationClient() {
               </div>
 
               <div className="space-y-2">
-                <Label>Localization Strategy</Label>
-                <Select value={locStrategy} onValueChange={(v) => handleStrategyChange(v as "knn" | "max_rssi")}>
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Localization Strategy</Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    Saved: <span className="font-semibold text-foreground">{locConfig?.strategy ?? "—"}</span>
+                  </span>
+                </div>
+                <Select
+                  value={locStrategy}
+                  onValueChange={(v) => {
+                    const next = v as "knn" | "max_rssi";
+                    setLocStrategy(next);
+                    setLocStrategyDirty(next !== locConfig?.strategy);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -724,6 +764,16 @@ export default function MlCalibrationClient() {
                     ? "Uses machine learning on RSSI fingerprints."
                     : "Uses the strongest visible RSSI node as the default room signal."}
                 </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  disabled={!locStrategyDirty}
+                  onClick={() => void handleSaveLocalizationStrategy()}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save strategy
+                </Button>
               </div>
 
               <div className="surface-container-low p-4 rounded-xl space-y-2 mt-4">

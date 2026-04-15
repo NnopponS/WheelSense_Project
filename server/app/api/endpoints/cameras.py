@@ -43,11 +43,15 @@ async def list_photos(
         result = await db.execute(query)
         photos = result.scalars().all()
 
-    # Construct the virtual url property
+    # Construct the virtual url property; omit rows whose file was removed from disk (orphan metadata).
+    out: list = []
     for photo in photos:
+        if not photo.filepath or not os.path.exists(photo.filepath):
+            continue
         photo.url = f"/api/cameras/photos/{photo.id}/content"
+        out.append(photo)
 
-    return photos
+    return out
 
 @router.get("/photos/{photo_id}/content")
 async def get_photo_content(

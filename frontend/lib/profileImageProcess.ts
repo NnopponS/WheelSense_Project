@@ -1,6 +1,18 @@
 /** Client-side square center crop + downscale to JPEG for avatar upload. */
 
+const IMAGE_FILENAME_RE = /\.(jpe?g|png|gif|webp|bmp|heic|heif|avif)$/i;
+
 const MAX_SIDE = 512;
+
+/** Some OS/browsers omit `file.type`; fall back to extension. */
+export function looksLikeImageFile(file: File): boolean {
+  const mime = file.type.trim().toLowerCase();
+  if (mime.startsWith("image/")) return true;
+  if (mime === "" || mime === "application/octet-stream") {
+    return IMAGE_FILENAME_RE.test(file.name);
+  }
+  return false;
+}
 const JPEG_QUALITY = 0.88;
 
 function loadImageElement(src: string): Promise<HTMLImageElement> {

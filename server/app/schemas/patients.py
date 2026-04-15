@@ -48,6 +48,7 @@ class PatientUpdate(BaseModel):
     past_surgeries: list[dict[str, Any]] | None = None
     room_id: int | None = None
     is_active: bool | None = None
+    photo_url: str | None = None
 
 class PatientOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)

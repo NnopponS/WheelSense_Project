@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { patientRoomQuickInfoValue } from "@/lib/patientRoomQuickInfo";
+import type { Room } from "@/lib/types";
 import { ageYears } from "@/lib/age";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
@@ -136,6 +138,13 @@ export default function SupervisorPatientDetailPage() {
     () => (patientQuery.data ?? null) as GetPatientResponse | null,
     [patientQuery.data],
   );
+
+  const patientRoomQuery = useQuery({
+    queryKey: ["supervisor", "patient-detail", patientId, "room", patient?.room_id],
+    queryFn: () => api.get<Room>(`/rooms/${patient!.room_id}`),
+    enabled: hasValidPatientId && patient?.room_id != null,
+  });
+
   const alerts = useMemo(
     () => (alertsQuery.data ?? []) as ListAlertsResponse,
     [alertsQuery.data],
@@ -415,6 +424,22 @@ export default function SupervisorPatientDetailPage() {
     [acknowledgeDirectiveMutation, pendingDirectiveId, t],
   );
 
+  const roomQuickInfoValue = useMemo(() => {
+    if (patientQuery.isLoading) return t("common.loading");
+    return patientRoomQuickInfoValue({
+      roomId: patient?.room_id ?? null,
+      room: patientRoomQuery.data,
+      isLoading: patientRoomQuery.isLoading,
+      t,
+    });
+  }, [
+    patientQuery.isLoading,
+    patient?.room_id,
+    patientRoomQuery.data,
+    patientRoomQuery.isLoading,
+    t,
+  ]);
+
   if (!hasValidPatientId) {
     return (
       <Card>
@@ -460,7 +485,7 @@ export default function SupervisorPatientDetailPage() {
             </div>
           </div>
           <div className="grid gap-3 md:grid-cols-4">
-            <QuickInfo label={t("patients.room")} value={patient?.room_id != null ? `Room ${patient.room_id}` : t("patients.noRoom")} />
+            <QuickInfo label={t("patients.room")} value={roomQuickInfoValue} />
             <QuickInfo label={t("clinical.patientDetail.statRecentVitals")} value={String(vitalsRows.length)} />
             <QuickInfo label={t("clinical.patientDetail.statActiveAlerts")} value={String(activeAlerts.length)} />
             <QuickInfo label={t("supervisor.patientDetail.statOpenTasks")} value={String(taskRows.filter((task) => task.status !== "completed").length)} />

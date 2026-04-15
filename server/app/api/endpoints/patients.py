@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 """Patient CRUD, device assignment, and contact endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.api.dependencies import (
     RequireRole,
@@ -37,6 +37,7 @@ from app.schemas.patients import (
 )
 from app.services import device_activity as device_activity_service
 from app.services.patient import patient_service, patient_assignment_service, contact_service
+from app.services.profile_image_storage import remove_hosted_profile_file_if_any, store_hosted_profile_jpeg_bytes
 
 router = APIRouter()
 
@@ -220,6 +221,32 @@ async def update_patient(
     if not patient:
         raise HTTPException(404, "Patient not found")
     return await patient_service.update(db, ws_id=ws.id, db_obj=patient, obj_in=data)
+
+
+@router.post("/{patient_id}/profile-image", response_model=PatientOut)
+async def upload_patient_profile_image(
+    patient_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    """Store a JPEG and set patient.photo_url to a platform-hosted path."""
+    patient = await patient_service.get(db, ws_id=ws.id, id=patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient not found")
+    data = await file.read()
+    try:
+        relative = store_hosted_profile_jpeg_bytes(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    remove_hosted_profile_file_if_any((patient.photo_url or "").strip() or None)
+    patient.photo_url = relative
+    db.add(patient)
+    await db.commit()
+    await db.refresh(patient)
+    return patient
+
 
 @router.delete("/{patient_id}", status_code=204)
 async def delete_patient(

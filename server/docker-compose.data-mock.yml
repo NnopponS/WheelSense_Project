@@ -50,6 +50,8 @@ services:
       API_BASE_URL: http://wheelsense-platform-server:8000/api
       BOOTSTRAP_DEMO_WORKSPACE_NAME: ${BOOTSTRAP_DEMO_WORKSPACE_NAME:-WheelSense Demo Workspace}
       SIM_WORKSPACE_ID: ${SIM_WORKSPACE_ID:-}
+      # Set to 1 to force scripts/seed_sim_team.py to re-run when the workspace already has devices/patients.
+      SIM_FORCE_SEED: ${SIM_FORCE_SEED:-}
     command:
       - sh
       - -c

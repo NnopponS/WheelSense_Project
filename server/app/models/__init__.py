@@ -50,6 +50,7 @@ from .medication import Prescription, PharmacyOrder
 from .service_requests import ServiceRequest
 from .support import SupportTicket, SupportTicketComment, SupportTicketAttachment
 from .shift_checklist import ShiftChecklistState
+from .shift_checklist_user_template import ShiftChecklistUserTemplate
 
 __all__ = [
     "Base",
@@ -118,4 +119,5 @@ __all__ = [
     "SupportTicketComment",
     "SupportTicketAttachment",
     "ShiftChecklistState",
+    "ShiftChecklistUserTemplate",
 ]

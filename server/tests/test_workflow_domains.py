@@ -251,7 +251,7 @@ async def test_impersonated_workflow_audit_preserves_admin_actor(
 
 
 @pytest.mark.asyncio
-async def test_workflow_audit_forbidden_for_observer(
+async def test_workflow_audit_allowed_for_observer_scoped(
     db_session: AsyncSession,
     admin_user: User,
 ):
@@ -282,7 +282,8 @@ async def test_workflow_audit_forbidden_for_observer(
             r = await ac.get("/api/workflow/audit")
         app.dependency_overrides.clear()
 
-    assert r.status_code == 403
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)
 
 
 @pytest.mark.asyncio
@@ -754,3 +755,73 @@ async def test_messaging_recipients_available_to_authenticated_roles(client: Asy
     assert res.status_code == 200
     payload = res.json()
     assert isinstance(payload, list)
+
+
+@pytest.mark.asyncio
+async def test_workflow_message_delete_sender_and_403_for_other_observer(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+    make_token_headers,
+):
+    other = User(
+        workspace_id=admin_user.workspace_id,
+        username="wf_msg_other_obs",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        is_active=True,
+    )
+    db_session.add(other)
+    await db_session.commit()
+    await db_session.refresh(other)
+
+    msg = await client.post(
+        "/api/workflow/messages",
+        json={"recipient_role": "observer", "subject": "All", "body": "Broadcast"},
+    )
+    assert msg.status_code == 201, msg.text
+    mid = msg.json()["id"]
+
+    from app.main import app
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers=make_token_headers(other),
+    ) as ac:
+        forbidden = await ac.delete(f"/api/workflow/messages/{mid}")
+    assert forbidden.status_code == 403
+
+    deleted = await client.delete(f"/api/workflow/messages/{mid}")
+    assert deleted.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_workflow_message_attachment_upload_and_send(client: AsyncClient):
+    up = await client.post(
+        "/api/workflow/messages/attachments",
+        files={"file": ("note.pdf", b"%PDF-1.4 test", "application/pdf")},
+    )
+    assert up.status_code == 201, up.text
+    pending_id = up.json()["pending_id"]
+
+    msg = await client.post(
+        "/api/workflow/messages",
+        json={
+            "recipient_role": "admin",
+            "subject": "With file",
+            "body": "See attached",
+            "pending_attachment_ids": [pending_id],
+        },
+    )
+    assert msg.status_code == 201, msg.text
+    body = msg.json()
+    assert len(body["attachments"]) == 1
+    aid = body["attachments"][0]["id"]
+
+    content = await client.get(f"/api/workflow/messages/{body['id']}/attachments/{aid}/content")
+    assert content.status_code == 200
+    assert content.content.startswith(b"%PDF")
+
+    deleted = await client.delete(f"/api/workflow/messages/{body['id']}")
+    assert deleted.status_code == 204

@@ -4,11 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Clock3, Link2, Link2Off, Loader2, MapPin, RefreshCw, UserRound } from "lucide-react";
+import { Camera, Clock3, Link2, Link2Off, Loader2, MapPin, RefreshCw, Trash2, UserRound } from "lucide-react";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import { hasCapability } from "@/lib/permissions";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { isDeviceOnline } from "@/lib/deviceOnline";
+import {
+  preferredRoomNodeDeviceKey,
+  roomNodeDeviceMatchesDevice,
+} from "@/lib/nodeDeviceRoomKey";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import type {
   DeviceActivityEventOut,
@@ -17,6 +23,7 @@ import type {
 import type { TranslationKey } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,6 +33,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Sheet,
   SheetContent,
@@ -66,6 +81,7 @@ const deviceDetailSchema = z
     device_type: z.string().nullish(),
     hardware_type: z.string().nullish(),
     display_name: z.string().nullish(),
+    config: z.record(z.string(), z.unknown()).optional(),
     firmware: z.string().nullish(),
     last_seen: z.string().nullable().optional(),
     patient: z
@@ -269,11 +285,16 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: DeviceDetailDrawerProps) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canManageDevices = user ? hasCapability(user.role, "devices.manage") : false;
   const nowMs = useFixedNowMs();
   const [feedback, setFeedback] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+  const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [scopeBuilding, setScopeBuilding] = useState(EMPTY_SELECT_VALUE);
   const [scopeFloor, setScopeFloor] = useState(EMPTY_SELECT_VALUE);
   const [fastPollUntilMs, setFastPollUntilMs] = useState(0);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [latestPhotoImageBroken, setLatestPhotoImageBroken] = useState(false);
 
   const deviceQuery = useQuery({
     queryKey: ["device-detail-drawer", "detail", deviceId],
@@ -357,15 +378,20 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     const rooms = roomsQuery.data ?? [];
     if (!detail) return null;
 
-    const byNode = rooms.find((room) => room.node_device_id === detail.device_id);
-    if (byNode) return byNode;
-
     const detailRoomId = detail.location?.room_id;
     if (typeof detailRoomId === "number") {
-      return rooms.find((room) => room.id === detailRoomId) ?? null;
+      const byLoc = rooms.find((room) => room.id === detailRoomId);
+      if (byLoc) return byLoc;
     }
 
-    return null;
+    const byNode = rooms.find((room) =>
+      roomNodeDeviceMatchesDevice(room.node_device_id, {
+        device_id: detail.device_id,
+        display_name: detail.display_name,
+        config: detail.config,
+      }),
+    );
+    return byNode ?? null;
   }, [detail, roomsQuery.data]);
 
   const facilityOptions = useMemo(() => {
@@ -418,6 +444,15 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const polarSnapshot = detail?.polar_metrics ?? detail?.polar_vitals ?? null;
 
   useEffect(() => {
+    if (!detail || detail.device_id !== deviceId) return;
+    setDisplayNameDraft(detail.display_name ?? "");
+  }, [deviceId, detail?.device_id, detail?.display_name]);
+
+  useEffect(() => {
+    setLatestPhotoImageBroken(false);
+  }, [detail?.latest_photo?.url, detail?.device_id]);
+
+  useEffect(() => {
     if (!detail) return;
 
     patientForm.reset({
@@ -444,6 +479,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
       queryClient.invalidateQueries({ queryKey: ["admin", "devices"] }),
       queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] }),
       queryClient.invalidateQueries({ queryKey: ["device-detail-drawer"] }),
+      queryClient.invalidateQueries({ queryKey: ["device-detail-drawer", "rooms"] }),
     ]);
     onMutate();
   };
@@ -493,7 +529,13 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
         await api.patchRoom(currentRoomId, { node_device_id: null });
       }
 
-      await api.patchRoom(nextRoomId, { node_device_id: detail.device_id });
+      await api.patchRoom(nextRoomId, {
+        node_device_id: preferredRoomNodeDeviceKey({
+          device_id: detail.device_id,
+          display_name: detail.display_name,
+          config: detail.config,
+        }),
+      });
     },
     onSuccess: async () => {
       setFeedback({ tone: "success", text: "Room assignment updated." });
@@ -536,12 +578,48 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     },
   });
 
+  const deleteRegistryMutation = useMutation({
+    mutationFn: async () => {
+      if (!detail) throw new Error("Device detail unavailable");
+      await api.deleteRegistryDevice(detail.device_id);
+    },
+    onSuccess: async () => {
+      setRemoveDialogOpen(false);
+      await refreshAfterMutation();
+      onClose();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
+
+  const patchDisplayNameMutation = useMutation({
+    mutationFn: async () => {
+      if (!detail) throw new Error("Device detail unavailable");
+      await api.patchRegistryDevice(detail.device_id, {
+        display_name: displayNameDraft.trim() || "",
+      });
+    },
+    onSuccess: async () => {
+      setFeedback({ tone: "success", text: t("devicesDetail.displayNameUpdated") });
+      await refreshAfterMutation();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
+
+  const displayNameDirty =
+    Boolean(detail) && displayNameDraft.trim() !== (detail?.display_name ?? "").trim();
+
   const busy =
     assignPatientMutation.isPending ||
     unlinkPatientMutation.isPending ||
     assignRoomMutation.isPending ||
     unlinkRoomMutation.isPending ||
-    snapshotMutation.isPending;
+    snapshotMutation.isPending ||
+    deleteRegistryMutation.isPending ||
+    patchDisplayNameMutation.isPending;
 
   const online = detail ? isDeviceOnline(detail.last_seen ?? null, nowMs) : false;
   const batteryPct =
@@ -561,6 +639,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   if (!deviceId) return null;
 
   return (
+    <>
     <Sheet open={Boolean(deviceId)} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="p-0">
         <div className="flex h-full flex-col">
@@ -603,14 +682,42 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                     <CardTitle className="text-base">{t("devicesDetail.identity")}</CardTitle>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
-                    <Metric
-                      label={t("devicesDetail.displayName")}
-                      value={
-                        hardwareType === "node"
-                          ? nodeBeaconShortLabel(detail)
-                          : detail.display_name?.trim() || detail.device_id
-                      }
-                    />
+                    {canManageDevices ? (
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="device-display-name">{t("devicesDetail.displayName")}</Label>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                          <Input
+                            id="device-display-name"
+                            value={displayNameDraft}
+                            onChange={(e) => setDisplayNameDraft(e.target.value)}
+                            placeholder={detail.device_id}
+                            autoComplete="off"
+                            disabled={busy}
+                            className="sm:max-w-md"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={!displayNameDirty || busy}
+                            onClick={() => patchDisplayNameMutation.mutate()}
+                          >
+                            {t("devicesDetail.save")}
+                          </Button>
+                        </div>
+                        {hardwareType === "node" ? (
+                          <p className="text-xs text-muted-foreground">{t("devicesDetail.displayNameMqttNodeHint")}</p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <Metric
+                        label={t("devicesDetail.displayName")}
+                        value={
+                          hardwareType === "node"
+                            ? nodeBeaconShortLabel(detail)
+                            : detail.display_name?.trim() || detail.device_id
+                        }
+                      />
+                    )}
                     <Metric label={t("devicesDetail.hardware")} value={hardwareType} />
                     <Metric
                       label={t("devices.lastSeen")}
@@ -779,7 +886,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                         )}
                         {t("devicesDetail.cameraCheck")}
                       </Button>
-                      {detail.latest_photo?.url ? (
+                      {detail.latest_photo?.url && !latestPhotoImageBroken ? (
                         <div className="space-y-2">
                           <p className="text-xs font-medium text-muted-foreground">{t("devicesDetail.latestSnapshot")}</p>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -790,6 +897,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                             loading="eager"
                             fetchPriority="high"
                             decoding="async"
+                            onError={() => setLatestPhotoImageBroken(true)}
                           />
                           {detail.latest_photo.timestamp ? (
                             <p className="text-xs text-muted-foreground">
@@ -1005,6 +1113,29 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   </Card>
                 ) : null}
 
+                <Card className="border-destructive/25">
+                  <CardHeader>
+                    <CardTitle className="text-base text-destructive">
+                      {t("devicesDetail.removeFromRegistry")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {t("devicesDetail.removeFromRegistryBody")}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="mt-4"
+                      disabled={busy}
+                      onClick={() => setRemoveDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {t("devicesDetail.removeFromRegistry")}
+                    </Button>
+                  </CardContent>
+                </Card>
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -1061,5 +1192,36 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
         </div>
       </SheetContent>
     </Sheet>
+
+    <Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t("devicesDetail.removeFromRegistryTitle")}</DialogTitle>
+          <DialogDescription>{t("devicesDetail.removeFromRegistryBody")}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setRemoveDialogOpen(false)}
+            disabled={deleteRegistryMutation.isPending}
+          >
+            {t("common.cancel")}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={deleteRegistryMutation.isPending || !detail}
+            onClick={() => deleteRegistryMutation.mutate()}
+          >
+            {deleteRegistryMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : null}
+            {t("devicesDetail.removeFromRegistryConfirm")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

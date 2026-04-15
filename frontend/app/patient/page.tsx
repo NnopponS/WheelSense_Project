@@ -6,9 +6,11 @@ import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  Bug,
   Calendar,
   Heart,
   Home,
+  MapPin,
   MessageCircle,
   Phone,
   Siren,
@@ -16,6 +18,8 @@ import {
   UserRound,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { patientRoomQuickInfoValue } from "@/lib/patientRoomQuickInfo";
+import type { Room } from "@/lib/types";
 import { ageYears } from "@/lib/age";
 import { useAuth } from "@/hooks/useAuth";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
@@ -43,20 +47,36 @@ type MeProfileResponse = {
     id: number;
     first_name?: string | null;
     last_name?: string | null;
+    /** Same hosted path as `GET /patients/{id}` when staff set a patient portrait. */
+    photo_url?: string | null;
   } | null;
 };
 
-const TABS: HubTab[] = [
-  { key: "overview", label: "Overview", icon: Heart },
-  { key: "profile", label: "Profile", icon: UserRound },
-  { key: "support", label: "Support", icon: MessageCircle },
-];
+/** Prefer facility patient portrait, then `/auth/me/profile` copies, then account-only user image. */
+function mergedPatientPortalAvatarUrl(
+  patient: GetPatientResponse,
+  profile: MeProfileResponse | null,
+): string | null {
+  const row = patient as { photo_url?: string | null };
+  const a = row.photo_url?.trim();
+  const b = profile?.linked_patient?.photo_url?.trim();
+  const c = profile?.user.profile_image_url?.trim();
+  return a || b || c || null;
+}
 
 export default function PatientDashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const tab = useHubTab(TABS);
+  const hubTabs = useMemo<HubTab[]>(
+    () => [
+      { key: "overview", label: t("patient.hub.overview"), icon: Heart },
+      { key: "profile", label: t("patient.hub.profile"), icon: UserRound },
+      { key: "support", label: t("patient.hub.support"), icon: Bug },
+    ],
+    [t],
+  );
+  const tab = useHubTab(hubTabs);
   const nowMs = useFixedNowMs();
 
   const previewRaw = searchParams.get("previewAs");
@@ -83,6 +103,30 @@ export default function PatientDashboardPage() {
 
   const patient = patientQuery.data as GetPatientResponse | null;
   const profile = (profileQuery.data ?? null) as MeProfileResponse | null;
+
+  const patientRoomQuery = useQuery({
+    queryKey: ["patient", "dashboard", "room", effectivePatientId, patient?.room_id],
+    queryFn: () => api.get<Room>(`/rooms/${patient!.room_id}`),
+    enabled: effectivePatientId != null && patient?.room_id != null,
+  });
+
+  const roomHeadline = useMemo(() => {
+    if (patientQuery.isLoading || patientQuery.isPending) return t("common.loading");
+    if (!patient) return "";
+    return patientRoomQuickInfoValue({
+      roomId: patient.room_id ?? null,
+      room: patientRoomQuery.data,
+      isLoading: patientRoomQuery.isLoading,
+      t,
+    });
+  }, [
+    patientQuery.isLoading,
+    patientQuery.isPending,
+    patient,
+    patientRoomQuery.data,
+    patientRoomQuery.isLoading,
+    t,
+  ]);
 
   const raiseAssistanceMutation = useMutation({
     mutationFn: async (kind: "assistance" | "sos") => {
@@ -145,10 +189,7 @@ export default function PatientDashboardPage() {
             <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
               {t("patient.page.helloPrefix")} {fullName || t("patient.page.guest")}
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("patient.page.roomPrefix")} {currentPatient.room_id ?? t("patient.page.roomUnassigned")} ·{" "}
-              {t("patient.page.dashboardTagline")}
-            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.dashboardTagline")}</p>
           </div>
         </div>
         {currentPatient.care_level ? (
@@ -167,8 +208,24 @@ export default function PatientDashboardPage() {
         ) : null}
       </div>
 
+      <Card className="border-primary/25 bg-gradient-to-br from-primary/[0.07] via-transparent to-sky-500/[0.04]">
+        <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 space-y-0.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("patient.page.roomLocationTitle")}
+              </p>
+              <p className="text-lg font-semibold leading-snug text-foreground tracking-tight">{roomHeadline}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Suspense>
-        <HubTabBar tabs={TABS} />
+        <HubTabBar tabs={hubTabs} />
       </Suspense>
 
       {tab === "overview" ? (
@@ -181,20 +238,24 @@ export default function PatientDashboardPage() {
       ) : null}
 
       {tab === "profile" ? (
-        <ProfileTab patient={currentPatient} profile={profile} nowMs={nowMs} />
+        <ProfileTab patient={currentPatient} profile={profile} nowMs={nowMs} roomDisplay={roomHeadline} />
       ) : null}
 
-      {tab === "support" ? (
-        <section className="space-y-4">
-          <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-foreground">Support and corrections</h3>
-            <p className="text-sm text-muted-foreground">
-              Report account issues, room mismatches, or health-record corrections for staff follow-up.
-            </p>
-          </div>
-          <ReportIssueForm />
-        </section>
-      ) : null}
+      {tab === "support" ? <SupportTab t={t} /> : null}
+    </div>
+  );
+}
+
+function SupportTab({ t }: { t: (key: string) => string }) {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1">
+        <h3 className="text-base font-semibold text-foreground">{t("patient.page.reportSectionTitle")}</h3>
+        <p className="text-sm text-muted-foreground">{t("patient.page.reportSectionDesc")}</p>
+      </div>
+      <div className="rounded-2xl border border-border/70 bg-card/40 p-4 md:p-5">
+        <ReportIssueForm />
+      </div>
     </div>
   );
 }
@@ -212,8 +273,8 @@ function OverviewTab({
 }) {
   return (
     <>
-      <PatientMySensors patientId={patientId} />
       <PatientCareRoadmap patientId={patientId} />
+      <PatientMySensors patientId={patientId} />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card
@@ -255,24 +316,11 @@ function OverviewTab({
         </Card>
       </section>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Link
-          href="/patient/room-controls"
-          className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-        >
-          <Home className="h-4 w-4 text-muted-foreground" />
-          Room Controls
-        </Link>
-        <Link
-          href="/patient/support"
-          className="flex items-center gap-2 rounded-xl border border-border bg-card p-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-        >
-          <MessageCircle className="h-4 w-4 text-muted-foreground" />
-          Support
-        </Link>
-      </div>
-
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section className="space-y-3" aria-labelledby="patient-quicklinks-heading">
+        <h3 id="patient-quicklinks-heading" className="text-sm font-semibold text-foreground">
+          {t("patient.page.quickLinksTitle")}
+        </h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           {
             href: "/patient/schedule",
@@ -310,6 +358,7 @@ function OverviewTab({
             </Card>
           </Link>
         ))}
+        </div>
       </section>
     </>
   );
@@ -319,13 +368,21 @@ function ProfileTab({
   patient,
   profile,
   nowMs,
+  roomDisplay,
 }: {
   patient: GetPatientResponse;
   profile: MeProfileResponse | null;
   nowMs: number;
+  roomDisplay: string;
 }) {
   const linkedPatientName = [patient.first_name, patient.last_name].filter(Boolean).join(" ").trim();
   const age = ageYears(patient.date_of_birth, nowMs);
+  const avatarUrl = useMemo(
+    () => mergedPatientPortalAvatarUrl(patient, profile),
+    [patient, profile],
+  );
+  const initialsLabel = linkedPatientName || profile?.user.username || "Patient";
+  const { t } = useTranslation();
 
   return (
     <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -337,8 +394,8 @@ function ProfileTab({
         <CardContent className="space-y-5">
           <div className="flex items-center gap-4">
             <UserAvatar
-              username={(profile?.user.username ?? linkedPatientName) || "Patient"}
-              profileImageUrl={profile?.user.profile_image_url ?? null}
+              username={initialsLabel}
+              profileImageUrl={avatarUrl}
               sizePx={88}
             />
             <div className="min-w-0">
@@ -346,7 +403,7 @@ function ProfileTab({
                 {linkedPatientName || profile?.user.username || "Patient"}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {(profile?.user.role?.replace(/_/g, " ") || "patient")} · Room {patient.room_id ?? "unassigned"}
+                {(profile?.user.role?.replace(/_/g, " ") || "patient")} · {roomDisplay}
               </p>
             </div>
           </div>
@@ -361,7 +418,7 @@ function ProfileTab({
           </div>
 
           <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
-            If your room, identity, or health record looks wrong, open the Support tab and submit a correction request for staff.
+            {t("patient.page.profileCorrectionHint")}
           </div>
         </CardContent>
       </Card>

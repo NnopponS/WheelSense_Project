@@ -7,7 +7,8 @@ from httpx import AsyncClient
 
 from app.core.security import create_access_token, get_password_hash
 from app.models.caregivers import CareGiver
-from app.models.core import Device
+from app.models.core import Device, DeviceActivityEvent, Room
+from app.models.facility import Facility, Floor
 from app.models.patients import Patient
 from app.models.telemetry import IMUTelemetry
 from app.models.users import User
@@ -69,6 +70,129 @@ async def test_get_device_detail(
 
 
 @pytest.mark.asyncio
+async def test_get_device_detail_resolves_room_when_node_link_is_alias_label(
+    client: AsyncClient, admin_user: User, db_session
+):
+    """Room stores WSN_* on node_device_id; registry row is CAM_* with ble_node_id — detail must expose location."""
+    ws = admin_user.workspace_id
+    fac = Facility(workspace_id=ws, name="Bang Khae", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=ws, facility_id=fac.id, floor_number=1, name="L1", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    cam = Device(
+        workspace_id=ws,
+        device_id="CAM_ALIAS_DETAIL",
+        device_type="camera",
+        hardware_type="node",
+        display_name="Room104 cam",
+        config={"ble_node_id": "WSN_104"},
+    )
+    room = Room(
+        workspace_id=ws,
+        floor_id=fl.id,
+        name="Room104",
+        room_type="bedroom",
+        node_device_id="WSN_104",
+    )
+    db_session.add_all([cam, room])
+    await db_session.commit()
+
+    res = await client.get("/api/devices/CAM_ALIAS_DETAIL")
+    assert res.status_code == 200, res.text
+    j = res.json()
+    loc = j.get("location") or {}
+    assert loc.get("room_id") == room.id
+    assert loc.get("room_name") == "Room104"
+
+
+@pytest.mark.asyncio
+async def test_delete_registry_device(client: AsyncClient, admin_user: User, db_session):
+    ws = admin_user.workspace_id
+    db_session.add(
+        Device(
+            workspace_id=ws,
+            device_id="DEL1",
+            device_type="camera",
+            hardware_type="node",
+            display_name="to delete",
+        )
+    )
+    await db_session.commit()
+
+    res = await client.delete("/api/devices/DEL1")
+    assert res.status_code == 204
+
+    gone = await client.get("/api/devices/DEL1")
+    assert gone.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_registry_device_clears_activity_events_and_alias_room(
+    client: AsyncClient, admin_user: User, db_session
+):
+    ws = admin_user.workspace_id
+    fac = Facility(workspace_id=ws, name="F", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=ws, facility_id=fac.id, floor_number=1, name="L1", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    cam = Device(
+        workspace_id=ws,
+        device_id="CAM_WIPE",
+        device_type="camera",
+        hardware_type="node",
+        display_name="cam",
+        config={"ble_node_id": "WSN_WIPE"},
+    )
+    room = Room(
+        workspace_id=ws,
+        floor_id=fl.id,
+        name="R1",
+        room_type="bedroom",
+        node_device_id="WSN_WIPE",
+    )
+    ev = DeviceActivityEvent(
+        workspace_id=ws,
+        event_type="legacy_row",
+        summary="old",
+        registry_device_id="CAM_WIPE",
+    )
+    db_session.add_all([cam, room, ev])
+    await db_session.commit()
+
+    res = await client.delete("/api/devices/CAM_WIPE")
+    assert res.status_code == 204
+
+    row = (await db_session.execute(select(Room).where(Room.id == room.id))).scalar_one()
+    assert row.node_device_id is None
+
+    stale = (
+        await db_session.execute(
+            select(DeviceActivityEvent).where(
+                DeviceActivityEvent.workspace_id == ws,
+                DeviceActivityEvent.registry_device_id == "CAM_WIPE",
+                DeviceActivityEvent.event_type == "legacy_row",
+            )
+        )
+    ).scalar_one_or_none()
+    assert stale is None
+
+    audit = (
+        await db_session.execute(
+            select(DeviceActivityEvent).where(
+                DeviceActivityEvent.workspace_id == ws,
+                DeviceActivityEvent.registry_device_id == "CAM_WIPE",
+                DeviceActivityEvent.event_type == "registry_deleted",
+            )
+        )
+    ).scalar_one_or_none()
+    assert audit is not None
+
+
+@pytest.mark.asyncio
 async def test_patch_device_display_name_and_config(
     client: AsyncClient, admin_user: User, db_session
 ):
@@ -105,6 +229,42 @@ async def test_patch_device_display_name_and_config(
     assert "wifi_ssid" not in j["config"]
     assert "mqtt_broker" not in j["config"]
     assert "mqtt_user" not in j["config"]
+
+
+@pytest.mark.asyncio
+async def test_patch_node_display_name_with_wsn_pushes_mqtt_config(
+    client: AsyncClient, admin_user: User, db_session
+):
+    ws = admin_user.workspace_id
+    db_session.add(
+        Device(
+            workspace_id=ws,
+            device_id="CAM_AB",
+            device_type="camera",
+            hardware_type="node",
+            display_name="WSN_001",
+            config={},
+        )
+    )
+    await db_session.commit()
+
+    with patch(
+        "app.services.device_management.publish_mqtt",
+        new_callable=AsyncMock,
+    ) as pub:
+        res = await client.patch(
+            "/api/devices/CAM_AB",
+            json={"display_name": "Lobby WSN_042 cam"},
+        )
+        assert res.status_code == 200
+        j = res.json()
+        assert j["display_name"] == "Lobby WSN_042 cam"
+        assert j["config"].get("ble_node_id") == "WSN_042"
+        pub.assert_awaited_once()
+        args, kwargs = pub.await_args
+        assert args[0] == "WheelSense/config/CAM_AB"
+        assert args[1]["node_id"] == "WSN_042"
+        assert args[1]["sync_only"] is False
 
 
 @pytest.mark.asyncio

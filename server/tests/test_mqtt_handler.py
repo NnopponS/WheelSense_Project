@@ -257,6 +257,70 @@ async def test_camera_registration_merges_ble_stub(active_workspace):
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_camera_registration_merges_ble_stub_using_ble_device_id_mac(active_workspace):
+    """BLE_* stub may omit config ble_mac; MAC is still encoded in the registry device_id."""
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id="BLE_AABBCCDDEEFF",
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+                display_name="WSN_009",
+                config={"ble_node_id": "WSN_009"},
+            )
+        )
+        await session.commit()
+
+    payload = {
+        "device_id": "CAM_FROM_BLE",
+        "node_id": "WSN_009",
+        "ip_address": "10.0.0.2",
+        "firmware": "3.0.0",
+        "ble_mac": "AA:BB:CC:DD:EE:FF",
+    }
+    await _handle_camera_registration(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        stub = (
+            await session.execute(select(Device).where(Device.device_id == "BLE_AABBCCDDEEFF"))
+        ).scalar_one_or_none()
+        assert stub is None
+        cam = (
+            await session.execute(select(Device).where(Device.device_id == "CAM_FROM_BLE"))
+        ).scalar_one_or_none()
+        assert cam is not None
+        assert cam.config.get("merged_from_ble_stub") is True
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_camera_registration_auto_creates_cam_without_ble_stub(active_workspace):
+    """First camera /registration creates registry row when a single workspace can be resolved."""
+    payload = {
+        "device_id": "CAM_BRAND_NEW",
+        "node_id": "WSN_100",
+        "ip_address": "10.0.0.3",
+        "firmware": "3.0.0",
+        "ble_mac": "11:22:33:44:55:66",
+    }
+    await _handle_camera_registration(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        cam = (
+            await session.execute(select(Device).where(Device.device_id == "CAM_BRAND_NEW"))
+        ).scalar_one_or_none()
+        assert cam is not None
+        assert cam.workspace_id == active_workspace.id
+        assert cam.hardware_type == "node"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 async def test_camera_registration_deletes_duplicate_ble_when_cam_pre_registered(active_workspace):
     async with _SessionFactory() as session:
         session.add(
@@ -355,6 +419,70 @@ async def test_telemetry_skips_ble_stub_when_cam_claims_mac(active_workspace):
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_telemetry_prunes_ble_stub_when_cam_has_ble_mac_reported_only(active_workspace):
+    """CAM rows may carry ble_mac_reported after BLE→CAM merge without duplicating ble_mac; RSSI must not keep a BLE_* twin."""
+    mock_client = AsyncMock()
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id="WHEEL_PRUNE",
+                workspace_id=active_workspace.id,
+                device_type="wheelchair",
+            )
+        )
+        session.add(
+            Device(
+                device_id="CAM_PRUNE",
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+                display_name="WSN_001",
+                config={"ble_mac_reported": "34:85:18:8b:d7:7d"},
+            )
+        )
+        session.add(
+            Device(
+                device_id="BLE_3485188BD77D",
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+                display_name="WSN_003",
+                config={
+                    "ble_mac": "34:85:18:8b:d7:7d",
+                    "discovered_via": "wheelchair_rssi",
+                },
+            )
+        )
+        await session.commit()
+
+    payload = {
+        "device_id": "WHEEL_PRUNE",
+        "firmware": "1",
+        "imu": {"ax": 0, "ay": 0, "az": 1},
+        "motion": {},
+        "battery": {},
+        "rssi": [
+            {"node": "WSN_003", "rssi": -41, "mac": "34:85:18:8b:d7:7d"},
+        ],
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+    }
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        ble = (
+            await session.execute(select(Device).where(Device.device_id == "BLE_3485188BD77D"))
+        ).scalar_one_or_none()
+        assert ble is None
+        cam = (
+            await session.execute(select(Device).where(Device.device_id == "CAM_PRUNE"))
+        ).scalar_one_or_none()
+        assert cam is not None
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 async def test_handle_camera_registration(active_workspace):
     payload = {
         "device_id": "CAM_1",
@@ -395,20 +523,23 @@ async def test_handle_camera_registration(active_workspace):
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 async def test_handle_camera_status(active_workspace):
-    payload = {"device_id": "CAM_STATUS"}
-    # Fails gracefully if not registered
+    """Status handler persists telemetry; CAM_* rows may be auto-created like registration."""
+    payload = {
+        "device_id": "CAM_STATUS_X",
+        "node_id": "WSN_020",
+        "ip_address": "10.9.9.1",
+        "firmware": "3.0.0",
+    }
     await _handle_camera_status(json.dumps(payload).encode())
 
-    # Register first
-    async with _SessionFactory() as session:
-        dev = Device(device_id="CAM_STATUS", workspace_id=active_workspace.id, device_type="camera")
-        session.add(dev)
-        await session.commit()
-        
-    await _handle_camera_status(json.dumps(payload).encode())
     async with _SessionFactory() as session:
         from sqlalchemy import select
-        device = (await session.execute(select(Device).where(Device.device_id == "CAM_STATUS"))).scalar_one_or_none()
+
+        device = (
+            await session.execute(select(Device).where(Device.device_id == "CAM_STATUS_X"))
+        ).scalar_one_or_none()
+        assert device is not None
+        assert device.hardware_type == "node"
         assert device.last_seen is not None
         assert isinstance(device.config, dict)
         assert "camera_status" in device.config

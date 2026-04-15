@@ -67,7 +67,9 @@ async def test_api_list_photos(client: TestClient, db_session: AsyncSession, adm
     await _seed_photo(db_session, admin_user.workspace_id)
     await db_session.commit()
 
-    resp = await client.get("/api/cameras/photos")
+    # List API only returns rows whose file path still exists on disk.
+    with patch("os.path.exists", return_value=True):
+        resp = await client.get("/api/cameras/photos")
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)

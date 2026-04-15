@@ -220,6 +220,24 @@ async def patch_device(
     )
     return dm.device_summary_dict(dev)
 
+
+@router.delete("/{device_id}", status_code=204)
+async def delete_registry_device(
+    device_id: str,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: object = Depends(RequireRole(ROLE_DEVICE_MANAGERS)),
+):
+    await dm.delete_registry_device(db, ws.id, device_id)
+    await device_activity_service.log_event(
+        db,
+        ws.id,
+        "registry_deleted",
+        f"Device {device_id} removed from workspace registry",
+        registry_device_id=device_id,
+        details={},
+    )
+
 @router.post("/{device_id}/commands", response_model=DeviceCommandOut)
 async def send_device_command(
     device_id: str,

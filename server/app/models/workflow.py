@@ -70,6 +70,12 @@ class RoleMessage(Base):
     workflow_item_id = Column(Integer, nullable=True, index=True)
     subject = Column(String(128), default="")
     body = Column(Text, nullable=False)
+    attachments = Column(
+        JSON().with_variant(JSONB, "postgresql"),
+        nullable=False,
+        default=list,
+        server_default="[]",
+    )
     is_read = Column(Boolean, default=False, index=True)
     read_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, index=True)

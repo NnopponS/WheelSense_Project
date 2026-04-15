@@ -1,26 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ListChecks } from "lucide-react";
+import { HeadNurseStaffMemberSheet } from "@/components/head-nurse/HeadNurseStaffMemberSheet";
 import { api } from "@/lib/api";
-import { useTranslation } from "@/lib/i18n";
+import type { ShiftChecklistWorkspaceRow } from "@/lib/api/task-scope-types";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import type { User } from "@/lib/types";
 import { utcShiftDateString } from "@/lib/shiftChecklistDefaults";
 import { formatRelativeTime } from "@/lib/datetime";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 
+const ROLE_TO_I18N: Record<string, TranslationKey> = {
+  admin: "personnel.role.admin",
+  head_nurse: "personnel.role.headNurse",
+  supervisor: "personnel.role.supervisor",
+  observer: "personnel.role.observer",
+  patient: "personnel.role.patient",
+};
+
+function formatStaffRole(role: string, t: (key: TranslationKey) => string): string {
+  const key = ROLE_TO_I18N[role];
+  return key ? t(key) : role.replace(/_/g, " ");
+}
+
 export function ShiftChecklistWorkspaceClient() {
   const { t } = useTranslation();
+  const { user: me } = useAuth();
   const [shiftDate, setShiftDate] = useState(() => utcShiftDateString());
+  const [sheetRow, setSheetRow] = useState<ShiftChecklistWorkspaceRow | null>(null);
+
+  const canEditTemplates = me?.role === "admin" || me?.role === "head_nurse";
 
   const query = useQuery({
     queryKey: ["shift-checklist", "workspace", shiftDate],
     queryFn: () => api.listShiftChecklistWorkspace({ shift_date: shiftDate }),
   });
+
+  const linkedUserForSheet: User | null = useMemo(() => {
+    if (!sheetRow || !me) return null;
+    return {
+      id: sheetRow.user_id,
+      workspace_id: me.workspace_id,
+      username: sheetRow.username,
+      role: sheetRow.role as User["role"],
+      is_active: true,
+      caregiver_id: null,
+      patient_id: null,
+      created_at: "",
+      updated_at: "",
+    };
+  }, [sheetRow, me]);
+
+  const caregiverForSheet = sheetRow
+    ? { id: sheetRow.user_id, fullName: sheetRow.username, role: sheetRow.role }
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-8 animate-fade-in">
@@ -49,7 +90,9 @@ export function ShiftChecklistWorkspaceClient() {
       <Card className="border-border/70">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">{t("shiftChecklistWorkspace.staff")}</CardTitle>
-          <CardDescription>{t("shiftChecklistWorkspace.cardHint")}</CardDescription>
+          <CardDescription>
+            {canEditTemplates ? t("shiftChecklistWorkspace.cardHintEditable") : t("shiftChecklistWorkspace.cardHint")}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {query.isError ? (
@@ -60,13 +103,28 @@ export function ShiftChecklistWorkspaceClient() {
             (query.data ?? []).map((row) => (
               <div
                 key={row.user_id}
-                className="rounded-xl border border-border/70 bg-card/50 p-4 space-y-3"
+                role={canEditTemplates ? "button" : undefined}
+                tabIndex={canEditTemplates ? 0 : undefined}
+                onClick={() => {
+                  if (canEditTemplates) setSheetRow(row);
+                }}
+                onKeyDown={(e) => {
+                  if (!canEditTemplates) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSheetRow(row);
+                  }
+                }}
+                className={cn(
+                  "rounded-xl border border-border/70 bg-card/50 p-4 space-y-3 text-left transition-colors",
+                  canEditTemplates && "cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                )}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-medium text-foreground">{row.username}</p>
-                    <Badge variant="secondary" className="mt-1 capitalize">
-                      {t("shiftChecklistWorkspace.role")}: {row.role.replace("_", " ")}
+                    <Badge variant="secondary" className="mt-1 font-normal">
+                      {t("shiftChecklistWorkspace.role")}: {formatStaffRole(row.role, t)}
                     </Badge>
                   </div>
                   <div className="text-right text-sm text-muted-foreground">
@@ -88,6 +146,19 @@ export function ShiftChecklistWorkspaceClient() {
           )}
         </CardContent>
       </Card>
+
+      {canEditTemplates ? (
+        <HeadNurseStaffMemberSheet
+          open={sheetRow != null}
+          onOpenChange={(open) => {
+            if (!open) setSheetRow(null);
+          }}
+          caregiver={caregiverForSheet}
+          linkedUser={linkedUserForSheet}
+          tasksForUser={[]}
+          schedulesForUser={[]}
+        />
+      ) : null}
     </div>
   );
 }
