@@ -20,7 +20,7 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 - **@dnd-kit/core** + **@dnd-kit/utilities** — pointer drag-and-drop for the shared workflow **task board** (column moves call existing `PATCH /api/workflow/tasks/{id}`)
 - **Sonner** (`sonner`) for global toast/snackbar (mounted via `components/SonnerToaster.tsx` inside `AppProviders`)
 - **TipTap** (`@tiptap/react`, `@tiptap/starter-kit`, link + placeholder extensions) for rich **unified task** report templates in `components/tasks/CreateTaskDialog.tsx` / `components/tasks/RichReportEditor.tsx`
-- **`CreateTaskDialog`** (`components/tasks/CreateTaskDialog.tsx`) supports **multi-assignee** selection, **optional start/end `datetime-local`**, **per-subtask report notes** (`report_spec.body_html`), and **multi-patient** selection by issuing one `POST /api/tasks/` per selected patient (or a single unlinked task when none are selected). `useCreateTask` owns cache invalidation only; the dialog controls success/error toasts.
+- **`CreateTaskDialog`** (`components/tasks/CreateTaskDialog.tsx`) creates **ad-hoc (`specific`)** unified tasks only: **multi-assignee** selection, **optional start/end `datetime-local`**, **per-subtask report notes** (`report_spec.body_html`), and **multi-patient** selection by issuing one `POST /api/tasks/` per selected patient (or a single unlinked task when none are selected). **Daily / routine** coverage uses the **งานประจำวัน** control on `TasksPageLayout` (`RoutineDayOverviewSheet`), not this dialog. `useCreateTask` owns cache invalidation only; the dialog controls success/error toasts.
 - `lib/api.ts` fetch wrapper for auth and error handling
 
 ## Runtime Model

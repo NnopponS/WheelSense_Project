@@ -68,7 +68,8 @@ const subtaskSchema = z.object({
 });
 
 const taskSchema = z.object({
-  task_type: z.enum(["specific", "routine"]),
+  /** Create dialog only creates ad-hoc patient-linked tasks; daily/routine hub uses "งานประจำวัน" in the tasks header. */
+  task_type: z.literal("specific"),
   title: z.string().min(1, "Title is required").max(256),
   description: z.string().optional(),
   priority: z.enum(["low", "normal", "high", "critical"]),
@@ -268,7 +269,6 @@ export function CreateTaskDialog({
     setSubtaskReportFilesById({});
   };
 
-  const taskType = form.watch("task_type");
   const startAt = form.watch("start_at");
   const endsAt = form.watch("ends_at");
   const selectedAssigneeIds = form.watch("assigned_user_ids") ?? [];
@@ -289,63 +289,6 @@ export function CreateTaskDialog({
           style={{ maxHeight: "calc(90vh - 180px)" }}
         >
           <div className="space-y-6">
-            {/* Task Type Selection */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">{t("tasks.taskType")}</Label>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => form.setValue("task_type", "specific")}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl border-2 p-4 text-left transition-all",
-                    taskType === "specific"
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-card hover:border-muted-foreground/30"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                      taskType === "specific" ? "bg-primary text-primary-foreground" : "bg-muted"
-                    )}
-                  >
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{t("tasks.specificTask")}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("tasks.specificTaskDesc")}
-                    </p>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => form.setValue("task_type", "routine")}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl border-2 p-4 text-left transition-all",
-                    taskType === "routine"
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-card hover:border-muted-foreground/30"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                      taskType === "routine" ? "bg-primary text-primary-foreground" : "bg-muted"
-                    )}
-                  >
-                    <ListTodo className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{t("tasks.routineTask")}</p>
-                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">
-                      {t("tasks.routineTaskDesc")}
-                    </p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title" className="text-sm font-medium">
