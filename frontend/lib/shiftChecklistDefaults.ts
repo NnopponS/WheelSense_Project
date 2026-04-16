@@ -4,7 +4,7 @@ export type ShiftChecklistCategory = "shift" | "room" | "patient";
 
 export type ShiftChecklistRow = {
   id: string;
-  /** i18n key or plain label key from server template */
+  /** Display text stored in API field `label_key` (plain language, not i18n keys). */
   labelKey: string;
   checked: boolean;
   category: ShiftChecklistCategory;
@@ -12,14 +12,14 @@ export type ShiftChecklistRow = {
 
 /** Fallback when API returns no items (offline / error). Matches server default_shift_template. */
 export const DEFAULT_SHIFT_CHECKLIST: ShiftChecklistRow[] = [
-  { id: "1", labelKey: "observer.checklist.signIn", checked: false, category: "shift" },
-  { id: "2", labelKey: "observer.checklist.emergencyEquip", checked: false, category: "shift" },
-  { id: "3", labelKey: "observer.checklist.reviewPatients", checked: false, category: "shift" },
-  { id: "4", labelKey: "observer.checklist.room101", checked: false, category: "room" },
-  { id: "5", labelKey: "observer.checklist.room102", checked: false, category: "room" },
-  { id: "6", labelKey: "observer.checklist.room103", checked: false, category: "room" },
-  { id: "7", labelKey: "observer.checklist.docObs", checked: false, category: "patient" },
-  { id: "8", labelKey: "observer.checklist.careLog", checked: false, category: "patient" },
+  { id: "1", labelKey: "ลงเวลาเข้ากะ", checked: false, category: "shift" },
+  { id: "2", labelKey: "ตรวจอุปกรณ์ฉุกเฉิน", checked: false, category: "shift" },
+  { id: "3", labelKey: "ทบทวนผู้ป่วยที่รับผิดชอบ", checked: false, category: "shift" },
+  { id: "4", labelKey: "ห้อง 101 - ตรวจสัญญาณชีพ", checked: false, category: "room" },
+  { id: "5", labelKey: "ห้อง 102 - ช่วยมื้ออาหาร", checked: false, category: "room" },
+  { id: "6", labelKey: "ห้อง 103 - ตรวจยา", checked: false, category: "room" },
+  { id: "7", labelKey: "บันทึกการสังเกตผู้ป่วย", checked: false, category: "patient" },
+  { id: "8", labelKey: "อัปเดตบันทึกการดูแล", checked: false, category: "patient" },
 ];
 
 export function utcShiftDateString(): string {

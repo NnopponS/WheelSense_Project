@@ -192,7 +192,7 @@ export default function ObserverDashboardPage() {
             <Link href="/observer/tasks">{t("nav.tasks")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/observer/patients">{t("nav.patients")}</Link>
+            <Link href="/observer/personnel">{t("nav.personnel")}</Link>
           </Button>
           <Button asChild size="sm">
             <Link href="/observer/monitoring">
@@ -365,7 +365,7 @@ export default function ObserverDashboardPage() {
               <CardDescription>{t("observer.page.previewPatientsDesc")}</CardDescription>
             </div>
             <Button asChild size="sm" variant="outline">
-              <Link href="/observer/patients">
+              <Link href="/observer/personnel">
                 {t("dash.viewAll")}
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
@@ -376,7 +376,7 @@ export default function ObserverDashboardPage() {
               myPatients.map(({ patient, alerts: patientAlerts, latestVitals }) => (
                 <Link
                   key={patient.id}
-                  href={`/observer/patients/${patient.id}`}
+                  href={`/observer/personnel/${patient.id}`}
                   className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40"
                 >
                   <div className="min-w-0">

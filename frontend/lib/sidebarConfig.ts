@@ -93,6 +93,17 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           activeForPaths: ["/admin/audit", "/admin/ml-calibration"],
         },
         {
+          key: "nav.tasks",
+          href: "/admin/tasks",
+          icon: ClipboardEdit,
+          requiredCapability: "workflow.manage",
+          activeForPaths: [
+            "/admin/workflow",
+            "/admin/shift-checklists",
+            "/admin/timeline",
+          ],
+        },
+        {
           key: "nav.messages",
           href: "/admin/messages",
           icon: Inbox,
@@ -116,10 +127,10 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
         },
         {
           key: "nav.personnel",
-          href: "/head-nurse/patients",
+          href: "/head-nurse/personnel",
           icon: Users,
           requiredCapability: "patients.read",
-          activeForPaths: ["/head-nurse/staff", "/head-nurse/specialists", "/head-nurse/calendar"],
+          activeForPaths: ["/head-nurse/personnel", "/head-nurse/specialists", "/head-nurse/calendar"],
         },
         {
           key: "nav.tasks",
@@ -156,13 +167,13 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
         },
         {
           key: "nav.patients",
-          href: "/supervisor/patients",
+          href: "/supervisor/personnel",
           icon: Users,
           requiredCapability: "patients.read",
-          activeForPaths: ["/supervisor/prescriptions"],
+          activeForPaths: ["/supervisor/personnel", "/supervisor/prescriptions"],
         },
         {
-          key: "nav.workflow",
+          key: "nav.tasks",
           href: "/supervisor/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
@@ -196,10 +207,10 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
         },
         {
           key: "nav.observer.myPatients",
-          href: "/observer/patients",
+          href: "/observer/personnel",
           icon: Users,
           requiredCapability: "patients.read",
-          activeForPaths: ["/observer/prescriptions"],
+          activeForPaths: ["/observer/personnel", "/observer/prescriptions"],
         },
         {
           key: "nav.tasks",

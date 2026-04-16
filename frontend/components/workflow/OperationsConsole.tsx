@@ -1,7 +1,7 @@
 "use client";
 "use no memo";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -695,7 +695,11 @@ export function OperationsConsole({
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const activeTab = consoleTabFromSearchParams(searchParams);
+  /** Tasks hub embeds the console under `/{role}/tasks` — hide inner queue/transfer/… tabs; use standalone `/{role}/workflow` for full panels. */
+  const isWorkflowEmbeddedInTasksHub = /\/(head-nurse|observer|supervisor)\/tasks$/.test(pathname ?? "");
+  const activeTab: ConsoleTab = isWorkflowEmbeddedInTasksHub
+    ? "queue"
+    : consoleTabFromSearchParams(searchParams);
 
   const baseKey = [role, "workflow"] as const;
   /** Matches `GET /api/analytics/wards/summary` — observer is not authorized for workspace-wide ward totals. */
@@ -836,6 +840,30 @@ export function OperationsConsole({
   const patients = useMemo(() => (patientsQuery.data ?? []) as ListPatientsResponse, [patientsQuery.data]);
   const users = useMemo(() => (usersQuery.data ?? []) as UserSearchResult[], [usersQuery.data]);
   const tasks = useMemo(() => (tasksQuery.data ?? []) as ListWorkflowTasksResponse, [tasksQuery.data]);
+
+  // region agent log
+  useEffect(() => {
+    const linked = tasks.filter((t) => t.workflow_job_id != null).length;
+    void fetch("http://127.0.0.1:7687/ingest/3079ba95-d656-44c3-9953-dc1c569178f1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4d0de1" },
+      body: JSON.stringify({
+        sessionId: "4d0de1",
+        hypothesisId: "H5",
+        location: "OperationsConsole.tsx:tasks",
+        message: "ops console tasks query",
+        data: {
+          role,
+          tasksLen: tasks.length,
+          workflowLinked: linked,
+          fetchStatus: tasksQuery.fetchStatus,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, [tasks, role, tasksQuery.fetchStatus]);
+  // endregion
+
   const schedules = useMemo(
     () => (schedulesQuery.data ?? []) as ListWorkflowSchedulesResponse,
     [schedulesQuery.data],
@@ -1498,38 +1526,40 @@ export function OperationsConsole({
         ))}
       </section>
 
-      <Card className="border-border/70">
-        <CardContent className="flex flex-wrap gap-2 p-3">
-          {([
-            ["queue", t("workflow.console.tab.queue")],
-            ["transfer", t("workflow.console.tab.transfer")],
-            ["coordination", t("workflow.console.tab.coordination")],
-            ["audit", t("workflow.console.tab.audit")],
-            ["reports", t("workflow.console.tab.reports")],
-          ] as const).map(([tab, label]) => (
-            <Button
-              key={tab}
-              type="button"
-              variant={activeTab === tab ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                const next = new URLSearchParams(searchParams.toString());
-                if (tab === "queue") {
-                  next.delete(WORKFLOW_CONSOLE_TAB_QP);
-                  stripLegacyConsoleTabFromTabQP(next);
-                } else {
-                  next.set(WORKFLOW_CONSOLE_TAB_QP, tab);
-                  stripLegacyConsoleTabFromTabQP(next);
-                }
-                const query = next.toString();
-                router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-              }}
-            >
-              {label}
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
+      {!isWorkflowEmbeddedInTasksHub ? (
+        <Card className="border-border/70">
+          <CardContent className="flex flex-wrap gap-2 p-3">
+            {([
+              ["queue", t("workflow.console.tab.queue")],
+              ["transfer", t("workflow.console.tab.transfer")],
+              ["coordination", t("workflow.console.tab.coordination")],
+              ["audit", t("workflow.console.tab.audit")],
+              ["reports", t("workflow.console.tab.reports")],
+            ] as const).map(([tab, label]) => (
+              <Button
+                key={tab}
+                type="button"
+                variant={activeTab === tab ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams.toString());
+                  if (tab === "queue") {
+                    next.delete(WORKFLOW_CONSOLE_TAB_QP);
+                    stripLegacyConsoleTabFromTabQP(next);
+                  } else {
+                    next.set(WORKFLOW_CONSOLE_TAB_QP, tab);
+                    stripLegacyConsoleTabFromTabQP(next);
+                  }
+                  const query = next.toString();
+                  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+                }}
+              >
+                {label}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {activeTab === "queue" ? (
         <div className="space-y-4">

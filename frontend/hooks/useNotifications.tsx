@@ -17,7 +17,12 @@ import {
 import { AlertToastCard } from "@/components/notifications/AlertToastCard";
 import type { TranslationKey } from "@/lib/i18n";
 import type { Room } from "@/lib/types";
-import type { AlertOut, CareTaskOut, RoleMessageOut } from "@/lib/api/task-scope-types";
+import type {
+  AlertOut,
+  CareTaskOut,
+  CareWorkflowJobOut,
+  RoleMessageOut,
+} from "@/lib/api/task-scope-types";
 
 /** Matches server `ROLE_CLINICAL_STAFF` for `GET /api/workflow/tasks` (patients are forbidden). */
 const WORKFLOW_TASKS_ROLES = new Set(["admin", "head_nurse", "supervisor", "observer"]);
@@ -25,7 +30,7 @@ const WORKFLOW_TASKS_ROLES = new Set(["admin", "head_nurse", "supervisor", "obse
 const ALERT_POLL_MS = 10_000;
 const DEFAULT_POLL_MS = 30_000;
 
-export type NotificationType = "alert" | "message" | "task";
+export type NotificationType = "alert" | "message" | "task" | "workflow_job";
 
 export interface Notification {
   id: string;
@@ -36,7 +41,7 @@ export interface Notification {
   read: boolean;
   link?: string;
   priority?: "low" | "medium" | "high" | "urgent";
-  data?: AlertOut | CareTaskOut | RoleMessageOut;
+  data?: AlertOut | CareTaskOut | RoleMessageOut | CareWorkflowJobOut;
 }
 
 interface UseNotificationsReturn {
@@ -122,6 +127,44 @@ function transformTask(task: CareTaskOut, role: AppRole): Notification {
   };
 }
 
+function pendingWorkflowJobSteps(job: CareWorkflowJobOut): number {
+  return (job.steps ?? []).filter((s) => s.status !== "done" && s.status !== "skipped").length;
+}
+
+function workflowJobSignature(job: CareWorkflowJobOut): string {
+  return `${job.updated_at}|${pendingWorkflowJobSteps(job)}|${job.status}`;
+}
+
+function transformWorkflowJob(
+  job: CareWorkflowJobOut,
+  role: AppRole,
+  t: (key: TranslationKey) => string,
+): Notification {
+  const pending = pendingWorkflowJobSteps(job);
+  const desc = job.description?.trim() ?? "";
+  let message: string;
+  if (pending > 0) {
+    message = t("notifications.workflowJobPendingSteps").replace("{n}", String(pending));
+    if (desc) message = `${message} · ${desc}`;
+  } else if (desc) {
+    message = desc;
+  } else {
+    message = t("notifications.workflowJobNoPendingSteps");
+  }
+  const terminal = job.status === "completed" || job.status === "cancelled";
+  return {
+    id: `workflow-job-${job.id}`,
+    type: "workflow_job",
+    title: job.title ?? "",
+    message,
+    timestamp: job.updated_at || job.created_at,
+    read: terminal,
+    link: workflowTasksPath(role),
+    priority: "medium",
+    data: job,
+  };
+}
+
 function transformMessage(message: RoleMessageOut, role: AppRole): Notification {
   const link =
     message.patient_id != null && message.patient_id !== undefined
@@ -154,6 +197,8 @@ export function useNotifications(): UseNotificationsReturn {
 
   const alertToastBootstrap = useRef(false);
   const alertToastIds = useRef<Set<number>>(new Set());
+  const workflowJobNotifyBootstrap = useRef(false);
+  const workflowJobSignatures = useRef<Map<number, string>>(new Map());
 
   const { data: alertsData } = useQuery({
     queryKey: ["notifications", "alerts"],
@@ -165,6 +210,13 @@ export function useNotifications(): UseNotificationsReturn {
   const { data: tasksData } = useQuery({
     queryKey: ["notifications", "tasks"],
     queryFn: () => api.listWorkflowTasks({ status: "pending", limit: 50 }),
+    enabled: authReady && canListWorkflowTasks,
+    refetchInterval: DEFAULT_POLL_MS,
+  });
+
+  const { data: workflowJobsData } = useQuery({
+    queryKey: ["notifications", "workflow-jobs"],
+    queryFn: () => api.listWorkflowJobs({ limit: 50 }),
     enabled: authReady && canListWorkflowTasks,
     refetchInterval: DEFAULT_POLL_MS,
   });
@@ -244,6 +296,60 @@ export function useNotifications(): UseNotificationsReturn {
     }
   }, [alertsData, user, role, router, t, canAcknowledgeAlerts]);
 
+  useEffect(() => {
+    if (!workflowJobsData || !user || !canListWorkflowTasks) return;
+    const map = workflowJobSignatures.current;
+    if (!workflowJobNotifyBootstrap.current) {
+      workflowJobsData.forEach((j) => map.set(j.id, workflowJobSignature(j)));
+      workflowJobNotifyBootstrap.current = true;
+      return;
+    }
+    const activeStatuses = new Set(["draft", "active"]);
+    for (const job of workflowJobsData) {
+      const sig = workflowJobSignature(job);
+      const prev = map.get(job.id);
+      if (prev === undefined) {
+        map.set(job.id, sig);
+        if (activeStatuses.has(job.status)) {
+          const pending = pendingWorkflowJobSteps(job);
+          toast.info(t("notifications.workflowJobNewTitle"), {
+            description:
+              job.title && pending > 0
+                ? `${job.title} · ${t("notifications.workflowJobPendingSteps").replace("{n}", String(pending))}`
+                : job.title || undefined,
+            duration: 12_000,
+            action: {
+              label: t("notifications.workflowJobOpenTasks"),
+              onClick: () => router.push(workflowTasksPath(role)),
+            },
+          });
+        }
+        continue;
+      }
+      if (prev !== sig && activeStatuses.has(job.status)) {
+        map.set(job.id, sig);
+        const pending = pendingWorkflowJobSteps(job);
+        toast.info(t("notifications.workflowJobUpdatedTitle"), {
+          description:
+            job.title && pending > 0
+              ? `${job.title} · ${t("notifications.workflowJobPendingSteps").replace("{n}", String(pending))}`
+              : job.title || undefined,
+          duration: 12_000,
+          action: {
+            label: t("notifications.workflowJobOpenTasks"),
+            onClick: () => router.push(workflowTasksPath(role)),
+          },
+        });
+      } else {
+        map.set(job.id, sig);
+      }
+    }
+    const seen = new Set(workflowJobsData.map((j) => j.id));
+    for (const id of map.keys()) {
+      if (!seen.has(id)) map.delete(id);
+    }
+  }, [workflowJobsData, user, canListWorkflowTasks, t, router, role]);
+
   const notifications: Notification[] = useMemo(() => {
     const rows: Notification[] = [
       ...(alertsData?.map((a) => {
@@ -260,10 +366,11 @@ export function useNotifications(): UseNotificationsReturn {
           message: n.message.trim() ? n.message : t("notifications.taskMissingDescription"),
         };
       }) ?? []),
+      ...(workflowJobsData?.map((job) => transformWorkflowJob(job, role, t)) ?? []),
       ...(messagesData?.map((m) => transformMessage(m, role)) ?? []),
     ];
     return rows.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [alertsData, tasksData, messagesData, role, t]);
+  }, [alertsData, tasksData, workflowJobsData, messagesData, role, t]);
 
   const processedNotifications = notifications.map((n) => ({
     ...n,

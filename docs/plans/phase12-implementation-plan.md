@@ -7,7 +7,7 @@ This file is kept as a historical planning artifact.
 - The frontend has moved beyond the original Phase 12 planning draft.
 - Current runtime truth lives in:
   - `frontend/README.md`
-  - `wheelsense_role_breakdown.md`
+  - `docs/plans/wheelsense-role-breakdown.md`
   - `frontend/` source code
 - As of `2026-04-07`, the frontend also has a newer standardization layer beyond the original Phase 12 model:
   - root app providers for theme/query/auth wiring

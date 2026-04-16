@@ -8,6 +8,7 @@ import {
   CheckCheck,
   ClipboardList,
   Clock,
+  ListChecks,
   Mail,
   Trash2,
   X,
@@ -32,6 +33,7 @@ interface NotificationDrawerProps {
 const TYPE_LABEL_KEYS: Record<NotificationType, TranslationKey> = {
   alert: "notifications.typeAlert",
   task: "notifications.typeTask",
+  workflow_job: "notifications.typeWorkflowJob",
   message: "notifications.typeMessage",
 };
 
@@ -43,6 +45,10 @@ const typeConfig: Record<NotificationType, { icon: React.ReactNode; color: strin
   task: {
     icon: <ClipboardList className="h-4 w-4" />,
     color: "bg-primary/10 text-primary",
+  },
+  workflow_job: {
+    icon: <ListChecks className="h-4 w-4" />,
+    color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
   },
   message: {
     icon: <Mail className="h-4 w-4" />,
@@ -111,6 +117,7 @@ export function NotificationDrawer({
   const typeCounts = {
     alert: notifications.filter((n) => n.type === "alert" && !n.read).length,
     task: notifications.filter((n) => n.type === "task" && !n.read).length,
+    workflow_job: notifications.filter((n) => n.type === "workflow_job" && !n.read).length,
     message: notifications.filter((n) => n.type === "message" && !n.read).length,
   };
 
@@ -156,7 +163,7 @@ export function NotificationDrawer({
 
           {/* Filter tabs */}
           <div className="flex flex-wrap gap-1">
-            {(["all", "alert", "task", "message"] as const).map((type) => (
+            {(["all", "alert", "task", "workflow_job", "message"] as const).map((type) => (
               <Button
                 key={type}
                 variant={selectedType === type ? "secondary" : "ghost"}

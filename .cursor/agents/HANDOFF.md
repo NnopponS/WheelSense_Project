@@ -15,7 +15,7 @@ See also:
 
 - **2026-04-15 - Docs: workflow task Kanban + head nurse dashboard staff strip**
   - **Outcome:** Documented frontend-only workflow task **calendar / Kanban / list** surfaces and **Operations Console** boundary; **PATCH** contract unchanged. Documented head nurse **staff context strip** above priority alerts/tasks.
-  - **Files:** `frontend/README.md` (stack + conventions + route notes + key files), `ARCHITECTURE.md` (frontend bullet), `docs/adr/0008-workflow-domains-for-role-operations.md` (supplementary section).
+  - **Files:** `frontend/README.md` (stack + conventions + route notes + key files), `docs/ARCHITECTURE.md` (frontend bullet), `docs/adr/0008-workflow-domains-for-role-operations.md` (supplementary section).
 
 - **2026-04-12 - MCP OAuth authentication flow implementation**
   - **Outcome:** Implemented remote MCP OAuth authentication flow for external MCP clients:
@@ -57,53 +57,53 @@ See also:
   - **New Role Names:** None
 
 - **2026-04-12 - MCP architecture pivot: authenticated remote MCP + agent runtime orchestration**
-  - **Outcome:** Replaced the old “chat -> direct internal `execute_workspace_tool()`” path with a server-to-server `wheelsense-agent-runtime` service and authenticated remote MCP surface. `/mcp` now mounts the remote MCP app with **Streamable HTTP** as primary transport and temporary **SSE** compatibility at `/mcp/sse`; unauthenticated MCP requests return `401` with protected-resource metadata at `/.well-known/oauth-protected-resource/mcp`. Split MCP code into `server/app/mcp/*` (auth/context/server), added scoped actor context from bearer auth, added MCP resources/prompts/tool annotations, and removed caller-controlled caregiver attribution from MCP alert acknowledgement. `POST /api/chat/actions/propose` now calls the runtime service, which plans/grounds/executes through MCP as the acting user; `chat_actions` now supports `mcp_plan` payloads with normalized execution plan metadata. Added `wheelsense-agent-runtime` service to `server/docker-compose.core.yml`. Synced `ARCHITECTURE.md` and `server/AGENTS.md`.
+  - **Outcome:** Replaced the old “chat -> direct internal `execute_workspace_tool()`” path with a server-to-server `wheelsense-agent-runtime` service and authenticated remote MCP surface. `/mcp` now mounts the remote MCP app with **Streamable HTTP** as primary transport and temporary **SSE** compatibility at `/mcp/sse`; unauthenticated MCP requests return `401` with protected-resource metadata at `/.well-known/oauth-protected-resource/mcp`. Split MCP code into `server/app/mcp/*` (auth/context/server), added scoped actor context from bearer auth, added MCP resources/prompts/tool annotations, and removed caller-controlled caregiver attribution from MCP alert acknowledgement. `POST /api/chat/actions/propose` now calls the runtime service, which plans/grounds/executes through MCP as the acting user; `chat_actions` now supports `mcp_plan` payloads with normalized execution plan metadata. Added `wheelsense-agent-runtime` service to `server/docker-compose.core.yml`. Synced `docs/ARCHITECTURE.md` and `server/AGENTS.md`.
   - **Verification:** `cd server && python -m pytest tests/test_chat_actions.py tests/test_mcp_server.py tests/test_chat.py -q`
 
 - **2026-04-12 - Auth hardening: server-tracked sessions + HttpOnly web auth**
-  - **Outcome:** Added backend `auth_sessions` model/migration and auth APIs (`GET /api/auth/sessions`, `POST /api/auth/logout`, `DELETE /api/auth/sessions/{session_id}`); JWTs issued by login/impersonation now carry `sid` and are rejected when the tracked session is revoked/expired. Frontend auth no longer stores JWTs in `localStorage`; Next `/api/*` proxy now manages HttpOnly `ws_token` cookies, clears them on logout/401, and preserves an HttpOnly admin backup cookie for impersonation restore. Updated `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`, and auth copy in `frontend/lib/i18n.tsx`.
+  - **Outcome:** Added backend `auth_sessions` model/migration and auth APIs (`GET /api/auth/sessions`, `POST /api/auth/logout`, `DELETE /api/auth/sessions/{session_id}`); JWTs issued by login/impersonation now carry `sid` and are rejected when the tracked session is revoked/expired. Frontend auth no longer stores JWTs in `localStorage`; Next `/api/*` proxy now manages HttpOnly `ws_token` cookies, clears them on logout/401, and preserves an HttpOnly admin backup cookie for impersonation restore. Updated `docs/ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`, and auth copy in `frontend/lib/i18n.tsx`.
   - **Verification:** `cd server && python -m pytest tests/test_api.py tests/e2e/test_system_flows.py tests/test_future_domains.py tests/test_devices_mvp.py -q`; `cd server && python scripts/export_openapi.py openapi.generated.json`; `cd frontend && npm run openapi:types`; `cd frontend && npm run build`.
 
 - **2026-04-12 - Docs: facility management + floorplan panel UX (architecture sync)**
-  - **Outcome:** Documented full-name stats card and **`FloorplansPanel`** scope/layout behavior in `ARCHITECTURE.md` and `frontend/README.md`; noted `api.getRoom` in README key files.
+  - **Outcome:** Documented full-name stats card and **`FloorplansPanel`** scope/layout behavior in `docs/ARCHITECTURE.md` and `frontend/README.md`; noted `api.getRoom` in README key files.
   - **Verification:** N/A (markdown).
 
 - **2026-04-12 - Frontend: alert toast patient name + room context**
-  - **Outcome:** Before `toast.custom`, `useNotifications` resolves `GET /patients/{id}` and `GET /rooms/{room_id}` when present; `AlertToastCard` shows name + location line (or `notifications.toastPatientNoRoomOnRecord` / `notifications.toastPatientLocationUnknown`). Added `api.getRoom`. Docs: `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`.
+  - **Outcome:** Before `toast.custom`, `useNotifications` resolves `GET /patients/{id}` and `GET /rooms/{room_id}` when present; `AlertToastCard` shows name + location line (or `notifications.toastPatientNoRoomOnRecord` / `notifications.toastPatientLocationUnknown`). Added `api.getRoom`. Docs: `docs/ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`.
   - **Verification:** `cd frontend; npx tsc --noEmit` — pass.
 
 - **2026-04-12 - Admin caregiver detail: head nurse reference for HN profiles**
-  - **Outcome:** `CaregiverDetailPane` shows **Head nurses (reference)** for viewed roles **observer**, **supervisor**, and **head_nurse** (was only observer/supervisor). Peer list excludes self when the open profile is a head nurse; i18n `caregivers.headNursesPeerOnlySelf` for empty peer case. Docs: `ARCHITECTURE.md`, `frontend/README.md`.
+  - **Outcome:** `CaregiverDetailPane` shows **Head nurses (reference)** for viewed roles **observer**, **supervisor**, and **head_nurse** (was only observer/supervisor). Peer list excludes self when the open profile is a head nurse; i18n `caregivers.headNursesPeerOnlySelf` for empty peer case. Docs: `docs/ARCHITECTURE.md`, `frontend/README.md`.
   - **Verification:** `cd frontend; npx tsc --noEmit` — pass.
 
 - **2026-04-12 - Frontend: alert toast chrome — no red frame**
-  - **Outcome:** Removed destructive/red borders from alert `toast.custom` UI: `AlertToastCard` no longer switches left accent to red for high severity; **`ws-toast-urgent`** in `globals.css` uses neutral `border` + elevated shadow only. Dropped unused `isUrgent` prop. Docs: `ARCHITECTURE.md`, `frontend/README.md`.
+  - **Outcome:** Removed destructive/red borders from alert `toast.custom` UI: `AlertToastCard` no longer switches left accent to red for high severity; **`ws-toast-urgent`** in `globals.css` uses neutral `border` + elevated shadow only. Dropped unused `isUrgent` prop. Docs: `docs/ARCHITECTURE.md`, `frontend/README.md`.
   - **Verification:** `cd frontend; npx tsc --noEmit` — pass.
 
 - **2026-04-12 - Frontend: Next 16 sync dynamic APIs + doc sync**
   - **Lanes:** `ws-frontend-shared` / docs
-  - **Outcome:** Client pages stop taking Promise `params` on the segment (`/admin/patients/[id]`, `/admin/caregivers/[id]` → `useParams()`). `/admin/settings` is client `Suspense` + `useSearchParams()` for `?tab=`. Renamed `hooks/useNotifications.ts` → **`useNotifications.tsx`** (JSX). Documented in `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`.
+  - **Outcome:** Client pages stop taking Promise `params` on the segment (`/admin/patients/[id]`, `/admin/caregivers/[id]` → `useParams()`). `/admin/settings` is client `Suspense` + `useSearchParams()` for `?tab=`. Renamed `hooks/useNotifications.ts` → **`useNotifications.tsx`** (JSX). Documented in `docs/ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md`.
   - **Verification:** `cd frontend; npx tsc --noEmit; npm run build` — pass.
 
 - **2026-04-12 - Frontend: sidebar consolidation + hub tabs**
   - **Lanes:** `ws-frontend-shared` / role UIs
-  - **Outcome:** Reduced per-role sidebar items (`lib/sidebarConfig.ts`); `NavItem.activeForPaths` + `RoleSidebar` active state; `components/shared/HubTabBar.tsx` + `?tab=` on hub pages (admin settings/messages; head-nurse/supervisor/observer monitoring, patients, tasks/workflow; patient schedule; patient home quick links). Docs: `ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md` (frontend contract bullet).
+  - **Outcome:** Reduced per-role sidebar items (`lib/sidebarConfig.ts`); `NavItem.activeForPaths` + `RoleSidebar` active state; `components/shared/HubTabBar.tsx` + `?tab=` on hub pages (admin settings/messages; head-nurse/supervisor/observer monitoring, patients, tasks/workflow; patient schedule; patient home quick links). Docs: `docs/ARCHITECTURE.md`, `frontend/README.md`, `server/AGENTS.md` (frontend contract bullet).
   - **Verification:** `cd frontend; npx tsc --noEmit; npm run build` — pass; Docker `wheelsense-platform-web` rebuild as needed after deploy.
 
 - **2026-04-12 - Frontend: remove legacy `hooks/useQuery.ts`**
   - **Lanes:** `ws-frontend-admin` / shared shell
-  - **Outcome:** All former `@/hooks/useQuery` call sites use `@tanstack/react-query` with namespaced `queryKey`s; monitoring (`FloorMapWorkspace`, `RoomSmartDevicesPanel`) and remaining admin/shared components aligned. Deleted `frontend/hooks/useQuery.ts`. Docs: `ARCHITECTURE.md` (dedicated TanStack client-cache bullet: removal, keys, helpers, REST unchanged), `frontend/README.md` (migration note + monitoring file pointers), `server/AGENTS.md` (frontend contract line), `.agents/workflows/wheelsense.md`, `frontend/lib/queryEndpointDefaults.ts` file header comment.
+  - **Outcome:** All former `@/hooks/useQuery` call sites use `@tanstack/react-query` with namespaced `queryKey`s; monitoring (`FloorMapWorkspace`, `RoomSmartDevicesPanel`) and remaining admin/shared components aligned. Deleted `frontend/hooks/useQuery.ts`. Docs: `docs/ARCHITECTURE.md` (dedicated TanStack client-cache bullet: removal, keys, helpers, REST unchanged), `frontend/README.md` (migration note + monitoring file pointers), `server/AGENTS.md` (frontend contract line), `.agents/workflows/wheelsense.md`, `frontend/lib/queryEndpointDefaults.ts` file header comment.
   - **Verification:** `cd frontend; npx tsc --noEmit; npm run build` — pass.
 
 - **2026-04-12 - Docs: iter-3 implementation truth (TanStack admin, clinical i18n, patient shell, HA room-controls)**
   - **Lanes:** manual / `ws-docs-sync`-style
-  - **Outcome:** Synced `ARCHITECTURE.md` (admin query keys, Sonner urgent skin, `clinical.*` i18n, patient portal shell), `frontend/README.md` (TanStack vs legacy `useQuery`, `clinical.*` convention, toast + patient layout notes), `server/AGENTS.md` (`/api/ha` semantics: REST from browser, no browser MQTT for actuators; ADR-0012 / not `/api/care/device/action`).
+  - **Outcome:** Synced `docs/ARCHITECTURE.md` (admin query keys, Sonner urgent skin, `clinical.*` i18n, patient portal shell), `frontend/README.md` (TanStack vs legacy `useQuery`, `clinical.*` convention, toast + patient layout notes), `server/AGENTS.md` (`/api/ha` semantics: REST from browser, no browser MQTT for actuators; ADR-0012 / not `/api/care/device/action`).
   - **Verification:** N/A (markdown only).
 
 - **2026-04-12 - Docs: notifications, i18n tables, floorplan assign, room-actuator ADR (frontend + architecture sync)**
   - **Lanes:** manual / `ws-docs-sync`-style
   - **Outcome:** Documented Sonner toasts + alert sound toggle + `useNotifications` polling and `lib/notificationRoutes.ts`; RoleShell/RoleSidebar + `sidebarConfig` admin extras (device health, shift checklists, demo control, head-nurse reports, supervisor directives); admin/observer patient table i18n pattern (`adminPatients.*`, explicit care-level keys); floorplan **patient assignment mode** (`PATCH /patients`); cross-linked **ADR-0012** (room-native MQTT actuators) from architecture notes.
-  - **Files:** `frontend/README.md`, `ARCHITECTURE.md` (this round); runtime truth already in `server/AGENTS.md`, `docs/adr/README.md`, `docs/adr/0012-room-native-actuators-mqtt.md`, `.agents/workflows/wheelsense.md` from implementation pass.
+  - **Files:** `frontend/README.md`, `docs/ARCHITECTURE.md` (this round); runtime truth already in `server/AGENTS.md`, `docs/adr/README.md`, `docs/adr/0012-room-native-actuators-mqtt.md`, `.agents/workflows/wheelsense.md` from implementation pass.
   - **Verification:** N/A (markdown only).
 
 - **2026-04-12 - Hard cut `/api/future` -> canonical domains + admin surface cleanup**
@@ -125,7 +125,7 @@ See also:
        - `account-management` migrated to TanStack Query
        - patient caregiver display now uses real caregiver-patient access data
        - fake caregiver on-duty math removed
-    5. Runtime docs updated: `ARCHITECTURE.md`, `server/AGENTS.md`, `frontend/README.md`, and ADR text for the canonical API names.
+    5. Runtime docs updated: `docs/ARCHITECTURE.md`, `server/AGENTS.md`, `frontend/README.md`, and ADR text for the canonical API names.
   - **Verification:**
     - `cd server && python scripts/export_openapi.py openapi.generated.json`
     - `cd server && python -m pytest tests/test_future_domains.py tests/test_workspace_scoped_uniqueness.py -q` -> `13 passed`
@@ -137,7 +137,7 @@ See also:
 
 - **2026-04-12 - Docs: patient workflow + messaging + observer calendar (architecture sync)**
   - **Lanes:** `ws-docs-sync` (manual)
-  - **Outcome:** Updated `ARCHITECTURE.md` (role matrix + workflow API bullets), `server/AGENTS.md` (`/api/workflow` semantics: patient schedule/task read scope, observer write, messaging recipients, message targeting), `frontend/README.md` (route groups + patient portal subsection).
+  - **Outcome:** Updated `docs/ARCHITECTURE.md` (role matrix + workflow API bullets), `server/AGENTS.md` (`/api/workflow` semantics: patient schedule/task read scope, observer write, messaging recipients, message targeting), `frontend/README.md` (route groups + patient portal subsection).
   - **Verification:** N/A (markdown only).
 
 - **2026-04-11 - Auth Impersonate 400 Error Fix**
@@ -161,9 +161,8 @@ See also:
     2. **✅ Added Logout**: Created `/logout` page + logout button already exists in RoleSidebar
     3. **✅ Fixed Escape Key**: Added `onEscapeKeyDown` handler to Sheet component to prevent logout
     4. **✅ Fixed Direct Navigation**: Improved auth guard logic with proper loading states
-    5. **✅ Documented Patient Role**: Patient linking requires backend seed data update (documented in TEST_REPORT.md)
+    5. **✅ Documented Patient Role**: Patient linking requires backend seed data update (noted in this handoff entry)
   - **Files created/modified:**
-    - `testing/hospital-simulation/DESIGN.md` + `TEST_REPORT.md` - Test documentation
     - `frontend/app/logout/page.tsx` - New logout page
     - `frontend/components/RoleShell.tsx` - Fixed redirect loops
     - `frontend/components/RoleSidebar.tsx` - Fixed Escape key handler

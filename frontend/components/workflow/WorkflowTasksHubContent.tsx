@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { addMinutes, format, isPast, parseISO } from "date-fns";
 import {
   AlertCircle,
@@ -20,6 +20,7 @@ import {
   type CalendarViewMode,
 } from "@/components/calendar/CalendarView";
 import { buildPatientNameMap } from "@/components/calendar/scheduleEventMapper";
+import { WorkflowJobsPanel } from "@/components/workflow/WorkflowJobsPanel";
 import { WorkflowTasksKanban } from "@/components/workflow/WorkflowTasksKanban";
 import { ObserverTaskListPanel } from "@/components/workflow/ObserverTaskListPanel";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +78,7 @@ const QUERY = {
     invalidate: [
       ["head-nurse", "tasks"],
       ["head-nurse", "dashboard", "tasks"],
+      ["head-nurse", "workflow-jobs"],
     ] as const,
   },
   observer: {
@@ -88,6 +90,7 @@ const QUERY = {
       ["observer", "dashboard", "tasks"],
       ["observer", "patients"],
       ["observer", "patient-detail"],
+      ["observer", "workflow-jobs"],
     ] as const,
   },
   supervisor: {
@@ -98,6 +101,7 @@ const QUERY = {
       ["supervisor", "tasks"],
       ["supervisor", "dashboard", "tasks"],
       ["supervisor", "calendar", "tasks"],
+      ["supervisor", "workflow-jobs"],
     ] as const,
   },
 } as const;
@@ -120,7 +124,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
     "all" | "pending" | "in_progress" | "completed"
   >("all");
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
-  const [tasksLayout, setTasksLayout] = useState<"calendar" | "kanban" | "list">("calendar");
+  const [tasksLayout, setTasksLayout] = useState<"jobs" | "calendar" | "kanban" | "list">("jobs");
   const [savingTaskIds, setSavingTaskIds] = useState<Set<number>>(() => new Set());
   const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
   const [taskActionError, setTaskActionError] = useState<string | null>(null);
@@ -136,6 +140,40 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
 
   const isLoading = tasksQuery.isLoading;
   const tasks = useMemo(() => (tasksQuery.data ?? []) as CareTaskOut[], [tasksQuery.data]);
+
+  // region agent log
+  useEffect(() => {
+    const linked = tasks.filter((t) => t.workflow_job_id != null).length;
+    const filtered = tasks.filter((task) => {
+      if (selectedStatus !== "all" && task.status !== selectedStatus) return false;
+      if (selectedPatientId !== ALL_FILTER && task.patient_id !== Number(selectedPatientId)) {
+        return false;
+      }
+      return true;
+    });
+    void fetch("http://127.0.0.1:7687/ingest/3079ba95-d656-44c3-9953-dc1c569178f1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4d0de1" },
+      body: JSON.stringify({
+        sessionId: "4d0de1",
+        hypothesisId: "H2-H3",
+        location: "WorkflowTasksHubContent.tsx:tasks",
+        message: "tasks + filters",
+        data: {
+          variant,
+          tasksLen: tasks.length,
+          workflowLinked: linked,
+          filteredLen: filtered.length,
+          selectedStatus,
+          selectedPatientId,
+          tasksFetchStatus: tasksQuery.fetchStatus,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, [tasks, variant, selectedStatus, selectedPatientId, tasksQuery.fetchStatus]);
+  // endregion
+
   const patients = useMemo(
     () => (patientsQuery.data ?? []) as ListPatientsResponse,
     [patientsQuery.data],
@@ -185,7 +223,7 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
   }, [tasks, selectedStatus, selectedPatientId]);
 
   const events = useMemo<CalendarEvent[]>(() => {
-    return filteredTasks
+    const raw = filteredTasks
       .filter((task) => task.due_at || task.created_at)
       .map((task) => {
         const start = new Date(task.due_at ?? task.created_at ?? new Date().toISOString());
@@ -208,7 +246,22 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
           recurrence: null,
         };
       });
-  }, [filteredTasks, patientNameById, t]);
+    // region agent log
+    void fetch("http://127.0.0.1:7687/ingest/3079ba95-d656-44c3-9953-dc1c569178f1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "4d0de1" },
+      body: JSON.stringify({
+        sessionId: "4d0de1",
+        hypothesisId: "H4",
+        location: "WorkflowTasksHubContent.tsx:events",
+        message: "calendar events built",
+        data: { eventsLen: raw.length, viewDate: currentDate.toISOString() },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // endregion
+    return raw;
+  }, [filteredTasks, patientNameById, t, currentDate]);
 
   const stats = useMemo(() => {
     const today = format(new Date(), "yyyy-MM-dd");
@@ -372,6 +425,15 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
+          variant={effectiveLayout === "jobs" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setTasksLayout("jobs")}
+        >
+          <ClipboardList className="mr-2 h-4 w-4" />
+          {t("workflowTasks.kanban.viewJobs")}
+        </Button>
+        <Button
+          type="button"
           variant={effectiveLayout === "calendar" ? "default" : "outline"}
           size="sm"
           onClick={() => setTasksLayout("calendar")}
@@ -400,6 +462,8 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
           </Button>
         ) : null}
       </div>
+
+      {effectiveLayout === "jobs" ? <WorkflowJobsPanel variant={variant} /> : null}
 
       {effectiveLayout === "kanban" ? (
         <WorkflowTasksKanban

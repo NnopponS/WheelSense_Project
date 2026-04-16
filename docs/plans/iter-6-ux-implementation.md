@@ -30,4 +30,4 @@ Shared: [`frontend/components/RoleShell.tsx`](../../frontend/components/RoleShel
 
 ## Canonical docs
 
-Update when behavior changes: [`ARCHITECTURE.md`](../../ARCHITECTURE.md), [`frontend/README.md`](../../frontend/README.md), [`.agents/workflows/wheelsense.md`](../../.agents/workflows/wheelsense.md).
+Update when behavior changes: [`ARCHITECTURE.md`](../ARCHITECTURE.md), [`frontend/README.md`](../../frontend/README.md), [`.agents/workflows/wheelsense.md`](../../.agents/workflows/wheelsense.md).

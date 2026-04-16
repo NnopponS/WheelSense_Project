@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, ClipboardList, ListChecks, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -56,10 +56,23 @@ const CHECKLIST_GROUPS: {
 type TemplateEditorProps = {
   initialItems: ShiftChecklistItemApi[];
   linkedUser: User;
+  /** Hide bottom save button when parent shows a sticky footer save. */
+  hideBottomSave?: boolean;
+  onSavingChange?: (pending: boolean) => void;
+};
+
+export type StaffChecklistTemplateEditorHandle = {
+  save: () => void;
 };
 
 /** Isolated editor: parent sets `key` so state resets after template refetch. */
-function StaffChecklistTemplateEditor({ initialItems, linkedUser }: TemplateEditorProps) {
+const StaffChecklistTemplateEditor = forwardRef<
+  StaffChecklistTemplateEditorHandle,
+  TemplateEditorProps
+>(function StaffChecklistTemplateEditor(
+  { initialItems, linkedUser, hideBottomSave, onSavingChange },
+  ref,
+) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const newRowSeq = useRef(nextNewRowSequence(initialItems));
@@ -88,6 +101,9 @@ function StaffChecklistTemplateEditor({ initialItems, linkedUser }: TemplateEdit
       }
       await api.putShiftChecklistUserTemplate(linkedUser.id, { items: trimmed });
     },
+    onMutate: () => {
+      onSavingChange?.(true);
+    },
     onSuccess: async () => {
       setTemplateErr(null);
       await queryClient.invalidateQueries({ queryKey: ["shift-checklist"] });
@@ -98,7 +114,20 @@ function StaffChecklistTemplateEditor({ initialItems, linkedUser }: TemplateEdit
     onError: (e: Error) => {
       setTemplateErr(e.message);
     },
+    onSettled: () => {
+      onSavingChange?.(false);
+    },
   });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      save: () => {
+        saveTemplateMutation.mutate();
+      },
+    }),
+    [saveTemplateMutation],
+  );
 
   const addItem = (category: ShiftChecklistItemApi["category"]) => {
     const id = `new-${newRowSeq.current}`;
@@ -115,14 +144,13 @@ function StaffChecklistTemplateEditor({ initialItems, linkedUser }: TemplateEdit
     setDraftItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   };
 
-  const previewLabel = (labelKey: string) => {
-    const trimmed = labelKey.trim();
-    if (!trimmed) return "—";
-    return t(trimmed);
+  const previewLabel = (labelText: string) => {
+    const trimmed = labelText.trim();
+    return trimmed || "—";
   };
 
   return (
-    <Card className="border-border/70 shadow-none">
+    <Card id="staff-checklist-template" className="border-border/70 shadow-none scroll-mt-4">
       <CardHeader className="space-y-1 pb-3">
         <CardTitle className="text-base">{t("headNurse.staff.templateSection")}</CardTitle>
         <CardDescription>{t("headNurse.staff.templateHint")}</CardDescription>
@@ -218,7 +246,7 @@ function StaffChecklistTemplateEditor({ initialItems, linkedUser }: TemplateEdit
           })
         )}
 
-        {draftItems.length > 0 ? (
+        {draftItems.length > 0 && !hideBottomSave ? (
           <div className="border-t border-border/70 pt-4">
             <Button
               type="button"
@@ -239,7 +267,7 @@ function StaffChecklistTemplateEditor({ initialItems, linkedUser }: TemplateEdit
       </CardContent>
     </Card>
   );
-}
+});
 
 type Props = {
   open: boolean;
@@ -259,6 +287,8 @@ export function HeadNurseStaffMemberSheet({
   schedulesForUser,
 }: Props) {
   const { t } = useTranslation();
+  const templateEditorRef = useRef<StaffChecklistTemplateEditorHandle>(null);
+  const [templateFooterSaving, setTemplateFooterSaving] = useState(false);
   const [checklistDate, setChecklistDate] = useState(() => utcShiftDateString());
 
   const workspaceChecklist = useQuery({
@@ -320,8 +350,9 @@ export function HeadNurseStaffMemberSheet({
           </div>
         </SheetHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          <div className="space-y-5 pb-6">
+        <div className="flex min-h-0 min-h-[200px] flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            <div className="space-y-5 pb-6">
             {!linkedUser ? (
               <Card className="border-dashed border-border/80 bg-muted/20">
                 <CardContent className="pt-6">
@@ -332,6 +363,26 @@ export function HeadNurseStaffMemberSheet({
               </Card>
             ) : (
               <>
+                {templateQuery.isLoading ? (
+                  <Card className="border-border/70 shadow-none">
+                    <CardContent className="py-8">
+                      <div className="space-y-3 animate-pulse">
+                        <div className="h-24 rounded-lg bg-muted" />
+                        <div className="h-24 rounded-lg bg-muted" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <StaffChecklistTemplateEditor
+                    ref={templateEditorRef}
+                    key={`${linkedUser.id}-${templateSyncToken}`}
+                    initialItems={templateQuery.data?.items ?? []}
+                    linkedUser={linkedUser}
+                    hideBottomSave
+                    onSavingChange={setTemplateFooterSaving}
+                  />
+                )}
+
                 <Card className="border-border/70 shadow-none">
                   <CardHeader className="space-y-1 pb-3">
                     <div className="flex items-center gap-2">
@@ -471,7 +522,7 @@ export function HeadNurseStaffMemberSheet({
                                         : "text-foreground",
                                     )}
                                   >
-                                    {t(item.label_key)}
+                                    {item.label_key}
                                   </span>
                                 </div>
                               ))}
@@ -486,26 +537,34 @@ export function HeadNurseStaffMemberSheet({
                     )}
                   </CardContent>
                 </Card>
-
-                {templateQuery.isLoading ? (
-                  <Card className="border-border/70 shadow-none">
-                    <CardContent className="py-8">
-                      <div className="space-y-3 animate-pulse">
-                        <div className="h-24 rounded-lg bg-muted" />
-                        <div className="h-24 rounded-lg bg-muted" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <StaffChecklistTemplateEditor
-                    key={`${linkedUser.id}-${templateSyncToken}`}
-                    initialItems={templateQuery.data?.items ?? []}
-                    linkedUser={linkedUser}
-                  />
-                )}
               </>
             )}
+            </div>
           </div>
+
+          {linkedUser && !templateQuery.isLoading ? (
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border bg-background px-6 py-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  document.getElementById("staff-checklist-template")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+              >
+                {t("headNurse.staff.scrollToTemplate")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={templateFooterSaving}
+                onClick={() => templateEditorRef.current?.save()}
+              >
+                {templateFooterSaving ? t("common.saving") : t("headNurse.staff.saveTemplate")}
+              </Button>
+            </div>
+          ) : null}
         </div>
       </SheetContent>
     </Sheet>

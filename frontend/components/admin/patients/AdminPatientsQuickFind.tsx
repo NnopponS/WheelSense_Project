@@ -96,7 +96,7 @@ export default function AdminPatientsQuickFind({ search, onSearchChange }: Props
           onClick={() => {
             const id = selectedPatientId.trim();
             if (!id) return;
-            router.push(`/head-nurse/patients/${id}`);
+            router.push(`/head-nurse/personnel/${id}`);
           }}
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white gradient-cta disabled:opacity-50 sm:min-w-[8.5rem]"
         >

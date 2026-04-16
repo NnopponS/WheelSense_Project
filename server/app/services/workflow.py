@@ -621,7 +621,7 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
 
 class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
     @staticmethod
-    def _is_task_visible(task: CareTask, *, user_id: int, user_role: str) -> bool:
+    def _standalone_task_visible(task: CareTask, *, user_id: int, user_role: str) -> bool:
         if user_role in {"admin", "head_nurse", "supervisor"}:
             return True
         return bool(task.assigned_user_id == user_id or task.assigned_role == user_role)
@@ -666,6 +666,11 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         task = await self.get(session, ws_id=ws_id, id=task_id)
         if not task:
             return None
+        if task.workflow_job_id is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="This task is linked to a checklist job; update the checklist job instead.",
+            )
         patch = obj_in if isinstance(obj_in, dict) else obj_in.model_dump(exclude_unset=True)
         if (
             "assigned_role" in patch
@@ -714,27 +719,94 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         visible_patient_ids: set[int] | None = None,
         limit: int = 100,
     ) -> list[CareTask]:
-        stmt = select(CareTask).where(CareTask.workspace_id == ws_id)
         patient_scope = _patient_scope_condition(CareTask, visible_patient_ids)
+
+        if user_role in {"admin", "head_nurse", "supervisor"}:
+            stmt = select(CareTask).where(CareTask.workspace_id == ws_id)
+            if patient_scope is not None:
+                stmt = stmt.where(patient_scope)
+            if status:
+                stmt = stmt.where(CareTask.status == status)
+            stmt = stmt.order_by(CareTask.created_at.desc()).limit(limit)
+            res = await session.execute(stmt)
+            return await enrich_task_people(session, ws_id, list(res.scalars().all()))
+
+        assignee_clause = or_(
+            CareTask.assigned_user_id == user_id,
+            CareTask.assigned_role == user_role,
+        )
+        stmt_standalone = select(CareTask).where(
+            CareTask.workspace_id == ws_id,
+            CareTask.workflow_job_id.is_(None),
+            assignee_clause,
+        )
         if patient_scope is not None:
-            stmt = stmt.where(patient_scope)
-        if user_role not in {"admin", "head_nurse", "supervisor"}:
-            stmt = stmt.where(
-                or_(CareTask.assigned_user_id == user_id, CareTask.assigned_role == user_role)
-            )
+            stmt_standalone = stmt_standalone.where(patient_scope)
         if status:
-            stmt = stmt.where(CareTask.status == status)
-        stmt = stmt.order_by(CareTask.created_at.desc()).limit(limit)
-        res = await session.execute(stmt)
-        return await enrich_task_people(session, ws_id, list(res.scalars().all()))
+            stmt_standalone = stmt_standalone.where(CareTask.status == status)
+
+        stmt_linked = select(CareTask).where(
+            CareTask.workspace_id == ws_id,
+            CareTask.workflow_job_id.isnot(None),
+        )
+        if patient_scope is not None:
+            stmt_linked = stmt_linked.where(patient_scope)
+        if status:
+            stmt_linked = stmt_linked.where(CareTask.status == status)
+
+        res_s = await session.execute(stmt_standalone)
+        res_l = await session.execute(stmt_linked)
+        standalone = list(res_s.scalars().all())
+        linked_candidates = list(res_l.scalars().all())
+
+        from app.services.care_workflow_jobs import get_job_if_visible
+
+        visible_linked: list[CareTask] = []
+        for t in linked_candidates:
+            if t.workflow_job_id is None:
+                continue
+            out = await get_job_if_visible(
+                session,
+                ws_id,
+                t.workflow_job_id,
+                user_id=user_id,
+                user_role=user_role,
+                visible_patient_ids=visible_patient_ids,
+            )
+            if out is not None:
+                visible_linked.append(t)
+
+        merged = standalone + visible_linked
+        merged.sort(key=lambda x: x.created_at, reverse=True)
+        merged = merged[:limit]
+        return await enrich_task_people(session, ws_id, merged)
 
     async def can_user_access_task(
-        self, session: AsyncSession, ws_id: int, *, task_id: int, user_id: int, user_role: str
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        *,
+        task_id: int,
+        user_id: int,
+        user_role: str,
+        visible_patient_ids: set[int] | None = None,
     ) -> bool:
         task = await self.get(session, ws_id=ws_id, id=task_id)
         if not task:
             return False
-        return self._is_task_visible(task, user_id=user_id, user_role=user_role)
+        if task.workflow_job_id is None:
+            return self._standalone_task_visible(task, user_id=user_id, user_role=user_role)
+        from app.services.care_workflow_jobs import get_job_if_visible
+
+        out = await get_job_if_visible(
+            session,
+            ws_id,
+            task.workflow_job_id,
+            user_id=user_id,
+            user_role=user_role,
+            visible_patient_ids=visible_patient_ids,
+        )
+        return out is not None
 
     async def claim(
         self,
@@ -748,6 +820,11 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         task = await self.get(session, ws_id=ws_id, id=task_id)
         if not task:
             return None
+        if task.workflow_job_id is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot claim a checklist-linked task; use the checklist job workflow.",
+            )
         previous = {
             "assigned_role": task.assigned_role,
             "assigned_user_id": task.assigned_user_id,
@@ -785,6 +862,11 @@ class CareTaskService(CRUDBase[CareTask, CareTaskCreate, CareTaskUpdate]):
         task = await self.get(session, ws_id=ws_id, id=task_id)
         if not task:
             return None
+        if task.workflow_job_id is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot hand off a checklist-linked task; use the checklist job workflow.",
+            )
         await _validate_task_target(
             session,
             ws_id,

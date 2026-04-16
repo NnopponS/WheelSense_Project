@@ -39,6 +39,10 @@ from .chat_actions import ChatAction
 from .workflow import (
     CareSchedule,
     CareTask,
+    CareWorkflowJob,
+    CareWorkflowJobAssignee,
+    CareWorkflowJobPatient,
+    CareWorkflowJobStep,
     RoleMessage,
     HandoverNote,
     CareDirective,
@@ -51,6 +55,7 @@ from .service_requests import ServiceRequest
 from .support import SupportTicket, SupportTicketComment, SupportTicketAttachment
 from .shift_checklist import ShiftChecklistState
 from .shift_checklist_user_template import ShiftChecklistUserTemplate
+from .tasks import Task, TaskReport
 
 __all__ = [
     "Base",
@@ -102,6 +107,10 @@ __all__ = [
     # Workflow domains
     "CareSchedule",
     "CareTask",
+    "CareWorkflowJob",
+    "CareWorkflowJobPatient",
+    "CareWorkflowJobAssignee",
+    "CareWorkflowJobStep",
     "RoleMessage",
     "HandoverNote",
     "CareDirective",
@@ -120,4 +129,7 @@ __all__ = [
     "SupportTicketAttachment",
     "ShiftChecklistState",
     "ShiftChecklistUserTemplate",
+    # Unified Task Management
+    "Task",
+    "TaskReport",
 ]

@@ -156,13 +156,13 @@ async def test_shift_checklist_template_head_nurse(
     new_items = [
         {
             "id": "a1",
-            "label_key": "observer.checklist.signIn",
+            "label_key": "ลงเวลาเข้ากะ",
             "checked": False,
             "category": "shift",
         },
         {
             "id": "a2",
-            "label_key": "observer.checklist.emergencyEquip",
+            "label_key": "ตรวจอุปกรณ์ฉุกเฉิน",
             "checked": False,
             "category": "shift",
         },

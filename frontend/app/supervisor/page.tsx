@@ -160,7 +160,7 @@ export default function SupervisorDashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href="/supervisor/patients">{t("nav.patients")}</Link>
+            <Link href="/supervisor/personnel">{t("nav.personnel")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/supervisor/tasks">{t("supervisor.page.workflowLink")}</Link>

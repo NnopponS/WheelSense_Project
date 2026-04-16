@@ -53,3 +53,13 @@ dist/
 postgres-data/
 mosquitto/data/
 mosquitto/log/
+
+# Android SDK (local install under mobile-app; do not commit)
+mobile-app/.android-sdk/
+
+# Accidental literal paths (e.g. CMD %VAR% used without expansion in PowerShell)
+/%USERPROFILE%/
+/%USERPROFILE%AndroidSdkcmdline-tools/
+
+# Accidental literal Windows TEMP zip (must never enter Git; exceeds GitHub limit)
+/%TEMP%cmdline-tools.zip

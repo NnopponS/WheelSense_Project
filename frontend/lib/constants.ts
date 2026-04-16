@@ -10,15 +10,15 @@ export const ROUTES = {
   OBSERVER: "/observer",
   PATIENT: "/patient",
   // Clinical features moved to head-nurse role
-  PATIENTS: "/head-nurse/patients",
-  PATIENT_DETAIL: (id: number) => `/head-nurse/patients/${id}`,
+  PATIENTS: "/head-nurse/personnel",
+  PATIENT_DETAIL: (id: number) => `/head-nurse/personnel/${id}`,
   DEVICES: "/admin/devices",
   // Monitoring, alerts moved to role-specific dashboards
   MONITORING: "/admin",
   ALERTS: "/head-nurse/alerts",
   TIMELINE: "/admin",
-  // Staff detail pages remain at admin; list view redirect to head-nurse
-  CAREGIVERS: "/head-nurse/staff",
+  // Personnel hub includes staff and patients in head-nurse role
+  CAREGIVERS: "/head-nurse/personnel",
   CAREGIVER_DETAIL: (id: number) => `/admin/caregivers/${id}`,
   FACILITIES: "/admin/facility-management",
   PROFILE: "/account",

@@ -2,20 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, ListChecks, Plus } from "lucide-react";
+import { CalendarDays, Plus } from "lucide-react";
 import { api } from "@/lib/api";
-import type { User } from "@/lib/types";
 import type { CareScheduleOut, ListPatientsResponse } from "@/lib/api/task-scope-types";
-import type { TranslationKey } from "@/lib/i18n";
 import { useTranslation } from "@/lib/i18n";
-import { utcShiftDateString } from "@/lib/shiftChecklistDefaults";
-import { formatRelativeTime } from "@/lib/datetime";
-import { Badge } from "@/components/ui/badge";
+import type { User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -37,7 +31,6 @@ type Props = {
 
 export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
   const { t } = useTranslation();
-  const [shiftDate, setShiftDate] = useState(() => utcShiftDateString());
   const [viewMode, setViewMode] = useState<CalendarViewMode>("week");
   const [calendarAnchor, setCalendarAnchor] = useState(() => new Date());
   const [scheduleFormOpen, setScheduleFormOpen] = useState(false);
@@ -51,16 +44,9 @@ export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
 
   useEffect(() => {
     if (!linkedUsers.length) return;
-    setPrimaryAssigneeUserId((prev) =>
-      prev != null && linkedUsers.some((u) => u.id === prev) ? prev : linkedUsers[0].id,
-    );
-  }, [linkedUsers]);
-
-  const checklistQuery = useQuery({
-    queryKey: ["shift-checklist", "workspace", shiftDate, "staff-panel"],
-    queryFn: () => api.listShiftChecklistWorkspace({ shift_date: shiftDate }),
-    enabled: linkedUsers.length > 0,
-  });
+    const valid = (id: number | null) => id != null && linkedUsers.some((u) => u.id === id);
+    if (!valid(primaryAssigneeUserId)) setPrimaryAssigneeUserId(linkedUsers[0].id);
+  }, [linkedUsers, primaryAssigneeUserId]);
 
   const schedulesQuery = useQuery({
     queryKey: ["admin", "staff-detail", "schedules"],
@@ -89,11 +75,6 @@ export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
     [filteredSchedules, patientNameById],
   );
 
-  const workspaceRows = useMemo(() => {
-    const rows = checklistQuery.data ?? [];
-    return rows.filter((row) => linkedUserIds.has(row.user_id));
-  }, [checklistQuery.data, linkedUserIds]);
-
   const invalidateSchedules = useCallback(() => {
     void schedulesQuery.refetch();
   }, [schedulesQuery]);
@@ -116,94 +97,6 @@ export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <section className="space-y-4">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-outline-variant/30 bg-surface-container-low px-3 py-1 text-xs font-medium uppercase tracking-wide text-foreground-variant">
-              <ListChecks className="h-3.5 w-3.5" aria-hidden />
-              {t("caregivers.workPanel.routineBadge")}
-            </div>
-            <h2 className="mt-2 text-xl font-semibold text-foreground">{t("caregivers.workPanel.routineTitle")}</h2>
-            <p className="mt-1 max-w-2xl text-sm text-foreground-variant">
-              {t("caregivers.workPanel.routineHint")}
-            </p>
-          </div>
-          <div className="flex w-full max-w-xs flex-col gap-1.5">
-            <Label htmlFor="staff-shift-date">{t("shiftChecklistWorkspace.dateLabel")}</Label>
-            <Input
-              id="staff-shift-date"
-              type="date"
-              value={shiftDate}
-              onChange={(e) => setShiftDate(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <Card className="border-outline-variant/20">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("shiftChecklistWorkspace.staff")}</CardTitle>
-            <CardDescription>{t("caregivers.workPanel.routineScope")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {checklistQuery.isError ? (
-              <p className="text-sm text-critical">{t("shiftChecklistWorkspace.loadError")}</p>
-            ) : checklistQuery.isLoading ? (
-              <p className="text-sm text-foreground-variant">…</p>
-            ) : workspaceRows.length === 0 ? (
-              <p className="text-sm text-foreground-variant">{t("caregivers.workPanel.noChecklistRows")}</p>
-            ) : (
-              workspaceRows.map((row) => (
-                <div
-                  key={row.user_id}
-                  className="rounded-xl border border-outline-variant/20 bg-surface-container-low/40 p-4 space-y-3"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-foreground">{row.username}</p>
-                      <Badge variant="secondary" className="mt-1 capitalize">
-                        {t("shiftChecklistWorkspace.role")}: {row.role.replace("_", " ")}
-                      </Badge>
-                    </div>
-                    <div className="text-right text-sm text-foreground-variant">
-                      <p>
-                        {t("shiftChecklistWorkspace.updated")}:{" "}
-                        {row.updated_at ? formatRelativeTime(row.updated_at) : t("shiftChecklistWorkspace.never")}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs text-foreground-variant">
-                      <span>{t("shiftChecklistWorkspace.progress")}</span>
-                      <span className="tabular-nums font-medium text-foreground">{row.percent_complete}%</span>
-                    </div>
-                    <Progress value={row.percent_complete} className="h-2" />
-                  </div>
-                  <ul className="grid gap-1.5 sm:grid-cols-2">
-                    {row.items.map((item) => (
-                      <li
-                        key={`${row.user_id}-${item.id}`}
-                        className="flex items-start gap-2 rounded-lg border border-outline-variant/15 bg-card/60 px-2 py-1.5 text-xs"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={item.checked}
-                          readOnly
-                          className="mt-0.5 h-3.5 w-3.5 rounded border-outline-variant"
-                          aria-label={item.label_key}
-                        />
-                        <span className={item.checked ? "text-foreground-variant line-through" : "text-foreground"}>
-                          {t(item.label_key as TranslationKey)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </section>
-
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -33,6 +33,9 @@ import type {
   CreateWorkflowHandoverRequest,
   CreateWorkflowScheduleRequest,
   CreateWorkflowScheduleResponse,
+  CareWorkflowJobOut,
+  CareWorkflowJobStepOut,
+  CreateCareWorkflowJobInput,
   CreateWorkflowTaskRequest,
   CreateWorkflowTaskResponse,
   CreatePatientContactRequest,
@@ -88,10 +91,24 @@ import type {
   UpdatePatientRequest,
   UpdateWorkflowScheduleRequest,
   UpdateWorkflowScheduleResponse,
+  PatchCareWorkflowJobStepInput,
+  UpdateCareWorkflowJobInput,
   UpdateWorkflowTaskRequest,
   UpdateWorkflowTaskResponse,
   UpdateUserRequest,
 } from "./api/task-scope-types";
+import type {
+  DailyBoardResponse,
+  PatientFixRoutineCreate,
+  PatientFixRoutineOut,
+  PatientFixRoutineUpdate,
+  RoutineLogBulkResetRequest,
+  RoutineTaskCreate,
+  RoutineTaskLogOut,
+  RoutineTaskLogUpdate,
+  RoutineTaskOut,
+  RoutineTaskUpdate,
+} from "./api/task-management-types";
 
 /** Default timeout so hung upstream/proxy calls cannot leave auth stuck in `loading` forever */
 const DEFAULT_REQUEST_TIMEOUT_MS = 25_000;
@@ -649,6 +666,56 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  listWorkflowJobs: (params?: { status?: string; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set("status", params.status);
+    if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+    const suffix = query.toString();
+    return request<CareWorkflowJobOut[]>(suffix ? `/workflow/jobs?${suffix}` : "/workflow/jobs");
+  },
+
+  getWorkflowJob: (jobId: number) =>
+    request<CareWorkflowJobOut>(`/workflow/jobs/${encodeURIComponent(String(jobId))}`),
+
+  createWorkflowJob: (payload: CreateCareWorkflowJobInput) =>
+    request<CareWorkflowJobOut>("/workflow/jobs", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  updateWorkflowJob: (jobId: number, payload: UpdateCareWorkflowJobInput) =>
+    request<CareWorkflowJobOut>(`/workflow/jobs/${encodeURIComponent(String(jobId))}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  completeWorkflowJob: (jobId: number) =>
+    request<CareWorkflowJobOut>(`/workflow/jobs/${encodeURIComponent(String(jobId))}/complete`, {
+      method: "POST",
+    }),
+
+  patchWorkflowJobStep: (
+    jobId: number,
+    stepId: number,
+    payload: PatchCareWorkflowJobStepInput,
+  ) =>
+    request<CareWorkflowJobStepOut>(
+      `/workflow/jobs/${encodeURIComponent(String(jobId))}/steps/${encodeURIComponent(String(stepId))}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      },
+    ),
+
+  finalizeWorkflowJobStepAttachments: (jobId: number, stepId: number, pendingIds: string[]) =>
+    request<CareWorkflowJobStepOut>(
+      `/workflow/jobs/${encodeURIComponent(String(jobId))}/steps/${encodeURIComponent(String(stepId))}/attachments/finalize`,
+      {
+        method: "POST",
+        body: JSON.stringify({ pending_ids: pendingIds }),
+      },
+    ),
+
   claimWorkflowItem: (itemType: "task" | "schedule" | "directive", itemId: number | string, payload: WorkflowClaimRequest) =>
     request<unknown>(
       `/workflow/items/${encodeURIComponent(itemType)}/${encodeURIComponent(String(itemId))}/claim`,
@@ -950,6 +1017,75 @@ export const api = {
         body: JSON.stringify(payload),
       },
     ),
+
+  // ── Task Management ─────────────────────────────────────────────────────────
+
+  // Routine Task Templates
+  listRoutineTasks: (includeInactive = false) =>
+    request<RoutineTaskOut[]>(`/task-management/routine-tasks${includeInactive ? "?include_inactive=true" : ""}`),
+
+  createRoutineTask: (payload: RoutineTaskCreate) =>
+    request<RoutineTaskOut>("/task-management/routine-tasks", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  updateRoutineTask: (id: number, payload: RoutineTaskUpdate) =>
+    request<RoutineTaskOut>(`/task-management/routine-tasks/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteRoutineTask: (id: number) =>
+    request<void>(`/task-management/routine-tasks/${id}`, { method: "DELETE" }),
+
+  // Daily Routine Board
+  getDailyBoard: (shiftDate?: string) =>
+    request<DailyBoardResponse>(
+      `/task-management/routine-logs${
+        shiftDate ? `?shift_date=${encodeURIComponent(shiftDate)}` : ""
+      }`,
+    ),
+
+  updateRoutineLog: (logId: number, payload: RoutineTaskLogUpdate) =>
+    request<RoutineTaskLogOut>(`/task-management/routine-logs/${logId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  resetRoutineLogs: (payload?: RoutineLogBulkResetRequest) =>
+    request<{ reset_date: string; ok: boolean }>("/task-management/routine-logs/reset", {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    }),
+
+  // Patient Fix Routines
+  listPatientRoutines: (includeInactive = false) =>
+    request<PatientFixRoutineOut[]>(
+      `/task-management/patient-routines${includeInactive ? "?include_inactive=true" : ""}`,
+    ),
+
+  createPatientRoutine: (payload: PatientFixRoutineCreate) =>
+    request<PatientFixRoutineOut>("/task-management/patient-routines", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  updatePatientRoutine: (id: number, payload: PatientFixRoutineUpdate) =>
+    request<PatientFixRoutineOut>(`/task-management/patient-routines/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  deletePatientRoutine: (id: number) =>
+    request<void>(`/task-management/patient-routines/${id}`, { method: "DELETE" }),
+
+  // Exports
+  getRoutineLogsExportUrl: (shiftDate?: string) =>
+    `${API_BASE}/task-management/export/routine-logs${shiftDate ? `?shift_date=${encodeURIComponent(shiftDate)}` : ""}`,
+
+  getPatientRoutinesExportUrl: () =>
+    `${API_BASE}/task-management/export/patient-routines`,
 };
 
 export { ApiError };

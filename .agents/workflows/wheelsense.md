@@ -104,7 +104,7 @@ When backend changes affect the web app:
 - update `frontend/lib/types.ts`
 - verify `frontend/lib/api.ts` call shapes still match
 - verify route guards and role routing in `frontend/proxy.ts`
-- update `frontend/README.md` or `wheelsense_role_breakdown.md` if user-facing structure changed
+- update `frontend/README.md` or `docs/plans/wheelsense-role-breakdown.md` if user-facing structure changed
 - canonical cross-domain route prefixes are now:
   - `/api/floorplans/*`
   - `/api/care/*`
@@ -128,12 +128,19 @@ For current frontend standardization work, prefer:
 - `npm run openapi:types` after backend contract changes that need regenerated schema output
 - run `npm run build` in `frontend/` after i18n key or consumer changes (types keys off the translation map)
 
+**Unified `/api/tasks` (2026-04)** — when changing multi-assignee JSON, rich `report_template`, subtask redaction, or assignee-only `PATCH` rules:
+
+- Backend: `server/app/services/tasks.py`, `server/app/schemas/tasks.py`, `server/app/models/tasks.py`, Alembic under `server/alembic/versions/`
+- Frontend: `frontend/types/tasks.ts`, `frontend/components/tasks/*`, `frontend/components/head-nurse/tasks/TaskDetailModal.tsx`, observer `ShiftChecklistMePanel`
+- Verify: `npx tsc --noEmit` + `npm run build` in `frontend/`; sync `server/AGENTS.md` § Unified tasks and `frontend/README.md` hub/checklist bullets
+- **Create payload:** `POST /api/tasks/` accepts **`assigned_user_ids`**, optional **`ends_at`**, and per-subtask **`report_spec`**; the router passes **`actor_user_role`** into `TaskService.create_task` (required by the service signature). Regenerate OpenAPI types when request/response schemas change (`cd frontend && npm run openapi:types`).
+
 **Clinical shell notifications (2026-04)** — when changing alert UX or polling:
 
 - `frontend/hooks/useNotifications.tsx` (Sonner enqueue + drawer merge)
 - `frontend/components/notifications/AlertToastCard.tsx`, `frontend/lib/notificationRoutes.ts` (`alertsInboxUrl` + `?alert=`), `frontend/hooks/useAlertRowHighlight.ts`, `frontend/components/supervisor/DataTableCard.tsx` (row `id` / highlight class)
 - Role pages: `frontend/app/head-nurse/alerts/page.tsx`, `frontend/app/observer/alerts/page.tsx`, `frontend/app/supervisor/emergency/page.tsx`
-- Keep **toast Acknowledge** aligned with **`ROLE_ALERT_ACK`** in `server/app/api/endpoints/alerts.py`; document behavior in **`ARCHITECTURE.md`**, **`server/AGENTS.md`**, and **`frontend/README.md`** when it changes
+- Keep **toast Acknowledge** aligned with **`ROLE_ALERT_ACK`** in `server/app/api/endpoints/alerts.py`; document behavior in **`docs/ARCHITECTURE.md`**, **`server/AGENTS.md`**, and **`frontend/README.md`** when it changes
 
 **Floorplan live presence (2026-04)** — when changing room telemetry/presence semantics:
 
@@ -143,7 +150,7 @@ For current frontend standardization work, prefer:
 **Floorplan layout save** — when changing `PUT /api/floorplans/layout`, `FloorplansPanel`, or `FloorMapWorkspace`:
 
 - Backend validates optional per-shape `device_id` (registry PK, unique in the payload). Room rows use `PATCH /api/rooms/{id}` for `node_device_id` (string); `POST /api/rooms` does not require the node to exist in the device registry.
-- Web editors use `alignFloorplanShapesToRegistryDevices` (`frontend/lib/floorplanSaveProvision.ts`) before PUT. Keep `ARCHITECTURE.md`, `server/AGENTS.md`, and `frontend/README.md` aligned when this contract or the save pipeline changes.
+- Web editors use `alignFloorplanShapesToRegistryDevices` (`frontend/lib/floorplanSaveProvision.ts`) before PUT. Keep `docs/ARCHITECTURE.md`, `server/AGENTS.md`, and `frontend/README.md` aligned when this contract or the save pipeline changes.
 
 ## Docker And Runtime Verification
 

@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
+import { getPatientDetailPath, getMonitoringPath, getAlertsPath } from "@/lib/routes";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +62,8 @@ export function RoomDetailPopup({
 }: RoomDetailPopupProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const { user } = useAuth();
+  const role = user?.role || "head_nurse";
 
   if (!room) return null;
 
@@ -144,7 +148,7 @@ export function RoomDetailPopup({
                   <Card
                     key={patient.id}
                     className="cursor-pointer hover:border-primary/50 transition-colors"
-                    onClick={() => router.push(`/head-nurse/patients/${patient.id}`)}
+                    onClick={() => router.push(getPatientDetailPath(role, patient.id))}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between">
@@ -169,7 +173,7 @@ export function RoomDetailPopup({
                             className="h-8 w-8"
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/head-nurse/patients/${patient.id}`);
+                              router.push(getPatientDetailPath(role, patient.id));
                             }}
                           >
                             <Activity className="h-4 w-4" />
@@ -254,7 +258,7 @@ export function RoomDetailPopup({
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => router.push(`/head-nurse/monitoring?room=${room.id}`)}
+              onClick={() => router.push(getMonitoringPath(role, room.id))}
             >
               <Activity className="mr-2 h-4 w-4" />
               View Monitoring
@@ -262,7 +266,7 @@ export function RoomDetailPopup({
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => router.push(`/head-nurse/alerts?room=${room.id}`)}
+              onClick={() => router.push(getAlertsPath(role, room.id))}
             >
               <AlertCircle className="mr-2 h-4 w-4" />
               View Alerts

@@ -4,6 +4,7 @@ import { useCallback, useEffect } from "react";
 import type { User } from "@/lib/types";
 import { api, ApiError, login as apiLogin } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth-store";
+import { useMobileAuthHandshake } from "@/hooks/useMobileAuthHandshake";
 
 type ImpersonationState = {
   active: boolean;
@@ -88,10 +89,18 @@ async function fetchCurrentUser() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setLoading = useAuthStore((state) => state.setLoading);
 
+  // On initial load, fetch session normally (cookie-based for web users).
   useEffect(() => {
     setLoading(true);
     void fetchCurrentUser();
   }, [setLoading]);
+
+  // When loaded inside the WheelSense mobile WebView, exchange the injected
+  // JWT for an HttpOnly session cookie, then re-fetch the user so the auth
+  // state reflects the mobile user without showing the login form.
+  useMobileAuthHandshake(() => {
+    void fetchCurrentUser();
+  });
 
   return <>{children}</>;
 }

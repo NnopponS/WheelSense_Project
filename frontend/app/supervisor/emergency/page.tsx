@@ -272,7 +272,7 @@ export default function SupervisorEmergencyPage() {
         id: "actions",
         header: t("clinical.table.actions"),
         cell: ({ row }) => {
-          const href = row.original.patientId ? `/supervisor/patients/${row.original.patientId}` : "/supervisor/patients";
+          const href = row.original.patientId ? `/supervisor/personnel/${row.original.patientId}` : "/supervisor/personnel";
           return (
             <Button asChild size="sm" variant="outline">
               <Link href={href}>{t("headNurse.alerts.openPatient")}</Link>

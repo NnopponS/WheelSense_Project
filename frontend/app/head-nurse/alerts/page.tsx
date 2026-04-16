@@ -185,8 +185,8 @@ export default function HeadNurseAlertsPage() {
         header: t("clinical.table.actions"),
         cell: ({ row }) => {
           const href = row.original.patientId
-            ? `/head-nurse/patients/${row.original.patientId}`
-            : "/head-nurse/patients";
+            ? `/head-nurse/personnel/${row.original.patientId}`
+            : "/head-nurse/personnel";
           return (
             <div className="flex flex-wrap justify-end gap-2">
               {row.original.status === "active" || row.original.status === "acknowledged" ? (

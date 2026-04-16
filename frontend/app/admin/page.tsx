@@ -36,6 +36,9 @@ import type {
   ListUsersResponse,
 } from "@/lib/api/task-scope-types";
 
+/** Matches `RequireRole` on `GET /api/devices/activity` — avoid polling when the session cannot read fleet activity. */
+const ROLES_DEVICE_ACTIVITY_POLL = new Set<string>(["admin", "head_nurse", "supervisor"]);
+
 const HARDWARE_ROWS: Array<{ hardware: HardwareType; labelKey: "devicesDetail.tabWheelchair" | "devicesDetail.tabNode" | "devicesDetail.tabPolar" | "devicesDetail.tabMobile" }> = [
   { hardware: "wheelchair", labelKey: "devicesDetail.tabWheelchair" },
   { hardware: "node", labelKey: "devicesDetail.tabNode" },
@@ -80,12 +83,17 @@ export default function AdminDashboardPage() {
     staleTime: smartEndpoint ? getQueryStaleTimeMs(smartEndpoint) : 30_000,
     refetchInterval: smartEndpoint ? getQueryPollingMs(smartEndpoint) : false,
   });
+  const deviceActivityQueryEnabled =
+    Boolean(activityEndpoint) &&
+    Boolean(user?.role) &&
+    ROLES_DEVICE_ACTIVITY_POLL.has(String(user?.role));
+
   const { data: activity } = useQuery({
     queryKey: ["admin", "dashboard", "device-activity", activityEndpoint],
     queryFn: () => api.get<ListDeviceActivityResponse>(activityEndpoint!),
-    enabled: Boolean(activityEndpoint),
+    enabled: deviceActivityQueryEnabled,
     staleTime: activityEndpoint ? getQueryStaleTimeMs(activityEndpoint) : 30_000,
-    refetchInterval: activityEndpoint ? getQueryPollingMs(activityEndpoint) : false,
+    refetchInterval: activityEndpoint && deviceActivityQueryEnabled ? getQueryPollingMs(activityEndpoint) : false,
   });
   const { data: users } = useQuery({
     queryKey: ["admin", "dashboard", "users", usersEndpoint],
@@ -190,16 +198,16 @@ export default function AdminDashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/monitoring">{t("admin.openLiveMap")}</Link>
+            <Link href="./monitoring">{t("admin.openLiveMap")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/devices">{t("admin.openDevices")}</Link>
+            <Link href="./devices">{t("admin.openDevices")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="/admin/settings">{t("admin.openSettings")}</Link>
+            <Link href="./settings">{t("admin.openSettings")}</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/admin/device-health">
+            <Link href="./device-health">
               <Monitor className="mr-1.5 h-4 w-4" />
               {t("admin.navDeviceHealth")}
             </Link>
@@ -343,7 +351,7 @@ export default function AdminDashboardPage() {
               {fleetByType.map((row) => (
                 <Link
                   key={row.hardware}
-                  href={`/admin/devices?tab=${row.hardware}`}
+                  href={`./devices?tab=${row.hardware}`}
                   className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40"
                 >
                   <div className="flex items-center gap-3">
@@ -390,7 +398,7 @@ export default function AdminDashboardPage() {
                 <CardDescription>{t("admin.supportChannelDesc")}</CardDescription>
               </div>
               <Button asChild size="sm" variant="outline">
-                <Link href="/admin/support">
+                <Link href="./support">
                   <HelpCircle className="mr-1.5 h-4 w-4" />
                   {t("dash.viewAll")}
                 </Link>
@@ -444,7 +452,7 @@ export default function AdminDashboardPage() {
             <CardDescription>{t("admin.activityFeedCardDesc")}</CardDescription>
           </div>
           <Button asChild size="sm" variant="ghost">
-            <Link href="/admin/audit">
+            <Link href="./audit">
               {t("nav.auditLog")}
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>

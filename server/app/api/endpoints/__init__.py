@@ -12,6 +12,7 @@ from . import calendar
 from . import chat_actions
 from . import admin_database
 from . import shift_checklist
+from . import task_management
 
 __all__ = [
     "workspaces",
@@ -44,4 +45,5 @@ __all__ = [
     "chat_actions",
     "admin_database",
     "shift_checklist",
+    "task_management",
 ]

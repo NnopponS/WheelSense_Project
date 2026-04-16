@@ -135,12 +135,16 @@ All API routes are under `/api`.
 
 ### Auth / identity
 
+- `GET /api/auth/session` — browser-friendly hydrate probe (**always 200**; sets `authenticated` without surfacing `401` for missing tokens)
 - `GET /api/auth/me`
+- `GET /api/auth/me/profile` — current user plus optional **`linked_caregiver`** / **`linked_patient`** directory rows (same workspace)
+- `PATCH /api/auth/me/profile` — self-edit **`user`** / **`linked_caregiver`** / **`linked_patient`** (or legacy keys `caregiver` / `patient` in the JSON body); patient-linked fields follow **`SelfPatientProfilePatch`** in `server/app/schemas/users.py` (names, vitals-style demographics, allergies, notes, `photo_url`; not room/care_level/mobility)
 - `GET /api/auth/sessions`
 - `POST /api/auth/logout`
 - `DELETE /api/auth/sessions/{session_id}`
-- `PATCH /api/auth/me`
-- `POST /api/auth/me/profile-image`
+- `PATCH /api/auth/me` — narrow user field updates (including `profile_image_url` when not using the profile bundle)
+- `POST /api/auth/me/profile-image` — multipart JPEG upload for hosted avatar path
+- `POST /api/auth/change-password`
 
 Current auth/session rules:
 
@@ -241,6 +245,8 @@ Important `/api/workflow` semantics:
 - **`GET /api/workflow/messaging/recipients`** is available to **all authenticated roles** and returns workspace users for user-targeted compose: clinical staff (`admin`, `head_nurse`, `supervisor`, `observer`) plus **patient-linked accounts** (`kind="patient"`), merged and de-duplicated by user id (`UserSearchOut` list).
 - **`POST /api/workflow/messages`**: body must include **`recipient_role` or `recipient_user_id`** (validated in service: do not send both). Patient UI targets a **staff user id** so messages are addressable to a real account, not only a role inbox. The create schema may include **`pending_attachment_ids`** (UUIDs from the pending-upload step); **`RoleMessage.attachments`** is stored as JSON metadata (PostgreSQL **JSONB** in production; tests use SQLite-compatible JSON).
 - **Workflow message attachments:** **`POST /api/workflow/messages/attachments`** accepts a pending file upload (workspace-scoped storage path resolved in service). Sending a message with **`pending_attachment_ids`** finalizes those blobs and attaches them to the new `role_messages` row. **`GET /api/workflow/messages/{message_id}/attachments/{attachment_id}/content`** streams file bytes when the caller may read that message (same visibility rules as list/detail). **`DELETE /api/workflow/messages/{message_id}`** removes a message when policy allows (**sender**, **recipient** for role-inbox cleanup, or **`admin`**); stored files are deleted in service. Implementation: `server/app/services/workflow_message_attachments.py`, `RoleMessageService` extensions, workflow router; coverage in `server/tests/test_workflow_domains.py`.
+- **Care workflow jobs (multi-patient checklist jobs):** **`GET /api/workflow/jobs`**, **`POST /api/workflow/jobs`**, **`GET/PATCH /api/workflow/jobs/{job_id}`**, **`POST /api/workflow/jobs/{job_id}/complete`**, **`PATCH /api/workflow/jobs/{job_id}/steps/{step_id}`**, plus step attachment finalize and download routes. List/detail obey the same workspace + patient visibility patterns as flat care tasks (`CareWorkflowJobService`); **observers** see jobs where they are assignees or linked to visible patients. Completing a job writes one **`activity_timeline`** row per linked patient (`event_type` **`workflow_job_completed`**) and records audit events. Storage for step attachments reuses the workflow-message pending-upload layout (`workflow_job_attachments.py`). Tests: `server/tests/test_workflow_jobs.py`.
+- **Shadow `care_tasks` row:** Creating or updating a checklist job upserts a single **`care_tasks`** row with **`workflow_job_id`** (FK to **`care_workflow_jobs`**, unique, `ON DELETE CASCADE`) so **`GET /api/workflow/tasks`** and dashboards share the same feed. **`list_visible_tasks`** treats linked tasks like jobs: non-coordinators see them when **`get_job_if_visible`** would allow the job (not only assignee columns on the task). **`PATCH /api/workflow/tasks/{id}`** returns **409** for linked tasks (complete work via the job/step APIs). Claim/handoff reject linked tasks with **409**.
 
 ### Shift checklists
 
@@ -260,6 +266,14 @@ Important `/api/workflow` semantics:
 - `PUT /users/{user_id}/template` — `admin` and `head_nurse`; **target user role must be `observer` or `supervisor`** (templates apply to floor-staff dashboards); upserts `shift_checklist_user_templates`.
 
 Implementation: `server/app/services/shift_checklist.py`, `server/app/api/endpoints/shift_checklist.py`, model `ShiftChecklistUserTemplate`. Tests: `server/tests/test_shift_checklist.py`.
+
+### Unified tasks (`/api/tasks`)
+
+- **`tasks.assigned_user_ids`** (JSONB int list) complements **`assigned_user_id`**: writers keep **`assigned_user_id`** synced to the first id in **`assigned_user_ids`**; list/board filters treat a user as assignee when they match either column.
+- **`POST /api/tasks/`** accepts **`assigned_user_ids`** alongside optional **`assigned_user_id`** (primary assignee); **`ends_at`** is accepted alongside **`start_at`** / **`due_at`** (service prefers explicit **`due_at`**, then **`ends_at`**, then **`start_at`** when **`due_at`** is omitted). Each **`subtasks[]`** item may include **`report_spec`** (JSON dict; optional **`body_html`** is sanitized like rich templates).
+- **`GET /api/tasks` / board / detail:** **`admin`** and **`head_nurse`** receive full **`subtasks`** for tasks they can see; other roles receive **`subtasks`** only when the task is assigned to them (otherwise an empty list).
+- **`PATCH /api/tasks/{id}`:** **`admin` / `head_nurse`** keep full edit powers. **Assignees** (`observer`, `supervisor`, etc.) may **`PATCH` only `status`** on tasks assigned to them (see `tasks` router + `TaskService.update_task`).
+- **Reports:** templates may use **`report_template.mode: "rich"`** with **`body_html`**; structured **`fields`** validation is skipped for rich mode on submit. HTML is lightly sanitized on write in `TaskService`.
 
 ### Integrations and extended domains
 
@@ -324,6 +338,8 @@ Topics currently used by runtime code:
 | Topic | Direction | Purpose |
 |-------|-----------|---------|
 | `WheelSense/data` | wheelchair -> server | IMU, motion, RSSI, battery telemetry |
+| `WheelSense/mobile/{device_id}/telemetry` | mobile app -> server | RSSI beacons, HR/PPG, battery from React Native app |
+| `WheelSense/mobile/{device_id}/control` | server -> mobile app | config updates (scan interval, telemetry interval) |
 | `WheelSense/{device_id}/control` | server -> wheelchair | motion/device commands |
 | `WheelSense/{device_id}/ack` | wheelchair -> server | wheelchair command acknowledgement |
 | `WheelSense/room/{device_id}` | server -> subscribers | predicted room updates |
@@ -607,5 +623,5 @@ Update these when behavior changes:
 Update these when frontend/API integration changes:
 
 - `frontend/README.md`
-- `wheelsense_role_breakdown.md`
+- `docs/plans/wheelsense-role-breakdown.md`
 - `.cursor/agents/README.md`

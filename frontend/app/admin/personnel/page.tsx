@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, KeyRound, Search, Shield, UserCog, UserPlus, Users } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
@@ -24,6 +24,13 @@ import {
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { hasCapability } from "@/lib/permissions";
+import {
+  getPatientDetailPath,
+  getCaregiverDetailPath,
+  getPatientsPath,
+  getCaregiversPath,
+  getAccountManagementPath,
+} from "@/lib/routes";
 import type { Caregiver, Patient, User as AppUser } from "@/lib/types";
 import type {
   ListCaregiversResponse,
@@ -69,10 +76,12 @@ function formatUserRole(role: string, t: (key: TranslationKey) => string): strin
 
 function PersonnelPageContent() {
   const { t } = useTranslation();
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user: me } = useAuth();
   const queryClient = useQueryClient();
+  const canManageAccounts = me?.role === "admin" && hasCapability(me.role, "users.manage");
   const canProvision =
     me &&
     hasCapability(me.role, "patients.manage") &&
@@ -183,10 +192,13 @@ function PersonnelPageContent() {
   const onPersonnelTabChange = useCallback(
     (v: ViewTab) => {
       setTab(v);
-      const path = v === "staff" ? "/admin/personnel" : `/admin/personnel?tab=${encodeURIComponent(v)}`;
+      const basePath = pathname.includes("/head-nurse/personnel")
+        ? "/head-nurse/personnel"
+        : "/admin/personnel";
+      const path = v === "staff" ? basePath : `${basePath}?tab=${encodeURIComponent(v)}`;
       router.replace(path, { scroll: false });
     },
-    [router],
+    [pathname, router],
   );
 
   const onSubmitStaffPlusAccount = useCallback(async () => {
@@ -503,16 +515,18 @@ function PersonnelPageContent() {
                         {row.is_active ? t("common.active") : t("common.inactive")}
                       </Badge>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`/admin/caregivers/${row.id}`}>
+                        <Link href={getCaregiverDetailPath(me?.role || "admin", row.id)}>
                           {t("personnel.rowOpen")}
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/admin/account-management?kind=staff&q=${encodeURIComponent(linkedAccount?.username || String(row.id))}`}>
-                          {linkedAccount ? t("personnel.accountLinked") : t("personnel.accountCreate")}
-                        </Link>
-                      </Button>
+                      {canManageAccounts ? (
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`${getAccountManagementPath(me?.role || "admin")}?kind=staff&q=${encodeURIComponent(linkedAccount?.username || String(row.id))}`}>
+                            {linkedAccount ? t("personnel.accountLinked") : t("personnel.accountCreate")}
+                          </Link>
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 )})}
@@ -548,16 +562,18 @@ function PersonnelPageContent() {
                         {row.is_active ? t("common.active") : t("common.inactive")}
                       </Badge>
                       <Button asChild variant="outline" size="sm">
-                        <Link href={`/admin/patients/${row.id}`}>
+                        <Link href={getPatientDetailPath(me?.role || "admin", row.id)}>
                           {t("personnel.rowOpen")}
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/admin/account-management?kind=patient&q=${encodeURIComponent(linkedAccount?.username || String(row.id))}`}>
-                          {linkedAccount ? t("personnel.accountLinked") : t("personnel.accountCreate")}
-                        </Link>
-                      </Button>
+                      {canManageAccounts ? (
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`${getAccountManagementPath(me?.role || "admin")}?kind=patient&q=${encodeURIComponent(linkedAccount?.username || String(row.id))}`}>
+                            {linkedAccount ? t("personnel.accountLinked") : t("personnel.accountCreate")}
+                          </Link>
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 )})}
@@ -591,12 +607,14 @@ function PersonnelPageContent() {
                       <Badge variant={row.is_active ? "success" : "outline"}>
                         {row.is_active ? t("common.active") : t("common.inactive")}
                       </Badge>
-                      <Button asChild variant="outline" size="sm">
-                        <Link href={`/admin/account-management?kind=${row.role === "patient" ? "patient" : "staff"}&q=${encodeURIComponent(row.username)}`}>
-                          <Shield className="h-3.5 w-3.5" />
-                          {t("personnel.manage")}
-                        </Link>
-                      </Button>
+                      {canManageAccounts ? (
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`${getAccountManagementPath(me?.role || "admin")}?kind=${row.role === "patient" ? "patient" : "staff"}&q=${encodeURIComponent(row.username)}`}>
+                            <Shield className="h-3.5 w-3.5" />
+                            {t("personnel.manage")}
+                          </Link>
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -614,13 +632,13 @@ function PersonnelPageContent() {
 
       <div className="flex flex-wrap gap-2">
         <Button asChild variant="outline">
-          <Link href="/admin/caregivers">
+          <Link href={getCaregiversPath(me?.role || "admin")}>
             <UserCog className="h-4 w-4" />
             {t("personnel.linkStaffDirectory")}
           </Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/admin/patients">
+          <Link href={getPatientsPath(me?.role || "admin")}>
             <Users className="h-4 w-4" />
             {t("personnel.linkPatientRoster")}
           </Link>
@@ -651,12 +669,14 @@ function PersonnelPageContent() {
             </Button>
           </>
         ) : null}
-        <Button asChild>
-          <Link href="/admin/account-management">
-            <UserPlus className="h-4 w-4" />
-            {t("personnel.openAccountMgmt")}
-          </Link>
-        </Button>
+        {canManageAccounts ? (
+          <Button asChild>
+            <Link href={getAccountManagementPath(me?.role || "admin")}>
+              <UserPlus className="h-4 w-4" />
+              {t("personnel.openAccountMgmt")}
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       <Dialog open={staffDialogOpen} onOpenChange={(o) => { setStaffDialogOpen(o); if (!o) resetStaffForm(); }}>
@@ -723,20 +743,22 @@ function PersonnelPageContent() {
               </section>
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
-                <div className="mb-4 flex items-start gap-3">
-                  <Checkbox
-                    id="ps-create-login"
-                    checked={sfCreateLogin}
-                    onCheckedChange={(v) => setSfCreateLogin(v === true)}
-                  />
-                  <div className="space-y-1">
-                    <Label htmlFor="ps-create-login" className="cursor-pointer font-medium leading-snug">
-                      {t("personnel.createLoginLabel")}
-                    </Label>
-                    <p className="text-xs text-muted-foreground">{t("personnel.createLoginHint")}</p>
+                {canManageAccounts ? (
+                  <div className="mb-4 flex items-start gap-3">
+                    <Checkbox
+                      id="ps-create-login"
+                      checked={sfCreateLogin}
+                      onCheckedChange={(v) => setSfCreateLogin(v === true)}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="ps-create-login" className="cursor-pointer font-medium leading-snug">
+                        {t("personnel.createLoginLabel")}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">{t("personnel.createLoginHint")}</p>
+                    </div>
                   </div>
-                </div>
-                {sfCreateLogin ? (
+                ) : null}
+                {canManageAccounts && sfCreateLogin ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <Label htmlFor="ps-user">{t("personnel.username")}</Label>
@@ -853,20 +875,22 @@ function PersonnelPageContent() {
               </section>
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
-                <div className="mb-4 flex items-start gap-3">
-                  <Checkbox
-                    id="pp-create-login"
-                    checked={ptCreateLogin}
-                    onCheckedChange={(v) => setPtCreateLogin(v === true)}
-                  />
-                  <div className="space-y-1">
-                    <Label htmlFor="pp-create-login" className="cursor-pointer font-medium leading-snug">
-                      {t("personnel.createLoginLabel")}
-                    </Label>
-                    <p className="text-xs text-muted-foreground">{t("personnel.createLoginHint")}</p>
+                {canManageAccounts ? (
+                  <div className="mb-4 flex items-start gap-3">
+                    <Checkbox
+                      id="pp-create-login"
+                      checked={ptCreateLogin}
+                      onCheckedChange={(v) => setPtCreateLogin(v === true)}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="pp-create-login" className="cursor-pointer font-medium leading-snug">
+                        {t("personnel.createLoginLabel")}
+                      </Label>
+                      <p className="text-xs text-muted-foreground">{t("personnel.createLoginHint")}</p>
+                    </div>
                   </div>
-                </div>
-                {ptCreateLogin ? (
+                ) : null}
+                {canManageAccounts && ptCreateLogin ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <Label htmlFor="pp-user">{t("personnel.username")}</Label>

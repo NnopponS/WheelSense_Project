@@ -4,7 +4,7 @@
 > **Date:** 2026-04-12
 > **Framework Contexts Applied:** `@wheelsense`, `@nextjs-best-practices`, `@frontend-developer`, `@frontend-design`
 >
-> **Erratum (2026-04):** An earlier draft of §2 incorrectly referred to a deprecated `hooks/useQuery` wrapper. That file **does not exist** in this repository; client data fetching uses **`@tanstack/react-query`** directly. §2 below reflects **current repo truth**; see also [`ARCHITECTURE.md`](../../ARCHITECTURE.md) and [`frontend/README.md`](../../frontend/README.md).
+> **Erratum (2026-04):** An earlier draft of §2 incorrectly referred to a deprecated `hooks/useQuery` wrapper. That file **does not exist** in this repository; client data fetching uses **`@tanstack/react-query`** directly. §2 below reflects **current repo truth**; see also [`ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) and [`frontend/README.md`](../../frontend/README.md).
 
 ---
 
@@ -19,7 +19,7 @@ The API backend (`server/app/api/endpoints/`) is robust and compliant. All endpo
 ## 2. Next.js App Router & Frontend Standards (`@nextjs-best-practices` & `@frontend-developer`)
 
 ### ✅ Client data fetching (current state)
-- The legacy **`frontend/hooks/useQuery.ts`** wrapper has been **removed**. Role and admin pages import **`useQuery` / `useMutation` from `@tanstack/react-query`** with **namespaced `queryKey`s** (see [`server/AGENTS.md`](../../server/AGENTS.md) and the TanStack bullet in [`ARCHITECTURE.md`](../../ARCHITECTURE.md)).
+- The legacy **`frontend/hooks/useQuery.ts`** wrapper has been **removed**. Role and admin pages import **`useQuery` / `useMutation` from `@tanstack/react-query`** with **namespaced `queryKey`s** (see [`server/AGENTS.md`](../../server/AGENTS.md) and the TanStack bullet in [`ARCHITECTURE.md`](../../docs/ARCHITECTURE.md)).
 - **`frontend/app/admin/*`** follows the same pattern as other client-heavy surfaces: not an anti-pattern relative to the removed hook.
 
 ### 🔁 Optional next steps (incremental; not a blanket migration)
@@ -27,7 +27,7 @@ The API backend (`server/app/api/endpoints/`) is robust and compliant. All endpo
 - **Suspense:** Where it adds clear UX value, TanStack + `Suspense` boundaries can be adopted incrementally; this is guidance, not a repo-wide mandate.
 
 ### ✅ Clinical Alert Implementation
-Canonical description: [`ARCHITECTURE.md`](../../ARCHITECTURE.md) (clinical alert surfacing) and [`frontend/README.md`](../../frontend/README.md) (In-app notifications and clinical toasts).
+Canonical description: [`ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) (clinical alert surfacing) and [`frontend/README.md`](../../frontend/README.md) (In-app notifications and clinical toasts).
 
 The frontend matches the `@wheelsense` clinical alerts intent:
 - **`toast.custom`** with **`AlertToastCard`** for structured in-toast actions and copy.
@@ -69,7 +69,7 @@ The frontend matches the `@wheelsense` clinical alerts intent:
 
 ## 4. Recommended Action Plan
 
-**✅ Primary:** Keep **canonical docs** aligned when behavior changes: [`ARCHITECTURE.md`](../../ARCHITECTURE.md), [`server/AGENTS.md`](../../server/AGENTS.md), [`frontend/README.md`](../../frontend/README.md), [`.agents/workflows/wheelsense.md`](../../.agents/workflows/wheelsense.md).
+**✅ Primary:** Keep **canonical docs** aligned when behavior changes: [`ARCHITECTURE.md`](../../docs/ARCHITECTURE.md), [`server/AGENTS.md`](../../server/AGENTS.md), [`frontend/README.md`](../../frontend/README.md), [`.agents/workflows/wheelsense.md`](../../.agents/workflows/wheelsense.md).
 
 **✅ Frontend engineering (`@frontend-developer` & `@nextjs-best-practices`):**
 - Continue **namespaced TanStack Query** keys and `lib/api.ts` for interactive surfaces.

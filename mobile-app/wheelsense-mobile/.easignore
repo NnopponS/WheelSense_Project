@@ -1,0 +1,57 @@
+# Include only the mobile app directory contents
+# EAS will include the git root, so we need to exclude everything else
+
+# Exclude parent directories (repo root level)
+/../../*
+/../../.*
+/../../server
+/../../frontend
+/../../firmware
+/../../docs
+/../../.*
+
+# Ignore node_modules
+node_modules/
+
+# Ignore Android build artifacts
+android/.gradle/
+android/app/build/
+android/build/
+
+# Ignore iOS build artifacts
+ios/Pods/
+ios/build/
+
+# Ignore test files
+__tests__/
+*.test.ts
+*.test.tsx
+
+# Ignore documentation (keep for build)
+# *.md
+
+# Ignore IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+*.log
+npm-debug.log*
+
+# Ignore local env files
+.env.local
+.env.development
+
+# Ignore scripts
+scripts/
+
+# Ignore large assets if any
+*.mp4
+*.mov
+*.mp3

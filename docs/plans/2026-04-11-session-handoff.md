@@ -540,7 +540,7 @@
 
 ### Existing docs that remain relevant
 
-- `ARCHITECTURE.md`
+- `docs/ARCHITECTURE.md`
 - `server/AGENTS.md`
 - `frontend/README.md`
 - `docs/adr/0004-configurable-localization-strategy.md`

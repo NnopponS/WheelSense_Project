@@ -243,10 +243,7 @@ export default function HeadNurseDashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href="/head-nurse/patients">{t("nav.patients")}</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/head-nurse/staff">{t("nav.staff")}</Link>
+            <Link href="/head-nurse/personnel">{t("nav.personnel")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/head-nurse/tasks">{t("nav.tasks")}</Link>
@@ -351,7 +348,7 @@ export default function HeadNurseDashboardPage() {
               <CardDescription>{t("headNurse.onDutyStaffDesc")}</CardDescription>
             </div>
             <Button asChild size="sm" variant="outline">
-              <Link href="/head-nurse/staff">
+              <Link href="/head-nurse/personnel">
                 {t("dash.viewAll")}
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
@@ -442,7 +439,7 @@ export default function HeadNurseDashboardPage() {
               <p className="text-sm text-muted-foreground">{t("headNurse.noStaffOnDuty")}</p>
             )}
             <Button asChild size="sm" variant="outline" className="w-full shrink-0 sm:w-auto">
-              <Link href="/head-nurse/staff">
+              <Link href="/head-nurse/personnel">
                 {t("dash.viewAll")}
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
@@ -474,7 +471,7 @@ export default function HeadNurseDashboardPage() {
                 return (
                   <Link
                     key={alert.id}
-                    href={alert.patient_id ? `/head-nurse/patients/${alert.patient_id}` : "/head-nurse/alerts"}
+                    href={alert.patient_id ? `/head-nurse/personnel/${alert.patient_id}` : "/head-nurse/alerts"}
                     className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40"
                   >
                     <div className="min-w-0 flex-1">

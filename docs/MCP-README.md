@@ -408,7 +408,8 @@ WWW-Authenticate: Bearer realm="wheelsense-mcp",
 ## Related Documentation
 
 - [server/AGENTS.md](../server/AGENTS.md) - Server canonical memory
-- [ARCHITECTURE.md](../ARCHITECTURE.md) - System architecture
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
+- [MCP implementation handoff](./plans/mcp-implementation-handoff.md) - Agent continuation notes (historical context)
 - [frontend/README.md](../frontend/README.md) - Frontend integration
 - [MCP Specification](https://modelcontextprotocol.io) - Official MCP docs
 

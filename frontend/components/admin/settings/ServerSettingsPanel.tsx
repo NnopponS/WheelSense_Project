@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
+import { getDevicesPath, getPersonnelPath, getMlCalibrationPath } from "@/lib/routes";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
@@ -362,7 +364,7 @@ export default function ServerSettingsPanel() {
         </CardHeader>
         <CardContent>
           <Button type="button" variant="outline" asChild>
-            <a href="/admin/ml-calibration">{t("admin.ml.openCalibrationPage")}</a>
+            <Link href={getMlCalibrationPath(user?.role || "admin")}>{t("admin.ml.openCalibrationPage")}</Link>
           </Button>
         </CardContent>
       </Card>

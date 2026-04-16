@@ -109,7 +109,7 @@ export default function AddPatientModal({
 
       await onCreated();
       closeModal();
-      router.push(`/head-nurse/patients/${created.id}`);
+      router.push(`/head-nurse/personnel/${created.id}`);
     } catch (err) {
       if (createdPatientId != null && emergencyContact) {
         try {

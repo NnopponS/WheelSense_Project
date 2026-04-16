@@ -1,9 +1,34 @@
 from __future__ import annotations
 
+import json
+import time
+from pathlib import Path
 from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 """Workflow domain endpoints (Wave P1)."""
+
+
+# region agent log
+def _agent_dbg(hypothesis_id: str, location: str, message: str, data: dict) -> None:
+    try:
+        root = Path(__file__).resolve().parents[4]
+        line = {
+            "sessionId": "4d0de1",
+            "timestamp": int(time.time() * 1000),
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data,
+        }
+        with (root / "debug-4d0de1.log").open("a", encoding="utf-8") as f:
+            f.write(json.dumps(line, default=str) + "\n")
+    except Exception:
+        pass
+
+
+# endregion
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
@@ -21,7 +46,7 @@ from app.api.dependencies import (
 from app.models.core import Workspace
 from app.models.patients import Patient
 from app.models.users import User
-from app.models.workflow import RoleMessage
+from app.models.workflow import CareWorkflowJob, CareWorkflowJobStep, RoleMessage
 from app.schemas.users import UserSearchOut
 from app.schemas.workflow import (
     AuditTrailEventOut,
@@ -35,6 +60,11 @@ from app.schemas.workflow import (
     CareTaskCreate,
     CareTaskOut,
     CareTaskUpdate,
+    CareWorkflowJobCreate,
+    CareWorkflowJobOut,
+    CareWorkflowJobStepOut,
+    CareWorkflowJobStepPatch,
+    CareWorkflowJobUpdate,
     HandoverNoteCreate,
     HandoverNoteOut,
     PendingWorkflowAttachmentUploadOut,
@@ -43,8 +73,17 @@ from app.schemas.workflow import (
     WorkflowClaimRequest,
     WorkflowHandoffRequest,
     WorkflowItemDetailOut,
+    WorkflowJobStepFinalizeAttachmentsBody,
 )
 from app.services.auth import UserService
+from app.services.care_workflow_jobs import (
+    complete_job as complete_workflow_job,
+    create_job as create_workflow_job,
+    finalize_step_attachments,
+    get_job_if_visible,
+    list_jobs as list_workflow_jobs_svc,
+    patch_step as patch_workflow_job_step,
+)
 from app.services.workflow_message_attachments import resolve_attachment_path, save_pending_upload
 from app.services.workflow import (
     WORKFLOW_AUDIT_ENTITY_TYPES,
@@ -151,7 +190,7 @@ async def list_tasks(
     current_user: User = Depends(RequireRole(ROLE_ALL_AUTHENTICATED)),
 ):
     visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
-    return await care_task_service.list_visible_tasks(
+    rows = await care_task_service.list_visible_tasks(
         db,
         ws_id=ws.id,
         user_id=current_user.id,
@@ -160,6 +199,22 @@ async def list_tasks(
         visible_patient_ids=visible_patient_ids,
         limit=limit,
     )
+    # region agent log
+    linked = sum(1 for t in rows if getattr(t, "workflow_job_id", None) is not None)
+    _agent_dbg(
+        "H1",
+        "workflow.py:list_tasks",
+        "list_visible_tasks result",
+        {
+            "count": len(rows),
+            "workflow_linked": linked,
+            "role": current_user.role,
+            "status_param": status,
+            "limit": limit,
+        },
+    )
+    # endregion
+    return rows
 
 @router.post("/tasks", response_model=CareTaskOut, status_code=201)
 async def create_task(
@@ -185,12 +240,14 @@ async def update_task(
         raise HTTPException(404, "Task not found")
     if task.patient_id is not None:
         await assert_patient_record_access_db(db, ws.id, current_user, task.patient_id)
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     can_access = await care_task_service.can_user_access_task(
         db,
         ws_id=ws.id,
         task_id=task_id,
         user_id=current_user.id,
         user_role=current_user.role,
+        visible_patient_ids=visible_patient_ids,
     )
     if not can_access:
         raise HTTPException(403, "Operation not permitted")
@@ -513,6 +570,7 @@ async def get_workflow_item_detail(
             task_id=item_id,
             user_id=current_user.id,
             user_role=current_user.role,
+            visible_patient_ids=visible_patient_ids,
         ):
             raise HTTPException(403, "Operation not permitted")
         await enrich_task_people(db, ws.id, [task])
@@ -614,6 +672,7 @@ async def claim_workflow_item(
     ws: Workspace = Depends(get_current_user_workspace),
     current_user: User = Depends(RequireRole(ROLE_CLINICAL_STAFF)),
 ):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     if item_type == "task":
         task = await care_task_service.get(db, ws_id=ws.id, id=item_id)
         if not task:
@@ -626,6 +685,7 @@ async def claim_workflow_item(
             task_id=item_id,
             user_id=current_user.id,
             user_role=current_user.role,
+            visible_patient_ids=visible_patient_ids,
         ):
             raise HTTPException(403, "Operation not permitted")
         claimed = await care_task_service.claim(
@@ -688,6 +748,7 @@ async def handoff_workflow_item(
     target_role = data.target_role if data.target_mode == "role" else None
     target_user_id = data.target_user_id if data.target_mode == "user" else None
 
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
     if item_type == "task":
         task = await care_task_service.get(db, ws_id=ws.id, id=item_id)
         if not task:
@@ -700,6 +761,7 @@ async def handoff_workflow_item(
             task_id=item_id,
             user_id=current_user.id,
             user_role=current_user.role,
+            visible_patient_ids=visible_patient_ids,
         ):
             raise HTTPException(403, "Operation not permitted")
         handed = await care_task_service.handoff(
@@ -754,4 +816,197 @@ async def handoff_workflow_item(
         return CareDirectiveOut.model_validate(handed)
 
     raise HTTPException(422, "Invalid workflow item type")
+
+
+# ── Care workflow jobs (checklist + multi-patient) ───────────────────────────
+
+
+@router.get("/jobs", response_model=list[CareWorkflowJobOut])
+async def list_workflow_jobs(
+    status: Optional[str] = None,
+    limit: int = Query(100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
+):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    return await list_workflow_jobs_svc(
+        db,
+        ws.id,
+        user_id=current_user.id,
+        user_role=current_user.role,
+        visible_patient_ids=visible_patient_ids,
+        status=status,
+        limit=limit,
+    )
+
+
+@router.post("/jobs", response_model=CareWorkflowJobOut, status_code=201)
+async def create_workflow_job_endpoint(
+    data: CareWorkflowJobCreate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
+):
+    for pid in data.patient_ids:
+        await assert_patient_record_access_db(db, ws.id, current_user, pid)
+    return await create_workflow_job(db, ws.id, current_user.id, data)
+
+
+@router.get("/jobs/{job_id}", response_model=CareWorkflowJobOut)
+async def get_workflow_job(
+    job_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
+):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    out = await get_job_if_visible(
+        db,
+        ws.id,
+        job_id,
+        user_id=current_user.id,
+        user_role=current_user.role,
+        visible_patient_ids=visible_patient_ids,
+    )
+    if out is None:
+        raise HTTPException(404, "Job not found")
+    return out
+
+
+@router.patch("/jobs/{job_id}", response_model=CareWorkflowJobOut)
+async def update_workflow_job(
+    job_id: int,
+    data: CareWorkflowJobUpdate,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
+):
+    from app.services.care_workflow_jobs import update_job as update_wj
+
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    existing = await get_job_if_visible(
+        db,
+        ws.id,
+        job_id,
+        user_id=current_user.id,
+        user_role=current_user.role,
+        visible_patient_ids=visible_patient_ids,
+    )
+    if existing is None:
+        raise HTTPException(404, "Job not found")
+    updated = await update_wj(db, ws.id, job_id, current_user.id, data)
+    if updated is None:
+        raise HTTPException(404, "Job not found")
+    return updated
+
+
+@router.post("/jobs/{job_id}/complete", response_model=CareWorkflowJobOut)
+async def complete_workflow_job_endpoint(
+    job_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
+):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    existing = await get_job_if_visible(
+        db,
+        ws.id,
+        job_id,
+        user_id=current_user.id,
+        user_role=current_user.role,
+        visible_patient_ids=visible_patient_ids,
+    )
+    if existing is None:
+        raise HTTPException(404, "Job not found")
+    out = await complete_workflow_job(db, ws.id, job_id, current_user.id)
+    if out is None:
+        raise HTTPException(404, "Job not found")
+    return out
+
+
+@router.patch("/jobs/{job_id}/steps/{step_id}", response_model=CareWorkflowJobStepOut)
+async def patch_workflow_job_step_endpoint(
+    job_id: int,
+    step_id: int,
+    data: CareWorkflowJobStepPatch,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
+):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    existing = await get_job_if_visible(
+        db,
+        ws.id,
+        job_id,
+        user_id=current_user.id,
+        user_role=current_user.role,
+        visible_patient_ids=visible_patient_ids,
+    )
+    if existing is None:
+        raise HTTPException(404, "Job not found")
+    out = await patch_workflow_job_step(
+        db, ws.id, job_id, step_id, current_user.id, current_user.role, data
+    )
+    if out is None:
+        raise HTTPException(404, "Step not found")
+    return out
+
+
+@router.post("/jobs/{job_id}/steps/{step_id}/attachments/finalize", response_model=CareWorkflowJobStepOut)
+async def finalize_workflow_job_step_attachments_endpoint(
+    job_id: int,
+    step_id: int,
+    body: WorkflowJobStepFinalizeAttachmentsBody,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
+):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    existing = await get_job_if_visible(
+        db,
+        ws.id,
+        job_id,
+        user_id=current_user.id,
+        user_role=current_user.role,
+        visible_patient_ids=visible_patient_ids,
+    )
+    if existing is None:
+        raise HTTPException(404, "Job not found")
+    out = await finalize_step_attachments(
+        db, ws.id, job_id, step_id, current_user.id, current_user.role, body.pending_ids
+    )
+    if out is None:
+        raise HTTPException(404, "Step not found")
+    return out
+
+
+@router.get("/jobs/{job_id}/steps/{step_id}/attachments/{attachment_id}/content")
+async def get_workflow_job_step_attachment_content(
+    job_id: int,
+    step_id: int,
+    attachment_id: str,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(ROLE_WORKFLOW_WRITE)),
+):
+    visible_patient_ids = await get_visible_patient_ids(db, ws.id, current_user)
+    existing = await get_job_if_visible(
+        db,
+        ws.id,
+        job_id,
+        user_id=current_user.id,
+        user_role=current_user.role,
+        visible_patient_ids=visible_patient_ids,
+    )
+    if existing is None:
+        raise HTTPException(404, "Job not found")
+    job = await db.get(CareWorkflowJob, job_id)
+    if not job or job.workspace_id != ws.id:
+        raise HTTPException(404, "Job not found")
+    step = await db.get(CareWorkflowJobStep, step_id)
+    if not step or step.job_id != job_id:
+        raise HTTPException(404, "Step not found")
+    path, media_type, filename = resolve_attachment_path(step.attachments, attachment_id)
+    return FileResponse(path=path, media_type=media_type, filename=filename)
 

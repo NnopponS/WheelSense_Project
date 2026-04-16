@@ -36,6 +36,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api, ApiError } from "@/lib/api";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
+import { getPatientDetailPath, getPatientsPath } from "@/lib/routes";
 import { hasCapability } from "@/lib/permissions";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import type { ListPatientsResponse, CareScheduleOut, CaregiverOut } from "@/lib/api/task-scope-types";
@@ -408,7 +409,7 @@ export default function AdminPatientsPage() {
         cell: ({ row }) => (
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild size="sm" variant="outline">
-              <Link href={`/admin/patients/${row.original.id}`}>{t("patients.viewProfile")}</Link>
+              <Link href={getPatientDetailPath(user?.role || "admin", row.original.id)}>{t("patients.viewProfile")}</Link>
             </Button>
             {canDeletePatient ? (
               <Button
@@ -445,7 +446,7 @@ export default function AdminPatientsPage() {
           <p className="mt-1 text-sm text-muted-foreground">{t("adminPatients.subtitle")}</p>
         </div>
         <Button asChild>
-          <Link href="/admin/patients/new">
+          <Link href={`${getPatientsPath(user?.role || "admin")}/new`}>
             <Plus className="mr-1.5 h-4 w-4" />
             {t("patients.addNew")}
           </Link>

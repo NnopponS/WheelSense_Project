@@ -2270,6 +2270,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workflow/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Workflow Jobs */
+        get: operations["list_workflow_jobs_api_workflow_jobs_get"];
+        put?: never;
+        /** Create Workflow Job Endpoint */
+        post: operations["create_workflow_job_endpoint_api_workflow_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workflow/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Workflow Job */
+        get: operations["get_workflow_job_api_workflow_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Workflow Job */
+        patch: operations["update_workflow_job_api_workflow_jobs__job_id__patch"];
+        trace?: never;
+    };
+    "/api/workflow/jobs/{job_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Workflow Job Endpoint */
+        post: operations["complete_workflow_job_endpoint_api_workflow_jobs__job_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workflow/jobs/{job_id}/steps/{step_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Workflow Job Step Endpoint */
+        patch: operations["patch_workflow_job_step_endpoint_api_workflow_jobs__job_id__steps__step_id__patch"];
+        trace?: never;
+    };
+    "/api/workflow/jobs/{job_id}/steps/{step_id}/attachments/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finalize Workflow Job Step Attachments Endpoint */
+        post: operations["finalize_workflow_job_step_attachments_endpoint_api_workflow_jobs__job_id__steps__step_id__attachments_finalize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/workflow/jobs/{job_id}/steps/{step_id}/attachments/{attachment_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Workflow Job Step Attachment Content */
+        get: operations["get_workflow_job_step_attachment_content_api_workflow_jobs__job_id__steps__step_id__attachments__attachment_id__content_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/floorplans": {
         parameters: {
             query?: never;
@@ -3137,6 +3241,294 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/task-management/routine-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Routine Tasks
+         * @description List all routine task templates for the workspace.
+         */
+        get: operations["list_routine_tasks_api_task_management_routine_tasks_get"];
+        put?: never;
+        /** Create Routine Task */
+        post: operations["create_routine_task_api_task_management_routine_tasks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/task-management/routine-tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Routine Task */
+        delete: operations["delete_routine_task_api_task_management_routine_tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Routine Task */
+        patch: operations["update_routine_task_api_task_management_routine_tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/api/task-management/routine-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Daily Board
+         * @description Return daily aggregated board: per-user progress for all routine tasks.
+         */
+        get: operations["get_daily_board_api_task_management_routine_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/task-management/routine-logs/{log_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Routine Log */
+        patch: operations["update_routine_log_api_task_management_routine_logs__log_id__patch"];
+        trace?: never;
+    };
+    "/api/task-management/routine-logs/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Routine Logs
+         * @description Head Nurse manually resets all logs to 'pending' for a given date.
+         */
+        post: operations["reset_routine_logs_api_task_management_routine_logs_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/task-management/patient-routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patient Routines */
+        get: operations["list_patient_routines_api_task_management_patient_routines_get"];
+        put?: never;
+        /** Create Patient Routine */
+        post: operations["create_patient_routine_api_task_management_patient_routines_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/task-management/patient-routines/{routine_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Patient Routine */
+        delete: operations["delete_patient_routine_api_task_management_patient_routines__routine_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Patient Routine */
+        patch: operations["update_patient_routine_api_task_management_patient_routines__routine_id__patch"];
+        trace?: never;
+    };
+    "/api/task-management/export/routine-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Routine Logs Csv
+         * @description Export daily routine log as CSV for the given shift date.
+         */
+        get: operations["export_routine_logs_csv_api_task_management_export_routine_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/task-management/export/patient-routines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Patient Routines Csv
+         * @description Export all active patient fix routines as CSV.
+         */
+        get: operations["export_patient_routines_csv_api_task_management_export_patient_routines_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tasks
+         * @description List tasks with filtering. Enforces workspace and patient visibility.
+         */
+        get: operations["list_tasks_api_tasks__get"];
+        put?: never;
+        /**
+         * Create Task
+         * @description Create new task. Requires head_nurse or admin role.
+         */
+        post: operations["create_task_api_tasks__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Task Board
+         * @description Get task board with per-user aggregation.
+         */
+        get: operations["get_task_board_api_tasks_board_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Task
+         * @description Get single task by ID.
+         */
+        get: operations["get_task_api_tasks__task_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Task
+         * @description Soft delete task. Requires head_nurse or admin role.
+         */
+        delete: operations["delete_task_api_tasks__task_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Task
+         * @description Update task. Requires head_nurse or admin role.
+         */
+        patch: operations["update_task_api_tasks__task_id__patch"];
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reports
+         * @description Get all reports for a task. Requires task access.
+         */
+        get: operations["get_reports_api_tasks__task_id__reports_get"];
+        put?: never;
+        /**
+         * Submit Report
+         * @description Submit structured task report. Must be assignee or head_nurse/admin.
+         */
+        post: operations["submit_report_api_tasks__task_id__reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/routines/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Routine Tasks
+         * @description Reset all routine tasks for a shift date. Requires head_nurse or admin role.
+         */
+        post: operations["reset_routine_tasks_api_tasks_routines_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -3950,6 +4342,8 @@ export interface components {
             workspace_id: number;
             /** Schedule Id */
             schedule_id: number | null;
+            /** Workflow Job Id */
+            workflow_job_id?: number | null;
             /** Patient Id */
             patient_id: number | null;
             /** Title */
@@ -3999,6 +4393,142 @@ export interface components {
             assigned_role?: string | null;
             /** Assigned User Id */
             assigned_user_id?: number | null;
+        };
+        /** CareWorkflowJobAssigneeOut */
+        CareWorkflowJobAssigneeOut: {
+            /** User Id */
+            user_id: number;
+            /** Role Hint */
+            role_hint?: string | null;
+            person?: components["schemas"]["WorkflowPersonOut"] | null;
+        };
+        /** CareWorkflowJobCreate */
+        CareWorkflowJobCreate: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Patient Ids */
+            patient_ids?: number[];
+            /** Assignee User Ids */
+            assignee_user_ids?: number[];
+            /** Steps */
+            steps?: components["schemas"]["WorkflowJobStepCreateItem"][];
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+        };
+        /** CareWorkflowJobOut */
+        CareWorkflowJobOut: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Status */
+            status: string;
+            /** Created By User Id */
+            created_by_user_id?: number | null;
+            /** Completed At */
+            completed_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Patient Ids */
+            patient_ids?: number[];
+            /** Assignees */
+            assignees?: components["schemas"]["CareWorkflowJobAssigneeOut"][];
+            /** Steps */
+            steps?: components["schemas"]["CareWorkflowJobStepOut"][];
+            created_by_person?: components["schemas"]["WorkflowPersonOut"] | null;
+        };
+        /** CareWorkflowJobStepOut */
+        CareWorkflowJobStepOut: {
+            /** Id */
+            id: number;
+            /** Job Id */
+            job_id: number;
+            /** Sort Order */
+            sort_order: number;
+            /** Title */
+            title: string;
+            /** Instructions */
+            instructions: string;
+            /** Status */
+            status: string;
+            /** Report Text */
+            report_text: string;
+            /** Attachments */
+            attachments?: components["schemas"]["WorkflowJobStepAttachmentOut"][];
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+            /** Completed By User Id */
+            completed_by_user_id?: number | null;
+            /** Completed At */
+            completed_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            assigned_person?: components["schemas"]["WorkflowPersonOut"] | null;
+            completed_by_person?: components["schemas"]["WorkflowPersonOut"] | null;
+        };
+        /** CareWorkflowJobStepPatch */
+        CareWorkflowJobStepPatch: {
+            /** Status */
+            status?: string | null;
+            /** Report Text */
+            report_text?: string | null;
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+        };
+        /** CareWorkflowJobUpdate */
+        CareWorkflowJobUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Starts At */
+            starts_at?: string | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Status */
+            status?: string | null;
         };
         /** CaregiverDeviceAssignmentCreate */
         CaregiverDeviceAssignmentCreate: {
@@ -4401,6 +4931,39 @@ export interface components {
         CopilotStatusOut: {
             /** Connected */
             connected: boolean;
+        };
+        /** DailyBoardResponse */
+        DailyBoardResponse: {
+            /**
+             * Shift Date
+             * Format: date
+             */
+            shift_date: string;
+            /** Rows */
+            rows: components["schemas"]["DailyBoardUserRow"][];
+        };
+        /** DailyBoardUserRow */
+        DailyBoardUserRow: {
+            /** User Id */
+            user_id: number;
+            /** Username */
+            username: string;
+            /** Display Name */
+            display_name: string;
+            /** Role */
+            role: string;
+            /** Total */
+            total: number;
+            /** Done */
+            done: number;
+            /** Skipped */
+            skipped: number;
+            /** Pending */
+            pending: number;
+            /** Percent Complete */
+            percent_complete: number;
+            /** Logs */
+            logs: components["schemas"]["RoutineTaskLogOut"][];
         };
         /** DemoActorMoveRequest */
         DemoActorMoveRequest: {
@@ -5826,6 +6389,93 @@ export interface components {
             /** Room Id */
             room_id?: number | null;
         };
+        /** PatientFixRoutineCreate */
+        PatientFixRoutineCreate: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Patient Ids */
+            patient_ids?: number[];
+            /** Target Roles */
+            target_roles?: string[];
+            /**
+             * Schedule Type
+             * @default daily
+             */
+            schedule_type: string;
+            /**
+             * Recurrence Rule
+             * @default
+             */
+            recurrence_rule: string;
+            /** Steps */
+            steps?: components["schemas"]["RoutineStepTemplate"][];
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** PatientFixRoutineOut */
+        PatientFixRoutineOut: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Patient Ids */
+            patient_ids: number[];
+            /** Target Roles */
+            target_roles: string[];
+            /** Schedule Type */
+            schedule_type: string;
+            /** Recurrence Rule */
+            recurrence_rule: string;
+            /** Steps */
+            steps: unknown[];
+            /** Created By User Id */
+            created_by_user_id: number | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Patient Summaries */
+            patient_summaries?: components["schemas"]["PatientSummary"][];
+        };
+        /** PatientFixRoutineUpdate */
+        PatientFixRoutineUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Patient Ids */
+            patient_ids?: number[] | null;
+            /** Target Roles */
+            target_roles?: string[] | null;
+            /** Schedule Type */
+            schedule_type?: string | null;
+            /** Recurrence Rule */
+            recurrence_rule?: string | null;
+            /** Steps */
+            steps?: components["schemas"]["RoutineStepTemplate"][] | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
         /** PatientOut */
         PatientOut: {
             /** Id */
@@ -5886,6 +6536,15 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** PatientSummary */
+        PatientSummary: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Room Number */
+            room_number?: string | null;
         };
         /** PatientUpdate */
         PatientUpdate: {
@@ -6187,6 +6846,30 @@ export interface components {
             /** End Date */
             end_date?: string | null;
         };
+        /** ReportTemplate */
+        ReportTemplate: {
+            /** Fields */
+            fields?: components["schemas"]["ReportTemplateField"][];
+        };
+        /**
+         * ReportTemplateField
+         * @description A single field in a structured report template.
+         */
+        ReportTemplateField: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Type */
+            type: string;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Options */
+            options?: string[];
+        };
         /**
          * RetentionConfig
          * @description Current retention policy configuration.
@@ -6455,6 +7138,175 @@ export interface components {
             config?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** RoutineStepTemplate */
+        RoutineStepTemplate: {
+            /** Title */
+            title: string;
+            /**
+             * Instructions
+             * @default
+             */
+            instructions: string;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+        };
+        /** RoutineTaskAssignedUser */
+        RoutineTaskAssignedUser: {
+            /** User Id */
+            user_id: number;
+            /** Username */
+            username: string;
+            /** Display Name */
+            display_name: string;
+            /** Role */
+            role: string;
+        };
+        /** RoutineTaskCreate */
+        RoutineTaskCreate: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Category
+             * @default general
+             */
+            category: string;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+            /** Assigned Role */
+            assigned_role?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** RoutineTaskLogBulkResetRequest */
+        RoutineTaskLogBulkResetRequest: {
+            /** Shift Date */
+            shift_date?: string | null;
+        };
+        /** RoutineTaskLogOut */
+        RoutineTaskLogOut: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /** Routine Task Id */
+            routine_task_id: number;
+            /** Assigned User Id */
+            assigned_user_id: number | null;
+            /**
+             * Shift Date
+             * Format: date
+             */
+            shift_date: string;
+            /** Status */
+            status: string;
+            /** Note */
+            note: string;
+            /** Report Text */
+            report_text: string;
+            /** Report Images */
+            report_images: string[];
+            /** Completed At */
+            completed_at: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            routine_task?: components["schemas"]["RoutineTaskOut"] | null;
+        };
+        /** RoutineTaskLogUpdate */
+        RoutineTaskLogUpdate: {
+            /** Status */
+            status: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Report Text
+             * @default
+             */
+            report_text: string;
+            /** Report Images */
+            report_images?: string[];
+        };
+        /** RoutineTaskOut */
+        RoutineTaskOut: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Label */
+            label: string;
+            /** Category */
+            category: string;
+            /** Sort Order */
+            sort_order: number;
+            /** Assigned User Id */
+            assigned_user_id: number | null;
+            /** Assigned Role */
+            assigned_role: string | null;
+            /** Created By User Id */
+            created_by_user_id: number | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            assigned_user?: components["schemas"]["RoutineTaskAssignedUser"] | null;
+        };
+        /** RoutineTaskUpdate */
+        RoutineTaskUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Label */
+            label?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+            /** Assigned Role */
+            assigned_role?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
         };
         /** SelfCaregiverProfilePatch */
         SelfCaregiverProfilePatch: {
@@ -6950,6 +7802,51 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /**
+         * SubtaskItem
+         * @description A single subtask/checklist item within a task.
+         */
+        SubtaskItem: {
+            /**
+             * Id
+             * @description Unique identifier (UUID)
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+            /** Assigned User Ids */
+            assigned_user_ids?: number[];
+            /** Report Spec */
+            report_spec?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @default pending
+             */
+            status: string;
+            /** Completed At */
+            completed_at?: string | null;
+        };
+        /** SubtaskItemCreate */
+        SubtaskItemCreate: {
+            /** Title */
+            title: string;
+            /** Description */
+            description?: string | null;
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+            /** Assigned User Ids */
+            assigned_user_ids?: number[];
+            /** Report Spec */
+            report_spec?: {
+                [key: string]: unknown;
+            };
+        };
         /** SupportTicketAttachmentOut */
         SupportTicketAttachmentOut: {
             /** Id */
@@ -7099,6 +7996,221 @@ export interface components {
             oldest_record?: string | null;
             /** Newest Record */
             newest_record?: string | null;
+        };
+        /** TaskBoardResponse */
+        TaskBoardResponse: {
+            /** Shift Date */
+            shift_date?: string | null;
+            /** Rows */
+            rows: components["schemas"]["TaskBoardUserRow"][];
+        };
+        /**
+         * TaskBoardUserRow
+         * @description Per-user aggregate row for the task board.
+         */
+        TaskBoardUserRow: {
+            /** User Id */
+            user_id: number;
+            /** Username */
+            username: string;
+            /** Display Name */
+            display_name: string;
+            /** Role */
+            role: string;
+            /** Total */
+            total: number;
+            /** In Progress */
+            in_progress: number;
+            /** Completed */
+            completed: number;
+            /** Skipped */
+            skipped: number;
+            /** Pending */
+            pending: number;
+            /** Percent Complete */
+            percent_complete: number;
+            /** Tasks */
+            tasks: components["schemas"]["TaskOut"][];
+        };
+        /** TaskCreate */
+        TaskCreate: {
+            /** Task Type */
+            task_type: string;
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Priority
+             * @default normal
+             */
+            priority: string;
+            /** Patient Id */
+            patient_id?: number | null;
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+            /** Assigned User Ids */
+            assigned_user_ids?: number[];
+            /** Assigned Role */
+            assigned_role?: string | null;
+            /** Start At */
+            start_at?: string | null;
+            /** Ends At */
+            ends_at?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /** Subtasks */
+            subtasks?: components["schemas"]["SubtaskItemCreate"][];
+            report_template?: components["schemas"]["ReportTemplate"];
+            /** Shift Date */
+            shift_date?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** TaskOut */
+        TaskOut: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /** Task Type */
+            task_type: string;
+            /** Patient Id */
+            patient_id: number | null;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Priority */
+            priority: string;
+            /** Start At */
+            start_at: string | null;
+            /** Ends At */
+            ends_at: string | null;
+            /** Due At */
+            due_at: string | null;
+            /** Status */
+            status: string;
+            /** Assigned User Id */
+            assigned_user_id: number | null;
+            /** Assigned User Ids */
+            assigned_user_ids?: number[];
+            /** Assigned Role */
+            assigned_role: string | null;
+            /** Created By User Id */
+            created_by_user_id: number | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Subtasks */
+            subtasks?: {
+                [key: string]: unknown;
+            }[];
+            /** Report Template */
+            report_template?: {
+                [key: string]: unknown;
+            };
+            /** Workflow Job Id */
+            workflow_job_id: number | null;
+            /** Shift Date */
+            shift_date: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Patient Name */
+            patient_name?: string | null;
+            /** Assigned User Name */
+            assigned_user_name?: string | null;
+            /** Created By User Name */
+            created_by_user_name?: string | null;
+            /**
+             * Report Count
+             * @default 0
+             */
+            report_count: number;
+        };
+        /** TaskReportCreate */
+        TaskReportCreate: {
+            /** Report Data */
+            report_data?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            /** Attachments */
+            attachments?: string[];
+        };
+        /** TaskReportOut */
+        TaskReportOut: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /** Task Id */
+            task_id: number;
+            /** Patient Id */
+            patient_id: number | null;
+            /** Submitted By User Id */
+            submitted_by_user_id: number;
+            /** Report Data */
+            report_data: {
+                [key: string]: unknown;
+            };
+            /** Notes */
+            notes: string;
+            /** Attachments */
+            attachments: string[];
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Submitted By User Name */
+            submitted_by_user_name?: string | null;
+        };
+        /** TaskUpdate */
+        TaskUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Priority */
+            priority?: string | null;
+            /** Start At */
+            start_at?: string | null;
+            /** Ends At */
+            ends_at?: string | null;
+            /** Due At */
+            due_at?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+            /** Assigned User Ids */
+            assigned_user_ids?: number[];
+            /** Assigned Role */
+            assigned_role?: string | null;
+            /** Subtasks */
+            subtasks?: components["schemas"]["SubtaskItem"][] | null;
+            /** Is Active */
+            is_active?: boolean | null;
         };
         /** TimelineEventCreate */
         TimelineEventCreate: {
@@ -7444,6 +8556,34 @@ export interface components {
             messages?: components["schemas"]["RoleMessageOut"][];
             /** Audit */
             audit?: components["schemas"]["AuditTrailEventOut"][];
+        };
+        /** WorkflowJobStepAttachmentOut */
+        WorkflowJobStepAttachmentOut: {
+            /** Id */
+            id: string;
+            /** Filename */
+            filename: string;
+            /** Content Type */
+            content_type: string;
+            /** Byte Size */
+            byte_size: number;
+        };
+        /** WorkflowJobStepCreateItem */
+        WorkflowJobStepCreateItem: {
+            /** Title */
+            title: string;
+            /**
+             * Instructions
+             * @default
+             */
+            instructions: string;
+            /** Assigned User Id */
+            assigned_user_id?: number | null;
+        };
+        /** WorkflowJobStepFinalizeAttachmentsBody */
+        WorkflowJobStepFinalizeAttachmentsBody: {
+            /** Pending Ids */
+            pending_ids?: string[];
         };
         /** WorkflowPersonOut */
         WorkflowPersonOut: {
@@ -12738,6 +13878,273 @@ export interface operations {
             };
         };
     };
+    list_workflow_jobs_api_workflow_jobs_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareWorkflowJobOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_workflow_job_endpoint_api_workflow_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareWorkflowJobCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareWorkflowJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workflow_job_api_workflow_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareWorkflowJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_workflow_job_api_workflow_jobs__job_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareWorkflowJobUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareWorkflowJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_workflow_job_endpoint_api_workflow_jobs__job_id__complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareWorkflowJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_workflow_job_step_endpoint_api_workflow_jobs__job_id__steps__step_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+                step_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareWorkflowJobStepPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareWorkflowJobStepOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finalize_workflow_job_step_attachments_endpoint_api_workflow_jobs__job_id__steps__step_id__attachments_finalize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+                step_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkflowJobStepFinalizeAttachmentsBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareWorkflowJobStepOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workflow_job_step_attachment_content_api_workflow_jobs__job_id__steps__step_id__attachments__attachment_id__content_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+                step_id: number;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_floorplans_api_floorplans_get: {
         parameters: {
             query?: {
@@ -14578,6 +15985,715 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_routine_tasks_api_task_management_routine_tasks_get: {
+        parameters: {
+            query?: {
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineTaskOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_routine_task_api_task_management_routine_tasks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineTaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineTaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_routine_task_api_task_management_routine_tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_routine_task_api_task_management_routine_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineTaskUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineTaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_daily_board_api_task_management_routine_logs_get: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD (UTC). Defaults to today. */
+                shift_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyBoardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_routine_log_api_task_management_routine_logs__log_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                log_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineTaskLogUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoutineTaskLogOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_routine_logs_api_task_management_routine_logs_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoutineTaskLogBulkResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_patient_routines_api_task_management_patient_routines_get: {
+        parameters: {
+            query?: {
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientFixRoutineOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_patient_routine_api_task_management_patient_routines_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatientFixRoutineCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientFixRoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_patient_routine_api_task_management_patient_routines__routine_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_patient_routine_api_task_management_patient_routines__routine_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                routine_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatientFixRoutineUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientFixRoutineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_routine_logs_csv_api_task_management_export_routine_logs_get: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM-DD (Bangkok). Defaults to today. */
+                shift_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_patient_routines_csv_api_task_management_export_patient_routines_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_tasks_api_tasks__get: {
+        parameters: {
+            query?: {
+                /** @description Filter by task type: specific or routine */
+                task_type?: string | null;
+                /** @description Filter by status */
+                status?: string | null;
+                /** @description Filter by patient ID */
+                patient_id?: number | null;
+                /** @description Filter by assignee user ID */
+                assignee_user_id?: number | null;
+                /** @description Filter by created_at >= date_from */
+                date_from?: string | null;
+                /** @description Filter by created_at <= date_to */
+                date_to?: string | null;
+                /** @description Filter by shift date */
+                shift_date?: string | null;
+                /** @description Filter by active state */
+                is_active?: boolean;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_task_api_tasks__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_task_board_api_tasks_board_get: {
+        parameters: {
+            query?: {
+                /** @description Shift date (defaults to today) */
+                shift_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskBoardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_task_api_tasks__task_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_task_api_tasks__task_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_task_api_tasks__task_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reports_api_tasks__task_id__reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskReportOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_report_api_tasks__task_id__reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskReportCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_routine_tasks_api_tasks_routines_reset_post: {
+        parameters: {
+            query?: {
+                /** @description Shift date to reset (defaults to today) */
+                shift_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

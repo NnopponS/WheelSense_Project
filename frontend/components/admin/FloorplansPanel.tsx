@@ -8,6 +8,8 @@ import type { ListPatientsResponse } from "@/lib/api/task-scope-types";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import { useTranslation } from "@/lib/i18n";
+import { useAuth } from "@/hooks/useAuth";
+import { getDevicesPath, getPersonnelPath } from "@/lib/routes";
 import {
   normalizeRoomShapeIds,
   resolveLayoutShapeToFloorRoomId,
@@ -91,6 +93,7 @@ export default function FloorplansPanel({
   /** Parent-selected facility/floor (e.g. Facility management tabs). Hides duplicate building/floor pickers. */
   externalScope?: FloorplansPanelExternalScope | null;
 }) {
+  const { user } = useAuth();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const {
@@ -1229,13 +1232,13 @@ export default function FloorplansPanel({
                   </dl>
                   <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-outline-variant/25 pt-2">
                     <Link
-                      href="/admin/devices?tab=node"
+                      href={`${getDevicesPath(user?.role || "admin")}?tab=node`}
                       className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
                     >
                       {t("floorplan.adminDevicesLink")}
                     </Link>
                     <Link
-                      href="/admin/personnel?tab=patients"
+                      href={`${getPersonnelPath(user?.role || "admin")}?tab=patients`}
                       className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
                     >
                       {t("floorplan.adminPersonnelLink")}

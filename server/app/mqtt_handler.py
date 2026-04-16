@@ -98,6 +98,9 @@ async def mqtt_listener():
                 )
 
                 await client.subscribe("WheelSense/data")
+                await client.subscribe("WheelSense/mobile/+/telemetry")
+                await client.subscribe("WheelSense/mobile/+/register")
+                await client.subscribe("WheelSense/mobile/+/walkstep")
                 await client.subscribe("WheelSense/camera/+/registration")
                 await client.subscribe("WheelSense/camera/+/status")
                 await client.subscribe("WheelSense/camera/+/photo")
@@ -110,6 +113,12 @@ async def mqtt_listener():
                     try:
                         if topic == "WheelSense/data":
                             await _handle_telemetry(message.payload, client)
+                        elif topic.startswith("WheelSense/mobile/") and topic.endswith("/telemetry"):
+                            await _handle_mobile_telemetry(message.payload, client)
+                        elif topic.startswith("WheelSense/mobile/") and topic.endswith("/register"):
+                            await _handle_mobile_registration(message.payload)
+                        elif topic.startswith("WheelSense/mobile/") and topic.endswith("/walkstep"):
+                            await _handle_mobile_walkstep(message.payload)
                         elif topic.endswith("/ack"):
                             await _handle_device_ack(message.payload)
                         elif topic.endswith("/registration"):
@@ -322,6 +331,157 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
                 }
             ),
         )
+
+
+async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
+    """Handle telemetry published by the WheelSense mobile app.
+
+    Topic: WheelSense/mobile/{device_id}/telemetry
+
+    The payload schema mirrors the wheelchair TelemetryPayload but uses
+    ``device_type: "mobile_app"`` and may contain ``rssi``, ``hr``, and ``ppg``
+    fields.  IMU / motion fields are absent for mobile payloads and default to
+    None / zero so the shared model is reused without modification.
+    """
+    data = json.loads(payload)
+    device_id = data.get("device_id", "unknown")
+    battery = data.get("battery", {})
+    rssi_list = data.get("rssi", [])
+
+    hr_data = data.get("hr")
+    ppg_data = data.get("ppg")
+
+    ts_str = data.get("timestamp", "")
+    ts = None
+    if ts_str:
+        with suppress(Exception):
+            ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+    if ts is None:
+        ts = utcnow()
+
+    patient_id: int | None = None
+    prediction: dict | None = None
+
+    async with AsyncSessionLocal() as session:
+        device = await get_registered_device_for_ingest(session, device_id)
+        if not device:
+            device = await ensure_wheelchair_device_from_telemetry(
+                session,
+                device_id,
+                {**data, "hardware_type": "mobile_app", "device_type": "mobile_app"},
+            )
+        if not device:
+            logger.warning("Mobile telemetry dropped for unregistered device: %s", device_id)
+            return
+
+        ws_id = device.workspace_id
+        device.last_seen = utcnow()  # type: ignore[assignment]
+        device.firmware = data.get("firmware", device.firmware)
+        session.add(device)
+
+        # Persist RSSI readings for localization
+        for r in rssi_list:
+            session.add(
+                RSSIReading(
+                    workspace_id=ws_id,
+                    device_id=device_id,
+                    timestamp=ts,
+                    node_id=r.get("node", ""),
+                    rssi=r.get("rssi", -100),
+                    mac=r.get("mac", ""),
+                )
+            )
+
+        await ensure_ble_node_devices_from_wheelchair_rssi(session, ws_id, rssi_list)
+
+        patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
+
+        # Persist HR vital if present
+        if hr_data and patient_id is not None:
+            session.add(
+                VitalReading(
+                    workspace_id=ws_id,
+                    patient_id=patient_id,
+                    device_id=device_id,
+                    timestamp=ts,
+                    heart_rate_bpm=hr_data.get("bpm"),
+                    rr_interval_ms=(
+                        hr_data["rr_intervals"][0]
+                        if hr_data.get("rr_intervals")
+                        else None
+                    ),
+                    spo2=None,
+                    sensor_battery=battery.get("percentage"),
+                    source="mobile_ble",
+                )
+            )
+
+        # Run room prediction when RSSI data is present
+        rssi_vector = {r["node"]: r["rssi"] for r in rssi_list if "node" in r}
+        if rssi_vector:
+            prediction = await predict_room_with_strategy(session, ws_id, rssi_vector)
+            if prediction is not None:
+                session.add(
+                    RoomPrediction(
+                        workspace_id=ws_id,
+                        device_id=device_id,
+                        timestamp=ts,
+                        predicted_room_id=prediction.get("room_id"),
+                        predicted_room_name=prediction.get("room_name", ""),
+                        confidence=prediction.get("confidence", 0.0),
+                        model_type=prediction.get("model_type", "knn"),
+                        rssi_vector=rssi_vector,
+                    )
+                )
+                patient_id_for_room = patient_id or await _lookup_patient_for_device(
+                    session, ws_id, device_id
+                )
+                if patient_id_for_room is not None:
+                    await _track_room_transition(
+                        session, ws_id, device_id, patient_id_for_room, prediction, ts
+                    )
+
+        await session.commit()
+
+    # Publish derived vital broadcast
+    if hr_data and patient_id is not None:
+        await client.publish(
+            f"WheelSense/vitals/{patient_id}",
+            json.dumps(
+                {
+                    "patient_id": patient_id,
+                    "device_id": device_id,
+                    "heart_rate_bpm": hr_data.get("bpm"),
+                    "rr_interval_ms": (
+                        hr_data["rr_intervals"][0] if hr_data.get("rr_intervals") else None
+                    ),
+                    "timestamp": ts.isoformat() if ts else None,
+                    "source": "mobile_ble",
+                }
+            ),
+        )
+
+    # Publish room prediction result
+    if prediction is not None:
+        await client.publish(
+            f"WheelSense/room/{device_id}",
+            json.dumps(
+                {
+                    "room_id": prediction.get("room_id"),
+                    "room_name": prediction.get("room_name", ""),
+                    "confidence": round(prediction.get("confidence", 0.0), 3),
+                    "model_type": prediction.get("model_type", "knn"),
+                    "strategy": prediction.get("strategy"),
+                }
+            ),
+        )
+
+    logger.debug(
+        "Mobile telemetry ingested: device=%s rssi_nodes=%d hr=%s",
+        device_id,
+        len(rssi_list),
+        hr_data.get("bpm") if hr_data else None,
+    )
 
 
 async def _maybe_create_fall_alert(

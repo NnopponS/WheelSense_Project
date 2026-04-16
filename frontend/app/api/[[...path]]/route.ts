@@ -126,7 +126,13 @@ function clearImpersonationBackupCookie(response: NextResponse) {
 
 async function proxyToBackend(req: NextRequest, pathSegments: string[] | undefined) {
   const sub = pathSegments?.length ? pathSegments.join("/") : "";
-  const targetUrl = new URL(sub ? `/api/${sub}` : "/api", getBackendOrigin());
+  const incoming = req.nextUrl.pathname;
+  /** Use the browser path (not `sub` alone) so a trailing slash is preserved. Rebuilding `/api/tasks/` from segments yields `/api/tasks`, which breaks POST bodies against Starlette/FastAPI slash handling. */
+  let upstreamPath = incoming.startsWith("/api") ? incoming : sub ? `/api/${sub}` : "/api";
+  if (req.method !== "GET" && req.method !== "HEAD" && upstreamPath === "/api/tasks") {
+    upstreamPath = "/api/tasks/";
+  }
+  const targetUrl = new URL(upstreamPath, getBackendOrigin());
   targetUrl.search = req.nextUrl.searchParams.toString();
 
   const fwd = new Headers();
@@ -167,39 +173,26 @@ async function proxyToBackend(req: NextRequest, pathSegments: string[] | undefin
   let res: Response;
   try {
     res = await fetchWithTimeout();
-  } catch (error) {
-    // Handle brief backend startup/network jitter (common during container restarts).
-    if (req.method === "GET" || req.method === "HEAD") {
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      try {
-        res = await fetchWithTimeout();
-      } catch {
-        console.error(
-          "API proxy failed",
-          targetUrl.toString(),
-          error instanceof Error ? error.message : error,
-        );
-        const fallback = fallbackResponseForApiPath(sub);
-        if (fallback) {
-          return fallback;
-        }
-        return NextResponse.json(
-          { detail: "Backend service is unavailable" },
-          { status: 502 },
-        );
-      }
-    } else {
+  } catch (errorFirst) {
+    // Brief retry on connection failures (startup jitter, Docker restarts, POST redirect edge cases).
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    try {
+      res = await fetchWithTimeout();
+    } catch (errorSecond) {
       console.error(
         "API proxy failed",
         targetUrl.toString(),
-        error instanceof Error ? error.message : error,
+        errorFirst instanceof Error ? errorFirst.message : errorFirst,
       );
       const fallback = fallbackResponseForApiPath(sub);
       if (fallback) {
         return fallback;
       }
       return NextResponse.json(
-        { detail: "Backend service is unavailable" },
+        {
+          detail: "Backend service is unavailable",
+          backend_origin: getBackendOrigin(),
+        },
         { status: 502 },
       );
     }

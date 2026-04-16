@@ -22,16 +22,16 @@ def _percent(items: list[ShiftChecklistItem]) -> int:
 
 
 def default_shift_template() -> list[ShiftChecklistItem]:
-    """Canonical default when no per-user template row exists (matches frontend legacy DEFAULT)."""
+    """Canonical default when no per-user template row exists (plain display text; field name remains label_key)."""
     specs: list[tuple[str, str, Literal["shift", "room", "patient"]]] = [
-        ("1", "observer.checklist.signIn", "shift"),
-        ("2", "observer.checklist.emergencyEquip", "shift"),
-        ("3", "observer.checklist.reviewPatients", "shift"),
-        ("4", "observer.checklist.room101", "room"),
-        ("5", "observer.checklist.room102", "room"),
-        ("6", "observer.checklist.room103", "room"),
-        ("7", "observer.checklist.docObs", "patient"),
-        ("8", "observer.checklist.careLog", "patient"),
+        ("1", "ลงเวลาเข้ากะ", "shift"),
+        ("2", "ตรวจอุปกรณ์ฉุกเฉิน", "shift"),
+        ("3", "ทบทวนผู้ป่วยที่รับผิดชอบ", "shift"),
+        ("4", "ห้อง 101 - ตรวจสัญญาณชีพ", "room"),
+        ("5", "ห้อง 102 - ช่วยมื้ออาหาร", "room"),
+        ("6", "ห้อง 103 - ตรวจยา", "room"),
+        ("7", "บันทึกการสังเกตผู้ป่วย", "patient"),
+        ("8", "อัปเดตบันทึกการดูแล", "patient"),
     ]
     return [
         ShiftChecklistItem(id=i, label_key=k, checked=False, category=c)

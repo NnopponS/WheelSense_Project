@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ComponentType } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Camera,
@@ -15,12 +16,16 @@ import {
   UserRound,
 } from "lucide-react";
 import UserAvatar from "@/components/shared/UserAvatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { getRoleHome } from "@/lib/routes";
-import type { Caregiver, User } from "@/lib/types";
+import { bodyMassIndex, bmiCategory } from "@/lib/patientMetrics";
+import { useTranslation } from "@/lib/i18n";
+import type { Caregiver, Patient, Room, User } from "@/lib/types";
 import {
   imageFileToResizedSquareJpegBlob,
   isAllowedProfileImageUrlInput,
@@ -42,17 +47,77 @@ type LinkedCaregiver = Partial<
   >
 >;
 
+type LinkedPatientProfile = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  nickname: string;
+  date_of_birth: string | null;
+  gender: string;
+  height_cm: number | null;
+  weight_kg: number | null;
+  blood_type: string;
+  allergies: string[];
+  notes: string;
+  photo_url: string;
+  is_active: boolean;
+};
+
 type MeProfileResponse = {
   user: User;
   linked_caregiver?: LinkedCaregiver | null;
-  linked_patient?: {
-    id: number;
-    first_name?: string | null;
-    last_name?: string | null;
-    nickname?: string | null;
-    photo_url?: string | null;
-  } | null;
+  linked_patient?: LinkedPatientProfile | null;
 };
+
+type PatientRecordFormState = {
+  first_name: string;
+  last_name: string;
+  nickname: string;
+  date_of_birth: string;
+  gender: string;
+  height_cm: string;
+  weight_kg: string;
+  blood_type: string;
+  allergiesText: string;
+  notes: string;
+  photo_url: string;
+};
+
+function patientFormFromLinked(p: LinkedPatientProfile): PatientRecordFormState {
+  const dob =
+    p.date_of_birth == null
+      ? ""
+      : String(p.date_of_birth).length >= 10
+        ? String(p.date_of_birth).slice(0, 10)
+        : String(p.date_of_birth);
+  return {
+    first_name: p.first_name ?? "",
+    last_name: p.last_name ?? "",
+    nickname: p.nickname ?? "",
+    date_of_birth: dob,
+    gender: p.gender ?? "",
+    height_cm: p.height_cm != null ? String(p.height_cm) : "",
+    weight_kg: p.weight_kg != null ? String(p.weight_kg) : "",
+    blood_type: p.blood_type ?? "",
+    allergiesText: (p.allergies ?? []).join("\n"),
+    notes: p.notes ?? "",
+    photo_url: (p.photo_url ?? "").trim(),
+  };
+}
+
+function normalizeAllergyLines(text: string): string[] {
+  return text
+    .split(/\r?\n|,/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function allergiesEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const sa = [...a].map((s) => s.trim()).sort();
+  const sb = [...b].map((s) => s.trim()).sort();
+  return sa.every((v, i) => v === sb[i]);
+}
 
 type ProfileFormState = {
   username: string;
@@ -91,6 +156,8 @@ function withFallback(user: User): MeProfileResponse {
 }
 
 export default function AccountPage() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { user, loading, refreshUser } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<MeProfileResponse | null>(null);
@@ -130,6 +197,27 @@ export default function AccountPage() {
   const [photoSaving, setPhotoSaving] = useState(false);
   const [photoMessage, setPhotoMessage] = useState<string | null>(null);
 
+  const [patientRecordForm, setPatientRecordForm] = useState<PatientRecordFormState | null>(null);
+
+  const linkedPatientId = profile?.linked_patient?.id ?? null;
+
+  const patientDetailQuery = useQuery({
+    queryKey: ["account", "patient-detail", linkedPatientId],
+    queryFn: () => api.getPatient(linkedPatientId as number),
+    enabled: Boolean(linkedPatientId),
+  });
+
+  const patientDetail = patientDetailQuery.data as Patient | undefined;
+  const roomId = patientDetail?.room_id ?? null;
+
+  const roomDetailQuery = useQuery({
+    queryKey: ["account", "room", roomId],
+    queryFn: () => api.getRoom(roomId as number),
+    enabled: Boolean(roomId),
+  });
+
+  const roomDetail = roomDetailQuery.data;
+
   const revokeLocalPreview = useCallback(() => {
     setLocalPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
@@ -163,6 +251,14 @@ export default function AccountPage() {
     void loadProfile();
   }, [loadProfile, user]);
 
+  useEffect(() => {
+    if (!profile?.linked_patient) {
+      setPatientRecordForm(null);
+      return;
+    }
+    setPatientRecordForm(patientFormFromLinked(profile.linked_patient));
+  }, [profile]);
+
   useEffect(() => () => revokeLocalPreview(), [revokeLocalPreview]);
 
   const trimmedUrl = urlInput.trim();
@@ -186,6 +282,28 @@ export default function AccountPage() {
     const name = `${first} ${last}`.trim();
     return name || profile.linked_patient.nickname || `Patient #${profile.linked_patient.id}`;
   }, [profile?.linked_patient]);
+
+  const patientBmiPreview = useMemo(() => {
+    if (!patientRecordForm) return null;
+    const h = Number(patientRecordForm.height_cm);
+    const w = Number(patientRecordForm.weight_kg);
+    return bodyMassIndex(Number.isFinite(h) ? h : null, Number.isFinite(w) ? w : null);
+  }, [patientRecordForm]);
+
+  const patientBmiCategory = patientBmiPreview != null ? bmiCategory(patientBmiPreview) : null;
+
+  const roomLocationLine = useMemo(() => {
+    if (!patientDetail?.room_id) return null;
+    if (roomDetailQuery.isPending && !roomDetail) {
+      return t("patients.editorLoading");
+    }
+    const r = roomDetail as Room | undefined;
+    if (r) {
+      const bits = [r.name, r.facility_name].filter(Boolean);
+      return bits.length ? bits.join(" · ") : `${t("clinical.patient.roomPrefix")}${patientDetail.room_id}`;
+    }
+    return `${t("clinical.patient.roomPrefix")}${patientDetail.room_id}`;
+  }, [patientDetail, roomDetail, roomDetailQuery.isPending, t]);
 
   const resetPhotoState = useCallback(
     (nextProfile: MeProfileResponse | null) => {
@@ -370,6 +488,62 @@ export default function AccountPage() {
         if (Object.keys(caregiverPatch).length > 0) payload.linked_caregiver = caregiverPatch;
       }
 
+      if (profile.linked_patient && patientRecordForm) {
+        const lp = profile.linked_patient;
+        const f = patientRecordForm;
+        const patientPatch: Record<string, unknown> = {};
+        const parseOptFloat = (raw: string): number | null => {
+          const trimmed = raw.trim();
+          if (!trimmed) return null;
+          const n = Number(trimmed);
+          return Number.isFinite(n) ? n : null;
+        };
+        const dobLp = lp.date_of_birth ? String(lp.date_of_birth).slice(0, 10) : "";
+        const dobForm = f.date_of_birth.trim();
+        const nextAllergies = normalizeAllergyLines(f.allergiesText);
+
+        if (f.first_name.trim() !== (lp.first_name ?? "").trim()) {
+          patientPatch.first_name = f.first_name.trim();
+        }
+        if (f.last_name.trim() !== (lp.last_name ?? "").trim()) {
+          patientPatch.last_name = f.last_name.trim();
+        }
+        if (f.nickname.trim() !== (lp.nickname ?? "").trim()) {
+          patientPatch.nickname = f.nickname.trim();
+        }
+        if (dobForm !== dobLp) {
+          patientPatch.date_of_birth = dobForm.length ? dobForm : null;
+        }
+        if ((f.gender ?? "") !== (lp.gender ?? "")) {
+          patientPatch.gender = f.gender;
+        }
+        const nextH = parseOptFloat(f.height_cm);
+        if (nextH !== lp.height_cm) {
+          patientPatch.height_cm = nextH;
+        }
+        const nextW = parseOptFloat(f.weight_kg);
+        if (nextW !== lp.weight_kg) {
+          patientPatch.weight_kg = nextW;
+        }
+        if (f.blood_type.trim() !== (lp.blood_type ?? "").trim()) {
+          patientPatch.blood_type = f.blood_type.trim();
+        }
+        if (!allergiesEqual(nextAllergies, lp.allergies ?? [])) {
+          patientPatch.allergies = nextAllergies;
+        }
+        if (f.notes.trim() !== (lp.notes ?? "").trim()) {
+          patientPatch.notes = f.notes.trim();
+        }
+        const nextPhoto = f.photo_url.trim();
+        const prevPhoto = (lp.photo_url ?? "").trim();
+        if (nextPhoto !== prevPhoto) {
+          patientPatch.photo_url = nextPhoto.length ? nextPhoto : null;
+        }
+        if (Object.keys(patientPatch).length > 0) {
+          payload.linked_patient = patientPatch;
+        }
+      }
+
       if (Object.keys(payload).length === 0) {
         setProfileMessage("No changes to save.");
         return;
@@ -378,6 +552,8 @@ export default function AccountPage() {
       await api.patch<MeProfileResponse>("/auth/me/profile", payload);
       await refreshUser();
       await loadProfile();
+      await queryClient.invalidateQueries({ queryKey: ["account", "patient-detail"] });
+      await queryClient.invalidateQueries({ queryKey: ["account", "room"] });
       setProfileMessage("Profile updated.");
     } catch (err) {
       setProfileError(err instanceof ApiError ? err.message : "Could not save profile.");
@@ -580,6 +756,197 @@ export default function AccountPage() {
           </div>
 
           <div className="space-y-4">
+            {profile?.linked_patient && patientRecordForm ? (
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h2 className="text-lg font-semibold">{t("patients.detailAbout")}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{t("account.linkedPatientIntro")}</p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge variant="outline" className="text-xs font-normal">
+                    {t("patients.recordId")} #{linkedPatientId}
+                  </Badge>
+                  {patientDetail ? (
+                    <>
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        {patientDetail.care_level}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        {patientDetail.mobility_type}
+                      </Badge>
+                      <Badge variant={patientDetail.is_active ? "success" : "outline"} className="text-xs font-normal">
+                        {patientDetail.is_active
+                          ? t("clinical.recordStatus.activeBadge")
+                          : t("clinical.recordStatus.inactiveBadge")}
+                      </Badge>
+                    </>
+                  ) : patientDetailQuery.isPending ? (
+                    <span className="text-xs text-muted-foreground">{t("patients.editorLoading")}</span>
+                  ) : null}
+                </div>
+
+                {roomLocationLine ? (
+                  <div className="mt-3 text-sm text-foreground">
+                    <span className="text-muted-foreground">{t("observer.patients.room")}: </span>
+                    {roomLocationLine}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">{t("patients.noRoom")}</p>
+                )}
+
+                {user.role === "patient" ? (
+                  <div className="mt-2">
+                    <Link
+                      href="/patient/room-controls"
+                      className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      {t("account.linkedPatientRoomControls")}
+                    </Link>
+                  </div>
+                ) : null}
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label={t("patients.firstName")}
+                    value={patientRecordForm.first_name}
+                    onChange={(value) =>
+                      setPatientRecordForm((prev) => (prev ? { ...prev, first_name: value } : prev))
+                    }
+                  />
+                  <Field
+                    label={t("patients.lastName")}
+                    value={patientRecordForm.last_name}
+                    onChange={(value) =>
+                      setPatientRecordForm((prev) => (prev ? { ...prev, last_name: value } : prev))
+                    }
+                  />
+                </div>
+                <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label={t("patients.nickname")}
+                    value={patientRecordForm.nickname}
+                    onChange={(value) =>
+                      setPatientRecordForm((prev) => (prev ? { ...prev, nickname: value } : prev))
+                    }
+                  />
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">{t("patients.dateOfBirth")}</label>
+                    <Input
+                      type="date"
+                      value={patientRecordForm.date_of_birth}
+                      onChange={(event) =>
+                        setPatientRecordForm((prev) =>
+                          prev ? { ...prev, date_of_birth: event.target.value } : prev,
+                        )
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">{t("patients.gender")}</label>
+                    <select
+                      className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring/30"
+                      value={patientRecordForm.gender}
+                      onChange={(event) =>
+                        setPatientRecordForm((prev) =>
+                          prev ? { ...prev, gender: event.target.value } : prev,
+                        )
+                      }
+                    >
+                      <option value="">{t("patients.genderUnset")}</option>
+                      <option value="male">{t("patients.genderMale")}</option>
+                      <option value="female">{t("patients.genderFemale")}</option>
+                      <option value="other">{t("patients.genderOther")}</option>
+                    </select>
+                  </div>
+                  <Field
+                    label={t("patients.heightCm")}
+                    value={patientRecordForm.height_cm}
+                    onChange={(value) =>
+                      setPatientRecordForm((prev) => (prev ? { ...prev, height_cm: value } : prev))
+                    }
+                  />
+                  <Field
+                    label={t("patients.weightKg")}
+                    value={patientRecordForm.weight_kg}
+                    onChange={(value) =>
+                      setPatientRecordForm((prev) => (prev ? { ...prev, weight_kg: value } : prev))
+                    }
+                  />
+                  <Field
+                    label={t("patients.bloodType")}
+                    value={patientRecordForm.blood_type}
+                    onChange={(value) =>
+                      setPatientRecordForm((prev) => (prev ? { ...prev, blood_type: value } : prev))
+                    }
+                  />
+                  <div className="sm:col-span-2 rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm">
+                    <span className="text-muted-foreground">{t("patients.detailBmi")}: </span>
+                    <span className="font-medium tabular-nums">
+                      {patientBmiPreview != null ? patientBmiPreview : "—"}
+                    </span>
+                    {patientBmiCategory ? (
+                      <span className="ml-2 text-muted-foreground">
+                        (
+                        {patientBmiCategory === "underweight"
+                          ? t("patients.bmiUnderweight")
+                          : patientBmiCategory === "normal"
+                            ? t("patients.bmiNormal")
+                            : patientBmiCategory === "overweight"
+                              ? t("patients.bmiOverweight")
+                              : t("patients.bmiObese")}
+                        )
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <label className="block text-sm font-medium">{t("account.allergiesFieldLabel")}</label>
+                  <Textarea
+                    rows={4}
+                    value={patientRecordForm.allergiesText}
+                    placeholder={t("patients.allergiesPlaceholder")}
+                    onChange={(event) =>
+                      setPatientRecordForm((prev) =>
+                        prev ? { ...prev, allergiesText: event.target.value } : prev,
+                      )
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">{t("account.linkedPatientAllergiesHelp")}</p>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <label className="block text-sm font-medium">{t("patients.formSectionNotes")}</label>
+                  <Textarea
+                    rows={3}
+                    value={patientRecordForm.notes}
+                    onChange={(event) =>
+                      setPatientRecordForm((prev) =>
+                        prev ? { ...prev, notes: event.target.value } : prev,
+                      )
+                    }
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <Field
+                    label={t("account.linkedPatientRecordPhoto")}
+                    value={patientRecordForm.photo_url}
+                    onChange={(value) =>
+                      setPatientRecordForm((prev) => (prev ? { ...prev, photo_url: value } : prev))
+                    }
+                  />
+                </div>
+
+                {patientDetailQuery.isError ? (
+                  <p className="mt-3 text-xs text-destructive">
+                    {patientDetailQuery.error instanceof ApiError
+                      ? patientDetailQuery.error.message
+                      : t("common.requestFailed")}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             <div className="rounded-xl border border-border bg-card p-5">
               <h2 className="text-lg font-semibold">Personal profile</h2>
               <p className="mt-1 text-sm text-muted-foreground">

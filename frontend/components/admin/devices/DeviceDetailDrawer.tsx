@@ -16,6 +16,9 @@ import {
   roomNodeDeviceMatchesDevice,
 } from "@/lib/nodeDeviceRoomKey";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
+
+/** Matches `RequireRole` on `GET /api/devices/activity`. */
+const ROLES_DEVICE_ACTIVITY_POLL = new Set<string>(["admin", "head_nurse", "supervisor"]);
 import type {
   DeviceActivityEventOut,
   ListPatientsResponse,
@@ -318,11 +321,20 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const isPatientAssignable =
     hardwareType === "wheelchair" || hardwareType === "mobile_phone" || hardwareType === "polar_sense";
 
+  const userRole = user?.role;
+  const deviceActivityPollEnabled =
+    Boolean(deviceId) &&
+    userRole != null &&
+    ROLES_DEVICE_ACTIVITY_POLL.has(userRole);
+
   const activityQuery = useQuery({
     queryKey: ["device-detail-drawer", "activity", deviceId],
-    enabled: Boolean(deviceId),
+    enabled: deviceActivityPollEnabled,
     staleTime: 3_000,
-    refetchInterval: () => (Date.now() < fastPollUntilMs ? 2_000 : 8_000),
+    refetchInterval: () => {
+      if (!deviceActivityPollEnabled) return false;
+      return Date.now() < fastPollUntilMs ? 2_000 : 8_000;
+    },
     refetchIntervalInBackground: true,
     queryFn: async () => {
       const rows = await api.listDeviceActivity(80);

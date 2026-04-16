@@ -48,6 +48,8 @@ export interface CalendarEvent {
   status?: "scheduled" | "in_progress" | "completed" | "cancelled";
   color?: string;
   recurrence?: string | null;
+  /** Unified workspace task — open task detail when set */
+  workspaceTaskId?: number;
 }
 
 interface CalendarViewProps {

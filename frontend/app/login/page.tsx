@@ -236,10 +236,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground leading-relaxed px-1">
-            {t("auth.devCredentialHint")}
-          </p>
-
           <p className="mt-8 text-center text-xs text-outline">
             WheelSense Smart Care Platform v1.0
           </p>

@@ -25,6 +25,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import { useAuth } from "@/hooks/useAuth";
+import { getAccountManagementPath } from "@/lib/routes";
 import type {
   CareTaskOut,
   CareScheduleOut,
@@ -128,6 +130,7 @@ function getPriorityBadgeVariant(priority: string): "default" | "secondary" | "d
 }
 
 export default function AdminCaregiversPage() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
@@ -526,7 +529,7 @@ export default function AdminCaregiversPage() {
           </p>
         </div>
         <Button asChild>
-          <a href="/admin/users">
+          <a href={getAccountManagementPath(user?.role || "admin")}>
             <Users className="mr-1.5 h-4 w-4" />
             Manage Users
           </a>

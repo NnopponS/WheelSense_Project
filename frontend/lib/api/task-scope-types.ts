@@ -318,3 +318,88 @@ export type ShiftChecklistTemplateResponse = {
   items: ShiftChecklistItemApi[];
   updated_at: string | null;
 };
+
+/** Care workflow jobs — manual contract until OpenAPI regen includes `/workflow/jobs`. */
+export type WorkflowPersonOut = {
+  user_id: number;
+  username: string;
+  role: string;
+  display_name: string;
+  person_type: string;
+  caregiver_id?: number | null;
+  patient_id?: number | null;
+};
+
+export type WorkflowJobStepAttachmentOut = {
+  id: string;
+  filename: string;
+  content_type: string;
+  byte_size: number;
+};
+
+export type CareWorkflowJobStepOut = {
+  id: number;
+  job_id: number;
+  sort_order: number;
+  title: string;
+  instructions: string;
+  status: string;
+  report_text: string;
+  attachments: WorkflowJobStepAttachmentOut[];
+  assigned_user_id: number | null;
+  completed_by_user_id: number | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  assigned_person: WorkflowPersonOut | null;
+  completed_by_person: WorkflowPersonOut | null;
+};
+
+export type CareWorkflowJobAssigneeOut = {
+  user_id: number;
+  role_hint: string | null;
+  person: WorkflowPersonOut | null;
+};
+
+export type CareWorkflowJobOut = {
+  id: number;
+  workspace_id: number;
+  title: string;
+  description: string;
+  starts_at: string;
+  duration_minutes: number | null;
+  status: string;
+  created_by_user_id: number | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  patient_ids: number[];
+  assignees: CareWorkflowJobAssigneeOut[];
+  steps: CareWorkflowJobStepOut[];
+  created_by_person: WorkflowPersonOut | null;
+};
+
+export type CreateCareWorkflowJobInput = {
+  title: string;
+  description?: string;
+  starts_at: string;
+  duration_minutes?: number | null;
+  patient_ids: number[];
+  assignee_user_ids: number[];
+  steps: { title: string; instructions?: string; assigned_user_id?: number | null }[];
+  status?: string;
+};
+
+export type UpdateCareWorkflowJobInput = {
+  title?: string;
+  description?: string;
+  starts_at?: string;
+  duration_minutes?: number | null;
+  status?: string;
+};
+
+export type PatchCareWorkflowJobStepInput = {
+  status?: string;
+  report_text?: string;
+  assigned_user_id?: number | null;
+};

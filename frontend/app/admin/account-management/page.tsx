@@ -11,6 +11,7 @@ import SearchableListboxPicker, {
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
+import { getCaregiverDetailPath, getPatientDetailPath } from "@/lib/routes";
 import { hasCapability } from "@/lib/permissions";
 import { ROUTES } from "@/lib/constants";
 import type {
@@ -71,7 +72,7 @@ export default function AccountManagementPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const canEdit = me ? hasCapability(me.role, "users.manage") : false;
+  const canEdit = me ? me.role === "admin" && hasCapability(me.role, "users.manage") : false;
 
   const usersQuery = useQuery({
     queryKey: ["admin", "account-management", "users"],
@@ -642,7 +643,7 @@ export default function AccountManagementPage() {
                           ) : null}
                           {cg ? (
                             <Link
-                              href={`/admin/caregivers/${cg.id}`}
+                              href={getCaregiverDetailPath(me?.role || "admin", cg.id)}
                               className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
                             >
                               <Users className="h-3.5 w-3.5" aria-hidden />
@@ -652,7 +653,7 @@ export default function AccountManagementPage() {
                           ) : null}
                           {pt ? (
                             <Link
-                              href={`/admin/patients/${pt.id}`}
+                              href={getPatientDetailPath(me?.role || "admin", pt.id)}
                               className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
                             >
                               <Users className="h-3.5 w-3.5" aria-hidden />

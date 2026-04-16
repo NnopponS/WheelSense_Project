@@ -9,7 +9,7 @@ from .endpoints import (
     patients, caregivers, facilities, vitals, timeline, alerts,
     auth, users, homeassistant, retention, cameras, analytics,
     chat, ai_settings, workflow, floorplans, care, medication, service_requests, profile_images, demo_control,
-    support, calendar, chat_actions, shift_checklist, mcp_auth,
+    support, calendar, chat_actions, shift_checklist, mcp_auth, task_management, tasks,
 )
 from app.localization import is_model_ready
 
@@ -136,6 +136,20 @@ api_router.include_router(
     mcp_auth.router,
     prefix="/mcp",
     tags=["mcp-auth"],
+    dependencies=[Depends(get_current_active_user)],
+)
+api_router.include_router(
+    task_management.router,
+    prefix="/task-management",
+    tags=["task-management"],
+    dependencies=[Depends(get_current_active_user)],
+)
+
+# Unified Task Management (new system)
+api_router.include_router(
+    tasks.router,
+    prefix="/tasks",
+    tags=["tasks"],
     dependencies=[Depends(get_current_active_user)],
 )
 

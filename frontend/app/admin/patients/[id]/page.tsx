@@ -47,6 +47,11 @@ import { ScheduleForm } from "@/components/calendar/ScheduleForm";
 import { schedulesToCalendarEvents } from "@/components/calendar/scheduleEventMapper";
 import type { CareScheduleOut } from "@/lib/api/task-scope-types";
 import { imageFileToResizedSquareJpegBlob, looksLikeImageFile } from "@/lib/profileImageProcess";
+import {
+  getPatientsPath,
+  getCaregiverDetailPath,
+  getFacilityManagementPath,
+} from "@/lib/routes";
 
 function caregiverSearchText(c: Caregiver): string {
   return [
@@ -593,7 +598,7 @@ export default function PatientDetailPage() {
         <AlertCircle className="w-12 h-12 text-error mb-3" />
         <p className="text-foreground font-medium">{error || t("patients.empty")}</p>
         <Link
-          href="/admin/patients"
+          href="../patients"
           className="text-sm text-primary mt-3 hover:underline"
         >
           {t("patients.backToList")}
@@ -644,7 +649,7 @@ export default function PatientDetailPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          href="/admin/patients"
+          href={getPatientsPath(authUser?.role || "admin")}
           className="inline-flex items-center gap-2 text-sm text-foreground-variant hover:text-primary transition-smooth"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -804,7 +809,7 @@ export default function PatientDetailPage() {
                   </p>
                   <p>
                     <Link
-                      href="/admin/facility-management"
+                      href={getFacilityManagementPath(authUser?.role || "admin")}
                       className="text-primary text-sm font-semibold hover:underline"
                     >
                       {t("patients.roomOpenFacility")}
@@ -1371,7 +1376,7 @@ export default function PatientDetailPage() {
                     className="rounded-lg border border-outline-variant/20 p-3 bg-surface-container-low text-sm hover:border-primary/30 transition-smooth"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <Link href={`/admin/caregivers/${person.id}`} className="min-w-0 flex-1">
+                      <Link href={getCaregiverDetailPath(authUser?.role || "admin", person.id)} className="min-w-0 flex-1">
                         <span className="font-medium text-foreground block">
                           {person.first_name} {person.last_name}
                         </span>
@@ -1382,7 +1387,7 @@ export default function PatientDetailPage() {
                       </Link>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <Link
-                          href={`/admin/caregivers/${person.id}`}
+                          href={getCaregiverDetailPath(authUser?.role || "admin", person.id)}
                           className="text-xs text-primary font-semibold hover:underline"
                         >
                           {t("caregivers.openFullDetail")}

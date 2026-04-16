@@ -141,7 +141,7 @@ export default function ObserverAlertsQueue() {
             <Button asChild size="sm" variant="outline">
               <Link
                 href={
-                  row.original.patientId ? `/observer/patients/${row.original.patientId}` : "/observer/patients"
+                  row.original.patientId ? `/observer/personnel/${row.original.patientId}` : "/observer/personnel"
                 }
               >
                 {t("observer.alerts.openPatient")}

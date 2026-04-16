@@ -105,6 +105,7 @@ class CareTaskOut(BaseModel):
     id: int
     workspace_id: int
     schedule_id: Optional[int]
+    workflow_job_id: Optional[int] = None
     patient_id: Optional[int]
     title: str
     description: str
@@ -284,3 +285,111 @@ class WorkflowItemDetailOut(BaseModel):
 class WorkflowActionOut(BaseModel):
     item_type: str
     item: dict[str, Any]
+
+
+# ── Care workflow jobs (multi-patient + checklist) ────────────────────────────
+
+
+class WorkflowJobStepCreateItem(BaseModel):
+    title: str
+    instructions: str = ""
+    assigned_user_id: Optional[int] = None
+
+
+class CareWorkflowJobCreate(BaseModel):
+    title: str
+    description: str = ""
+    starts_at: datetime
+    duration_minutes: Optional[int] = Field(default=None, ge=1, le=24 * 60)
+    patient_ids: list[int] = Field(default_factory=list)
+    assignee_user_ids: list[int] = Field(default_factory=list)
+    steps: list[WorkflowJobStepCreateItem] = Field(default_factory=list)
+    status: str = "active"
+
+
+class CareWorkflowJobUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    starts_at: Optional[datetime] = None
+    duration_minutes: Optional[int] = Field(default=None, ge=1, le=24 * 60)
+    status: Optional[str] = None
+
+
+class WorkflowJobStepAttachmentOut(BaseModel):
+    id: str
+    filename: str
+    content_type: str
+    byte_size: int
+
+
+class CareWorkflowJobStepOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    job_id: int
+    sort_order: int
+    title: str
+    instructions: str
+    status: str
+    report_text: str
+    attachments: list[WorkflowJobStepAttachmentOut] = Field(default_factory=list)
+    assigned_user_id: Optional[int] = None
+    completed_by_user_id: Optional[int] = None
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    assigned_person: Optional[WorkflowPersonOut] = None
+    completed_by_person: Optional[WorkflowPersonOut] = None
+
+    @field_validator("attachments", mode="before")
+    @classmethod
+    def normalize_step_attachments(cls, v: Any) -> Any:
+        if v is None:
+            return []
+        out: list[dict[str, Any]] = []
+        for item in v:
+            if not isinstance(item, dict):
+                continue
+            out.append(
+                {
+                    "id": str(item.get("id", "")),
+                    "filename": str(item.get("filename", "")),
+                    "content_type": str(item.get("content_type", "")),
+                    "byte_size": int(item.get("byte_size") or 0),
+                }
+            )
+        return out
+
+
+class CareWorkflowJobAssigneeOut(BaseModel):
+    user_id: int
+    role_hint: Optional[str] = None
+    person: Optional[WorkflowPersonOut] = None
+
+
+class CareWorkflowJobOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    workspace_id: int
+    title: str
+    description: str
+    starts_at: datetime
+    duration_minutes: Optional[int] = None
+    status: str
+    created_by_user_id: Optional[int] = None
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    patient_ids: list[int] = Field(default_factory=list)
+    assignees: list[CareWorkflowJobAssigneeOut] = Field(default_factory=list)
+    steps: list[CareWorkflowJobStepOut] = Field(default_factory=list)
+    created_by_person: Optional[WorkflowPersonOut] = None
+
+
+class CareWorkflowJobStepPatch(BaseModel):
+    status: Optional[str] = None
+    report_text: Optional[str] = None
+    assigned_user_id: Optional[int] = None
+
+
+class WorkflowJobStepFinalizeAttachmentsBody(BaseModel):
+    pending_ids: list[str] = Field(default_factory=list)
