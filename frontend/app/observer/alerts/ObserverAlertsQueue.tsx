@@ -2,12 +2,12 @@
 "use no memo";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Bell } from "lucide-react";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
 import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
 import { buildRoomByIdMap, formatPatientRoomLine } from "@/lib/alertPatientLocation";
@@ -31,9 +31,18 @@ type AlertRow = {
   timestamp: string;
 };
 
+function parseRequestError(error: unknown): string {
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Request failed.";
+}
+
 export default function ObserverAlertsQueue() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const [pendingAlertId, setPendingAlertId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: alertsData } = useSuspenseQuery({
     queryKey: ["observer", "alerts", "list"],
@@ -60,6 +69,28 @@ export default function ObserverAlertsQueue() {
   );
 
   const roomById = useMemo(() => buildRoomByIdMap((roomsData ?? []) as Room[]), [roomsData]);
+
+  const updateAlertMutation = useMutation({
+    mutationFn: async (variables: { id: number; status: "acknowledged" | "resolved" }) => {
+      if (variables.status === "acknowledged") {
+        await api.acknowledgeAlert(variables.id, { caregiver_id: null });
+        return;
+      }
+      await api.resolveAlert(variables.id, { resolution_note: "" });
+    },
+    onSuccess: async () => {
+      setActionError(null);
+      await queryClient.invalidateQueries({ queryKey: ["observer", "alerts"] });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard"] });
+    },
+    onError: (error) => {
+      setActionError(parseRequestError(error));
+    },
+    onSettled: () => {
+      setPendingAlertId(null);
+    },
+  });
 
   const rows = useMemo<AlertRow[]>(() => {
     return [...alerts]
@@ -162,9 +193,38 @@ export default function ObserverAlertsQueue() {
       },
       {
         id: "actions",
-        header: "",
+        header: t("observer.alerts.colActions"),
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {row.original.status === "active" ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id}
+                onClick={() => {
+                  setPendingAlertId(row.original.id);
+                  setActionError(null);
+                  updateAlertMutation.mutate({ id: row.original.id, status: "acknowledged" });
+                }}
+              >
+                {t("alerts.acknowledge")}
+              </Button>
+            ) : null}
+            {row.original.status === "active" || row.original.status === "acknowledged" ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={updateAlertMutation.isPending && pendingAlertId === row.original.id}
+                onClick={() => {
+                  setPendingAlertId(row.original.id);
+                  setActionError(null);
+                  updateAlertMutation.mutate({ id: row.original.id, status: "resolved" });
+                }}
+              >
+                {t("alerts.resolve")}
+              </Button>
+            ) : null}
             <Button asChild size="sm" variant="outline">
               <Link
                 href={
@@ -178,7 +238,7 @@ export default function ObserverAlertsQueue() {
         ),
       },
     ],
-    [t],
+    [pendingAlertId, t, updateAlertMutation],
   );
 
   const highlightAlertId = useMemo(() => {
@@ -194,21 +254,28 @@ export default function ObserverAlertsQueue() {
   const flashAlertId = useAlertRowHighlight(highlightAlertId, highlightReady);
 
   return (
-    <DataTableCard
-      title={t("observer.alerts.queueTitle")}
-      description={t("observer.alerts.queueDesc")}
-      data={rows}
-      columns={columns}
-      isLoading={false}
-      emptyText={t("observer.alerts.empty")}
-      rightSlot={<Bell className="h-4 w-4 text-muted-foreground" />}
-      pageSize={200}
-      getRowDomId={(row) => `ws-alert-${row.id}`}
-      getRowClassName={(row) =>
-        flashAlertId != null && flashAlertId === row.id
-          ? "bg-primary/10 ring-2 ring-primary/30 transition-colors"
-          : undefined
-      }
-    />
+    <div className="space-y-4">
+      {actionError ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {actionError}
+        </div>
+      ) : null}
+      <DataTableCard
+        title={t("observer.alerts.queueTitle")}
+        description={t("observer.alerts.queueDesc")}
+        data={rows}
+        columns={columns}
+        isLoading={false}
+        emptyText={t("observer.alerts.empty")}
+        rightSlot={<Bell className="h-4 w-4 text-muted-foreground" />}
+        pageSize={200}
+        getRowDomId={(row) => `ws-alert-${row.id}`}
+        getRowClassName={(row) =>
+          flashAlertId != null && flashAlertId === row.id
+            ? "bg-primary/10 ring-2 ring-primary/30 transition-colors"
+            : undefined
+        }
+      />
+    </div>
   );
 }

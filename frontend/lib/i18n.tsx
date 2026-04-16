@@ -3932,6 +3932,14 @@ const translations = {
   },
   "observer.patientDetail.sending": { en: "Sending...", th: "กำลังส่ง..." },
   "observer.patientDetail.sendMessage": { en: "Send message", th: "ส่งข้อความ" },
+  "observer.patientDetail.handoverTargetRole": {
+    en: "Send handover to role",
+    th: "ส่งบันทึกส่งต่อไปยังบทบาท",
+  },
+  "observer.patientDetail.handoverTargetAll": {
+    en: "All staff roles (shared inbox)",
+    th: "ทุกบทบาทเจ้าหน้าที่ (กล่องข้อความร่วม)",
+  },
   "observer.patientDetail.submitHandover": { en: "Submit Handover", th: "ส่งต่องาน" },
   "observer.patientDetail.handoverPlaceholder": {
     en: "Record concise handover for next shift",
@@ -4030,6 +4038,7 @@ const translations = {
   "observer.alerts.colSeverity": { en: "Severity", th: "ความรุนแรง" },
   "observer.alerts.colStatus": { en: "Status", th: "สถานะ" },
   "observer.alerts.colTime": { en: "Time", th: "เวลา" },
+  "observer.alerts.colActions": { en: "Actions", th: "การดำเนินการ" },
   "observer.alerts.openPatient": { en: "Open patient", th: "เปิดผู้ป่วย" },
   "observer.alerts.title": { en: "Active Alerts", th: "การแจ้งเตือนที่ใช้งาน" },
   "observer.alerts.subtitle": {
@@ -4038,8 +4047,8 @@ const translations = {
   },
   "observer.alerts.queueTitle": { en: "Alert Queue", th: "คิวการแจ้งเตือน" },
   "observer.alerts.queueDesc": {
-    en: "Current active alerts with severity and patient context.",
-    th: "การแจ้งเตือนที่ใช้งานพร้อมความรุนแรงและบริบทผู้ป่วย",
+    en: "Active alerts with severity and patient context. Acknowledge or resolve when triaged, or open the patient record.",
+    th: "การแจ้งเตือนที่ใช้งานพร้อมความรุนแรงและบริบทผู้ป่วย รับทราบหรือปิดเรื่องเมื่อจัดการแล้ว หรือเปิดบันทึกผู้ป่วย",
   },
   "observer.alerts.empty": { en: "No active alerts right now.", th: "ตอนนี้ไม่มีการแจ้งเตือนที่ใช้งาน" },
   "observer.alerts.loadingQueue": { en: "Loading alert queue…", th: "กำลังโหลดคิวการแจ้งเตือน…" },

@@ -15,6 +15,14 @@ import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { api, ApiError } from "@/lib/api";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
@@ -80,6 +88,8 @@ type HandoverRow = {
   createdAt: string;
 };
 
+type HandoverTargetRoleChoice = "all" | "head_nurse" | "supervisor" | "admin" | "observer";
+
 type AlertRow = {
   id: number;
   title: string;
@@ -144,6 +154,7 @@ export function PatientCareCoordinationPanel({
 
   const [noteText, setNoteText] = useState("");
   const [handoverText, setHandoverText] = useState("");
+  const [handoverTargetRole, setHandoverTargetRole] = useState<HandoverTargetRoleChoice>("head_nurse");
   const [actionError, setActionError] = useState<string | null>(null);
   const [messageDetail, setMessageDetail] = useState<MessageRow | null>(null);
   const [pendingAlertId, setPendingAlertId] = useState<number | null>(null);
@@ -213,13 +224,13 @@ export function PatientCareCoordinationPanel({
   });
 
   const createHandoverMutation = useMutation({
-    mutationFn: async (note: string) => {
+    mutationFn: async (input: { note: string; targetRole: HandoverTargetRoleChoice }) => {
       const payload = {
         patient_id: patientId,
-        target_role: "head_nurse",
+        target_role: input.targetRole === "all" ? null : input.targetRole,
         shift_label: "observer_update",
         priority: "routine",
-        note,
+        note: input.note,
       } satisfies CreateWorkflowHandoverRequest;
 
       await api.createWorkflowHandover(payload);
@@ -934,6 +945,24 @@ export function PatientCareCoordinationPanel({
         <Card>
           <CardContent className="space-y-3 pt-6">
             <h3 className="text-sm font-semibold text-foreground">{t("observer.patientDetail.submitHandover")}</h3>
+            <div className="space-y-2">
+              <Label htmlFor="observer-handover-target-role">{t("observer.patientDetail.handoverTargetRole")}</Label>
+              <Select
+                value={handoverTargetRole}
+                onValueChange={(value) => setHandoverTargetRole(value as HandoverTargetRoleChoice)}
+              >
+                <SelectTrigger id="observer-handover-target-role" className="w-full max-w-md">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("observer.patientDetail.handoverTargetAll")}</SelectItem>
+                  <SelectItem value="head_nurse">{t("shell.roleHeadNurse")}</SelectItem>
+                  <SelectItem value="supervisor">{t("shell.roleSupervisor")}</SelectItem>
+                  <SelectItem value="admin">{t("shell.roleAdmin")}</SelectItem>
+                  <SelectItem value="observer">{t("shell.roleObserver")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Textarea
               value={handoverText}
               onChange={(event) => setHandoverText(event.target.value)}
@@ -943,7 +972,12 @@ export function PatientCareCoordinationPanel({
             <Button
               type="button"
               disabled={createHandoverMutation.isPending || !handoverText.trim()}
-              onClick={() => createHandoverMutation.mutate(handoverText.trim())}
+              onClick={() =>
+                createHandoverMutation.mutate({
+                  note: handoverText.trim(),
+                  targetRole: handoverTargetRole,
+                })
+              }
             >
               {createHandoverMutation.isPending ? t("observer.patientDetail.submitting") : t("observer.patientDetail.addHandover")}
             </Button>
