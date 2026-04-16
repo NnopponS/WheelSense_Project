@@ -63,3 +63,7 @@ mobile-app/.android-sdk/
 
 # Accidental literal Windows TEMP zip (must never enter Git; exceeds GitHub limit)
 /%TEMP%cmdline-tools.zip
+
+# IDE / local build artifacts (mobile)
+mobile-app/**/.idea/
+mobile-app/**/*.apk

@@ -83,7 +83,7 @@ class Task(Base):
         Integer, ForeignKey("care_workflow_jobs.id", ondelete="SET NULL"), nullable=True
     )
     # Shift date (for routine tasks — NULL for specific tasks)
-    shift_date = Column(Date, nullable=True, index=True)
+    shift_date = Column(Date, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

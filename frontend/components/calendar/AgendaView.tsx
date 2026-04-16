@@ -130,7 +130,10 @@ export function AgendaView({
 
                     return (
                       <div
-                        key={event.id}
+                        key={
+                          event.instanceKey ??
+                          `${event.sourceScheduleId ?? event.id}-${event.startTime.getTime()}`
+                        }
                         className={cn(
                           "group flex items-start gap-3 rounded-xl border border-border/50 bg-card p-3 transition-colors",
                           onEventClick && "cursor-pointer hover:bg-muted/50"

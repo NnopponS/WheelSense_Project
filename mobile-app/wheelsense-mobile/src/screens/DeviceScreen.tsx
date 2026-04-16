@@ -13,11 +13,12 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { usePolar, useBeacons, useAppStore } from '../store/useAppStore';
+import { usePolarStore, useBeacons, useAppStore } from '../store/useAppStore';
 import { Polar as PolarService } from '../services/PolarService';
 import { BLEScanner } from '../services/BLEScanner';
 import { PolarDevice, BLEBeacon } from '../types';
@@ -27,7 +28,8 @@ type DeviceScreenProps = {
 };
 
 export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
-  const polar = usePolar();
+  const { t } = useTranslation();
+  const polar = usePolarStore();
   const beacons = useBeacons();
   const settings = useAppStore((state) => state.settings);
   
@@ -38,7 +40,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
   // Polar device discovery
   const scanForPolarDevices = async () => {
     if (!PolarService.isAvailable()) {
-      Alert.alert('Error', 'Polar SDK is not available on this device');
+      Alert.alert(t('common.error'), t('device.polarNotAvailable'));
       return;
     }
 
@@ -55,7 +57,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
     } catch (error) {
       console.error('[DeviceScreen] Polar scan failed:', error);
       setIsScanningPolar(false);
-      Alert.alert('Error', 'Failed to scan for Polar devices');
+      Alert.alert(t('common.error'), t('device.polarScanFailed'));
     }
   };
 
@@ -64,9 +66,9 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
     
     try {
       await PolarService.connect(deviceId);
-      Alert.alert('Success', 'Connected to Polar device');
+      Alert.alert(t('common.success'), t('device.polarConnected'));
     } catch (error: any) {
-      Alert.alert('Connection Failed', error.message || 'Failed to connect');
+      Alert.alert(t('device.connectionFailed'), error.message || 'Failed to connect');
     } finally {
       setConnectingDeviceId(null);
     }
@@ -75,9 +77,9 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
   const disconnectPolar = async () => {
     try {
       await PolarService.disconnect();
-      Alert.alert('Disconnected', 'Polar device disconnected');
+      Alert.alert(t('home.disconnected'), t('device.polarDisconnected'));
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to disconnect');
+      Alert.alert(t('common.error'), error.message || 'Failed to disconnect');
     }
   };
 
@@ -85,7 +87,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
     try {
       await PolarService.startHRStreaming();
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('common.error'), error.message);
     }
   };
 
@@ -97,7 +99,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
     try {
       await PolarService.startPPGStreaming();
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('common.error'), error.message);
     }
   };
 
@@ -133,35 +135,35 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
           <>
             {/* Polar Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Polar Verity Sense</Text>
+              <Text style={styles.sectionTitle}>{t('device.polarTitle')}</Text>
               
-              {!polar.isAvailable ? (
+              {!PolarService.isAvailable() ? (
                 <View style={styles.unavailableCard}>
                   <Text style={styles.unavailableText}>
-                    Polar SDK not available
+                    {t('device.polarNotAvailable')}
                   </Text>
                 </View>
-              ) : polar.isConnected ? (
+              ) : polar.isPolarConnected ? (
                 <View style={styles.connectedCard}>
                   <View style={styles.deviceHeader}>
                     <Text style={styles.deviceName}>
-                      {polar.device?.name || 'Polar Device'}
+                      {polar.polarDevice?.name || t('device.polarTitle')}
                     </Text>
                     <View style={styles.statusBadge}>
-                      <Text style={styles.statusText}>Connected</Text>
+                      <Text style={styles.statusText}>{t('device.polarConnected')}</Text>
                     </View>
                   </View>
                   
-                  {polar.device?.batteryLevel !== undefined && (
+                  {polar.polarDevice?.batteryLevel !== undefined && (
                     <Text style={styles.batteryText}>
-                      Battery: {polar.device.batteryLevel}%
+                      {t('device.polarBattery', { level: polar.polarDevice.batteryLevel })}
                     </Text>
                   )}
                   
                   {polar.lastHR && (
                     <View style={styles.metricRow}>
-                      <Text style={styles.metricLabel}>Heart Rate:</Text>
-                      <Text style={styles.metricValue}>{polar.lastHR.bpm} BPM</Text>
+                      <Text style={styles.metricLabel}>{t('home.heartRate')}:</Text>
+                      <Text style={styles.metricValue}>{polar.lastHR.bpm} {t('home.bpm')}</Text>
                     </View>
                   )}
                   
@@ -170,13 +172,13 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
                       style={[styles.actionButton, styles.startButton]}
                       onPress={startHR}
                     >
-                      <Text style={styles.buttonText}>Start HR</Text>
+                      <Text style={styles.buttonText}>{t('device.polarStartHR')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.stopButton]}
                       onPress={stopHR}
                     >
-                      <Text style={styles.buttonText}>Stop HR</Text>
+                      <Text style={styles.buttonText}>{t('device.polarStopHR')}</Text>
                     </TouchableOpacity>
                   </View>
                   
@@ -185,13 +187,13 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
                       style={[styles.actionButton, styles.startButton]}
                       onPress={startPPG}
                     >
-                      <Text style={styles.buttonText}>Start PPG</Text>
+                      <Text style={styles.buttonText}>{t('device.polarStartPPG')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.stopButton]}
                       onPress={stopPPG}
                     >
-                      <Text style={styles.buttonText}>Stop PPG</Text>
+                      <Text style={styles.buttonText}>{t('device.polarStopPPG')}</Text>
                     </TouchableOpacity>
                   </View>
                   
@@ -199,7 +201,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
                     style={[styles.disconnectButton]}
                     onPress={disconnectPolar}
                   >
-                    <Text style={styles.disconnectButtonText}>Disconnect</Text>
+                    <Text style={styles.disconnectButtonText}>{t('device.polarDisconnect')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -213,14 +215,14 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
                       <ActivityIndicator color="#fff" />
                     ) : (
                       <Text style={styles.scanButtonText}>
-                        Scan for Polar Devices
+                        {t('device.polarScan')}
                       </Text>
                     )}
                   </TouchableOpacity>
                   
                   {foundPolarDevices.length > 0 && (
                     <View style={styles.deviceList}>
-                      <Text style={styles.listTitle}>Found Devices:</Text>
+                      <Text style={styles.listTitle}>{t('device.polarFound')}</Text>
                       {foundPolarDevices.map((device) => (
                         <TouchableOpacity
                           key={device.deviceId}
@@ -243,14 +245,14 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
             {/* BLE Beacons Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>BLE Beacons</Text>
+                <Text style={styles.sectionTitle}>{t('device.beaconsTitle')}</Text>
                 <TouchableOpacity
                   style={styles.scanBeaconButton}
                   onPress={() => BLEScanner.startScanning()}
                   disabled={beacons.isScanningBeacons}
                 >
                   <Text style={styles.scanBeaconText}>
-                    {beacons.isScanningBeacons ? 'Scanning...' : 'Scan'}
+                    {beacons.isScanningBeacons ? t('device.beaconsScanning') : t('device.beaconsScan')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -258,7 +260,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
               {beacons.detectedBeacons.length === 0 ? (
                 <View style={styles.emptyCard}>
                   <Text style={styles.emptyText}>
-                    No beacons detected. Tap Scan to search.
+                    {t('device.beaconsEmpty')}
                   </Text>
                 </View>
               ) : null}

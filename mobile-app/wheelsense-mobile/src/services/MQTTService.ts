@@ -16,6 +16,10 @@ import {
 import { useAppStore } from '../store/useAppStore';
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
+import { isMqttNativeAvailable } from '../utils/runtimeEnvironment';
+
+const MQTT_EXPO_GO_HINT =
+  '[MQTT] Native MQTT (sp-react-native-mqtt) is not available in Expo Go. Use `npx expo run:android` or a development build.';
 
 // ==================== MQTT CONFIG ====================
 
@@ -44,6 +48,13 @@ class MQTTService {
   async connect(config: MQTTConfig): Promise<void> {
     if (this.isConnected) {
       console.log('[MQTT] Already connected');
+      return;
+    }
+
+    if (!isMqttNativeAvailable()) {
+      console.warn(MQTT_EXPO_GO_HINT);
+      this.config = config;
+      useAppStore.getState().setMQTTConnected(false);
       return;
     }
 
@@ -121,6 +132,9 @@ class MQTTService {
 
   private scheduleReconnect(): void {
     if (this.reconnectTimer) return;
+    if (!isMqttNativeAvailable()) {
+      return;
+    }
 
     console.log('[MQTT] Scheduling reconnect in 5 seconds...');
 
@@ -396,6 +410,11 @@ class MQTTService {
 
   isConnectedToBroker(): boolean {
     return this.isConnected;
+  }
+
+  /** False in Expo Go — MQTT requires a dev/production build with native `Mqtt` module. */
+  isNativeModuleAvailable(): boolean {
+    return isMqttNativeAvailable();
   }
 
   getQueueSize(): number {

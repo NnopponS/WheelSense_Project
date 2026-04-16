@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useId, useMemo, type ChangeEvent } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
@@ -10,19 +10,12 @@ import type {
   Caregiver,
   Room,
   User as PortalUser,
-  VitalReading,
-  Alert,
-  TimelineEvent,
   DeviceAssignment,
   PatientContact,
   MedicalConditionEntry,
 } from "@/lib/types";
 import {
   ArrowLeft,
-  Heart,
-  Activity,
-  Bell,
-  Clock,
   Tablet,
   AlertCircle,
   Phone,
@@ -44,7 +37,11 @@ import { bodyMassIndex, bmiCategory } from "@/lib/patientMetrics";
 import { CalendarView, type CalendarViewMode } from "@/components/calendar/CalendarView";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { ScheduleForm } from "@/components/calendar/ScheduleForm";
-import { schedulesToCalendarEvents } from "@/components/calendar/scheduleEventMapper";
+import {
+  resolveCareScheduleIdFromEvent,
+  schedulesToCalendarEvents,
+  visibleCalendarRange,
+} from "@/components/calendar/scheduleEventMapper";
 import type { CareScheduleOut } from "@/lib/api/task-scope-types";
 import { imageFileToResizedSquareJpegBlob, looksLikeImageFile } from "@/lib/profileImageProcess";
 import {
@@ -52,6 +49,8 @@ import {
   getCaregiverDetailPath,
   getFacilityManagementPath,
 } from "@/lib/routes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PatientCareCoordinationPanel } from "@/components/patients/PatientCareCoordinationPanel";
 
 function caregiverSearchText(c: Caregiver): string {
   return [
@@ -147,6 +146,8 @@ export default function PatientDetailPage() {
   const params = useParams();
   const id = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const { t, locale } = useTranslation();
   const { user: authUser } = useAuth();
   const nowMs = useFixedNowMs();
@@ -161,9 +162,6 @@ export default function PatientDetailPage() {
   const [staffSearch, setStaffSearch] = useState("");
   const [staffSaving, setStaffSaving] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
-  const [vitals, setVitals] = useState<VitalReading[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [assignments, setAssignments] = useState<DeviceAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -218,22 +216,14 @@ export default function PatientDetailPage() {
       const p = await api.get<Patient>(`/patients/${id}`);
       setPatient(p);
 
-      const [c, v, a, tl, d, users, pool, assigned] = await Promise.all([
+      const [c, d, users, pool, assigned] = await Promise.all([
         api.get<PatientContact[]>(`/patients/${id}/contacts`).catch(() => []),
-        api
-          .get<VitalReading[]>(`/vitals/readings?patient_id=${id}&limit=20`)
-          .catch(() => []),
-        api.get<Alert[]>(`/alerts?patient_id=${id}`).catch(() => []),
-        api.get<TimelineEvent[]>(`/timeline?patient_id=${id}`).catch(() => []),
         api.get<DeviceAssignment[]>(`/patients/${id}/devices`).catch(() => []),
         api.get<PortalUser[]>("/users").catch(() => []),
         api.get<Caregiver[]>("/caregivers?limit=1000").catch(() => []),
         api.get<Caregiver[]>(`/patients/${id}/caregivers`).catch(() => []),
       ]);
       setContacts(c);
-      setVitals(v);
-      setAlerts(a);
-      setTimeline(tl);
       setAssignments(d);
       const poolMerged = new Map<number, Caregiver>();
       (pool ?? []).forEach((c) => poolMerged.set(c.id, c));
@@ -269,6 +259,31 @@ export default function PatientDetailPage() {
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
+
+  const mainTab = searchParams.get("tab") === "care" ? "care" : "profile";
+
+  const setMainTab = useCallback(
+    (next: "profile" | "care") => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (next === "profile") {
+        p.delete("tab");
+      } else {
+        p.set("tab", "care");
+      }
+      const q = p.toString();
+      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  useEffect(() => {
+    if (searchParams.get("edit") === "1" && mainTab !== "profile") {
+      const p = new URLSearchParams(searchParams.toString());
+      p.delete("tab");
+      const q = p.toString();
+      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    }
+  }, [mainTab, pathname, router, searchParams]);
 
   useEffect(() => {
     if (searchParams.get("edit") === "1") {
@@ -408,9 +423,14 @@ export default function PatientDetailPage() {
     [id, schedulesQuery.data],
   );
 
+  const patientCalendarRange = useMemo(
+    () => visibleCalendarRange(calendarAnchor, calendarViewMode),
+    [calendarAnchor, calendarViewMode],
+  );
+
   const patientCalendarEvents = useMemo(
-    () => schedulesToCalendarEvents(patientSchedules, patientNameById),
-    [patientNameById, patientSchedules],
+    () => schedulesToCalendarEvents(patientSchedules, patientNameById, patientCalendarRange),
+    [patientCalendarRange, patientNameById, patientSchedules],
   );
 
   const startEditingCard = useCallback(
@@ -657,6 +677,20 @@ export default function PatientDetailPage() {
         </Link>
       </div>
 
+      <Tabs
+        value={mainTab}
+        onValueChange={(v) => setMainTab(v as "profile" | "care")}
+        className="w-full"
+      >
+        <TabsList className="mb-4 grid h-auto w-full max-w-lg grid-cols-2 gap-1 p-1">
+          <TabsTrigger value="profile" className="text-sm">
+            {t("patients.detailTabProfile")}
+          </TabsTrigger>
+          <TabsTrigger value="care" className="text-sm">
+            {t("patients.detailTabCare")}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="profile" className="mt-0 space-y-0">
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 space-y-6">
           <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
@@ -1105,82 +1139,7 @@ export default function PatientDetailPage() {
             {cardErrors.notes ? <p className="mt-3 text-sm text-error">{cardErrors.notes}</p> : null}
           </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SectionCard icon={Heart} title={t("patients.latestVitals")} iconColor="text-error">
-              {vitals.length === 0 ? (
-                <p className="text-sm text-foreground-variant py-4">—</p>
-              ) : (
-                <div className="space-y-2">
-                  {vitals.slice(0, 5).map((v) => (
-                    <div
-                      key={v.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-surface-container-low text-sm"
-                    >
-                      <span className="text-foreground-variant">
-                        {new Date(v.timestamp).toLocaleString(localeTag)}
-                      </span>
-                      <div className="flex gap-4 text-foreground font-medium">
-                        {v.heart_rate_bpm != null && <span>HR: {v.heart_rate_bpm}</span>}
-                        {v.spo2 != null && <span>SpO2: {v.spo2}%</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </SectionCard>
-
-            <SectionCard icon={Bell} title={t("patients.alertsSection")} iconColor="text-warning">
-              {alerts.length === 0 ? (
-                <p className="text-sm text-foreground-variant py-4">—</p>
-              ) : (
-                <div className="space-y-2">
-                  {alerts.slice(0, 5).map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-surface-container-low text-sm"
-                    >
-                      <div
-                        className={`w-2 h-2 rounded-full shrink-0 ${
-                          a.severity === "critical"
-                            ? "bg-error"
-                            : a.severity === "warning"
-                              ? "bg-warning"
-                              : "bg-info"
-                        }`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">{a.title}</p>
-                        <p className="text-xs text-foreground-variant truncate">{a.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </SectionCard>
-
-            <SectionCard icon={Clock} title={t("patients.timelineSection")} iconColor="text-info">
-              {timeline.length === 0 ? (
-                <p className="text-sm text-foreground-variant py-4">—</p>
-              ) : (
-                <div className="space-y-2">
-                  {timeline.slice(0, 5).map((ev) => (
-                    <div key={ev.id} className="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low text-sm">
-                      <Activity className="w-4 h-4 text-foreground-variant shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-foreground">{ev.event_type}</p>
-                        <p className="text-xs text-foreground-variant">{ev.description}</p>
-                        <p className="text-xs text-foreground-variant mt-1">
-                          {new Date(ev.timestamp).toLocaleString(localeTag)}
-                          {ev.room_name ? ` · ${ev.room_name}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </SectionCard>
-
-            <SectionCard icon={Tablet} title={t("patients.devicesSection")} iconColor="text-primary">
+          <SectionCard icon={Tablet} title={t("patients.devicesSection")} iconColor="text-primary">
               {activeAssignments.length === 0 ? (
                 <p className="text-sm text-foreground-variant py-4">—</p>
               ) : (
@@ -1202,68 +1161,6 @@ export default function PatientDetailPage() {
                 </div>
               )}
             </SectionCard>
-          </div>
-
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold text-foreground flex items-center gap-2">
-                <CalendarDays className="w-5 h-5 text-primary" />
-                {t("caregivers.workPanel.calendarTitle")}
-              </h2>
-              {canManageSchedules ? (
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90"
-                  onClick={() => {
-                    setEditingSchedule(null);
-                    setSchedulePickerDate(new Date());
-                    setScheduleFormOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4" />
-                  {t("caregivers.workPanel.addSupplementary")}
-                </button>
-              ) : null}
-            </div>
-            <CalendarView
-              events={patientCalendarEvents}
-              viewMode={calendarViewMode}
-              onViewModeChange={setCalendarViewMode}
-              currentDate={calendarAnchor}
-              onDateChange={setCalendarAnchor}
-              onEventClick={(ev) => {
-                if (!canManageSchedules) return;
-                const full = patientSchedules.find((row) => row.id === ev.id) ?? null;
-                setEditingSchedule(full);
-                setSchedulePickerDate(new Date(ev.startTime));
-                setScheduleFormOpen(true);
-              }}
-              onDateClick={(date) => {
-                if (!canManageSchedules) return;
-                setEditingSchedule(null);
-                setSchedulePickerDate(date);
-                setScheduleFormOpen(true);
-              }}
-              onCreateClick={() => {
-                if (!canManageSchedules) return;
-                setEditingSchedule(null);
-                setSchedulePickerDate(new Date());
-                setScheduleFormOpen(true);
-              }}
-              showCreateButton={canManageSchedules}
-            />
-            <AgendaView
-              events={patientCalendarEvents}
-              onEventClick={(ev) => {
-                if (!canManageSchedules) return;
-                const full = patientSchedules.find((row) => row.id === ev.id) ?? null;
-                if (!full) return;
-                setEditingSchedule(full);
-                setSchedulePickerDate(new Date(ev.startTime));
-                setScheduleFormOpen(true);
-              }}
-            />
-          </section>
         </div>
 
         <aside className="space-y-4">
@@ -1412,6 +1309,79 @@ export default function PatientDetailPage() {
           </section>
         </aside>
       </div>
+        </TabsContent>
+        <TabsContent value="care" className="mt-0 space-y-6">
+          <PatientCareCoordinationPanel
+            patientId={Number(id)}
+            showHeader={false}
+            invalidBackHref={getPatientsPath(authUser?.role || "admin")}
+          />
+          <section className="surface-card rounded-xl border border-outline-variant/20 p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-semibold text-foreground flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-primary" />
+                {t("caregivers.workPanel.calendarTitle")}
+              </h2>
+              {canManageSchedules ? (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90"
+                  onClick={() => {
+                    setEditingSchedule(null);
+                    setSchedulePickerDate(new Date());
+                    setScheduleFormOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("caregivers.workPanel.addSupplementary")}
+                </button>
+              ) : null}
+            </div>
+            <CalendarView
+              events={patientCalendarEvents}
+              viewMode={calendarViewMode}
+              onViewModeChange={setCalendarViewMode}
+              currentDate={calendarAnchor}
+              onDateChange={setCalendarAnchor}
+              onEventClick={(ev) => {
+                if (!canManageSchedules) return;
+                const full =
+                  patientSchedules.find((row) => row.id === resolveCareScheduleIdFromEvent(ev)) ??
+                  null;
+                setEditingSchedule(full);
+                setSchedulePickerDate(new Date(ev.startTime));
+                setScheduleFormOpen(true);
+              }}
+              onDateClick={(date) => {
+                if (!canManageSchedules) return;
+                setEditingSchedule(null);
+                setSchedulePickerDate(date);
+                setScheduleFormOpen(true);
+              }}
+              onCreateClick={() => {
+                if (!canManageSchedules) return;
+                setEditingSchedule(null);
+                setSchedulePickerDate(new Date());
+                setScheduleFormOpen(true);
+              }}
+              showCreateButton={canManageSchedules}
+            />
+            <AgendaView
+              events={patientCalendarEvents}
+              onEventClick={(ev) => {
+                if (!canManageSchedules) return;
+                const full =
+                  patientSchedules.find((row) => row.id === resolveCareScheduleIdFromEvent(ev)) ??
+                  null;
+                if (!full) return;
+                setEditingSchedule(full);
+                setSchedulePickerDate(new Date(ev.startTime));
+                setScheduleFormOpen(true);
+              }}
+            />
+          </section>
+        </TabsContent>
+      </Tabs>
       <ScheduleForm
         open={scheduleFormOpen}
         onClose={() => {

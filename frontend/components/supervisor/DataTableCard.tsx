@@ -11,8 +11,10 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
+import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { buildCsvFromRows, downloadCsvFile } from "@/lib/csv";
 import { useTranslation } from "@/lib/i18n";
 import {
   Table,
@@ -23,6 +25,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+export type DataTableCsvExport<TData> = {
+  /** Filename stem without extension, ASCII recommended (date is appended). */
+  fileNameBase: string;
+  headers: string[];
+  getRowValues: (row: TData) => (string | number | null | undefined)[];
+};
+
 type Props<TData> = {
   title: string;
   data: TData[];
@@ -32,6 +41,7 @@ type Props<TData> = {
   description?: string;
   rightSlot?: React.ReactNode;
   pageSize?: number;
+  csvExport?: DataTableCsvExport<TData>;
   /** When set, each body row gets this `id` (e.g. deep-link targets `ws-alert-12`). */
   getRowDomId?: (row: TData) => string | undefined;
   getRowClassName?: (row: TData) => string | undefined;
@@ -46,6 +56,7 @@ export function DataTableCard<TData>({
   description,
   rightSlot,
   pageSize = 10,
+  csvExport,
   getRowDomId,
   getRowClassName,
 }: Props<TData>) {
@@ -77,6 +88,24 @@ export function DataTableCard<TData>({
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {rightSlot}
+          {csvExport ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              disabled={isLoading || data.length === 0}
+              onClick={() => {
+                const rows = data.map(csvExport.getRowValues);
+                const csv = buildCsvFromRows(csvExport.headers, rows);
+                const stamp = new Date().toISOString().slice(0, 10);
+                downloadCsvFile(csv, `${csvExport.fileNameBase}-${stamp}.csv`);
+              }}
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden />
+              {t("table.exportCsv")}
+            </Button>
+          ) : null}
           <p className="text-sm text-muted-foreground">
             {data.length} {data.length === 1 ? t("table.row") : t("table.rows")}
           </p>

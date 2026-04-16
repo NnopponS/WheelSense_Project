@@ -473,6 +473,28 @@ class CareScheduleService(CRUDBase[CareSchedule, CareScheduleCreate, CareSchedul
         await enrich_schedule_people(session, ws_id, [db_obj])
         return db_obj
 
+    async def delete_schedule(
+        self, session: AsyncSession, ws_id: int, actor_user_id: int, schedule_id: int
+    ) -> bool:
+        schedule = await self.get(session, ws_id=ws_id, id=schedule_id)
+        if not schedule:
+            return False
+        patient_id = schedule.patient_id
+        await session.delete(schedule)
+        await audit_trail_service.log_event(
+            session,
+            ws_id,
+            actor_user_id=actor_user_id,
+            domain="schedule",
+            action="delete",
+            entity_type="care_schedule",
+            entity_id=schedule_id,
+            patient_id=patient_id,
+            details={},
+        )
+        await session.commit()
+        return True
+
     async def set_status(
         self, session: AsyncSession, ws_id: int, actor_user_id: int, schedule_id: int, status: str
     ) -> Optional[CareSchedule]:

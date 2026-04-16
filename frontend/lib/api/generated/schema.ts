@@ -2617,6 +2617,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/services/requests/{request_id}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim Service Request */
+        post: operations["claim_service_request_api_services_requests__request_id__claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/services/requests/{request_id}": {
         parameters: {
             query?: never;
@@ -3449,6 +3466,46 @@ export interface paths {
          * @description Get task board with per-user aggregation.
          */
         get: operations["get_task_board_api_tasks_board_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/attachments/pending/{pending_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Pending Task Attachment
+         * @description Stream a pending upload for preview (same storage as workflow message pending uploads).
+         */
+        get: operations["stream_pending_task_attachment_api_tasks_attachments_pending__pending_id__content_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/{task_id}/attachments/{attachment_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Task Template Attachment
+         * @description Download/preview an attachment embedded in task report template or subtask report_spec.
+         */
+        get: operations["stream_task_template_attachment_api_tasks__task_id__attachments__attachment_id__content_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6846,10 +6903,27 @@ export interface components {
             /** End Date */
             end_date?: string | null;
         };
-        /** ReportTemplate */
+        /**
+         * ReportTemplate
+         * @description Task-level report template: structured fields and/or rich HTML body.
+         */
         ReportTemplate: {
+            /**
+             * Mode
+             * @default structured
+             */
+            mode: string;
             /** Fields */
             fields?: components["schemas"]["ReportTemplateField"][];
+            /**
+             * Body Html
+             * @default
+             */
+            body_html: string;
+            /** Attachments */
+            attachments?: {
+                [key: string]: unknown;
+            }[];
         };
         /**
          * ReportTemplateField
@@ -7377,7 +7451,9 @@ export interface components {
              * Service Type
              * @enum {string}
              */
-            service_type: "food" | "transport" | "housekeeping";
+            service_type: "food" | "transport" | "housekeeping" | "support";
+            /** Title */
+            title?: string | null;
             /** Note */
             note: string;
         };
@@ -7395,7 +7471,9 @@ export interface components {
              * Service Type
              * @enum {string}
              */
-            service_type: "food" | "transport" | "housekeeping";
+            service_type: "food" | "transport" | "housekeeping" | "support";
+            /** Title */
+            title: string | null;
             /** Note */
             note: string;
             /**
@@ -7407,6 +7485,10 @@ export interface components {
             resolution_note: string | null;
             /** Resolved By User Id */
             resolved_by_user_id: number | null;
+            /** Claimed By User Id */
+            claimed_by_user_id: number | null;
+            /** Claimed At */
+            claimed_at: string | null;
             /** Resolved At */
             resolved_at: string | null;
             /**
@@ -8065,6 +8147,8 @@ export interface components {
             /** Subtasks */
             subtasks?: components["schemas"]["SubtaskItemCreate"][];
             report_template?: components["schemas"]["ReportTemplate"];
+            /** Report Template Pending Attachment Ids */
+            report_template_pending_attachment_ids?: string[];
             /** Shift Date */
             shift_date?: string | null;
             /**
@@ -14767,6 +14851,37 @@ export interface operations {
             };
         };
     };
+    claim_service_request_api_services_requests__request_id__claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_service_request_api_services_requests__request_id__patch: {
         parameters: {
             query?: never;
@@ -16491,6 +16606,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskBoardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_pending_task_attachment_api_tasks_attachments_pending__pending_id__content_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pending_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_task_template_attachment_api_tasks__task_id__attachments__attachment_id__content_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: number;
+                attachment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

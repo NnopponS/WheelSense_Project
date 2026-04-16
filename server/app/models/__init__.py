@@ -56,6 +56,7 @@ from .support import SupportTicket, SupportTicketComment, SupportTicketAttachmen
 from .shift_checklist import ShiftChecklistState
 from .shift_checklist_user_template import ShiftChecklistUserTemplate
 from .tasks import Task, TaskReport
+from .task_management import PatientFixRoutine, RoutineTask, RoutineTaskLog
 
 __all__ = [
     "Base",
@@ -132,4 +133,7 @@ __all__ = [
     # Unified Task Management
     "Task",
     "TaskReport",
+    "RoutineTask",
+    "RoutineTaskLog",
+    "PatientFixRoutine",
 ]

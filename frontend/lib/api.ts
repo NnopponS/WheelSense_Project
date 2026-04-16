@@ -13,6 +13,8 @@ import type {
 import type {
   AcknowledgeAlertRequest,
   AcknowledgeAlertResponse,
+  ResolveAlertRequest,
+  ResolveAlertResponse,
   AcknowledgeWorkflowDirectiveRequest,
   AcknowledgeWorkflowDirectiveResponse,
   AssignPatientFromDeviceRequest,
@@ -51,6 +53,7 @@ import type {
   ListPrescriptionsResponse,
   ListSpecialistsResponse,
   ListServiceRequestsResponse,
+  ClaimServiceRequestResponse,
   ListLocalizationPredictionsResponse,
   ListPatientDeviceAssignmentsResponse,
   ListPatientsResponse,
@@ -574,6 +577,12 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  resolveAlert: (alertId: number | string, payload: ResolveAlertRequest) =>
+    request<ResolveAlertResponse>(`/alerts/${encodeURIComponent(String(alertId))}/resolve`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
   listDeviceActivity: (limit = 30) =>
     request<ListDeviceActivityResponse>(`/devices/activity?limit=${limit}`),
 
@@ -849,6 +858,11 @@ export const api = {
     request<UpdateServiceRequestResponse>(`/services/requests/${encodeURIComponent(String(requestId))}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
+    }),
+
+  claimServiceRequest: (requestId: number | string) =>
+    request<ClaimServiceRequestResponse>(`/services/requests/${encodeURIComponent(String(requestId))}/claim`, {
+      method: "POST",
     }),
 
   requestPharmacyOrder: (payload: RequestPharmacyOrderRequest) =>

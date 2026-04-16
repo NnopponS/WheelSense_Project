@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { Pedometer } from 'expo-sensors';
 import { useWalkSteps, useConnection } from '../store/useAppStore';
 import { mqttService } from '../services/MQTTService';
@@ -25,6 +26,7 @@ import { WalkStepData } from '../types';
 const STEP_LENGTH_M = 0.7; // Average step length in meters
 
 export const WalkStepsScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { walkSteps, setWalkSteps, clearWalkSteps } = useWalkSteps();
   const { isMQTTConnected } = useConnection();
 
@@ -61,7 +63,7 @@ export const WalkStepsScreen: React.FC = () => {
 
   const startTracking = useCallback(() => {
     if (!isPedometerAvailable) {
-      Alert.alert('Unavailable', 'Pedometer is not available on this device');
+      Alert.alert(t('common.unavailable'), t('walk.pedometerNotAvailable'));
       return;
     }
 
@@ -78,7 +80,7 @@ export const WalkStepsScreen: React.FC = () => {
     });
 
     // Subscribe to step updates
-    subscriptionRef.current = Pedometer.watchStepCount((result) => {
+    subscriptionRef.current = Pedometer.watchStepCount((result: { steps: number }) => {
       const now = Date.now();
       const data: WalkStepData = {
         steps: result.steps,
@@ -121,10 +123,10 @@ export const WalkStepsScreen: React.FC = () => {
   }, [walkSteps, isMQTTConnected]);
 
   const resetSession = () => {
-    Alert.alert('Reset', 'Reset step counter to 0?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('walk.reset'), t('walk.resetConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Reset',
+        text: t('walk.reset'),
         onPress: () => {
           stopTracking();
           clearWalkSteps();
@@ -138,7 +140,7 @@ export const WalkStepsScreen: React.FC = () => {
     const elapsed = Math.floor((Date.now() - startMs) / 1000);
     const mins = Math.floor(elapsed / 60);
     const secs = elapsed % 60;
-    return `${mins}m ${secs}s`;
+    return `${mins}${t('walk.minShort')} ${secs}${t('walk.secShort')}`;
   };
 
   return (
@@ -149,14 +151,14 @@ export const WalkStepsScreen: React.FC = () => {
         {/* Availability Banner */}
         {isPedometerAvailable === false && (
           <View style={styles.warningBanner}>
-            <Text style={styles.warningText}>⚠️ Pedometer is not available on this device</Text>
+            <Text style={styles.warningText}>⚠️ {t('walk.pedometerNotAvailable')}</Text>
           </View>
         )}
 
         {/* Step Counter */}
         <Animated.View style={[styles.stepCircle, { transform: [{ scale: stepScale }] }]}>
           <Text style={styles.stepCount}>{walkSteps?.steps ?? 0}</Text>
-          <Text style={styles.stepUnit}>steps</Text>
+          <Text style={styles.stepUnit}>{t('walk.steps')}</Text>
         </Animated.View>
 
         {/* Distance */}
@@ -165,12 +167,12 @@ export const WalkStepsScreen: React.FC = () => {
             <Text style={styles.distanceValue}>
               {walkSteps?.distance_m ? walkSteps.distance_m.toFixed(1) : '0'}
             </Text>
-            <Text style={styles.distanceUnit}>meters</Text>
+            <Text style={styles.distanceUnit}>{t('walk.meters')}</Text>
           </View>
           {sessionStart > 0 && (
             <View style={styles.distanceStat}>
               <Text style={styles.distanceValue}>{formatDuration(sessionStart)}</Text>
-              <Text style={styles.distanceUnit}>duration</Text>
+              <Text style={styles.distanceUnit}>{t('walk.duration')}</Text>
             </View>
           )}
         </View>
@@ -183,31 +185,31 @@ export const WalkStepsScreen: React.FC = () => {
             activeOpacity={0.8}
           >
             <Text style={styles.primaryBtnText}>
-              {isTracking ? '⏹  Stop Tracking' : '▶  Start Tracking'}
+              {isTracking ? `⏹  ${t('walk.stopTracking')}` : `▶  ${t('walk.startTracking')}`}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryBtn} onPress={resetSession}>
-            <Text style={styles.secondaryBtnText}>🔄 Reset</Text>
+            <Text style={styles.secondaryBtnText}>🔄 {t('walk.reset')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* MQTT Info */}
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>📡 MQTT Sync</Text>
+          <Text style={styles.infoTitle}>📡 {t('walk.mqttSync')}</Text>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Status</Text>
+            <Text style={styles.infoLabel}>{t('walk.status')}</Text>
             <Text style={[styles.infoValue, isMQTTConnected ? styles.infoGreen : styles.infoRed]}>
-              {isMQTTConnected ? 'Connected' : 'Disconnected'}
+              {isMQTTConnected ? t('home.connected') : t('home.disconnected')}
             </Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Published</Text>
-            <Text style={styles.infoValue}>{publishCount} times</Text>
+            <Text style={styles.infoLabel}>{t('walk.published')}</Text>
+            <Text style={styles.infoValue}>{publishCount} {t('walk.times')}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Interval</Text>
-            <Text style={styles.infoValue}>Every 10s</Text>
+            <Text style={styles.infoLabel}>{t('walk.interval')}</Text>
+            <Text style={styles.infoValue}>{t('walk.every10s')}</Text>
           </View>
         </View>
 

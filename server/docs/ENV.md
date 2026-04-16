@@ -23,6 +23,7 @@ This file reflects the variables currently read by `server/app/config.py` and th
 | `MQTT_AUTO_REGISTER_BLE_NODES` | `true` | When `true`, BLE beacons reported in `WheelSense/data` `rssi[]` (`node` names like `WSN_*` plus `mac`) auto-create a **node** (`hardware_type=node`) in the **same workspace** as the wheelchair. Registry `device_id` is `BLE_<12 hex MAC>` (or `BLE_<sanitized node>` if MAC is missing). Same note as above: deleted rows can reappear if the broker still publishes those beacons. |
 | `MQTT_MERGE_BLE_CAMERA_BY_MAC` | `true` | When `true`, `WheelSense/camera/.../registration` JSON with `ble_mac` matching a `BLE_*` stub **renames** that registry row to the camera’s `device_id` (e.g. `CAM_*`) so MQTT topics and the web UI use one device. |
 | `MQTT_AUTO_REGISTER_WORKSPACE_ID` | empty | Optional integer workspace PK. When set, new devices from telemetry attach to this workspace. When unset and **exactly one** workspace exists, that workspace is used. If multiple workspaces exist and this is unset, auto-register is skipped (telemetry dropped until you register manually or set this variable). |
+| `ROOM_TIMELINE_STABILITY_SAMPLES` | `3` | MQTT localization must produce the same predicted `room_id` this many times in a row before `activity_timeline` records `room_enter` / `room_exit`. Reduces duplicate timeline rows when RSSI/KNN flickers between rooms. Set to `1` for the previous immediate-logging behavior. |
 
 ### MQTT simulator worker (`sim_controller.py`)
 

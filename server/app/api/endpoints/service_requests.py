@@ -13,11 +13,14 @@ from app.services.service_requests import service_request_service
 
 router = APIRouter()
 
+_SERVICE_TYPE_PATTERN = r"^(food|transport|housekeeping|support)$"
+_STATUS_PATTERN = r"^(open|in_progress|fulfilled|cancelled)$"
+
 
 @router.get("/requests", response_model=list[ServiceRequestOut])
 async def list_service_requests(
-    status: str | None = Query(default=None, pattern="^(open|in_progress|fulfilled|cancelled)$"),
-    service_type: str | None = Query(default=None, pattern="^(food|transport|housekeeping)$"),
+    status: str | None = Query(default=None, pattern=_STATUS_PATTERN),
+    service_type: str | None = Query(default=None, pattern=_SERVICE_TYPE_PATTERN),
     limit: int = Query(default=200, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
@@ -43,12 +46,22 @@ async def create_service_request(
     return await service_request_service.create_request(db, ws.id, current_user, payload)
 
 
+@router.post("/requests/{request_id}/claim", response_model=ServiceRequestOut)
+async def claim_service_request(
+    request_id: int,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(["observer", "supervisor"])),
+):
+    return await service_request_service.claim_request(db, ws.id, current_user, request_id)
+
+
 @router.patch("/requests/{request_id}", response_model=ServiceRequestOut)
 async def update_service_request(
     request_id: int,
     payload: ServiceRequestPatchIn,
     db: AsyncSession = Depends(get_db),
     ws: Workspace = Depends(get_current_user_workspace),
-    current_user: User = Depends(RequireRole(["admin"])),
+    current_user: User = Depends(RequireRole(["admin", "head_nurse", "observer", "supervisor"])),
 ):
     return await service_request_service.patch_request(db, ws.id, current_user, request_id, payload)

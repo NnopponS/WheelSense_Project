@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useMemo } from "react";
+import { Suspense, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -33,6 +33,7 @@ import { PatientCareRoadmap } from "@/components/patient/PatientCareRoadmap";
 import { HubTabBar, useHubTab, type HubTab } from "@/components/shared/HubTabBar";
 import ReportIssueForm from "@/components/support/ReportIssueForm";
 import UserAvatar from "@/components/shared/UserAvatar";
+import { withPatientPreview } from "@/lib/patientPortalPreview";
 
 type MeProfileResponse = {
   user: {
@@ -145,6 +146,19 @@ export default function PatientDashboardPage() {
     },
   });
 
+  const lastRaiseRef = useRef<{ at: number; kind: "assistance" | "sos" } | null>(null);
+  const onRaiseAlert = useCallback(
+    (kind: "assistance" | "sos") => {
+      if (raiseAssistanceMutation.isPending) return;
+      const now = Date.now();
+      const prev = lastRaiseRef.current;
+      if (prev && prev.kind === kind && now - prev.at < 2500) return;
+      lastRaiseRef.current = { at: now, kind };
+      raiseAssistanceMutation.mutate(kind);
+    },
+    [raiseAssistanceMutation],
+  );
+
   if (effectivePatientId && (patientQuery.isLoading || patientQuery.isPending) && !patient) {
     return (
       <div className="mx-auto max-w-5xl space-y-6 pb-6 animate-fade-in">
@@ -231,8 +245,9 @@ export default function PatientDashboardPage() {
       {tab === "overview" ? (
         <OverviewTab
           patientId={Number(effectivePatientId)}
+          previewPatientId={isAdminPreview ? previewPatientId : null}
           isPending={raiseAssistanceMutation.isPending}
-          onRaise={(kind) => raiseAssistanceMutation.mutate(kind)}
+          onRaise={onRaiseAlert}
           t={t}
         />
       ) : null}
@@ -262,25 +277,26 @@ function SupportTab({ t }: { t: (key: string) => string }) {
 
 function OverviewTab({
   patientId,
+  previewPatientId,
   isPending,
   onRaise,
   t,
 }: {
   patientId: number;
+  previewPatientId: number | null;
   isPending: boolean;
   onRaise: (kind: "assistance" | "sos") => void;
   t: (key: string) => string;
 }) {
+  const servicesHref = withPatientPreview("/patient/services", previewPatientId);
+
   return (
     <>
       <PatientCareRoadmap patientId={patientId} />
       <PatientMySensors patientId={patientId} />
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card
-          className="cursor-pointer border-border/70 transition-all hover:border-primary/50 hover:shadow-md"
-          onClick={() => !isPending && onRaise("assistance")}
-        >
+        <Card className="border-border/70 transition-all hover:border-primary/50 hover:shadow-md">
           <CardContent className="flex flex-col items-center justify-center gap-4 p-8 md:p-12">
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-sky-500/12 text-sky-600">
               <Phone className="h-10 w-10" />
@@ -289,17 +305,30 @@ function OverviewTab({
               <p className="text-xl font-semibold text-foreground md:text-2xl">{t("patient.page.callNurse")}</p>
               <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.callNurseHint")}</p>
             </div>
-            <Button size="lg" variant="outline" className="w-full max-w-xs" disabled={isPending}>
-              <Phone className="mr-2 h-5 w-5" />
-              {t("patient.page.requestAssistance")}
+            <Button size="lg" variant="outline" className="w-full max-w-xs" asChild>
+              <Link href={servicesHref}>
+                <Phone className="mr-2 h-5 w-5" />
+                {t("patient.page.requestAssistance")}
+              </Link>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="w-full max-w-xs"
+              disabled={isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRaise("assistance");
+              }}
+            >
+              {t("patient.page.notifyStaffUrgent")}
             </Button>
           </CardContent>
         </Card>
 
-        <Card
-          className="cursor-pointer border-red-500/30 bg-red-500/5 transition-all hover:border-red-500/60 hover:shadow-md"
-          onClick={() => !isPending && onRaise("sos")}
-        >
+        <Card className="border-red-500/30 bg-red-500/5 transition-all hover:border-red-500/60 hover:shadow-md">
           <CardContent className="flex flex-col items-center justify-center gap-4 p-8 md:p-12">
             <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-500/12 text-red-600">
               <Siren className="h-10 w-10 animate-pulse" />
@@ -308,7 +337,18 @@ function OverviewTab({
               <p className="text-xl font-semibold text-red-600 md:text-2xl">{t("patient.page.emergencySos")}</p>
               <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.emergencySosHint")}</p>
             </div>
-            <Button size="lg" variant="destructive" className="w-full max-w-xs" disabled={isPending}>
+            <Button
+              type="button"
+              size="lg"
+              variant="destructive"
+              className="w-full max-w-xs"
+              disabled={isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRaise("sos");
+              }}
+            >
               <Siren className="mr-2 h-5 w-5" />
               {t("patient.page.emergencyAlert")}
             </Button>
@@ -347,7 +387,7 @@ function OverviewTab({
             color: "bg-violet-500/12 text-violet-600",
           },
         ].map(({ href, icon: Icon, labelKey, color }) => (
-          <Link key={href} href={href}>
+          <Link key={href} href={withPatientPreview(href, previewPatientId)}>
             <Card className="border-border/70 transition-all hover:border-primary/40 hover:shadow-sm">
               <CardContent className="flex flex-col items-center justify-center gap-3 p-6">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}>

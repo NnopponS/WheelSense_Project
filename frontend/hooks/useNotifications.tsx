@@ -193,7 +193,8 @@ export function useNotifications(): UseNotificationsReturn {
   const authReady = Boolean(user);
   const role = (user?.role ?? "observer") as AppRole;
   const canListWorkflowTasks = Boolean(user?.role && WORKFLOW_TASKS_ROLES.has(user.role));
-  const canAcknowledgeAlerts = role === "admin" || role === "head_nurse";
+  const canAcknowledgeAlerts =
+    role === "admin" || role === "head_nurse" || role === "supervisor" || role === "observer";
 
   const alertToastBootstrap = useRef(false);
   const alertToastIds = useRef<Set<number>>(new Set());
@@ -369,7 +370,11 @@ export function useNotifications(): UseNotificationsReturn {
       ...(workflowJobsData?.map((job) => transformWorkflowJob(job, role, t)) ?? []),
       ...(messagesData?.map((m) => transformMessage(m, role)) ?? []),
     ];
-    return rows.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    const byId = new Map<string, Notification>();
+    for (const n of rows) {
+      if (!byId.has(n.id)) byId.set(n.id, n);
+    }
+    return [...byId.values()].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [alertsData, tasksData, workflowJobsData, messagesData, role, t]);
 
   const processedNotifications = notifications.map((n) => ({

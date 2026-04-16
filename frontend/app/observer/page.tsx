@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Clock,
@@ -15,10 +15,12 @@ import {
   AlertTriangle,
   CheckSquare,
   ArrowRight,
+  ConciergeBell,
 } from "lucide-react";
 import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import { mergeServerShiftChecklist, utcShiftDateString } from "@/lib/shiftChecklistDefaults";
 import { formatRelativeTime } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +32,7 @@ import type {
   ListAlertsResponse,
   ListPatientsResponse,
   ListVitalReadingsResponse,
+  ServiceRequestOut,
 } from "@/lib/api/task-scope-types";
 
 function taskPriorityLabel(t: (key: TranslationKey) => string, priority: string): string {
@@ -64,7 +67,11 @@ function careLevelLabel(t: (key: TranslationKey) => string, level: string): stri
 
 export default function ObserverDashboardPage() {
   const { t } = useTranslation();
+  const { user: me } = useAuth();
+  const queryClient = useQueryClient();
   const [shiftDate] = useState(() => utcShiftDateString());
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [taskActionError, setTaskActionError] = useState<string | null>(null);
 
   const shiftChecklistQuery = useQuery({
     queryKey: ["shift-checklist", "me", shiftDate],
@@ -94,6 +101,60 @@ export default function ObserverDashboardPage() {
     refetchInterval: 30_000,
   });
 
+  const supportRequestsQuery = useQuery({
+    queryKey: ["observer", "dashboard", "service-requests"],
+    queryFn: () => api.listServiceRequests({ limit: 50 }),
+    refetchInterval: 15_000,
+  });
+
+  const claimMutation = useMutation({
+    mutationFn: async (id: number) => {
+      setClaimError(null);
+      await api.claimServiceRequest(id);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard", "service-requests"] });
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : t("observer.supportQueue.claimFailed");
+      setClaimError(msg);
+    },
+  });
+
+  const fulfillMutation = useMutation({
+    mutationFn: async (id: number) => {
+      setClaimError(null);
+      await api.updateServiceRequest(id, { status: "fulfilled", resolution_note: null });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard", "service-requests"] });
+    },
+    onError: (err: unknown) => {
+      const msg =
+        err instanceof ApiError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : t("observer.supportQueue.fulfillFailed");
+      setClaimError(msg);
+    },
+  });
+
+  const completeDashboardTaskMutation = useMutation({
+    mutationFn: (taskId: number) => api.updateWorkflowTask(taskId, { status: "completed" }),
+    onSuccess: async () => {
+      setTaskActionError(null);
+      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard", "tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: () => setTaskActionError(t("observer.page.taskActionError")),
+  });
+
   // Data processing
   const patients = useMemo(
     () => (patientsQuery.data ?? []) as ListPatientsResponse,
@@ -105,6 +166,14 @@ export default function ObserverDashboardPage() {
     () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
     [vitalsQuery.data],
   );
+
+  const supportRequests = useMemo(() => {
+    const rows = (supportRequestsQuery.data ?? []) as ServiceRequestOut[];
+    return [...rows]
+      .filter((r) => r.status === "open" || r.status === "in_progress")
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 12);
+  }, [supportRequestsQuery.data]);
 
   const patientById = useMemo(
     () => new Map(patients.map((patient) => [patient.id, patient])),
@@ -203,6 +272,12 @@ export default function ObserverDashboardPage() {
         </div>
       </div>
 
+      {taskActionError ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {taskActionError}
+        </div>
+      ) : null}
+
       {/* Stats Overview */}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
@@ -284,6 +359,83 @@ export default function ObserverDashboardPage() {
         </Card>
       </section>
 
+      <Card className="border-border/70">
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-3">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <ConciergeBell className="h-3.5 w-3.5" />
+              {t("observer.supportQueue.badge")}
+            </div>
+            <CardTitle className="text-base">{t("observer.supportQueue.title")}</CardTitle>
+            <CardDescription>{t("observer.supportQueue.desc")}</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {claimError ? <p className="text-sm text-destructive">{claimError}</p> : null}
+          {supportRequestsQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+          ) : supportRequests.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("observer.supportQueue.empty")}</p>
+          ) : (
+            <div className="space-y-2">
+              {supportRequests.map((req) => {
+                const patient = req.patient_id ? patientById.get(req.patient_id) : null;
+                const claimedByMe = me?.id != null && req.claimed_by_user_id === me.id;
+                const claimedByOther = req.claimed_by_user_id != null && !claimedByMe;
+                return (
+                  <div
+                    key={req.id}
+                    className="flex flex-col gap-2 rounded-xl border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        {t("observer.supportQueue.patient")}:{" "}
+                        <span className="font-medium text-foreground">
+                          {patient
+                            ? `${patient.first_name ?? ""} ${patient.last_name ?? ""}`.trim() || `Patient #${patient.id}`
+                            : `#${req.patient_id ?? "?"}`}
+                        </span>
+                      </p>
+                      {req.title ? <p className="truncate text-sm font-semibold text-foreground">{req.title}</p> : null}
+                      <p className="line-clamp-2 text-xs text-muted-foreground">{req.note}</p>
+                      {claimedByOther ? (
+                        <p className="text-xs text-amber-700 dark:text-amber-400">{t("observer.supportQueue.taken")}</p>
+                      ) : null}
+                      {claimedByMe ? (
+                        <p className="text-xs text-emerald-700 dark:text-emerald-400">{t("observer.supportQueue.claimed")}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+                      {req.status === "open" && !claimedByOther ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={claimMutation.isPending}
+                          onClick={() => claimMutation.mutate(req.id)}
+                        >
+                          {t("observer.supportQueue.claim")}
+                        </Button>
+                      ) : null}
+                      {claimedByMe && req.status === "in_progress" ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          disabled={fulfillMutation.isPending}
+                          onClick={() => fulfillMutation.mutate(req.id)}
+                        >
+                          {t("observer.supportQueue.markFulfilled")}
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Zone Map & Shift Checklist Grid */}
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         {/* Zone Map */}
@@ -344,6 +496,24 @@ export default function ObserverDashboardPage() {
                           {t("observer.tasks.due")} {formatRelativeTime(task.due_at)}
                         </p>
                       )}
+                    </div>
+                    <div className="flex shrink-0 flex-col items-stretch gap-2 sm:items-end">
+                      {task.patient_id ? (
+                        <Button asChild size="sm" variant="outline" className="whitespace-nowrap">
+                          <Link href={`/observer/personnel/${task.patient_id}`}>
+                            {t("observer.page.openPatient")}
+                          </Link>
+                        </Button>
+                      ) : null}
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="whitespace-nowrap"
+                        disabled={completeDashboardTaskMutation.isPending}
+                        onClick={() => completeDashboardTaskMutation.mutate(task.id)}
+                      >
+                        {t("observer.page.completeTask")}
+                      </Button>
                     </div>
                   </div>
                 );

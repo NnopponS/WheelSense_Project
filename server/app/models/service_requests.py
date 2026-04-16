@@ -30,6 +30,7 @@ class ServiceRequest(Base):
         index=True,
     )
     service_type = Column(String(32), nullable=False, index=True)
+    title = Column(String(200), nullable=True)
     note = Column(Text, nullable=False, default="")
     status = Column(String(16), nullable=False, default="open", index=True)
     resolution_note = Column(Text, nullable=True)
@@ -39,6 +40,13 @@ class ServiceRequest(Base):
         nullable=True,
         index=True,
     )
+    claimed_by_user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    claimed_at = Column(DateTime(timezone=True), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, index=True)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

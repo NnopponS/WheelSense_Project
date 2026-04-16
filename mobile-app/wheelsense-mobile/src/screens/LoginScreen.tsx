@@ -25,12 +25,14 @@ import { useSettings, useConnection } from '../store/useAppStore';
 import { mqttService } from '../services/MQTTService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useTranslation } from 'react-i18next';
 
 type SetupScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Setup'>;
 };
 
 export const SetupScreen: React.FC<SetupScreenProps> = () => {
+  const { t } = useTranslation();
   const [deviceName, setDeviceName] = useState('');
   const [brokerHost, setBrokerHost] = useState('');
   const [brokerPort, setBrokerPort] = useState('');
@@ -59,16 +61,16 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
 
   const handleConnect = async () => {
     if (!deviceName.trim()) {
-      Alert.alert('Required', 'Please enter a device name');
+      Alert.alert(t('common.required'), t('setup.requiredDeviceName'));
       return;
     }
     if (!brokerHost.trim()) {
-      Alert.alert('Required', 'Please enter MQTT broker address');
+      Alert.alert(t('common.required'), t('setup.requiredBroker'));
       return;
     }
 
     setIsConnecting(true);
-    setStatusMessage('Connecting to MQTT broker...');
+    setStatusMessage(t('setup.statusConnecting'));
 
     try {
       // Save settings
@@ -90,12 +92,12 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
         clientId: `ws_${deviceId}_${Date.now()}`,
       });
 
-      setStatusMessage('Registering device...');
+      setStatusMessage(t('setup.statusRegistering'));
 
       // Publish registration
       await mqttService.publishRegistration();
 
-      setStatusMessage('Connected! Starting services...');
+      setStatusMessage(t('setup.statusConnected'));
       setMQTTConnected(true);
       setDeviceRegistered(true);
 
@@ -106,8 +108,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
       console.error('[Setup] Connection failed:', error);
       setStatusMessage('');
       Alert.alert(
-        'Connection Failed',
-        `Could not connect to ${brokerHost}:${brokerPort}\n\n${error.message || 'Check broker address and try again'}`
+        t('setup.connectionFailed'),
+        `${t('setup.connectionFailedDetail', { host: brokerHost, port: brokerPort })}\n\n${error.message || t('setup.checkBroker')}`
       );
     } finally {
       setIsConnecting(false);
@@ -132,10 +134,10 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
               <Text style={styles.logoIcon}>🦽</Text>
             </View>
             <Text style={styles.title}>WheelSense</Text>
-            <Text style={styles.subtitle}>Mobile Companion</Text>
+            <Text style={styles.subtitle}>{t('setup.subtitle')}</Text>
             <View style={styles.divider} />
             <Text style={styles.description}>
-              Connect via MQTT to start BLE scanning, step tracking, and health monitoring
+              {t('setup.description')}
             </Text>
           </View>
 
@@ -145,13 +147,13 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.labelIcon}>📱</Text>
-                <Text style={styles.label}>Device Name</Text>
+                <Text style={styles.label}>{t('setup.deviceName')}</Text>
               </View>
               <TextInput
                 style={styles.input}
                 value={deviceName}
                 onChangeText={setDeviceName}
-                placeholder="e.g. Nurse-Station-01"
+                placeholder={t('setup.deviceNamePlaceholder')}
                 placeholderTextColor="#667"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -163,13 +165,13 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.labelIcon}>📡</Text>
-                <Text style={styles.label}>MQTT Broker</Text>
+                <Text style={styles.label}>{t('setup.mqttBroker')}</Text>
               </View>
               <TextInput
                 style={styles.input}
                 value={brokerHost}
                 onChangeText={setBrokerHost}
-                placeholder="broker.emqx.io"
+                placeholder={t('setup.mqttBrokerPlaceholder')}
                 placeholderTextColor="#667"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -182,13 +184,13 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.labelIcon}>🔌</Text>
-                <Text style={styles.label}>Port</Text>
+                <Text style={styles.label}>{t('setup.port')}</Text>
               </View>
               <TextInput
                 style={[styles.input, styles.portInput]}
                 value={brokerPort}
                 onChangeText={setBrokerPort}
-                placeholder="1883"
+                placeholder={t('setup.portPlaceholder')}
                 placeholderTextColor="#667"
                 keyboardType="number-pad"
                 editable={!isConnecting}
@@ -216,7 +218,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
                 ) : (
                   <>
                     <Text style={styles.connectIcon}>⚡</Text>
-                    <Text style={styles.connectText}>Connect</Text>
+                    <Text style={styles.connectText}>{t('setup.connect')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -229,7 +231,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
               WheelSense Mobile v1.0.0 • MQTT-First
             </Text>
             <Text style={styles.footerHint}>
-              No server login needed — communicates via MQTT
+              {t('setup.footerHint')}
             </Text>
           </View>
         </ScrollView>

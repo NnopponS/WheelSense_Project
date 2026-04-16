@@ -10,10 +10,12 @@ import { Bell } from "lucide-react";
 import { api } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
 import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
+import { buildRoomByIdMap, formatPatientRoomLine } from "@/lib/alertPatientLocation";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
+import type { Room } from "@/lib/types";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
 
 type AlertRow = {
@@ -25,6 +27,7 @@ type AlertRow = {
   status: string;
   patientId: number | null;
   patientName: string;
+  patientRoomLine: string;
   timestamp: string;
 };
 
@@ -43,6 +46,11 @@ export default function ObserverAlertsQueue() {
     queryFn: () => api.listPatients({ limit: 400 }),
   });
 
+  const { data: roomsData } = useSuspenseQuery({
+    queryKey: ["observer", "alerts", "rooms"],
+    queryFn: () => api.listRooms(),
+  });
+
   const alerts = alertsData as ListAlertsResponse;
   const patients = patientsData as ListPatientsResponse;
 
@@ -50,6 +58,8 @@ export default function ObserverAlertsQueue() {
     () => new Map(patients.map((patient) => [patient.id, patient])),
     [patients],
   );
+
+  const roomById = useMemo(() => buildRoomByIdMap((roomsData ?? []) as Room[]), [roomsData]);
 
   const rows = useMemo<AlertRow[]>(() => {
     return [...alerts]
@@ -65,6 +75,10 @@ export default function ObserverAlertsQueue() {
       })
       .map((alert) => {
         const patient = alert.patient_id ? patientMap.get(alert.patient_id) : null;
+        const patientName = patient
+          ? `${patient.first_name} ${patient.last_name}`.trim()
+          : t("observer.alerts.unlinkedPatient");
+        const patientRoomLine = formatPatientRoomLine(patient ?? null, roomById, t);
         return {
           id: alert.id,
           title: alert.title,
@@ -73,13 +87,12 @@ export default function ObserverAlertsQueue() {
           severity: alert.severity,
           status: alert.status,
           patientId: alert.patient_id,
-          patientName: patient
-            ? `${patient.first_name} ${patient.last_name}`.trim()
-            : t("observer.alerts.unlinkedPatient"),
+          patientName,
+          patientRoomLine,
           timestamp: alert.timestamp,
         };
       });
-  }, [alerts, patientMap, t]);
+  }, [alerts, patientMap, roomById, t]);
 
   const columns = useMemo<ColumnDef<AlertRow>[]>(
     () => [
@@ -91,12 +104,26 @@ export default function ObserverAlertsQueue() {
             <p className="font-medium text-foreground">{row.original.title}</p>
             <p className="text-xs text-muted-foreground">{row.original.alertType}</p>
             <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
+            {row.original.patientId != null ? (
+              <p className="pt-1 text-xs text-foreground">
+                <span className="font-medium">{row.original.patientName}</span>
+                {row.original.patientRoomLine ? (
+                  <span className="text-muted-foreground"> · {row.original.patientRoomLine}</span>
+                ) : null}
+              </p>
+            ) : null}
           </div>
         ),
       },
       {
         accessorKey: "patientName",
         header: t("observer.alerts.colPatient"),
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <p className="font-medium text-foreground">{row.original.patientName}</p>
+            <p className="text-xs text-muted-foreground">{row.original.patientRoomLine}</p>
+          </div>
+        ),
       },
       {
         accessorKey: "severity",

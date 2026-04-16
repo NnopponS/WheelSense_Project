@@ -29,6 +29,7 @@ import { CalendarView, type CalendarViewMode } from "@/components/calendar/Calen
 import {
   buildPatientNameMap,
   schedulesToCalendarEvents,
+  visibleCalendarRange,
 } from "@/components/calendar/scheduleEventMapper";
 
 const TABS: HubTab[] = [
@@ -108,9 +109,14 @@ function ScheduleContent() {
     ]);
   }, [patient, effectivePatientId]);
 
+  const calendarRange = useMemo(
+    () => visibleCalendarRange(currentDate, viewMode),
+    [currentDate, viewMode],
+  );
+
   const events = useMemo(
-    () => schedulesToCalendarEvents(schedules, patientNameById),
-    [schedules, patientNameById],
+    () => schedulesToCalendarEvents(schedules, patientNameById, calendarRange),
+    [schedules, patientNameById, calendarRange],
   );
 
   const stats = useMemo(() => {

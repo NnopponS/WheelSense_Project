@@ -8,7 +8,10 @@ import { api } from "@/lib/api";
 import { CalendarView, type CalendarViewMode } from "@/components/calendar/CalendarView";
 import { AgendaView } from "@/components/calendar/AgendaView";
 import { ScheduleForm } from "@/components/calendar/ScheduleForm";
-import { schedulesToCalendarEvents } from "@/components/calendar/scheduleEventMapper";
+import {
+  schedulesToCalendarEvents,
+  visibleCalendarRange,
+} from "@/components/calendar/scheduleEventMapper";
 import type { CareScheduleOut } from "@/lib/api/task-scope-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,9 +50,14 @@ export function PatientWorkflowSchedulePanel({
     return rows.filter((row) => row.patient_id === patientId);
   }, [patientId, schedulesQuery.data]);
 
+  const calendarRange = useMemo(
+    () => visibleCalendarRange(calendarAnchor, calendarViewMode),
+    [calendarAnchor, calendarViewMode],
+  );
+
   const patientCalendarEvents = useMemo(
-    () => schedulesToCalendarEvents(patientSchedules, patientNameById),
-    [patientNameById, patientSchedules],
+    () => schedulesToCalendarEvents(patientSchedules, patientNameById, calendarRange),
+    [calendarRange, patientNameById, patientSchedules],
   );
 
   return (
@@ -85,7 +93,8 @@ export function PatientWorkflowSchedulePanel({
             onDateChange={setCalendarAnchor}
             onEventClick={(ev) => {
               if (!canManage) return;
-              const full = patientSchedules.find((row) => row.id === ev.id) ?? null;
+              const full =
+                patientSchedules.find((row) => row.id === (ev.sourceScheduleId ?? ev.id)) ?? null;
               setEditingSchedule(full);
               setSchedulePickerDate(new Date(ev.startTime));
               setScheduleFormOpen(true);
@@ -108,7 +117,8 @@ export function PatientWorkflowSchedulePanel({
             events={patientCalendarEvents}
             onEventClick={(ev) => {
               if (!canManage) return;
-              const full = patientSchedules.find((row) => row.id === ev.id) ?? null;
+              const full =
+                patientSchedules.find((row) => row.id === (ev.sourceScheduleId ?? ev.id)) ?? null;
               if (!full) return;
               setEditingSchedule(full);
               setSchedulePickerDate(new Date(ev.startTime));

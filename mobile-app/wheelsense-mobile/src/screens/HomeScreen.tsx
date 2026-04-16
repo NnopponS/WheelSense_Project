@@ -31,13 +31,18 @@ import {
 } from '../store/useAppStore';
 import { BLEScanner } from '../services/BLEScanner';
 import { mqttService } from '../services/MQTTService';
+import { useTranslation } from 'react-i18next';
+import { useSettings } from '../store/useAppStore';
+import * as Device from 'expo-device';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 };
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { deviceName, isMQTTConnected, isDeviceRegistered, disconnectAll } = useConnection();
+  const { t } = useTranslation();
+  const { deviceName, isMQTTConnected, isDeviceRegistered, disconnectAll, setDeviceInfo, setMQTTConnected, setDeviceRegistered } = useConnection();
+  const { settings, updateSettings } = useSettings();
   const polar = usePolarStore();
   const beaconStore = useBeacons();
   const { appMode, setAppMode } = useAppMode();
@@ -64,10 +69,52 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       console.error('[Home] BLE scan failed:', err);
     });
 
+    // Auto-connect to MQTT for testing (Bypassing Setup)
+    if (!isMQTTConnected) {
+      handleAutoConnect();
+    }
+
     return () => {
       BLEScanner.stopScanning();
     };
   }, []);
+
+  const handleAutoConnect = async () => {
+    try {
+      if (!mqttService.isNativeModuleAvailable()) {
+        console.log('[Home] MQTT native module unavailable — skipping auto-connect (Expo Go / web).');
+        return;
+      }
+
+      console.log('[Home] Initiating auto-connect...');
+      
+      // Ensure device name and info
+      const name = deviceName || settings.deviceName || Device.deviceName || 'TestDevice';
+      const deviceId = `MOBILE_${name.replace(/\s+/g, '_').toUpperCase()}`;
+      
+      if (!deviceName) {
+        setDeviceInfo(deviceId, name);
+        updateSettings({ deviceName: name });
+      }
+
+      // Connect to MQTT
+      await mqttService.connect({
+        host: settings.mqttBroker,
+        port: settings.mqttPort,
+        clientId: `ws_${deviceId}_${Date.now()}`,
+      });
+
+      // Publish registration
+      await mqttService.publishRegistration();
+      
+      // Start telemetry
+      mqttService.startTelemetryLoop();
+      
+      console.log('[Home] Auto-connect successful');
+    } catch (error) {
+      console.error('[Home] Auto-connect failed:', error);
+    }
+  };
 
   // MQTT pulse indicator
   useEffect(() => {
@@ -96,12 +143,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleDisconnect = () => {
     Alert.alert(
-      'Disconnect',
-      'Disconnect from MQTT and return to setup?',
+      t('home.disconnect'),
+      t('home.disconnectConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Disconnect',
+          text: t('home.disconnect'),
           style: 'destructive',
           onPress: () => {
             BLEScanner.stopScanning();
@@ -144,7 +191,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               ]}
             />
             <Text style={styles.headerSubtitle}>
-              {isMQTTConnected ? `Connected — ${deviceName}` : 'Disconnected'}
+              {isMQTTConnected 
+                ? `${t('home.connected')} — ${deviceName}` 
+                : t('home.disconnected')}
             </Text>
           </View>
         </View>
@@ -162,10 +211,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         {/* ===== ROOM PREDICTION BANNER ===== */}
         {roomPrediction && roomPrediction.room_name !== '' && (
           <View style={styles.roomBanner}>
-            <Text style={styles.roomLabel}>📍 Current Location</Text>
+            <Text style={styles.roomLabel}>📍 {t('home.currentLocation')}</Text>
             <Text style={styles.roomName}>{roomPrediction.room_name}</Text>
             <Text style={styles.roomConfidence}>
-              {(roomPrediction.confidence * 100).toFixed(0)}% confidence • {roomPrediction.model_type}
+              {(roomPrediction.confidence * 100).toFixed(0)}% {t('home.confidence')} • {roomPrediction.model_type}
             </Text>
           </View>
         )}
@@ -175,13 +224,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <View style={styles.modeLeft}>
             <Text style={styles.modeIcon}>{appMode === 'wheelchair' ? '🦽' : '🚶'}</Text>
             <View>
-              <Text style={styles.modeLabel}>Mode</Text>
+              <Text style={styles.modeLabel}>{t('home.mode')}</Text>
               <Text style={styles.modeValue}>
-                {appMode === 'wheelchair' ? 'Wheelchair' : 'Walking'}
+                {appMode === 'wheelchair' ? t('home.wheelchair') : t('home.walking')}
               </Text>
             </View>
           </View>
-          <Text style={styles.modeSwitchHint}>Tap to switch</Text>
+          <Text style={styles.modeSwitchHint}>{t('home.tapToSwitch')}</Text>
         </TouchableOpacity>
 
         {/* ===== FUNCTION CARDS GRID ===== */}
@@ -193,9 +242,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text style={styles.cardIcon}>📡</Text>
               </View>
               <View style={styles.cardMeta}>
-                <Text style={styles.cardTitle}>BLE Scanner</Text>
+                <Text style={styles.cardTitle}>{t('home.bleScanner')}</Text>
                 <Text style={[styles.cardStatus, beaconStore.isScanningBeacons && styles.cardStatusActive]}>
-                  {beaconStore.isScanningBeacons ? '● Scanning' : '○ Idle'}
+                  {beaconStore.isScanningBeacons ? `● ${t('home.scanning')}` : `○ ${t('home.idle')}`}
                 </Text>
               </View>
             </View>
@@ -204,12 +253,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <View style={styles.cardStatRow}>
               <View style={styles.cardStat}>
                 <Text style={styles.statValue}>{beaconStore.detectedBeacons.length}</Text>
-                <Text style={styles.statLabel}>Nodes</Text>
+                <Text style={styles.statLabel}>{t('home.nodes')}</Text>
               </View>
               {beaconStore.closestBeacon && (
                 <View style={styles.cardStat}>
                   <Text style={styles.statValue}>{beaconStore.closestBeacon.rssi}</Text>
-                  <Text style={styles.statLabel}>Closest dBm</Text>
+                  <Text style={styles.statLabel}>{t('home.closestDbm')}</Text>
                 </View>
               )}
             </View>
@@ -247,7 +296,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 }}
               >
                 <Text style={styles.actionBtnText}>
-                  {beaconStore.isScanningBeacons ? '⏹ Stop' : '▶ Start'}
+                  {beaconStore.isScanningBeacons ? `⏹ ${t('home.stop')}` : `▶ ${t('home.start')}`}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -260,8 +309,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text style={styles.cardIcon}>👟</Text>
               </View>
               <View style={styles.cardMeta}>
-                <Text style={styles.cardTitle}>Walk Steps</Text>
-                <Text style={styles.cardStatus}>Pedometer</Text>
+                <Text style={styles.cardTitle}>{t('home.walkSteps')}</Text>
+                <Text style={styles.cardStatus}>{t('home.pedometer')}</Text>
               </View>
             </View>
 
@@ -270,13 +319,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text style={[styles.statValue, styles.statValueLarge]}>
                   {walkSteps?.steps ?? 0}
                 </Text>
-                <Text style={styles.statLabel}>Steps</Text>
+                <Text style={styles.statLabel}>{t('home.steps')}</Text>
               </View>
               <View style={styles.cardStat}>
                 <Text style={styles.statValue}>
                   {walkSteps?.distance_m ? `${walkSteps.distance_m.toFixed(1)}` : '0'}
                 </Text>
-                <Text style={styles.statLabel}>Meters</Text>
+                <Text style={styles.statLabel}>{t('home.meters')}</Text>
               </View>
             </View>
 
@@ -285,7 +334,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 style={styles.actionBtn}
                 onPress={() => navigation.navigate('WalkSteps')}
               >
-                <Text style={styles.actionBtnText}>📊 Details</Text>
+                <Text style={styles.actionBtnText}>📊 {t('home.details')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -297,9 +346,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text style={styles.cardIcon}>❤️</Text>
               </View>
               <View style={styles.cardMeta}>
-                <Text style={styles.cardTitle}>Polar Health</Text>
+                <Text style={styles.cardTitle}>{t('home.polarHealth')}</Text>
                 <Text style={[styles.cardStatus, polar.isPolarConnected && styles.cardStatusActive]}>
-                  {polar.isPolarConnected ? `● ${polar.polarDevice?.name || 'Connected'}` : '○ Not connected'}
+                  {polar.isPolarConnected 
+                    ? `● ${polar.polarDevice?.name || t('home.connected')}` 
+                    : `○ ${t('home.notConnected')}`}
                 </Text>
               </View>
             </View>
@@ -309,12 +360,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text style={[styles.statValue, styles.statHR]}>
                   {polar.lastHR?.bpm ?? '--'}
                 </Text>
-                <Text style={styles.statLabel}>BPM</Text>
+                <Text style={styles.statLabel}>{t('home.bpm')}</Text>
               </View>
               {polar.polarDevice?.batteryLevel != null && (
                 <View style={styles.cardStat}>
                   <Text style={styles.statValue}>{polar.polarDevice.batteryLevel}%</Text>
-                  <Text style={styles.statLabel}>Battery</Text>
+                  <Text style={styles.statLabel}>{t('home.battery')}</Text>
                 </View>
               )}
             </View>
@@ -324,7 +375,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 style={styles.actionBtn}
                 onPress={() => navigation.navigate('PolarHealth')}
               >
-                <Text style={styles.actionBtnText}>💓 Monitor</Text>
+                <Text style={styles.actionBtnText}>💓 {t('home.monitor')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -332,19 +383,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
         {/* ===== QUICK ACTIONS ===== */}
         <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate('Settings')}>
               <Text style={styles.quickIcon}>⚙️</Text>
-              <Text style={styles.quickLabel}>Settings</Text>
+              <Text style={styles.quickLabel}>{t('home.settings')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate('WebView')}>
               <Text style={styles.quickIcon}>🌐</Text>
-              <Text style={styles.quickLabel}>Web Portal</Text>
+              <Text style={styles.quickLabel}>{t('home.webPortal')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickBtn} onPress={() => navigation.navigate('Devices')}>
               <Text style={styles.quickIcon}>📱</Text>
-              <Text style={styles.quickLabel}>Devices</Text>
+              <Text style={styles.quickLabel}>{t('home.devices')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -352,7 +403,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         {/* ===== MQTT STATUS BAR ===== */}
         <View style={styles.mqttBar}>
           <Text style={styles.mqttBarText}>
-            MQTT: {isMQTTConnected ? '✅ Online' : '❌ Offline'} • Queue: {mqttService.getQueueSize()} • Beacons: {beaconStore.detectedBeacons.length}
+            MQTT: {isMQTTConnected ? `✅ ${t('home.mqttOnline')}` : `❌ ${t('home.mqttOffline')}`} • {t('home.queue')}: {mqttService.getQueueSize()} • {t('home.bleScanner')}: {beaconStore.detectedBeacons.length}
           </Text>
         </View>
       </ScrollView>

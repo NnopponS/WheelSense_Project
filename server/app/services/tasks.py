@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Optional
 
 from fastapi import HTTPException
@@ -380,6 +380,11 @@ class TaskService:
         await session.refresh(task)
 
         await self._enrich_tasks(session, ws_id, [task])
+        await self._sync_subtask_patient_calendars(
+            ws_id, actor_user_id, actor_user_role, task.id
+        )
+        await session.refresh(task)
+        await self._enrich_tasks(session, ws_id, [task])
         return self._to_task_out(
             task, viewer_user_id=actor_user_id, viewer_role=actor_user_role
         )
@@ -464,6 +469,12 @@ class TaskService:
         await session.refresh(task)
 
         await self._enrich_tasks(session, ws_id, [task])
+        if is_manager and patch.get("subtasks") is not None:
+            await self._sync_subtask_patient_calendars(
+                ws_id, actor_user_id, actor_user_role, task.id
+            )
+            await session.refresh(task)
+            await self._enrich_tasks(session, ws_id, [task])
         return self._to_task_out(
             task, viewer_user_id=actor_user_id, viewer_role=actor_user_role
         )
@@ -946,6 +957,135 @@ class TaskService:
             return task.patient_id in visible_patient_ids
 
         return False
+
+    async def _sync_subtask_patient_calendars(
+        self,
+        ws_id: int,
+        actor_user_id: int,
+        actor_user_role: str,
+        task_id: int,
+    ) -> None:
+        """Create/update/delete patient care_schedules rows driven by subtask report_spec flags."""
+
+        def _opt_int(v: Any) -> int | None:
+            if v is None:
+                return None
+            if isinstance(v, bool):
+                return None
+            if isinstance(v, int):
+                return v
+            if isinstance(v, str) and v.strip().isdigit():
+                return int(v.strip())
+            return None
+
+        if actor_user_role not in STAFF_WIDE_ROLES:
+            return
+
+        from app.db.session import AsyncSessionLocal
+        from app.schemas.workflow import CareScheduleCreate, CareScheduleUpdate
+        from app.services.workflow import schedule_service
+
+        async with AsyncSessionLocal() as session:
+            task = await session.get(Task, task_id)
+            if not task or task.workspace_id != ws_id:
+                return
+
+            st_list = [dict(x) for x in (task.subtasks or [])]
+            changed = False
+
+            for idx, st in enumerate(st_list):
+                rs = dict(st.get("report_spec") or {})
+                sync = bool(rs.get("patient_calendar_sync"))
+                sid_existing = _opt_int(rs.get("patient_calendar_schedule_id"))
+                pid_override = _opt_int(rs.get("patient_calendar_patient_id"))
+
+                pid = pid_override if pid_override is not None else task.patient_id
+
+                if not sync:
+                    if sid_existing is not None:
+                        async with AsyncSessionLocal() as del_sess:
+                            await schedule_service.delete_schedule(
+                                del_sess, ws_id, actor_user_id, sid_existing
+                            )
+                        rs.pop("patient_calendar_schedule_id", None)
+                        rs["patient_calendar_sync"] = False
+                        st["report_spec"] = rs
+                        st_list[idx] = st
+                        changed = True
+                    continue
+
+                if pid is None:
+                    continue
+
+                exists = (
+                    await session.execute(
+                        select(Patient.id).where(
+                            Patient.workspace_id == ws_id,
+                            Patient.id == int(pid),
+                        )
+                    )
+                ).scalar_one_or_none()
+                if not exists:
+                    continue
+
+                title = f"{task.title}: {st.get('title', 'Subtask')}"[:128]
+                desc = (st.get("description") or "").strip()
+                link_notes = (
+                    f"__TASK_SUBTASK__\ntask_id={task.id}\nsubtask_id={st.get('id')}\n\n{desc}".strip()
+                )[:4000]
+
+                start = task.due_at or task.starts_at or utcnow()
+                if isinstance(start, datetime) and start.tzinfo is None:
+                    start = start.replace(tzinfo=timezone.utc)
+                end = start + timedelta(hours=1)
+
+                need_create = True
+                if sid_existing is not None:
+                    async with AsyncSessionLocal() as up_sess:
+                        sch = await schedule_service.get(up_sess, ws_id=ws_id, id=sid_existing)
+                        if sch:
+                            await schedule_service.update(
+                                up_sess,
+                                ws_id,
+                                sch,
+                                CareScheduleUpdate(
+                                    title=title,
+                                    notes=link_notes,
+                                    starts_at=start,
+                                    ends_at=end,
+                                ),
+                            )
+                            need_create = False
+
+                if need_create:
+                    async with AsyncSessionLocal() as cr_sess:
+                        created = await schedule_service.create_schedule(
+                            cr_sess,
+                            ws_id=ws_id,
+                            actor_user_id=actor_user_id,
+                            obj_in=CareScheduleCreate(
+                                patient_id=int(pid),
+                                room_id=None,
+                                title=title,
+                                schedule_type="task_subtask",
+                                starts_at=start,
+                                ends_at=end,
+                                recurrence_rule="",
+                                assigned_role=None,
+                                assigned_user_id=None,
+                                notes=link_notes,
+                            ),
+                        )
+                    rs["patient_calendar_schedule_id"] = created.id
+                    rs["patient_calendar_sync"] = True
+                    st["report_spec"] = rs
+                    st_list[idx] = st
+                    changed = True
+
+            if changed:
+                task.subtasks = st_list
+                session.add(task)
+                await session.commit()
 
 
 task_service = TaskService()

@@ -4,12 +4,32 @@
  * Supports continuous scanning mode for persistent telemetry
  */
 
-import { BleManager, Device, ScanMode, State as BLEState } from 'react-native-ble-plx';
+import {
+  BleManager,
+  Device,
+  ScanMode,
+  State as BLEState,
+} from 'react-native-ble-plx';
 import * as TaskManager from 'expo-task-manager';
 import * as BackgroundFetch from 'expo-background-fetch';
 import { Platform, PermissionsAndroid } from 'react-native';
 import { BLEBeacon } from '../types';
 import { useAppStore } from '../store/useAppStore';
+
+/** Public surface shared by native BLE and Expo Go fallback (no native module). */
+export interface BLEScannerApi {
+  onBeaconsUpdated(callback: (beacons: BLEBeacon[]) => void): void;
+  requestPermissions(): Promise<boolean>;
+  startScanning(): Promise<void>;
+  stopScanning(): void;
+  startContinuousScanning(): Promise<void>;
+  registerBackgroundTask(): Promise<void>;
+  unregisterBackgroundTask(): Promise<void>;
+  getIsScanning(): boolean;
+  getIsContinuous(): boolean;
+  cleanup(): void;
+  getManager(): BleManager;
+}
 
 // ==================== CONSTANTS ====================
 
@@ -19,9 +39,63 @@ const STALE_BEACON_MS = 30000; // 30 seconds
 const SCAN_WINDOW_MS = 10000;  // 10 seconds per scan cycle
 const SCAN_REST_MS = 2000;     // 2 seconds rest between cycles
 
+const EXPO_GO_BLE_HINT =
+  '[BLE] Bluetooth scanning needs a development build (expo run:android / run:ios). Expo Go does not ship react-native-ble-plx native code.';
+
+/**
+ * Used when `BleManager` native module is missing (Expo Go, web, or misconfigured build).
+ */
+class BleUnavailableScannerService implements BLEScannerApi {
+  private onBeaconsUpdatedCallback: ((beacons: BLEBeacon[]) => void) | null = null;
+
+  onBeaconsUpdated(callback: (beacons: BLEBeacon[]) => void): void {
+    this.onBeaconsUpdatedCallback = callback;
+  }
+
+  async requestPermissions(): Promise<boolean> {
+    return false;
+  }
+
+  async startScanning(): Promise<void> {
+    console.warn(EXPO_GO_BLE_HINT);
+  }
+
+  stopScanning(): void {
+    useAppStore.getState().setScanningBeacons(false);
+  }
+
+  async startContinuousScanning(): Promise<void> {
+    console.warn(EXPO_GO_BLE_HINT);
+  }
+
+  async registerBackgroundTask(): Promise<void> {
+    console.warn(EXPO_GO_BLE_HINT);
+  }
+
+  async unregisterBackgroundTask(): Promise<void> {}
+
+  getIsScanning(): boolean {
+    return false;
+  }
+
+  getIsContinuous(): boolean {
+    return false;
+  }
+
+  cleanup(): void {
+    this.stopScanning();
+  }
+
+  getManager(): BleManager {
+    throw new Error(
+      'BLE native module is not available. Use a development or production build with react-native-ble-plx.'
+    );
+  }
+}
+
 // ==================== BLE SCANNER SERVICE ====================
 
-class BLEScannerService {
+class BLEScannerService implements BLEScannerApi {
   private manager: BleManager;
   private isScanning = false;
   private isContinuousMode = false;
@@ -80,13 +154,10 @@ class BLEScannerService {
           results[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === PermissionsAndroid.RESULTS.GRANTED
         );
       } else {
-        const permissions = [
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADMIN,
+        // Android < 12 (API < 31): only location permission needed for BLE scanning
+        const results = await PermissionsAndroid.requestMultiple([
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        ];
-
-        const results = await PermissionsAndroid.requestMultiple(permissions);
+        ]);
 
         return Object.values(results).every(
           (result) => result === PermissionsAndroid.RESULTS.GRANTED
@@ -307,7 +378,16 @@ class BLEScannerService {
 
 // ==================== SINGLETON INSTANCE ====================
 
-export const BLEScanner = new BLEScannerService();
+function createBleScannerSingleton(): BLEScannerApi {
+  try {
+    return new BLEScannerService();
+  } catch {
+    console.warn(EXPO_GO_BLE_HINT);
+    return new BleUnavailableScannerService();
+  }
+}
+
+export const BLEScanner: BLEScannerApi = createBleScannerSingleton();
 
 // ==================== HOOK ====================
 

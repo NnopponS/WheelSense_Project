@@ -22,16 +22,17 @@ import { useSettings, useAppMode } from '../store/useAppStore';
 import { mqttService } from '../services/MQTTService';
 import { BLEScanner } from '../services/BLEScanner';
 import { NotificationManager } from '../services/NotificationService';
+import { useTranslation } from 'react-i18next';
 
 type SettingsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 };
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
+  const { t, i18n } = useTranslation();
   const { settings, updateSettings, resetSettings } = useSettings();
   const { appMode, setAppMode } = useAppMode();
   
-  const [serverUrl, setServerUrl] = useState(settings.serverUrl);
   const [mqttBroker, setMqttBroker] = useState(settings.mqttBroker);
   const [mqttPort, setMqttPort] = useState(settings.mqttPort.toString());
   const [scanInterval, setScanInterval] = useState(settings.scanInterval.toString());
@@ -39,33 +40,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
   const saveSettings = () => {
     updateSettings({
-      serverUrl,
       mqttBroker,
       mqttPort: parseInt(mqttPort, 10) || 1883,
       scanInterval: parseInt(scanInterval, 10) || 5000,
       telemetryInterval: parseInt(telemetryInterval, 10) || 1000,
     });
     
-    Alert.alert('Success', 'Settings saved successfully');
+    
+    Alert.alert(t('common.success'), t('settings.settingsSaved'));
   };
 
   const handleReset = () => {
     Alert.alert(
-      'Reset Settings',
-      'Are you sure you want to reset all settings to defaults?',
+      t('settings.resetDefaults'),
+      t('settings.resetConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Reset',
+          text: t('common.reset'),
           style: 'destructive',
           onPress: () => {
             resetSettings();
-            setServerUrl(settings.serverUrl);
             setMqttBroker(settings.mqttBroker);
             setMqttPort(settings.mqttPort.toString());
             setScanInterval(settings.scanInterval.toString());
             setTelemetryInterval(settings.telemetryInterval.toString());
-            Alert.alert('Success', 'Settings reset to defaults');
+            Alert.alert(t('common.success'), t('settings.settingsReset'));
           },
         },
       ]
@@ -74,14 +74,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
   const testMQTTConnection = async () => {
     try {
-      await MQTT.connect({
-        host: mqttBroker,
-        port: parseInt(mqttPort, 10) || 1883,
-        clientId: `test_${Date.now()}`,
-      });
-      Alert.alert('Success', 'MQTT connection successful');
+      const connected = mqttService.isConnectedToBroker();
+      if (connected) {
+        Alert.alert(t('common.success'), t('settings.mqttConnected'));
+      } else {
+        Alert.alert(t('home.disconnected'), t('settings.mqttNotConnected'));
+      }
     } catch (error: any) {
-      Alert.alert('Connection Failed', error.message || 'Failed to connect to MQTT broker');
+      Alert.alert(t('common.error'), error.message || 'Unable to check MQTT status');
     }
   };
 
@@ -93,9 +93,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         { type: 'test' },
         2
       );
-      Alert.alert('Success', 'Test notification scheduled (will appear in 2 seconds)');
+      Alert.alert(t('common.success'), t('settings.notificationScheduled'));
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to schedule notification');
+      Alert.alert(t('common.error'), error.message || 'Failed to schedule notification');
     }
   };
 
@@ -104,29 +104,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       <StatusBar style="dark" />
       
       <ScrollView style={styles.scrollView}>
-        {/* Server Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Server Configuration</Text>
-          
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Server URL</Text>
-            <TextInput
-              style={styles.input}
-              value={serverUrl}
-              onChangeText={setServerUrl}
-              placeholder="https://wheelsense.local"
-              autoCapitalize="none"
-              keyboardType="url"
-            />
-          </View>
-        </View>
-
         {/* MQTT Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>MQTT Configuration</Text>
+          <Text style={styles.sectionTitle}>{t('settings.mqttConfig')}</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>MQTT Broker</Text>
+            <Text style={styles.label}>{t('settings.mqttBroker')}</Text>
             <TextInput
               style={styles.input}
               value={mqttBroker}
@@ -137,7 +120,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>MQTT Port</Text>
+            <Text style={styles.label}>{t('settings.mqttPort')}</Text>
             <TextInput
               style={styles.input}
               value={mqttPort}
@@ -151,16 +134,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             style={styles.testButton}
             onPress={testMQTTConnection}
           >
-            <Text style={styles.testButtonText}>Test MQTT Connection</Text>
+            <Text style={styles.testButtonText}>{t('settings.testMQTT')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Scanning Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Scanning Configuration</Text>
+          <Text style={styles.sectionTitle}>{t('settings.scanConfig')}</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>BLE Scan Interval (ms)</Text>
+            <Text style={styles.label}>{t('settings.bleScanInterval')}</Text>
             <TextInput
               style={styles.input}
               value={scanInterval}
@@ -171,7 +154,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Telemetry Interval (ms)</Text>
+            <Text style={styles.label}>{t('settings.telemetryInterval')}</Text>
             <TextInput
               style={styles.input}
               value={telemetryInterval}
@@ -184,17 +167,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
         {/* App Mode */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Mode</Text>
+          <Text style={styles.sectionTitle}>{t('settings.appMode')}</Text>
           
           <View style={styles.modeRow}>
             <View style={styles.modeInfo}>
               <Text style={styles.modeLabel}>
-                {appMode === 'wheelchair' ? '🦽 Wheelchair Mode' : '🚶 Walking Mode'}
+                {appMode === 'wheelchair' ? `🦽 ${t('settings.wheelchairMode')}` : `🚶 ${t('settings.walkingMode')}`}
               </Text>
               <Text style={styles.modeDescription}>
                 {appMode === 'wheelchair'
-                  ? 'For wheelchair users with M5StickC gateway'
-                  : 'For independent walking with mobile sensors'}
+                  ? t('settings.wheelchairDesc')
+                  : t('settings.walkingDesc')}
               </Text>
             </View>
             <Switch
@@ -206,15 +189,38 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
         </View>
 
+        {/* Language Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
+          <View style={styles.languageRow}>
+            <TouchableOpacity 
+              style={[styles.languageBtn, i18n.language === 'en' && styles.languageBtnActive]}
+              onPress={() => i18n.changeLanguage('en')}
+            >
+              <Text style={[styles.languageBtnText, i18n.language === 'en' && styles.languageBtnTextActive]}>
+                {t('settings.english')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.languageBtn, i18n.language === 'th' && styles.languageBtnActive]}
+              onPress={() => i18n.changeLanguage('th')}
+            >
+              <Text style={[styles.languageBtnText, i18n.language === 'th' && styles.languageBtnTextActive]}>
+                {t('settings.thai')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Notifications */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+          <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
           
           <TouchableOpacity
             style={styles.testButton}
             onPress={testNotifications}
           >
-            <Text style={styles.testButtonText}>Test Push Notification</Text>
+            <Text style={styles.testButtonText}>{t('settings.testNotification')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -224,21 +230,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             style={styles.saveButton}
             onPress={saveSettings}
           >
-            <Text style={styles.saveButtonText}>Save Settings</Text>
+            <Text style={styles.saveButtonText}>{t('settings.saveSettings')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
             style={styles.resetButton}
             onPress={handleReset}
           >
-            <Text style={styles.resetButtonText}>Reset to Defaults</Text>
+            <Text style={styles.resetButtonText}>{t('settings.resetDefaults')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Version Info */}
         <View style={styles.versionSection}>
-          <Text style={styles.versionText}>WheelSense Mobile v1.0.0</Text>
-          <Text style={styles.buildText}>Build 2026.04.16</Text>
+          <Text style={styles.versionText}>{t('settings.version')} v1.0.0</Text>
+          <Text style={styles.buildText}>{t('settings.build')} 2026.04.16</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -347,6 +353,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginTop: 4,
+  },
+  languageRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  languageBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+  },
+  languageBtnActive: {
+    borderColor: '#0052cc',
+    backgroundColor: '#eef4ff',
+  },
+  languageBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  languageBtnTextActive: {
+    color: '#0052cc',
+    fontWeight: '600',
   },
 });
 

@@ -22,7 +22,9 @@ import { CalendarView, type CalendarEvent, type CalendarViewMode } from "@/compo
 import { ScheduleForm } from "@/components/calendar/ScheduleForm";
 import {
   buildPatientNameMap,
+  resolveCareScheduleIdFromEvent,
   schedulesToCalendarEvents,
+  visibleCalendarRange,
 } from "@/components/calendar/scheduleEventMapper";
 
 type Props = {
@@ -70,9 +72,14 @@ export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
     );
   }, [schedulesQuery.data, linkedUserIds]);
 
+  const calendarRange = useMemo(
+    () => visibleCalendarRange(calendarAnchor, viewMode),
+    [calendarAnchor, viewMode],
+  );
+
   const calendarEvents: CalendarEvent[] = useMemo(
-    () => schedulesToCalendarEvents(filteredSchedules, patientNameById),
-    [filteredSchedules, patientNameById],
+    () => schedulesToCalendarEvents(filteredSchedules, patientNameById, calendarRange),
+    [calendarRange, filteredSchedules, patientNameById],
   );
 
   const invalidateSchedules = useCallback(() => {
@@ -154,7 +161,8 @@ export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
                 currentDate={calendarAnchor}
                 onDateChange={setCalendarAnchor}
                 onEventClick={(ev) => {
-                  const full = filteredSchedules.find((s) => s.id === ev.id) ?? null;
+                  const full =
+                    filteredSchedules.find((s) => s.id === resolveCareScheduleIdFromEvent(ev)) ?? null;
                   setEditingSchedule(full);
                   setScheduleFormOpen(true);
                 }}
@@ -177,7 +185,8 @@ export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
               <AgendaView
                 events={calendarEvents}
                 onEventClick={(ev) => {
-                  const full = filteredSchedules.find((s) => s.id === ev.id) ?? null;
+                  const full =
+                    filteredSchedules.find((s) => s.id === resolveCareScheduleIdFromEvent(ev)) ?? null;
                   setEditingSchedule(full);
                   setScheduleFormOpen(true);
                 }}

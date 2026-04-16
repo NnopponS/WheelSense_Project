@@ -22,12 +22,21 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
       }),
   );
 
+  // React 19 warns on `<script>` inside client components; next-themes injects one for
+  // no-flash SSR. Keep the executable script on the server only; after hydration the
+  // theme is already applied (see pacocoursey/next-themes#387).
+  const themeScriptProps =
+    typeof window === "undefined"
+      ? undefined
+      : ({ type: "application/json" } as const);
+
   return (
     <ThemeProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
+      scriptProps={themeScriptProps}
     >
       <QueryClientProvider client={queryClient}>
         <I18nProvider>

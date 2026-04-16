@@ -5,6 +5,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_password_hash
+from app.models.caregivers import CareGiver, CareGiverPatientAccess
 from app.models.patients import Patient
 from app.models.users import User
 
@@ -121,3 +122,102 @@ async def test_service_requests_patient_scoping_and_admin_updates(
     assert fulfilled_body["status"] == "fulfilled"
     assert fulfilled_body["resolution_note"] == "Completed"
     assert fulfilled_body["resolved_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_support_request_title_and_observer_claim_race(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+    make_token_headers,
+):
+    patient = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Claim",
+        last_name="Patient",
+        nickname="CP",
+    )
+    db_session.add(patient)
+    await db_session.flush()
+
+    caregiver = CareGiver(
+        workspace_id=admin_user.workspace_id,
+        first_name="Floor",
+        last_name="Observer",
+        role="observer",
+        is_active=True,
+    )
+    db_session.add(caregiver)
+    await db_session.flush()
+
+    access = CareGiverPatientAccess(
+        workspace_id=admin_user.workspace_id,
+        caregiver_id=caregiver.id,
+        patient_id=patient.id,
+        assigned_by_user_id=admin_user.id,
+        is_active=True,
+    )
+    db_session.add(access)
+
+    observer_a = User(
+        workspace_id=admin_user.workspace_id,
+        username="svc_observer_a",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        caregiver_id=caregiver.id,
+        is_active=True,
+    )
+    observer_b = User(
+        workspace_id=admin_user.workspace_id,
+        username="svc_observer_b",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        caregiver_id=caregiver.id,
+        is_active=True,
+    )
+    patient_user = User(
+        workspace_id=admin_user.workspace_id,
+        username="svc_support_patient",
+        hashed_password=get_password_hash("password123"),
+        role="patient",
+        patient_id=patient.id,
+        is_active=True,
+    )
+    db_session.add_all([observer_a, observer_b, patient_user])
+    await db_session.commit()
+    await db_session.refresh(observer_a)
+    await db_session.refresh(observer_b)
+    await db_session.refresh(patient_user)
+
+    p_headers = make_token_headers(patient_user)
+    a_headers = make_token_headers(observer_a)
+    b_headers = make_token_headers(observer_b)
+
+    created = await client.post(
+        "/api/services/requests",
+        headers=p_headers,
+        json={"service_type": "support", "title": "Need water", "note": "Please bring room temperature water."},
+    )
+    assert created.status_code == 201
+    rid = created.json()["id"]
+    assert created.json()["title"] == "Need water"
+
+    listed = await client.get("/api/services/requests", headers=a_headers)
+    assert listed.status_code == 200
+    assert any(row["id"] == rid for row in listed.json())
+
+    claim_a = await client.post(f"/api/services/requests/{rid}/claim", headers=a_headers)
+    assert claim_a.status_code == 200
+    assert claim_a.json()["status"] == "in_progress"
+    assert claim_a.json()["claimed_by_user_id"] == observer_a.id
+
+    claim_b = await client.post(f"/api/services/requests/{rid}/claim", headers=b_headers)
+    assert claim_b.status_code == 409
+
+    fulfill = await client.patch(
+        f"/api/services/requests/{rid}",
+        headers=a_headers,
+        json={"status": "fulfilled", "resolution_note": "Delivered"},
+    )
+    assert fulfill.status_code == 200
+    assert fulfill.json()["status"] == "fulfilled"

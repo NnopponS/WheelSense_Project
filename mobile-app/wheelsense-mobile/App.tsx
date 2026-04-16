@@ -8,18 +8,31 @@ import { LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { AppNavigator } from './src/navigation/AppNavigator';
-import { useAppStore } from './src/store/useAppStore';
-import { API } from './src/services/APIService';
 import { NotificationManager } from './src/services/NotificationService';
 import { BLEScanner } from './src/services/BLEScanner';
+import './src/i18n';
+import { useAppStore } from './src/store/useAppStore';
+import i18next from 'i18next';
 
 // Ignore specific warnings
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
   'Require cycle:',
+  // Expo Go (SDK 53+): remote push not in the Go client (noise in the console)
+  'Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go',
+  '`expo-notifications` functionality is not fully supported in Expo Go',
 ]);
 
 export default function App() {
+  const language = useAppStore((state) => state.settings?.language || 'en');
+
+  // Sync i18n language
+  useEffect(() => {
+    if (i18next.language !== language) {
+      i18next.changeLanguage(language);
+    }
+  }, [language]);
+
   // Initialize app on mount
   useEffect(() => {
     initializeApp();
@@ -33,24 +46,6 @@ export default function App() {
   const initializeApp = async () => {
     try {
       console.log('[App] Initializing WheelSense Mobile...');
-      
-      // Load persisted auth state
-      const store = useAppStore.getState();
-      
-      // Set API base URL from settings
-      API.setBaseUrl(store.settings.serverUrl);
-      
-      // If we have a token, try to refresh the session
-      if (store.authToken) {
-        try {
-          await API.refreshSession();
-          console.log('[App] Session refreshed successfully');
-        } catch (error) {
-          console.error('[App] Session refresh failed:', error);
-          // Clear invalid auth state
-          store.clearAuth();
-        }
-      }
       
       // Initialize notifications
       await NotificationManager.initialize();

@@ -16,15 +16,9 @@ import { api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
 import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
+import { buildRoomByIdMap, formatPatientRoomLine } from "@/lib/alertPatientLocation";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
-
-const roomSchema = z
-  .object({
-    id: z.number(),
-    name: z.string(),
-    room_type: z.string().nullable().optional(),
-  })
-  .passthrough();
+import type { Room } from "@/lib/types";
 
 const predictionSchema = z
   .object({
@@ -53,6 +47,7 @@ type AlertRow = {
   title: string;
   description: string;
   patientName: string;
+  patientRoomLine: string;
   patientId: number | null;
   timestamp: string;
 };
@@ -75,14 +70,7 @@ export default function SupervisorEmergencyPage() {
 
   const roomsQuery = useQuery({
     queryKey: ["supervisor", "emergency", "rooms"],
-    queryFn: async () => {
-      const raw = await api.listRooms();
-      if (!Array.isArray(raw)) return [] as z.infer<typeof roomSchema>[];
-      return raw
-        .map((item) => roomSchema.safeParse(item))
-        .filter((result) => result.success)
-        .map((result) => result.data);
-    },
+    queryFn: () => api.listRooms() as Promise<Room[]>,
   });
 
   const predictionsQuery = useQuery({
@@ -107,10 +95,9 @@ export default function SupervisorEmergencyPage() {
     () => (alertsQuery.data ?? []) as ListAlertsResponse,
     [alertsQuery.data],
   );
-  const rooms = useMemo(
-    () => roomsQuery.data ?? [],
-    [roomsQuery.data],
-  );
+  const rooms = useMemo(() => (roomsQuery.data ?? []) as Room[], [roomsQuery.data]);
+
+  const roomById = useMemo(() => buildRoomByIdMap(rooms), [rooms]);
   const predictions = useMemo(
     () => predictionsQuery.data ?? [],
     [predictionsQuery.data],
@@ -197,13 +184,16 @@ export default function SupervisorEmergencyPage() {
       .filter((alert) => alert.status === "active")
       .map((alert) => {
         const patient = alert.patient_id ? patientById.get(alert.patient_id) : null;
+        const patientName = patient
+          ? `${patient.first_name} ${patient.last_name}`.trim()
+          : t("supervisor.emergency.patientNotLinked");
+        const patientRoomLine = formatPatientRoomLine(patient ?? null, roomById, t);
         return {
           alertId: alert.id,
           title: alert.title,
           description: alert.description,
-          patientName: patient
-            ? `${patient.first_name} ${patient.last_name}`.trim()
-            : t("supervisor.emergency.patientNotLinked"),
+          patientName,
+          patientRoomLine,
           patientId: alert.patient_id,
           timestamp: alert.timestamp,
         };
@@ -215,7 +205,7 @@ export default function SupervisorEmergencyPage() {
         if (d !== 0) return d;
         return right.timestamp.localeCompare(left.timestamp);
       });
-  }, [alerts, patientById, t]);
+  }, [alerts, patientById, roomById, t]);
 
   const roomRows = useMemo<RoomRow[]>(() => {
     return rooms.map((room) => {
@@ -254,10 +244,27 @@ export default function SupervisorEmergencyPage() {
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
             <p className="text-xs text-muted-foreground">{row.original.description}</p>
+            {row.original.patientId != null ? (
+              <p className="pt-1 text-xs text-foreground">
+                <span className="font-medium">{row.original.patientName}</span>
+                {row.original.patientRoomLine ? (
+                  <span className="text-muted-foreground"> · {row.original.patientRoomLine}</span>
+                ) : null}
+              </p>
+            ) : null}
           </div>
         ),
       },
-      { accessorKey: "patientName", header: t("clinical.table.patient") },
+      {
+        accessorKey: "patientName",
+        header: t("clinical.table.patient"),
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <p className="font-medium text-foreground">{row.original.patientName}</p>
+            <p className="text-xs text-muted-foreground">{row.original.patientRoomLine}</p>
+          </div>
+        ),
+      },
       {
         accessorKey: "timestamp",
         header: t("clinical.table.time"),

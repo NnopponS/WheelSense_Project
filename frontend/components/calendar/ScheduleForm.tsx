@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 import type {
   ListPatientsResponse,
   ListRoomsResponse,
@@ -56,6 +57,8 @@ const recurrenceOptions = [
 
 const scheduleFormSchema = z
   .object({
+    planKind: z.enum(["routine", "special"]),
+    notifyPatientMissed: z.boolean().optional(),
     title: z.string().min(1, "Title is required").max(200, "Title too long"),
     scheduleType: z.string().min(1, "Schedule type is required"),
     patientId: z.number().nullable().optional(),
@@ -78,7 +81,16 @@ const scheduleFormSchema = z
       message: "End time must be after start time",
       path: ["endTime"],
     }
-  );
+  )
+  .superRefine((data, ctx) => {
+    if (data.planKind === "special" && !String(data.scheduleType || "").trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["scheduleType"],
+        message: "Schedule type is required",
+      });
+    }
+  });
 
 type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 
@@ -110,6 +122,7 @@ export function ScheduleForm({
   defaultPatientId = null,
   lockedPatientId = null,
 }: ScheduleFormProps) {
+  const { t } = useTranslation();
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -143,7 +156,14 @@ export function ScheduleForm({
     if (schedule && mode === "edit") {
       const start = new Date(schedule.starts_at);
       const end = schedule.ends_at ? new Date(schedule.ends_at) : new Date(new Date(schedule.starts_at).getTime() + 60 * 60 * 1000);
+      const rawRule = (schedule.recurrence_rule || "").trim();
+      const parts = rawRule.split("|");
+      const baseRec = (parts[0] || "").trim();
+      const notifyMissed = parts.some((p) => p.trim().toLowerCase() === "notify_missed=1");
+      const isRoutine = schedule.schedule_type === "patient_routine";
       return {
+        planKind: isRoutine ? "routine" : "special",
+        notifyPatientMissed: notifyMissed,
         title: schedule.title,
         scheduleType: schedule.schedule_type || "other",
         patientId: schedule.patient_id ?? null,
@@ -153,7 +173,7 @@ export function ScheduleForm({
         startTime: format(start, "HH:mm"),
         endDate: format(end, "yyyy-MM-dd"),
         endTime: format(end, "HH:mm"),
-        recurrence: schedule.recurrence_rule || "",
+        recurrence: isRoutine ? "daily" : baseRec,
         notes: schedule.notes || "",
       };
     }
@@ -162,6 +182,8 @@ export function ScheduleForm({
     const end = addHours(start, 1);
 
     return {
+      planKind: "special",
+      notifyPatientMissed: false,
       title: "",
       scheduleType: "",
       patientId: lockedPatientId ?? defaultPatientId ?? null,
@@ -181,6 +203,8 @@ export function ScheduleForm({
     handleSubmit,
     reset,
     watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<ScheduleFormValues>({
     resolver: zodResolver(scheduleFormSchema),
@@ -197,6 +221,19 @@ export function ScheduleForm({
 
   const selectedPatientId = watch("patientId");
   const selectedRoomId = watch("roomId");
+  const planKind = watch("planKind");
+
+  useEffect(() => {
+    if (planKind === "routine") {
+      setValue("recurrence", "daily", { shouldValidate: true });
+    }
+  }, [planKind, setValue]);
+
+  useEffect(() => {
+    if (planKind === "special" && getValues("scheduleType") === "patient_routine") {
+      setValue("scheduleType", "");
+    }
+  }, [planKind, getValues, setValue]);
 
   const selectedPatient = Array.isArray(patients) ? patients.find((p) => p.id === selectedPatientId) : undefined;
   const selectedRoom = Array.isArray(rooms) ? rooms.find((r) => r.id === selectedRoomId) : undefined;
@@ -205,16 +242,23 @@ export function ScheduleForm({
     const startTime = new Date(`${values.startDate}T${values.startTime}`).toISOString();
     const endTime = new Date(`${values.endDate}T${values.endTime}`).toISOString();
 
+    const isRoutine = values.planKind === "routine";
+    const recurrenceBase = isRoutine ? "daily" : (values.recurrence || "").trim();
+    const recurrence_rule =
+      isRoutine && values.notifyPatientMissed
+        ? `${recurrenceBase}|notify_missed=1`
+        : recurrenceBase;
+
     return {
       title: values.title,
-      schedule_type: values.scheduleType,
+      schedule_type: isRoutine ? "patient_routine" : values.scheduleType,
       patient_id: lockedPatientId ?? values.patientId,
       room_id: values.roomId,
       assigned_user_id: values.assigneeId,
       assigned_role: null,
       starts_at: startTime,
       ends_at: endTime,
-      recurrence_rule: values.recurrence || "",
+      recurrence_rule,
       notes: values.notes || "",
     };
   };
@@ -268,6 +312,61 @@ export function ScheduleForm({
           </DialogHeader>
 
           <div className="space-y-5 overflow-y-auto px-6 py-4">
+            <FormField label={t("scheduleForm.planKindLabel")} error={errors.planKind?.message}>
+              <Controller
+                name="planKind"
+                control={control}
+                render={({ field }) => (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={field.value === "routine" ? "default" : "outline"}
+                      onClick={() => field.onChange("routine")}
+                      disabled={isSubmitting}
+                    >
+                      {t("scheduleForm.planRoutine")}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={field.value === "special" ? "default" : "outline"}
+                      onClick={() => field.onChange("special")}
+                      disabled={isSubmitting}
+                    >
+                      {t("scheduleForm.planSpecial")}
+                    </Button>
+                  </div>
+                )}
+              />
+            </FormField>
+
+            {planKind === "routine" ? (
+              <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
+                <Controller
+                  name="notifyPatientMissed"
+                  control={control}
+                  render={({ field }) => (
+                    <label className="flex cursor-pointer items-start gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-border"
+                        checked={Boolean(field.value)}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        disabled={isSubmitting}
+                      />
+                      <span>
+                        <span className="font-medium">{t("scheduleForm.notifyMissedTitle")}</span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">
+                          {t("scheduleForm.notifyMissedHint")}
+                        </span>
+                      </span>
+                    </label>
+                  )}
+                />
+              </div>
+            ) : null}
+
             {/* Title and Type */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField label="Title *" error={errors.title?.message}>
@@ -280,7 +379,10 @@ export function ScheduleForm({
                 />
               </FormField>
 
-              <FormField label="Schedule Type *" error={errors.scheduleType?.message}>
+              <FormField
+                label={t("scheduleForm.scheduleTypeLabel")}
+                error={errors.scheduleType?.message}
+              >
                 <Controller
                   name="scheduleType"
                   control={control}
@@ -290,7 +392,7 @@ export function ScheduleForm({
                       onValueChange={(value) =>
                         field.onChange(value === EMPTY_SELECT_VALUE ? "" : value)
                       }
-                      disabled={isSubmitting || lockedPatientId != null}
+                      disabled={isSubmitting || planKind === "routine"}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select type..." />
@@ -482,36 +584,40 @@ export function ScheduleForm({
             </div>
 
             {/* Recurrence */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField label="Recurrence">
-                <Controller
-                  name="recurrence"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || EMPTY_SELECT_VALUE}
-                      onValueChange={(value) =>
-                        field.onChange(
-                          value === EMPTY_SELECT_VALUE ? "" : value
-                        )
-                      }
-                      disabled={isSubmitting}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select recurrence..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {recurrenceOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value || EMPTY_SELECT_VALUE}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </FormField>
-            </div>
+            {planKind === "special" ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField label={t("scheduleForm.recurrenceLabel")}>
+                  <Controller
+                    name="recurrence"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || EMPTY_SELECT_VALUE}
+                        onValueChange={(value) =>
+                          field.onChange(
+                            value === EMPTY_SELECT_VALUE ? "" : value
+                          )
+                        }
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("scheduleForm.recurrencePlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {recurrenceOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value || EMPTY_SELECT_VALUE}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </FormField>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t("scheduleForm.routineRecurrenceHint")}</p>
+            )}
 
             {/* Notes */}
             <FormField label="Notes" error={errors.notes?.message}>

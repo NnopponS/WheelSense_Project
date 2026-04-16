@@ -24,7 +24,8 @@ from app.services.activity import alert_service
 router = APIRouter()
 
 ROLE_ALERT_CREATE = ["admin", "head_nurse", "supervisor", "observer", "patient"]
-ROLE_ALERT_ACK = ["admin", "head_nurse"]
+# Same visibility rules as list/get: patient access checks run inside handlers.
+ROLE_ALERT_ACK = ROLE_CLINICAL_STAFF
 
 @router.get("", response_model=list[AlertOut])
 async def list_alerts(

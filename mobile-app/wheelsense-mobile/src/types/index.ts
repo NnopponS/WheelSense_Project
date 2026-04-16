@@ -267,6 +267,7 @@ export interface AppSettings {
   mqttPort: number;
   scanInterval: number;
   telemetryInterval: number;
+  language: string; // 'en' | 'th'
 }
 
 // ==================== NOTIFICATION TYPES ====================

@@ -22,6 +22,8 @@ import { ApiError, api } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { useTranslation } from "@/lib/i18n";
 import { useAlertRowHighlight } from "@/hooks/useAlertRowHighlight";
+import { buildRoomByIdMap, formatPatientRoomLine } from "@/lib/alertPatientLocation";
+import type { Room } from "@/lib/types";
 import type { ListAlertsResponse, ListPatientsResponse } from "@/lib/api/task-scope-types";
 
 type AlertRow = {
@@ -33,6 +35,7 @@ type AlertRow = {
   status: string;
   patientId: number | null;
   patientName: string;
+  patientRoomLine: string;
   timestamp: string;
 };
 
@@ -66,6 +69,11 @@ export default function HeadNurseAlertsPage() {
     queryFn: () => api.listPatients({ limit: 300 }),
   });
 
+  const roomsQuery = useQuery({
+    queryKey: ["head-nurse", "alerts", "rooms"],
+    queryFn: () => api.listRooms(),
+  });
+
   const alerts = useMemo(
     () => (alertsQuery.data ?? []) as ListAlertsResponse,
     [alertsQuery.data],
@@ -79,6 +87,8 @@ export default function HeadNurseAlertsPage() {
     () => new Map(patients.map((patient) => [patient.id, patient])),
     [patients],
   );
+
+  const roomById = useMemo(() => buildRoomByIdMap((roomsQuery.data ?? []) as Room[]), [roomsQuery.data]);
 
   const updateAlertMutation = useMutation({
     mutationFn: async (variables: { id: number; status: "acknowledged" | "resolved" }) => {
@@ -111,6 +121,10 @@ export default function HeadNurseAlertsPage() {
       .filter((item) => (severity === "all" ? true : item.severity === severity))
       .map((item) => {
         const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
+        const patientName = patient
+          ? `${patient.first_name} ${patient.last_name}`.trim()
+          : t("admin.unlinkedPatient");
+        const patientRoomLine = formatPatientRoomLine(patient ?? null, roomById, t);
         return {
           id: item.id,
           title: item.title,
@@ -119,19 +133,19 @@ export default function HeadNurseAlertsPage() {
           severity: item.severity,
           status: item.status,
           patientId: item.patient_id,
-          patientName: patient
-            ? `${patient.first_name} ${patient.last_name}`.trim()
-            : t("admin.unlinkedPatient"),
+          patientName,
+          patientRoomLine,
           timestamp: item.timestamp,
         };
       })
       .filter((item) => {
         if (!normalizedSearch) return true;
-        const corpus = `${item.title} ${item.alertType} ${item.description} ${item.patientName}`.toLowerCase();
+        const corpus =
+          `${item.title} ${item.alertType} ${item.description} ${item.patientName} ${item.patientRoomLine}`.toLowerCase();
         return corpus.includes(normalizedSearch);
       })
       .sort((left, right) => right.timestamp.localeCompare(left.timestamp));
-  }, [alerts, patientMap, search, severity, status, t]);
+  }, [alerts, patientMap, roomById, search, severity, status, t]);
 
   const columns = useMemo<ColumnDef<AlertRow>[]>(
     () => [
@@ -143,10 +157,27 @@ export default function HeadNurseAlertsPage() {
             <p className="font-medium text-foreground">{row.original.title}</p>
             <p className="text-xs text-muted-foreground">{row.original.alertType}</p>
             <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
+            {row.original.patientId != null ? (
+              <p className="pt-1 text-xs text-foreground">
+                <span className="font-medium">{row.original.patientName}</span>
+                {row.original.patientRoomLine ? (
+                  <span className="text-muted-foreground"> · {row.original.patientRoomLine}</span>
+                ) : null}
+              </p>
+            ) : null}
           </div>
         ),
       },
-      { accessorKey: "patientName", header: t("clinical.table.patient") },
+      {
+        accessorKey: "patientName",
+        header: t("clinical.table.patient"),
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <p className="font-medium text-foreground">{row.original.patientName}</p>
+            <p className="text-xs text-muted-foreground">{row.original.patientRoomLine}</p>
+          </div>
+        ),
+      },
       {
         accessorKey: "severity",
         header: t("clinical.table.severity"),
@@ -242,7 +273,7 @@ export default function HeadNurseAlertsPage() {
     return Number.isFinite(n) ? n : null;
   }, [searchParams]);
 
-  const alertsTableLoading = alertsQuery.isLoading || patientsQuery.isLoading;
+  const alertsTableLoading = alertsQuery.isLoading || patientsQuery.isLoading || roomsQuery.isLoading;
   const highlightReady =
     !alertsTableLoading &&
     highlightAlertId != null &&

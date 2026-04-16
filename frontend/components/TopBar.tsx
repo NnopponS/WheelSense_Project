@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, Search, Beaker, Volume2, VolumeX } from "lucide-react";
@@ -60,6 +60,16 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   useEffect(() => {
     setAlertSoundOn(getAlertSoundEnabled());
   }, []);
+
+  const notificationInboxHint = useMemo(() => {
+    if (!user || user.role === "patient") return undefined;
+    if (impersonation.active) {
+      return `${t("notifications.drawerInboxImpersonationLead")} ${user.username ?? t("shell.impersonationUserPlaceholder")} — ${t("notifications.drawerInboxImpersonationTail")}`;
+    }
+    if (user.role === "admin") return t("notifications.drawerInboxAdminHint");
+    if (user.role === "head_nurse") return t("notifications.drawerInboxHeadNurseHint");
+    return undefined;
+  }, [impersonation.active, t, user]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-card/95 backdrop-blur">
@@ -190,6 +200,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
         onMarkAsRead={markAsRead}
         onMarkAllAsRead={markAllAsRead}
         onClearAll={clearAll}
+        inboxContextHint={notificationInboxHint}
       />
     </header>
   );

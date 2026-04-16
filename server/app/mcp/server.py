@@ -2226,13 +2226,13 @@ async def list_service_requests(status: str | None = None, service_type: str | N
 
 @mcp.tool(name="create_service_request", description="Create a service request (patient self-service for food, transport, etc.).",
           annotations=mcp_types.ToolAnnotations(title="Create Service Request", readOnlyHint=False, destructiveHint=False))
-async def create_service_request(service_type: str, note: str) -> dict[str, Any]:
+async def create_service_request(service_type: str, note: str, title: str | None = None) -> dict[str, Any]:
     actor = require_actor_context()
     async with AsyncSessionLocal() as db:
         user = (await db.execute(select(User).where(User.id == actor.user_id))).scalar_one_or_none()
         if not user:
             raise ValueError("User not found")
-        payload = ServiceRequestCreateIn(service_type=service_type, note=note)
+        payload = ServiceRequestCreateIn(service_type=service_type, note=note, title=title)
         req = await service_request_service.create_request(db, actor.workspace_id, user, payload)
         return {"id": req.id, "service_type": req.service_type, "status": req.status}
 

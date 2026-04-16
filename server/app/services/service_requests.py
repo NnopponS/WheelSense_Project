@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.service_requests import ServiceRequest
@@ -19,6 +19,21 @@ def _is_admin(user: User) -> bool:
 
 def _is_patient(user: User) -> bool:
     return user.role == "patient"
+
+
+def _is_head_nurse(user: User) -> bool:
+    return user.role == "head_nurse"
+
+
+def _is_floor_staff(user: User) -> bool:
+    return user.role in ("observer", "supervisor")
+
+
+async def _visible_patient_ids(session: AsyncSession, ws_id: int, user: User) -> set[int] | None:
+    """Lazy import avoids circular import: dependencies -> services/__init__ -> service_requests."""
+    from app.api.dependencies import get_visible_patient_ids
+
+    return await get_visible_patient_ids(session, ws_id, user)
 
 
 class ServiceRequestService:
@@ -40,8 +55,20 @@ class ServiceRequestService:
                 ServiceRequest.workspace_id == ws_id,
                 ServiceRequest.patient_id == patient_id,
             )
-        elif _is_admin(user):
+        elif _is_admin(user) or _is_head_nurse(user):
             stmt = select(ServiceRequest).where(ServiceRequest.workspace_id == ws_id)
+            if status:
+                stmt = stmt.where(ServiceRequest.status == status)
+            if service_type:
+                stmt = stmt.where(ServiceRequest.service_type == service_type)
+        elif _is_floor_staff(user):
+            visible = await _visible_patient_ids(session, ws_id, user)
+            if not visible:
+                return []
+            stmt = select(ServiceRequest).where(
+                ServiceRequest.workspace_id == ws_id,
+                ServiceRequest.patient_id.in_(visible),
+            )
             if status:
                 stmt = stmt.where(ServiceRequest.status == status)
             if service_type:
@@ -71,20 +98,73 @@ class ServiceRequestService:
         if not note:
             raise HTTPException(status_code=400, detail="Request note is required")
 
+        title_val = (payload.title or "").strip() or None
+
         row = ServiceRequest(
             workspace_id=ws_id,
             patient_id=patient_id,
             requested_by_user_id=user.id,
             service_type=payload.service_type,
+            title=title_val,
             note=note,
             status="open",
             resolution_note=None,
             resolved_by_user_id=None,
             resolved_at=None,
+            claimed_by_user_id=None,
+            claimed_at=None,
         )
         session.add(row)
         await session.commit()
         await session.refresh(row)
+        return row
+
+    @staticmethod
+    async def claim_request(
+        session: AsyncSession,
+        ws_id: int,
+        user: User,
+        request_id: int,
+    ) -> ServiceRequest:
+        if not _is_floor_staff(user):
+            raise HTTPException(status_code=403, detail="Only floor staff may claim service requests")
+
+        visible = await _visible_patient_ids(session, ws_id, user)
+        if not visible:
+            raise HTTPException(status_code=403, detail="No linked patients for this account")
+
+        now = datetime.now(timezone.utc)
+        result = await session.execute(
+            update(ServiceRequest)
+            .where(
+                ServiceRequest.id == request_id,
+                ServiceRequest.workspace_id == ws_id,
+                ServiceRequest.status == "open",
+                ServiceRequest.claimed_by_user_id.is_(None),
+                ServiceRequest.patient_id.in_(visible),
+            )
+            .values(
+                claimed_by_user_id=user.id,
+                claimed_at=now,
+                status="in_progress",
+            )
+        )
+        if result.rowcount == 0:
+            await session.rollback()
+            raise HTTPException(
+                status_code=409,
+                detail="Request is no longer open, already claimed, or outside your patient access",
+            )
+        await session.commit()
+
+        row = (
+            await session.execute(
+                select(ServiceRequest).where(
+                    ServiceRequest.workspace_id == ws_id,
+                    ServiceRequest.id == request_id,
+                )
+            )
+        ).scalar_one()
         return row
 
     @staticmethod
@@ -95,9 +175,6 @@ class ServiceRequestService:
         request_id: int,
         payload: ServiceRequestPatchIn,
     ) -> ServiceRequest:
-        if not _is_admin(user):
-            raise HTTPException(status_code=403, detail="Only admin users can update service requests")
-
         row = (
             await session.execute(
                 select(ServiceRequest).where(
@@ -108,6 +185,20 @@ class ServiceRequestService:
         ).scalar_one_or_none()
         if not row:
             raise HTTPException(status_code=404, detail="Service request not found")
+
+        if _is_floor_staff(user):
+            visible = await _visible_patient_ids(session, ws_id, user)
+            if not visible or row.patient_id is None or row.patient_id not in visible:
+                raise HTTPException(status_code=403, detail="Cannot update this service request")
+            if row.claimed_by_user_id != user.id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Only the staff member who claimed this request may update it",
+                )
+        elif _is_admin(user) or _is_head_nurse(user):
+            pass
+        else:
+            raise HTTPException(status_code=403, detail="Operation not permitted")
 
         changes = payload.model_dump(exclude_unset=True)
         status = changes.get("status")
@@ -126,7 +217,9 @@ class ServiceRequestService:
                 else None
             )
 
-        if changes:
+        if changes and (_is_admin(user) or _is_head_nurse(user)):
+            row.resolved_by_user_id = user.id
+        elif changes and _is_floor_staff(user):
             row.resolved_by_user_id = user.id
 
         session.add(row)

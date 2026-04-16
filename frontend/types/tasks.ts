@@ -3,6 +3,12 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 export interface SubtaskReportSpec {
+  /** When true, server creates/updates a patient `care_schedules` row for this subtask. */
+  patient_calendar_sync?: boolean;
+  /** Override patient; defaults to the task's `patient_id`. */
+  patient_calendar_patient_id?: number | null;
+  /** Populated by the server after the linked schedule row exists. */
+  patient_calendar_schedule_id?: number | null;
   body_html?: string;
   attachment_hints?: string[];
   /** Client-only pending upload IDs; stripped server-side and merged into attachments. */

@@ -130,6 +130,9 @@ export type ListSupportTicketsResponse = JsonResponse<
 export type ListServiceRequestsResponse = JsonResponse<
   operations["list_service_requests_api_services_requests_get"]
 >;
+export type ClaimServiceRequestResponse = JsonResponse<
+  operations["claim_service_request_api_services_requests__request_id__claim_post"]
+>;
 export type ListWorkflowHandoversResponse = JsonResponse<
   operations["list_handover_notes_api_workflow_handovers_get"]
 >;
@@ -275,6 +278,10 @@ export type CreateTimelineEventResponse = JsonResponseCreated<
 export type CreateAlertResponse = JsonResponseCreated<operations["create_alert_api_alerts_post"]>;
 export type AcknowledgeAlertResponse = JsonResponse<
   operations["acknowledge_alert_api_alerts__alert_id__acknowledge_post"]
+>;
+export type ResolveAlertRequest = components["schemas"]["AlertResolve"];
+export type ResolveAlertResponse = JsonResponse<
+  operations["resolve_alert_api_alerts__alert_id__resolve_post"]
 >;
 export type ControlSmartDeviceResponse = JsonResponse<
   operations["control_smart_device_api_ha_devices__device_id__control_post"]

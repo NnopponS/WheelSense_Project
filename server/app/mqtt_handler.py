@@ -39,6 +39,7 @@ from app.models.vitals import VitalReading
 
 logger = logging.getLogger("wheelsense.mqtt")
 
+# Key: "{workspace_id}:{patient_id}" — one localization state per patient (mobile + wheelchair share it).
 _room_tracker: dict[str, dict] = {}
 _photo_buffers: dict[str, dict] = {}
 _fall_cooldown: dict[str, float] = {}
@@ -526,6 +527,58 @@ async def _maybe_create_fall_alert(
     return True
 
 
+def _room_tracker_key(ws_id: int, patient_id: int) -> str:
+    return f"{ws_id}:{patient_id}"
+
+
+async def _fetch_last_room_localization_event(session, patient_id: int) -> ActivityTimeline | None:
+    result = await session.execute(
+        select(ActivityTimeline)
+        .where(
+            ActivityTimeline.patient_id == patient_id,
+            ActivityTimeline.event_type.in_(("room_enter", "room_exit")),
+        )
+        .order_by(ActivityTimeline.timestamp.desc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
+async def _ensure_room_tracker_state(session, ws_id: int, patient_id: int) -> None:
+    key = _room_tracker_key(ws_id, patient_id)
+    if key in _room_tracker:
+        return
+
+    row = await _fetch_last_room_localization_event(session, patient_id)
+    if row is None:
+        _room_tracker[key] = {
+            "room_id": None,
+            "room_name": "",
+            "candidate_room_id": None,
+            "candidate_room_name": "",
+            "candidate_streak": 0,
+        }
+        return
+
+    if row.event_type == "room_enter":
+        _room_tracker[key] = {
+            "room_id": row.room_id,
+            "room_name": row.room_name or "",
+            "candidate_room_id": None,
+            "candidate_room_name": "",
+            "candidate_streak": 0,
+        }
+    else:
+        # Last logged event was an exit — localized "current room" is unknown until a new enter.
+        _room_tracker[key] = {
+            "room_id": None,
+            "room_name": "",
+            "candidate_room_id": None,
+            "candidate_room_name": "",
+            "candidate_streak": 0,
+        }
+
+
 async def _track_room_transition(
     session,
     ws_id: int,
@@ -534,12 +587,43 @@ async def _track_room_transition(
     prediction: dict,
     ts,
 ):
-    new_room_id = prediction.get("room_id")
-    new_room_name = prediction.get("room_name", "")
-    prev = _room_tracker.get(device_id)
+    """Persist room_enter/room_exit only after stable predictions (hysteresis).
 
-    if prev is None:
-        _room_tracker[device_id] = {"room_id": new_room_id, "room_name": new_room_name}
+    State is keyed by workspace + patient so mobile and wheelchair telemetry do not
+    duplicate the same room_enter. Cold start is seeded from the latest timeline row
+    so server restarts do not emit a duplicate enter for the same room.
+    """
+    _ = device_id  # retained for log context if needed later
+    new_room_id = prediction.get("room_id")
+    new_room_name = prediction.get("room_name", "") or ""
+
+    await _ensure_room_tracker_state(session, ws_id, patient_id)
+    key = _room_tracker_key(ws_id, patient_id)
+    state = _room_tracker[key]
+
+    n_req = max(1, int(settings.room_timeline_stability_samples))
+    committed_id = state["room_id"]
+    committed_name = state.get("room_name") or ""
+
+    # Already matches localized commitment — clear pending candidate noise.
+    if new_room_id == committed_id:
+        state["candidate_room_id"] = None
+        state["candidate_streak"] = 0
+        return
+
+    cand_id = state.get("candidate_room_id")
+    if new_room_id == cand_id:
+        state["candidate_streak"] = int(state.get("candidate_streak", 0)) + 1
+    else:
+        state["candidate_room_id"] = new_room_id
+        state["candidate_room_name"] = new_room_name
+        state["candidate_streak"] = 1
+
+    if state["candidate_streak"] < n_req:
+        return
+
+    # Confirmed transition to candidate room
+    if committed_id is None:
         session.add(
             ActivityTimeline(
                 workspace_id=ws_id,
@@ -548,22 +632,25 @@ async def _track_room_transition(
                 event_type="room_enter",
                 room_id=new_room_id,
                 room_name=new_room_name,
-                description=f"Entered {new_room_name}",
+                description=f"Entered {new_room_name}" if new_room_name else "Entered room",
                 source="auto",
             )
         )
-        return
-
-    if prev["room_id"] != new_room_id:
+        logger.info(
+            "Room enter (stable): patient=%s room_id=%s",
+            patient_id,
+            new_room_id,
+        )
+    else:
         session.add(
             ActivityTimeline(
                 workspace_id=ws_id,
                 patient_id=patient_id,
                 timestamp=ts,
                 event_type="room_exit",
-                room_id=prev["room_id"],
-                room_name=prev["room_name"],
-                description=f"Left {prev['room_name']}",
+                room_id=committed_id,
+                room_name=committed_name,
+                description=f"Left {committed_name}" if committed_name else "Left room",
                 source="auto",
             )
         )
@@ -575,17 +662,21 @@ async def _track_room_transition(
                 event_type="room_enter",
                 room_id=new_room_id,
                 room_name=new_room_name,
-                description=f"Entered {new_room_name}",
+                description=f"Entered {new_room_name}" if new_room_name else "Entered room",
                 source="auto",
             )
         )
-        _room_tracker[device_id] = {"room_id": new_room_id, "room_name": new_room_name}
         logger.info(
-            "Room transition: patient=%d %s -> %s",
+            "Room transition (stable): patient=%d %s -> %s",
             patient_id,
-            prev["room_name"],
+            committed_name,
             new_room_name,
         )
+
+    state["room_id"] = new_room_id
+    state["room_name"] = new_room_name
+    state["candidate_room_id"] = None
+    state["candidate_streak"] = 0
 
 
 def _normalize_node_status_payload(data: dict) -> dict:
@@ -824,3 +915,193 @@ async def _handle_camera_status(payload: bytes):
         )
         await _upsert_node_status_snapshot(session, device, _normalize_node_status_payload(data))
         await session.commit()
+
+
+# ---------------------------------------------------------------------------
+# Mobile app MQTT handlers
+# ---------------------------------------------------------------------------
+
+
+async def _handle_mobile_registration(payload: bytes):
+    """Handle mobile device auto-registration via MQTT.
+
+    Topic: WheelSense/mobile/{device_id}/register
+    Creates or updates a Device row with device_type='mobile_app'.
+    """
+    data = json.loads(payload)
+    device_id = data.get("device_id", "")
+    if not device_id:
+        logger.warning("Mobile registration missing device_id")
+        return
+
+    device_name = data.get("device_name", device_id)
+    platform = data.get("platform", "unknown")
+    os_version = data.get("os_version", "")
+    app_version = data.get("app_version", "")
+
+    async with AsyncSessionLocal() as session:
+        device = await get_registered_device_for_ingest(session, device_id)
+
+        if device:
+            # Update existing device
+            device.status = "online"
+            device.last_seen = utcnow()
+            cfg = dict(device.config or {})
+            cfg["platform"] = platform
+            cfg["os_version"] = os_version
+            cfg["app_version"] = app_version
+            cfg["device_name"] = device_name
+            device.config = cfg  # type: ignore[assignment]
+            device.firmware_version = app_version
+            logger.info(
+                "Mobile device updated: %s (%s %s) ws=%d",
+                device_id, platform, os_version, device.workspace_id,
+            )
+        else:
+            # Create new device in workspace 1 (default)
+            device = Device(
+                device_id=device_id,
+                device_type="mobile_app",
+                hardware_type="mobile_app",
+                status="online",
+                workspace_id=1,
+                last_seen=utcnow(),
+                firmware_version=app_version,
+                config={
+                    "platform": platform,
+                    "os_version": os_version,
+                    "app_version": app_version,
+                    "device_name": device_name,
+                },
+            )
+            session.add(device)
+            logger.info(
+                "Mobile device registered: %s (%s %s) ws=1",
+                device_id, platform, os_version,
+            )
+
+        await session.commit()
+
+
+async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
+    """Handle mobile app telemetry (RSSI + HR + walk steps).
+
+    Topic: WheelSense/mobile/{device_id}/telemetry
+    Processes RSSI for room prediction and stores vital readings.
+    """
+    data = json.loads(payload)
+    device_id = data.get("device_id", "unknown")
+    rssi_list = data.get("rssi", [])
+    hr_data = data.get("hr")
+    walk_step_data = data.get("walk_steps")
+    app_mode = data.get("app_mode", "walking")
+
+    ts_str = data.get("timestamp", "")
+    ts = None
+    if ts_str:
+        with suppress(Exception):
+            ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+    if ts is None:
+        ts = utcnow()
+
+    async with AsyncSessionLocal() as session:
+        device = await get_registered_device_for_ingest(session, device_id)
+        if not device:
+            logger.debug("Mobile telemetry from unregistered device: %s", device_id)
+            return
+
+        ws_id = device.workspace_id
+        device.status = "online"
+        device.last_seen = ts
+
+        patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
+
+        # Store RSSI readings for localization
+        if rssi_list:
+            for rssi_item in rssi_list:
+                session.add(RSSIReading(
+                    workspace_id=ws_id,
+                    device_id=device_id,
+                    node_id=rssi_item.get("node", ""),
+                    rssi=rssi_item.get("rssi", -100),
+                    mac_address=rssi_item.get("mac", ""),
+                    patient_id=patient_id,
+                    timestamp=ts,
+                ))
+
+            # Run room prediction
+            try:
+                prediction = await predict_room_with_strategy(session, device_id, rssi_list, ws_id)
+                if prediction and prediction.get("room_name"):
+                    # Publish room prediction back to mobile device
+                    room_topic = f"WheelSense/room/{device_id}"
+                    await client.publish(room_topic, json.dumps(prediction).encode())
+                    logger.debug("Room prediction for %s: %s", device_id, prediction.get("room_name"))
+            except Exception:
+                logger.exception("Room prediction failed for %s", device_id)
+
+        # Store heart rate vital
+        if hr_data and hr_data.get("bpm"):
+            session.add(VitalReading(
+                workspace_id=ws_id,
+                patient_id=patient_id,
+                device_id=device_id,
+                vital_type="heart_rate",
+                value=hr_data["bpm"],
+                unit="bpm",
+                metadata={"rr_intervals": hr_data.get("rr_intervals", [])},
+                timestamp=ts,
+            ))
+
+        await session.commit()
+
+
+async def _handle_mobile_walkstep(payload: bytes):
+    """Handle mobile walk step data.
+
+    Topic: WheelSense/mobile/{device_id}/walkstep
+    Stores step count as an activity timeline event.
+    """
+    data = json.loads(payload)
+    device_id = data.get("device_id", "")
+    steps = data.get("steps", 0)
+    distance_m = data.get("distance_m", 0)
+
+    if not device_id or steps <= 0:
+        return
+
+    ts_str = data.get("timestamp_iso", "")
+    ts = None
+    if ts_str:
+        with suppress(Exception):
+            ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+    if ts is None:
+        ts = utcnow()
+
+    async with AsyncSessionLocal() as session:
+        device = await get_registered_device_for_ingest(session, device_id)
+        if not device:
+            logger.debug("Walkstep from unregistered device: %s", device_id)
+            return
+
+        ws_id = device.workspace_id
+        patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
+
+        session.add(ActivityTimeline(
+            workspace_id=ws_id,
+            patient_id=patient_id,
+            source_device_id=device_id,
+            event_type="walk_steps",
+            details={
+                "steps": steps,
+                "distance_m": distance_m,
+                "session_start": data.get("session_start"),
+                "app_mode": "walking",
+            },
+            timestamp=ts,
+        ))
+        await session.commit()
+        logger.info(
+            "Walk steps recorded: %s — %d steps (%.1fm)",
+            device_id, steps, distance_m,
+        )

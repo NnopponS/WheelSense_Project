@@ -11,7 +11,6 @@ import {
   ListChecks,
   Mail,
   Trash2,
-  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
@@ -28,6 +27,8 @@ interface NotificationDrawerProps {
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   onClearAll: () => void;
+  /** Staff-only: explains shared clinical inbox / impersonation context */
+  inboxContextHint?: string;
 }
 
 const TYPE_LABEL_KEYS: Record<NotificationType, TranslationKey> = {
@@ -77,6 +78,7 @@ export function NotificationDrawer({
   onMarkAsRead,
   onMarkAllAsRead,
   onClearAll,
+  inboxContextHint,
 }: NotificationDrawerProps) {
   const { t, locale } = useTranslation();
   const router = useRouter();
@@ -126,16 +128,21 @@ export function NotificationDrawer({
       <SheetContent className="w-full sm:max-w-md">
         <SheetHeader className="space-y-4">
           {/* Reserve space for SheetContent’s default absolute close control (top-right). */}
-          <div className="flex items-center justify-between pr-12">
-            <SheetTitle className="flex items-center gap-2">
-              {t("shell.notifications")}
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="text-xs">
-                  {unreadCount}
-                </Badge>
-              )}
-            </SheetTitle>
-            <div className="flex gap-1">
+          <div className="flex items-start justify-between gap-2 pr-12">
+            <div className="min-w-0 flex-1 space-y-1">
+              <SheetTitle className="flex flex-wrap items-center gap-2">
+                {t("shell.notifications")}
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="text-xs">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </SheetTitle>
+              {inboxContextHint ? (
+                <p className="text-xs leading-snug text-muted-foreground">{inboxContextHint}</p>
+              ) : null}
+            </div>
+            <div className="flex shrink-0 gap-1">
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"

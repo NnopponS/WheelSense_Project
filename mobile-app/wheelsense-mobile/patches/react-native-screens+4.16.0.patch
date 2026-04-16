@@ -1,0 +1,14 @@
+diff --git a/android/build.gradle b/android/build.gradle
+index 114be81..0fb53b6 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -137,7 +137,8 @@ android {
+         }
+         externalNativeBuild {
+             cmake {
+-                arguments "-DANDROID_STL=c++_shared",
++                arguments "-DCMAKE_OBJECT_PATH_MAX=1024",
++                        "-DANDROID_STL=c++_shared",
+                         "-DRNS_NEW_ARCH_ENABLED=${IS_NEW_ARCHITECTURE_ENABLED}",
+                         "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+             }

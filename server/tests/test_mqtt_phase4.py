@@ -17,6 +17,7 @@ from sqlalchemy import select
 from app.models.core import Workspace, Device
 from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.vitals import VitalReading
+from app.config import settings
 from app.models.activity import ActivityTimeline, Alert
 from tests.conftest import _get_session_factory
 
@@ -180,9 +181,11 @@ async def test_polar_hr_no_assignment_skips(mock_predict, ws_with_patient):
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 @patch("app.mqtt_handler.predict_room_with_strategy")
-async def test_room_transition_creates_timeline_events(mock_predict, ws_with_patient):
+async def test_room_transition_creates_timeline_events(mock_predict, ws_with_patient, monkeypatch):
     """When room prediction changes, create room_exit + room_enter events."""
     from app.mqtt_handler import _handle_telemetry, _room_tracker
+
+    monkeypatch.setattr(settings, "room_timeline_stability_samples", 1)
 
     # Clear tracker state
     _room_tracker.clear()
@@ -226,9 +229,11 @@ async def test_room_transition_creates_timeline_events(mock_predict, ws_with_pat
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 @patch("app.mqtt_handler.predict_room_with_strategy")
-async def test_room_no_transition_no_duplicate_events(mock_predict, ws_with_patient):
+async def test_room_no_transition_no_duplicate_events(mock_predict, ws_with_patient, monkeypatch):
     """Same room prediction twice should NOT create duplicate events."""
     from app.mqtt_handler import _handle_telemetry, _room_tracker
+
+    monkeypatch.setattr(settings, "room_timeline_stability_samples", 1)
 
     _room_tracker.clear()
     mock_client = AsyncMock()
@@ -253,6 +258,43 @@ async def test_room_no_transition_no_duplicate_events(mock_predict, ws_with_pati
         # Only ONE room_enter for Room A, no duplicates
         enter_events = [e for e in events if e.event_type == "room_enter"]
         assert len(enter_events) == 1
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.mqtt_handler.predict_room_with_strategy")
+async def test_room_timeline_stability_requires_consecutive_agreement(mock_predict, ws_with_patient, monkeypatch):
+    """With stability N, need N identical predictions before the first room_enter."""
+    from app.mqtt_handler import _handle_telemetry, _room_tracker
+
+    monkeypatch.setattr(settings, "room_timeline_stability_samples", 3)
+
+    _room_tracker.clear()
+    mock_client = AsyncMock()
+
+    mock_predict.return_value = {
+        "room_id": 1, "room_name": "Room A", "confidence": 0.9, "model_type": "knn"
+    }
+    payload = {
+        "device_id": "M5-001",
+        "imu": {"ax": 0, "ay": 0, "az": 1.0, "gx": 0, "gy": 0, "gz": 0},
+        "motion": {},
+        "battery": {},
+        "rssi": [{"node": "CAM_1", "rssi": -60}],
+    }
+
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+
+    async with _SessionFactory() as session:
+        events = (await session.execute(select(ActivityTimeline))).scalars().all()
+        assert len([e for e in events if e.event_type == "room_enter"]) == 0
+
+    await _handle_telemetry(json.dumps(payload).encode(), mock_client)
+
+    async with _SessionFactory() as session:
+        events = (await session.execute(select(ActivityTimeline))).scalars().all()
+        assert len([e for e in events if e.event_type == "room_enter"]) == 1
 
 
 # ── 3. Fall Detection ────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@ import { PolarHealthScreen } from '../screens/PolarHealthScreen';
 export type RootStackParamList = {
   Setup: undefined;
   Home: undefined;
-  WebView: { path?: string };
+  WebView: { path?: string } | undefined;
   Devices: undefined;
   Settings: undefined;
   WalkSteps: undefined;
@@ -34,10 +34,8 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
-  const isMQTTConnected = useAppStore((s) => s.isMQTTConnected);
-  const isDeviceRegistered = useAppStore((s) => s.isDeviceRegistered);
-
-  const isReady = isMQTTConnected && isDeviceRegistered;
+  // Always ready - bypass login entirely as requested
+  const isReady = true;
 
   return (
     <NavigationContainer>
@@ -56,60 +54,46 @@ export const AppNavigator: React.FC = () => {
           },
         }}
       >
-        {!isReady ? (
-          // Setup Stack
-          <>
-            <Stack.Screen
-              name="Setup"
-              component={SetupScreen}
-              options={{ headerShown: false }}
-            />
-          </>
-        ) : (
-          // Main Stack
-          <>
-            <Stack.Screen
-              name="Home"
-              component={HomeScreen}
-              options={{
-                headerShown: false,
-              }}
-            />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{
+            headerShown: false,
+          }}
+        />
 
-            <Stack.Screen
-              name="WebView"
-              component={WebViewScreen}
-              options={{
-                title: 'WheelSense Web',
-                headerShown: false,
-              }}
-            />
+        <Stack.Screen
+          name="WebView"
+          component={WebViewScreen}
+          options={{
+            title: 'WheelSense Web',
+            headerShown: false,
+          }}
+        />
 
-            <Stack.Screen
-              name="Devices"
-              component={DeviceScreen}
-              options={{ title: 'Devices' }}
-            />
+        <Stack.Screen
+          name="Devices"
+          component={DeviceScreen}
+          options={{ title: 'Devices' }}
+        />
 
-            <Stack.Screen
-              name="Settings"
-              component={SettingsScreen}
-              options={{ title: 'Settings' }}
-            />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ title: 'Settings' }}
+        />
 
-            <Stack.Screen
-              name="WalkSteps"
-              component={WalkStepsScreen}
-              options={{ title: 'Walk Steps' }}
-            />
+        <Stack.Screen
+          name="WalkSteps"
+          component={WalkStepsScreen}
+          options={{ title: 'Walk Steps' }}
+        />
 
-            <Stack.Screen
-              name="PolarHealth"
-              component={PolarHealthScreen}
-              options={{ title: 'Polar Health' }}
-            />
-          </>
-        )}
+        <Stack.Screen
+          name="PolarHealth"
+          component={PolarHealthScreen}
+          options={{ title: 'Polar Health' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

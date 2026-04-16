@@ -105,6 +105,7 @@ const defaultSettings: AppSettings = {
   mqttPort: 1883,
   scanInterval: 5000,
   telemetryInterval: 3000,
+  language: 'en',
 };
 
 // ==================== STORE DEFINITION ====================

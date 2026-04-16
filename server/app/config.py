@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     mqtt_auto_register_ble_nodes: bool = True
     # When true, camera /registration JSON with ble_mac matching a BLE_* stub renames that row to the camera device_id (CAM_*).
     mqtt_merge_ble_camera_by_mac: bool = True
+    # Consecutive identical room predictions required before logging room_enter/room_exit (reduces RSSI/KNN flicker).
+    room_timeline_stability_samples: int = 3
 
     # App
     app_name: str = "WheelSense Server"

@@ -1,56 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ConciergeBell, Sparkles, Truck, Utensils } from "lucide-react";
+import { ConciergeBell, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 
-const SERVICE_TYPES = [
-  {
-    value: "food" as const,
-    icon: Utensils,
-    titleKey: "patient.services.foodTitle" as const,
-    descKey: "patient.services.foodDesc" as const,
-    bodyKey: "patient.services.foodBody" as const,
-  },
-  {
-    value: "transport" as const,
-    icon: Truck,
-    titleKey: "patient.services.transportTitle" as const,
-    descKey: "patient.services.transportDesc" as const,
-    bodyKey: "patient.services.transportBody" as const,
-  },
-  {
-    value: "housekeeping" as const,
-    icon: Sparkles,
-    titleKey: "patient.services.housekeepingTitle" as const,
-    descKey: "patient.services.housekeepingDesc" as const,
-    bodyKey: "patient.services.housekeepingBody" as const,
-  },
-];
-
-type ServiceRequestType = (typeof SERVICE_TYPES)[number]["value"];
 type BadgeVariant = "default" | "secondary" | "outline" | "success" | "warning" | "destructive";
-
-function serviceTypeLabelKey(type: ServiceRequestType) {
-  switch (type) {
-    case "food":
-      return "patient.services.foodTitle" as const;
-    case "transport":
-      return "patient.services.transportTitle" as const;
-    case "housekeeping":
-      return "patient.services.housekeepingTitle" as const;
-  }
-}
 
 function requestStatusTone(status: string): BadgeVariant {
   switch (status) {
@@ -67,43 +32,80 @@ function requestStatusTone(status: string): BadgeVariant {
   }
 }
 
-export default function PatientServicesPage() {
+function serviceTypeLabelKey(type: string): TranslationKey {
+  switch (type) {
+    case "food":
+      return "patient.services.foodTitle";
+    case "transport":
+      return "patient.services.transportTitle";
+    case "housekeeping":
+      return "patient.services.housekeepingTitle";
+    case "support":
+      return "patient.services.typeSupport";
+    default:
+      return "patient.services.typeOther";
+  }
+}
+
+function PatientServicesContent() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const [serviceType, setServiceType] = useState<ServiceRequestType>("food");
+  const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
 
-  const patientId = user?.patient_id ?? undefined;
-  const hasPatientProfile = typeof patientId === "number";
+  const previewRaw = searchParams.get("previewAs");
+  const previewNum = previewRaw != null && previewRaw !== "" ? Number(previewRaw) : NaN;
+  const previewPatientId =
+    Number.isFinite(previewNum) && previewNum > 0 ? Math.floor(previewNum) : null;
+  const isAdminPreview = user?.role === "admin" && previewPatientId != null;
+  const adminWithoutPatientPreview = user?.role === "admin" && previewPatientId == null;
+
+  const effectivePatientId = useMemo(() => {
+    if (isAdminPreview) return previewPatientId;
+    return user?.patient_id ?? null;
+  }, [isAdminPreview, previewPatientId, user?.patient_id]);
+
+  const canListRequests =
+    effectivePatientId != null && (user?.role === "patient" || isAdminPreview);
+  const isPatientAccount = user?.role === "patient";
+  const hasPatientProfileForSubmit =
+    isPatientAccount && typeof user.patient_id === "number";
 
   const requestsQuery = useQuery({
-    queryKey: ["patient", "services", patientId],
-    enabled: hasPatientProfile,
-    queryFn: () => api.listServiceRequests({ limit: 100 }),
+    queryKey: ["patient", "services", user?.role, effectivePatientId],
+    enabled: canListRequests,
+    queryFn: () => api.listServiceRequests({ limit: 200 }),
     refetchInterval: 20_000,
   });
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      if (!hasPatientProfile) {
+      if (!hasPatientProfileForSubmit) {
         throw new Error(t("patient.services.noProfileLinked"));
       }
       await api.createServiceRequest({
-        service_type: serviceType,
+        service_type: "support",
+        title: title.trim(),
         note: note.trim(),
       });
     },
     onSuccess: async () => {
+      setTitle("");
       setNote("");
       await queryClient.invalidateQueries({ queryKey: ["patient", "services"] });
     },
   });
 
-  const requests = useMemo(
-    () => [...(requestsQuery.data ?? [])].sort((left, right) => right.created_at.localeCompare(left.created_at)),
-    [requestsQuery.data],
-  );
+  const requests = useMemo(() => {
+    const raw = [...(requestsQuery.data ?? [])];
+    const scoped =
+      isAdminPreview && effectivePatientId != null
+        ? raw.filter((r) => r.patient_id === effectivePatientId)
+        : raw;
+    return scoped.sort((left, right) => right.created_at.localeCompare(left.created_at));
+  }, [requestsQuery.data, isAdminPreview, effectivePatientId]);
 
   const submitError =
     submitMutation.error instanceof ApiError
@@ -112,7 +114,8 @@ export default function PatientServicesPage() {
         ? submitMutation.error.message
         : null;
 
-  const selectedService = SERVICE_TYPES.find((item) => item.value === serviceType) ?? SERVICE_TYPES[0];
+  const canSubmit =
+    hasPatientProfileForSubmit && title.trim().length > 0 && note.trim().length > 0;
 
   return (
     <div className="space-y-6 pb-6 animate-fade-in">
@@ -124,83 +127,47 @@ export default function PatientServicesPage() {
           </div>
           <div>
             <h2 className="text-2xl font-semibold text-foreground md:text-3xl">{t("patient.services.title")}</h2>
-            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t("patient.services.subtitle")}</p>
+            <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{t("patient.services.subtitleFreeform")}</p>
           </div>
         </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SERVICE_TYPES.map((service) => {
-          const Icon = service.icon;
-          return (
-            <Card key={service.value} className="border-border/70">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">{t(service.titleKey)}</CardTitle>
-                    <CardDescription>{t(service.descKey)}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">{t(service.bodyKey)}</p>
-                <Button
-                  variant={serviceType === service.value ? "default" : "outline"}
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setServiceType(service.value)}
-                >
-                  {serviceType === service.value ? t("patient.services.selectedCta") : t("patient.services.requestCta")}
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
         <Card className="border-border/70">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-base">{t("patient.services.formTitle")}</CardTitle>
-            <CardDescription>{t("patient.services.formDesc")}</CardDescription>
+            <CardTitle className="text-base">{t("patient.services.freeformFormTitle")}</CardTitle>
+            <CardDescription>{t("patient.services.freeformFormDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>{t("patient.services.serviceTypeLabel")}</Label>
-              <Select value={serviceType} onValueChange={(value) => setServiceType(value as ServiceRequestType)} disabled={!hasPatientProfile}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("patient.services.serviceTypePlaceholder")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {SERVICE_TYPES.map((service) => (
-                    <SelectItem key={service.value} value={service.value}>
-                      {t(service.titleKey)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isAdminPreview ? (
+              <p className="text-sm text-muted-foreground">{t("patient.services.adminPreviewSubmitHint")}</p>
+            ) : null}
 
             <div className="space-y-2">
-              <Label>{t("patient.services.noteLabel")}</Label>
-              <Textarea
-                rows={4}
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-                disabled={!hasPatientProfile}
-                placeholder={t("patient.services.notePlaceholder")}
+              <Label htmlFor="support-title">{t("patient.services.requestTitleLabel")}</Label>
+              <Input
+                id="support-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={!hasPatientProfileForSubmit}
+                placeholder={t("patient.services.requestTitlePlaceholder")}
+                maxLength={200}
               />
             </div>
 
-            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">{t(selectedService.titleKey)}</p>
-              <p className="mt-1">{t("patient.services.formHint")}</p>
+            <div className="space-y-2">
+              <Label htmlFor="support-note">{t("patient.services.requestDetailLabel")}</Label>
+              <Textarea
+                id="support-note"
+                rows={5}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                disabled={!hasPatientProfileForSubmit}
+                placeholder={t("patient.services.requestDetailPlaceholder")}
+              />
             </div>
 
-            {!hasPatientProfile ? (
+            {!hasPatientProfileForSubmit ? (
               <p className="text-sm text-muted-foreground">{t("patient.services.noProfileLinked")}</p>
             ) : null}
 
@@ -209,7 +176,7 @@ export default function PatientServicesPage() {
             <Button
               type="button"
               onClick={() => submitMutation.mutate()}
-              disabled={submitMutation.isPending || !hasPatientProfile || !note.trim()}
+              disabled={submitMutation.isPending || !canSubmit}
             >
               {submitMutation.isPending ? t("patient.services.submitting") : t("patient.services.submitRequest")}
             </Button>
@@ -222,7 +189,21 @@ export default function PatientServicesPage() {
             <CardDescription>{t("patient.services.historyDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
-            {requestsQuery.isLoading ? (
+            {!canListRequests ? (
+              <div className="rounded-xl border border-dashed border-border/70 px-3 py-10 text-center">
+                <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/50" />
+                <p className="mt-3 text-sm font-medium text-muted-foreground">
+                  {adminWithoutPatientPreview
+                    ? t("patient.services.adminPreviewRequiredTitle")
+                    : t("patient.page.notLinkedTitle")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {adminWithoutPatientPreview
+                    ? t("patient.services.adminPreviewRequiredBody")
+                    : t("patient.page.notLinkedBody")}
+                </p>
+              </div>
+            ) : requestsQuery.isLoading ? (
               <div className="flex min-h-56 items-center justify-center">
                 <div className="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               </div>
@@ -240,7 +221,11 @@ export default function PatientServicesPage() {
                             {t(serviceTypeLabelKey(request.service_type))}
                           </span>
                         </div>
+                        {request.title ? <p className="text-sm font-medium text-foreground">{request.title}</p> : null}
                         <p className="text-sm text-foreground whitespace-pre-wrap">{request.note}</p>
+                        {request.claimed_by_user_id != null ? (
+                          <p className="text-xs text-muted-foreground">{t("patient.services.claimedHint")}</p>
+                        ) : null}
                         {request.resolution_note ? (
                           <p className="text-xs text-muted-foreground">
                             {t("patient.services.resolutionLabel")}: {request.resolution_note}
@@ -266,5 +251,19 @@ export default function PatientServicesPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function PatientServicesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center pb-6">
+          <div className="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      <PatientServicesContent />
+    </Suspense>
   );
 }

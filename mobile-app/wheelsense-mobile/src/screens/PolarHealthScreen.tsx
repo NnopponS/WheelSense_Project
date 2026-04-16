@@ -17,10 +17,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useTranslation } from 'react-i18next';
 import { usePolarStore, useConnection } from '../store/useAppStore';
 import { HeartRateData, PolarDevice } from '../types';
 
 export const PolarHealthScreen: React.FC = () => {
+  const { t } = useTranslation();
   const polar = usePolarStore();
   const { isMQTTConnected } = useConnection();
 
@@ -53,18 +55,18 @@ export const PolarHealthScreen: React.FC = () => {
     // Note: PolarService should be imported and used here
     // This is a placeholder for the actual Polar BLE scan
     Alert.alert(
-      'Polar Scan',
-      'Scanning for nearby Polar devices...\n\nMake sure your Polar device (H10, OH1, Verity Sense) is turned on and in pairing mode.',
-      [{ text: 'OK' }]
+      t('common.polarScan'),
+      t('device.polarScanDescription'),
+      [{ text: t('common.ok') }]
     );
     setTimeout(() => setIsScanning(false), 3000);
   };
 
   const handleDisconnectPolar = () => {
-    Alert.alert('Disconnect', 'Disconnect from Polar device?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('common.disconnect'), t('vitals.disconnectConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Disconnect',
+        text: t('common.disconnect'),
         style: 'destructive',
         onPress: () => {
           polar.setPolarDevice(null);
@@ -76,11 +78,11 @@ export const PolarHealthScreen: React.FC = () => {
   };
 
   const getHRZone = (bpm: number): { label: string; color: string } => {
-    if (bpm < 60) return { label: 'Resting', color: '#42A5F5' };
-    if (bpm < 100) return { label: 'Normal', color: '#66BB6A' };
-    if (bpm < 140) return { label: 'Elevated', color: '#FFA726' };
-    if (bpm < 170) return { label: 'High', color: '#EF5350' };
-    return { label: 'Max', color: '#E53935' };
+    if (bpm < 60) return { label: t('vitals.hrZoneResting'), color: '#42A5F5' };
+    if (bpm < 100) return { label: t('vitals.hrZoneNormal'), color: '#66BB6A' };
+    if (bpm < 140) return { label: t('vitals.hrZoneElevated'), color: '#FFA726' };
+    if (bpm < 170) return { label: t('vitals.hrZoneHigh'), color: '#EF5350' };
+    return { label: t('vitals.hrZoneMax'), color: '#E53935' };
   };
 
   const currentBPM = polar.lastHR?.bpm ?? 0;
@@ -108,8 +110,8 @@ export const PolarHealthScreen: React.FC = () => {
             <View style={[styles.statusDot, polar.isPolarConnected ? styles.dotGreen : styles.dotRed]} />
             <Text style={styles.statusText}>
               {polar.isPolarConnected
-                ? `Connected: ${polar.polarDevice?.name || 'Polar'}`
-                : 'Not Connected'}
+                ? t('vitals.statusConnected', { name: polar.polarDevice?.name || 'Polar' })
+                : t('vitals.statusNotConnected')}
             </Text>
           </View>
           {polar.polarDevice?.firmwareVersion && (
@@ -122,7 +124,7 @@ export const PolarHealthScreen: React.FC = () => {
           <Animated.View style={[styles.hrCircle, { transform: [{ scale: beatScale }] }]}>
             <Text style={styles.heartEmoji}>❤️</Text>
             <Text style={[styles.hrValue, { color: zone.color }]}>{currentBPM || '--'}</Text>
-            <Text style={styles.hrUnit}>BPM</Text>
+            <Text style={styles.hrUnit}>{t('vitals.hrBpm')}</Text>
           </Animated.View>
           {currentBPM > 0 && (
             <View style={[styles.zoneBadge, { backgroundColor: zone.color + '22', borderColor: zone.color }]}>
@@ -136,22 +138,22 @@ export const PolarHealthScreen: React.FC = () => {
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{avgBPM}</Text>
-              <Text style={styles.statLabel}>Avg</Text>
+              <Text style={styles.statLabel}>{t('vitals.avg')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={[styles.statValue, styles.statMin]}>{minBPM}</Text>
-              <Text style={styles.statLabel}>Min</Text>
+              <Text style={styles.statLabel}>{t('vitals.min')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={[styles.statValue, styles.statMax]}>{maxBPM}</Text>
-              <Text style={styles.statLabel}>Max</Text>
+              <Text style={styles.statLabel}>{t('vitals.max')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statValue}>{hrHistory.length}</Text>
-              <Text style={styles.statLabel}>Readings</Text>
+              <Text style={styles.statLabel}>{t('vitals.readings')}</Text>
             </View>
           </View>
         )}
@@ -159,7 +161,7 @@ export const PolarHealthScreen: React.FC = () => {
         {/* RR Intervals */}
         {polar.lastHR?.rr_intervals && polar.lastHR.rr_intervals.length > 0 && (
           <View style={styles.rrCard}>
-            <Text style={styles.cardTitle}>RR Intervals (ms)</Text>
+            <Text style={styles.cardTitle}>{t('vitals.rrIntervals')}</Text>
             <Text style={styles.rrValues}>
               {polar.lastHR.rr_intervals.map((rr) => rr.toFixed(0)).join(', ')}
             </Text>
@@ -169,7 +171,7 @@ export const PolarHealthScreen: React.FC = () => {
         {/* PPG Data */}
         {polar.lastPPG && (
           <View style={styles.ppgCard}>
-            <Text style={styles.cardTitle}>PPG Sensor Data</Text>
+            <Text style={styles.cardTitle}>{t('vitals.ppgData')}</Text>
             <View style={styles.ppgRow}>
               <View style={styles.ppgItem}>
                 <Text style={styles.ppgValue}>{polar.lastPPG.ppg0}</Text>
@@ -185,7 +187,7 @@ export const PolarHealthScreen: React.FC = () => {
               </View>
               <View style={styles.ppgItem}>
                 <Text style={styles.ppgValue}>{polar.lastPPG.ambient}</Text>
-                <Text style={styles.ppgLabel}>Ambient</Text>
+                <Text style={styles.ppgLabel}>{t('vitals.ambient')}</Text>
               </View>
             </View>
           </View>
@@ -201,7 +203,7 @@ export const PolarHealthScreen: React.FC = () => {
               activeOpacity={0.8}
             >
               <Text style={styles.primaryBtnText}>
-                {isScanning ? '🔍 Scanning...' : '🔍 Scan for Polar'}
+                {isScanning ? `🔍 ${t('vitals.scanningTarget')}` : `🔍 ${t('vitals.scanTarget')}`}
               </Text>
             </TouchableOpacity>
           ) : (
@@ -210,7 +212,7 @@ export const PolarHealthScreen: React.FC = () => {
               onPress={handleDisconnectPolar}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryBtnText}>⏏ Disconnect Polar</Text>
+              <Text style={styles.primaryBtnText}>⏏ {t('vitals.disconnectTarget')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -218,12 +220,12 @@ export const PolarHealthScreen: React.FC = () => {
         {/* Recent HR History */}
         {hrHistory.length > 0 && (
           <View style={styles.historyCard}>
-            <Text style={styles.cardTitle}>Recent Heart Rate</Text>
+            <Text style={styles.cardTitle}>{t('vitals.recentHr')}</Text>
             {hrHistory.slice(0, 10).map((entry, idx) => (
               <View key={idx} style={styles.historyRow}>
                 <Text style={styles.historyTime}>{entry.time}</Text>
                 <Text style={[styles.historyBpm, { color: getHRZone(entry.bpm).color }]}>
-                  {entry.bpm} BPM
+                  {entry.bpm} {t('vitals.hrBpm')}
                 </Text>
               </View>
             ))}
@@ -233,7 +235,7 @@ export const PolarHealthScreen: React.FC = () => {
         {/* MQTT Status */}
         <View style={styles.mqttInfo}>
           <Text style={styles.mqttText}>
-            MQTT: {isMQTTConnected ? '✅ HR data synced to server' : '❌ Offline — data not synced'}
+            MQTT: {isMQTTConnected ? t('vitals.mqttSync') : t('vitals.mqttNoSync')}
           </Text>
         </View>
       </ScrollView>

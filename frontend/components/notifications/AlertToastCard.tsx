@@ -20,7 +20,7 @@ export interface AlertToastCardProps {
   patientContext: { nameLine: string; roomLine: string } | null;
   /** Observer + sound-tier: stronger shadow / border for floor-staff “interrupt” pattern (iter-6 §3.B). */
   visualEmphasis?: AlertToastVisualEmphasis;
-  /** Server allows POST /alerts/{id}/acknowledge only for admin + head_nurse today. */
+  /** True when UI may call POST /alerts/{id}/acknowledge; mirrors clinical staff allowed by backend ROLE_ALERT_ACK. */
   canAcknowledge: boolean;
   onNavigateInbox: () => void;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -67,6 +67,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import type { ListPatientsResponse } from "@/lib/api/task-scope-types";
+import { getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { RichReportEditor } from "@/components/tasks/RichReportEditor";
 import { TaskReportAttachmentsBar } from "@/components/tasks/TaskReportAttachmentsBar";
 
@@ -215,6 +219,14 @@ export function TaskDetailModal({
     new Set()
   );
 
+  const patientsQuery = useQuery({
+    queryKey: ["tasks", "detail-modal", "patients"],
+    queryFn: () => api.get<ListPatientsResponse>("/patients"),
+    staleTime: getQueryStaleTimeMs("/patients"),
+    enabled: isOpen && canManage,
+  });
+  const workspacePatients = patientsQuery.data ?? [];
+
   const reportSchema = useMemo(() => {
     const mode = (task.report_template?.mode || "structured").toLowerCase();
     const notesField = { notes: z.string().optional() };
@@ -297,9 +309,10 @@ export function TaskDetailModal({
   const handleAddSubtask = () => {
     if (!newSubtaskTitle.trim() || !canManage) return;
     const newSubtask: SubtaskItem = {
-      id: `temp-${Date.now()}`,
+      id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `st-${Date.now()}`,
       title: newSubtaskTitle.trim(),
       status: "pending",
+      report_spec: {},
     };
     const updatedSubtasks = [...task.subtasks, newSubtask];
     if (onUpdateTask) {
@@ -336,6 +349,15 @@ export function TaskDetailModal({
   const totalSubtasks = task.subtasks.length;
   const subtaskProgress =
     totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
+
+  const patchSubtask = useCallback(
+    (subtaskId: string, updater: (row: SubtaskItem) => SubtaskItem) => {
+      if (!onUpdateTask || !canManage) return;
+      const next = task.subtasks.map((s) => (s.id === subtaskId ? updater({ ...s }) : s));
+      onUpdateTask(task.id, { subtasks: next });
+    },
+    [canManage, onUpdateTask, task.id, task.subtasks],
+  );
 
   const handleReportSubmit = reportForm.handleSubmit(async (data) => {
     if (!onSubmitReport) return;
@@ -741,6 +763,75 @@ export function TaskDetailModal({
                                   onPendingItemsChange={() => {}}
                                   serverAttachments={subtask.report_spec?.attachments}
                                 />
+                              </div>
+                            ) : null}
+                            {canManage ? (
+                              <div className="mt-3 space-y-2 rounded-lg border border-border/60 bg-muted/20 p-3">
+                                <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+                                  <Checkbox
+                                    checked={Boolean(subtask.report_spec?.patient_calendar_sync)}
+                                    onCheckedChange={(checked) =>
+                                      patchSubtask(subtask.id, (row) => ({
+                                        ...row,
+                                        report_spec: {
+                                          ...row.report_spec,
+                                          patient_calendar_sync: checked === true,
+                                          patient_calendar_patient_id:
+                                            checked === true
+                                              ? (row.report_spec?.patient_calendar_patient_id ??
+                                                task.patient_id ??
+                                                undefined)
+                                              : undefined,
+                                        },
+                                      }))
+                                    }
+                                  />
+                                  <span>Add to patient calendar</span>
+                                </label>
+                                {subtask.report_spec?.patient_calendar_sync ? (
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Patient</Label>
+                                    <Select
+                                      value={(() => {
+                                        const pid =
+                                          subtask.report_spec?.patient_calendar_patient_id ??
+                                          task.patient_id;
+                                        return pid != null ? String(pid) : "__pick__";
+                                      })()}
+                                      onValueChange={(v) =>
+                                        patchSubtask(subtask.id, (row) => ({
+                                          ...row,
+                                          report_spec: {
+                                            ...row.report_spec,
+                                            patient_calendar_sync: true,
+                                            patient_calendar_patient_id:
+                                              v === "__pick__" ? undefined : Number(v),
+                                          },
+                                        }))
+                                      }
+                                    >
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue placeholder="Select patient" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="__pick__" disabled>
+                                          Select patient…
+                                        </SelectItem>
+                                        {workspacePatients.map((p) => (
+                                          <SelectItem key={p.id} value={String(p.id)}>
+                                            {p.first_name} {p.last_name} (#{p.id})
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    {subtask.report_spec?.patient_calendar_schedule_id != null ? (
+                                      <p className="text-[11px] text-muted-foreground">
+                                        Linked schedule #
+                                        {subtask.report_spec.patient_calendar_schedule_id}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                ) : null}
                               </div>
                             ) : null}
                           </div>

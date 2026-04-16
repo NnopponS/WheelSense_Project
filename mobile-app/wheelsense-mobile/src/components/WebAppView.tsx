@@ -51,8 +51,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
   const bleScanner = useBLEScanner();
   const polar = usePolar();
   
-  const baseUrl = serverUrl || store.settings.serverUrl;
-  const authToken = store.authToken;
+  const baseUrl = serverUrl || 'http://wheelsense.local';
 
   // ==================== INJECTED JAVASCRIPT ====================
 
@@ -61,9 +60,6 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
       // Mark as mobile app
       window.__WHEELSENSE_MOBILE__ = true;
       window.__WHEELSENSE_MOBILE_VERSION__ = '1.0.0';
-      
-      // Inject auth token for seamless login
-      ${authToken ? `window.__WHEELSENSE_AUTH_TOKEN__ = '${authToken}';` : ''}
       
       // Mobile app bridge
       window.WheelSenseMobile = {
@@ -108,7 +104,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
           return {
             platform: '${store.appMode}',
             version: '1.0.0',
-            deviceId: '${store.user?.id || 'unknown'}'
+            deviceId: '${store.deviceId || 'unknown'}'
           };
         },
         

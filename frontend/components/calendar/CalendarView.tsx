@@ -36,6 +36,10 @@ export type CalendarViewMode = "month" | "week" | "day";
 
 export interface CalendarEvent {
   id: number;
+  /** When set, DB `care_schedules.id` for this row (recurrence instances use negative `id`). */
+  sourceScheduleId?: number;
+  /** Distinct key for list rendering when `id` repeats across recurrence instances. */
+  instanceKey?: string;
   title: string;
   startTime: Date;
   endTime: Date;
@@ -223,7 +227,7 @@ export function CalendarView({
                 <div className="mt-1 space-y-1">
                   {dayEvents.slice(0, 3).map((event) => (
                     <div
-                      key={event.id}
+                      key={event.instanceKey ?? `${event.sourceScheduleId ?? event.id}-${event.startTime.getTime()}`}
                       className={cn(
                         "truncate rounded px-1.5 py-0.5 text-xs font-medium",
                         statusColors[event.status || "scheduled"],
@@ -321,7 +325,7 @@ export function CalendarView({
                   >
                     {hourEvents.map((event) => (
                       <div
-                        key={event.id}
+                        key={event.instanceKey ?? `${event.sourceScheduleId ?? event.id}-${event.startTime.getTime()}`}
                         className={cn(
                           "mb-1 truncate rounded px-1 py-0.5 text-xs",
                           statusColors[event.status || "scheduled"],
@@ -390,7 +394,7 @@ export function CalendarView({
                 <div className="flex-1 p-2">
                   {hourEvents.map((event) => (
                     <Card
-                      key={event.id}
+                      key={event.instanceKey ?? `${event.sourceScheduleId ?? event.id}-${event.startTime.getTime()}`}
                       className={cn(
                         "mb-2 cursor-pointer transition-opacity hover:opacity-80",
                         event.color || statusColors[event.status || "scheduled"]

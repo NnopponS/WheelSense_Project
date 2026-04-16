@@ -5,6 +5,6 @@
 
 export { API, useAPI } from './APIService';
 export { BLEScanner, useBLEScanner } from './BLEScanner';
-export { MQTT, useMQTT } from './MQTTService';
+export { mqttService } from './MQTTService';
 export { Polar, usePolar } from './PolarService';
 export { NotificationManager, useNotifications } from './NotificationService';

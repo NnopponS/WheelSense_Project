@@ -5,20 +5,33 @@
 
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { Alert, WorkflowTask } from '../types';
+import { isExpoGo } from '../utils/runtimeEnvironment';
+
+function getEasProjectId(): string | undefined {
+  const id = Constants.expoConfig?.extra?.eas?.projectId;
+  return typeof id === 'string' ? id : undefined;
+}
 
 // ==================== NOTIFICATION CONFIG ====================
 
-// Configure how notifications appear when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+function ensureForegroundNotificationHandler(): void {
+  if (isExpoGo()) {
+    return;
+  }
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 // ==================== NOTIFICATION SERVICE ====================
 
@@ -33,6 +46,15 @@ class NotificationService {
     if (this.isInitialized) {
       return true;
     }
+
+    if (isExpoGo()) {
+      console.log(
+        '[Notifications] Expo Go: remote push is disabled (SDK 53+). Use a development build for full expo-notifications support.'
+      );
+      return false;
+    }
+
+    ensureForegroundNotificationHandler();
 
     try {
       // Request permissions
@@ -49,7 +71,6 @@ class NotificationService {
       this.setupListeners();
 
       this.isInitialized = true;
-      useAppStore.getState().setNotificationsEnabled(true);
       
       console.log('[Notifications] Initialized successfully');
       return true;
@@ -161,12 +182,12 @@ class NotificationService {
     switch (actionIdentifier) {
       case 'acknowledge':
         if (data?.alertId) {
-          this.handleAcknowledgeAlert(data.alertId);
+          this.handleAcknowledgeAlert(Number(data.alertId));
         }
         break;
       case 'complete':
         if (data?.taskId) {
-          this.handleCompleteTask(data.taskId);
+          this.handleCompleteTask(Number(data.taskId));
         }
         break;
       case 'view':
@@ -226,9 +247,11 @@ class NotificationService {
           severity: alert.severity,
         },
         categoryIdentifier: 'alert',
-        priority: alert.severity === 'critical' ? Notifications.AndroidNotificationPriority.MAX : Notifications.AndroidNotificationPriority.HIGH,
-      },
-      trigger: null, // Show immediately
+        priority: alert.severity === 'critical'
+          ? Notifications.AndroidNotificationPriority.MAX
+          : Notifications.AndroidNotificationPriority.HIGH,
+      } as Notifications.NotificationContentInput,
+      trigger: null,
     });
   }
 
@@ -257,8 +280,8 @@ class NotificationService {
     data?: Record<string, any>,
     delaySeconds?: number
   ): Promise<string> {
-    const trigger = delaySeconds
-      ? { seconds: delaySeconds }
+    const trigger: Notifications.NotificationTriggerInput | null = delaySeconds
+      ? { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: delaySeconds, repeats: false }
       : null;
 
     const identifier = await Notifications.scheduleNotificationAsync({
@@ -305,10 +328,16 @@ class NotificationService {
   // ==================== GET PUSH TOKEN ====================
 
   async getPushToken(): Promise<string | null> {
+    if (isExpoGo()) {
+      return null;
+    }
     try {
-      const token = await Notifications.getExpoPushTokenAsync({
-        projectId: 'wheelsense-mobile-project',
-      });
+      const projectId = getEasProjectId();
+      if (!projectId) {
+        console.warn('[Notifications] Missing extra.eas.projectId in app config — cannot fetch Expo push token.');
+        return null;
+      }
+      const token = await Notifications.getExpoPushTokenAsync({ projectId });
       return token.data;
     } catch (error) {
       console.error('[Notifications] Failed to get push token:', error);
@@ -343,7 +372,7 @@ export function useNotifications() {
   const store = useAppStore();
   
   return {
-    isEnabled: store.notificationsEnabled,
+    isEnabled: false, // notifications enabled tracked locally
     initialize: () => NotificationManager.initialize(),
     scheduleAlert: (alert: Alert) => NotificationManager.scheduleAlertNotification(alert),
     scheduleTask: (task: WorkflowTask) => NotificationManager.scheduleTaskNotification(task),
