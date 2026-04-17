@@ -16,6 +16,7 @@ This file reflects the variables currently read by `server/app/config.py` and th
 |----------|---------|---------|
 | `MQTT_BROKER` | `localhost` | MQTT hostname |
 | `MQTT_PORT` | `1883` | MQTT port |
+| `PORTAL_BASE_URL` | empty | Public HTTPS base URL of the web app (e.g. a Cloudflare quick tunnel). When set, the API publishes it on MQTT `WheelSense/config/all` at startup and includes it in per-device `WheelSense/config/{device_id}` payloads after patient pairing so the mobile WebView can load the portal off-LAN. |
 | `MQTT_USER` | empty | MQTT username |
 | `MQTT_PASSWORD` | empty | MQTT password |
 | `MQTT_TLS` | `false` | Enable TLS for MQTT |
@@ -24,6 +25,14 @@ This file reflects the variables currently read by `server/app/config.py` and th
 | `MQTT_MERGE_BLE_CAMERA_BY_MAC` | `true` | When `true`, `WheelSense/camera/.../registration` JSON with `ble_mac` matching a `BLE_*` stub **renames** that registry row to the camera’s `device_id` (e.g. `CAM_*`) so MQTT topics and the web UI use one device. |
 | `MQTT_AUTO_REGISTER_WORKSPACE_ID` | empty | Optional integer workspace PK. When set, new devices from telemetry attach to this workspace. When unset and **exactly one** workspace exists, that workspace is used. If multiple workspaces exist and this is unset, auto-register is skipped (telemetry dropped until you register manually or set this variable). |
 | `ROOM_TIMELINE_STABILITY_SAMPLES` | `3` | MQTT localization must produce the same predicted `room_id` this many times in a row before `activity_timeline` records `room_enter` / `room_exit`. Reduces duplicate timeline rows when RSSI/KNN flickers between rooms. Set to `1` for the previous immediate-logging behavior. |
+
+## Docker Compose — Cloudflare quick tunnel (production)
+
+[`docker-compose.yml`](../docker-compose.yml) includes [`docker-compose.cf-tunnel.yml`](../docker-compose.cf-tunnel.yml), so **`cf-tunnel-publish`** starts with the production stack. It runs `cloudflared` against the internal web URL and publishes the detected `*.trycloudflare.com` base URL to MQTT (`WheelSense/config/all`). Copy that URL into **`PORTAL_BASE_URL`** for `wheelsense-platform-server` if you want the API’s MQTT config payloads to match (see [RUNBOOK.md](RUNBOOK.md)).
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `CF_TUNNEL_TARGET_URL` | `http://wheelsense-platform-web:3000` | HTTP origin inside the Compose network for the quick tunnel (Next.js container). |
 
 ### MQTT simulator worker (`sim_controller.py`)
 

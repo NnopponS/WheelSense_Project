@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Clock3, Link2, Link2Off, Loader2, MapPin, RefreshCw, Trash2, UserRound } from "lucide-react";
+import { Camera, Clock3, Link2, Link2Off, Loader2, MapPin, RefreshCw, Trash2, UserRound, Users } from "lucide-react";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +51,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { Caregiver } from "@/lib/types";
 
 const EMPTY_SELECT_VALUE = "__empty__";
 const UNASSIGNED_FACILITY_KEY = "__facility_unassigned__";
@@ -91,6 +93,15 @@ const deviceDetailSchema = z
       .object({
         patient_id: z.number(),
         patient_name: z.string().nullish(),
+        device_role: z.string().nullish(),
+        assigned_at: z.string().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    caregiver: z
+      .object({
+        caregiver_id: z.number(),
+        caregiver_name: z.string().nullish(),
         device_role: z.string().nullish(),
         assigned_at: z.string().nullable().optional(),
       })
@@ -192,6 +203,14 @@ const patientAssignmentSchema = z.object({
 
 type PatientAssignmentValues = z.infer<typeof patientAssignmentSchema>;
 
+const caregiverAssignmentSchema = z.object({
+  caregiverId: z.string().refine((value) => value !== EMPTY_SELECT_VALUE, {
+    message: "Select a caregiver",
+  }),
+});
+
+type CaregiverAssignmentValues = z.infer<typeof caregiverAssignmentSchema>;
+
 const roomAssignmentSchema = z.object({
   roomId: z.string().refine((value) => value !== EMPTY_SELECT_VALUE, {
     message: "Select a room",
@@ -208,6 +227,7 @@ export interface DeviceDetailDrawerProps {
 }
 
 function resolveHardwareType(raw: string | null | undefined): HardwareType {
+  if (raw === "mobile_app") return "mobile_phone";
   const parsed = hardwareTypeSchema.safeParse(raw);
   return parsed.success ? parsed.data : "wheelchair";
 }
@@ -216,6 +236,12 @@ function defaultDeviceRole(hardwareType: HardwareType): string {
   if (hardwareType === "polar_sense") return "polar_hr";
   if (hardwareType === "mobile_phone") return "mobile";
   return "wheelchair_sensor";
+}
+
+/** Role stored on `caregiver_device_assignments` for staff-linked handsets / Polar. */
+function defaultCaregiverDeviceRole(hardwareType: HardwareType): string {
+  if (hardwareType === "polar_sense") return "polar_hr";
+  return "mobile_phone";
 }
 
 function mapApiError(error: unknown): string {
@@ -298,6 +324,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const [fastPollUntilMs, setFastPollUntilMs] = useState(0);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [latestPhotoImageBroken, setLatestPhotoImageBroken] = useState(false);
+  const [identityTab, setIdentityTab] = useState<"patient" | "staff">("patient");
 
   const deviceQuery = useQuery({
     queryKey: ["device-detail-drawer", "detail", deviceId],
@@ -320,6 +347,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const isNodeDevice = hardwareType === "node";
   const isPatientAssignable =
     hardwareType === "wheelchair" || hardwareType === "mobile_phone" || hardwareType === "polar_sense";
+  const supportsStaffDeviceLink = hardwareType === "mobile_phone" || hardwareType === "polar_sense";
 
   const userRole = user?.role;
   const deviceActivityPollEnabled =
@@ -348,6 +376,12 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     queryFn: () => api.listPatients({ is_active: true, limit: 200 }),
   });
 
+  const caregiversQuery = useQuery({
+    queryKey: ["device-detail-drawer", "caregivers"],
+    enabled: Boolean(deviceId) && supportsStaffDeviceLink,
+    queryFn: () => api.listCaregivers({ limit: 500 }),
+  });
+
   const roomsQuery = useQuery({
     queryKey: ["device-detail-drawer", "rooms"],
     enabled: Boolean(deviceId) && isNodeDevice,
@@ -369,12 +403,29 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     },
   });
 
+  const caregiverForm = useForm<CaregiverAssignmentValues>({
+    resolver: zodResolver(caregiverAssignmentSchema),
+    defaultValues: {
+      caregiverId: EMPTY_SELECT_VALUE,
+    },
+  });
+
   const roomForm = useForm<RoomAssignmentValues>({
     resolver: zodResolver(roomAssignmentSchema),
     defaultValues: {
       roomId: EMPTY_SELECT_VALUE,
     },
   });
+
+  const caregiverOptions = useMemo(() => {
+    const rows = (caregiversQuery.data ?? []) as Caregiver[];
+    return rows
+      .map((row) => ({
+        id: row.id,
+        name: `${row.first_name} ${row.last_name}`.trim() || `Caregiver #${row.id}`,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [caregiversQuery.data]);
 
   const patientOptions = useMemo(() => {
     const rows = (patientsQuery.data ?? []) as ListPatientsResponse;
@@ -470,6 +521,10 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     patientForm.reset({
       patientId: detail.patient?.patient_id ? String(detail.patient.patient_id) : EMPTY_SELECT_VALUE,
     });
+    caregiverForm.reset({
+      caregiverId: detail.caregiver?.caregiver_id ? String(detail.caregiver.caregiver_id) : EMPTY_SELECT_VALUE,
+    });
+    setIdentityTab(detail.patient ? "patient" : detail.caregiver ? "staff" : "patient");
 
     if (currentRoom) {
       setScopeBuilding(facilityKey(currentRoom));
@@ -484,7 +539,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
         roomId: EMPTY_SELECT_VALUE,
       });
     }
-  }, [currentRoom, detail, patientForm, roomForm]);
+  }, [currentRoom, detail, patientForm, caregiverForm, roomForm]);
 
   const refreshAfterMutation = async () => {
     await Promise.all([
@@ -524,6 +579,41 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     },
     onSuccess: async () => {
       setFeedback({ tone: "success", text: "Patient unlinked." });
+      await refreshAfterMutation();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
+
+  const assignCaregiverMutation = useMutation({
+    mutationFn: async (form: CaregiverAssignmentValues) => {
+      if (!detail) throw new Error("Device detail unavailable");
+      const caregiverId = Number(form.caregiverId);
+      await api.assignCaregiverFromDevice(detail.device_id, {
+        caregiver_id: caregiverId,
+        device_role: defaultCaregiverDeviceRole(hardwareType),
+      });
+    },
+    onSuccess: async () => {
+      setFeedback({ tone: "success", text: "Caregiver assignment updated." });
+      await refreshAfterMutation();
+    },
+    onError: (error) => {
+      setFeedback({ tone: "error", text: mapApiError(error) });
+    },
+  });
+
+  const unlinkCaregiverMutation = useMutation({
+    mutationFn: async () => {
+      if (!detail) throw new Error("Device detail unavailable");
+      await api.assignCaregiverFromDevice(detail.device_id, {
+        caregiver_id: null,
+        device_role: defaultCaregiverDeviceRole(hardwareType),
+      });
+    },
+    onSuccess: async () => {
+      setFeedback({ tone: "success", text: "Caregiver unlinked." });
       await refreshAfterMutation();
     },
     onError: (error) => {
@@ -627,6 +717,8 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const busy =
     assignPatientMutation.isPending ||
     unlinkPatientMutation.isPending ||
+    assignCaregiverMutation.isPending ||
+    unlinkCaregiverMutation.isPending ||
     assignRoomMutation.isPending ||
     unlinkRoomMutation.isPending ||
     snapshotMutation.isPending ||
@@ -1051,7 +1143,159 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   </Card>
                 ) : null}
 
-                {isPatientAssignable ? (
+                {isPatientAssignable && supportsStaffDeviceLink ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <UserRound className="h-4 w-4" />
+                        {t("devicesDetail.identityAssignmentTitle")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">{t("devicesDetail.patientOrStaffHint")}</p>
+                      <Tabs value={identityTab} onValueChange={(v) => setIdentityTab(v as "patient" | "staff")}>
+                        <TabsList className="w-full max-w-md">
+                          <TabsTrigger className="flex-1" value="patient">
+                            {t("devicesDetail.identityTabPatient")}
+                          </TabsTrigger>
+                          <TabsTrigger className="flex-1" value="staff">
+                            {t("devicesDetail.identityTabStaff")}
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="patient" className="mt-4 space-y-4">
+                          <p className="text-sm text-muted-foreground">
+                            {detail.patient
+                              ? `${detail.patient.patient_name || `Patient #${detail.patient.patient_id}`} (${detail.patient.device_role || defaultDeviceRole(hardwareType)})`
+                              : t("devicesDetail.noPatient")}
+                          </p>
+                          <form
+                            className="space-y-2"
+                            onSubmit={patientForm.handleSubmit((values) => assignPatientMutation.mutate(values))}
+                          >
+                            <Label>{t("devicesDetail.selectPatient")}</Label>
+                            <Controller
+                              control={patientForm.control}
+                              name="patientId"
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value || EMPTY_SELECT_VALUE}
+                                  onValueChange={field.onChange}
+                                  disabled={busy || patientsQuery.isLoading}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder={t("devicesDetail.selectPatient")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value={EMPTY_SELECT_VALUE}>Select patient</SelectItem>
+                                    {patientOptions.map((patient) => (
+                                      <SelectItem key={patient.id} value={String(patient.id)}>
+                                        {patient.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                            {patientForm.formState.errors.patientId ? (
+                              <p className="text-xs text-destructive">
+                                {patientForm.formState.errors.patientId.message}
+                              </p>
+                            ) : null}
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <Button type="submit" disabled={busy}>
+                                {assignPatientMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Link2 className="h-4 w-4" />
+                                )}
+                                Link patient
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                disabled={busy || !detail.patient}
+                                onClick={() => unlinkPatientMutation.mutate()}
+                              >
+                                {unlinkPatientMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Link2Off className="h-4 w-4" />
+                                )}
+                                Unlink patient
+                              </Button>
+                            </div>
+                          </form>
+                        </TabsContent>
+                        <TabsContent value="staff" className="mt-4 space-y-4">
+                          <p className="text-sm text-muted-foreground">
+                            {detail.caregiver
+                              ? `${detail.caregiver.caregiver_name || `Caregiver #${detail.caregiver.caregiver_id}`} (${detail.caregiver.device_role || defaultCaregiverDeviceRole(hardwareType)})`
+                              : t("devicesDetail.noCaregiver")}
+                          </p>
+                          <form
+                            className="space-y-2"
+                            onSubmit={caregiverForm.handleSubmit((values) => assignCaregiverMutation.mutate(values))}
+                          >
+                            <Label>{t("devicesDetail.selectCaregiver")}</Label>
+                            <Controller
+                              control={caregiverForm.control}
+                              name="caregiverId"
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value || EMPTY_SELECT_VALUE}
+                                  onValueChange={field.onChange}
+                                  disabled={busy || caregiversQuery.isLoading}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder={t("devicesDetail.selectCaregiver")} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value={EMPTY_SELECT_VALUE}>{t("devicesDetail.selectCaregiver")}</SelectItem>
+                                    {caregiverOptions.map((cg) => (
+                                      <SelectItem key={cg.id} value={String(cg.id)}>
+                                        {cg.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                            {caregiverForm.formState.errors.caregiverId ? (
+                              <p className="text-xs text-destructive">
+                                {caregiverForm.formState.errors.caregiverId.message}
+                              </p>
+                            ) : null}
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <Button type="submit" disabled={busy}>
+                                {assignCaregiverMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Users className="h-4 w-4" />
+                                )}
+                                {t("devicesDetail.linkCaregiver")}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                disabled={busy || !detail.caregiver}
+                                onClick={() => unlinkCaregiverMutation.mutate()}
+                              >
+                                {unlinkCaregiverMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Link2Off className="h-4 w-4" />
+                                )}
+                                {t("devicesDetail.unlinkCaregiver")}
+                              </Button>
+                            </div>
+                          </form>
+                        </TabsContent>
+                      </Tabs>
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                {isPatientAssignable && !supportsStaffDeviceLink ? (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">

@@ -198,16 +198,16 @@ export default function AdminDashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link href="./monitoring">{t("admin.openLiveMap")}</Link>
+            <Link href="/admin/monitoring">{t("admin.openLiveMap")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="./devices">{t("admin.openDevices")}</Link>
+            <Link href="/admin/devices">{t("admin.openDevices")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link href="./settings">{t("admin.openSettings")}</Link>
+            <Link href="/admin/settings">{t("admin.openSettings")}</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="./device-health">
+            <Link href="/admin/device-health">
               <Monitor className="mr-1.5 h-4 w-4" />
               {t("admin.navDeviceHealth")}
             </Link>
@@ -351,7 +351,7 @@ export default function AdminDashboardPage() {
               {fleetByType.map((row) => (
                 <Link
                   key={row.hardware}
-                  href={`./devices?tab=${row.hardware}`}
+                  href={`/admin/devices?tab=${row.hardware}`}
                   className="flex items-center justify-between gap-3 rounded-xl border border-border/70 px-3 py-3 hover:bg-muted/40"
                 >
                   <div className="flex items-center gap-3">
@@ -398,7 +398,7 @@ export default function AdminDashboardPage() {
                 <CardDescription>{t("admin.supportChannelDesc")}</CardDescription>
               </div>
               <Button asChild size="sm" variant="outline">
-                <Link href="./support">
+                <Link href="/admin/support">
                   <HelpCircle className="mr-1.5 h-4 w-4" />
                   {t("dash.viewAll")}
                 </Link>
@@ -452,7 +452,7 @@ export default function AdminDashboardPage() {
             <CardDescription>{t("admin.activityFeedCardDesc")}</CardDescription>
           </div>
           <Button asChild size="sm" variant="ghost">
-            <Link href="./audit">
+            <Link href="/admin/audit">
               {t("nav.auditLog")}
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>

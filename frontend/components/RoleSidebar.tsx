@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { LogOut, Activity } from "lucide-react";
 import UserAvatar from "@/components/shared/UserAvatar";
+import Logo from "@/components/shared/Logo";
 import { cn } from "@/lib/utils";
 
 interface RoleSidebarProps {
@@ -133,8 +134,8 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
       <>
         {/* Header - Logo and Platform Name */}
         <div className="flex h-[var(--topbar-height)] items-center gap-3 px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-            <Activity className="h-5 w-5 text-primary" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/5">
+            <Logo size={28} className="text-primary" />
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-base font-bold leading-tight text-foreground">WheelSense</h1>

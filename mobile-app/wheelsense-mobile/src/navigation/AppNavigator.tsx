@@ -9,13 +9,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAppStore } from '../store/useAppStore';
 
 // Screens
-import { SetupScreen } from '../screens/LoginScreen';
+import { SetupScreen } from '../screens/SetupScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { WebViewScreen } from '../screens/WebViewScreen';
 import { DeviceScreen } from '../screens/DeviceScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { WalkStepsScreen } from '../screens/WalkStepsScreen';
 import { PolarHealthScreen } from '../screens/PolarHealthScreen';
+import { colors } from '../theme/tokens';
 
 // ==================== NAVIGATION TYPES ====================
 
@@ -42,15 +43,16 @@ export const AppNavigator: React.FC = () => {
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#0D1F38',
+            backgroundColor: colors.surface,
           },
-          headerTintColor: '#E0E0E0',
+          headerTintColor: colors.text,
           headerTitleStyle: {
             fontWeight: '700',
+            color: colors.text,
           },
           headerShadowVisible: false,
           contentStyle: {
-            backgroundColor: '#0A1628',
+            backgroundColor: colors.bg,
           },
         }}
       >

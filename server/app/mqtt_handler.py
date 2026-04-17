@@ -5,6 +5,7 @@ import base64
 import json
 import logging
 import os
+import time
 import uuid
 from contextlib import suppress
 from datetime import datetime
@@ -18,10 +19,14 @@ from app.db.session import AsyncSessionLocal
 from app.services.device_management import (
     ensure_ble_node_devices_from_wheelchair_rssi,
     ensure_camera_device_from_mqtt_registration,
+    ensure_polar_companion_for_mobile_registration,
     ensure_wheelchair_device_from_telemetry,
     get_registered_device_for_ingest,
+    mirror_mobile_assignments_to_polar_companion,
     remove_ble_stubs_superseded_by_camera_payload,
+    resolve_mqtt_auto_register_workspace_id,
     try_merge_ble_row_for_camera_registration,
+    _polar_companion_id_for_mobile,
 )
 from app.models.activity import ActivityTimeline, Alert
 from app.models.base import utcnow
@@ -43,7 +48,10 @@ logger = logging.getLogger("wheelsense.mqtt")
 _room_tracker: dict[str, dict] = {}
 _photo_buffers: dict[str, dict] = {}
 _fall_cooldown: dict[str, float] = {}
+# Monotonic clock of last mobile telemetry per device — detect offline→online to re-push MQTT config.
+_mobile_last_telemetry_mono: dict[str, float] = {}
 
+MOBILE_ONLINE_CONFIG_GAP_SEC = 75.0
 FALL_COOLDOWN_SECONDS = 30.0
 FALL_AZ_THRESHOLD = 3.0
 FALL_VELOCITY_THRESHOLD = 0.05
@@ -340,7 +348,7 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
     Topic: WheelSense/mobile/{device_id}/telemetry
 
     The payload schema mirrors the wheelchair TelemetryPayload but uses
-    ``device_type: "mobile_app"`` and may contain ``rssi``, ``hr``, and ``ppg``
+    ``device_type: "mobile_phone"`` (legacy ``mobile_app`` normalized) and may contain ``rssi``, ``hr``, and ``ppg``
     fields.  IMU / motion fields are absent for mobile payloads and default to
     None / zero so the shared model is reused without modification.
     """
@@ -369,7 +377,7 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
             device = await ensure_wheelchair_device_from_telemetry(
                 session,
                 device_id,
-                {**data, "hardware_type": "mobile_app", "device_type": "mobile_app"},
+                {**data, "hardware_type": "mobile_phone", "device_type": "mobile_phone"},
             )
         if not device:
             logger.warning("Mobile telemetry dropped for unregistered device: %s", device_id)
@@ -397,8 +405,9 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
 
         patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
 
-        # Persist HR vital if present
+        # Persist HR vital if present (Polar Verity / SDK streams use polar_sdk)
         if hr_data and patient_id is not None:
+            hr_source = "polar_sdk" if (ppg_data or data.get("hr_source") == "polar_sdk") else "mobile_ble"
             session.add(
                 VitalReading(
                     workspace_id=ws_id,
@@ -413,9 +422,55 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
                     ),
                     spo2=None,
                     sensor_battery=battery.get("percentage"),
-                    source="mobile_ble",
+                    source=hr_source,
                 )
             )
+            polar_row_id = (device.config or {}).get("polar_companion_device_id")
+            if isinstance(polar_row_id, str) and polar_row_id.strip():
+                pid_polar = polar_row_id.strip()
+                patient_polar = await _lookup_patient_for_device(session, ws_id, pid_polar)
+                if patient_polar is not None:
+                    session.add(
+                        VitalReading(
+                            workspace_id=ws_id,
+                            patient_id=patient_polar,
+                            device_id=pid_polar,
+                            timestamp=ts,
+                            heart_rate_bpm=hr_data.get("bpm"),
+                            rr_interval_ms=(
+                                hr_data["rr_intervals"][0]
+                                if hr_data.get("rr_intervals")
+                                else None
+                            ),
+                            spo2=None,
+                            sensor_battery=battery.get("percentage"),
+                            source=hr_source,
+                        )
+                    )
+
+        # Optional walk_steps snapshot on same telemetry topic (ActivityTimeline)
+        walk_step_data = data.get("walk_steps")
+        if walk_step_data and isinstance(walk_step_data, dict):
+            steps = int(walk_step_data.get("steps") or 0)
+            if steps > 0 and patient_id is not None:
+                session.add(
+                    ActivityTimeline(
+                        workspace_id=ws_id,
+                        patient_id=patient_id,
+                        timestamp=ts,
+                        event_type="walk_steps",
+                        description=f"{steps} steps (mobile telemetry)",
+                        data={
+                            "steps": steps,
+                            "distance_m": walk_step_data.get("distance_m", 0),
+                            "session_start": walk_step_data.get("session_start"),
+                            "app_mode": data.get("app_mode", "walking"),
+                            "source_device_id": device_id,
+                            "via": "telemetry",
+                        },
+                        source="auto",
+                    )
+                )
 
         # Run room prediction when RSSI data is present
         rssi_vector = {r["node"]: r["rssi"] for r in rssi_list if "node" in r}
@@ -444,6 +499,15 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
 
         await session.commit()
 
+    # Re-push retained MQTT config on first telemetry or after offline→online gap.
+    now_mono = time.monotonic()
+    prev_mono = _mobile_last_telemetry_mono.get(device_id)
+    _mobile_last_telemetry_mono[device_id] = now_mono
+    if prev_mono is None or (now_mono - prev_mono) >= MOBILE_ONLINE_CONFIG_GAP_SEC:
+        from app.services.mqtt_publish import publish_mobile_device_config_resolved_background
+
+        publish_mobile_device_config_resolved_background(device_id)
+
     # Publish derived vital broadcast
     if hr_data and patient_id is not None:
         await client.publish(
@@ -457,7 +521,11 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
                         hr_data["rr_intervals"][0] if hr_data.get("rr_intervals") else None
                     ),
                     "timestamp": ts.isoformat() if ts else None,
-                    "source": "mobile_ble",
+                    "source": (
+                        "polar_sdk"
+                        if (ppg_data or data.get("hr_source") == "polar_sdk")
+                        else "mobile_ble"
+                    ),
                 }
             ),
         )
@@ -926,7 +994,7 @@ async def _handle_mobile_registration(payload: bytes):
     """Handle mobile device auto-registration via MQTT.
 
     Topic: WheelSense/mobile/{device_id}/register
-    Creates or updates a Device row with device_type='mobile_app'.
+    Creates or updates a Device row with hardware_type='mobile_phone'.
     """
     data = json.loads(payload)
     device_id = data.get("device_id", "")
@@ -937,14 +1005,15 @@ async def _handle_mobile_registration(payload: bytes):
     device_name = data.get("device_name", device_id)
     platform = data.get("platform", "unknown")
     os_version = data.get("os_version", "")
-    app_version = data.get("app_version", "")
+    app_version = str(data.get("app_version", "") or "")[:16]
+    display = str(device_name).strip()[:128] or device_id.strip()[:128]
+    polar_registry_id: str | None = None
+    ws_mirror: int | None = None
 
     async with AsyncSessionLocal() as session:
         device = await get_registered_device_for_ingest(session, device_id)
 
         if device:
-            # Update existing device
-            device.status = "online"
             device.last_seen = utcnow()
             cfg = dict(device.config or {})
             cfg["platform"] = platform
@@ -952,21 +1021,28 @@ async def _handle_mobile_registration(payload: bytes):
             cfg["app_version"] = app_version
             cfg["device_name"] = device_name
             device.config = cfg  # type: ignore[assignment]
-            device.firmware_version = app_version
+            device.firmware = app_version or device.firmware
+            device.display_name = display
+            if device.hardware_type == "mobile_app":
+                device.hardware_type = "mobile_phone"
+            if device.device_type == "mobile_app":
+                device.device_type = "mobile_phone"
             logger.info(
                 "Mobile device updated: %s (%s %s) ws=%d",
                 device_id, platform, os_version, device.workspace_id,
             )
         else:
-            # Create new device in workspace 1 (default)
+            ws_id = await resolve_mqtt_auto_register_workspace_id(session)
+            if ws_id is None:
+                ws_id = 1
             device = Device(
-                device_id=device_id,
-                device_type="mobile_app",
-                hardware_type="mobile_app",
-                status="online",
-                workspace_id=1,
+                device_id=device_id.strip()[:32],
+                device_type="mobile_phone",
+                hardware_type="mobile_phone",
+                display_name=display,
+                workspace_id=ws_id,
                 last_seen=utcnow(),
-                firmware_version=app_version,
+                firmware=app_version,
                 config={
                     "platform": platform,
                     "os_version": os_version,
@@ -976,84 +1052,32 @@ async def _handle_mobile_registration(payload: bytes):
             )
             session.add(device)
             logger.info(
-                "Mobile device registered: %s (%s %s) ws=1",
-                device_id, platform, os_version,
+                "Mobile device registered: %s (%s %s) ws=%s",
+                device_id, platform, os_version, ws_id,
             )
 
+        await session.flush()
+        companion = data.get("companion_polar")
+        ws_mirror = device.workspace_id
+        await ensure_polar_companion_for_mobile_registration(
+            session,
+            ws_mirror,
+            device,
+            companion if isinstance(companion, dict) else None,
+        )
+        polar_registry_id = await _polar_companion_id_for_mobile(session, ws_mirror, device_id)
         await session.commit()
 
+    if polar_registry_id and ws_mirror is not None:
+        async with AsyncSessionLocal() as sync_session:
+            await mirror_mobile_assignments_to_polar_companion(
+                sync_session, ws_mirror, device_id, polar_registry_id
+            )
+            await sync_session.commit()
 
-async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
-    """Handle mobile app telemetry (RSSI + HR + walk steps).
+    from app.services.mqtt_publish import publish_mobile_device_config_resolved_background
 
-    Topic: WheelSense/mobile/{device_id}/telemetry
-    Processes RSSI for room prediction and stores vital readings.
-    """
-    data = json.loads(payload)
-    device_id = data.get("device_id", "unknown")
-    rssi_list = data.get("rssi", [])
-    hr_data = data.get("hr")
-    walk_step_data = data.get("walk_steps")
-    app_mode = data.get("app_mode", "walking")
-
-    ts_str = data.get("timestamp", "")
-    ts = None
-    if ts_str:
-        with suppress(Exception):
-            ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-    if ts is None:
-        ts = utcnow()
-
-    async with AsyncSessionLocal() as session:
-        device = await get_registered_device_for_ingest(session, device_id)
-        if not device:
-            logger.debug("Mobile telemetry from unregistered device: %s", device_id)
-            return
-
-        ws_id = device.workspace_id
-        device.status = "online"
-        device.last_seen = ts
-
-        patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
-
-        # Store RSSI readings for localization
-        if rssi_list:
-            for rssi_item in rssi_list:
-                session.add(RSSIReading(
-                    workspace_id=ws_id,
-                    device_id=device_id,
-                    node_id=rssi_item.get("node", ""),
-                    rssi=rssi_item.get("rssi", -100),
-                    mac_address=rssi_item.get("mac", ""),
-                    patient_id=patient_id,
-                    timestamp=ts,
-                ))
-
-            # Run room prediction
-            try:
-                prediction = await predict_room_with_strategy(session, device_id, rssi_list, ws_id)
-                if prediction and prediction.get("room_name"):
-                    # Publish room prediction back to mobile device
-                    room_topic = f"WheelSense/room/{device_id}"
-                    await client.publish(room_topic, json.dumps(prediction).encode())
-                    logger.debug("Room prediction for %s: %s", device_id, prediction.get("room_name"))
-            except Exception:
-                logger.exception("Room prediction failed for %s", device_id)
-
-        # Store heart rate vital
-        if hr_data and hr_data.get("bpm"):
-            session.add(VitalReading(
-                workspace_id=ws_id,
-                patient_id=patient_id,
-                device_id=device_id,
-                vital_type="heart_rate",
-                value=hr_data["bpm"],
-                unit="bpm",
-                metadata={"rr_intervals": hr_data.get("rr_intervals", [])},
-                timestamp=ts,
-            ))
-
-        await session.commit()
+    publish_mobile_device_config_resolved_background(device_id)
 
 
 async def _handle_mobile_walkstep(payload: bytes):
@@ -1086,20 +1110,27 @@ async def _handle_mobile_walkstep(payload: bytes):
 
         ws_id = device.workspace_id
         patient_id = await _lookup_patient_for_device(session, ws_id, device_id)
+        if patient_id is None:
+            logger.debug("Walkstep skipped (no patient assignment): %s", device_id)
+            return
 
-        session.add(ActivityTimeline(
-            workspace_id=ws_id,
-            patient_id=patient_id,
-            source_device_id=device_id,
-            event_type="walk_steps",
-            details={
-                "steps": steps,
-                "distance_m": distance_m,
-                "session_start": data.get("session_start"),
-                "app_mode": "walking",
-            },
-            timestamp=ts,
-        ))
+        session.add(
+            ActivityTimeline(
+                workspace_id=ws_id,
+                patient_id=patient_id,
+                timestamp=ts,
+                event_type="walk_steps",
+                description=f"{steps} steps",
+                data={
+                    "steps": steps,
+                    "distance_m": distance_m,
+                    "session_start": data.get("session_start"),
+                    "app_mode": data.get("app_mode", "walking"),
+                    "source_device_id": device_id,
+                },
+                source="auto",
+            )
+        )
         await session.commit()
         logger.info(
             "Walk steps recorded: %s — %d steps (%.1fm)",

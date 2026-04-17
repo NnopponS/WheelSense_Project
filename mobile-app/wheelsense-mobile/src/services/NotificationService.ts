@@ -274,6 +274,67 @@ class NotificationService {
     });
   }
 
+  /** Local notification when an alert JSON arrives on `WheelSense/alerts/{patient_id}` (MQTT). */
+  async notifyAlertFromMqtt(payload: Record<string, unknown>): Promise<void> {
+    if (isExpoGo()) {
+      return;
+    }
+    const { alertsEnabled, linkedPatientId } = useAppStore.getState().settings;
+    if (alertsEnabled === false || linkedPatientId == null) {
+      console.log('[Notifications] Skipping MQTT alert: alerts disabled or device not paired to a patient');
+      return;
+    }
+    ensureForegroundNotificationHandler();
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        console.warn('[Notifications] Skipping MQTT alert: permission not granted');
+        return;
+      }
+    } catch (e) {
+      console.warn('[Notifications] Permission check failed', e);
+      return;
+    }
+
+    const title =
+      (typeof payload.title === 'string' && payload.title.trim()) ||
+      `${String(payload.severity || 'alert').toUpperCase()}: ${String(payload.alert_type || 'Alert')}`;
+    const body =
+      (typeof payload.description === 'string' && payload.description.trim()) ||
+      'WheelSense alert';
+
+    const rawId = payload.alert_id;
+    const alertId =
+      typeof rawId === 'number'
+        ? rawId
+        : typeof rawId === 'string' && rawId.trim()
+          ? Number(rawId)
+          : undefined;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: {
+          type: 'alert',
+          alertId: Number.isFinite(alertId) ? alertId : undefined,
+          patientId:
+            payload.patient_id != null && payload.patient_id !== ''
+              ? Number(payload.patient_id)
+              : undefined,
+          severity: payload.severity,
+          source: 'mqtt',
+        },
+        categoryIdentifier: 'alert',
+        priority:
+          payload.severity === 'critical'
+            ? Notifications.AndroidNotificationPriority.MAX
+            : Notifications.AndroidNotificationPriority.HIGH,
+      } as Notifications.NotificationContentInput,
+      trigger: null,
+    });
+  }
+
   async scheduleLocalNotification(
     title: string,
     body: string,

@@ -7,6 +7,9 @@ import logging
 from typing import Any
 
 from fastapi import HTTPException
+from httpx import ASGITransport, AsyncClient
+from mcp.client.session import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 from sqlalchemy import select
 
 from app.api.dependencies import assert_patient_record_access_db, resolve_current_user_from_token
@@ -119,29 +122,69 @@ def _ingest_patient_context_from_tool_result(
                 pass
 
 
+async def _call_mcp_tool_direct(actor_access_token: str, tool_name: str, arguments: dict[str, Any]) -> Any:
+    async with AsyncSessionLocal() as db:
+        user, _, _ = await resolve_current_user_from_token(db, actor_access_token)
+        return await execute_workspace_tool(
+            tool_name=tool_name,
+            workspace_id=user.workspace_id,
+            arguments=arguments,
+            actor_context={
+                "user_id": user.id,
+                "workspace_id": user.workspace_id,
+                "role": user.role,
+                "patient_id": getattr(user, "patient_id", None),
+                "caregiver_id": getattr(user, "caregiver_id", None),
+                "scopes": list(getattr(user, "_token_scopes", set())),
+            },
+        )
+
+
+async def _call_mcp_tool_via_streamable_http(
+    actor_access_token: str, tool_name: str, arguments: dict[str, Any]
+) -> Any:
+    """Invoke MCP tools/call through the official Streamable HTTP client (matches external MCP clients)."""
+    mode = settings.agent_runtime_mcp_tool_transport
+    mcp_url = settings.resolved_mcp_streamable_http_url
+    headers = {"Authorization": f"Bearer {actor_access_token}"}
+
+    if mode == "asgi":
+        from app.main import app as platform_app
+
+        base = "http://wheelsense.test"
+        url = f"{base}/mcp/mcp"
+        transport = ASGITransport(app=platform_app)
+        client_cm = AsyncClient(
+            transport=transport, base_url=base, headers=headers, timeout=120.0
+        )
+    elif mode == "http":
+        url = mcp_url
+        client_cm = AsyncClient(headers=headers, timeout=120.0)
+    else:
+        raise ValueError(f"Unsupported agent_runtime_mcp_tool_transport: {mode}")
+
+    async with client_cm as client:
+        async with streamable_http_client(url, http_client=client) as (read_stream, write_stream, _get_id):
+            async with ClientSession(read_stream, write_stream) as session:
+                await session.initialize()
+                raw = await session.call_tool(tool_name, arguments)
+                if getattr(raw, "isError", False):
+                    detail = _tool_result_payload(raw)
+                    raise RuntimeError(detail if detail else "MCP tool returned isError")
+                return _tool_result_payload(raw)
+
+
 async def _call_mcp_tool(actor_access_token: str, tool_name: str, arguments: dict[str, Any]) -> Any:
     try:
-        # NOTE: FastMCP streamable HTTP mount currently fails in this deployment
-        # with "Task group is not initialized". Use the hardened backend tool path
-        # so first-party chat remains operational.
-        async with AsyncSessionLocal() as db:
-            user, _, _ = await resolve_current_user_from_token(db, actor_access_token)
-            result = await execute_workspace_tool(
-                tool_name=tool_name,
-                workspace_id=user.workspace_id,
-                arguments=arguments,
-                actor_context={
-                    "user_id": user.id,
-                    "workspace_id": user.workspace_id,
-                    "role": user.role,
-                    "patient_id": getattr(user, "patient_id", None),
-                    "caregiver_id": getattr(user, "caregiver_id", None),
-                    "scopes": list(getattr(user, "_token_scopes", set())),
-                },
-            )
-            return result
+        if settings.agent_runtime_mcp_tool_transport == "direct":
+            return await _call_mcp_tool_direct(actor_access_token, tool_name, arguments)
+        return await _call_mcp_tool_via_streamable_http(actor_access_token, tool_name, arguments)
     except Exception:
-        logger.exception("Direct MCP tool execution failed")
+        logger.exception(
+            "MCP tool execution failed (transport=%s tool=%s)",
+            settings.agent_runtime_mcp_tool_transport,
+            tool_name,
+        )
         raise
 
 

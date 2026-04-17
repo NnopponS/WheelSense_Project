@@ -36,11 +36,40 @@ export default function App() {
   // Initialize app on mount
   useEffect(() => {
     initializeApp();
-    
+
+    const syncBg = () => {
+      void import('./src/services/BackgroundRuntimeService').then(({ syncRegisteredBackgroundTaskWithSettings }) => {
+        void syncRegisteredBackgroundTaskWithSettings();
+      });
+    };
+
+    const unsubHydrate = useAppStore.persist.onFinishHydration(() => {
+      syncBg();
+    });
+    if (useAppStore.persist.hasHydrated()) {
+      syncBg();
+    }
+
     return () => {
+      unsubHydrate();
       // Cleanup on unmount
       cleanup();
     };
+  }, []);
+
+  useEffect(() => {
+    let prev = !!useAppStore.getState().settings.backgroundMonitoringEnabled;
+    const unsub = useAppStore.subscribe((state) => {
+      const next = !!state.settings.backgroundMonitoringEnabled;
+      if (next === prev) {
+        return;
+      }
+      prev = next;
+      void import('./src/services/BackgroundRuntimeService').then(({ syncRegisteredBackgroundTaskWithSettings }) => {
+        void syncRegisteredBackgroundTaskWithSettings();
+      });
+    });
+    return unsub;
   }, []);
 
   const initializeApp = async () => {

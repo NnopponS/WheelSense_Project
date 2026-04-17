@@ -4,11 +4,12 @@
     Start WheelSense Production Environment
 .DESCRIPTION
     Starts the WheelSense platform in production mode with clean database.
-    Uses docker-compose.yml (includes core stack + production DB).
+    Uses docker-compose.yml (includes core stack + production DB + cf-tunnel-publish).
     - PostgreSQL service `db` with pgdata-prod volume (isolated from mock/sim)
     - Same app images as sim entry; only data layer differs
     - FastAPI server (ENV_MODE=production)
     - Next.js frontend
+    - Cloudflare quick tunnel sidecar (publishes trycloudflare URL to MQTT)
     - Home Assistant
     
     Note: Simulator service (synthetic MQTT) is NOT included in production.

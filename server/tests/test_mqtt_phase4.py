@@ -75,6 +75,7 @@ async def ws_with_patient():
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 @patch("app.mqtt_handler.predict_room_with_strategy", return_value=None)
+@patch.object(settings, "mqtt_auto_register_devices", False)
 async def test_unknown_device_telemetry_is_dropped(mock_predict, ws_with_patient):
     from app.mqtt_handler import _handle_telemetry
 

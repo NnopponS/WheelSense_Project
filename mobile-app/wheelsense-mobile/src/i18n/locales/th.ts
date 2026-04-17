@@ -73,7 +73,12 @@ export default {
     devices: "อุปกรณ์",
     mqttOnline: "ออนไลน์",
     mqttOffline: "ออฟไลน์",
-    queue: "คิว"
+    queue: "คิว",
+    backgroundMonitoring: "ทำงานเบื้องหลัง",
+    backgroundMonitoringHint: "MQTT, โหนด และก้าวเมื่อไม่ได้เปิดแอป (ระบบกำหนดความถี่)",
+    backgroundMonitoringTitle: "เปิดการทำงานเบื้องหลัง?",
+    backgroundMonitoringExplain:
+      "Android (dev/production build): จะมีการแจ้งเตือนค้างเพื่อรัน MQTT, สแกนโหนด BLE และโทรมาตรขณะแอปอยู่เบื้องหลัง iOS: ระบบจัดตารางงานเบื้องหลัง (BackgroundFetch + background tasks) ไม่ใช่รันตลอด 24 ชม. การนับก้าวระหว่างรอบทำงานได้ดีบน iOS Expo Go ไม่มี MQTT/BLE แบบ native — ต้องใช้ development build",
   },
   device: {
     title: "อุปกรณ์",
@@ -140,6 +145,7 @@ export default {
     startTracking: "เริ่มติดตามก้าว",
     stopTracking: "หยุดติดตามก้าว",
     pedometerNotAvailable: "ไม่พบเครื่องวัดก้าวบนอุปกรณ์นี้",
+    pedometerPermissionDenied: "ต้องอนุญาตการเข้าถึงการเคลื่อนไหว/กิจกรรมเพื่อนับก้าว โปรดเปิดในการตั้งค่าระบบ",
     meters: "เมตร",
     duration: "เวลาหลัก",
     reset: "รีเซ็ต",
@@ -190,6 +196,7 @@ export default {
     english: "English (อังกฤษ)",
     thai: "ไทย (Thai)",
     version: "WheelSense Mobile",
-    build: "บิลด์"
+    build: "บิลด์",
+    background: "พื้นหลัง"
   }
 };

@@ -7,6 +7,7 @@ from app.agent_runtime.llm_tool_router import (
     _validate_calls_for_role,
     build_openai_tools_for_role,
 )
+from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
 from app.services.ai_chat import ParsedToolCall
 
 
@@ -15,7 +16,7 @@ def test_build_openai_tools_admin_covers_registry() -> None:
     names = {t["function"]["name"] for t in tools}
     assert "list_visible_patients" in names
     assert "get_message_recipients" in names
-    assert len(names) == 28
+    assert names == set(_WORKSPACE_TOOL_REGISTRY.keys())
 
 
 def test_validate_calls_filters_disallowed_for_patient() -> None:

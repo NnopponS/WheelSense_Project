@@ -17,6 +17,7 @@ import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useAppStore } from '../store/useAppStore';
 import { useBLEScanner } from '../services/BLEScanner';
 import { usePolar } from '../services/PolarService';
+import { colors } from '../theme/tokens';
 
 // ==================== INTERFACES ====================
 
@@ -50,8 +51,11 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
   const store = useAppStore();
   const bleScanner = useBLEScanner();
   const polar = usePolar();
-  
-  const baseUrl = serverUrl || 'http://wheelsense.local';
+
+  const portal = (store.settings.portalBaseUrl || '').trim();
+  const propUrl = (serverUrl || '').trim();
+  const baseUrl =
+    propUrl || (portal.length > 0 ? portal.replace(/\/$/, '') : '') || 'http://wheelsense.local';
 
   // ==================== INJECTED JAVASCRIPT ====================
 
@@ -132,13 +136,20 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
         }
       });
       
-      // Notify when page is ready
-      window.addEventListener('load', function() {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'PAGE_LOADED',
-          payload: { url: window.location.href }
-        }));
-      });
+      // Notify when page is ready (SPA may have fired the load event before this script runs)
+      function postPageLoaded() {
+        try {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'PAGE_LOADED',
+            payload: { url: window.location.href }
+          }));
+        } catch (e) {}
+      }
+      if (document.readyState === 'complete') {
+        postPageLoaded();
+      } else {
+        window.addEventListener('load', postPageLoaded);
+      }
       
       // Override console.log to send to React Native
       const originalLog = console.log;
@@ -191,7 +202,6 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
           
         case 'PAGE_LOADED':
           setIsLoading(false);
-          onLoadEnd?.();
           break;
           
         case 'CONSOLE_LOG':
@@ -205,7 +215,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
     } catch (error) {
       console.error('[WebView] Failed to handle message:', error);
     }
-  }, [bleScanner, polar, onLoadEnd]);
+  }, [bleScanner, polar]);
 
   const handleBLEScanRequest = useCallback(async () => {
     try {
@@ -242,8 +252,9 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
   }, [onLoadStart]);
 
   const handleLoadEnd = useCallback(() => {
-    // Loading state is set by PAGE_LOADED message
-  }, []);
+    setIsLoading(false);
+    onLoadEnd?.();
+  }, [onLoadEnd]);
 
   const handleError = useCallback((error: any) => {
     console.error('[WebView] Load error:', error);
@@ -293,6 +304,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
       <StatusBar barStyle="dark-content" />
       
       <WebView
+        key={baseUrl}
         ref={webViewRef}
         source={{ uri: baseUrl }}
         userAgent={USER_AGENT}
@@ -328,7 +340,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
       
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#0052cc" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading WheelSense...</Text>
         </View>
       )}
@@ -341,22 +353,22 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: colors.textMuted,
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
@@ -364,17 +376,17 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text,
     marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textMuted,
     textAlign: 'center',
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#0052cc',
+    backgroundColor: colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 8,

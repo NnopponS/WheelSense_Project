@@ -22,6 +22,7 @@ import { Pedometer } from 'expo-sensors';
 import { useWalkSteps, useConnection } from '../store/useAppStore';
 import { mqttService } from '../services/MQTTService';
 import { WalkStepData } from '../types';
+import { colors, radius } from '../theme/tokens';
 
 const STEP_LENGTH_M = 0.7; // Average step length in meters
 
@@ -36,23 +37,19 @@ export const WalkStepsScreen: React.FC = () => {
   const [publishCount, setPublishCount] = useState(0);
 
   const subscriptionRef = useRef<ReturnType<typeof Pedometer.watchStepCount> | null>(null);
-  const publishIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const publishIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const latestWalkRef = useRef<WalkStepData | null>(null);
+  const mqttConnectedRef = useRef(isMQTTConnected);
 
-  // Step count animation
   const stepScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    checkAvailability();
+    mqttConnectedRef.current = isMQTTConnected;
+  }, [isMQTTConnected]);
 
-    return () => {
-      stopTracking();
-    };
-  }, []);
-
-  const checkAvailability = async () => {
-    const result = await Pedometer.isAvailableAsync();
-    setIsPedometerAvailable(result);
-  };
+  useEffect(() => {
+    latestWalkRef.current = walkSteps;
+  }, [walkSteps]);
 
   const animateStep = () => {
     Animated.sequence([
@@ -61,49 +58,7 @@ export const WalkStepsScreen: React.FC = () => {
     ]).start();
   };
 
-  const startTracking = useCallback(() => {
-    if (!isPedometerAvailable) {
-      Alert.alert(t('common.unavailable'), t('walk.pedometerNotAvailable'));
-      return;
-    }
-
-    const start = Date.now();
-    setSessionStart(start);
-    setIsTracking(true);
-
-    // Initialize walk steps
-    setWalkSteps({
-      steps: 0,
-      distance_m: 0,
-      timestamp: start,
-      session_start: start,
-    });
-
-    // Subscribe to step updates
-    subscriptionRef.current = Pedometer.watchStepCount((result: { steps: number }) => {
-      const now = Date.now();
-      const data: WalkStepData = {
-        steps: result.steps,
-        distance_m: parseFloat((result.steps * STEP_LENGTH_M).toFixed(1)),
-        timestamp: now,
-        session_start: start,
-      };
-
-      setWalkSteps(data);
-      animateStep();
-    });
-
-    // Periodic MQTT publish (every 10 seconds)
-    publishIntervalRef.current = setInterval(async () => {
-      const currentSteps = walkSteps;
-      if (currentSteps && isMQTTConnected) {
-        await mqttService.publishWalkStep(currentSteps);
-        setPublishCount((prev) => prev + 1);
-      }
-    }, 10000);
-  }, [isPedometerAvailable, isMQTTConnected]);
-
-  const stopTracking = useCallback(() => {
+  const stopTrackingInner = useCallback(() => {
     if (subscriptionRef.current) {
       subscriptionRef.current.remove();
       subscriptionRef.current = null;
@@ -114,13 +69,78 @@ export const WalkStepsScreen: React.FC = () => {
       publishIntervalRef.current = null;
     }
 
-    // Final publish
-    if (walkSteps && isMQTTConnected) {
-      mqttService.publishWalkStep(walkSteps);
+    const cur = latestWalkRef.current;
+    if (cur && mqttConnectedRef.current) {
+      void mqttService.publishWalkStep(cur);
     }
 
     setIsTracking(false);
-  }, [walkSteps, isMQTTConnected]);
+  }, []);
+
+  useEffect(() => {
+    void Pedometer.isAvailableAsync().then(setIsPedometerAvailable);
+
+    return () => {
+      stopTrackingInner();
+    };
+  }, [stopTrackingInner]);
+
+  const startTracking = useCallback(async () => {
+    if (!isPedometerAvailable) {
+      Alert.alert(t('common.unavailable'), t('walk.pedometerNotAvailable'));
+      return;
+    }
+
+    try {
+      const perm = await Pedometer.requestPermissionsAsync();
+      if (perm.status !== 'granted') {
+        Alert.alert(t('common.unavailable'), t('walk.pedometerPermissionDenied'));
+        return;
+      }
+    } catch {
+      Alert.alert(t('common.unavailable'), t('walk.pedometerNotAvailable'));
+      return;
+    }
+
+    const start = Date.now();
+    setSessionStart(start);
+    setIsTracking(true);
+
+    const initial: WalkStepData = {
+      steps: 0,
+      distance_m: 0,
+      timestamp: start,
+      session_start: start,
+    };
+    latestWalkRef.current = initial;
+    setWalkSteps(initial);
+
+    subscriptionRef.current = Pedometer.watchStepCount((result: { steps: number }) => {
+      const now = Date.now();
+      const data: WalkStepData = {
+        steps: result.steps,
+        distance_m: parseFloat((result.steps * STEP_LENGTH_M).toFixed(1)),
+        timestamp: now,
+        session_start: start,
+      };
+      latestWalkRef.current = data;
+      setWalkSteps(data);
+      animateStep();
+    });
+
+    publishIntervalRef.current = setInterval(() => {
+      const cur = latestWalkRef.current;
+      if (cur && cur.steps > 0 && mqttConnectedRef.current) {
+        void mqttService.publishWalkStep(cur).then(() => {
+          setPublishCount((prev) => prev + 1);
+        });
+      }
+    }, 10000);
+  }, [isPedometerAvailable, setWalkSteps, t]);
+
+  const stopTracking = useCallback(() => {
+    stopTrackingInner();
+  }, [stopTrackingInner]);
 
   const resetSession = () => {
     Alert.alert(t('walk.reset'), t('walk.resetConfirm'), [
@@ -128,8 +148,9 @@ export const WalkStepsScreen: React.FC = () => {
       {
         text: t('walk.reset'),
         onPress: () => {
-          stopTracking();
+          stopTrackingInner();
           clearWalkSteps();
+          latestWalkRef.current = null;
           setPublishCount(0);
         },
       },
@@ -145,23 +166,20 @@ export const WalkStepsScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
 
-        {/* Availability Banner */}
         {isPedometerAvailable === false && (
           <View style={styles.warningBanner}>
             <Text style={styles.warningText}>⚠️ {t('walk.pedometerNotAvailable')}</Text>
           </View>
         )}
 
-        {/* Step Counter */}
         <Animated.View style={[styles.stepCircle, { transform: [{ scale: stepScale }] }]}>
           <Text style={styles.stepCount}>{walkSteps?.steps ?? 0}</Text>
           <Text style={styles.stepUnit}>{t('walk.steps')}</Text>
         </Animated.View>
 
-        {/* Distance */}
         <View style={styles.distanceRow}>
           <View style={styles.distanceStat}>
             <Text style={styles.distanceValue}>
@@ -177,7 +195,6 @@ export const WalkStepsScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Controls */}
         <View style={styles.controls}>
           <TouchableOpacity
             style={[styles.primaryBtn, isTracking ? styles.stopBtn : styles.startBtn]}
@@ -194,7 +211,6 @@ export const WalkStepsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* MQTT Info */}
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>📡 {t('walk.mqttSync')}</Text>
           <View style={styles.infoRow}>
@@ -221,7 +237,7 @@ export const WalkStepsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A1628',
+    backgroundColor: colors.bg,
   },
   scrollContent: {
     alignItems: 'center',
@@ -245,10 +261,10 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 100,
     borderWidth: 4,
-    borderColor: '#1A3A5C',
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0D2137',
+    backgroundColor: colors.surface,
     shadowColor: '#4FC3F7',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
@@ -259,11 +275,11 @@ const styles = StyleSheet.create({
   stepCount: {
     fontSize: 52,
     fontWeight: '800',
-    color: '#66BB6A',
+    color: colors.success,
   },
   stepUnit: {
     fontSize: 16,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: -4,
   },
   distanceRow: {
@@ -278,11 +294,11 @@ const styles = StyleSheet.create({
   distanceValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#E0E0E0',
+    color: colors.text,
   },
   distanceUnit: {
     fontSize: 12,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: 2,
   },
   controls: {
@@ -320,27 +336,27 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    backgroundColor: '#111D30',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   secondaryBtnText: {
-    color: '#B0BEC5',
+    color: colors.text,
     fontSize: 15,
     fontWeight: '600',
   },
   infoCard: {
     width: '100%',
-    backgroundColor: '#111D30',
-    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   infoTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#B0BEC5',
+    color: colors.text,
     marginBottom: 12,
   },
   infoRow: {
@@ -350,11 +366,11 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 13,
-    color: '#667788',
+    color: colors.textMuted,
   },
   infoValue: {
     fontSize: 13,
-    color: '#B0BEC5',
+    color: colors.text,
     fontWeight: '600',
   },
   infoGreen: {

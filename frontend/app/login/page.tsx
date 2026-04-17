@@ -6,7 +6,8 @@ import { ApiError } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/lib/i18n";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { Eye, EyeOff, Activity, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import Logo from "@/components/shared/Logo";
 import { getRoleHome } from "@/lib/routes";
 
 function AuthLoadingShell({ label }: { label: string }) {
@@ -100,8 +101,8 @@ export default function LoginPage() {
         </div>
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-              <Activity className="w-5 h-5" />
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-sm border border-white/10">
+              <Logo size={28} color="white" />
             </div>
             <span className="font-bold text-lg">WheelSense</span>
           </div>
@@ -146,8 +147,8 @@ export default function LoginPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 gradient-cta rounded-lg flex items-center justify-center">
-              <Activity className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center dark:bg-white">
+              <Logo size={28} className="text-white dark:text-black" />
             </div>
             <span className="font-bold text-lg text-foreground">WheelSense</span>
           </div>

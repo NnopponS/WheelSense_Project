@@ -6,6 +6,7 @@ import os
 import subprocess
 import tempfile
 from collections.abc import Awaitable, Callable
+from contextlib import asynccontextmanager
 from typing import Any
 
 import aiomqtt
@@ -33,7 +34,6 @@ from app.models.patients import Patient, PatientContact, PatientDeviceAssignment
 from app.models.caregivers import CareGiver, CareGiverPatientAccess
 from app.models.medication import Prescription, PharmacyOrder
 from app.models.workflow import (
-    AuditTrailEvent,
     CareDirective,
     CareSchedule,
     CareTask,
@@ -108,6 +108,22 @@ logger = logging.getLogger("wheelsense.mcp")
 settings = config.settings
 
 mcp = FastMCP("WheelSense")
+
+# FastMCP `streamable_http_app()` attaches a Router lifespan that runs
+# `StreamableHTTPSessionManager.run()` (anyio task group). FastAPI does not run
+# lifespans for `app.mount(...)` sub-apps, so `app/main.py` must enter this via
+# `mcp_streamable_http_session_lifespan()` alongside the main FastAPI lifespan.
+_mcp_streamable_http_inner_app: Starlette | None = None
+
+
+@asynccontextmanager
+async def mcp_streamable_http_session_lifespan():
+    inner = _mcp_streamable_http_inner_app
+    if inner is None:
+        yield
+        return
+    async with inner.router.lifespan_context(inner):
+        yield
 
 
 def _require_scope(scope: str) -> None:
@@ -1353,7 +1369,12 @@ async def get_floorplan_layout(facility_id: int, floor_id: int) -> dict[str, Any
 )
 async def execute_python_code(code: str) -> dict[str, Any]:
     actor = require_actor_context()
-    
+    if not config.settings.mcp_allow_execute_python:
+        raise PermissionError(
+            "execute_python_code is disabled. WheelSense MCP is limited to domain tools (patients, workflow, "
+            "devices, etc.). Enable only on isolated hosts with WHEELSENSE_MCP_ALLOW_EXECUTE_PYTHON=1."
+        )
+
     with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False, encoding="utf-8") as f:
         f.write(code)
         script_path = f.name
@@ -1465,7 +1486,7 @@ async def list_patient_devices(patient_id: int) -> list[dict[str, Any]]:
           annotations=mcp_types.ToolAnnotations(title="Assign Patient Device", readOnlyHint=False, destructiveHint=False))
 async def assign_patient_device(patient_id: int, device_id: int) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("devices.write")
+    _require_scope("devices.manage")
     async with AsyncSessionLocal() as db:
         assignment = PatientDeviceAssignment(
             workspace_id=actor.workspace_id,
@@ -1482,7 +1503,7 @@ async def assign_patient_device(patient_id: int, device_id: int) -> dict[str, An
           annotations=mcp_types.ToolAnnotations(title="Unassign Patient Device", readOnlyHint=False, destructiveHint=True))
 async def unassign_patient_device(patient_id: int, device_id: int) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("devices.write")
+    _require_scope("devices.manage")
     async with AsyncSessionLocal() as db:
         row = (await db.execute(
             select(PatientDeviceAssignment).where(
@@ -1754,19 +1775,36 @@ async def acknowledge_care_directive(directive_id: int, note: str = "") -> dict[
         return {"directive_id": directive_id, "acknowledged": True}
 
 
-@mcp.tool(name="get_audit_trail", description="Retrieve workflow audit trail events. Admin only.",
-          annotations=mcp_types.ToolAnnotations(title="Get Audit Trail", readOnlyHint=True))
+@mcp.tool(
+    name="get_audit_trail",
+    description="Retrieve workflow audit trail events (same visibility rules as GET /api/workflow/audit).",
+    annotations=mcp_types.ToolAnnotations(title="Get Audit Trail", readOnlyHint=True),
+)
 async def get_audit_trail(limit: int = 50, entity_type: str | None = None) -> list[dict[str, Any]]:
     actor = require_actor_context()
-    _require_scope("audit.read")
-    if actor.role != "admin":
-        raise PermissionError("Only admin can access the audit trail")
+    _require_scope("admin.audit.read")
+    if actor.role not in {"admin", "head_nurse", "supervisor", "observer"}:
+        raise PermissionError("Audit trail query is restricted to staff roles")
     async with AsyncSessionLocal() as db:
-        stmt = select(AuditTrailEvent).where(AuditTrailEvent.workspace_id == actor.workspace_id)
-        if entity_type:
-            stmt = stmt.where(AuditTrailEvent.entity_type == entity_type)
-        rows = (await db.execute(stmt.order_by(AuditTrailEvent.created_at.desc()).limit(limit))).scalars().all()
-        return [{"id": r.id, "entity_type": r.entity_type, "entity_id": r.entity_id, "action": r.action, "actor_role": r.actor_role, "created_at": str(r.created_at)} for r in rows]
+        visible = await get_visible_patient_ids(db, actor.workspace_id, _actor_user())
+        rows = await audit_trail_service.query_events(
+            db,
+            actor.workspace_id,
+            entity_type=entity_type,
+            visible_patient_ids=visible,
+            limit=limit,
+        )
+        return [
+            {
+                "id": r.id,
+                "entity_type": r.entity_type,
+                "entity_id": r.entity_id,
+                "action": r.action,
+                "patient_id": r.patient_id,
+                "created_at": str(r.created_at),
+            }
+            for r in rows
+        ]
 
 
 @mcp.tool(name="claim_workflow_item", description="Claim a workflow item (task/schedule/directive) to yourself.",
@@ -1833,7 +1871,7 @@ async def get_room_details(room_id: int) -> dict[str, Any]:
           annotations=mcp_types.ToolAnnotations(title="Create Room", readOnlyHint=False, destructiveHint=False))
 async def create_room(name: str, room_type: str = "patient", floor_id: int | None = None, description: str | None = None) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("rooms.write")
+    _require_scope("rooms.manage")
     if actor.role != "admin":
         raise PermissionError("Only admin can create rooms")
     async with AsyncSessionLocal() as db:
@@ -1848,7 +1886,7 @@ async def create_room(name: str, room_type: str = "patient", floor_id: int | Non
           annotations=mcp_types.ToolAnnotations(title="Update Room", readOnlyHint=False, destructiveHint=False))
 async def update_room(room_id: int, name: str | None = None, description: str | None = None, room_type: str | None = None) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("rooms.write")
+    _require_scope("rooms.manage")
     if actor.role != "admin":
         raise PermissionError("Only admin can update rooms")
     async with AsyncSessionLocal() as db:
@@ -1870,7 +1908,7 @@ async def update_room(room_id: int, name: str | None = None, description: str | 
           annotations=mcp_types.ToolAnnotations(title="Delete Room", readOnlyHint=False, destructiveHint=True))
 async def delete_room(room_id: int) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("rooms.write")
+    _require_scope("rooms.manage")
     if actor.role != "admin":
         raise PermissionError("Only admin can delete rooms")
     async with AsyncSessionLocal() as db:
@@ -1916,7 +1954,7 @@ async def list_device_activity(limit: int = 30) -> list[dict[str, Any]]:
           annotations=mcp_types.ToolAnnotations(title="Register Device", readOnlyHint=False, destructiveHint=False))
 async def register_device(name: str, device_type: str, serial_number: str | None = None, room_id: int | None = None) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("devices.write")
+    _require_scope("devices.manage")
     if actor.role != "admin":
         raise PermissionError("Only admin can register devices")
     async with AsyncSessionLocal() as db:
@@ -1931,7 +1969,7 @@ async def register_device(name: str, device_type: str, serial_number: str | None
           annotations=mcp_types.ToolAnnotations(title="Update Device", readOnlyHint=False, destructiveHint=False))
 async def update_device(device_id: int, name: str | None = None, room_id: int | None = None, status: str | None = None) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("devices.write")
+    _require_scope("devices.manage")
     async with AsyncSessionLocal() as db:
         d = (await db.execute(select(Device).where(Device.id == device_id, Device.workspace_id == actor.workspace_id))).scalar_one_or_none()
         if not d:
@@ -1951,7 +1989,7 @@ async def update_device(device_id: int, name: str | None = None, room_id: int | 
           annotations=mcp_types.ToolAnnotations(title="Assign Device to Patient", readOnlyHint=False, destructiveHint=False))
 async def assign_device_patient(device_id: int, patient_id: int | None = None) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("devices.write")
+    _require_scope("devices.manage")
     async with AsyncSessionLocal() as db:
         d = (await db.execute(select(Device).where(Device.id == device_id, Device.workspace_id == actor.workspace_id))).scalar_one_or_none()
         if not d:
@@ -2575,9 +2613,9 @@ async def add_timeline_event(patient_id: int, event_type: str, description: str,
           annotations=mcp_types.ToolAnnotations(title="Create Alert", readOnlyHint=False, destructiveHint=False))
 async def create_alert(alert_type: str, description: str, severity: str = "medium", patient_id: int | None = None, device_id: int | None = None) -> dict[str, Any]:
     actor = require_actor_context()
-    _require_scope("alerts.write")
-    if actor.role not in {"admin", "head_nurse"}:
-        raise PermissionError("Only admin or head_nurse can create alerts")
+    _require_scope("alerts.read")
+    if actor.role not in {"admin", "head_nurse", "supervisor", "observer", "patient"}:
+        raise PermissionError("Role cannot create alerts")
     async with AsyncSessionLocal() as db:
         payload = AlertCreate(alert_type=alert_type, description=description, severity=severity, patient_id=patient_id, device_id=device_id)
         alert = await alert_service.create(db, actor.workspace_id, payload)
@@ -2782,14 +2820,19 @@ class wrap_actor_context:
 
 
 def create_remote_mcp_app() -> Starlette:
+    global _mcp_streamable_http_inner_app
     sse_app = wrap_mcp_app(
         mcp.sse_app(),
         allowed_origins=settings.normalized_mcp_allowed_origins,
         require_origin=settings.mcp_require_origin,
         resource_metadata_url="/.well-known/oauth-protected-resource/mcp",
     )
+    # Lifespan must target FastMCP's Starlette app (`router`); `wrap_mcp_app` returns
+    # `McpAuthMiddleware`, which has no `.router` and would crash startup.
+    raw_streamable_http = mcp.streamable_http_app()
+    _mcp_streamable_http_inner_app = raw_streamable_http
     streamable_app = wrap_mcp_app(
-        mcp.streamable_http_app(),
+        raw_streamable_http,
         allowed_origins=settings.normalized_mcp_allowed_origins,
         require_origin=settings.mcp_require_origin,
         resource_metadata_url="/.well-known/oauth-protected-resource/mcp",

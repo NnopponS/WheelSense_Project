@@ -1333,6 +1333,19 @@ const translations = {
   "devicesDetail.noPatient": { en: "No patient linked", th: "ยังไม่ผูกผู้ป่วย" },
   "devicesDetail.caregiver": { en: "Linked caregiver", th: "ผู้ดูแลที่ผูก" },
   "devicesDetail.noCaregiver": { en: "No caregiver linked", th: "ยังไม่ผูกผู้ดูแล" },
+  "devicesDetail.identityAssignmentTitle": {
+    en: "Patient or staff assignment",
+    th: "ผูกกับผู้ป่วยหรือเจ้าหน้าที่",
+  },
+  "devicesDetail.identityTabPatient": { en: "Patient", th: "ผู้ป่วย" },
+  "devicesDetail.identityTabStaff": { en: "Staff", th: "เจ้าหน้าที่" },
+  "devicesDetail.selectCaregiver": { en: "Select caregiver", th: "เลือกผู้ดูแล" },
+  "devicesDetail.linkCaregiver": { en: "Link caregiver", th: "ผูกผู้ดูแล" },
+  "devicesDetail.unlinkCaregiver": { en: "Unlink caregiver", th: "ยกเลิกผู้ดูแล" },
+  "devicesDetail.patientOrStaffHint": {
+    en: "Link either a patient or a staff caregiver directory row, not both.",
+    th: "ผูกได้อย่างใดอย่างหนึ่งระหว่างผู้ป่วยหรือผู้ดูแลในระบบ ไม่ใช่ทั้งคู่",
+  },
   "devicesDetail.networkConfig": { en: "Network config (saved + MQTT push)", th: "ค่าเครือข่าย (บันทึก + ส่ง MQTT)" },
   "devicesDetail.searchPatient": {
     en: "Search patients by name or ID…",

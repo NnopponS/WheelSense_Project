@@ -473,6 +473,7 @@ class DemoControlService:
             status="active",
         )
         session.add(alert)
+        await session.flush()
         await audit_trail_service.log_event(
             session,
             ws_id,
@@ -480,11 +481,15 @@ class DemoControlService:
             domain="demo",
             action="trigger_alert",
             entity_type="alert",
-            entity_id=None,
+            entity_id=alert.id,
             patient_id=patient.id,
             details={"alert_type": alert_type, "room_id": patient.room_id},
         )
         await session.commit()
+        await session.refresh(alert)
+        from app.services.mqtt_publish import publish_alert_to_mqtt_background
+
+        publish_alert_to_mqtt_background(alert)
         return {"patient_id": patient.id, "room_id": patient.room_id, "alert_type": alert_type}
 
     async def capture_room(

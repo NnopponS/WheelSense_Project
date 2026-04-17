@@ -15,6 +15,8 @@ import {
   Alert,
   Animated,
   Easing,
+  Switch,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -31,9 +33,12 @@ import {
 } from '../store/useAppStore';
 import { BLEScanner } from '../services/BLEScanner';
 import { mqttService } from '../services/MQTTService';
+import { setBackgroundMonitoringEnabled } from '../services/BackgroundRuntimeService';
 import { useTranslation } from 'react-i18next';
+import { colors, radius } from '../theme/tokens';
 import { useSettings } from '../store/useAppStore';
 import * as Device from 'expo-device';
+import { Logo } from '../components/Logo';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -50,6 +55,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { roomPrediction } = useRoomPrediction();
 
   const [refreshing, setRefreshing] = useState(false);
+  /** User explicitly stopped BLE from the home card — do not auto-resume on app foreground. */
+  const userStoppedBleRef = useRef(false);
 
   // Animations
   const mqttPulse = useRef(new Animated.Value(0)).current;
@@ -77,6 +84,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return () => {
       BLEScanner.stopScanning();
     };
+  }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active' && !userStoppedBleRef.current) {
+        BLEScanner.startContinuousScanning().catch(() => {});
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   const handleAutoConnect = async () => {
@@ -166,6 +182,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setAppMode(newMode);
   };
 
+  const applyBackgroundMonitoring = (enabled: boolean) => {
+    setBackgroundMonitoringEnabled(enabled);
+  };
+
+  const onToggleBackgroundMonitoring = (value: boolean) => {
+    if (value) {
+      Alert.alert(t('home.backgroundMonitoringTitle'), t('home.backgroundMonitoringExplain'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.ok'),
+          onPress: () => {
+            void applyBackgroundMonitoring(true);
+          },
+        },
+      ]);
+    } else {
+      void applyBackgroundMonitoring(false);
+    }
+  };
+
   const mqttDotOpacity = mqttPulse.interpolate({
     inputRange: [0, 1],
     outputRange: [0.4, 1],
@@ -179,7 +215,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <Animated.View style={[styles.header, { opacity: fadeIn }]}>
         <View style={styles.headerLeft}>
           <View style={styles.headerTitleRow}>
-            <Text style={styles.headerLogo}>🦽</Text>
+            <Logo size={24} color="#E0E0E0" />
             <Text style={styles.headerTitle}>WheelSense</Text>
           </View>
           <View style={styles.headerStatusRow}>
@@ -202,6 +238,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <Text style={styles.disconnectText}>⏏</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      <View style={styles.backgroundRow}>
+        <View style={styles.backgroundRowText}>
+          <Text style={styles.backgroundRowTitle}>{t('home.backgroundMonitoring')}</Text>
+          <Text style={styles.backgroundRowHint}>{t('home.backgroundMonitoringHint')}</Text>
+        </View>
+        <Switch
+          value={!!settings.backgroundMonitoringEnabled}
+          onValueChange={onToggleBackgroundMonitoring}
+          trackColor={{ false: '#333', true: '#2E7D6A' }}
+          thumbColor={settings.backgroundMonitoringEnabled ? '#B2DFDB' : '#888'}
+        />
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -289,8 +338,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 style={[styles.actionBtn, beaconStore.isScanningBeacons && styles.actionBtnActive]}
                 onPress={() => {
                   if (beaconStore.isScanningBeacons) {
+                    userStoppedBleRef.current = true;
                     BLEScanner.stopScanning();
                   } else {
+                    userStoppedBleRef.current = false;
                     BLEScanner.startContinuousScanning();
                   }
                 }}
@@ -416,7 +467,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A1628',
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection: 'row',
@@ -424,9 +475,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#0D1F38',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#1A3050',
+    borderBottomColor: colors.border,
   },
   headerLeft: {},
   headerTitleRow: {
@@ -440,7 +491,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#E0E0E0',
+    color: colors.text,
     letterSpacing: 0.5,
   },
   headerStatusRow: {
@@ -462,16 +513,40 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#8899AA',
+    color: colors.textMuted,
   },
   disconnectBtn: {
     padding: 10,
     borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.surfaceMuted,
   },
   disconnectText: {
     fontSize: 20,
-    color: '#E0E0E0',
+    color: colors.text,
+  },
+  backgroundRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backgroundRowText: {
+    flex: 1,
+    marginRight: 12,
+  },
+  backgroundRowTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  backgroundRowHint: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   scrollView: {
     flex: 1,
@@ -485,24 +560,24 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 16,
     padding: 14,
-    backgroundColor: '#0D2A40',
-    borderRadius: 12,
+    backgroundColor: colors.primaryMuted,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: '#1A4060',
+    borderColor: colors.border,
   },
   roomLabel: {
     fontSize: 12,
-    color: '#8899AA',
+    color: colors.textMuted,
     marginBottom: 2,
   },
   roomName: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#4FC3F7',
+    color: colors.primary,
   },
   roomConfidence: {
     fontSize: 11,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: 2,
   },
 
@@ -511,13 +586,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 14,
     padding: 14,
-    backgroundColor: '#111D30',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   modeLeft: {
     flexDirection: 'row',
@@ -529,16 +604,16 @@ const styles = StyleSheet.create({
   },
   modeLabel: {
     fontSize: 11,
-    color: '#667788',
+    color: colors.textMuted,
   },
   modeValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#E0E0E0',
+    color: colors.text,
   },
   modeSwitchHint: {
     fontSize: 11,
-    color: '#556677',
+    color: colors.textMuted,
   },
 
   // Card grid
@@ -547,16 +622,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   card: {
-    backgroundColor: '#111D30',
+    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   cardActive: {
-    borderColor: '#2A5A8C',
-    shadowColor: '#4FC3F7',
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -571,7 +646,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#1A2A40',
+    backgroundColor: colors.surfaceMuted,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -583,11 +658,11 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#E0E0E0',
+    color: colors.text,
   },
   cardStatus: {
     fontSize: 12,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: 1,
   },
   cardStatusActive: {
@@ -603,7 +678,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#E0E0E0',
+    color: colors.text,
   },
   statValueLarge: {
     fontSize: 32,
@@ -614,14 +689,14 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 11,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: 1,
   },
 
   // Beacon list
   beaconList: {
     borderTopWidth: 1,
-    borderTopColor: '#1A3050',
+    borderTopColor: colors.border,
     paddingTop: 10,
     marginBottom: 10,
   },
@@ -632,7 +707,7 @@ const styles = StyleSheet.create({
   },
   beaconName: {
     fontSize: 13,
-    color: '#B0BEC5',
+    color: colors.textMuted,
     fontFamily: 'monospace',
   },
   beaconRssi: {
@@ -657,15 +732,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#1A3050',
+    backgroundColor: colors.surfaceMuted,
     marginRight: 10,
   },
   actionBtnActive: {
-    backgroundColor: '#B71C1C',
+    backgroundColor: colors.danger,
   },
   actionBtnText: {
     fontSize: 13,
-    color: '#B0BEC5',
+    color: colors.text,
     fontWeight: '600',
   },
 
@@ -677,7 +752,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#8899AA',
+    color: colors.textMuted,
     marginBottom: 12,
     letterSpacing: 0.3,
   },
@@ -690,9 +765,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginHorizontal: 4,
     borderRadius: 12,
-    backgroundColor: '#111D30',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   quickIcon: {
     fontSize: 24,
@@ -700,7 +775,7 @@ const styles = StyleSheet.create({
   },
   quickLabel: {
     fontSize: 11,
-    color: '#8899AA',
+    color: colors.textMuted,
     fontWeight: '600',
   },
 
@@ -710,12 +785,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 10,
     borderRadius: 8,
-    backgroundColor: '#0D1F38',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
   },
   mqttBarText: {
     fontSize: 11,
-    color: '#556677',
+    color: colors.textMuted,
     fontFamily: 'monospace',
   },
 });

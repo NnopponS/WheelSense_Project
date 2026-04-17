@@ -1,0 +1,15 @@
+diff --git a/android/expo-gradle-plugin/expo-autolinking-settings-plugin/src/main/kotlin/expo/modules/plugin/ExpoAutolinkingSettingsPlugin.kt b/android/expo-gradle-plugin/expo-autolinking-settings-plugin/src/main/kotlin/expo/modules/plugin/ExpoAutolinkingSettingsPlugin.kt
+--- a/android/expo-gradle-plugin/expo-autolinking-settings-plugin/src/main/kotlin/expo/modules/plugin/ExpoAutolinkingSettingsPlugin.kt
++++ b/android/expo-gradle-plugin/expo-autolinking-settings-plugin/src/main/kotlin/expo/modules/plugin/ExpoAutolinkingSettingsPlugin.kt
+@@ -34,8 +34,10 @@ open class ExpoAutolinkingSettingsPlugin : Plugin<Settings> {
+   private fun getExpoGradlePluginsFile(settings: Settings): File {
+     val expoModulesAutolinkingPath =
+       settings.providers.exec { env ->
+-        env.workingDir(settings.rootDir)
+-        env.commandLine("node", "--print", "require.resolve('expo-modules-autolinking/package.json', { paths: [require.resolve('expo/package.json')] })")
++        // settings.rootDir is android/ — Node must resolve from JS app root (parent).
++        env.workingDir(settings.rootDir.parentFile)
++        env.commandLine("node", "--print", "require.resolve('expo-modules-autolinking/package.json')")
+       }.standardOutput.asText.get().trim()
+ 
+     val expoAutolinkingDir = File(expoModulesAutolinkingPath).parentFile

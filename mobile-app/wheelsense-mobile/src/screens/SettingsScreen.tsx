@@ -18,11 +18,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { useSettings, useAppMode } from '../store/useAppStore';
+import { useSettings, useAppMode, useAppStore } from '../store/useAppStore';
 import { mqttService } from '../services/MQTTService';
 import { BLEScanner } from '../services/BLEScanner';
 import { NotificationManager } from '../services/NotificationService';
+import { setBackgroundMonitoringEnabled } from '../services/BackgroundRuntimeService';
 import { useTranslation } from 'react-i18next';
+import { colors, radius, space } from '../theme/tokens';
 
 type SettingsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>;
@@ -61,10 +63,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           style: 'destructive',
           onPress: () => {
             resetSettings();
-            setMqttBroker(settings.mqttBroker);
-            setMqttPort(settings.mqttPort.toString());
-            setScanInterval(settings.scanInterval.toString());
-            setTelemetryInterval(settings.telemetryInterval.toString());
+            const s = useAppStore.getState().settings;
+            setMqttBroker(s.mqttBroker);
+            setMqttPort(String(s.mqttPort));
+            setScanInterval(String(s.scanInterval));
+            setTelemetryInterval(String(s.telemetryInterval));
             Alert.alert(t('common.success'), t('settings.settingsReset'));
           },
         },
@@ -165,6 +168,53 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
         </View>
 
+        {(!!settings.portalBaseUrl?.trim() || settings.linkedPatientId != null) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Portal & pairing</Text>
+            {!!settings.portalBaseUrl?.trim() && (
+              <Text style={styles.metaText} selectable>
+                {settings.portalBaseUrl?.trim()}
+              </Text>
+            )}
+            {settings.linkedPatientId != null && (
+              <Text style={styles.metaText}>
+                Patient ID: {settings.linkedPatientId}
+              </Text>
+            )}
+            <Text style={styles.metaHint}>
+              Values are pushed from the server over MQTT when an admin pairs this device.
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.background')}</Text>
+          <View style={styles.modeRow}>
+            <View style={styles.modeInfo}>
+              <Text style={styles.modeLabel}>{t('home.backgroundMonitoring')}</Text>
+              <Text style={styles.modeDescription}>{t('home.backgroundMonitoringHint')}</Text>
+            </View>
+            <Switch
+              value={!!settings.backgroundMonitoringEnabled}
+              onValueChange={(value) => {
+                if (value) {
+                  Alert.alert(t('home.backgroundMonitoringTitle'), t('home.backgroundMonitoringExplain'), [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    {
+                      text: t('common.ok'),
+                      onPress: () => setBackgroundMonitoringEnabled(true),
+                    },
+                  ]);
+                } else {
+                  setBackgroundMonitoringEnabled(false);
+                }
+              }}
+              trackColor={{ false: '#767577', true: '#0052cc' }}
+              thumbColor="#f4f3f4"
+            />
+          </View>
+        </View>
+
         {/* App Mode */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.appMode')}</Text>
@@ -254,49 +304,62 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.bg,
   },
   scrollView: {
     flex: 1,
   },
   section: {
-    backgroundColor: '#fff',
-    margin: 16,
-    marginBottom: 8,
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    margin: space.md,
+    marginBottom: space.sm,
+    padding: space.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
+    color: colors.text,
+    marginBottom: space.md,
+  },
+  metaText: {
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: space.sm,
+  },
+  metaHint: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: space.sm,
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: space.md,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    color: colors.text,
+    marginBottom: space.sm,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: space.sm + 2,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.surfaceMuted,
+    color: colors.text,
   },
   testButton: {
-    backgroundColor: '#e3f2fd',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: colors.primaryMuted,
+    padding: space.sm + 2,
+    borderRadius: radius.sm,
     alignItems: 'center',
   },
   testButtonText: {
-    color: '#0052cc',
+    color: colors.primary,
     fontWeight: '600',
   },
   modeRow: {
@@ -306,52 +369,54 @@ const styles = StyleSheet.create({
   },
   modeInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: space.md,
   },
   modeLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
   },
   modeDescription: {
     fontSize: 12,
-    color: '#666',
+    color: colors.textMuted,
     marginTop: 4,
   },
   saveButton: {
-    backgroundColor: '#0052cc',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    padding: space.md,
+    borderRadius: radius.sm,
     alignItems: 'center',
   },
   saveButtonText: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 16,
     fontWeight: '600',
   },
   resetButton: {
-    backgroundColor: '#f5f5f5',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: colors.surfaceMuted,
+    padding: space.md,
+    borderRadius: radius.sm,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: space.sm + 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   resetButtonText: {
-    color: '#f44336',
+    color: colors.danger,
     fontSize: 16,
     fontWeight: '600',
   },
   versionSection: {
     alignItems: 'center',
-    padding: 24,
+    padding: space.lg,
   },
   versionText: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textMuted,
   },
   buildText: {
     fontSize: 12,
-    color: '#999',
+    color: colors.textMuted,
     marginTop: 4,
   },
   languageRow: {
@@ -361,24 +426,24 @@ const styles = StyleSheet.create({
   languageBtn: {
     flex: 1,
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: space.sm + 2,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.border,
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.surfaceMuted,
   },
   languageBtnActive: {
-    borderColor: '#0052cc',
-    backgroundColor: '#eef4ff',
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryMuted,
   },
   languageBtnText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: colors.textMuted,
   },
   languageBtnTextActive: {
-    color: '#0052cc',
+    color: colors.primary,
     fontWeight: '600',
   },
 });

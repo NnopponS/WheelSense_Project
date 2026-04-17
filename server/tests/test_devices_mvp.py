@@ -715,3 +715,83 @@ async def test_patient_registry_device_reads_are_assignment_scoped(
 
     ok = await client.get("/api/devices/WDEV_PAT", headers=ph)
     assert ok.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_post_device_caregiver_assign_and_unassign(
+    client: AsyncClient, admin_user: User, db_session: AsyncSession
+):
+    ws = admin_user.workspace_id
+    cg = CareGiver(
+        workspace_id=ws,
+        first_name="Sam",
+        last_name="Staff",
+        role="observer",
+        phone="",
+        email="",
+    )
+    db_session.add(cg)
+    db_session.add(
+        Device(
+            workspace_id=ws,
+            device_id="MOB_CG_REST",
+            device_type="mobile_phone",
+            hardware_type="mobile_phone",
+            display_name="Phone",
+        )
+    )
+    await db_session.commit()
+    await db_session.refresh(cg)
+
+    res = await client.post(
+        "/api/devices/MOB_CG_REST/caregiver",
+        json={"caregiver_id": cg.id, "device_role": "mobile_phone"},
+    )
+    assert res.status_code == 200
+    assert res.json()["caregiver_id"] == cg.id
+
+    det = await client.get("/api/devices/MOB_CG_REST")
+    assert det.status_code == 200
+    assert det.json().get("caregiver") is not None
+
+    un = await client.post(
+        "/api/devices/MOB_CG_REST/caregiver",
+        json={"caregiver_id": None, "device_role": "mobile_phone"},
+    )
+    assert un.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_ensure_polar_companion_creates_registry_row(
+    admin_user: User, db_session: AsyncSession
+):
+    from app.services.device_management import ensure_polar_companion_for_mobile_registration, get_device
+
+    ws = admin_user.workspace_id
+    mob = Device(
+        workspace_id=ws,
+        device_id="MOB_POLAR_T",
+        device_type="mobile_phone",
+        hardware_type="mobile_phone",
+        display_name="Test phone",
+        config={},
+    )
+    db_session.add(mob)
+    await db_session.commit()
+    await db_session.refresh(mob)
+
+    companion_id = await ensure_polar_companion_for_mobile_registration(
+        db_session,
+        ws,
+        mob,
+        {"polar_device_id": "AABBCCDDEEFF", "name": "Polar test"},
+    )
+    await db_session.commit()
+    assert companion_id
+    assert companion_id.startswith("POLAR_")
+
+    mob2 = await get_device(db_session, ws, "MOB_POLAR_T")
+    assert (mob2.config or {}).get("polar_companion_device_id") == companion_id
+
+    polar_d = await get_device(db_session, ws, companion_id)
+    assert polar_d.hardware_type == "polar_sense"

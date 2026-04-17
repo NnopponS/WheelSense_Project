@@ -644,6 +644,15 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  assignCaregiverFromDevice: (
+    deviceId: string,
+    payload: { caregiver_id: number | null; device_role?: string },
+  ) =>
+    request<unknown>(`/devices/${encodeURIComponent(deviceId)}/caregiver`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
   cameraCheckSnapshot: (deviceId: string) =>
     request<CameraCheckResponse>(`/devices/${encodeURIComponent(deviceId)}/camera/check`, {
       method: "POST",

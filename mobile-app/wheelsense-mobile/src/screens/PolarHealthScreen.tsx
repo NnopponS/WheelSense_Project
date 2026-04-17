@@ -13,13 +13,13 @@ import {
   Alert,
   Animated,
   Easing,
-  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { usePolarStore, useConnection } from '../store/useAppStore';
-import { HeartRateData, PolarDevice } from '../types';
+import { Polar as PolarService } from '../services/PolarService';
+import { colors, radius, space } from '../theme/tokens';
 
 export const PolarHealthScreen: React.FC = () => {
   const { t } = useTranslation();
@@ -28,6 +28,7 @@ export const PolarHealthScreen: React.FC = () => {
 
   const [hrHistory, setHrHistory] = useState<{ bpm: number; time: string }[]>([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
 
   // HR heartbeat animation
   const beatScale = useRef(new Animated.Value(1)).current;
@@ -51,15 +52,32 @@ export const PolarHealthScreen: React.FC = () => {
   }, [polar.lastHR?.timestamp]);
 
   const handleScanPolar = async () => {
+    if (!PolarService.isAvailable()) {
+      Alert.alert(t('common.error'), t('device.polarNotAvailable'));
+      return;
+    }
     setIsScanning(true);
-    // Note: PolarService should be imported and used here
-    // This is a placeholder for the actual Polar BLE scan
-    Alert.alert(
-      t('common.polarScan'),
-      t('device.polarScanDescription'),
-      [{ text: t('common.ok') }]
-    );
-    setTimeout(() => setIsScanning(false), 3000);
+    polar.clearPolarDiscovery();
+    try {
+      await PolarService.searchForDevice();
+    } catch (e: unknown) {
+      Alert.alert(t('common.error'), t('device.polarScanFailed'));
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleConnectPolar = async (deviceId: string) => {
+    setConnectingId(deviceId);
+    try {
+      await PolarService.connect(deviceId);
+      await PolarService.startHRStreaming();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert(t('device.connectionFailed'), msg);
+    } finally {
+      setConnectingId(null);
+    }
   };
 
   const handleDisconnectPolar = () => {
@@ -69,6 +87,7 @@ export const PolarHealthScreen: React.FC = () => {
         text: t('common.disconnect'),
         style: 'destructive',
         onPress: () => {
+          void PolarService.disconnect();
           polar.setPolarDevice(null);
           polar.setPolarConnection(false);
           setHrHistory([]);
@@ -196,16 +215,34 @@ export const PolarHealthScreen: React.FC = () => {
         {/* Controls */}
         <View style={styles.controls}>
           {!polar.isPolarConnected ? (
-            <TouchableOpacity
-              style={[styles.primaryBtn, isScanning && styles.primaryBtnDisabled]}
-              onPress={handleScanPolar}
-              disabled={isScanning}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.primaryBtnText}>
-                {isScanning ? `🔍 ${t('vitals.scanningTarget')}` : `🔍 ${t('vitals.scanTarget')}`}
-              </Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={[styles.primaryBtn, isScanning && styles.primaryBtnDisabled]}
+                onPress={handleScanPolar}
+                disabled={isScanning}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.primaryBtnText}>
+                  {isScanning ? `🔍 ${t('vitals.scanningTarget')}` : `🔍 ${t('vitals.scanTarget')}`}
+                </Text>
+              </TouchableOpacity>
+              {polar.polarDiscoveredDevices.length > 0 && (
+                <View style={styles.discoveredBox}>
+                  <Text style={styles.cardTitle}>{t('device.polarFound')}</Text>
+                  {polar.polarDiscoveredDevices.map((d) => (
+                    <TouchableOpacity
+                      key={d.deviceId}
+                      style={styles.discoveredRow}
+                      onPress={() => handleConnectPolar(d.deviceId)}
+                      disabled={connectingId === d.deviceId}
+                    >
+                      <Text style={styles.discoveredName}>{d.name}</Text>
+                      <Text style={styles.discoveredId}>{d.deviceId}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </>
           ) : (
             <TouchableOpacity
               style={[styles.primaryBtn, styles.disconnectBtn]}
@@ -246,24 +283,24 @@ export const PolarHealthScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A1628',
+    backgroundColor: colors.bg,
   },
   scrollContent: {
-    padding: 20,
+    padding: space.md + 4,
     paddingBottom: 40,
   },
 
   // Status card
   statusCard: {
-    backgroundColor: '#111D30',
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     padding: 14,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   statusCardConnected: {
-    borderColor: '#2E7D32',
+    borderColor: colors.success,
   },
   statusRow: {
     flexDirection: 'row',
@@ -276,19 +313,19 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   dotGreen: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.success,
   },
   dotRed: {
-    backgroundColor: '#F44336',
+    backgroundColor: colors.danger,
   },
   statusText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#E0E0E0',
+    color: colors.text,
   },
   firmwareText: {
     fontSize: 12,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: 4,
     marginLeft: 20,
   },
@@ -303,15 +340,15 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 90,
     borderWidth: 4,
-    borderColor: '#3A1A2A',
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1A0D14',
-    shadowColor: '#EF5350',
+    backgroundColor: colors.surfaceMuted,
+    shadowColor: colors.danger,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.12,
     shadowRadius: 20,
-    elevation: 8,
+    elevation: 6,
     marginBottom: 14,
   },
   heartEmoji: {
@@ -324,7 +361,7 @@ const styles = StyleSheet.create({
   },
   hrUnit: {
     fontSize: 14,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: -4,
   },
   zoneBadge: {
@@ -342,12 +379,12 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    backgroundColor: '#111D30',
-    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     padding: 18,
     marginBottom: 18,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   stat: {
     alignItems: 'center',
@@ -355,47 +392,47 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#E0E0E0',
+    color: colors.text,
   },
   statMin: {
-    color: '#42A5F5',
+    color: colors.primary,
   },
   statMax: {
-    color: '#EF5350',
+    color: colors.danger,
   },
   statLabel: {
     fontSize: 11,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: 2,
   },
   statDivider: {
     width: 1,
-    backgroundColor: '#1A3050',
+    backgroundColor: colors.border,
   },
 
   // RR / PPG cards
   rrCard: {
-    backgroundColor: '#111D30',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: space.md,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   rrValues: {
-    color: '#B0BEC5',
+    color: colors.textMuted,
     fontSize: 13,
     fontFamily: 'monospace',
     marginTop: 6,
     lineHeight: 20,
   },
   ppgCard: {
-    backgroundColor: '#111D30',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: space.md,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   ppgRow: {
     flexDirection: 'row',
@@ -408,17 +445,17 @@ const styles = StyleSheet.create({
   ppgValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#E0E0E0',
+    color: colors.text,
   },
   ppgLabel: {
     fontSize: 11,
-    color: '#667788',
+    color: colors.textMuted,
     marginTop: 2,
   },
   cardTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#8899AA',
+    color: colors.textMuted,
   },
 
   // Controls
@@ -426,13 +463,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   primaryBtn: {
-    backgroundColor: '#1565C0',
-    borderRadius: 14,
-    paddingVertical: 16,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: space.md,
     alignItems: 'center',
-    shadowColor: '#1565C0',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 6,
   },
@@ -440,34 +477,58 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   disconnectBtn: {
-    backgroundColor: '#B71C1C',
-    shadowColor: '#F44336',
+    backgroundColor: colors.danger,
+    shadowColor: colors.danger,
   },
   primaryBtnText: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 17,
     fontWeight: '700',
+  },
+  discoveredBox: {
+    marginTop: space.md,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    padding: space.sm + 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  discoveredRow: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  discoveredName: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  discoveredId: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginTop: 2,
+    fontFamily: 'monospace',
   },
 
   // History
   historyCard: {
-    backgroundColor: '#111D30',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: space.md,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#1A3050',
+    borderColor: colors.border,
   },
   historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 5,
     borderBottomWidth: 1,
-    borderBottomColor: '#1A2A40',
+    borderBottomColor: colors.border,
   },
   historyTime: {
     fontSize: 12,
-    color: '#667788',
+    color: colors.textMuted,
     fontFamily: 'monospace',
   },
   historyBpm: {
@@ -477,14 +538,14 @@ const styles = StyleSheet.create({
 
   // MQTT info
   mqttInfo: {
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: '#0D1F38',
+    padding: space.sm + 2,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
   },
   mqttText: {
     fontSize: 11,
-    color: '#556677',
+    color: colors.textMuted,
   },
 });
 

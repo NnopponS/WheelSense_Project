@@ -379,15 +379,16 @@ async def test_scope_narrowing_by_role():
     assert "patients.read" in supervisor_scopes
     assert "alerts.manage" in supervisor_scopes
 
-    # Observer has read-only scopes
+    # Observer: no patient registry writes; may acknowledge alerts (REST clinical staff)
     observer_scopes = resolve_effective_token_scopes("observer", [])
     assert "patients.read" in observer_scopes
     assert "patients.write" not in observer_scopes
     assert "alerts.read" in observer_scopes
-    assert "alerts.manage" not in observer_scopes
+    assert "alerts.manage" in observer_scopes
 
     # Patient has limited scopes
     patient_scopes = resolve_effective_token_scopes("patient", [])
+    assert "workspace.read" in patient_scopes
     assert "patients.read" in patient_scopes  # Can read own
     assert "room_controls.use" in patient_scopes
     assert "patients.write" not in patient_scopes

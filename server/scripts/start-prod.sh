@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start WheelSense Production Environment
+# Start WheelSense Production Environment (docker-compose.yml: core + prod DB + cf-tunnel-publish).
 #
 # Usage:
 #   ./start-prod.sh

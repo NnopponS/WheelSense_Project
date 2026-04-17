@@ -73,7 +73,12 @@ export default {
     devices: "Devices",
     mqttOnline: "Online",
     mqttOffline: "Offline",
-    queue: "Queue"
+    queue: "Queue",
+    backgroundMonitoring: "Background monitoring",
+    backgroundMonitoringHint: "MQTT, nodes & steps while the app is not open (OS decides how often).",
+    backgroundMonitoringTitle: "Enable background monitoring?",
+    backgroundMonitoringExplain:
+      "Android (dev/production build): a persistent notification runs WheelSense with MQTT, BLE nodes, and telemetry while the app is in the background. iOS: background work uses system scheduling (BackgroundFetch + background tasks); it is not continuous 24/7. Step queries between runs work best on iOS. Expo Go cannot use MQTT/BLE native modules — use a development build.",
   },
   device: {
     title: "Devices",
@@ -140,6 +145,7 @@ export default {
     startTracking: "Start Tracking",
     stopTracking: "Stop Tracking",
     pedometerNotAvailable: "Pedometer is not available on this device",
+    pedometerPermissionDenied: "Motion / activity permission is required to count steps. Enable it in system settings.",
     meters: "Meters",
     duration: "Duration",
     reset: "Reset",
@@ -190,6 +196,7 @@ export default {
     english: "English",
     thai: "Thai",
     version: "WheelSense Mobile",
-    build: "Build"
+    build: "Build",
+    background: "Background"
   }
 };

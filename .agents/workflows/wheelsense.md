@@ -25,6 +25,17 @@ Treat `docs/plans/*` and `.agents/changes/*` as historical or planning context, 
 - Add Alembic migrations for schema changes
 - Sync backend contracts to `frontend/lib/types.ts` when API shapes change
 
+## Branding and Design System
+
+- **Official Logo**: Modular Black & White (B&W) icon representing a wheel with a centered 'W' and a sensing dot.
+- **Components**:
+  - **Mobile**: `src/components/Logo.tsx`
+  - **Frontend**: `frontend/components/shared/Logo.tsx`
+- **Core Rules**:
+  - **Minimalism**: Maintain a high-contrast Black/White aesthetic for all primary branding.
+  - **No Taglines**: Do not include "Intelligent tire monitoring" or other taglines in the logo or main headers.
+  - **Font**: Use modern sans-serif (Inter/System) for the 'W' and text.
+
 ## Workflow Before Editing
 
 1. Read the relevant runtime entrypoints

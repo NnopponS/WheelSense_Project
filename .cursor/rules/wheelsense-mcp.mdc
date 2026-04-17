@@ -20,7 +20,9 @@ WheelSense exposes an MCP (Model Context Protocol) server for AI assistants to i
 - `server/app/agent_runtime/service.py` - Intent recognition and execution planning
 - `server/app/api/endpoints/chat_actions.py` - 3-stage action flow (propose/confirm/execute)
 
-**Mount Point:** `/mcp` - SSE and Streamable HTTP endpoints
+**Mount Point:** FastAPI mounts a Starlette app at `/mcp` — SSE at `/mcp/sse`, Streamable HTTP MCP at **`/mcp/mcp`**. The FastAPI lifespan must run `mcp_streamable_http_session_lifespan()` (see `server/app/main.py`) so the MCP SDK’s `StreamableHTTPSessionManager` task group starts; otherwise Streamable HTTP returns `Task group is not initialized`.
+
+**Agent runtime tool execution:** `server/app/agent_runtime/service.py` calls MCP via the official Streamable HTTP client by default (`AGENT_RUNTIME_MCP_TOOL_TRANSPORT`, `MCP_STREAMABLE_HTTP_URL` / `SERVER_BASE_URL`), or `direct` for `execute_workspace_tool` only when configured.
 
 ## MCP Tool Registry
 

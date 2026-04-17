@@ -63,10 +63,13 @@ export function vitalMatchesHardwareTab(
   if (tab === "all") return true;
   const dev = devicesByDeviceId.get(v.device_id);
   const hw = dev?.hardware_type;
-  if (hw === tab) return true;
+  // Legacy MQTT rows may still be mobile_app until migrated
+  const hwNorm = hw === "mobile_app" ? "mobile_phone" : hw;
+  if (hwNorm === tab) return true;
   if (tab === "polar_sense") {
     if (v.source === "polar_sdk") return true;
-    if (hw === "wheelchair" && (v.source === "ble" || v.source === "sim_seed")) return true;
+    if (v.source === "mobile_ble") return true;
+    if (hwNorm === "wheelchair" && (v.source === "ble" || v.source === "sim_seed")) return true;
   }
   return false;
 }

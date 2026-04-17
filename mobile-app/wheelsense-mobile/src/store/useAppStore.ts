@@ -31,6 +31,8 @@ interface DeviceState {
   polarDevice: PolarDevice | null;
   isPolarConnected: boolean;
   isPolarScanning: boolean;
+  /** Ephemeral BLE scan results (Polar / Verity names); not persisted */
+  polarDiscoveredDevices: PolarDevice[];
   lastHR?: HeartRateData;
   lastPPG?: PPGData;
 
@@ -69,6 +71,8 @@ interface DeviceActions {
   setPolarDevice: (device: PolarDevice | null) => void;
   setPolarConnection: (connected: boolean) => void;
   setPolarScanning: (scanning: boolean) => void;
+  clearPolarDiscovery: () => void;
+  reportPolarDiscovered: (device: PolarDevice) => void;
   setLastHR: (hr: HeartRateData) => void;
   setLastPPG: (ppg: PPGData) => void;
 
@@ -106,6 +110,8 @@ const defaultSettings: AppSettings = {
   scanInterval: 5000,
   telemetryInterval: 3000,
   language: 'en',
+  portalBaseUrl: '',
+  backgroundMonitoringEnabled: false,
 };
 
 // ==================== STORE DEFINITION ====================
@@ -129,6 +135,7 @@ export const useAppStore = create<AppStore>()(
       polarDevice: null,
       isPolarConnected: false,
       isPolarScanning: false,
+      polarDiscoveredDevices: [],
       detectedBeacons: [],
       closestBeacon: undefined,
       isScanningBeacons: false,
@@ -162,20 +169,27 @@ export const useAppStore = create<AppStore>()(
           closestBeacon: undefined,
           roomPrediction: null,
           walkSteps: null,
+          polarDiscoveredDevices: [],
         }),
 
       // Polar actions
-      setPolarDevice: (device) =>
-        set({
-          polarDevice: device,
-          isPolarConnected: !!device,
-        }),
+      setPolarDevice: (device) => set({ polarDevice: device }),
 
       setPolarConnection: (connected) =>
         set({ isPolarConnected: connected }),
 
       setPolarScanning: (scanning) =>
         set({ isPolarScanning: scanning }),
+
+      clearPolarDiscovery: () => set({ polarDiscoveredDevices: [] }),
+
+      reportPolarDiscovered: (device) =>
+        set((state) => {
+          if (state.polarDiscoveredDevices.some((x) => x.deviceId === device.deviceId)) {
+            return {};
+          }
+          return { polarDiscoveredDevices: [...state.polarDiscoveredDevices, device] };
+        }),
 
       setLastHR: (hr) =>
         set({ lastHR: hr }),
@@ -316,11 +330,14 @@ export const usePolarStore = () => {
     polarDevice: store.polarDevice,
     isPolarConnected: store.isPolarConnected,
     isPolarScanning: store.isPolarScanning,
+    polarDiscoveredDevices: store.polarDiscoveredDevices,
     lastHR: store.lastHR,
     lastPPG: store.lastPPG,
     setPolarDevice: store.setPolarDevice,
     setPolarConnection: store.setPolarConnection,
     setPolarScanning: store.setPolarScanning,
+    clearPolarDiscovery: store.clearPolarDiscovery,
+    reportPolarDiscovered: store.reportPolarDiscovered,
     setLastHR: store.setLastHR,
     setLastPPG: store.setLastPPG,
   };

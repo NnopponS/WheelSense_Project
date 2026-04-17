@@ -60,3 +60,48 @@ async def test_mcp_tool_direct_call():
 
     result = await get_system_health()
     assert result["status"] == "ok"
+
+
+def test_mcp_workspace_tool_registry_keys_unique():
+    from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
+
+    keys = list(_WORKSPACE_TOOL_REGISTRY.keys())
+    assert len(keys) == len(set(keys))
+
+
+def test_mcp_admin_allowlist_matches_registry():
+    from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
+    from app.services.ai_chat import get_role_mcp_tool_allowlist
+
+    admin_tools = get_role_mcp_tool_allowlist()["admin"]
+    assert admin_tools == set(_WORKSPACE_TOOL_REGISTRY.keys())
+
+
+def test_mcp_streamable_http_lifespan_target_is_inner_starlette_not_auth_middleware():
+    """Regression: FastAPI lifespan uses inner.router; McpAuthMiddleware has no router."""
+    from app.mcp.auth import McpAuthMiddleware
+    from app.mcp import server as mcp_server
+
+    mcp_server._mcp_streamable_http_inner_app = None
+    mcp_server.create_remote_mcp_app()
+    inner = mcp_server._mcp_streamable_http_inner_app
+    assert inner is not None
+    assert not isinstance(inner, McpAuthMiddleware)
+    assert hasattr(inner, "router")
+
+
+@pytest.mark.asyncio
+async def test_mcp_streamable_http_tool_call_via_agent_runtime(admin_user: User):
+    """Regression: StreamableHTTPSessionManager task group + MCP client stack."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://localhost:8000") as client:
+        root_response = await client.get("/")
+        if root_response.json().get("mcp") is None:
+            pytest.skip("MCP mount disabled")
+
+    from app.agent_runtime import service as agent_runtime_service
+
+    token = create_access_token(subject=str(admin_user.id), role=admin_user.role)
+    result = await agent_runtime_service._call_mcp_tool(token, "get_system_health", {})
+    assert isinstance(result, dict)
+    assert result.get("status") == "ok"

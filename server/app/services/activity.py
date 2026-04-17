@@ -33,6 +33,13 @@ class ActivityTimelineService(CRUDBase[ActivityTimeline, TimelineEventCreate, Ti
         return list(result.scalars().all())
 
 class AlertService(CRUDBase[Alert, AlertCreate, AlertCreate]):
+    async def create(self, session: AsyncSession, ws_id: int, obj_in: AlertCreate) -> Alert:
+        alert = await super().create(session, ws_id, obj_in)
+        from app.services.mqtt_publish import publish_alert_to_mqtt_background
+
+        publish_alert_to_mqtt_background(alert)
+        return alert
+
     async def get_active_alerts(
         self, session: AsyncSession, ws_id: int, patient_id: Optional[int] = None
     ) -> List[Alert]:

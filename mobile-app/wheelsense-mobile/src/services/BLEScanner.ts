@@ -10,8 +10,6 @@ import {
   ScanMode,
   State as BLEState,
 } from 'react-native-ble-plx';
-import * as TaskManager from 'expo-task-manager';
-import * as BackgroundFetch from 'expo-background-fetch';
 import { Platform, PermissionsAndroid } from 'react-native';
 import { BLEBeacon } from '../types';
 import { useAppStore } from '../store/useAppStore';
@@ -34,7 +32,6 @@ export interface BLEScannerApi {
 // ==================== CONSTANTS ====================
 
 const NODE_PREFIX = 'WSN_';
-const BLE_SCAN_TASK = 'wheelsense-background-scan';
 const STALE_BEACON_MS = 30000; // 30 seconds
 const SCAN_WINDOW_MS = 10000;  // 10 seconds per scan cycle
 const SCAN_REST_MS = 2000;     // 2 seconds rest between cycles
@@ -314,46 +311,13 @@ class BLEScannerService implements BLEScannerApi {
   // ==================== BACKGROUND TASK ====================
 
   async registerBackgroundTask(): Promise<void> {
-    try {
-      TaskManager.defineTask(BLE_SCAN_TASK, async () => {
-        try {
-          console.log('[BLE Background] Starting scan...');
-
-          const scanner = new BLEScannerService();
-          await scanner.startScanning();
-
-          await new Promise((resolve) => setTimeout(resolve, SCAN_WINDOW_MS));
-
-          scanner.stopScanning();
-
-          console.log('[BLE Background] Scan completed');
-
-          return BackgroundFetch.BackgroundFetchResult.NewData;
-        } catch (error) {
-          console.error('[BLE Background] Error:', error);
-          return BackgroundFetch.BackgroundFetchResult.Failed;
-        }
-      });
-
-      await BackgroundFetch.registerTaskAsync(BLE_SCAN_TASK, {
-        minimumInterval: 60,
-        stopOnTerminate: false,
-        startOnBoot: true,
-      });
-
-      console.log('[BLE] Background task registered');
-    } catch (error) {
-      console.error('[BLE] Failed to register background task:', error);
-    }
+    const { setBackgroundMonitoringEnabled } = await import('./BackgroundRuntimeService');
+    setBackgroundMonitoringEnabled(true);
   }
 
   async unregisterBackgroundTask(): Promise<void> {
-    try {
-      await BackgroundFetch.unregisterTaskAsync(BLE_SCAN_TASK);
-      console.log('[BLE] Background task unregistered');
-    } catch (error) {
-      console.error('[BLE] Failed to unregister background task:', error);
-    }
+    const { setBackgroundMonitoringEnabled } = await import('./BackgroundRuntimeService');
+    setBackgroundMonitoringEnabled(false);
   }
 
   // ==================== UTILITY ====================

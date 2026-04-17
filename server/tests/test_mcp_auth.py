@@ -447,13 +447,14 @@ async def test_role_mcp_scope_mapping():
     head_nurse_scopes = ROLE_MCP_SCOPES["head_nurse"]
     assert "patients.read" in head_nurse_scopes
     assert "patients.write" in head_nurse_scopes
-    assert "admin.audit.read" not in head_nurse_scopes
+    assert "admin.audit.read" in head_nurse_scopes
 
     # Supervisor has read and alert manage but not patient write
     supervisor_scopes = ROLE_MCP_SCOPES["supervisor"]
     assert "patients.read" in supervisor_scopes
     assert "patients.write" not in supervisor_scopes
     assert "alerts.manage" in supervisor_scopes
+    assert "admin.audit.read" in supervisor_scopes
 
     # Observer has read-only
     observer_scopes = ROLE_MCP_SCOPES["observer"]
@@ -461,9 +462,11 @@ async def test_role_mcp_scope_mapping():
     assert "devices.read" in observer_scopes
     assert "patients.write" not in observer_scopes
     assert "devices.manage" not in observer_scopes
+    assert "admin.audit.read" in observer_scopes
 
     # Patient has limited self-access
     patient_scopes = ROLE_MCP_SCOPES["patient"]
+    assert "workspace.read" in patient_scopes
     assert "patients.read" in patient_scopes  # Self read
     assert "alerts.read" in patient_scopes
     assert "room_controls.use" in patient_scopes

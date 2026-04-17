@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import os
+import re
 from typing import Any
 
 from sqlalchemy import and_, delete, desc, or_, select, update
@@ -11,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import json
 import logging
-import re
 import uuid
 
 import aiomqtt
@@ -105,9 +106,13 @@ def _legacy_device_type_for_storage(hardware_type: str) -> str:
 def _normalize_hardware_type_mqtt(device_type: str | None, hardware_type: str | None) -> str:
     """Telemetry-safe hardware normalization; invalid or missing values default to wheelchair."""
     ht = (hardware_type or "").strip().lower() or None
+    if ht == "mobile_app":
+        ht = "mobile_phone"
     if ht and ht in HARDWARE_TYPES:
         return ht
     dt = (device_type or "").strip().lower()
+    if dt == "mobile_app":
+        dt = "mobile_phone"
     if dt == "camera":
         return "node"
     if dt in HARDWARE_TYPES:
@@ -800,6 +805,114 @@ async def patch_device(
                 )
     return dev
 
+async def _deactivate_caregiver_assignments_for_device(
+    session: AsyncSession, ws_id: int, device_id: str
+) -> None:
+    q = select(CareGiverDeviceAssignment).where(
+        CareGiverDeviceAssignment.workspace_id == ws_id,
+        CareGiverDeviceAssignment.device_id == device_id,
+        CareGiverDeviceAssignment.is_active.is_(True),
+    )
+    for row in (await session.execute(q)).scalars().all():
+        row.is_active = False
+        row.unassigned_at = utcnow()
+        session.add(row)
+
+
+def polar_companion_registry_device_id(peripheral_id: str) -> str:
+    """Stable registry id (<=32 chars) for a Polar BLE peripheral id / MAC."""
+    s = (peripheral_id or "").strip()
+    hex_run = re.sub(r"[^0-9A-Fa-f]", "", s)
+    if len(hex_run) >= 8:
+        return f"POLAR_{hex_run.upper()}"[:32]
+    digest = hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()[:10].upper()
+    return f"POLAR_{digest}"
+
+
+async def mirror_mobile_assignments_to_polar_companion(
+    session: AsyncSession, ws_id: int, mobile_device_id: str, polar_registry_id: str
+) -> None:
+    """Copy active patient or caregiver assignment from phone to polar_sense companion row."""
+    pa, patient = await _active_patient_assignment(session, ws_id, mobile_device_id)
+    ca, caregiver = await _active_caregiver_assignment(session, ws_id, mobile_device_id)
+    if pa and patient:
+        from app.schemas.patients import DeviceAssignmentCreate
+        from app.services.patient import patient_service
+
+        await patient_service.assign_device(
+            session,
+            ws_id,
+            patient.id,
+            DeviceAssignmentCreate(device_id=polar_registry_id, device_role="polar_hr"),
+        )
+    if ca and caregiver:
+        await assign_caregiver_device(
+            session, ws_id, caregiver.id, polar_registry_id, "mobile_phone"
+        )
+
+
+async def _polar_companion_id_for_mobile(session: AsyncSession, ws_id: int, mobile_device_id: str) -> str | None:
+    dev = await get_device(session, ws_id, mobile_device_id)
+    raw = (dev.config or {}).get("polar_companion_device_id")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return None
+
+
+async def ensure_polar_companion_for_mobile_registration(
+    session: AsyncSession,
+    workspace_id: int,
+    mobile_device: Device,
+    companion: dict[str, Any] | None,
+) -> str | None:
+    """Upsert polar_sense registry row linked to a mobile_phone; mirror identity assignments."""
+    if not companion or not isinstance(companion, dict):
+        return None
+    peripheral = str(
+        companion.get("polar_device_id") or companion.get("device_id") or ""
+    ).strip()
+    if not peripheral:
+        return None
+    companion_id = polar_companion_registry_device_id(peripheral)
+    display = str(companion.get("name") or "Polar Verity Sense").strip()[:128] or companion_id
+    q = select(Device).where(
+        Device.workspace_id == workspace_id,
+        Device.device_id == companion_id,
+    )
+    polar_dev = (await session.execute(q)).scalar_one_or_none()
+    if polar_dev:
+        polar_dev.last_seen = utcnow()  # type: ignore[assignment]
+        cfg = dict(polar_dev.config or {})
+        cfg["parent_mobile_device_id"] = mobile_device.device_id
+        cfg["polar_peripheral_id"] = peripheral[:128]
+        polar_dev.config = cfg  # type: ignore[assignment]
+        if polar_dev.hardware_type != "polar_sense":
+            polar_dev.hardware_type = "polar_sense"
+            polar_dev.device_type = "polar_sense"
+        session.add(polar_dev)
+    else:
+        polar_dev = Device(
+            workspace_id=workspace_id,
+            device_id=companion_id,
+            device_type="polar_sense",
+            hardware_type="polar_sense",
+            display_name=display[:128],
+            last_seen=utcnow(),
+            firmware=str(companion.get("firmware_version") or "")[:16],
+            config={
+                "parent_mobile_device_id": mobile_device.device_id,
+                "polar_peripheral_id": peripheral[:128],
+            },
+        )
+        session.add(polar_dev)
+    mcfg = dict(mobile_device.config or {})
+    mcfg["polar_companion_device_id"] = companion_id
+    mobile_device.config = mcfg  # type: ignore[assignment]
+    session.add(mobile_device)
+    await session.flush()
+    return companion_id
+
+
 async def assign_patient_from_device(
     session: AsyncSession,
     ws_id: int,
@@ -820,18 +933,64 @@ async def assign_patient_from_device(
             row.is_active = False
             row.unassigned_at = utcnow()
             session.add(row)
+        dev = await get_device(session, ws_id, device_id)
+        polar_c = (dev.config or {}).get("polar_companion_device_id")
+        if isinstance(polar_c, str) and polar_c.strip():
+            pid = polar_c.strip()
+            pq = select(PatientDeviceAssignment).where(
+                PatientDeviceAssignment.workspace_id == ws_id,
+                PatientDeviceAssignment.device_id == pid,
+                PatientDeviceAssignment.is_active.is_(True),
+            )
+            for row in list((await session.execute(pq)).scalars().all()):
+                row.is_active = False
+                row.unassigned_at = utcnow()
+                session.add(row)
         await session.commit()
         return None
+
+    await _deactivate_caregiver_assignments_for_device(session, ws_id, device_id)
+    await session.flush()
 
     from app.schemas.patients import DeviceAssignmentCreate
     from app.services.patient import patient_service
 
-    return await patient_service.assign_device(
+    row = await patient_service.assign_device(
         session,
         ws_id=ws_id,
         patient_id=patient_id,
         obj_in=DeviceAssignmentCreate(device_id=device_id, device_role=device_role),
     )
+    polar_id = await _polar_companion_id_for_mobile(session, ws_id, device_id)
+    if polar_id:
+        await mirror_mobile_assignments_to_polar_companion(session, ws_id, device_id, polar_id)
+    return row
+
+
+async def assign_caregiver_from_device(
+    session: AsyncSession,
+    ws_id: int,
+    device_id: str,
+    caregiver_id: int | None,
+    device_role: str,
+) -> CareGiverDeviceAssignment | None:
+    """Assign/unassign staff (caregiver directory) for a device. Mutually exclusive with patient assignment."""
+    await get_device(session, ws_id, device_id)
+    if caregiver_id is None:
+        await _deactivate_caregiver_assignments_for_device(session, ws_id, device_id)
+        dev = await get_device(session, ws_id, device_id)
+        polar_c = (dev.config or {}).get("polar_companion_device_id")
+        if isinstance(polar_c, str) and polar_c.strip():
+            await _deactivate_caregiver_assignments_for_device(session, ws_id, polar_c.strip())
+        await session.commit()
+        return None
+
+    await assign_patient_from_device(session, ws_id, device_id, None, device_role)
+    row = await assign_caregiver_device(session, ws_id, caregiver_id, device_id, device_role)
+    polar_id = await _polar_companion_id_for_mobile(session, ws_id, device_id)
+    if polar_id:
+        await mirror_mobile_assignments_to_polar_companion(session, ws_id, device_id, polar_id)
+    return row
 
 async def _latest_imu(session: AsyncSession, ws_id: int, device_id: str) -> IMUTelemetry | None:
     q = (

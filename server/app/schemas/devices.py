@@ -23,6 +23,11 @@ class DevicePatientAssign(BaseModel):
     patient_id: int | None = None
     device_role: str = "wheelchair_sensor"
 
+
+class DeviceCaregiverAssign(BaseModel):
+    caregiver_id: int | None = None
+    device_role: str = "mobile_phone"
+
 class DeviceCommandRequest(BaseModel):
     """Publish JSON to device control topic. Channel picks MQTT topic."""
 

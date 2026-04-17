@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator
+from functools import lru_cache
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -69,135 +70,29 @@ ROLE_SYSTEM_PROMPTS: dict[str, str] = {
 
 GENERAL_ASSISTANT_SUFFIX = (
     " You can answer general questions, small talk, and broad knowledge queries as a normal assistant. "
-    "When a request needs WheelSense live data or actions, use only grounded system data and do not invent facts."
+    "When a request needs WheelSense live data or actions, use only grounded system data and do not invent facts. "
+    "Do not attempt to run shell commands, modify application source code, or touch the host filesystem outside "
+    "the published WheelSense MCP tools."
 )
 
 WORKSPACE_ACTION_MANAGER_ROLES = {"admin", "head_nurse"}
 
-# Mirrors `server/app/mcp/server.py` `_WORKSPACE_TOOL_REGISTRY` keys; MCP still enforces scopes at execute.
-_ALL_MCP_WORKSPACE_TOOLS: frozenset[str] = frozenset(
+
+@lru_cache(maxsize=1)
+def _all_mcp_workspace_tool_names() -> frozenset[str]:
+    """Workspace MCP tool names from `_WORKSPACE_TOOL_REGISTRY` (authoritative)."""
+    from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
+
+    return frozenset(_WORKSPACE_TOOL_REGISTRY.keys())
+
+
+# ---------------------------------------------------------------------------
+# MCP tools that must never be driven by EaseAI / chat (arbitrary code, platform escape hatches).
+# Still registered for optional human-operated MCP when explicitly enabled in settings.
+# ---------------------------------------------------------------------------
+_EASEAI_FORBIDDEN_TOOLS: frozenset[str] = frozenset(
     {
-        # Core / read
-        "get_current_user_context",
-        "get_system_health",
-        "list_workspaces",
-        "get_workspace_analytics",
-        "get_ai_runtime_summary",
         "execute_python_code",
-        # Patients
-        "list_visible_patients",
-        "get_patient_details",
-        "create_patient_record",
-        "update_patient",
-        "delete_patient",
-        "update_patient_room",
-        "set_patient_mode",
-        "list_patient_devices",
-        "assign_patient_device",
-        "unassign_patient_device",
-        "list_patient_caregivers",
-        "update_patient_caregivers",
-        "list_patient_contacts",
-        "create_patient_contact",
-        "update_patient_contact",
-        "delete_patient_contact",
-        # Devices
-        "list_devices",
-        "get_device_details",
-        "list_device_activity",
-        "register_device",
-        "update_device",
-        "assign_device_patient",
-        "send_device_command",
-        "trigger_camera_photo",
-        # Rooms
-        "list_rooms",
-        "get_room_details",
-        "create_room",
-        "update_room",
-        "delete_room",
-        "control_room_smart_device",
-        # Facilities
-        "list_facilities",
-        "get_facility_details",
-        "get_floorplan_layout",
-        "create_facility",
-        "update_facility",
-        "delete_facility",
-        "list_facility_floors",
-        "create_facility_floor",
-        "update_facility_floor",
-        # Alerts
-        "list_active_alerts",
-        "acknowledge_alert",
-        "resolve_alert",
-        "create_alert",
-        "get_alert_details",
-        "list_all_alerts",
-        # Vitals & observations
-        "get_patient_vitals",
-        "add_vital_reading",
-        "add_health_observation",
-        "get_patient_timeline",
-        "add_timeline_event",
-        # Workflow tasks & schedules
-        "list_workflow_tasks",
-        "create_workflow_task",
-        "update_workflow_task_status",
-        "claim_workflow_item",
-        "handoff_workflow_item",
-        "list_workflow_schedules",
-        "create_workflow_schedule",
-        "update_workflow_schedule",
-        # Messaging
-        "send_message",
-        "get_message_recipients",
-        "list_messages",
-        "mark_message_read",
-        # Handover & care directives
-        "list_handover_notes",
-        "create_handover_note",
-        "list_care_directives",
-        "create_care_directive",
-        "update_care_directive",
-        "acknowledge_care_directive",
-        "get_audit_trail",
-        # Caregivers
-        "list_caregivers",
-        "create_caregiver",
-        "get_caregiver_details",
-        "update_caregiver",
-        "delete_caregiver",
-        "list_caregiver_patients",
-        "update_caregiver_patients",
-        # Medications
-        "list_prescriptions",
-        "create_prescription",
-        "update_prescription",
-        "list_pharmacy_orders",
-        "request_pharmacy_order",
-        "update_pharmacy_order",
-        # Support & service requests
-        "list_support_tickets",
-        "create_support_ticket",
-        "update_support_ticket",
-        "add_support_comment",
-        "list_service_requests",
-        "create_service_request",
-        "update_service_request",
-        # Shift checklist & calendar
-        "get_my_shift_checklist",
-        "update_my_shift_checklist",
-        "list_workspace_shift_checklists",
-        "list_calendar_events",
-        # AI settings
-        "get_ai_settings",
-        "update_ai_settings",
-        # User management
-        "list_users",
-        "create_user",
-        "update_user",
-        "delete_user",
     }
 )
 
@@ -263,11 +158,16 @@ _HEAD_NURSE_EXTRA_TOOLS: frozenset[str] = frozenset(
     }
 )
 
-_HEAD_NURSE_TOOLS: frozenset[str] = _ALL_MCP_WORKSPACE_TOOLS - _ADMIN_ONLY_TOOLS
-
-_SUPERVISOR_TOOLS: frozenset[str] = _HEAD_NURSE_TOOLS - _HEAD_NURSE_EXTRA_TOOLS
-
 # Observer has supervisor's read tools + own-shift write ops
+# Vitals / timeline manual writes (REST: ROLE_CARE_NOTE_WRITERS — excludes supervisor).
+_CARE_NOTE_WRITER_TOOLS: frozenset[str] = frozenset(
+    {
+        "add_vital_reading",
+        "add_health_observation",
+        "add_timeline_event",
+    }
+)
+
 _OBSERVER_ONLY_WRITE: frozenset[str] = frozenset(
     {
         "create_workflow_task",
@@ -285,20 +185,6 @@ _OBSERVER_ONLY_WRITE: frozenset[str] = frozenset(
         "list_calendar_events",
         "acknowledge_care_directive",
         "mark_message_read",
-    }
-)
-
-_SUPERVISOR_WRITE_REMOVED: frozenset[str] = frozenset(
-    {
-        "create_workflow_schedule",
-        "update_workflow_schedule",
-        "list_messages",
-        "mark_message_read",
-        "acknowledge_care_directive",
-        "get_audit_trail",
-        "list_care_directives",
-        "resolve_alert",
-        "list_all_alerts",
     }
 )
 
@@ -340,47 +226,59 @@ _OBSERVER_READ: frozenset[str] = frozenset(
     }
 )
 
-_OBSERVER_TOOLS: frozenset[str] = _OBSERVER_READ | _OBSERVER_ONLY_WRITE
 
-ROLE_MCP_TOOL_ALLOWLIST: dict[str, set[str]] = {
-    "admin": set(_ALL_MCP_WORKSPACE_TOOLS),
-    "head_nurse": set(_HEAD_NURSE_TOOLS),
-    "supervisor": set(_SUPERVISOR_TOOLS),
-    "observer": set(_OBSERVER_TOOLS),
-    "patient": {
-        # Own data read
-        "get_current_user_context",
-        "get_system_health",
-        "get_patient_details",
-        "get_patient_vitals",
-        "get_patient_timeline",
-        "list_patient_devices",
-        "list_patient_contacts",
-        # Rooms & facilities (read)
-        "list_rooms",
-        "get_room_details",
-        "get_facility_details",
-        "get_floorplan_layout",
-        # Room controls
-        "control_room_smart_device",
-        # Own schedule & tasks
-        "list_workflow_tasks",
-        "list_workflow_schedules",
-        "list_calendar_events",
-        # Own medications
-        "list_prescriptions",
-        "list_pharmacy_orders",
-        # Alerts (own)
-        "list_active_alerts",
-        # Service & support requests
-        "create_service_request",
-        "list_service_requests",
-        "create_support_ticket",
-        "list_support_tickets",
-        # Messaging (AI-mediated)
-        "get_message_recipients",
-    },
-}
+@lru_cache(maxsize=1)
+def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
+    all_tools = _all_mcp_workspace_tool_names()
+    head_nurse = all_tools - _ADMIN_ONLY_TOOLS
+    # Supervisor matches head_nurse minus operational/registry writes in _HEAD_NURSE_EXTRA_TOOLS
+    # and vitals/timeline note tools (supervisor is not in ROLE_CARE_NOTE_WRITERS).
+    supervisor = head_nurse - _HEAD_NURSE_EXTRA_TOOLS - _CARE_NOTE_WRITER_TOOLS
+    observer = _OBSERVER_READ | _OBSERVER_ONLY_WRITE
+    return {
+        "admin": set(all_tools - _EASEAI_FORBIDDEN_TOOLS),
+        "head_nurse": set(head_nurse),
+        "supervisor": set(supervisor),
+        "observer": set(observer),
+        "patient": {
+            # Own data read
+            "get_current_user_context",
+            "get_system_health",
+            "get_patient_details",
+            "get_patient_vitals",
+            "get_patient_timeline",
+            "list_patient_devices",
+            "list_patient_contacts",
+            # Rooms & facilities (read)
+            "list_rooms",
+            "get_room_details",
+            "get_facility_details",
+            "get_floorplan_layout",
+            # Room controls
+            "control_room_smart_device",
+            # Own schedule & tasks
+            "list_workflow_tasks",
+            "list_workflow_schedules",
+            "list_calendar_events",
+            # Own medications
+            "list_prescriptions",
+            "list_pharmacy_orders",
+            "request_pharmacy_order",
+            # Alerts (own)
+            "list_active_alerts",
+            # Service & support requests
+            "create_service_request",
+            "list_service_requests",
+            "create_support_ticket",
+            "list_support_tickets",
+            # Messaging (same as REST ROLE_ALL_AUTHENTICATED on workflow messages)
+            "get_message_recipients",
+            "list_messages",
+            "mark_message_read",
+            "send_message",
+        },
+    }
+
 
 def _system_prompt_for_role(role: str) -> str:
     return ROLE_SYSTEM_PROMPTS.get(role, ROLE_SYSTEM_PROMPTS["observer"]) + GENERAL_ASSISTANT_SUFFIX
@@ -504,7 +402,7 @@ def _ensure_action_visible_to_user(action: ChatAction, user: User) -> None:
 
 
 def _ensure_tool_allowed_for_role(role: str, tool_name: str) -> None:
-    allowed = ROLE_MCP_TOOL_ALLOWLIST.get(role, set())
+    allowed = get_role_mcp_tool_allowlist().get(role, set())
     if tool_name not in allowed:
         raise HTTPException(status_code=403, detail="Tool is not allowed for this role")
 

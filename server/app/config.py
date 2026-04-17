@@ -2,12 +2,19 @@ from __future__ import annotations
 
 """WheelSense Server — Configuration."""
 
+import os
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_SECRET_KEY = "your-super-secret-key-that-should-be-replaced-in-prod"
+
+
+def _default_agent_runtime_mcp_tool_transport() -> Literal["direct", "http", "asgi"]:
+    """Under pytest, default to in-process ASGI MCP calls; otherwise use Streamable HTTP."""
+    return "asgi" if os.environ.get("PYTEST_VERSION") else "http"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -73,10 +80,20 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://127.0.0.1:11434/v1"
     copilot_cli_url: str = ""  # e.g. copilot-cli:4321 or http://localhost:4321
     server_base_url: str = "http://127.0.0.1:8000"
+    # Public web URL for mobile WebView (e.g. Cloudflare quick tunnel). Published to MQTT config when set.
+    portal_base_url: str = ""
     agent_runtime_url: str = "http://127.0.0.1:8010"
     internal_service_secret: str = ""
     mcp_allowed_origins: str = ""
     mcp_require_origin: bool = False
+    # How agent-runtime executes MCP tools: direct DB/service path, HTTP Streamable MCP, or ASGI in-process.
+    agent_runtime_mcp_tool_transport: Literal["direct", "http", "asgi"] = Field(
+        default_factory=_default_agent_runtime_mcp_tool_transport,
+    )
+    # Full URL to Streamable HTTP MCP endpoint (e.g. http://127.0.0.1:8000/mcp/mcp). Empty uses server_base_url.
+    mcp_streamable_http_url: str = ""
+    # Dangerous: runs arbitrary Python with server env (incl. DB URL). Off by default; EaseAI never exposes this tool.
+    mcp_allow_execute_python: bool = False
 
     # Agent runtime — multilingual intent (embeddings + optional LLM bridge)
     intent_semantic_enabled: bool = True
@@ -110,6 +127,13 @@ class Settings(BaseSettings):
             for origin in self.mcp_allowed_origins.split(",")
             if origin.strip()
         ]
+
+    @property
+    def resolved_mcp_streamable_http_url(self) -> str:
+        explicit = (self.mcp_streamable_http_url or "").strip()
+        if explicit:
+            return explicit.rstrip("/")
+        return f"{self.server_base_url.rstrip('/')}/mcp/mcp"
 
     # Data Retention (Phase 6)
     retention_enabled: bool = True

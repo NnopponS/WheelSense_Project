@@ -22,6 +22,7 @@ import { usePolarStore, useBeacons, useAppStore } from '../store/useAppStore';
 import { Polar as PolarService } from '../services/PolarService';
 import { BLEScanner } from '../services/BLEScanner';
 import { PolarDevice, BLEBeacon } from '../types';
+import { colors, radius, space } from '../theme/tokens';
 
 type DeviceScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Devices'>;
@@ -34,8 +35,9 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
   const settings = useAppStore((state) => state.settings);
   
   const [isScanningPolar, setIsScanningPolar] = useState(false);
-  const [foundPolarDevices, setFoundPolarDevices] = useState<PolarDevice[]>([]);
   const [connectingDeviceId, setConnectingDeviceId] = useState<string | null>(null);
+
+  const foundPolarDevices = polar.polarDiscoveredDevices;
 
   // Polar device discovery
   const scanForPolarDevices = async () => {
@@ -45,19 +47,15 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
     }
 
     setIsScanningPolar(true);
-    setFoundPolarDevices([]);
+    polar.clearPolarDiscovery();
 
     try {
       await PolarService.searchForDevice();
-      
-      // Wait for devices to be found (simulated - in real app, listen to discovery events)
-      setTimeout(() => {
-        setIsScanningPolar(false);
-      }, 10000);
     } catch (error) {
       console.error('[DeviceScreen] Polar scan failed:', error);
-      setIsScanningPolar(false);
       Alert.alert(t('common.error'), t('device.polarScanFailed'));
+    } finally {
+      setIsScanningPolar(false);
     }
   };
 
@@ -279,183 +277,191 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.bg,
   },
   listContent: {
-    padding: 16,
+    padding: space.md,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: space.lg,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: space.sm + 2,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text,
   },
   unavailableCard: {
-    backgroundColor: '#ffebee',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: colors.primaryMuted,
+    padding: space.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   unavailableText: {
-    color: '#c62828',
+    color: colors.danger,
     textAlign: 'center',
   },
   connectedCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    padding: space.md,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: '#4caf50',
+    borderColor: colors.success,
   },
   deviceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: space.sm,
   },
   deviceName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
   },
   statusBadge: {
-    backgroundColor: '#4caf50',
+    backgroundColor: colors.success,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   statusText: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 12,
     fontWeight: '600',
   },
   batteryText: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    color: colors.textMuted,
+    marginBottom: space.sm + 2,
   },
   metricRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: space.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: colors.border,
   },
   metricLabel: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textMuted,
   },
   metricValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#e53935',
+    color: colors.danger,
   },
   buttonRow: {
     flexDirection: 'row',
-    marginTop: 12,
+    marginTop: space.sm + 2,
     gap: 8,
   },
   actionButton: {
     flex: 1,
-    padding: 12,
-    borderRadius: 8,
+    padding: space.sm + 2,
+    borderRadius: radius.sm,
     alignItems: 'center',
   },
   startButton: {
-    backgroundColor: '#4caf50',
+    backgroundColor: colors.success,
   },
   stopButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: colors.danger,
   },
   buttonText: {
-    color: '#fff',
+    color: colors.surface,
     fontWeight: '600',
   },
   disconnectButton: {
-    backgroundColor: '#757575',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: colors.textMuted,
+    padding: space.sm + 2,
+    borderRadius: radius.sm,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: space.sm + 2,
   },
   disconnectButtonText: {
-    color: '#fff',
+    color: colors.surface,
     fontWeight: '600',
   },
   scanSection: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    padding: space.md,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   scanButton: {
-    backgroundColor: '#0052cc',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    padding: space.md,
+    borderRadius: radius.sm,
     alignItems: 'center',
   },
   scanButtonText: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 16,
     fontWeight: '600',
   },
   deviceList: {
-    marginTop: 16,
+    marginTop: space.md,
   },
   listTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    color: colors.text,
+    marginBottom: space.sm,
   },
   deviceItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    marginBottom: 8,
+    padding: space.sm + 2,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.sm,
+    marginBottom: space.sm,
   },
   deviceItemName: {
     fontSize: 14,
-    color: '#333',
+    color: colors.text,
   },
   scanBeaconButton: {
-    backgroundColor: '#0052cc',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: colors.primary,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
     borderRadius: 4,
   },
   scanBeaconText: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 14,
     fontWeight: '600',
   },
   emptyCard: {
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    padding: space.lg,
+    borderRadius: radius.sm,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   emptyText: {
-    color: '#999',
+    color: colors.textMuted,
     textAlign: 'center',
   },
   beaconItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
+    backgroundColor: colors.surface,
+    padding: space.md,
+    borderRadius: radius.sm,
+    marginBottom: space.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   beaconInfo: {
     flex: 1,
@@ -463,11 +469,11 @@ const styles = StyleSheet.create({
   beaconName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
   },
   beaconMac: {
     fontSize: 12,
-    color: '#999',
+    color: colors.textMuted,
     marginTop: 4,
   },
   beaconSignal: {
@@ -479,13 +485,13 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
   signalStrong: {
-    color: '#4caf50',
+    color: colors.success,
   },
   signalMedium: {
     color: '#ff9800',
   },
   signalWeak: {
-    color: '#f44336',
+    color: colors.danger,
   },
 });
 

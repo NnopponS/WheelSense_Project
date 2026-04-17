@@ -1,7 +1,7 @@
 /**
- * WheelSense Mobile App - Setup Screen
- * MQTT-first connection setup — no HTTP login required
- * Connects to public EMQX broker and registers mobile device
+ * WheelSense Mobile App — MQTT setup (first screen)
+ * File: SetupScreen.tsx — NOT web-style login; configures broker + device id for MQTT.
+ * MQTT-first: connect broker, register mobile device, start telemetry loop.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -26,6 +26,8 @@ import { mqttService } from '../services/MQTTService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTranslation } from 'react-i18next';
+import { Logo } from '../components/Logo';
+import { colors, radius, space } from '../theme/tokens';
 
 type SetupScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Setup'>;
@@ -118,7 +120,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -131,10 +133,9 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
           {/* Header with gradient effect */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Text style={styles.logoIcon}>🦽</Text>
+              <Logo size={60} color={colors.text} />
             </View>
             <Text style={styles.title}>WheelSense</Text>
-            <Text style={styles.subtitle}>{t('setup.subtitle')}</Text>
             <View style={styles.divider} />
             <Text style={styles.description}>
               {t('setup.description')}
@@ -154,7 +155,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
                 value={deviceName}
                 onChangeText={setDeviceName}
                 placeholder={t('setup.deviceNamePlaceholder')}
-                placeholderTextColor="#667"
+                placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isConnecting}
@@ -172,7 +173,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
                 value={brokerHost}
                 onChangeText={setBrokerHost}
                 placeholder={t('setup.mqttBrokerPlaceholder')}
-                placeholderTextColor="#667"
+                placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="url"
@@ -191,7 +192,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
                 value={brokerPort}
                 onChangeText={setBrokerPort}
                 placeholder={t('setup.portPlaceholder')}
-                placeholderTextColor="#667"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
                 editable={!isConnecting}
               />
@@ -200,7 +201,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
             {/* Status message */}
             {statusMessage !== '' && (
               <View style={styles.statusContainer}>
-                <ActivityIndicator size="small" color="#4FC3F7" />
+                <ActivityIndicator size="small" color={colors.primary} />
                 <Text style={styles.statusText}>{statusMessage}</Text>
               </View>
             )}
@@ -214,7 +215,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
                 activeOpacity={0.8}
               >
                 {isConnecting ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={colors.surface} size="small" />
                 ) : (
                   <>
                     <Text style={styles.connectIcon}>⚡</Text>
@@ -243,7 +244,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A1628',
+    backgroundColor: colors.bg,
   },
   keyboardView: {
     flex: 1,
@@ -251,7 +252,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: space.lg,
   },
   header: {
     alignItems: 'center',
@@ -260,18 +261,18 @@ const styles = StyleSheet.create({
   logoContainer: {
     width: 88,
     height: 88,
-    borderRadius: 24,
-    backgroundColor: '#1A3A5C',
+    borderRadius: radius.lg,
+    backgroundColor: colors.primaryMuted,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: space.md,
     borderWidth: 2,
-    borderColor: '#2A5A8C',
-    shadowColor: '#4FC3F7',
+    borderColor: colors.border,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 6,
   },
   logoIcon: {
     fontSize: 44,
@@ -279,12 +280,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#E0E0E0',
+    color: colors.text,
     letterSpacing: 1,
   },
   subtitle: {
     fontSize: 16,
-    color: '#4FC3F7',
+    color: colors.primary,
     marginTop: 4,
     fontWeight: '500',
     letterSpacing: 0.5,
@@ -292,13 +293,13 @@ const styles = StyleSheet.create({
   divider: {
     width: 48,
     height: 3,
-    backgroundColor: '#4FC3F7',
+    backgroundColor: colors.primary,
     borderRadius: 2,
-    marginVertical: 16,
+    marginVertical: space.md,
   },
   description: {
     fontSize: 13,
-    color: '#8899AA',
+    color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 20,
@@ -321,17 +322,17 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#B0BEC5',
+    color: colors.textMuted,
     letterSpacing: 0.3,
   },
   input: {
     borderWidth: 1.5,
-    borderColor: '#1E3A5F',
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radius.md,
     padding: 14,
     fontSize: 16,
-    backgroundColor: '#0D2137',
-    color: '#E0E0E0',
+    backgroundColor: colors.surface,
+    color: colors.text,
   },
   portInput: {
     width: 120,
@@ -342,33 +343,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 12,
     padding: 10,
-    backgroundColor: '#0D2137',
-    borderRadius: 8,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.sm,
   },
   statusText: {
-    color: '#4FC3F7',
+    color: colors.primary,
     fontSize: 14,
     marginLeft: 10,
     fontWeight: '500',
   },
   connectButtonWrapper: {
-    marginTop: 8,
+    marginTop: space.sm,
   },
   connectButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1565C0',
-    borderRadius: 14,
-    paddingVertical: 16,
-    shadowColor: '#1565C0',
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: space.md,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 6,
   },
   connectButtonDisabled: {
-    backgroundColor: '#1E3A5F',
+    backgroundColor: colors.border,
     shadowOpacity: 0,
     elevation: 0,
   },
@@ -377,7 +378,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   connectText: {
-    color: '#fff',
+    color: colors.surface,
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -388,11 +389,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#556677',
+    color: colors.textMuted,
   },
   footerHint: {
     fontSize: 11,
-    color: '#445566',
+    color: colors.textMuted,
     marginTop: 4,
   },
 });

@@ -1011,6 +1011,24 @@ class IntentClassifier:
         )
 
 
+def _register_workspace_tools_intent_metadata() -> None:
+    """Ensure `/tool <name>` and intent routing have metadata for every workspace MCP tool."""
+    from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
+
+    default_meta = {
+        "playbook": "system",
+        "permission_basis": [],
+        "risk_level": "medium",
+        "read_only": False,
+    }
+    for name in _WORKSPACE_TOOL_REGISTRY:
+        if name not in TOOL_INTENT_METADATA:
+            TOOL_INTENT_METADATA[name] = dict(default_meta)
+
+
+_register_workspace_tools_intent_metadata()
+
+
 # Global classifier instance
 _classifier: IntentClassifier | None = None
 

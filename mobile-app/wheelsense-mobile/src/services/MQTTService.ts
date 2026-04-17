@@ -42,6 +42,7 @@ class MQTTService {
   private messageQueue: TelemetryPayload[] = [];
   private seq = 0;
   private telemetryTimer: NodeJS.Timeout | null = null;
+  private alertSubscribedTopic: string | null = null;
 
   // ==================== CONNECTION ====================
 
@@ -114,6 +115,7 @@ class MQTTService {
 
   disconnect(): void {
     this.stopTelemetryLoop();
+    this.alertSubscribedTopic = null;
 
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -169,13 +171,16 @@ class MQTTService {
         console.error(`[MQTT] Failed to subscribe to ${topic}:`, error);
       }
     }
+    await this.syncAlertSubscription();
   }
 
   private handleIncomingMessage(msg: any): void {
     try {
       const data = JSON.parse(msg.data);
 
-      if (msg.topic.includes('/config/')) {
+      if (msg.topic?.includes('/alerts/')) {
+        void this.handleAlertMessage(data);
+      } else if (msg.topic.includes('/config/')) {
         this.handleConfigUpdate(data);
       } else if (msg.topic.includes('/control')) {
         this.handleControlCommand(data);
@@ -187,17 +192,82 @@ class MQTTService {
     }
   }
 
+  private async handleAlertMessage(data: any): Promise<void> {
+    try {
+      const { NotificationManager } = await import('./NotificationService');
+      await NotificationManager.notifyAlertFromMqtt(data as Record<string, unknown>);
+    } catch (e) {
+      console.error('[MQTT] Alert notification failed:', e);
+    }
+  }
+
+  private async syncAlertSubscription(): Promise<void> {
+    if (!this.client || !this.isConnected || !isMqttNativeAvailable()) {
+      return;
+    }
+    const { linkedPatientId, alertsEnabled } = useAppStore.getState().settings;
+    const pid = linkedPatientId;
+    const allowAlerts = alertsEnabled !== false;
+    const topic =
+      typeof pid === 'number' && Number.isFinite(pid) && allowAlerts
+        ? `WheelSense/alerts/${pid}`
+        : null;
+
+    if (topic === this.alertSubscribedTopic) {
+      return;
+    }
+
+    if (this.alertSubscribedTopic) {
+      try {
+        await this.client.unsubscribe(this.alertSubscribedTopic);
+      } catch (e) {
+        console.warn('[MQTT] Failed to unsubscribe previous alerts topic:', e);
+      }
+      this.alertSubscribedTopic = null;
+    }
+
+    if (topic) {
+      try {
+        await this.client.subscribe(topic, 1);
+        this.alertSubscribedTopic = topic;
+        console.log(`[MQTT] Subscribed to: ${topic}`);
+      } catch (error) {
+        console.error(`[MQTT] Failed to subscribe to ${topic}:`, error);
+      }
+    }
+  }
+
   private handleConfigUpdate(config: any): void {
     console.log('[MQTT] Config update received:', config);
-    if (config.scan_interval) {
-      useAppStore.getState().updateSettings({
-        scanInterval: config.scan_interval,
-      });
+    const patch: Record<string, unknown> = {};
+
+    if (config.scan_interval != null && typeof config.scan_interval === 'number') {
+      patch.scanInterval = config.scan_interval;
     }
-    if (config.telemetry_interval) {
-      useAppStore.getState().updateSettings({
-        telemetryInterval: config.telemetry_interval,
-      });
+    if (config.telemetry_interval != null && typeof config.telemetry_interval === 'number') {
+      patch.telemetryInterval = config.telemetry_interval;
+    }
+    if (config.portal_base_url != null && typeof config.portal_base_url === 'string') {
+      const u = config.portal_base_url.trim();
+      patch.portalBaseUrl = u;
+    }
+    if ('linked_patient_id' in config) {
+      if (config.linked_patient_id === null || config.linked_patient_id === undefined) {
+        patch.linkedPatientId = undefined;
+      } else {
+        const n = Number(config.linked_patient_id);
+        if (!Number.isNaN(n)) {
+          patch.linkedPatientId = n;
+        }
+      }
+    }
+    if (typeof config.alerts_enabled === 'boolean') {
+      patch.alertsEnabled = config.alerts_enabled;
+    }
+
+    if (Object.keys(patch).length > 0) {
+      useAppStore.getState().updateSettings(patch as any);
+      void this.syncAlertSubscription();
     }
   }
 
@@ -222,15 +292,23 @@ class MQTTService {
   async publishRegistration(): Promise<void> {
     const deviceId = this.getDeviceId();
 
+    const state = useAppStore.getState();
     const registration: MobileRegistration = {
       device_id: deviceId,
-      device_name: useAppStore.getState().deviceName || Device.deviceName || 'Unknown',
+      device_name: state.deviceName || Device.deviceName || 'Unknown',
       platform: Platform.OS,
       os_version: Platform.Version?.toString() || 'unknown',
       app_version: '1.0.0',
-      hardware_type: 'mobile_app',
+      hardware_type: 'mobile_phone',
       timestamp: new Date().toISOString(),
     };
+    if (state.isPolarConnected && state.polarDevice?.deviceId) {
+      registration.companion_polar = {
+        polar_device_id: state.polarDevice.deviceId,
+        name: state.polarDevice.name,
+        firmware_version: state.polarDevice.firmwareVersion,
+      };
+    }
 
     const topic = `WheelSense/mobile/${deviceId}/register`;
     const message = JSON.stringify(registration);
@@ -349,8 +427,8 @@ class MQTTService {
 
     const payload: TelemetryPayload = {
       device_id: this.getDeviceId(),
-      device_type: 'mobile_app',
-      hardware_type: 'mobile_app',
+      device_type: 'mobile_phone',
+      hardware_type: 'mobile_phone',
       firmware: '1.0.0',
       seq: this.seq,
       timestamp: new Date().toISOString(),

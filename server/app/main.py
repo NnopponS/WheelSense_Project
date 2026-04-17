@@ -5,11 +5,12 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI
 
 from .config import settings
+from .schemas.mcp_auth import ALL_MCP_SCOPES
 from app.api.errors import register_error_handlers
 from app.core.security import validate_runtime_settings
 from .mqtt_handler import mqtt_listener
@@ -28,42 +29,66 @@ async def lifespan(app: FastAPI):
     """Startup: create tables & launch MQTT listener. Shutdown: cancel tasks."""
     logger.info("Starting %s", settings.app_name)
     validate_runtime_settings()
-    from app.db.session import init_db
 
-    from app.db.init_db import (
-        init_admin_user,
-        try_attach_bootstrap_admin_to_demo_workspace,
-    )
+    async with AsyncExitStack() as stack:
+        # Streamable HTTP MCP requires StreamableHTTPSessionManager.run(); mounted
+        # Starlette apps do not receive ASGI lifespan from FastAPI.
+        if MCP_ENABLED:
+            from app.mcp.server import mcp_streamable_http_session_lifespan
 
-    await init_db()
-    logger.info("Database initialized")
-    await init_admin_user()
-    await try_attach_bootstrap_admin_to_demo_workspace()
+            await stack.enter_async_context(mcp_streamable_http_session_lifespan())
 
-    # Start MQTT listener as background task
-    mqtt_task = asyncio.create_task(mqtt_listener())
-    logger.info("MQTT listener started")
+        from app.db.session import init_db
 
-    # Start retention scheduler (Phase 6)
-    from app.workers.retention_worker import (
-        start_retention_scheduler,
-        stop_retention_scheduler,
-    )
-    if settings.retention_enabled:
-        start_retention_scheduler()
-    else:
-        logger.info("Retention scheduler disabled via config")
+        from app.db.init_db import (
+            init_admin_user,
+            try_attach_bootstrap_admin_to_demo_workspace,
+        )
 
-    yield
+        await init_db()
+        logger.info("Database initialized")
+        await init_admin_user()
+        await try_attach_bootstrap_admin_to_demo_workspace()
 
-    # Shutdown
-    stop_retention_scheduler()
-    mqtt_task.cancel()
-    try:
-        await mqtt_task
-    except asyncio.CancelledError:
-        pass
-    logger.info("Shutdown complete")
+        # Start MQTT listener as background task
+        mqtt_task = asyncio.create_task(mqtt_listener())
+        logger.info("MQTT listener started")
+
+        async def _portal_push() -> None:
+            await asyncio.sleep(3)
+            try:
+                from app.services.mqtt_publish import (
+                    publish_portal_config_all,
+                    refresh_all_mobile_devices_mqtt_config,
+                )
+
+                await publish_portal_config_all()
+                await refresh_all_mobile_devices_mqtt_config()
+            except Exception:
+                logger.exception("Portal MQTT bootstrap failed")
+
+        asyncio.create_task(_portal_push())
+
+        # Start retention scheduler (Phase 6)
+        from app.workers.retention_worker import (
+            start_retention_scheduler,
+            stop_retention_scheduler,
+        )
+        if settings.retention_enabled:
+            start_retention_scheduler()
+        else:
+            logger.info("Retention scheduler disabled via config")
+
+        yield
+
+        # Shutdown
+        stop_retention_scheduler()
+        mqtt_task.cancel()
+        try:
+            await mqtt_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("Shutdown complete")
 
 app = FastAPI(
     title=settings.app_name,
@@ -92,25 +117,7 @@ async def mcp_oauth_protected_resource():
         "resource": f"{settings.server_base_url.rstrip('/')}/mcp",
         "authorization_servers": [f"{settings.server_base_url.rstrip('/')}/api/auth/login"],
         "bearer_methods_supported": ["header"],
-        "scopes_supported": [
-            "workspace.read",
-            "patients.read",
-            "patients.write",
-            "alerts.read",
-            "alerts.manage",
-            "devices.read",
-            "devices.manage",
-            "devices.command",
-            "rooms.read",
-            "rooms.manage",
-            "room_controls.use",
-            "workflow.read",
-            "workflow.write",
-            "cameras.capture",
-            "ai_settings.read",
-            "ai_settings.write",
-            "admin.audit.read",
-        ],
+        "scopes_supported": list(ALL_MCP_SCOPES),
     }
 
 # Mount MCP only when enabled so tests and local tooling can run without MCP side-effects.

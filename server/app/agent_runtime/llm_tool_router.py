@@ -24,10 +24,9 @@ from app.schemas.chat_actions import ChatActionProposeIn
 from app.services import ai_chat
 from app.services.ai_chat import (
     ParsedToolCall,
-    ROLE_MCP_TOOL_ALLOWLIST,
-    _ALL_MCP_WORKSPACE_TOOLS,
     collect_copilot_json_tool_calls,
     complete_ollama_with_tool_calls,
+    get_role_mcp_tool_allowlist,
     resolve_effective_ai,
 )
 
@@ -49,7 +48,7 @@ _MCP_WRITE_TOOL_NAMES: frozenset[str] = frozenset(
     }
 )
 
-MCP_TOOL_READ_ONLY_ROUTING: frozenset[str] = frozenset(_ALL_MCP_WORKSPACE_TOOLS - _MCP_WRITE_TOOL_NAMES)
+MCP_TOOL_READ_ONLY_ROUTING: frozenset[str] = frozenset(_WORKSPACE_TOOL_REGISTRY.keys()) - _MCP_WRITE_TOOL_NAMES
 
 
 def _function_to_openai_tool(name: str, fn: Any) -> dict[str, Any]:
@@ -82,7 +81,7 @@ def _function_to_openai_tool(name: str, fn: Any) -> dict[str, Any]:
 
 
 def build_openai_tools_for_role(role: str) -> list[dict[str, Any]]:
-    allowed = ROLE_MCP_TOOL_ALLOWLIST.get(role, set())
+    allowed = get_role_mcp_tool_allowlist().get(role, set())
     tools: list[dict[str, Any]] = []
     for name in sorted(allowed):
         fn = _WORKSPACE_TOOL_REGISTRY.get(name)
@@ -93,7 +92,7 @@ def build_openai_tools_for_role(role: str) -> list[dict[str, Any]]:
 
 
 def _validate_calls_for_role(role: str, calls: list[ParsedToolCall]) -> list[ParsedToolCall]:
-    allowed = ROLE_MCP_TOOL_ALLOWLIST.get(role, set())
+    allowed = get_role_mcp_tool_allowlist().get(role, set())
     out: list[ParsedToolCall] = []
     for c in calls:
         if c.name not in allowed or c.name not in _WORKSPACE_TOOL_REGISTRY:

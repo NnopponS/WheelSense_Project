@@ -25,6 +25,7 @@ from app.schemas.devices import (
     DeviceCommandOut,
     DeviceCommandRequest,
     DeviceCreate,
+    DeviceCaregiverAssign,
     MobileTelemetryIngest,
     MobileTelemetryIngestOut,
     DevicePatientAssign,
@@ -32,6 +33,10 @@ from app.schemas.devices import (
 )
 from app.services import device_activity as device_activity_service
 from app.services import device_management as dm
+from app.services.mqtt_publish import (
+    publish_mobile_device_config_background,
+    publish_mobile_device_config_resolved_background,
+)
 from app.services.device_management import NON_PUBLIC_DEVICE_CONFIG_KEYS
 
 router = APIRouter()
@@ -167,6 +172,7 @@ async def assign_patient_from_device(
             registry_device_id=device_id,
             details={"patient_id": None, "device_role": body.device_role},
         )
+        publish_mobile_device_config_background(device_id, None)
         return {"status": "ok", "patient_id": None}
     await device_activity_service.log_event(
         db,
@@ -176,12 +182,57 @@ async def assign_patient_from_device(
         registry_device_id=device_id,
         details={"patient_id": row.patient_id, "device_role": row.device_role},
     )
+    publish_mobile_device_config_background(device_id, row.patient_id)
     return {
         "status": "ok",
         "patient_id": row.patient_id,
         "device_role": row.device_role,
         "assigned_at": row.assigned_at.isoformat() if row.assigned_at else None,
     }
+
+
+@router.post("/{device_id}/caregiver")
+async def assign_caregiver_from_device_route(
+    device_id: str,
+    body: DeviceCaregiverAssign,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: object = Depends(RequireRole(ROLE_PATIENT_MANAGERS)),
+):
+    row = await dm.assign_caregiver_from_device(
+        db,
+        ws.id,
+        device_id,
+        caregiver_id=body.caregiver_id,
+        device_role=body.device_role,
+    )
+    if row is None:
+        await device_activity_service.log_event(
+            db,
+            ws.id,
+            "device_paired",
+            f"Device {device_id} unlinked from caregiver (staff)",
+            registry_device_id=device_id,
+            details={"caregiver_id": None, "device_role": body.device_role},
+        )
+        publish_mobile_device_config_resolved_background(device_id)
+        return {"status": "ok", "caregiver_id": None}
+    await device_activity_service.log_event(
+        db,
+        ws.id,
+        "device_paired",
+        f"Device {device_id} paired to caregiver {row.caregiver_id} ({row.device_role})",
+        registry_device_id=device_id,
+        details={"caregiver_id": row.caregiver_id, "device_role": row.device_role},
+    )
+    publish_mobile_device_config_resolved_background(device_id)
+    return {
+        "status": "ok",
+        "caregiver_id": row.caregiver_id,
+        "device_role": row.device_role,
+        "assigned_at": row.assigned_at.isoformat() if row.assigned_at else None,
+    }
+
 
 @router.post("")
 async def create_device(
