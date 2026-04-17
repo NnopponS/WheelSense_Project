@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db.session import AsyncSessionLocal
+from app.models.caregivers import CareGiverDeviceAssignment
 from app.models.core import Device
 from app.models.patients import PatientDeviceAssignment
 
@@ -77,11 +78,21 @@ def publish_alert_to_mqtt_background(alert) -> None:
     asyncio.create_task(publish_alert_to_mqtt(alert))
 
 
-def build_mobile_mqtt_config_payload(linked_patient_id: int | None) -> dict[str, Any]:
-    """Payload for WheelSense/config/{device_id} — retained so late-joining apps receive it."""
+def build_mobile_mqtt_config_payload(
+    linked_patient_id: int | None,
+    linked_caregiver_id: int | None = None,
+) -> dict[str, Any]:
+    """Payload for WheelSense/config/{device_id}; retained so late-joining apps receive it."""
+    linked_person_type: str | None = None
+    if linked_patient_id is not None:
+        linked_person_type = "patient"
+    elif linked_caregiver_id is not None:
+        linked_person_type = "caregiver"
     payload: dict[str, Any] = {
         "linked_patient_id": linked_patient_id,
-        "alerts_enabled": linked_patient_id is not None,
+        "linked_caregiver_id": linked_caregiver_id,
+        "linked_person_type": linked_person_type,
+        "alerts_enabled": linked_patient_id is not None or linked_caregiver_id is not None,
     }
     if (settings.portal_base_url or "").strip():
         payload["portal_base_url"] = str(settings.portal_base_url).strip().rstrip("/")
@@ -102,30 +113,65 @@ async def lookup_active_patient_for_registry_device(session: AsyncSession, devic
     return result.scalar_one_or_none()
 
 
+async def lookup_active_caregiver_for_registry_device(
+    session: AsyncSession, device_id: str
+) -> int | None:
+    result = await session.execute(
+        select(CareGiverDeviceAssignment.caregiver_id)
+        .where(
+            CareGiverDeviceAssignment.device_id == device_id,
+            CareGiverDeviceAssignment.is_active.is_(True),
+        )
+        .order_by(CareGiverDeviceAssignment.assigned_at.desc(), CareGiverDeviceAssignment.id.desc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
 async def publish_mobile_device_config_with_payload(
     device_id: str,
     linked_patient_id: int | None,
+    linked_caregiver_id: int | None = None,
     *,
     retain: bool = True,
 ) -> None:
-    payload = build_mobile_mqtt_config_payload(linked_patient_id)
+    payload = build_mobile_mqtt_config_payload(linked_patient_id, linked_caregiver_id)
     await mqtt_publish_json(f"WheelSense/config/{device_id}", payload, retain=retain)
 
 
-async def publish_mobile_device_config(device_id: str, patient_id: int | None) -> None:
+async def publish_mobile_device_config(
+    device_id: str,
+    patient_id: int | None,
+    caregiver_id: int | None = None,
+) -> None:
     """Push workspace-authorized hints to the mobile app (subscribes to WheelSense/config/{device_id})."""
-    await publish_mobile_device_config_with_payload(device_id, patient_id, retain=True)
+    await publish_mobile_device_config_with_payload(
+        device_id,
+        patient_id,
+        caregiver_id,
+        retain=True,
+    )
 
 
-def publish_mobile_device_config_background(device_id: str, patient_id: int | None) -> None:
-    asyncio.create_task(publish_mobile_device_config(device_id, patient_id))
+def publish_mobile_device_config_background(
+    device_id: str,
+    patient_id: int | None,
+    caregiver_id: int | None = None,
+) -> None:
+    asyncio.create_task(publish_mobile_device_config(device_id, patient_id, caregiver_id))
 
 
 async def publish_mobile_device_config_resolved(device_id: str) -> None:
     """Look up active patient assignment and publish full mobile config (portal + alerts flags)."""
     async with AsyncSessionLocal() as session:
         patient_id = await lookup_active_patient_for_registry_device(session, device_id)
-    await publish_mobile_device_config_with_payload(device_id, patient_id, retain=True)
+        caregiver_id = await lookup_active_caregiver_for_registry_device(session, device_id)
+    await publish_mobile_device_config_with_payload(
+        device_id,
+        patient_id,
+        caregiver_id,
+        retain=True,
+    )
 
 
 def publish_mobile_device_config_resolved_background(device_id: str) -> None:

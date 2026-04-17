@@ -12,7 +12,7 @@
 - [main.py](file://server/app/main.py)
 - [config.py](file://server/app/config.py)
 - [MCP-README.md](file://docs/MCP-README.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 </cite>
 
 ## Table of Contents

@@ -65,7 +65,12 @@ _PATIENT_SCOPED_READ_TOOLS = frozenset({"get_patient_vitals", "get_patient_timel
 
 # Immediate MCP reads that attach entity hints in IntentMatch but must still auto-run in propose.
 _IMMEDIATE_PATIENT_READS_WITH_ENTITIES = frozenset(
-    {"get_patient_vitals", "get_patient_timeline", "get_patient_details"}
+    {
+        "get_patient_vitals",
+        "get_patient_timeline",
+        "get_patient_details",
+        "list_patient_caregivers",
+    }
 )
 
 
@@ -114,6 +119,14 @@ def _ingest_patient_context_from_tool_result(
         return
 
     if tool_name in _PATIENT_SCOPED_READ_TOOLS:
+        pid = (tool_arguments or {}).get("patient_id")
+        if pid is not None:
+            try:
+                ctx.last_focused_patient_id = int(pid)
+            except (TypeError, ValueError):
+                pass
+
+    if tool_name == "list_patient_caregivers":
         pid = (tool_arguments or {}).get("patient_id")
         if pid is not None:
             try:
@@ -237,6 +250,50 @@ async def _seed_page_patient_context(
         logger.warning(
             "Could not seed page_patient_id=%s for conversation_id=%s",
             page_patient_id,
+            conversation_id,
+            exc_info=True,
+        )
+
+
+async def _seed_patient_self_context(
+    conversation_id: int | None,
+    actor_access_token: str,
+) -> None:
+    """Prime roster/focus for patient-role users from their linked patient_id (Thai follow-ups)."""
+    if conversation_id is None:
+        return
+    try:
+        async with AsyncSessionLocal() as db:
+            user, _, _ = await resolve_current_user_from_token(db, actor_access_token)
+            if getattr(user, "role", None) != "patient":
+                return
+            raw_pid = getattr(user, "patient_id", None)
+            if raw_pid is None:
+                return
+            pid = int(raw_pid)
+            await assert_patient_record_access_db(db, user.workspace_id, user, pid)
+            patient = await patient_service.get(db, ws_id=user.workspace_id, id=pid)
+            if patient is None:
+                return
+            pid_int = int(patient.id)
+            card = {
+                "id": pid_int,
+                "first_name": patient.first_name,
+                "last_name": patient.last_name,
+                "nickname": patient.nickname,
+            }
+        ctx = _get_or_create_context(conversation_id)
+        ctx.last_patient_cards = [card]
+        ctx.last_entities = [{"type": "patient", "id": pid_int}]
+        ctx.last_focused_patient_id = pid_int
+    except HTTPException:
+        logger.info(
+            "patient self-context seed skipped for conversation_id=%s (access policy)",
+            conversation_id,
+        )
+    except Exception:
+        logger.warning(
+            "Could not seed patient self-context for conversation_id=%s",
             conversation_id,
             exc_info=True,
         )
@@ -395,6 +452,7 @@ async def propose_turn(
     page_patient_id: int | None = None,
 ) -> AgentRuntimeProposeResponse:
     await _seed_page_patient_context(conversation_id, page_patient_id, actor_access_token)
+    await _seed_patient_self_context(conversation_id, actor_access_token)
 
     # Obvious chitchat: answer immediately via chat model (skip intent, MCP, LLM normalize).
     if settings.intent_ai_conversation_fastpath_enabled and is_general_conversation_only(message):
@@ -453,6 +511,19 @@ async def propose_turn(
     if immediate_tool is not None:
         tool_name, arguments = immediate_tool
         try:
+            try:
+                async with AsyncSessionLocal() as db:
+                    actor_user, _, _ = await resolve_current_user_from_token(db, actor_access_token)
+                    if (
+                        tool_name == "list_visible_patients"
+                        and getattr(actor_user, "role", None) == "patient"
+                        and getattr(actor_user, "patient_id", None) is not None
+                    ):
+                        tool_name = "get_patient_details"
+                        arguments = {"patient_id": int(actor_user.patient_id)}
+            except HTTPException:
+                # Tests / callers may use synthetic tokens; keep original tool selection.
+                pass
             result = await _call_mcp_tool(actor_access_token, tool_name, arguments)
             _ingest_patient_context_from_tool_result(
                 conversation_id, tool_name, result, arguments

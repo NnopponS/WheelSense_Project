@@ -8,7 +8,7 @@
 - [facility-management page.tsx](file://frontend/app/admin/facility-management/page.tsx)
 - [FloorMapWorkspace.tsx](file://frontend/components/admin/monitoring/FloorMapWorkspace.tsx)
 - [DashboardFloorplanPanel.tsx](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [README.md](file://frontend/README.md)
 - [facilities.py](file://server/app/api/endpoints/facilities.py)
 - [floorplans.py](file://server/app/api/endpoints/floorplans.py)
@@ -129,7 +129,7 @@ FP-->>Admin : Save success/error feedback
 - [rooms.py](file://server/app/api/endpoints/rooms.py)
 
 **Section sources**
-- [ARCHITECTURE.md:171-202](file://docs/ARCHITECTURE.md#L171-L202)
+- [ARCHITECTURE.md:171-202](file://ARCHITECTURE.md#L171-L202)
 - [README.md:186-192](file://frontend/README.md#L186-L192)
 
 ## Detailed Component Analysis

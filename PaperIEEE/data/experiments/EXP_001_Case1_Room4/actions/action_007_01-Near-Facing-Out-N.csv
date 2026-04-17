@@ -1,0 +1,24 @@
+timestamp,S1_RSSI,S2_RSSI,S3_RSSI,S4_RSSI,action_label,experiment_id,sub_action_label
+2026-03-08 12:43:47.483,-73,-69,-68,-62,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:47.484,-68,-57,-57,-67,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:47.485,-71,-57,-58,-70,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:47.486,-68,-57,-59,-67,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:47.487,-69,-57,-64,-64,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:47.680,-66,-56,-63,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:48.068,-67,-57,,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:48.287,,,-59,-63,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:48.484,-60,-55,-59,-63,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:48.680,-67,-57,-59,-64,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:48.883,-66,-55,-68,-63,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:49.077,-61,-57,-68,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:49.272,-67,-56,-59,-63,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:49.469,-65,-57,-69,-64,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:49.666,-60,-56,-60,-75,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:49.885,-61,-57,-61,-65,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:50.081,,,,-69,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:50.277,-61,-56,-58,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:50.659,-68,-57,-61,-65,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:50.852,-69,-56,-58,-67,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:51.253,-65,-57,-61,-70,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:51.642,-70,-56,-68,-68,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N
+2026-03-08 12:43:52.217,-67,-55,-57,-66,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-N

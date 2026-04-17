@@ -1,0 +1,23 @@
+% !TEX encoding = UTF-8 Unicode
+% !TEX TS-program = xelatex
+%% Standalone LaTeX cookbook (template examples). Not part of thesis.pdf.
+%% Build from the latex/ directory: xelatex -> biber -> xelatex x2
+\documentclass[12pt,a4paper,oneside]{book}
+\newcommand{\mycomment}[1]{}
+
+\usepackage{TUthesis}
+\usepackage{mystyle}
+
+\input{meta/info}
+
+%% Sample: no \includeonly / \excludeonly (see mystyle.sty \setReportType)
+\setReportType{Sample}
+
+\begin{document}
+\mainmatter
+
+\include{doc/latex-writing-guide-chapter}
+
+\include{content/backmatter/1_reference}
+
+\end{document}

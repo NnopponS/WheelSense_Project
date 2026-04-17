@@ -1,0 +1,402 @@
+{
+  "experiment_id": "EXP_003",
+  "dir_name": "EXP_003_Case3_Trajectory",
+  "name": "Case3_Trajectory",
+  "description": "",
+  "created_at": "2026-03-08T12:59:03.655972",
+  "updated_at": "2026-03-08T13:51:00.539702",
+  "stations": [
+    "S1",
+    "S2",
+    "S3",
+    "S4"
+  ],
+  "actions": [
+    {
+      "id": 1,
+      "label": "01_R4-R3-R2-R1",
+      "csv_file": "action_001_01_R4-R3-R2-R1.csv",
+      "start_time": "2026-03-08T13:02:14.437536",
+      "end_time": "2026-03-08T13:02:39.931129",
+      "sample_count": 105
+    },
+    {
+      "id": 2,
+      "label": "02_R2-R3-R4-R3",
+      "csv_file": "action_002_02_R2-R3-R4-R3.csv",
+      "start_time": "2026-03-08T13:03:30.905122",
+      "end_time": "2026-03-08T13:03:55.240282",
+      "sample_count": 100
+    },
+    {
+      "id": 3,
+      "label": "03_R3-R4-R1-R2",
+      "csv_file": "action_003_03_R3-R4-R1-R2.csv",
+      "start_time": "2026-03-08T13:04:17.912278",
+      "end_time": "2026-03-08T13:04:40.922859",
+      "sample_count": 94
+    },
+    {
+      "id": 4,
+      "label": "04_R2-R1-R4-R3",
+      "csv_file": "action_004_04_R2-R1-R4-R3.csv",
+      "start_time": "2026-03-08T13:05:12.416738",
+      "end_time": "2026-03-08T13:05:36.096901",
+      "sample_count": 101
+    },
+    {
+      "id": 5,
+      "label": "05_R3-R4-R3-R4",
+      "csv_file": "action_005_05_R3-R4-R3-R4.csv",
+      "start_time": "2026-03-08T13:07:35.390203",
+      "end_time": "2026-03-08T13:08:02.970517",
+      "sample_count": 147
+    },
+    {
+      "id": 6,
+      "label": "06_R1-R4-R1-R4",
+      "csv_file": "action_006_06_R1-R4-R1-R4.csv",
+      "start_time": "2026-03-08T13:09:25.752215",
+      "end_time": "2026-03-08T13:09:51.305230",
+      "sample_count": 119
+    },
+    {
+      "id": 7,
+      "label": "07_R2-R3-R2-R3",
+      "csv_file": "action_007_07_R2-R3-R2-R3.csv",
+      "start_time": "2026-03-08T13:10:12.105540",
+      "end_time": "2026-03-08T13:10:36.413992",
+      "sample_count": 95
+    },
+    {
+      "id": 8,
+      "label": "08_R4-R3-R4-R3",
+      "csv_file": "action_008_08_R4-R3-R4-R3.csv",
+      "start_time": "2026-03-08T13:10:58.713888",
+      "end_time": "2026-03-08T13:11:26.383681",
+      "sample_count": 126
+    },
+    {
+      "id": 9,
+      "label": "09_R3-R2-R3-R2",
+      "csv_file": "action_009_09_R3-R2-R3-R2.csv",
+      "start_time": "2026-03-08T13:11:57.022071",
+      "end_time": "2026-03-08T13:12:25.226722",
+      "sample_count": 125
+    },
+    {
+      "id": 10,
+      "label": "10_R1-R2-R1-R2",
+      "csv_file": "action_010_10_R1-R2-R1-R2.csv",
+      "start_time": "2026-03-08T13:13:00.376423",
+      "end_time": "2026-03-08T13:13:28.369977",
+      "sample_count": 127
+    },
+    {
+      "id": 11,
+      "label": "11_R2-R1-R2-R1",
+      "csv_file": "action_011_11_R2-R1-R2-R1.csv",
+      "start_time": "2026-03-08T13:13:43.787001",
+      "end_time": "2026-03-08T13:14:10.449372",
+      "sample_count": 118
+    },
+    {
+      "id": 12,
+      "label": "12_R4-R3-R4-R3",
+      "csv_file": "action_012_12_R4-R3-R4-R3.csv",
+      "start_time": "2026-03-08T13:15:19.874263",
+      "end_time": "2026-03-08T13:15:46.176508",
+      "sample_count": 91
+    },
+    {
+      "id": 13,
+      "label": "13_R1-R2-R3-R4",
+      "csv_file": "action_013_13_R1-R2-R3-R4.csv",
+      "start_time": "2026-03-08T13:16:33.943866",
+      "end_time": "2026-03-08T13:17:01.010788",
+      "sample_count": 129
+    },
+    {
+      "id": 14,
+      "label": "14_R2-R1-R4-R3",
+      "csv_file": "action_014_14_R2-R1-R4-R3.csv",
+      "start_time": "2026-03-08T13:18:50.212299",
+      "end_time": "2026-03-08T13:19:16.356760",
+      "sample_count": 145
+    },
+    {
+      "id": 15,
+      "label": "15_R2-R3-R4-R3",
+      "csv_file": "action_015_15_R2-R3-R4-R3.csv",
+      "start_time": "2026-03-08T13:19:53.102386",
+      "end_time": "2026-03-08T13:20:20.377650",
+      "sample_count": 132
+    },
+    {
+      "id": 16,
+      "label": "16_R3-R4-R1-R2",
+      "csv_file": "action_016_16_R3-R4-R1-R2.csv",
+      "start_time": "2026-03-08T13:20:55.323877",
+      "end_time": "2026-03-08T13:21:20.575824",
+      "sample_count": 134
+    },
+    {
+      "id": 17,
+      "label": "17_R2-R1-R4-R3",
+      "csv_file": "action_017_17_R2-R1-R4-R3.csv",
+      "start_time": "2026-03-08T13:21:36.086727",
+      "end_time": "2026-03-08T13:22:02.968125",
+      "sample_count": 116
+    },
+    {
+      "id": 18,
+      "label": "18_R3-R4-R3-R4",
+      "csv_file": "action_018_18_R3-R4-R3-R4.csv",
+      "start_time": "2026-03-08T13:22:21.140152",
+      "end_time": "2026-03-08T13:22:49.063541",
+      "sample_count": 124
+    },
+    {
+      "id": 19,
+      "label": "19_R1-R4-R1-R4",
+      "csv_file": "action_019_19_R1-R4-R1-R4.csv",
+      "start_time": "2026-03-08T13:23:01.299240",
+      "end_time": "2026-03-08T13:23:27.741245",
+      "sample_count": 110
+    },
+    {
+      "id": 20,
+      "label": "20_R2-R3-R2-R3",
+      "csv_file": "action_020_20_R2-R3-R2-R3.csv",
+      "start_time": "2026-03-08T13:26:48.402626",
+      "end_time": "2026-03-08T13:27:14.556936",
+      "sample_count": 142
+    },
+    {
+      "id": 21,
+      "label": "21_R4-R3-R2-R3",
+      "csv_file": "action_021_21_R4-R3-R2-R3.csv",
+      "start_time": "2026-03-08T13:28:04.636803",
+      "end_time": "2026-03-08T13:28:33.267680",
+      "sample_count": 126
+    },
+    {
+      "id": 22,
+      "label": "22_R3-R2-R1-R2",
+      "csv_file": "action_022_22_R3-R2-R1-R2.csv",
+      "start_time": "2026-03-08T13:28:52.098500",
+      "end_time": "2026-03-08T13:29:19.825327",
+      "sample_count": 113
+    },
+    {
+      "id": 23,
+      "label": "22_R2-R3-R4-R1",
+      "csv_file": "action_023_22_R2-R3-R4-R1.csv",
+      "start_time": "2026-03-08T13:29:44.232671",
+      "end_time": "2026-03-08T13:30:11.980021",
+      "sample_count": 107
+    },
+    {
+      "id": 24,
+      "label": "24_R1-R4-R3-R4",
+      "csv_file": "action_024_24_R1-R4-R3-R4.csv",
+      "start_time": "2026-03-08T13:30:34.762211",
+      "end_time": "2026-03-08T13:31:02.925939",
+      "sample_count": 114
+    },
+    {
+      "id": 25,
+      "label": "25_R4-R1-R2-R1",
+      "csv_file": "action_025_25_R4-R1-R2-R1.csv",
+      "start_time": "2026-03-08T13:31:22.554253",
+      "end_time": "2026-03-08T13:31:48.729015",
+      "sample_count": 121
+    },
+    {
+      "id": 26,
+      "label": "26_R1-R2-R3-R4",
+      "csv_file": "action_026_26_R1-R2-R3-R4.csv",
+      "start_time": "2026-03-08T13:32:10.334465",
+      "end_time": "2026-03-08T13:32:36.644577",
+      "sample_count": 116
+    },
+    {
+      "id": 27,
+      "label": "27_R4-R3-R2-R1",
+      "csv_file": "action_027_27_R4-R3-R2-R1.csv",
+      "start_time": "2026-03-08T13:32:57.129463",
+      "end_time": "2026-03-08T13:33:26.759765",
+      "sample_count": 124
+    },
+    {
+      "id": 28,
+      "label": "28_R1-R4-R1-R2",
+      "csv_file": "action_028_28_R1-R4-R1-R2.csv",
+      "start_time": "2026-03-08T13:33:50.183691",
+      "end_time": "2026-03-08T13:34:21.068011",
+      "sample_count": 128
+    },
+    {
+      "id": 29,
+      "label": "29_R3-R4-R1-R2",
+      "csv_file": "action_029_29_R3-R4-R1-R2.csv",
+      "start_time": "2026-03-08T13:34:39.275808",
+      "end_time": "2026-03-08T13:35:08.210888",
+      "sample_count": 120
+    },
+    {
+      "id": 30,
+      "label": "30_R2-R1-R4-R3",
+      "csv_file": "action_030_30_R2-R1-R4-R3.csv",
+      "start_time": "2026-03-08T13:35:42.510432",
+      "end_time": "2026-03-08T13:36:14.446233",
+      "sample_count": 124
+    },
+    {
+      "id": 31,
+      "label": "31_R3-R2-R3-R2",
+      "csv_file": "action_031_31_R3-R2-R3-R2.csv",
+      "start_time": "2026-03-08T13:36:29.527746",
+      "end_time": "2026-03-08T13:37:02.912150",
+      "sample_count": 134
+    },
+    {
+      "id": 32,
+      "label": "32_R1-R4-R3-R4",
+      "csv_file": "action_032_32_R1-R4-R3-R4.csv",
+      "start_time": "2026-03-08T13:37:15.523902",
+      "end_time": "2026-03-08T13:37:44.828900",
+      "sample_count": 127
+    },
+    {
+      "id": 33,
+      "label": "33_R3-R2-R3-R2",
+      "csv_file": "action_033_33_R3-R2-R3-R2.csv",
+      "start_time": "2026-03-08T13:38:10.573076",
+      "end_time": "2026-03-08T13:38:43.457970",
+      "sample_count": 144
+    },
+    {
+      "id": 34,
+      "label": "34_R2-R1-R2-R1",
+      "csv_file": "action_034_34_R2-R1-R2-R1.csv",
+      "start_time": "2026-03-08T13:38:59.877665",
+      "end_time": "2026-03-08T13:39:33.358599",
+      "sample_count": 127
+    },
+    {
+      "id": 35,
+      "label": "35_R1-R2-R3-R4",
+      "csv_file": "action_035_35_R1-R2-R3-R4.csv",
+      "start_time": "2026-03-08T13:39:47.710071",
+      "end_time": "2026-03-08T13:40:18.724877",
+      "sample_count": 141
+    },
+    {
+      "id": 36,
+      "label": "36_R4-R3-R2-R3",
+      "csv_file": "action_036_36_R4-R3-R2-R3.csv",
+      "start_time": "2026-03-08T13:40:37.930996",
+      "end_time": "2026-03-08T13:41:08.880640",
+      "sample_count": 134
+    },
+    {
+      "id": 37,
+      "label": "37_R3-R4-R1-R2",
+      "csv_file": "action_037_37_R3-R4-R1-R2.csv",
+      "start_time": "2026-03-08T13:41:24.177452",
+      "end_time": "2026-03-08T13:41:56.516824",
+      "sample_count": 134
+    },
+    {
+      "id": 38,
+      "label": "38_R4-R3-R4-R3",
+      "csv_file": "action_038_38_R4-R3-R4-R3.csv",
+      "start_time": "2026-03-08T13:42:28.343264",
+      "end_time": "2026-03-08T13:42:59.016236",
+      "sample_count": 135
+    },
+    {
+      "id": 39,
+      "label": "39_R3-R2-R1-R2",
+      "csv_file": "action_039_39_R3-R2-R1-R2.csv",
+      "start_time": "2026-03-08T13:43:16.389911",
+      "end_time": "2026-03-08T13:43:43.860634",
+      "sample_count": 108
+    },
+    {
+      "id": 40,
+      "label": "40_R2-R3-R4-R1",
+      "csv_file": "action_040_40_R2-R3-R4-R1.csv",
+      "start_time": "2026-03-08T13:43:59.569015",
+      "end_time": "2026-03-08T13:44:31.245974",
+      "sample_count": 128
+    },
+    {
+      "id": 41,
+      "label": "41_R1-R4-R3-R2",
+      "csv_file": "action_041_41_R1-R4-R3-R2.csv",
+      "start_time": "2026-03-08T13:44:48.993993",
+      "end_time": "2026-03-08T13:45:19.591667",
+      "sample_count": 133
+    },
+    {
+      "id": 42,
+      "label": "42_R2-R3-R2-R1",
+      "csv_file": "action_042_42_R2-R3-R2-R1.csv",
+      "start_time": "2026-03-08T13:45:35.886979",
+      "end_time": "2026-03-08T13:46:06.252640",
+      "sample_count": 131
+    },
+    {
+      "id": 43,
+      "label": "43_R2-R1-R4-R3",
+      "csv_file": "action_043_43_R2-R1-R4-R3.csv",
+      "start_time": "2026-03-08T13:46:25.110424",
+      "end_time": "2026-03-08T13:46:53.235141",
+      "sample_count": 120
+    },
+    {
+      "id": 44,
+      "label": "44_R3-R4-R1-R2",
+      "csv_file": "action_044_44_R3-R4-R1-R2.csv",
+      "start_time": "2026-03-08T13:47:20.965588",
+      "end_time": "2026-03-08T13:47:54.052320",
+      "sample_count": 131
+    },
+    {
+      "id": 45,
+      "label": "45_R1-R4-R1-R4",
+      "csv_file": "action_045_45_R1-R4-R1-R4.csv",
+      "start_time": "2026-03-08T13:48:09.897292",
+      "end_time": "2026-03-08T13:48:40.072844",
+      "sample_count": 124
+    },
+    {
+      "id": 46,
+      "label": "46_R4-R3-R2-R3",
+      "csv_file": "action_046_46_R4-R3-R2-R3.csv",
+      "start_time": "2026-03-08T13:48:53.615448",
+      "end_time": "2026-03-08T13:49:25.522772",
+      "sample_count": 136
+    },
+    {
+      "id": 47,
+      "label": "47_R3-R2-R1-R4",
+      "csv_file": "action_047_47_R3-R2-R1-R4.csv",
+      "start_time": "2026-03-08T13:49:39.796131",
+      "end_time": "2026-03-08T13:50:10.764660",
+      "sample_count": 128
+    },
+    {
+      "id": 48,
+      "label": "48_R3-R2-R3-R2",
+      "csv_file": "action_048_48_R3-R2-R3-R2.csv",
+      "start_time": "2026-03-08T13:50:29.900340",
+      "end_time": "2026-03-08T13:51:00.539702",
+      "sample_count": 133
+    }
+  ],
+  "total_samples": 5921,
+  "floorplan": null
+}

@@ -97,6 +97,29 @@ class TestIntentClassifierRegex:
         assert match.intent == "patients.read"
         assert immediate == ("list_visible_patients", {"query": "วิชัย"})
 
+    def test_thai_self_room_maps_to_get_patient_details_with_context(self, classifier):
+        ctx = ConversationContext()
+        ctx.last_focused_patient_id = 12
+        ctx.last_patient_cards = [{"id": 12, "first_name": "A", "last_name": "B"}]
+        match, immediate = classifier.classify("ตอนนี้ฉันอยู่ห้องไหน", ctx)
+        assert match is not None
+        assert immediate == ("get_patient_details", {"patient_id": 12})
+
+    def test_thai_self_caregivers_maps_to_list_patient_caregivers_with_context(self, classifier):
+        ctx = ConversationContext()
+        ctx.last_focused_patient_id = 5
+        ctx.last_entities = [{"type": "patient", "id": 5}]
+        match, immediate = classifier.classify("ใครดูแลฉัน", ctx)
+        assert match is not None
+        assert immediate == ("list_patient_caregivers", {"patient_id": 5})
+
+    def test_thai_self_identity_maps_to_get_patient_details_with_context(self, classifier):
+        ctx = ConversationContext()
+        ctx.last_focused_patient_id = 3
+        match, immediate = classifier.classify("ฉันคือใคร", ctx)
+        assert match is not None
+        assert immediate == ("get_patient_details", {"patient_id": 3})
+
     def test_thai_timeline_followup_uses_focused_patient(self, classifier):
         ctx = ConversationContext()
         ctx.last_focused_patient_id = 42

@@ -1,0 +1,42 @@
+%%=================================================
+%% Table of Contents, Figures and Tables
+%%=================================================
+% comment/uncomment any tables/lists that you desire
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{section}{สารบัญ}
+\addtocontents{toc}{\protect\vspace{\baselineskip}}
+\tableofcontents
+
+%\newpage
+%%=================================================
+%% Figures page
+%%=================================================
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{section}{สารบัญรูป}
+\addtocontents{toc}{\protect\vspace{\baselineskip}}
+\listoffigures
+
+%\newpage
+%%=================================================
+%% Tables page
+%%=================================================
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{section}{สารบัญตาราง}
+\addtocontents{toc}{\protect\vspace{\baselineskip}}
+\listoftables
+
+
+%\newpage
+%%=================================================
+%% Listings page
+%%=================================================
+\IfAddListOfListings{
+	\cleardoublepage
+	\phantomsection
+	\addcontentsline{toc}{section}{สารบัญรายการ}
+	\addtocontents{toc}{\protect\vspace{\baselineskip}}
+	\lstlistoflistings
+}

@@ -64,7 +64,10 @@ ROLE_SYSTEM_PROMPTS: dict[str, str] = {
     ),
     "patient": (
         "You are EaseAI for a patient user. Handle both general questions and patient-facing assistance. "
-        "Use simple language and encourage contacting staff for emergencies."
+        "Use simple language and encourage contacting staff for emergencies. "
+        "When WheelSense tool results are provided for this session, you may use them to answer about "
+        "this signed-in patient's own profile (including name and room assignment), vitals, timeline, "
+        "assigned care team, messages, and alerts. Never infer or disclose other patients' data."
     ),
 }
 
@@ -249,6 +252,7 @@ def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
             "get_patient_timeline",
             "list_patient_devices",
             "list_patient_contacts",
+            "list_patient_caregivers",
             # Rooms & facilities (read)
             "list_rooms",
             "get_room_details",

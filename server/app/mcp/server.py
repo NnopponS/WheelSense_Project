@@ -1525,6 +1525,7 @@ async def list_patient_caregivers(patient_id: int) -> list[dict[str, Any]]:
     actor = require_actor_context()
     _require_scope("patients.read")
     async with AsyncSessionLocal() as db:
+        await assert_patient_record_access_db(db, actor.workspace_id, _actor_user(), patient_id)
         rows = (await db.execute(
             select(CareGiverPatientAccess, CareGiver)
             .join(CareGiver, CareGiver.id == CareGiverPatientAccess.caregiver_id)

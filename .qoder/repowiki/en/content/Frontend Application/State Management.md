@@ -12,7 +12,7 @@
 - [refetchOrThrow.ts](file://frontend/lib/refetchOrThrow.ts)
 - [types.ts](file://frontend/lib/types.ts)
 - [constants.ts](file://frontend/lib/constants.ts)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 </cite>
 
 ## Table of Contents

@@ -2,7 +2,7 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [README.md](file://README.md)
 - [server/AGENTS.md](file://server/AGENTS.md)
 - [server/app/main.py](file://server/app/main.py)
@@ -71,13 +71,13 @@ AR --> MCP
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [server/app/main.py](file://server/app/main.py)
 - [server/AGENTS.md](file://server/AGENTS.md)
 
 **Section sources**
 - [README.md](file://README.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 
 ## Core Components
 - Firmware devices publish telemetry and camera frames to MQTT topics. The backend ingests and normalizes these events into database records and triggers derived workflows (localization, vitals, alerts).
@@ -87,7 +87,7 @@ AR --> MCP
 
 **Section sources**
 - [server/AGENTS.md](file://server/AGENTS.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [server/app/main.py](file://server/app/main.py)
 - [server/app/mcp/server.py](file://server/app/mcp/server.py)
 
@@ -223,11 +223,11 @@ UI --> MCP["MCP chat actions (optional)"]
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [frontend/app/layout.tsx](file://frontend/app/layout.tsx)
 
 **Section sources**
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [frontend/package.json](file://frontend/package.json)
 - [frontend/app/layout.tsx](file://frontend/app/layout.tsx)
 
@@ -237,7 +237,7 @@ UI --> MCP["MCP chat actions (optional)"]
 - Topics include device-specific control/ack channels and derived broadcasts (room predictions, vitals, alerts).
 
 **Section sources**
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [server/AGENTS.md](file://server/AGENTS.md)
 
 ### MQTT Communication and Data Flows
@@ -352,7 +352,7 @@ WheelSense Platform combines a firmware telemetry layer, a FastAPI backend with 
 
 **Section sources**
 - [server/AGENTS.md](file://server/AGENTS.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 
 ### Infrastructure Requirements and Deployment Topology
 - Backend: FastAPI app, PostgreSQL, Mosquitto, optional Copilot CLI profile
@@ -361,7 +361,7 @@ WheelSense Platform combines a firmware telemetry layer, a FastAPI backend with 
 
 **Section sources**
 - [server/docker-compose.yml](file://server/docker-compose.yml)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 
 ### Technology Stack and Version Compatibility
 - Backend: Python 3.12+, FastAPI, SQLAlchemy async, Alembic, aiomqtt, MCP FastMCP

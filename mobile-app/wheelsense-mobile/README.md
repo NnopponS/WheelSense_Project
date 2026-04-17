@@ -65,7 +65,7 @@ mobile-app/wheelsense-mobile/
 │   ├── navigation/
 │   │   └── AppNavigator.tsx    # React Navigation setup
 │   ├── screens/
-│   │   ├── SetupScreen.tsx     # MQTT broker + device setup (not web login)
+│   │   ├── LoginScreen.tsx     # Authentication
 │   │   ├── HomeScreen.tsx      # Main dashboard
 │   │   ├── WebViewScreen.tsx   # Full-screen WebView
 │   │   ├── DeviceScreen.tsx    # BLE/Polar device management
@@ -151,8 +151,6 @@ Default MQTT broker settings:
 - Host: `wheelsense.local` (or same as server)
 - Port: `1883` (or `8883` for TLS)
 - Client ID: Auto-generated based on user ID
-
-Registration payload (`WheelSense/mobile/{device_id}/register`) may include **`companion_polar`** when a Polar sensor is connected (`polar_device_id`, optional `name` / `firmware_version`). The server creates a linked `polar_sense` registry device for the admin **Polar / Sense** fleet tab and mirrors patient or staff assignments from the phone.
 
 ### BLE Permissions
 

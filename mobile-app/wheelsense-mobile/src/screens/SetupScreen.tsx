@@ -33,7 +33,7 @@ type SetupScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Setup'>;
 };
 
-export const SetupScreen: React.FC<SetupScreenProps> = () => {
+export const SetupScreen: React.FC<SetupScreenProps> = ({ navigation }) => {
   const { t } = useTranslation();
   const [deviceName, setDeviceName] = useState('');
   const [brokerHost, setBrokerHost] = useState('');
@@ -75,6 +75,10 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
     setStatusMessage(t('setup.statusConnecting'));
 
     try {
+      if (!mqttService.isNativeModuleAvailable()) {
+        throw new Error('MQTT native module is unavailable. Use an Android development or production build.');
+      }
+
       // Save settings
       const port = parseInt(brokerPort, 10) || 1883;
       updateSettings({
@@ -105,6 +109,10 @@ export const SetupScreen: React.FC<SetupScreenProps> = () => {
 
       // Start telemetry loop
       mqttService.startTelemetryLoop();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
 
     } catch (error: any) {
       console.error('[Setup] Connection failed:', error);

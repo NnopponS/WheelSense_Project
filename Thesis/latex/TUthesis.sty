@@ -1,0 +1,368 @@
+%%======================================================================
+%%
+%% Thammasat University Thesis Style
+%% by Satok Chaikunchuensakun csatok@engr.tu.ac.th, csatok@tu.ac.th
+%% v.1.0
+%% Oct 16, 2014
+%% v.1.0.1 Oct 20,2014 (use polyglossia & remove xCJKnumb สำหรับภาคผนวก ก, ข ,ค ...)
+%%
+%% Normally there is no need to edit this file.
+%%
+%%
+%%======================================================================
+
+\NeedsTeXFormat{LaTeX2e}[1998/12/01]
+\ProvidesPackage{TUthesis}
+
+%% Required packages
+\RequirePackage{setspace} %% Need for line spacing on title/signature page
+\RequirePackage{mathptmx} %% Times font for text and math
+\RequirePackage{listings} %% Include formatted source code listings
+                          %% (this package is not actually needed,
+                          %% however if you remove it then
+                          %% you must comment out all references to
+                          %% listings in this file and in thesis.tex)
+
+%% Page layout
+\setlength{\oddsidemargin}{0.18in}     %% 1.15in left margin
+\setlength{\evensidemargin}{0.18in}    %% 1.15in left margin (even pages)
+\setlength{\topmargin}{0.18in}         %% 1in top margin
+\setlength{\textwidth}{6.085in}        %% 5.76in text - 1.25in rt margin
+\setlength{\textheight}{9.69in}        %% Body ht for 1in margins
+\addtolength{\topmargin}{-\headheight} %% No header, so compensate
+\addtolength{\topmargin}{-\headsep}    %% for header height and separation
+\flushbottom
+
+%%\RequirePackage{xCJKnumb}
+\RequirePackage[shortlabels]{enumitem} %% item indent
+\RequirePackage{afterpage} %% สารบัญ ต่อ
+%\RequirePackage{array}
+\RequirePackage{fontspec}
+\RequirePackage{xunicode}
+\RequirePackage{xltxtra}
+
+%%=================================================
+%% Example of using \setmainfont
+%%=================================================
+%\setmainfont{MyFont} %% font filename (without extension, e.g. .ttf)
+%[
+%    Extension      = .ttf ,
+%    Path           = fonts/ ,          %% absolute/relative path
+%    UprightFont    = {*-Roman} ,       %% "*" is replaced with "MyFont"
+%    BoldFont       = {*-Bold} ,        %% font filename
+%    ItalicFont     = {*-Italic} ,      %% font filename
+%    BoldItalicFont = {*-Bold-Itaic} ,  %% font filename
+%]
+
+%%=================================================
+%% For system installed fonts
+%%=================================================
+%\setmainfont{TH Sarabun New}
+%[
+%    BoldFont       = {TH Sarabun New Bold} ,
+%    ItalicFont     = {TH Sarabun New Italic} ,
+%    BoldItalicFont = {TH Sarabun New Bold Italic} ,
+%    Scale          = 1.4 ,
+%    Script         = Thai ,
+%    Mapping        = tex-text,
+%]
+
+%%=================================================
+%% For local font files, specified fonts must match their font filenames
+%%=================================================
+\setmainfont{THSarabunNew}
+[
+    Extension      = .ttf ,
+    Path           = fonts/ ,
+    UprightFont    = {*} ,              %% "*" is replaced with "THSarabunNew"
+    BoldFont       = {*Bold} ,
+    ItalicFont     = {*Italic} ,
+    BoldItalicFont = {*BoldItalic} ,
+    Scale          = 1.4 ,
+    Script         = Thai ,
+    Mapping        = tex-text ,
+]
+
+\setmonofont{DejaVuSansMono}
+[
+    Extension      = .ttf ,
+    Path           = fonts/ ,
+    UprightFont    = {*} ,              %% "*" is replaced with "DejaVuSansMono"
+    BoldFont       = {*-Bold} ,
+    ItalicFont     = {*-Oblique} ,
+    BoldItalicFont = {*-BoldOblique} ,
+%    Scale          = 0.8 ,
+%    Script         = Thai ,
+%    Mapping        = tex-text ,
+]
+
+%\setromanfont[Scale=1.3]{Times New Roman}
+
+\XeTeXlinebreaklocale "th_TH"  %% enable Thai (dictionary-based) line-breaking
+\XeTeXlinebreakskip = 0pt plus 0.5pt
+
+\RequirePackage{polyglossia}
+\setdefaultlanguage{thai}
+\setotherlanguage{english}
+
+%% For system installed fonts
+%\newfontfamily{\thaifont}[Scale=1.4,Script=Thai]{TH Sarabun New}
+%\newfontfamily\thaifonttt[Scale=1.4,Script=Thai]{TH Sarabun New}
+
+%% For local font files, specified fonts must match their font filenames
+%% Need to define teletype font to correct problem with polyglossia:
+%% "! Package polyglossia Error: The current latin font..."
+%\newfontfamily{\thaifont}{THSarabunNew}[Scale=1.4,Script=Thai,Path=fonts/]
+\newfontfamily\thaifonttt{DejaVuSansMono}[Scale=0.8,Path=fonts/]
+
+
+%% Rename Tables and References
+\renewcommand{\figurename}{รูปที่}
+\renewcommand{\contentsname}{สารบัญ}
+\renewcommand{\chaptername}{บทที่}
+\renewcommand{\appendixname}{ภาคผนวก}
+\renewcommand{\bibname}{รายการอ้างอิง}
+\renewcommand{\listfigurename}{สารบัญรูปภาพ}
+\renewcommand{\listtablename}{สารบัญตาราง}
+\renewcommand{\tablename}{ตารางที่}
+\RequirePackage{fancyhdr}
+
+
+%% TOC includes 1., 1.1, 1.1.1
+\setcounter{tocdepth}{3}
+\RequirePackage{titlesec}
+\RequirePackage{titletoc}
+\setcounter{secnumdepth}{4}
+
+\addtocontents{toc}{\protect\vspace{-0.5cm}}
+\addtocontents{lof}{\protect\vspace{-0.5cm}}
+\addtocontents{lot}{\protect\vspace{-0.5cm}}
+%\addtocontents{toc}{\vskip -1.2cm}
+%\addtocontents{lof}{\vskip -1.2cm}
+
+%% ใช้ default spacing ของ LaTeX
+%% Uncomment ถ้าจะใช้การเว้นระยะในรูปแบบของ ม.ธ.
+%\titlespacing{\subsection}{0.8in}{1.5ex plus .1ex minus .2ex}{1pc}
+%\titlespacing{\subsubsection}{1.1in}{1.5ex plus .1ex minus .2ex}{1pc}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.2cm}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.2cm}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsection}{0.2cm}{}
+
+
+\let\oldsection\section
+\renewcommand{\section}[1]{\oldsection{#1}\setlength{\parindent}{0.8in}}
+
+\let\oldsubsection\subsection
+\renewcommand{\subsection}[1]{\oldsubsection{#1}\setlength{\parindent}{0.8in}}
+
+\let\oldsubsubsection\subsubsection
+\renewcommand{\subsubsection}[1]{\oldsubsubsection{#1}\setlength{\parindent}{1.1in}}
+
+
+%% Paragraph packages
+\RequirePackage{indentfirst}
+
+%%=================================================
+%% Start TeX commands
+%%=================================================
+\makeatletter
+
+%% Add space after chapters in TOC
+\renewcommand\chapter{%
+    \if@mainmatter
+        \addtocontents{toc}{\protect\addvspace{15\p@}}%
+    \fi
+
+    \if@openright\cleardoublepage\else\clearpage\fi
+
+    \thispagestyle{plain}%
+    \global\@topnum\z@%
+    \@afterindentfalse%
+
+    %% Always indent first paragraph
+    \let\@afterindentfalse\@afterindenttrue%
+    \@afterindenttrue%
+
+    \secdef\@chapter\@schapter%
+}
+
+%% For appendices, include appendix letter in TOC and heading
+\def\@chapter[#1]#2{%
+    \ifnum \c@secnumdepth >\m@ne
+        \if@mainmatter
+            \refstepcounter{chapter}%
+            \typeout{\@chapapp\space\thechapter.}%
+            \addcontentsline{toc}{chapter}%
+            {\protect\numberline{บทที่ \thechapter}#1}%
+        \else
+            \refstepcounter{chapter}%
+            \typeout{\@chapapp\space\thechapter.}%
+            \addcontentsline{toc}{section}%
+            {\@chapapp\space\thechapter:\space#1}%
+        \fi
+    \else
+        \addcontentsline{toc}{chapter}{#1}%
+    \fi
+    \chaptermark{#1}%
+    \addtocontents{lof}{\protect\addvspace{10\p@}}%
+    \addtocontents{lot}{\protect\addvspace{10\p@}}%
+    \if@twocolumn
+        \@topnewpage[\@makechapterhead{#2}]%
+    \else
+        \@makechapterhead{#2}%
+        \@afterheading
+    \fi%
+}
+
+%% Change font size of chapter headings
+\def\@makechapterhead#1{%
+    \vspace*{10\p@}%
+    {\parindent \z@ \centering \normalfont
+    \ifnum \c@secnumdepth >\m@ne
+        \if@mainmatter
+            \LARGE\bfseries \@chapapp\space \thechapter
+            \par\nobreak
+            \vskip 10\p@
+        \else
+            \LARGE\bfseries \@chapapp\space \thechapter
+            \par\nobreak
+            \vskip 10\p@
+        \fi
+    \fi
+    \interlinepenalty\@M
+    \LARGE \bfseries #1\par\nobreak
+    \vskip 20\p@
+    }%
+}
+
+%% Change font size of chapter* headings
+\def\@makeschapterhead#1{%
+    \vspace*{50\p@}%
+    {\parindent \z@ \centering
+    \normalfont
+    \interlinepenalty\@M
+    \LARGE \bfseries  #1\par\nobreak
+    \vskip 40\p@
+    }%
+}
+
+\renewcommand\appendix{\par
+    \stepcounter{chapter}
+    \setcounter{chapter}{0}
+    \stepcounter{section}
+    \setcounter{section}{0}
+    \setcounter{equation}{0}
+    \setcounter{figure}{0}
+    \setcounter{table}{0}
+    \setcounter{footnote}{0}
+    \def\@chapapp{\appendixname}%
+    \renewcommand\thechapter{\@thaiAlph\c@chapter}%
+}
+
+
+%\renewcommand\tableofcontents{%
+%    \parindent\z@
+%    \chapter*{\contentsname}
+%    \vskip 12\p@
+%    \textbf{ \hfill หน้า}
+%    \vskip 12\p@
+%    \@starttoc{toc}%
+%}
+%\renewcommand\listoffigures{%
+%    \parindent\z@
+%    \chapter*{\listfigurename}
+%    \vskip 12\p@
+%    \textbf{\hfill หน้า}
+%    \vskip 12\p@
+%    \@starttoc{lof}%
+%}
+%\renewcommand\listoftables{%
+%    \parindent\z@
+%    \chapter*{\listtablename}
+%    \vskip 12\p@
+%    \textbf{\hfill หน้า}
+%    \vskip 12\p@
+%    \@starttoc{lot}%
+%}
+
+%\renewcommand*{\lstlistoflistings}{%
+%    \chapter*{\lstlistlistingname}
+%    \vskip 12\p@
+%    \textbf{\hfill หน้า}
+%    \vskip 12\p@
+%    \@starttoc{lol}%
+%}
+
+\addtocontents{toc}{~\hfill\textnormal{หน้า\\}\par}
+\addtocontents{lot}{~\hfill\textnormal{หน้า}\par}
+\addtocontents{lof}{~\hfill\textnormal{หน้า}\par}
+\addtocontents{lol}{~\hfill\textnormal{หน้า}\par}
+
+
+%% add ต่อ
+\DeclareRobustCommand*{\contheading}{%
+    \afterpage{{\normalfont\large\centering
+    \hfill สารบัญ - ต่อ~\hfill\textnormal{หน้า}\par\bigskip}}%
+}
+
+%% Add space in table of contents when starting backmatter
+\renewcommand\backmatter{%
+    \if@openright
+        \cleardoublepage
+    \else
+        \clearpage
+    \fi
+    \@mainmatterfalse%
+    \addtocontents{toc}{\protect\addvspace{15\p@}}
+}
+
+\renewcommand\part{%
+    \if@openright
+        \cleardoublepage
+    \else
+        \clearpage
+    \fi
+    \thispagestyle{empty}   %% Original >>plain<< replaced by >>empty<<
+    \if@twocolumn
+        \onecolumn
+        \@tempswatrue
+    \else
+        \@tempswafalse
+    \fi
+    \null\vfil
+    \secdef\@part\@spart%
+}
+
+
+%% Format/width of TOC lines
+\renewcommand{\@dotsep}{10000}  %% remove dots
+\renewcommand*\l@chapter{\@dottedtocline{1}{1.8em}{2.4em}}
+\renewcommand*\l@section{\@dottedtocline{2}{4.2em}{1.8em}}
+\renewcommand*\l@subsection{\@dottedtocline{3}{6.0em}{2.4em}}
+\renewcommand*\l@figure{\@dottedtocline{1}{1.8em}{2.4em}}
+
+\renewcommand*\l@subsubsection{\@dottedtocline{4}{8.4em}{3em}}
+
+
+%% Font sizes
+\renewcommand\large{\@setfontsize\large{13}{17}}
+\renewcommand\Large{\@setfontsize\Large{14}{18}}
+\renewcommand\LARGE{\@setfontsize\LARGE{15}{19}}
+\renewcommand\huge{\@setfontsize\huge{16}{20}}
+
+
+\renewcommand\headrulewidth{0pt}
+\rhead{\vspace*{1.5\baselineskip}\thepage}
+
+\fancypagestyle{plain}{
+\fancyfoot{}
+\fancyhead{\hfill \thepage}}
+\pagestyle{plain}
+\renewcommand{\headrulewidth}{0pt}
+
+%%=================================================
+%% End TeX Commands
+%%=================================================
+
+\makeatother

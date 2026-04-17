@@ -1,0 +1,1008 @@
+%%================================================
+%% Chapter 3 — วิธีการดำเนินงานและการออกแบบระบบต้นแบบ
+%% เนื้อหาเน้นการนำหลักการในบทที่ 2 มาประยุกต์เป็นสถาปัตยกรรมและขั้นตอนที่ทำซ้ำได้
+%% ผลการทดสอบเชิงตัวเลขและการสรุปผลนำเสนอในบทที่ 4
+%%================================================
+\chapter{การดําเนินงาน/วิธีวิจัย}
+\label{chapter3}
+
+บทนี้อธิบายวิธีดำเนินงานและการออกแบบระบบต้นแบบ WheelSense ในระดับที่สามารถทำซ้ำได้ (reproducible engineering method) ตั้งแต่การกำหนดเครื่องมือ/อุปกรณ์ การออกแบบสถาปัตยกรรมและ data pipeline การกำหนดสัญญาแลกเปลี่ยนข้อมูล (data contract) การตั้งค่าพารามิเตอร์หลัก และโปรโตคอลการติดตั้งเพื่อให้ระบบพร้อมใช้งานก่อนการประเมิน
+เนื้อหาในบทนี้มุ่งตอบว่า “ระบบถูกสร้างอย่างไร” และ “การประเมินผลเชิงวิจัยวัดอะไรบ้าง” โดยแยกชัดระหว่าง (ก) การออกแบบและการตรวจสอบการทำงานเบื้องต้นระหว่างพัฒนา และ (ข) \textbf{การประเมินที่ใช้เป็นหลักฐานในเล่ม} ซึ่งประกอบด้วย (1) \textbf{สี่ประเด็นด้าน UX/UI และ LLM/MCP} ตามหัวข้อ~\ref{sec:ch3_test_plan} และ (2) \textbf{การทดสอบเสริมด้านความทนทานของโมดูลระบุตำแหน่ง} ภายใต้การเปลี่ยนแปลงของ RSSI แบบจำลอง (Gaussian noise injection) เพื่อเปรียบเทียบ KNN กับ XGBoost ในบริบทเดียวกัน
+บทนี้เชื่อมกับวัตถุประสงค์และขอบเขตในบทที่~\ref{chapter1} และยึดหลักการเชิงทฤษฎีจากบทที่~\ref{chapter2} โดยไม่ทวนซ้ำนิยาม/สมการของ IPS, RSSI fingerprinting และ KNN \cite{BLE_Fingerprint_Survey_IEEE,WiFi_BLE_IPS_Systematic_Review}
+ส่วนผลเชิงตัวเลข ตัวชี้วัด และการอภิปรายข้อค้นพบ นำเสนอในบทที่~\ref{chapter4}
+
+ลำดับการอ่านที่แนะนำ: (1) คำศัพท์และตาราง traceability (2) เครื่องมือ/สแต็กซอฟต์แวร์ (3) ภาพรวมสถาปัตยกรรมและสัญญา MQTT (4) บริบททดลองและข้อจำกัด (5) โมดูลอุปกรณ์ การระบุตำแหน่ง และเซิร์ฟเวอร์ (6) พารามิเตอร์และ \textbf{Profile-A} ในหัวข้อ~\ref{sec:ch3_eval_profile} (7) โปรโตคอลการติดตั้งและความพร้อมของระบบ (8) \textbf{แผนการประเมินผล} ในหัวข้อ~\ref{sec:ch3_test_plan}
+หมายเหตุ: ตาราง failure modes อยู่ก่อนหัวข้อพารามิเตอร์เพื่อสรุปความเสี่ยงของแต่ละระบบย่อย ก่อนรวบรวมเป็นตัวเลข Profile-A
+
+\section{คำศัพท์ สัญลักษณ์ และข้อตกลงการเรียกชื่อในบทนี้}
+\label{sec:ch3_terms}
+
+เพื่อให้การอธิบายสอดคล้องกันตลอดบทนี้และรองรับการอ้างอิงไปยังบทที่~\ref{chapter4} กำหนดคำศัพท์และข้อตกลงการเรียกชื่อหลักดังตารางที่~\ref{tab:ch3_terms}
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{5pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{4.2cm}|p{8.8cm}|}
+        \hline
+        \textbf{คำ/สัญลักษณ์} & \textbf{ความหมายและขอบเขตการใช้งาน} \\ \hline
+        \texttt{device\_id} & ตัวระบุอุปกรณ์ในระบบ ใช้เป็นกุญแจเชื่อมระหว่าง MQTT payload และการลงทะเบียนอุปกรณ์ในฐานข้อมูล \\ \hline
+        โซน/ห้อง (zone/room) & หน่วยผลลัพธ์การระบุตำแหน่งเชิงพื้นที่ในอาคาร ระดับความละเอียดอยู่ที่ room-level หรือ zone-level ตามบริบทพื้นที่ทดสอบ \\ \hline
+        \texttt{telemetry} & ข้อมูล time-series จากอุปกรณ์บนเก้าอี้รถเข็น เช่น IMU, motion, battery และ RSSI \\ \hline
+        \texttt{rssi[]} & รายการสังเกตการณ์ RSSI ต่อรอบสแกน BLE แต่ละรายการประกอบด้วยตัวระบุโหนด/บีคอนและค่าความแรงสัญญาณ (dBm) \\ \hline
+        radio map / fingerprint & ชุดข้อมูลอ้างอิงจากขั้นตอนออฟไลน์ที่ผูกเวกเตอร์ RSSI กับป้ายกำกับโซน/ห้อง ใช้เป็นฐานสำหรับ KNN ในขั้นตอนออนไลน์ \\ \hline
+        \texttt{polar\_hr} & ข้อมูลอัตราการเต้นหัวใจและสัญญาณสรีระศาสตร์จาก Polar Verity Sense ที่ถูกรวมเข้ากับ pipeline เดียวกับ telemetry \\ \hline
+        event/alert & เหตุการณ์ที่เกิดจากกฎตรวจจับความผิดปกติหรือการอนุมานเชิงระบบ ใช้สำหรับการแจ้งเตือนและการบันทึกเหตุการณ์ \\ \hline
+        \texttt{frame}/\texttt{photo} chunk & หน่วยข้อมูลภาพจากโหนดกล้องที่ส่งผ่าน MQTT แบบ chunked payload หรือแบบกรอบภาพสำรอง (fallback) \\ \hline
+        MCP & Model Context Protocol สำหรับจำกัดเครื่องมือที่ LLM เรียกได้ และรองรับการตรวจสอบย้อนหลังของการเรียกใช้เครื่องมือ \cite{ModelContextProtocol} \\ \hline
+    \end{tabular}
+    \caption{คำศัพท์และข้อตกลงการเรียกชื่อที่ใช้ในบทที่ 3}
+    \label{tab:ch3_terms}
+\end{table}
+
+\section{กรอบวิธีดำเนินงานเชิงระบบและการโยงกับวัตถุประสงค์}
+\label{sec:ch3_traceability}
+
+เพื่อหลีกเลี่ยงการอธิบายซ้ำวัตถุประสงค์รายข้อจากบทที่~\ref{chapter1} บทนี้ใช้การโยงเชิงร่องรอย (traceability) ระหว่าง “วัตถุประสงค์” “ความต้องการระดับระบบ” “โมดูลที่รับผิดชอบ” และ “การประเมินเชิงวิจัย (ถ้ามี)” ตามตารางที่~\ref{tab:ch3_traceability} โดยรายละเอียดของแผนการประเมินอยู่ในหัวข้อ~\ref{sec:ch3_test_plan}
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{3.5pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{tabular}{|p{2.9cm}|p{3.9cm}|p{4.1cm}|p{3.8cm}|}
+        \hline
+        \textbf{เป้าหมาย (จากบทที่ 1)} & \textbf{ความต้องการระดับระบบ} & \textbf{โมดูล/ส่วนประกอบหลัก} & \textbf{การประเมินเชิงวิจัย (บทที่ 3)} \\ \hline
+        ติดตามการเคลื่อนไหวและสถานะ & เก็บ telemetry ต่อเนื่องและย้อนตรวจสอบได้ & อุปกรณ์บนเก้าอี้, MQTT, ฐานข้อมูล & ออกแบบตาม \ref{sec:ch3_wheelchair_module}, \ref{sec:ch3_server_db} — ไม่จัดเป็นชุดประเมินแยก \\ \hline
+        ระบุตำแหน่งภายในอาคาร & ทำนายโซน/ห้องจาก RSSI fingerprinting & BLE beacon, KNN บนเซิร์ฟเวอร์ & ออกแบบตาม \ref{sec:ch3_indoor_loc} — ไม่จัดเป็นชุดประเมินแยก \\ \hline
+        แจ้งเตือนเหตุผิดปกติ & ตรวจจับเหตุการณ์จากกฎและส่งแจ้งเตือน & กฎบนอุปกรณ์/เซิร์ฟเวอร์, แอปเว็บ/มือถือ & ออกแบบตาม \ref{sec:ch3_anomaly_rules} — ไม่จัดเป็นชุดประเมินแยก \\ \hline
+        ช่องทางผู้ดูแลและการใช้งานจริง & แสดงผลสถานะล่าสุดและประวัติ & Web dashboard, mobile app (React Native + Expo) & ประเมิน UX/UI: \ref{sec:ch3_test_ux} \\ \hline
+        automation + การช่วยตีความ & เชื่อม HA และ LLM ผ่าน MCP อย่างปลอดภัย & Home Assistant, MCP/LLM runtime & ประเมิน LLM/MCP: \ref{sec:ch3_eval_llm_metrics} \\ \hline
+    \end{tabular}
+    \caption{การโยงวัตถุประสงค์กับความต้องการ โมดูล และการประเมินเชิงวิจัย (traceability)}
+    \label{tab:ch3_traceability}
+\end{table}
+
+\section{เครื่องมือและสภาพแวดล้อมที่ใช้ในการพัฒนาและทดสอบ}
+\label{sec:ch3_instruments}
+
+\subsection{ฮาร์ดแวร์}
+
+ฮาร์ดแวร์หลักของระบบต้นแบบประกอบด้วย 5 กลุ่ม ได้แก่ (1) อุปกรณ์บนเก้าอี้รถเข็น (M5StickC Plus2) (2) เซ็นเซอร์สรีระศาสตร์ (Polar Verity Sense จำนวน 2 ชุด) (3) โหนดกล้องแบบขอบเครือข่าย (ESP32-S3 พร้อมกล้อง) (4) เครือข่าย BLE beacon สำหรับการอ้างอิงสัญญาณ (5) เซิร์ฟเวอร์ภาคสนาม (Raspberry Pi 5, RAM 8GB) เพื่อโฮสต์บริการกลาง
+ตารางที่~\ref{tab:ch3_hw_roles} สรุปบทบาท สัญญาณที่สร้าง และข้อกำหนดการติดตั้งที่สำคัญต่อการทำซ้ำ
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{3.6cm}|p{4.6cm}|p{5.6cm}|}
+        \hline
+        \textbf{อุปกรณ์} & \textbf{บทบาท/สัญญาณหลัก} & \textbf{ข้อกำหนดเชิงปฏิบัติการเพื่อทำซ้ำ} \\ \hline
+        M5StickC Plus2 (บนเก้าอี้) & IMU (acc/gyro), motion feature, battery, BLE scan (RSSI), ส่ง MQTT telemetry & ตำแหน่งยึดบนเก้าอี้ต้องคงที่; ตั้งค่า Wi-Fi/MQTT เดียวกันในพื้นที่ทดสอบ; รักษารอบเวลาสุ่มและรอบเวลาส่งตามตารางพารามิเตอร์ \\ \hline
+        Polar Verity Sense (2 ชุด) & HR และสัญญาณสรีระศาสตร์; ส่งต่อเข้าสู่ pipeline เดียวกับ telemetry & กระบวนการจับคู่อุปกรณ์และบทบาทเซ็นเซอร์ต้องคงที่; ระบุการแมปอุปกรณ์ต่อผู้ใช้/เก้าอี้; บันทึกสถานะขาดการเชื่อมต่อ \\ \hline
+        โหนด ESP32-S3 พร้อมกล้อง & ส่งภาพแบบ chunked payload; รายงานสถานะ; รับคำสั่งควบคุมสตรีม & กำหนด \texttt{device\_id} ของโหนด; ตั้งค่าความละเอียด/อัตราเฟรมที่แน่นอน; ตรวจสอบเสถียรภาพเครือข่ายและขนาดแพ็กเก็ต MQTT \\ \hline
+        BLE beacon (คงที่) & แหล่งสัญญาณ BLE สำหรับ RSSI fingerprinting & ตำแหน่งติดตั้งต้องระบุในผังพื้นที่; ระยะสูง/การบังสัญญาณต้องคงที่ระหว่างการเก็บ fingerprint และการทดสอบออนไลน์ \\ \hline
+        Raspberry Pi 5 (ภาคสนาม) & โฮสต์บริการ: MQTT broker, API, DB, web dashboard, agent runtime และส่วนเชื่อมต่อ HA & บันทึกเวอร์ชันระบบ/คอนเทนเนอร์; จำกัดพอร์ตและผู้ใช้; แยกเครือข่ายทดสอบจากเครือข่ายใช้งานจริงเมื่อมี HA \\ \hline
+    \end{tabular}
+    \caption{สรุปฮาร์ดแวร์ บทบาท สัญญาณที่เกี่ยวข้อง และข้อกำหนดเพื่อการทำซ้ำ}
+    \label{tab:ch3_hw_roles}
+\end{table}
+
+\subsection{ซอฟต์แวร์และบริการหลัก}
+\label{sec:ch3_sw_stack}
+
+ฝั่งเซิร์ฟเวอร์ใช้สถาปัตยกรรมบริการแยกส่วนที่ติดตั้งซ้ำได้บน Raspberry Pi 5 โดยใช้ MQTT เป็นแกนกลางรับข้อมูลจากอุปกรณ์ \cite{MQTTSpec}
+การจัดแพ็กเกจและการติดตั้งยึดแนวทางคอนเทนเนอร์เพื่อให้ลดความคลาดเคลื่อนข้ามรอบการทดลองและทำซ้ำได้ \cite{Boettiger2015_Docker_reproducible_research}
+
+ตารางที่~\ref{tab:ch3_sw_stack} สรุปซอฟต์แวร์/บริการหลัก หน้าที่ และผลลัพธ์ที่สร้างใน pipeline
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{3.6cm}|p{4.8cm}|p{5.4cm}|}
+        \hline
+        \textbf{องค์ประกอบซอฟต์แวร์} & \textbf{หน้าที่หลัก} & \textbf{ข้อมูลเข้า/ออกที่เกี่ยวข้องกับบทที่ 4} \\ \hline
+        MQTT broker & รับ/ส่งข้อความ telemetry, RSSI, ภาพ, คำสั่งควบคุม & ข้อความ MQTT และสถานะการเชื่อมต่อของอุปกรณ์ \\ \hline
+        Ingestion/validation service & ตรวจสอบ schema, จัดรูปแบบข้อมูล, ประทับเวลา, บันทึก DB & time-series, event/alert และ metadata ภาพ \\ \hline
+        Localization service & ฝึก (offline) และทำนาย (online) โซน/ห้องจาก fingerprint + KNN & ผลทำนายตำแหน่ง, ตัวชี้วัดความเชื่อมั่นและเหตุผล fallback \\ \hline
+        ฐานข้อมูล (PostgreSQL) & เก็บ registry, time-series, predictions, logs & แหล่งข้อมูลหลักสำหรับคำนวณตัวชี้วัดและทำซ้ำผล \\ \hline
+        API server (FastAPI) & Endpoint สำหรับ dashboard, mobile, HA และ MCP surface & สถานะล่าสุด, ประวัติ, การตั้งค่า/พารามิเตอร์ \\ \hline
+        Web dashboard (Next.js/React/Tailwind) & UI ผู้ดูแล: สถานะล่าสุด, แจ้งเตือน, ประวัติย่อ & หลักฐาน UX task และการรับรู้เหตุการณ์แบบใกล้เวลาจริง \\ \hline
+        Mobile app (React Native + Expo) & ช่องทางเสริม: สถานะล่าสุด/แจ้งเตือน/มุมมองพกพา และส่ง telemetry ผ่าน MQTT & บริบทการใช้งานร่วมกับ UX (เทียบกับเว็บ) \\ \hline
+        Home Assistant & automation ตามบริบท (entity/event) & log เหตุการณ์ automation ที่เกิดขึ้นในการทดสอบ \\ \hline
+        Agent runtime + MCP & เชื่อม LLM กับเครื่องมือที่อนุญาต; audit การเรียกเครื่องมือ & tool-call logs, IRR, latency และคุณภาพข้อความสรุป \cite{ModelContextProtocol,GoogleGemma} \\ \hline
+    \end{tabular}
+    \caption{สรุปซอฟต์แวร์/บริการหลักและบทบาทในระบบต้นแบบ}
+    \label{tab:ch3_sw_stack}
+\end{table}
+
+\section{ภาพรวมสถาปัตยกรรมและการไหลของข้อมูลของระบบ WheelSense}
+\label{sec:ch3_system_overview}
+
+ระบบ WheelSense ถูกออกแบบให้แยกเส้นทางข้อมูลตามธรรมชาติของสัญญาณ (sensor telemetry, RSSI, ภาพ, การตั้งค่า/คำสั่ง และ audit log) เพื่อลด coupling ระหว่างโมดูลและช่วยให้วัดผลแบบ end-to-end ได้ชัดเจน
+สรุปภาพรวมสถาปัตยกรรมและขอบเขตความรับผิดชอบของแต่ละชั้นระบบแสดงในรูปที่~\ref{fig:ch3_architecture_overview}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{assets/figures/chapter3/ch3-fig01-architecture.pdf}{%
+        \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig01-architecture.pdf}%
+    }{%
+        \IfFileExists{assets/figures/chapter3/ch3-fig01-architecture.png}{%
+            \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig01-architecture.png}%
+        }{%
+            \fbox{\parbox[c][0.22\textheight][c]{0.93\textwidth}{\centering\small ตำแหน่งสำหรับรูปภาพ — เพิ่มไฟล์ \texttt{assets/figures/chapter3/ch3-fig01-architecture.pdf} หรือ \texttt{.png} ภายหลัง}}%
+        }%
+    }
+    \caption{ภาพรวมสถาปัตยกรรมและการไหลของข้อมูลของระบบ WheelSense}
+    \label{fig:ch3_architecture_overview}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{assets/figures/chapter3/ch3-fig03-mqtt-topic-map.pdf}{%
+        \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig03-mqtt-topic-map.pdf}%
+    }{%
+        \IfFileExists{assets/figures/chapter3/ch3-fig03-mqtt-topic-map.png}{%
+            \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig03-mqtt-topic-map.png}%
+        }{%
+            \fbox{\parbox[c][0.20\textheight][c]{0.93\textwidth}{\centering\small ตำแหน่งสำหรับรูปภาพ — เพิ่มไฟล์ \texttt{assets/figures/chapter3/ch3-fig03-mqtt-topic-map.pdf} หรือ \texttt{.png} ภายหลัง}}%
+        }%
+    }
+    \caption{ผังหัวข้อ MQTT (topic map) และชนิดข้อมูลของ WheelSense}
+    \label{fig:ch3_mqtt_topic_map}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{assets/figures/chapter3/ch3-fig04-latency-timeline.pdf}{%
+        \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig04-latency-timeline.pdf}%
+    }{%
+        \IfFileExists{assets/figures/chapter3/ch3-fig04-latency-timeline.png}{%
+            \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig04-latency-timeline.png}%
+        }{%
+            \fbox{\parbox[c][0.20\textheight][c]{0.93\textwidth}{\centering\small ตำแหน่งสำหรับรูปภาพ — เพิ่มไฟล์ \texttt{assets/figures/chapter3/ch3-fig04-latency-timeline.pdf} หรือ \texttt{.png} ภายหลัง}}%
+        }%
+    }
+    \caption{ไทม์ไลน์การวัดเวลาแฝง (latency) แบบ end-to-end: อุปกรณ์$\rightarrow$MQTT$\rightarrow$ingestion$\rightarrow$DB$\rightarrow$API$\rightarrow$แอปผู้ดูแล/เครื่องมือ MCP}
+    \label{fig:ch3_latency_timeline}
+\end{figure}
+
+\subsection{เส้นทางข้อมูลหลัก}
+\label{sec:ch3_dataflow}
+
+ลำดับเส้นทางหลักและจุดอ้างอิงเชิงปฏิบัติการในบทนี้มีดังนี้
+\begin{enumerate}
+    \item \textbf{อุปกรณ์บนเก้าอี้รถเข็น} — อ่าน IMU สร้าง motion feature สแกน BLE/RSSI และรวมสัญญาณสรีระศาสตร์ (HR) จาก Polar จากนั้นส่ง MQTT telemetry ที่มี \texttt{device\_id} และ timestamp (หัวข้อ~\ref{sec:ch3_wheelchair_module})
+    \item \textbf{โหนดกล้อง} — ส่งภาพนิ่งแบบ chunked payload พร้อม metadata และรับคำสั่งควบคุมการถ่ายภาพ/พารามิเตอร์การส่ง (หัวข้อ~\ref{sec:ch3_camera_node})
+    \item \textbf{MQTT broker} — เป็นช่องทางกลางรับข้อความจากอุปกรณ์และกระจายต่อให้บริการ ingestion/processing (หัวข้อ~\ref{sec:ch3_mqtt_contract})
+    \item \textbf{บริการ ingestion + ฐานข้อมูล} — ตรวจสอบรูปแบบข้อมูล บันทึก time-series/event และจัดการความเป็นระเบียบของเวลา (หัวข้อ~\ref{sec:ch3_server_db})
+    \item \textbf{บริการ localization} — ฝึก/ทำนายโซนหรือห้องด้วย RSSI fingerprinting + KNN และเก็บผลลัพธ์ (หัวข้อ~\ref{sec:ch3_indoor_loc})
+    \item \textbf{แอปพลิเคชันผู้ใช้งาน} — web dashboard และ mobile app ดึงข้อมูลจาก API และรับอัปเดตแบบใกล้เวลาจริงด้วยกลไกที่กำหนด (หัวข้อ~\ref{sec:ch3_webapp},~\ref{sec:ch3_mobile})
+    \item \textbf{Home Assistant + MCP/LLM} — ใช้ข้อมูลสถานะ/เหตุการณ์เพื่อ automation และการสรุป โดยจำกัดขอบเขตเครื่องมือและบันทึก audit log (หัวข้อ~\ref{sec:ch3_ha},~\ref{sec:ch3_llm_mcp})
+\end{enumerate}
+
+\subsection{สัญญาแลกเปลี่ยนข้อมูลผ่าน MQTT (topics และ payload)}
+\label{sec:ch3_mqtt_contract}
+
+เพื่อให้ระบบทำซ้ำได้และลดความคลุมเครือในการตีความข้อมูล กำหนดสัญญาแลกเปลี่ยนข้อมูลหลักผ่าน MQTT โดยใช้ตารางที่~\ref{tab:ch3_mqtt_topics} เป็นจุดอ้างอิงเดียว (canonical) สำหรับชื่อหัวข้อและทิศทางการไหลของข้อมูล สอดคล้องกับโค้ดฝั่งเซิร์ฟเวอร์และเอกสารภายในโครงการ \texttt{wheelsense-platform/server/AGENTS.md}
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \footnotesize
+    \setlength{\tabcolsep}{3pt}
+    \renewcommand{\arraystretch}{1.12}
+    \begin{tabular}{|p{5.4cm}|p{2.5cm}|p{5.3cm}|}
+        \hline
+        \textbf{หัวข้อ (topic)} & \textbf{ทิศทาง} & \textbf{วัตถุประสงค์หลัก} \\ \hline
+        \texttt{WheelSense/data} & เก้าอี้$\rightarrow$เซิร์ฟเวอร์ & telemetry: IMU, motion, RSSI, battery \\ \hline
+        \texttt{WheelSense/mobile/\{device\_id\}/telemetry} & มือถือ$\rightarrow$เซิร์ฟเวอร์ & RSSI, HR/PPG, walk steps, battery \\ \hline
+        \texttt{WheelSense/mobile/\{device\_id\}/register} & มือถือ$\rightarrow$เซิร์ฟเวอร์ & ลงทะเบียนมือถือ / จับคู่ Polar companion \\ \hline
+        \texttt{WheelSense/mobile/\{device\_id\}/walkstep} & มือถือ$\rightarrow$เซิร์ฟเวอร์ & step-count deltas (timeline) \\ \hline
+        \texttt{WheelSense/mobile/\{device\_id\}/control} & เซิร์ฟเวอร์$\rightarrow$มือถือ & ช่องคำสั่งควบคุม (สงวน) \\ \hline
+        \texttt{WheelSense/config/\{device\_id\}}, \texttt{WheelSense/config/all} & เซิร์ฟเวอร์$\rightarrow$ลูกข่าย & retained config (เช่น \texttt{portal\_base\_url}, การจับคู่ผู้ป่วย/ผู้ดูแล) \\ \hline
+        \texttt{WheelSense/alerts/\{patient\_id\}} หรือ \texttt{.../\{device\_id\}} & เซิร์ฟเวอร์$\rightarrow$ลูกข่าย & clinical alerts / fall detection JSON \\ \hline
+        \texttt{WheelSense/\{device\_id\}/control} & เซิร์ฟเวอร์$\rightarrow$เก้าอี้ & คำสั่ง motion/อุปกรณ์ \\ \hline
+        \texttt{WheelSense/\{device\_id\}/ack} & เก้าอี้$\rightarrow$เซิร์ฟเวอร์ & ยืนยันคำสั่ง \\ \hline
+        \texttt{WheelSense/room/\{device\_id\}} & เซิร์ฟเวอร์$\rightarrow$ลูกข่าย & อัปเดตห้อง/โซนที่ทำนาย \\ \hline
+        \texttt{WheelSense/camera/\{device\_id\}/registration}, \texttt{.../status} & กล้อง$\rightarrow$เซิร์ฟเวอร์ & ลงทะเบียน / heartbeat \\ \hline
+        \texttt{WheelSense/camera/\{device\_id\}/photo} & กล้อง$\rightarrow$เซิร์ฟเวอร์ & chunk ภาพนิ่ง \\ \hline
+        \texttt{WheelSense/camera/\{device\_id\}/ack} & กล้อง$\rightarrow$เซิร์ฟเวอร์ & ack คำสั่ง \\ \hline
+        \texttt{WheelSense/camera/\{device\_id\}/control} & เซิร์ฟเวอร์$\rightarrow$กล้อง & ถ่ายภาพ / ความละเอียด / พารามิเตอร์ส่ง \\ \hline
+        \texttt{WheelSense/vitals/\{patient\_id\}} & เซิร์ฟเวอร์$\rightarrow$ลูกข่าย & vital ที่ประมวลผลแล้ว (broadcast) \\ \hline
+    \end{tabular}
+    \caption{แผนที่หัวข้อ MQTT หลักของระบบ WheelSense (อ้างอิงเชิงวิศวกรรมจาก \texttt{server/AGENTS.md})}
+    \label{tab:ch3_mqtt_topics}
+\end{table}
+\noindent\textit{หมายเหตุ:} หัวข้อ actuator ระดับห้องแบบแยกจาก HA ยังอยู่ในขั้น planned ตาม \texttt{docs/adr/0012-room-native-actuators-mqtt.md} และไม่รวมในตารางนี้
+
+\subsubsection{ข้อความจากอุปกรณ์บนเก้าอี้รถเข็น (Wheelchair telemetry)}
+\label{sec:ch3_mqtt_wheelchair}
+
+Uplink หลักอยู่ที่ \texttt{WheelSense/data} (แถวในตารางที่~\ref{tab:ch3_mqtt_topics}) โดย payload เป็น JSON ที่ประกอบด้วยฟิลด์หลัก เช่น \texttt{device\_id}, \texttt{timestamp}, \texttt{imu}, \texttt{motion}, \texttt{rssi[]}, \texttt{battery} และ \texttt{seq} เพื่อรองรับการตรวจสอบความครบถ้วนของแพ็กเก็ตและการวิเคราะห์ out-of-order
+เพื่อให้รองรับการประเมินสัญญาณสรีระศาสตร์ในบทที่~\ref{chapter4} ข้อความเดียวกันนี้รวม \texttt{polar\_hr} (เช่น \texttt{heart\_rate\_bpm} และสถานะแบตเตอรี่ของเซ็นเซอร์) เมื่อมีข้อมูลจาก Polar
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{4.1cm}|p{3.0cm}|p{5.3cm}|}
+        \hline
+        \textbf{ฟิลด์} & \textbf{ชนิดข้อมูล} & \textbf{คำอธิบาย} \\ \hline
+        \texttt{device\_id} & string & ตัวระบุอุปกรณ์บนเก้าอี้รถเข็น \\ \hline
+        \texttt{seq} & integer & ลำดับข้อความเพื่อช่วยตรวจสอบความครบถ้วน/การหลุดหาย \\ \hline
+        \texttt{timestamp} & string (ISO 8601) & เวลาของอุปกรณ์ (เมื่อมีการ sync) เพื่อช่วยจับคู่กับเหตุการณ์อื่น \\ \hline
+        \texttt{uptime\_ms} & integer & เวลาทำงานนับตั้งแต่เปิดเครื่อง ใช้เป็น fallback เมื่อ timestamp ขาด \\ \hline
+        \texttt{imu} & object & \texttt{ax,ay,az,gx,gy,gz} ในหน่วยที่กำหนดในหัวข้อ~\ref{sec:ch3_params} \\ \hline
+        \texttt{motion} & object & ฟีเจอร์บนอุปกรณ์ เช่น \texttt{distance\_m, velocity\_ms, accel\_ms2, direction} \\ \hline
+        \texttt{rssi[]} & array & รายการ \texttt{\{node, rssi, mac\}} ต่อรอบสแกน BLE; \texttt{rssi} เป็น dBm \\ \hline
+        \texttt{battery} & object & \texttt{percentage, voltage\_v, charging} \\ \hline
+        \texttt{polar\_hr} & object (optional) & \texttt{heart\_rate\_bpm} และฟิลด์สรีระศาสตร์อื่นเมื่อมี \\ \hline
+    \end{tabular}
+    \caption{โครงสร้าง payload ขั้นต่ำของข้อความจากอุปกรณ์บนเก้าอี้รถเข็น}
+    \label{tab:ch3_payload_wheelchair}
+\end{table}
+
+\subsubsection{ข้อความจากโหนดกล้อง (Camera photo/control)}
+\label{sec:ch3_mqtt_camera}
+
+เส้นทางหลักของโหนดกล้องอยู่ในแถว \texttt{camera/\ldots/registration}, \texttt{.../status}, \texttt{.../photo}, \texttt{.../control}, \texttt{.../ack} ในตารางที่~\ref{tab:ch3_mqtt_topics} โดยส่งภาพแบบ chunk ที่ \texttt{.../photo} และมีหัวข้อสำรอง \texttt{.../frame} เมื่อการส่งแบบ chunk มีข้อผิดพลาด
+
+\subsubsection{ข้อความจากแอปพลิเคชันมือถือ (Mobile telemetry)}
+\label{sec:ch3_mqtt_mobile}
+
+แอปมือถือสแกน BLE/RSSI (โหนด \texttt{WSN\_*}) และรวมสรีระศาสตร์จาก Polar แล้ว uplink ที่ \texttt{WheelSense/mobile/\{device\_id\}/telemetry} พร้อมหัวข้อ \texttt{.../register}, \texttt{.../walkstep} และรับคอนฟิก/คำสั่งจากแถวที่เกี่ยวข้องในตารางที่~\ref{tab:ch3_mqtt_topics} เพื่อให้สอดคล้องกับโปรไฟล์การประเมินเดียวกัน
+
+\section{บริบทการทดลองและข้อจำกัดการดำเนินงาน}
+\label{sec:ch3_context_constraints}
+
+\subsection{พื้นที่ทดสอบและผู้มีส่วนได้ส่วนเสีย}
+
+การทดลองใช้พื้นที่ภายในอาคารที่อนุญาตให้ติดตั้ง BLE beacon และโหนด ESP32-S3 พร้อมกล้องได้อย่างปลอดภัย โดยมีผู้ใช้เก้าอี้รถเข็นและผู้ดูแลเป็นผู้มีส่วนได้ส่วนหลักในการประเมินความเหมาะสมของการแสดงผลและการแจ้งเตือน
+ข้อกำหนดด้านความปลอดภัยของสถานที่และนโยบายการเก็บข้อมูลส่วนบุคคลต้องถูกนำมาพิจารณาร่วมกับการออกแบบระบบ
+
+\subsection{ภาวะเดิมและข้อจำกัดเชิงเทคนิค}
+
+ก่อนการบูรณาการแบบ end-to-end การทดลองต้นแบบก่อนหน้าพบข้อจำกัดที่ส่งผลต่อการออกแบบรุ่นปัจจุบัน ได้แก่ ความผันผวนของ RSSI ตามสภาพแวดล้อมและเวลา ความไม่สอดคล้องของ timestamp ระหว่างอุปกรณ์บนเก้าอี้ โหนดภาพ และเซิร์ฟเวอร์ และความซับซ้อนของการติดตั้งหลายบริการบนเซิร์ฟเวอร์เครื่องเดียว
+ข้อจำกัดเหล่านี้ถูกจัดการในระดับสถาปัตยกรรมและพารามิเตอร์ตามที่อธิบายในหัวข้อ~\ref{sec:ch3_params} และผลจากการทดสอบจริงสรุปในบทที่~\ref{chapter4}
+
+\subsection{ความเที่ยงตรงของเครื่องมือ ความเชื่อมั่นของการวัด และภัยคุกคามต่อความน่าเชื่อถือ}
+\label{sec:ch3_validity_reliability}
+
+\textbf{ความเที่ยงตรงเชิงโครงสร้าง (construct validity):} การประเมินผลเชิงวิจัยในเล่มนี้ประกอบด้วย (1) \textbf{สี่ประเด็นด้าน UX/UI และ LLM/MCP} ในหัวข้อ~\ref{sec:ch3_test_plan} ได้แก่ (1) \textbf{การรับรู้ต่อ UX/UI} ของผู้ดูแลจากแบบสอบถามและงานที่กำหนดบนระบบจริง (2) \textbf{ความสอดคล้องของการเลือกเครื่องมือ MCP} (IRR) (3) \textbf{ความใกล้เคียงเชิงข้อความ} ของเอาต์พุต LLM เทียบข้อความอ้างอิง (4) \textbf{เวลาแฝง} ของเส้นทาง LLM/MCP และ (2) \textbf{การทดสอบเสริมด้านความทนทานของการระบุตำแหน่ง} ภายใต้การเปลี่ยนแปลงของ RSSI แบบจำลอง เพื่อสะท้อนความผันผวนของสัญญาณในสภาพแวดล้อมจริง
+โมดูลระบุตำแหน่ง (KNN/max-RSSI) และ pipeline อื่น ๆ เป็นส่วนของการออกแบบต้นแบบเพื่อสนับสนุนบริบทบนแดชบอร์ดและงานของผู้ดูแล โดยการทดสอบเสริมข้างต้นมีเป้าหมายเพื่อ \textbf{อธิบายความทนทานเชิงวิศวกรรมของวิธี fingerprinting} ไม่ใช่การรับรองความแม่นยำของ IPS เชิงมาตรฐานหรือเชิงคลินิก
+การอ้างอิงถึงความหน่วงหรือความสดใหม่ของข้อมูลบน UI ในแบบสอบถามหมายถึงประสบการณ์ผู้ใช้ภายใต้กลไก polling และเซิร์ฟเวอร์ ไม่ใช่การรับรองทางคลินิก
+\textbf{เอาต์พุต LLM} ไม่ถูกนิยามเป็นการวินิจฉัยหรือคำแนะนำทางการแพทย์
+
+\textbf{ความเชื่อมั่นของการวัดและการทำซ้ำ (reliability / repeatability):} การทำซ้ำการประเมินสี่ประเด็นอาศัยชุดพารามิเตอร์ Profile-A (หัวข้อ~\ref{sec:ch3_eval_profile}) ร่วมกับโปรโตคอลการติดตั้งและการเตรียมระบบ (หัวข้อ~\ref{sec:ch3_protocols}) เพื่อให้สภาพแวดล้อมระหว่างรอบเก็บข้อมูลสอดคล้องกัน การตรวจสอบความพร้อมของระบบก่อนให้ผู้เข้าร่วมทำแบบประเมินหรือชุด LLM เป็นการยืนยันพื้นฐานการทำงาน ไม่ได้ขยายจำนวนชุดประเมินเชิงวิจัยนอกเหนือจากสี่ประเด็นข้างต้น
+
+\textbf{ภัยคุกคามภายใน (internal threats):} (1) RSSI ไม่สถิติตามเวลาและสภาพแวดล้อม—จัดการด้วย QC fingerprint กฎ fallback และ failure modes ในหัวข้อ~\ref{sec:ch3_failure_modes} (2) เวลาอุปกรณ์/เซิร์ฟเวอร์ไม่สอดคล้อง—ใช้ server-side timestamp และ \texttt{seq} ตามหัวข้อ~\ref{sec:ch3_ordering} (3) การอัปเดตแบบ polling ทำให้ความสดใหม่มีขีดจำกัดตามคาบดึงข้อมูลใน Profile-A (4) เอาต์พุต LLM อาจไม่ซ้ำกันที่อุณหภูมิเดียวกัน—บันทึก log และทำซ้ำหลายรอบตามโปรโตคอล LLM/MCP
+
+รายละเอียดเชิงทฤษฎีของ IPS และแบบจำลองสัญญาณอยู่ในบทที่~\ref{chapter2}; การตีความผลเชิงปริมาณและข้อจำกัดของการทดลองจริงอยู่ในบทที่~\ref{chapter4}
+
+\section{โมดูลอุปกรณ์บนเก้าอี้รถเข็น}
+\label{sec:ch3_wheelchair_module}
+
+\subsection{สถาปัตยกรรมฝั่งอุปกรณ์}
+
+โมดูลบนเก้าอี้รถเข็นออกแบบให้ทำงานเป็นหน่วย semi-autonomous โดยมีงานหลักคือการอ่านเซ็นเซอร์ การรับสัญญาณ BLE/RSSI สำหรับ localization การจัดคิวข้อมูลชั่วคราวเมื่อสัญญาณขาด และการส่งข้อมูลตามรอบเวลาที่กำหนด
+การระบุตัวอุปกรณ์ใช้ \texttt{device\_id} ใน payload MQTT เพื่อให้ฝั่งเซิร์ฟเวอร์สามารถผูกข้อมูลกับการลงทะเบียนอุปกรณ์และการจับคู่ผู้ใช้/เก้าอี้รถเข็นได้อย่างเป็นระบบ
+รอบการสแกน BLE เพื่อรวบรวม RSSI อาจตั้งให้ถี่กว่ารอบการส่ง telemetry รวม (เช่น สแกนเป็นคาบสั้น ๆ แล้วรวมผลเป็นชุดต่อข้อความ uplink) เพื่อลดภาระเครือข่ายโดยยังคงความถี่ของตัวอย่าง RSSI เพียงพอต่อ fingerprinting
+
+\subsection{เซ็นเซอร์ IMU และข้อมูลการเคลื่อนไหว}
+
+IMU บน M5StickC Plus2 ใช้สำหรับอ่านความเร่งและการเปลี่ยนแปลงทิศทางเพื่อสนับสนุนการตรวจจับรูปแบบการเคลื่อนที่
+อัตราการสุ่มและช่วงการส่งข้อมูลถูกกำหนดให้สมดุลระหว่างความละเอียดกับภาระเครือข่าย โดยรายละเอียดตัวเลขอ้างอิงการตั้งค่าที่ใช้ในชุดทดสอบสรุปในหัวข้อ~\ref{sec:ch3_params}
+
+\subsection{Polar Verity Sense และสัญญาณสรีระศาสตร์}
+
+การเชื่อมต่อ Polar Verity Sense ดำเนินการภายใต้ข้อจำกัดการจับคู่อุปกรณ์และความถี่การอ่านที่เอกสารผู้ผลิตกำหนด \cite{PolarVeritySenseSDK}
+ข้อมูลจากเซ็นเซอร์ทั้งสองชุดถูกนำมาใช้ควบคู่กับ IMU ในการวิเคราะห์เชิงเวลา โดยต้องคำนึงถึงความล่าช้าและการสูญเสียแพ็กเก็ตระหว่างการรวมข้อมูลบนเซิร์ฟเวอร์
+
+\subsection{กลไกตรวจจับความผิดปกติแบบกฎเกณฑ์}
+\label{sec:ch3_anomaly_rules}
+
+ระบบใช้ตรรกะแบบกฎจากค่า accelerometer และสรุปการเคลื่อนไหว (\texttt{motion}) เป็นขั้นต่ำก่อนการนำไปสู่การแจ้งเตือน โดยกำหนดเกณฑ์เช่นการเบี่ยงเบนของแกนที่เลือกและช่วงเวลาที่ต้องเกินก่อนถือว่าเป็นเหตุการณ์
+กลไกนี้มีจุดประสงค์เพื่อลดความซับซ้อนและให้ตรวจสอบได้ในระดับต้นแบบ ไม่ได้อ้างว่าเป็นมาตรฐานทางการแพทย์
+ในต้นแบบนี้การตรวจจับเบื้องต้นด้วยกฎดำเนินการบนอุปกรณ์ (หรือโมดูลที่ใกล้เซ็นเซอร์ที่สุด) เพื่อลดความหน่วงก่อนแจ้งเตือน ส่วนการรวมกับตำแหน่งหรือการบันทึกเหตุการณ์ยาวขึ้นทำที่เซิร์ฟเวอร์
+เกณฑ์เชิงตัวเลขที่ใช้ในชุดประเมิน/จำลองบางสถานการณ์ฝั่งเซิร์ฟเวอร์ (เช่น ช่วงอัตราการเต้นของหัวใจสูง/ต่ำ) ถูกรวมเป็นค่าเริ่มต้นในชุด \texttt{ALERT\_THRESHOLDS} ของ \texttt{sim\_controller.py} ในโครงงาน \texttt{wheelsense-platform} สำหรับการทดสอบที่เปิดใช้งานการจำลอง ส่วนเกณฑ์จาก IMU บนอุปกรณ์จริงเป็นพารามิเตอร์ที่ปรับได้และต้องอ้างอิงคู่กับเวอร์ชันเฟิร์มแวร์ (เช่น \texttt{FIRMWARE\_VERSION} ในโค้ดอุปกรณ์) ในเอกสารประกอบหรือภาคผนวกเพื่อการทำซ้ำ
+
+\subsection{การสื่อสารไร้สายและการรายงานสถานะ}
+
+การส่ง telemetry ใช้โปรโตคอลที่เหมาะกับอุปกรณ์ฝังตัวและโครงสร้าง MQTT บนเซิร์ฟเวอร์ \cite{MQTTSpec}
+ข้อความ uplink ออกแบบให้มีฟิลด์อย่างน้อยดังนี้: ตัวระบุอุปกรณ์/เก้าอี้ timestamp ของตัวอย่างหรือของแพ็กเก็ต ค่า IMU หรือสรุปการเคลื่อนไหว โซนหรือช่วงอัตราการเต้นของหัวใจจาก Polar หากมี และเวกเตอร์ RSSI หรือคู่ (MAC/identifier, RSSI) ต่อชุดสแกน BLE
+เมื่อการเชื่อมต่อขาด อุปกรณ์เข้าสู่โหมดลองเชื่อมต่อใหม่และคิวข้อมูลชั่วคราวตามความจำเป็น แล้วส่งย้อนหลังหลังกลับมาออนไลน์พร้อมสถานะช่องว่างของข้อมูลเพื่อให้ผู้ดูแลทราบ
+
+\section{โหนดกล้องแบบขอบเครือข่าย (ESP32-S3)}
+\label{sec:ch3_camera_node}
+
+โหนดกล้องทำหน้าที่ส่งภาพเพื่อสนับสนุน “การรับรู้บริบท” และการตรวจสอบโดยผู้ดูแล โดยไม่ใช้เป็นอินพุตหลักของโมเดล KNN ในการระบุตำแหน่ง
+ระบบกำหนดให้โหนดกล้องส่งภาพผ่าน MQTT ทั้งในรูปแบบ chunked payload (\texttt{.../photo}) และรูปแบบ fallback (\texttt{.../frame}) ตามหัวข้อ~\ref{sec:ch3_mqtt_camera} เพื่อรองรับข้อจำกัดของเครือข่ายและขนาดแพ็กเก็ต
+
+\subsection{พารามิเตอร์การสตรีมและการควบคุม}
+
+การเริ่ม/หยุดสตรีมและการกำหนดคาบการจับภาพถูกควบคุมผ่านหัวข้อ \texttt{.../control} โดยมีการตอบรับคำสั่งผ่าน \texttt{.../ack} เพื่อให้สามารถตรวจสอบได้ว่าโหนดปรับสถานะจริง
+ค่าตั้งต้นของคาบการจับภาพใน Profile-A สรุปในตารางที่~\ref{tab:ch3_profileA_runtime}
+
+\section{ระบบระบุตำแหน่งภายในอาคาร}
+\label{sec:ch3_indoor_loc}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{assets/figures/chapter3/ch3-fig02-localization-pipeline.pdf}{%
+        \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig02-localization-pipeline.pdf}%
+    }{%
+        \IfFileExists{assets/figures/chapter3/ch3-fig02-localization-pipeline.png}{%
+            \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig02-localization-pipeline.png}%
+        }{%
+            \fbox{\parbox[c][0.22\textheight][c]{0.93\textwidth}{\centering\small ตำแหน่งสำหรับรูปภาพ — เพิ่มไฟล์ \texttt{assets/figures/chapter3/ch3-fig02-localization-pipeline.pdf} หรือ \texttt{.png} ภายหลัง}}%
+        }%
+    }
+    \caption{ลำดับขั้นตอนการระบุตำแหน่ง: ออฟไลน์สร้าง fingerprint และออนไลน์ทำนายด้วย KNN พร้อมกลยุทธ์สำรอง}
+    \label{fig:ch3_localization_pipeline}
+\end{figure}
+
+\subsection{โครงข่าย BLE และการรวบรวม RSSI}
+
+BLE beacon ถูกจัดวางให้ครอบคลุมพื้นที่อ้างอิงและโซนที่ต้องการแยกความละเอียดในการประเมิน โดย M5StickC Plus2 บนเก้าอี้รถเข็นเป็นตัวรับสัญญาณ BLE/RSSI ตามรอบเวลาที่ตั้งไว้และส่งเวกเตอร์หรือค่าที่ใช้ประกอบ fingerprinting ขึ้นเซิร์ฟเวอร์
+ปัจจัยที่มีผลต่อคุณภาพสัญญาณอธิบายไว้ในวรรณกรรม IPS และไม่ถูกทวนซ้ำเชิงทฤษฎีในบทนี้ \cite{BLE_Fingerprint_Survey_IEEE,WiFi_BLE_IPS_Systematic_Review}
+
+\subsection{การสร้าง fingerprint และแผนที่สัญญาณ}
+
+\textbf{ขั้นตอนออฟไลน์ (สร้างแผนที่อ้างอิง)} มีเป้าหมายเพื่อสร้าง radio map ที่ผูกเวกเตอร์ RSSI กับป้ายกำกับโซน/ห้องอย่างเป็นระบบ โดยกำหนดโปรโตคอลให้ทำซ้ำได้ดังนี้
+\begin{enumerate}
+    \item \textbf{กำหนดขอบเขตพื้นที่และระดับความละเอียด} — นิยามโซน/ห้องที่ต้องการทำนาย และกำหนดว่า output จะรายงานเป็น room-level หรือ zone-level ให้สอดคล้องกับการประเมินในบทที่~\ref{chapter4}
+    \item \textbf{กำหนดจุดอ้างอิง (reference points)} — ภายในแต่ละโซน/ห้องกำหนดจุดอ้างอิงให้ครอบคลุมพื้นที่ใช้งานจริง เช่น ทางเดิน จุดเลี้ยว จุดหน้าประตู และจุดที่มีสิ่งกีดขวาง โดยจำนวนจุดอ้างอิงและระยะห่างระหว่างจุดถูกกำหนดเป็นพารามิเตอร์ (หัวข้อ~\ref{sec:ch3_params})
+    \item \textbf{การเก็บข้อมูลต่อจุด} — เคลื่อนที่เก้าอี้ไปยังจุดอ้างอิงและคงตำแหน่งตามระยะเวลาที่กำหนดเพื่อเก็บหลายตัวอย่าง ลดผลจากการสแกนเพียงครั้งเดียวที่อาจผิดปกติจากการสะท้อนสัญญาณ
+    \item \textbf{การติดป้ายกำกับ (labeling)} — ทุกชุดข้อมูลต้องมีป้ายกำกับโซน/ห้องของจุดอ้างอิง รวมถึง metadata สำคัญ เช่น ช่วงเวลา และสภาพแวดล้อมที่ส่งผลต่อ RSSI (เช่น ประตูเปิด/ปิด คนเดินผ่าน) เพื่อรองรับการอภิปรายความเสถียรของระบบ
+    \item \textbf{การตรวจสอบคุณภาพข้อมูล (QC)} — ตรวจสอบความครบถ้วนของโหนด/บีคอนที่ถูกสแกน ความสม่ำเสมอของจำนวนตัวอย่างต่อจุด และคัดทิ้งตัวอย่างที่อยู่นอกช่วงที่เป็นไปได้หรือมีความผิดปกติที่ชัดเจนตามกฎเดียวกันทั้งชุด
+    \item \textbf{การรวมเป็น radio map} — รวมข้อมูลทั้งหมดเป็นโครงสร้างอ้างอิงในฐานข้อมูล โดยกำหนด schema และเวกเตอร์ฟีเจอร์ให้คงที่สำหรับการฝึก/ทำนายในขั้นตอนออนไลน์
+\end{enumerate}
+การเก็บ RSSI ณ จุดอ้างอิงใช้ข้อมูลที่อุปกรณ์บนเก้าอี้รับและส่งขึ้นมา ไม่ใช้สตรีมภาพจาก ESP32-S3 ในขั้นตอนนี้
+หากสภาพแวดล้อมเปลี่ยน (เช่น การย้ายสิ่งของ การเปลี่ยนตำแหน่งบีคอน หรือสภาพคนพลุกพล่านเปลี่ยนถาวร) ระบบกำหนดให้เก็บ fingerprint ใหม่หรือปรับน้ำหนักข้อมูลตามโปรโตคอลเดียวกันเพื่อรักษาความเที่ยงตรงของการทำนาย
+
+\subsection{การประมาณตำแหน่งแบบออนไลน์ด้วย KNN}
+
+\textbf{ขั้นตอนออนไลน์} เซิร์ฟเวอร์รับ snapshot ของ RSSI ล่าสุดจาก M5 ผ่าน MQTT แล้วทำการจัดรูปแบบหรือกรองค่าที่ขาดหาย/ผิดปกติตามนโยบายที่ตั้งไว้ จากนั้นเปรียบเทียบกับ fingerprint ในฐานข้อมูลด้วยระยะห่างที่กำหนดและค่า \(k\) ของ KNN ตามหลักการในบทที่~\ref{chapter2} เพื่อได้ผลลัพธ์เป็นโซนหรือห้อง
+ภาพจากโหนดกล้องใช้ประกอบการรับรู้บริบทและการแสดงผลต่อผู้ดูแล ไม่ได้บูรณาการเป็นฟีเจอร์ใน KNN ในต้นแบบนี้
+การเลือก \(k\) และนิยามฟีเจอร์ RSSI เป็นพารามิเตอร์สำคัญที่สรุปในหัวข้อ~\ref{sec:ch3_params} และต้องเป็นชุดเดียวกับที่ใช้ในการรายงานผลในบทที่~\ref{chapter4}
+
+\subsection{นิยามเวกเตอร์ฟีเจอร์และการจัดการสัญญาณที่ขาดหาย}
+\label{sec:ch3_feature_vector}
+
+เพื่อให้การฝึกและการทำนายของ KNN มีความสอดคล้อง เวกเตอร์ฟีเจอร์ RSSI ถูกนิยามบนชุดมิติ (dimensions) ที่สอดคล้องกับรายการโหนด/บีคอนที่ระบบรับรู้ในพื้นที่ทดสอบ โดยกำหนดลำดับมิติให้คงที่ (node ordering) และใช้กฎเดียวกันทั้งในช่วงออฟไลน์และออนไลน์
+การแปลงจาก \texttt{rssi[]} ไปสู่เวกเตอร์ทำเป็นขั้นตอนมาตรฐาน ได้แก่ (1) กลุ่มข้อมูลตามโหนด (2) เลือกค่าตัวแทนต่อโหนดในกรณีมีหลายรายการ (เช่น ค่ามัธยฐานในหน้าต่างเวลา) (3) เติมค่ามิติที่หายไปตามนโยบาย missing-signal
+
+ในกรณีที่รอบสแกนหนึ่งไม่พบสัญญาณจากบางโหนด ระบบใช้นโยบายแทนค่า (missing-signal handling) เพื่อให้เวกเตอร์มีความยาวคงที่และทำงานกับโมเดลได้ โดยนโยบายที่ใช้ในต้นแบบกำหนดเป็นพารามิเตอร์ เช่น
+\begin{enumerate}
+    \item \textbf{Sentinel dBm} — แทนค่าที่ขาดด้วยค่าต่ำกว่า RSSI ที่พบได้จริง (เช่น \(-100\) dBm) เพื่อสะท้อน “ไม่พบสัญญาณ”
+    \item \textbf{Last-observation carry-forward} — คงค่าจากรอบก่อนหน้าในหน้าต่างเวลาสั้น ๆ เมื่อคาดว่าการหายไปเป็นความผันผวนระยะสั้น
+    \item \textbf{Mask/weighting} — ใช้ตัวบ่งชี้การขาดหายหรือถ่วงน้ำหนักมิติที่ขาด เพื่อไม่ให้ sentinel ครอบงำระยะห่าง
+\end{enumerate}
+\textbf{ใน Profile-A} การรายงานผลในบทที่~\ref{chapter4} ใช้ \textbf{sentinel} ที่ \(-100\) dBm เป็นหลักสำหรับมิติที่ขาด พร้อม \textbf{last-known hold} ตามตารางที่~\ref{tab:ch3_profileA_loc} ไม่ได้ใช้ mask/weighting แบบแยกมิติในการสรุปผลหลัก
+ระบบเลือกใช้นโยบายเพียงแบบเดียวเป็นค่าอ้างอิงในการประเมินจริง และบันทึกไว้ในหัวข้อ~\ref{sec:ch3_params} เพื่อให้บทที่~\ref{chapter4} ทำซ้ำได้
+
+\subsection{กลยุทธ์สำรองและ baseline เชิงปฏิบัติการ (max-RSSI)}
+\label{sec:ch3_max_rssi}
+
+เพื่อให้ระบบยังคงให้บริการได้เมื่อโมเดล KNN ยังไม่พร้อม (เช่น หลังเปลี่ยนพื้นที่ทดลองหรือยังไม่ฝึกโมเดลจาก fingerprint ล่าสุด) ระบบกำหนดกลยุทธ์ max-RSSI เป็น baseline และ fallback เชิงปฏิบัติการ
+แนวทาง max-RSSI ใช้หลักการเลือกโหนด/บีคอนที่มี RSSI สูงสุดในรอบสแกน แล้วแมปไปยังโซน/ห้องตามตารางผูกความสัมพันธ์ของพื้นที่ (room-to-node binding) เพื่อให้ระบบยังคงให้ตำแหน่งโดยประมาณแบบใกล้เวลาจริง
+หากไม่พบสัญญาณหรือค่ามีความไม่แน่นอนสูง ระบบทำเครื่องหมายความน่าเชื่อถือต่ำและเลือกคงค่าตำแหน่งล่าสุดตามนโยบายที่กำหนด เพื่อลดการกระโดดของตำแหน่งและการแจ้งเตือนผิดพลาด
+
+\subsection{กรณีขอบเขตของข้อมูลและข้อจำกัด}
+
+กรณีที่ RSSI สูญหรือมีค่าผิดปกติจะต้องมีนโยบาย fallback เช่น คงค่าตำแหน่งล่าสุดหรือทำเครื่องหมายว่าไม่น่าเชื่อถือ เพื่อลดการแจ้งเตือนผิดพลาด
+ข้อจำกัดด้านความแม่นยำและความเสถียรเป็นประเด็นที่รายงานผลในบทที่~\ref{chapter4}
+
+\section{แพลตฟอร์มเซิร์ฟเวอร์และฐานข้อมูล}
+\label{sec:ch3_server_db}
+
+\begin{figure}[htbp]
+    \centering
+    \IfFileExists{assets/figures/chapter3/ch3-fig05-db-logical-model.pdf}{%
+        \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig05-db-logical-model.pdf}%
+    }{%
+        \IfFileExists{assets/figures/chapter3/ch3-fig05-db-logical-model.png}{%
+            \includegraphics[width=0.93\textwidth]{assets/figures/chapter3/ch3-fig05-db-logical-model.png}%
+        }{%
+            \fbox{\parbox[c][0.20\textheight][c]{0.93\textwidth}{\centering\small ตำแหน่งสำหรับรูปภาพ — เพิ่มไฟล์ \texttt{assets/figures/chapter3/ch3-fig05-db-logical-model.pdf} หรือ \texttt{.png} ภายหลัง}}%
+        }%
+    }
+    \caption{แบบจำลองเชิงตรรกะของข้อมูล (logical model): กลุ่ม registry, time-series, predictions, alerts และ media metadata}
+    \label{fig:ch3_db_logical_model}
+\end{figure}
+
+\subsubsection{สรุปชุดฟิลด์ขั้นต่ำสำหรับการทำซ้ำและการตรวจสอบย้อนหลัง (schema audit)}
+\label{sec:ch3_schema_audit}
+
+ตารางที่~\ref{tab:ch3_schema_min} สรุปฟิลด์ขั้นต่ำที่ควรมีในแหล่งข้อมูลหลักเมื่อนำไปคำนวณตัวชี้วัดในบทที่~\ref{chapter4} โดยไม่บังคับชื่อคอลัมน์ในระดับ physical schema ของระบบจริง แต่บังคับความหมายเชิงสัญญา (semantic contract) เพื่อให้สามารถ export เป็นชุดข้อมูลวิจัยได้
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{3.2cm}|p{9.8cm}|}
+        \hline
+        \textbf{กลุ่มข้อมูล} & \textbf{ฟิลด์ขั้นต่ำ (ความหมาย)} \\ \hline
+        Telemetry (เก้าอี้/มือถือ) & \texttt{workspace\_id}, \texttt{device\_id}, \texttt{device\_timestamp}, \texttt{server\_receive\_ts}, \texttt{seq}, \texttt{imu}, \texttt{motion}, \texttt{battery}, \texttt{rssi[]} (array of \{node id, rssi\}) \\ \hline
+        Localization output & \texttt{prediction\_ts}, \texttt{device\_id}, \texttt{predicted\_zone}, \texttt{confidence} (ถ้ามี), \texttt{model\_version} หรือ \texttt{radio\_map\_version}, \texttt{fallback\_strategy} (KNN / max-RSSI / none) \\ \hline
+        Alerts / events & \texttt{alert\_id}, \texttt{created\_ts}, \texttt{source} (device/server/rule), \texttt{severity}, \texttt{payload\_summary}, \texttt{ack\_status} \\ \hline
+        Media (ภาพนิ่ง) & \texttt{image\_id}, \texttt{device\_id}, \texttt{capture\_ts}, \texttt{chunk\_plan} (expected parts), \texttt{reassemble\_status}, \texttt{storage\_uri} หรือ hash \\ \hline
+        LLM/MCP (ดูเพิ่ม) & ตารางที่~\ref{tab:ch3_llm_log_min} \\ \hline
+    \end{tabular}
+    \caption{สรุปฟิลด์ขั้นต่ำตามกลุ่มข้อมูลสำหรับการทำซ้ำและ audit}
+    \label{tab:ch3_schema_min}
+\end{table}
+
+\subsection{สถาปัตยกรรมบริการ}
+
+บริการบน Raspberry Pi 5 แยกตามหน้าที่หลัก ได้แก่ MQTT broker บริการ ingestion/validation บริการ localization ชั้น API ฐานข้อมูล และแอปพลิเคชันผู้ดูแล (เว็บ/มือถือ)
+การแยกบริการช่วยให้สามารถปรับสเกลแบบแนวตั้งในระดับต้นแบบและลดผลกระทบเมื่อบริการหนึ่งล้มเหลว
+หัวข้อ MQTT ที่ใช้งานจริงยึดรูปแบบ \texttt{WheelSense/...} ตามหัวข้อ~\ref{sec:ch3_mqtt_contract} และสรุปในตารางที่~\ref{tab:ch3_mqtt_topics}
+
+\subsection{ฐานข้อมูลและโมเดลข้อมูล}
+
+โมเดลข้อมูลแยกเอนทิตีเชิงโครงสร้าง เช่น อุปกรณ์บนเก้าอี้ เก้าอี้รถเข็น โหนดกล้อง และห้องหรือโซน ออกจากข้อมูลเหตุการณ์และ time-series (telemetry, RSSI, ตำแหน่งโซน) ที่เปลี่ยนแปลงบ่อย
+การออกแบบดัชนีเน้นฟิลด์ที่ใช้ในการสืบค้นแบบเรียลไทม์และการเรียงลำดับตามเวลา โดยคำนึงถึงปัญหาการจัดเรียง timestamp ที่อาจคลาดเคลื่อนระหว่างแหล่งข้อมูล
+
+\subsection{Pipeline ข้อมูลแบบเรียลไทม์}
+
+ลำดับการประมวลผลหลักประกอบด้วยการรับข้อมูลจากอุปกรณ์และโหนดผ่าน MQTT การตรวจสอบความถูกต้องเบื้องต้น การบันทึกลงฐานข้อมูล และการเผยแพร่ต่อ API/ช่องทางอัปเดตแบบใกล้เวลาจริงตามที่ออกแบบในแอปพลิเคชัน
+สตรีมภาพอาจส่งเป็นชิ้นส่วนภายใต้หัวข้อเฉพาะของโหนดกล้อง โดยบริการ ingestion ประกอบ metadata (เช่น ลำดับแพ็กเก็ต ความละเอียด) ก่อนจัดเก็บหรือส่งต่อไปยัง buffer ชั่วคราวสำหรับการแสดงผล
+จุดที่ต้องบันทึกเวลาอย่างสม่ำเสมอคือขั้นตอนรับเข้าและก่อนบันทึกลงฐานข้อมูล เพื่อให้การวิเคราะห์ย้อนหลังสอดคล้องกับลำดับเหตุการณ์
+
+\subsubsection{ขั้นตอน ingestion/validation และกฎความถูกต้องขั้นต่ำ}
+\label{sec:ch3_ingestion_validation}
+
+เพื่อให้ข้อมูลที่เข้าสู่ฐานข้อมูลมีความสอดคล้องและตรวจสอบย้อนหลังได้ บริการ ingestion กำหนดขั้นตอนมาตรฐานดังนี้
+\begin{enumerate}
+    \item \textbf{ตรวจสอบตัวระบุและบริบท} — ตรวจสอบว่ามี \texttt{device\_id} และสามารถผูกกับการลงทะเบียนอุปกรณ์ใน workspace ที่ถูกต้องก่อนบันทึกข้อมูล เพื่อลดความเสี่ยงจากข้อมูลหลุดขอบเขต (cross-workspace contamination)
+    \item \textbf{ตรวจสอบ schema ขั้นต่ำ} — ตรวจสอบชนิดข้อมูลและฟิลด์ที่จำเป็นของ payload (เช่น \texttt{imu} เป็น object, \texttt{rssi[]} เป็น array, \texttt{seq} เป็นจำนวนเต็ม) พร้อมบันทึกเหตุผลการปฏิเสธเมื่อ payload ไม่ถูกต้อง
+    \item \textbf{ทำ normalization} — แปลงหน่วย/รูปแบบให้สอดคล้อง (เช่น RSSI เป็น dBm, สถานะชาร์จเป็น boolean) และจัดรูปแบบเวลาให้อยู่ในรูปเดียวกัน
+    \item \textbf{ประทับเวลา (server-side timestamp)} — เพิ่มเวลาเมื่อรับเข้าและเวลาเมื่อบันทึก เพื่อใช้คำนวณ latency และตรวจสอบ out-of-order โดยไม่ขึ้นกับการ sync เวลาในอุปกรณ์เพียงอย่างเดียว
+    \item \textbf{บันทึก time-series และเหตุการณ์} — แยกการบันทึกเป็นหมวด เช่น telemetry, RSSI snapshot, prediction, alert/event และ media metadata เพื่อให้สืบค้นได้มีประสิทธิภาพ
+\end{enumerate}
+
+\subsubsection{การจัดการลำดับข้อมูลและกรณี out-of-order}
+\label{sec:ch3_ordering}
+
+ระบบใช้ \texttt{seq} และ \texttt{uptime\_ms} จากอุปกรณ์ร่วมกับ server-side timestamp เพื่อช่วยจัดการกรณีข้อมูลมาถึงไม่เรียงเวลา โดยแนวทางหลักคือ (1) ใช้เวลาเซิร์ฟเวอร์เป็นอ้างอิงสำหรับการแสดงผล “สถานะล่าสุด” (2) ใช้ \texttt{timestamp} ของอุปกรณ์เมื่อมีการ sync เพื่อการวิเคราะห์เชิงเหตุการณ์/เส้นเวลา และ (3) ใช้ \texttt{seq} ตรวจสอบการหลุดหายของข้อมูลเพื่อการอภิปรายความเสถียรของ pipeline ในบทที่~\ref{chapter4}
+
+\subsubsection{การประกอบคืนภาพ (chunk reassembly) และความทนทานต่อความผิดพลาด}
+\label{sec:ch3_image_reassembly}
+
+การส่งภาพแบบ chunked payload มีความเสี่ยงต่อการสูญหายของชิ้นส่วนและการประกอบคืนไม่สำเร็จ ระบบจึงกำหนดขั้นตอนการจัดการดังนี้
+\begin{enumerate}
+    \item บันทึก metadata ต่อภาพอย่างน้อย: \texttt{device\_id}, ลำดับชิ้นส่วน, จำนวนชิ้นส่วนที่คาดหวัง, ความละเอียด/รูปแบบ, เวลาเริ่มรับ และเวลาเสร็จสิ้น
+    \item ตั้ง timeout สำหรับภาพที่ประกอบไม่ครบภายในเวลาที่กำหนด และบันทึกเหตุการณ์ “ประกอบไม่สำเร็จ” เพื่อใช้วิเคราะห์อัตราความสำเร็จของเส้นทางภาพ
+    \item เมื่อเกิดความผิดพลาดซ้ำ ให้โหนดสลับใช้ช่องทาง fallback (\texttt{.../frame}) หรือปรับพารามิเตอร์อัตรา/ความละเอียดตามที่นิยามไว้ในหัวข้อ~\ref{sec:ch3_params}
+\end{enumerate}
+
+\subsubsection{การเผยแพร่สู่ผู้ใช้และกลไกอัปเดตแบบใกล้เวลาจริง}
+\label{sec:ch3_realtime_to_clients}
+
+เพื่อให้ระบบทนทานต่อเครือข่ายที่แปรผันและทำซ้ำได้ง่าย ระบบกำหนดให้ web dashboard และ mobile app ใช้การดึงข้อมูลแบบช่วงเวลา (polling) สำหรับ endpoint สถานะล่าสุดและรายการแจ้งเตือน โดยบันทึกคาบการดึงข้อมูลเป็นพารามิเตอร์อ้างอิง (หัวข้อ~\ref{sec:ch3_params})
+สำหรับชั้น MCP ที่ใช้กับ LLM ระบบรองรับการสตรีมผลแบบ HTTP streaming/SSE-compatible ตามรูปแบบโปรโตคอล MCP \cite{ModelContextProtocol} เพื่อให้สามารถติดตามลำดับการเรียกใช้เครื่องมือและเวลาแฝงรายขั้นตอนได้อย่างชัดเจน
+
+\subsubsection{นโยบายการเก็บรักษาข้อมูล (retention) และบันทึกระบบ (logging)}
+\label{sec:ch3_retention}
+
+ระบบกำหนดนโยบาย retention สำหรับข้อมูลที่เป็น time-series และ media เพื่อควบคุมพื้นที่จัดเก็บและลดความเสี่ยงด้านข้อมูลอ่อนไหว โดยแยกหน้าต่างเวลาตามชนิดข้อมูล เช่น telemetry/RSSI/predictions/logs และกำหนดให้การลบข้อมูลเป็นแบบตรวจสอบย้อนกลับได้ (audit) เพื่อให้สอดคล้องกับการประเมินในบทที่~\ref{chapter4} และข้อกำหนดจริยธรรมในหัวข้อ~\ref{sec:ch3_privacy}
+
+\subsection{การติดตั้งและการกำหนดค่า}
+
+การติดตั้งใช้แพ็กเกจคอนเทนเนอร์และสคริปต์กำหนดค่าพื้นฐานเพื่อลดความคลาดเคลื่อนระหว่างรอบการทดลอง \cite{Boettiger2015_Docker_reproducible_research}
+รายการพอร์ต ตัวแปรสภาพแวดล้อม และเวอร์ชันบริการที่ใช้ในชุดทดสอบควรสอดคล้องกับภาคผนวกหรือเอกสารประกอบโครงงานเพื่อการทำซ้ำ
+
+\section{แอปพลิเคชันเว็บสำหรับผู้ดูแล}
+\label{sec:ch3_webapp}
+
+\subsection{เทคโนโลยีและโครงสร้างโปรเจกต์}
+
+แอปพลิเคชันเว็บพัฒนาด้วย Next.js, React และ Tailwind CSS โดยแยกชั้นการดึงข้อมูล สถานะฝั่งไคลเอนต์ และองค์ประกอบ UI ให้สอดคล้องกับการพัฒนาและทดสอบเป็นส่วน ๆ
+
+\subsection{การเชื่อมต่อข้อมูลแบบเรียลไทม์}
+
+การแสดงผลแบบใกล้เวลาจริงเชื่อมกับ API โดยใช้การดึงข้อมูลแบบช่วงเวลา (polling) ตามคาบที่กำหนดสำหรับประเภทข้อมูลที่ต่างกัน เช่น สถานะตำแหน่งล่าสุด รายการแจ้งเตือน และสรุปสัญญาณสำคัญ
+ตัวอย่างการจับคู่: การอัปเดตโซน/ห้องใช้การดึง “สถานะล่าสุด” ตามคาบสั้นเพื่อให้ผู้ดูแลเห็นการเปลี่ยนแปลงทันเวลา; การแจ้งเตือนจากกฎบนอุปกรณ์หรือจากเซิร์ฟเวอร์ถูกบันทึกเป็นรายการเหตุการณ์และถูกดึงมาแสดงในรูปแบบ banner/notification panel
+เมื่อการเชื่อมต่อขาด ระบบควรแสดงสถานะการเชื่อมต่อและช่วงเวลาที่ข้อมูลล่าสุดถูกอัปเดต
+
+\subsection{หน้าจอหลักและการทำงานของผู้ดูแล}
+
+งานหลักของผู้ดูแลในระบบต้นแบบได้แก่ การติดตามตำแหน่งหรือโซนล่าสุด การรับทราบหรือปิดการแจ้งเตือน (acknowledge) การตรวจสอบเหตุการณ์ความผิดปกติจากกฎ และการเปิดดูประวัติ telemetry หรือเหตุการณ์ย้อนหลังเบื้องต้น
+แต่ละงานเชื่อมกับเหตุการณ์จาก API และข้อมูลที่ดึงมาแบบช่วงเวลา โดยไม่จำเป็นต้องมีภาพหน้าจอในบทนี้
+รายละเอียดการจัดวางเมนูและป้ายกำกับควรสอดคล้องกับรุ่นระบบที่ใช้ในช่วงประเมินสุดท้าย
+
+\section{แอปพลิเคชันมือถือ}
+\label{sec:ch3_mobile}
+
+ตามขอบเขตในบทที่~\ref{chapter1} แอปพลิเคชันมือถือพัฒนาด้วย React Native + Expo ในฐานะช่องทางเสริมสำหรับผู้ใช้ที่ไม่ได้นั่งเก้าอี้รถเข็นและกรณีผู้ใช้ที่ต้องการโหมดการใช้งานนอกเก้าอี้ โดยรองรับการสแกน BLE/RSSI และการเชื่อมต่อ Polar แล้วส่ง telemetry ผ่าน MQTT ตามหัวข้อ~\ref{sec:ch3_mqtt_mobile}
+บทบาทหลักในการติดตามแบบเรียลไทม์ยังคงอยู่ที่แอปพลิเคชันเว็บ ดังนั้นการทดสอบการใช้งานจึงลำดับความสำคัญให้สอดคล้องกับบทบาทดังกล่าว
+ฝั่งมือถือใช้ชุด API และการยืนยันตัวตนเดียวกับแอปเว็บ (โดเมนของบริการ FastAPI เดียวกัน) เพื่อให้สถานะล่าสุด รายการแจ้งเตือน และงานที่เกี่ยวข้องกับผู้ดูแลสอดคล้องกันข้ามช่องทาง
+การอัปเดตข้อมูลใช้แนวทางดึงเป็นระยะ (polling) หรือการรีเฟรชตามคาบที่กำหนดในการออกแบบแอป โดยอิงช่วงเวลาเชิงปฏิบัติการเดียวกับหลักการของ dashboard (หัวข้อ~\ref{sec:ch3_webapp} และพารามิเตอร์ Profile-A ในหัวข้อ~\ref{sec:ch3_params}) เพื่อให้การประเมิน UX ระหว่างเว็บและมือถือเปรียบเทียบกันได้เป็นธรรม
+
+\section{Home Assistant และระบบอัตโนมัติ}
+\label{sec:ch3_ha}
+
+\subsection{การเชื่อมต่อและข้อมูลที่แลกเปลี่ยน}
+
+Home Assistant เชื่อมต่อกับ WheelSense ผ่านกลไกที่เหมาะสมกับแพลตฟอร์ม เช่น MQTT integration หรือ API ที่เผยแพร่สถานะเป็น entity
+เหตุการณ์ที่เผยแพร่ไปยัง HA จัดเป็นกลุ่มเชิงบทบาท ได้แก่ \textbf{การเปลี่ยนโซน/ห้อง} (สถานะตำแหน่งล่าสุด) \textbf{การแจ้งเตือนหรือ anomaly} จากกฎบนอุปกรณ์หรือจากเซิร์ฟเวอร์ และ \textbf{สถานะการเชื่อมต่อ} ของอุปกรณ์หรือโหนดกล้อง
+ข้อมูลที่ข้ามขอบเขตควรจำกัดเฉพาะสถานะและเหตุการณ์ที่จำเป็นต่อ automation เพื่อลดพื้นที่การโจมตีและความเสี่ยงด้านความเป็นส่วนตัว
+
+\subsection{รูปแบบ automation ตามบริบท}
+
+ตัวอย่างรูปแบบ automation ได้แก่ การปรับอุปกรณ์ในบ้านเมื่อ entity โซนตรงกับค่าที่กำหนด หรือเมื่อเกิดเหตุการณ์แจ้งเตือนจากกฎบนอุปกรณ์ หรือเมื่อสถานะการเชื่อมต่อเปลี่ยนเป็นออฟไลน์
+รายละเอียด entity และ YAML ควรบันทึกเป็นภาคผนวกหรือคู่มือการติดตั้งเพื่อการทำซ้ำ ไม่บรรจุ YAML เต็มในเนื้อหาหลักของบทนี้
+
+\subsection{ความปลอดภัยและการตั้งค่า}
+
+การควบคุมอุปกรณ์จริงในระบบบ้านอัจฉริยะมีความเสี่ยงหาก credential รั่วไหลหรือ automation ถูกกำหนดผิดพลาด ดังนั้นการทดลองควรจำกัดสิทธิ์การเข้าถึงและแยกสภาพแวดล้อมทดสอบออกจากระบบที่ใช้ในบ้านจริงเมื่อเป็นไปได้
+
+\section{Local LLM และ MCP}
+\label{sec:ch3_llm_mcp}
+
+\subsection{บทบาทและขอบเขตการใช้งาน}
+
+โมดูล local LLM ใช้ Gemma 4B ตามขอบเขตในบทที่~\ref{chapter1} โดยเชื่อมต่อผ่าน MCP เพื่อให้โมเดลเรียกใช้เครื่องมือที่อนุญาตเท่านั้น \cite{GoogleGemma,ModelContextProtocol}
+ขอบเขตการใช้งานต้องชัดเจนว่าเป็นการช่วยสรุปและชี้ประเด็น ไม่ใช่การวินิจฉัยหรือคำแนะทางการแพทย์
+
+\subsection{รูปแบบการทำงานแบบยืนยันก่อนกระทำ (Propose--Confirm--Execute) และโหมดการจัดเส้นทาง}
+
+เพื่อให้การกระทำที่เปลี่ยนแปลงสถานะ (write actions) มีความปลอดภัยและตรวจสอบย้อนหลังได้ ระบบกำหนดการทำงานเป็น 3 ระยะ ได้แก่ \textbf{เสนอ (propose)} $\rightarrow$ \textbf{ยืนยัน (confirm)} $\rightarrow$ \textbf{ดำเนินการ (execute)} กล่าวคือ ระบบสามารถตอบคำถามหรือเรียกใช้เครื่องมือประเภทอ่านข้อมูล (read tools) เพื่อสร้างคำตอบเชิงหลักฐานได้ทันที แต่เมื่อเป็นเครื่องมือที่มีผลต่อข้อมูลหรือการควบคุมอุปกรณ์ ระบบต้องสร้างแผนการทำงานเพื่อให้ผู้ใช้ยืนยันก่อนจึงดำเนินการจริง
+นอกจากนี้ระบบรองรับโหมดการจัดเส้นทางคำขอ 2 แบบ ได้แก่ (1) \textbf{intent-based routing} ที่ใช้การจำแนกเจตนาเพื่อเลือกเครื่องมือ และ (2) \textbf{LLM tool routing} ที่ให้โมเดลเลือกเครื่องมือจากรายการที่อนุญาตภายใต้ข้อจำกัดสิทธิ์ โดยทั้งสองโหมดอยู่ภายใต้กรอบการยืนยันก่อนกระทำเดียวกัน
+
+\subsection{เครื่องมือและแหล่งข้อมูล}
+
+เครื่องมือ MCP จัดเป็นประเภทเชิงอินเทอร์เฟซ ได้แก่ \textbf{การอ่านสถานะ} (เช่น สรุป telemetry โซนล่าสุด หรือข้อความจากเซิร์ฟเวอร์) และ \textbf{การกระทำที่จำกัด} (เช่น คำสั่งที่ผูกกับ entity ของ Home Assistant หรือการทริกเกอร์ที่อนุญาต) โดยไม่เปิด endpoint ทั่วไป
+การออกแบบนี้ลดความเสี่ยงจากการเรียกใช้ฟังก์ชันที่ไม่คาดคิดและสอดคล้องกับแนวทางการประเมินความน่าเชื่อถือของเอาต์พุตภาษา \cite{Ji2023HallucinationSurvey}
+
+\subsection{การทำงานร่วมกับแอปพลิเคชันและเซิร์ฟเวอร์}
+
+ลำดับการทำงานทั่วไปเริ่มจากคำขอของผู้ใช้หรือเหตุการณ์ในระบบ ไปสู่การดึงข้อมูลอ้างอิง การเรียกเครื่องมือ และการคืนค่าผลลัพธ์ไปยังชั้นแสดงผล
+การบันทึก log ควรเก็บอย่างน้อย: เวลาที่ได้รับคำขอ รายการเครื่องมือที่ถูกเลือก พารามิเตอร์ที่ส่งเข้าเครื่องมือ เวลาที่เครื่องมือตอบกลับสำเร็จ และข้อความสรุปของโมเดล เพื่อให้สอดคล้องกับนิยามการประเมินในหัวข้อ~\ref{sec:ch3_eval_llm_metrics} และ~\ref{sec:ch3_eval_irr} โดยตัวเลขและการอภิปรายนำเสนอในบทที่~\ref{chapter4}
+
+\section{ความปลอดภัย ความเป็นส่วนตัว และจริยธรรมข้อมูล}
+\label{sec:ch3_privacy}
+
+ข้อมูลในระบบแบ่งได้เป็นชั้นหลัก ได้แก่ \textbf{ตำแหน่งและพฤติกรรมการเคลื่อนที่} \textbf{สัญญาณสรีระศาสตร์} และ \textbf{ภาพจากกล้อง} ซึ่งล้วนมีความอ่อนไหวในเชิงการใช้งานและบริบทสถานที่
+การออกแบบต้นแบบกำหนดการควบคุมการเข้าถึงแอปพลิเคชันและบทบาทผู้ใช้ การส่งผ่านข้อมูลภายในเครือข่ายที่ควบคุมได้ และนโยบายการเก็บรักษาและลบข้อมูลภาพหรือ log หลังการทดลองตามความจำเป็น
+ขอบเขตการเก็บรักษาเป็นระดับต้นแบบในงานวิจัย ไม่ได้อ้างมาตรฐานความปลอดภัยระดับผลิตภัณฑ์ โดยอิงหลักการด้านจริยธรรมและความเป็นส่วนตัวที่กรอบไว้ในบทที่~\ref{chapter2} \cite{Wilkowska2022AAL_privacy_acceptance}
+
+\section{กรณีขัดข้องที่คาดหมายและมาตรการรองรับ}
+\label{sec:ch3_failure_modes}
+
+เพื่อให้การติดตั้งและการบูรณาการระบบในงานวิจัยทำซ้ำได้และลดความเสี่ยงเชิงปฏิบัติการ หัวข้อนี้รวบรวมกรณีขัดข้องที่คาดหมาย (failure modes) วิธีตรวจจับ (detection) พฤติกรรมการรองรับ (mitigation) และกฎความถูกต้องของข้อมูล (data integrity) ที่ระบบยึดถือ โดยเน้นกรณีที่มีผลต่อความสดใหม่ของข้อมูล ความเสถียรของตำแหน่ง และความน่าเชื่อถือของการแจ้งเตือน
+
+\subsection{อุปกรณ์บนเก้าอี้รถเข็นและเส้นทาง telemetry}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{3.3cm}|p{3.5cm}|p{3.7cm}|p{2.5cm}|}
+        \hline
+        \textbf{อาการ} & \textbf{การตรวจจับ} & \textbf{การรองรับ} & \textbf{กฎข้อมูล} \\ \hline
+        Wi-Fi หลุด/กลับมา & สถานะเชื่อมต่อ + ช่องว่างของ \texttt{seq} & reconnect + ส่งย้อนหลังเมื่อทำได้ & บันทึก server timestamp ทุกข้อความ \\ \hline
+        MQTT disconnect & broker/client state & backoff reconnect & ไม่สร้าง prediction หาก RSSI ไม่ครบ \\ \hline
+        clock drift & ต่างกันของ \texttt{timestamp} กับ server time & ใช้ server time เป็นอ้างอิงสถานะล่าสุด & เก็บทั้ง device+server time \\ \hline
+        IMU spike & outlier rule ใน ingestion/QC & ทำเครื่องหมาย anomaly candidate & ไม่ตีความเป็นเหตุแพทย์ \\ \hline
+    \end{tabular}
+    \caption{Failure modes: เส้นทาง telemetry จากอุปกรณ์บนเก้าอี้รถเข็น}
+    \label{tab:ch3_fail_wheelchair}
+\end{table}
+
+\subsection{RSSI/Localization}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{3.3cm}|p{3.5cm}|p{3.7cm}|p{2.5cm}|}
+        \hline
+        \textbf{อาการ} & \textbf{การตรวจจับ} & \textbf{การรองรับ} & \textbf{กฎข้อมูล} \\ \hline
+        โหนดหาย/ไม่พบสัญญาณ & สัดส่วน missing RSSI ในเวกเตอร์ & ใช้ sentinel + last-known hold & บันทึกเหตุผล fallback \\ \hline
+        multipath spike & outlier ต่อโหนด/หน้าต่างเวลา & ใช้ median aggregation & เก็บค่าดิบและค่าหลังรวม \\ \hline
+        fingerprint ล้าสมัย & accuracy drop + สภาพแวดล้อมเปลี่ยน & เก็บ fingerprint ใหม่ & ระบุเวอร์ชัน radio map \\ \hline
+        โมเดลยังไม่ฝึก & สถานะ “not trained” & ใช้ max-RSSI baseline & บันทึก strategy ที่ใช้ทุกครั้ง \\ \hline
+    \end{tabular}
+    \caption{Failure modes: RSSI และการระบุตำแหน่ง}
+    \label{tab:ch3_fail_localization}
+\end{table}
+
+\subsection{โหนดกล้องและเส้นทางภาพ}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{3.3cm}|p{3.5cm}|p{3.7cm}|p{2.5cm}|}
+        \hline
+        \textbf{อาการ} & \textbf{การตรวจจับ} & \textbf{การรองรับ} & \textbf{กฎข้อมูล} \\ \hline
+        chunk สูญหาย & ภาพประกอบไม่ครบภายใน timeout & ยกเลิกภาพ + บันทึกเหตุ & ไม่ประกอบภาพผิดชิ้น \\ \hline
+        payload ใหญ่เกิน & guard ตรวจขนาด & ลด chunk size/ลดความละเอียด & บันทึก error code \\ \hline
+        stream control fail & ไม่มี ack/สถานะไม่เปลี่ยน & retry จำกัดครั้ง & ไม่ส่งคำสั่งซ้ำไม่จำกัด \\ \hline
+    \end{tabular}
+    \caption{Failure modes: เส้นทางภาพจากโหนดกล้อง}
+    \label{tab:ch3_fail_camera}
+\end{table}
+
+\subsection{เซิร์ฟเวอร์/ฐานข้อมูล/ไคลเอนต์}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{3.3cm}|p{3.5cm}|p{3.7cm}|p{2.5cm}|}
+        \hline
+        \textbf{อาการ} & \textbf{การตรวจจับ} & \textbf{การรองรับ} & \textbf{กฎข้อมูล} \\ \hline
+        ingestion ปฏิเสธ schema & error log + count rejects & reject พร้อมเหตุผล & ไม่บันทึกข้อมูลไม่ครบ \\ \hline
+        DB ช้าหรือ contention & latency เพิ่ม/timeout & backpressure + ลดความถี่ polling & บันทึก latency server-side \\ \hline
+        ข้อมูล stale บน UI & last-updated เกินเกณฑ์ & แสดงสถานะ stale/offline & ไม่แสดงเป็น realtime ปลอม \\ \hline
+    \end{tabular}
+    \caption{Failure modes: เซิร์ฟเวอร์ ฐานข้อมูล และไคลเอนต์ผู้ดูแล}
+    \label{tab:ch3_fail_server_clients}
+\end{table}
+
+\subsection{Home Assistant และ MCP/LLM}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{3.3cm}|p{3.5cm}|p{3.7cm}|p{2.5cm}|}
+        \hline
+        \textbf{อาการ} & \textbf{การตรวจจับ} & \textbf{การรองรับ} & \textbf{กฎข้อมูล} \\ \hline
+        automation ผิดพลาด & log HA + event mismatch & จำกัดสิทธิ์/แยกสภาพแวดล้อมทดสอบ & ไม่ควบคุมอุปกรณ์จริงเกินจำเป็น \\ \hline
+        tool misuse จาก LLM & tool-call audit log & require confirm ก่อน execute & บันทึก proposed/confirmed/executed \\ \hline
+        คำตอบหลุดกรอบ & rubric/IRR ไม่สอดคล้อง & ลดขอบเขตเครื่องมือ + prompt guardrails & ไม่ใช้แทนคำแนะนำแพทย์ \\ \hline
+    \end{tabular}
+    \caption{Failure modes: Home Assistant และ MCP/LLM}
+    \label{tab:ch3_fail_ha_mcp}
+\end{table}
+
+\section{พารามิเตอร์และการตั้งค่าหลัก}
+\label{sec:ch3_params}
+
+พารามิเตอร์ในระบบถูกแบ่งออกเป็น 2 กลุ่มเพื่อความชัดเจน ได้แก่ (1) พารามิเตอร์ด้าน localization และการเก็บ fingerprint (2) พารามิเตอร์ด้านอุปกรณ์ เครือข่าย ระบบบริการ และ LLM/MCP ทั้งสองกลุ่มต้องใช้ชุดค่าที่สอดคล้องกับการประเมินสี่ประเด็นและการรายงานผลในบทที่~\ref{chapter4}
+หากมีการปรับค่าระหว่างพัฒนา ให้บันทึกชุดค่าที่ใช้ในการประเมินจริงเป็นชุดเดียวและเก็บหลักฐานการตั้งค่าไว้ในภาคผนวกเพื่อการทำซ้ำ
+
+\subsection{Evaluation profile สำหรับการรายงานผลในบทที่ 4}
+\label{sec:ch3_eval_profile}
+
+ระบบถูกพัฒนาให้ปรับพารามิเตอร์ได้ (configurable) เพื่อรองรับสภาพแวดล้อมที่ต่างกัน อย่างไรก็ตามเพื่อให้การประเมินสี่ประเด็นและผลในบทที่~\ref{chapter4} ทำซ้ำได้อย่างชัดเจน โครงงานกำหนด \textbf{evaluation profile} เดียวเป็นค่าอ้างอิง เรียกว่า \textbf{Profile-A}
+โดยการรายงานตัวเลขที่อ้างอิงสภาพระบบในบทที่~\ref{chapter4} ใช้ค่าตาม Profile-A เท่านั้น ส่วนการตั้งค่าอื่นที่ระบบรองรับไม่ถูกนำมาขยายขอบเขตการอภิปรายเกินความจำเป็น
+
+เพื่อให้การอ้างอิง Profile-A ตรวจสอบย้อนหลังได้ ชุดค่าที่ใช้คู่กับการรายงานผลควรถูก ``แช่แข็ง'' โดยเก็บหลักฐานอย่างน้อยดังนี้: (1) ตัวระบุเวอร์ชันของที่เก็บโค้ด \texttt{wheelsense-platform} (เช่น แฮชคอมมิตหรือแท็กรุ่น) ณ ช่วงทดลอง (2) ไฟล์กำหนดค่าคอนเทนเนอร์/ตัวแปรสภาพแวดล้อมที่ใช้บน Raspberry Pi (3) เวอร์ชันเฟิร์มแวร์อุปกรณ์ที่อ่านได้จากข้อความ telemetry หรือจากเอกสารกำหนดค่า (4) สำเนาการตั้งค่า MQTT ที่ใช้ในห้องทดลอง (เช่น \texttt{mosquitto.conf}) เมื่อเกี่ยวข้องกับพอร์ตและนโยบายการยืนยันตัวตน
+รายการดังกล่าวอาจสรุปเป็นตารางในภาคผนวกหรือเอกสารประกอบโครงงานเพื่อไม่ขยายความยาวบทนี้
+
+Profile-A ครอบคลุม 4 กลุ่มการตั้งค่าหลัก ได้แก่ (1) การเก็บ fingerprint และพารามิเตอร์ KNN (2) รอบเวลา telemetry/การสแกน BLE ของอุปกรณ์บนเก้าอี้ (3) พารามิเตอร์สตรีมภาพของโหนดกล้อง (4) คาบการอัปเดตของแอปพลิเคชันผู้ดูแลและข้อจำกัดของ MCP/LLM
+ค่าพารามิเตอร์ของ Profile-A สรุปในตารางที่~\ref{tab:ch3_profileA_loc} และ~\ref{tab:ch3_profileA_runtime}
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{4.2cm}|p{3.3cm}|p{5.3cm}|}
+        \hline
+        \textbf{พารามิเตอร์ (Profile-A)} & \textbf{ค่า/หน่วย} & \textbf{เหตุผล/หมายเหตุ} \\ \hline
+        ระยะห่างจุดอ้างอิง (grid/spacing) & 1.0\,m & ระดับความละเอียด room/zone-level โดยไม่เพิ่มภาระเก็บข้อมูลมากเกินไป \\ \hline
+        เวลาค้างต่อจุด (dwell time) & 10\,s/จุด & ลดผลจากความผันผวนระยะสั้นของ RSSI และเพิ่มความเสถียรของเวกเตอร์ \\ \hline
+        จำนวนรอบเก็บซ้ำต่อจุด & 3 รอบ & ลด bias จากช่วงเวลาหรือสภาพแวดล้อมเฉพาะครั้ง \\ \hline
+        สถิติรวม RSSI ต่อโหนด & มัธยฐาน (median) & ทนต่อ outlier จาก multipath/การชนของแพ็กเก็ต \\ \hline
+        หน้าต่างรวมค่า RSSI & 2\,s & สอดคล้องกับคาบสแกน BLE และคาบส่ง telemetry \\ \hline
+        missing-RSSI policy & sentinel = \(-100\)\,dBm & ตีความ “ไม่พบสัญญาณ” และทำให้เวกเตอร์มีความยาวคงที่ \\ \hline
+        KNN: \(k\) & 5 & สมดุลระหว่างความไวต่อสัญญาณรบกวนและการแยกโซน \\ \hline
+        KNN: metric & Euclidean & ใช้กับเวกเตอร์ RSSI ที่ถูกจัดมิติคงที่ \\ \hline
+        KNN: weighting & distance & ถ่วงน้ำหนักเพื่อนบ้านใกล้กว่าให้มีผลมากกว่า \\ \hline
+        Baseline max-RSSI & ใช้ RSSI สูงสุด/รอบสแกน & ใช้เป็น fallback และ baseline เปรียบเทียบในบทที่~\ref{chapter4} \\ \hline
+        Last-known hold & 15\,s & ลดการกระโดดตำแหน่งเมื่อ RSSI ขาดช่วงสั้น ๆ \\ \hline
+    \end{tabular}
+    \caption{Profile-A: พารามิเตอร์ด้านการเก็บ fingerprint และการระบุตำแหน่ง}
+    \label{tab:ch3_profileA_loc}
+\end{table}
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{4.2cm}|p{3.3cm}|p{5.3cm}|}
+        \hline
+        \textbf{พารามิเตอร์ (Profile-A)} & \textbf{ค่า/หน่วย} & \textbf{เหตุผล/หมายเหตุ} \\ \hline
+        IMU sample rate (ปกติ) & 20\,Hz & อ้างอิงจากคาบอ่านเซ็นเซอร์ 50\,ms ของอุปกรณ์ \\ \hline
+        IMU sample rate (idle) & 5\,Hz & โหมดประหยัดพลังงานเมื่อตรวจพบ idle \\ \hline
+        Telemetry publish interval (ปกติ) & 1000\,ms & ให้ความสดใหม่ระดับ near real-time \\ \hline
+        Telemetry publish interval (idle) & 5000\,ms & ลดภาระเครือข่ายเมื่อไม่อยู่ในสถานการณ์สำคัญ \\ \hline
+        BLE update interval & 250\,ms & รอบอัปเดตรายการโหนด BLE ภายในอุปกรณ์ \\ \hline
+        MAX BLE nodes & 10 โหนด & ข้อจำกัดหน่วยความจำ/ความเสถียรของ BLE stack \\ \hline
+        Camera chunk bytes & 12{,}288\,B & ขนาด chunk สำหรับ MQTT chunked photo \\ \hline
+        Camera payload guard & 60{,}000\,B & ป้องกัน payload เกินขนาดแพ็กเก็ต \\ \hline
+        Camera default capture interval & 200\,ms & คาบเริ่มต้นของการถ่ายภาพ/ส่งภาพนิ่งเมื่อเปิดโหมดการส่งภาพ (ปรับได้โดยคำสั่งควบคุม) \\ \hline
+        MQTT broker port & 1883/TCP & listener ของ mosquitto ในสแต็กทดสอบ (สอดคล้องกับ \texttt{wheelsense-platform/server/mosquitto.conf}) \\ \hline
+        MQTT allow anonymous & เปิดใช้งาน & ตามไฟล์ตั้งค่าของโครงการข้างต้น; ใช้เฉพาะเครือข่ายทดสอบที่ควบคุมได้ การนำไปใช้ภายนอกห้องทดลองต้องกำหนดการยืนยันตัวตน \\ \hline
+        Dashboard alert poll & 10{,}000\,ms & คาบดึงแจ้งเตือนผู้ดูแล \\ \hline
+        Dashboard default poll & 30{,}000\,ms & คาบดึงข้อมูลทั่วไป (งาน/ข้อความ) \\ \hline
+        LLM model & Gemma 4B (local) & ใช้ผ่าน MCP ภายใต้นโยบายเครื่องมือที่จำกัด \\ \hline
+        Agent routing mode & intent & ค่ามาตรฐาน; เปลี่ยนเป็น llm\_tools ได้เมื่อประเมินเฉพาะกรณี \\ \hline
+    \end{tabular}
+    \caption{Profile-A: พารามิเตอร์ด้านอุปกรณ์ เครือข่าย ระบบบริการ และ MCP/LLM}
+    \label{tab:ch3_profileA_runtime}
+\end{table}
+
+\section{โปรโตคอลการติดตั้ง เก็บข้อมูล และความพร้อมของระบบ}
+\label{sec:ch3_protocols}
+
+หัวข้อนี้กำหนด “ขั้นตอนปฏิบัติ” (protocol) ที่ทำซ้ำได้สำหรับการติดตั้งระบบ เก็บ fingerprint และการตรวจสอบความพร้อมก่อนการประเมินสี่ประเด็นในหัวข้อ~\ref{sec:ch3_test_plan} โดยตั้งเป้าให้บุคคลอื่นสามารถทำซ้ำการติดตั้งและได้ชุดข้อมูล/หลักฐานที่มีโครงสร้างเดียวกันสำหรับการคำนวณตัวชี้วัดในบทที่~\ref{chapter4}
+
+\subsection{โปรโตคอลการติดตั้งระบบบน Raspberry Pi 5 (Deployment protocol)}
+\label{sec:ch3_protocol_deploy}
+
+\subsubsection{เงื่อนไขก่อนเริ่ม (preconditions checklist)}
+\begin{enumerate}
+    \item เครือข่ายทดสอบพร้อมใช้งานและแยกจากเครือข่ายใช้งานจริงเมื่อมี Home Assistant
+    \item เวลาเซิร์ฟเวอร์ถูกต้อง (NTP หรือเทียบเท่า) เพื่อให้ server-side timestamp ใช้เป็นจุดอ้างอิงได้
+    \item พื้นที่จัดเก็บเพียงพอสำหรับ time-series และภาพ ตามนโยบาย retention ในหัวข้อ~\ref{sec:ch3_retention}
+    \item พอร์ตหลักไม่ชนกับบริการอื่นในเครื่องเดียวกัน (อย่างน้อย MQTT 1883/TCP)
+\end{enumerate}
+
+\subsubsection{ขั้นตอนนำระบบขึ้น (bring-up steps)}
+\begin{enumerate}
+    \item เริ่มบริการฐานข้อมูลและ MQTT broker ก่อน เพื่อให้ ingestion เชื่อมต่อได้
+    \item เริ่มบริการ API/ingestion/localization และ web dashboard ตามลำดับ
+    \item ตรวจสอบสถานะสุขภาพ (health) ด้วยการ publish/subscribe หัวข้อทดสอบและเรียก endpoint สถานะระบบ
+\end{enumerate}
+
+\subsubsection{เกณฑ์ผ่าน (deployment gates)}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{4.2cm}|p{5.4cm}|p{3.2cm}|}
+        \hline
+        \textbf{เกณฑ์} & \textbf{วิธีตรวจสอบ} & \textbf{ผ่านเมื่อ} \\ \hline
+        MQTT broker พร้อมใช้งาน & publish ทดสอบที่ QoS 0 แล้วให้ไคลเอนต์อื่น subscribe หัวข้อเดียวกันเพื่อยืนยันการรับข้อความ \cite{MQTTSpec} & subscriber เห็นข้อความครบ และการ publish สำเร็จ (QoS 0 ไม่มี PUBACK แบบ QoS 1/2) \\ \hline
+        DB พร้อมใช้งาน & เรียก endpoint ที่ต้องอ่าน DB & ตอบกลับ HTTP 200 \\ \hline
+        Ingestion พร้อมรับข้อความ & ส่ง telemetry ตัวอย่าง 1 ข้อความ & มีแถวข้อมูลถูกบันทึก \\ \hline
+        Dashboard เข้าถึงได้ & เปิดหน้าเว็บ/ตรวจสอบโหลดทรัพยากร & โหลดสำเร็จ ไม่มี error สำคัญ \\ \hline
+    \end{tabular}
+    \caption{Deployment gates สำหรับยืนยันความพร้อมก่อนเก็บข้อมูลหรือก่อนการประเมิน}
+    \label{tab:ch3_gate_deploy}
+\end{table}
+
+\subsection{โปรโตคอลการเก็บ fingerprint (Offline fingerprint protocol)}
+\label{sec:ch3_protocol_fingerprint}
+
+โปรโตคอลนี้ใช้กับ Profile-A (หัวข้อ~\ref{sec:ch3_eval_profile}) โดยยึดนิยามจุดอ้างอิงและ QC ที่ระบุในหัวข้อ~\ref{sec:ch3_indoor_loc}
+
+\subsection{นิยามข้อเท็จจริงอ้างอิง (ground truth) และการจัดแนวเชิงเวลา}
+\label{sec:ch3_ground_truth}
+
+\textbf{Ground truth สำหรับ localization (ระดับโซน/ห้อง):} ในช่วงเก็บ fingerprint ป้ายกำกับ \(y\) ของแต่ละตัวอย่างคือโซน/ห้องที่จุดอ้างอิง (RP) ตั้งอยู่จริงบนผังพื้นที่ ไม่ใช่การตีความจากระบบ
+ในช่วงทดสอบออนไลน์หรือการทดสอบความทนทานแบบจำลองสัญญาณรบกวน ป้ายกำกับ \(y\) ยังคงเป็นห้อง/โซนที่ผู้ทดลองควบคุมให้อยู่จริงในขณะเก็บข้อมูล แม้เวกเตอร์ \(\tilde{\mathbf{r}}\) จะถูกปรับให้ ``คล้ายแต่ไม่เหมือนเดิม'' ตามหัวข้อ~\ref{sec:ch3_eval_loc_noise_injection}
+
+\textbf{การจัดแนวเชิงเวลา:} เมื่อรวมสตรีมหลายแหล่ง (เช่น telemetry กับ prediction กับ alert) ให้ใช้ \texttt{server\_receive\_ts} เป็นหลักสำหรับการเรียงเหตุการณ์ในการวิเคราะห์ end-to-end ตามหลักการในบทที่~\ref{sec:ch2_multistream} และใช้ \texttt{device\_timestamp} ร่วมกับ \texttt{seq} เมื่อต้องการวิเคราะห์พฤติกรรมฝั่งอุปกรณ์
+หากต้องเทียบเหตุการณ์กับกิจกรรมของผู้ทดลอง ให้กำหนดหน้าต่างยอมรับ \(\Delta t\) (เช่น 1--2 คาบ telemetry ตาม Profile-A) รอบจุดเปลี่ยนโซนในสคริปต์ทดสอบ เพื่อลดความคลาดเคลื่อนจากความหน่วงของเครือข่าย
+
+\subsubsection{ขั้นตอนปฏิบัติ}
+\begin{enumerate}
+    \item ยืนยันว่าตำแหน่ง BLE beacon ไม่เปลี่ยนจากแผนผังพื้นที่ทดสอบ
+    \item กำหนดจุดอ้างอิงในแต่ละโซน/ห้องตามระยะห่างและจำนวนที่กำหนดใน Profile-A
+    \item สำหรับแต่ละจุด: จอดนิ่งตาม dwell time, เก็บข้อมูลครบตามจำนวนรอบ, ใส่ป้ายกำกับโซน/ห้องและ metadata สภาพแวดล้อม
+    \item หลังจบโซน: ตรวจ QC เบื้องต้น (coverage, outlier, จำนวนตัวอย่าง) ก่อนย้ายไปโซนถัดไป
+    \item รวมชุดข้อมูลทั้งหมดเป็น radio map และบันทึกเวอร์ชันของชุด fingerprint ที่ใช้ในการฝึกโมเดล
+\end{enumerate}
+
+\subsubsection{Fingerprint QC gates}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{4.2cm}|p{5.4cm}|p{3.2cm}|}
+        \hline
+        \textbf{เกณฑ์} & \textbf{นิยาม/วิธีตรวจ} & \textbf{ผ่านเมื่อ} \\ \hline
+        ความครบถ้วนของป้ายกำกับ & ทุกตัวอย่างมี zone/room label & 100\% ของตัวอย่าง \\ \hline
+        ความครอบคลุมบีคอนขั้นต่ำ & จำนวนโหนดที่พบต่อจุด & $\ge$ 2 โหนด (หรือค่าที่กำหนด) \\ \hline
+        RSSI อยู่ในช่วงที่เป็นไปได้ & ตรวจค่าผิดปกติสุดโต่ง & ไม่มีค่าหลุดช่วงที่กำหนด \\ \hline
+        จำนวนตัวอย่างต่อจุดเพียงพอ & นับตัวอย่างหลัง QC & $\ge$ เกณฑ์ขั้นต่ำของ Profile-A \\ \hline
+    \end{tabular}
+    \caption{QC gates สำหรับชุดข้อมูล fingerprint ก่อนฝึกโมเดล}
+    \label{tab:ch3_gate_fingerprint}
+\end{table}
+
+\subsection{การตรวจสอบการทำงานแบบบูรณาการเบื้องต้น (ไม่ใช่ชุดประเมินเชิงวิจัยแยก)}
+\label{sec:ch3_protocol_e2e}
+
+ขั้นตอนนี้ใช้เพื่อยืนยันว่าระบบเชื่อมต่อและแสดงผลได้ก่อนให้ผู้เข้าร่วมทำแบบประเมิน UX หรือชุด LLM/MCP \textbf{ไม่ได้เพิ่มจำนวนชุดประเมินหลัก} นอกเหนือจากสี่ประเด็นในหัวข้อ~\ref{sec:ch3_test_plan}
+
+\subsubsection{สคริปต์สถานการณ์ (scenario script)}
+\begin{enumerate}
+    \item เริ่มจากสถานะอุปกรณ์ออนไลน์ครบ: เก้าอี้, โหนดกล้อง, เซิร์ฟเวอร์
+    \item เคลื่อนที่ตามเส้นทางที่กำหนดผ่านหลายโซน/ห้อง โดยกำหนด “จุดเปลี่ยนโซน” เป็น ground truth สำหรับการวิเคราะห์
+    \item ทริกเกอร์เหตุการณ์ผิดปกติตามกฎขั้นต่ำ (เช่น การหยุดนิ่ง/การเร่งผิดปกติ) เพื่อทดสอบเส้นทาง alert $\rightarrow$ dashboard/mobile $\rightarrow$ HA
+    \item เปิด/ปิดสตรีมภาพและตรวจสอบการประกอบคืนภาพในฝั่งเซิร์ฟเวอร์
+\end{enumerate}
+
+\subsubsection{E2E gates}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{4.2cm}|p{5.4cm}|p{3.2cm}|}
+        \hline
+        \textbf{เกณฑ์} & \textbf{นิยาม/วิธีตรวจ} & \textbf{ผ่านเมื่อ} \\ \hline
+        Telemetry end-to-end & device$\rightarrow$MQTT$\rightarrow$ingest$\rightarrow$DB$\rightarrow$API & มีข้อมูลต่อเนื่องในช่วงทดสอบ \\ \hline
+        Localization end-to-end & RSSI$\rightarrow$feature vector$\rightarrow$KNN$\rightarrow$prediction & มีผลทำนายและบันทึกลง DB \\ \hline
+        Alert end-to-end & rule/event$\rightarrow$alert record$\rightarrow$UI & ผู้ดูแลเห็นรายการแจ้งเตือนใน UI ภายในเวลาไม่เกินหนึ่งคาบดึงแจ้งเตือนของ dashboard ตามตาราง~\ref{tab:ch3_profileA_runtime} บวกช่วงเวลาประมวลผลฝั่งเซิร์ฟเวอร์ที่ยอมรับได้จาก log \\ \hline
+        Camera path & chunk/frame$\rightarrow$reassembly$\rightarrow$metadata & มีภาพสำเร็จหรือบันทึกสาเหตุล้มเหลว \\ \hline
+    \end{tabular}
+    \caption{เกณฑ์ความพร้อมแบบบูรณาการ (readiness checks) ก่อนการประเมินสี่ประเด็น — ไม่ใช่ตัวชี้วัดประเมินผลแยกจากหัวข้อ~\ref{sec:ch3_test_plan}}
+    \label{tab:ch3_gate_e2e}
+\end{table}
+
+\subsection{โปรโตคอลการประเมิน UX (Caregiver UX protocol)}
+\label{sec:ch3_protocol_ux}
+
+กำหนดงานทดสอบให้สอดคล้องกับ traceability (ตารางที่~\ref{tab:ch3_traceability}) ได้แก่ (1) ดูสถานะตำแหน่งล่าสุด (2) ตอบสนองต่อแจ้งเตือน (acknowledge) (3) เปิดดูประวัติย่อ (4) ตรวจสอบภาพประกอบบริบท (ถ้ามี)
+รายละเอียดเชิงเครื่องมือประเมิน เช่น โครงสร้างแบบสอบถามและมิติ Likert อยู่ในหัวข้อ~\ref{sec:ch3_test_ux}
+นิยามความล้มเหลวของงานเป็น “ไม่สามารถทำงานเสร็จภายในเวลาที่กำหนด” หรือ “ทำงานผิดขั้นตอนจนได้ผลลัพธ์ผิด”
+
+\subsection{โปรโตคอลการประเมิน LLM/MCP}
+\label{sec:ch3_protocol_llm}
+
+นิยามตัวชี้วัด IRR ความใกล้เคียงเชิงข้อความ และเวลาแฝงของเส้นทาง LLM/MCP อยู่ในหัวข้อ~\ref{sec:ch3_eval_llm_metrics} (รวมถึง~\ref{sec:ch3_eval_irr}, \ref{sec:ch3_eval_text_sim}, และ~\ref{sec:ch3_eval_llm_latency})
+ในการเก็บข้อมูลจริง ให้ใช้ชุดคำถามมาตรฐาน (prompt set) และข้อมูลอ้างอิงที่ LLM ต้องใช้ตอบ โดยบันทึกฟิลด์ขั้นต่ำตามตารางที่~\ref{tab:ch3_llm_log_min} เพื่อให้คำนวณตัวชี้วัดตามนิยามข้างต้นได้ ส่วนตัวเลขและการอภิปรายนำเสนอในบทที่~\ref{chapter4}
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|p{4.2cm}|p{8.8cm}|}
+        \hline
+        \textbf{สิ่งที่ต้องบันทึก (LLM/MCP)} & \textbf{ฟิลด์ขั้นต่ำ} \\ \hline
+        บริบทคำถาม & \texttt{timestamp\_received}, \texttt{user\_intent}, \texttt{profile} \\ \hline
+        การเสนอ/ยืนยัน/กระทำ & \texttt{proposed\_tools}, \texttt{confirmed\_tools}, \texttt{executed\_tools} \\ \hline
+        เวลาแฝงรายขั้น & \texttt{t\_tool\_start}, \texttt{t\_tool\_end}, \texttt{t\_workflow\_done} \\ \hline
+        ผลลัพธ์ & \texttt{tool\_outputs\_summary}, \texttt{final\_response} \\ \hline
+    \end{tabular}
+    \caption{ฟิลด์ขั้นต่ำของ log สำหรับการประเมิน LLM/MCP}
+    \label{tab:ch3_llm_log_min}
+\end{table}
+
+\section{แผนการประเมินผล}
+\label{sec:ch3_test_plan}
+
+หัวข้อนี้กำหนด \textbf{การประเมินผลเชิงวิจัย} ของงาน โดยประกอบด้วย (ก) \textbf{สี่ประเด็นด้าน UX/UI และ LLM/MCP} และ (ข) \textbf{การทดสอบเสริมด้านความทนทานของโมดูลระบุตำแหน่งต่อความผันผวนของ RSSI} แบบจำลอง (Gaussian noise injection) เพื่อเปรียบเทียบ KNN กับ XGBoost ในบริบทข้อมูลเดียวกัน
+การตรวจสอบการทำงานของอุปกรณ์ โมดูลย่อย หรือ pipeline ในระหว่างพัฒนาเป็นเพียงการยืนยันความพร้อมของต้นแบบ (รวมถึงขั้นตอนในหัวข้อ~\ref{sec:ch3_protocol_e2e}) โดยไม่ขยายจำนวนชุดประเมินเชิงวิจัยเกินกว่าหัวข้อที่กำหนดในส่วนนี้
+ตัวเลขผลลัพธ์ของหัวข้อในส่วนนี้นำเสนอในบทที่~\ref{chapter4}
+
+\subsection{วัตถุประสงค์การประเมิน}
+
+วัตถุประสงค์การประเมินสอดคล้องกับวัตถุประสงค์โครงงานในบทที่~\ref{chapter1} โดยมุ่งวัดประสบการณ์ผู้ดูแลต่อชั้นแอปพลิเคชันและคุณภาพ/ประสิทธิภาพของโมดูล LLM ผ่าน MCP ภายใต้ข้อกำหนด Profile-A (หัวข้อ~\ref{sec:ch3_eval_profile})
+
+\subsection{สรุปสี่ประเด็นประเมิน}
+\label{sec:ch3_eval_scope_four}
+
+\begin{enumerate}
+    \item \textbf{UX/UI (แบบสอบถาม)} — รวบรวมความคิดเห็นเชิงประสบการณ์ต่อการใช้งานแดชบอร์ด/อินเทอร์เฟซผู้ดูแล รายละเอียดอยู่ในหัวข้อ~\ref{sec:ch3_test_ux}
+    \item \textbf{IRR (การเลือกเครื่องมือ MCP)} — วัดความสอดคล้องระหว่างผู้ให้คะแนนว่าในแต่ละบริบทควรเรียกเครื่องมือใด รายละเอียดอยู่ในหัวข้อ~\ref{sec:ch3_eval_irr}
+    \item \textbf{ความใกล้เคียงเชิงข้อความ} — วัดความใกล้เคียงระหว่างเอาต์พุต LLM กับข้อความอ้างอิง รายละเอียดอยู่ในหัวข้อ~\ref{sec:ch3_eval_text_sim}
+    \item \textbf{เวลาแฝง LLM/MCP} — วัดช่วงเวลาตั้งแต่คำถามของผู้ใช้จนถึงการเรียกเครื่องมือ MCP เสร็จสมบูรณ์ รายละเอียดอยู่ในหัวข้อ~\ref{sec:ch3_eval_llm_latency}
+\end{enumerate}
+
+\subsection{การทดสอบเสริม: ความทนทานของการระบุตำแหน่งต่อ RSSI drift แบบจำลอง (Gaussian noise injection)}
+\label{sec:ch3_eval_loc_robustness}
+
+เนื่องจากสัญญาณ RSSI มีความผันผวนตามเวลา สภาพแวดล้อม และการบังสัญญาณในทางปฏิบัติ การประเมินเชิงวิศวกรรมจึงเพิ่มการทดสอบเสริมเพื่อสะท้อนกรณี ``ค่า RSSI เปลี่ยนเล็กน้อยในพื้นที่เดิม'' โดยไม่เปลี่ยนแผนผังพื้นที่หรือป้ายกำกับโซน/ห้อง
+แนวคิดนี้เชื่อมกับการอภิปรายเรื่อง RSSI drift/temporal variability ในบทที่~\ref{sec:ch2_rssi_drift}
+การทดสอบนี้มีวัตถุประสงค์เพื่อ (1) ตรวจสอบแนวโน้มการเสื่อมถอยของความแม่นยำเมื่อ RSSI เปลี่ยน และ (2) เปรียบเทียบพฤติกรรมของ \textbf{KNN} (ตัวแบบหลักของระบบ) กับ \textbf{XGBoost} ซึ่งเป็นตัวแบบ supervised ที่ใช้กันแพร่หลายในงานจำแนกจาก RSSI \cite{Chen2016XGBoost}
+
+\subsubsection{แนวคิดและการสร้างชุดทดสอบที่มีสัญญาณรบกวน}
+\label{sec:ch3_eval_loc_noise_injection}
+
+ให้เวกเตอร์ RSSI ของแต่ละตัวอย่างเป็น \(\mathbf{r}\in\mathbb{R}^{d}\) (หลังจัดมิติคงที่และจัดการ missing-RSSI ตามหัวข้อ~\ref{sec:ch3_feature_vector}) แล้วสร้างชุดทดสอบแบบจำลองสัญญาณรบกวนโดย
+\[
+    \tilde{\mathbf{r}} = \mathbf{r} + \boldsymbol{\epsilon},\qquad \boldsymbol{\epsilon}\sim\mathcal{N}(0,\sigma^2\mathbf{I})
+\]
+โดยกำหนด \(\sigma\) เป็นระดับการเปลี่ยนแปลงของ RSSI (หน่วย dBm) ในช่วง \(\sigma\in\{2,4,6,8,10,12\}\) เพื่อครอบคลุมตั้งแต่ ``เปลี่ยนเล็กน้อย'' ไปจนถึงกรณีรบกวนสูง ทั้งนี้การสุ่มทำในทุกมิติของ RSSI ต่อหนึ่งตัวอย่าง และทำซ้ำได้ด้วยการกำหนดค่า seed ของกระบวนการสุ่ม
+แนวคิดนี้สอดคล้องกับงานศึกษาความไวของระบบ fingerprinting ต่อความแปรผันของ RSSI \cite{Kaemarungsi2012RSSIAnalysis}
+
+\subsubsection{โปรโตคอลการประเมินและตัวชี้วัด}
+\label{sec:ch3_eval_loc_protocol}
+
+\begin{enumerate}
+    \item \textbf{ชุดฝึก (baseline)} ใช้ radio map/fingerprint ที่เก็บตามโปรโตคอลในหัวข้อ~\ref{sec:ch3_protocol_fingerprint} และฝึกโมเดล KNN ตาม Profile-A (ตารางที่~\ref{tab:ch3_profileA_loc})
+    \item \textbf{ตัวแบบเปรียบเทียบ} ฝึก XGBoost บนชุด fingerprint เดียวกัน โดยใช้ฟีเจอร์เวกเตอร์ RSSI แบบเดียวกันเพื่อให้การเปรียบเทียบยุติธรรม (ไม่เพิ่มฟีเจอร์เชิงอนุพันธ์หรือข้อมูลจากภาพ)
+    \item \textbf{ชุดทดสอบ (robustness)} สร้าง \(\tilde{\mathbf{r}}\) ด้วย noise injection ตามระดับ \(\sigma\) แล้วประเมินผลทำนายโซน/ห้องเทียบกับป้ายกำกับเดิม (ground truth)
+    \item \textbf{ตัวชี้วัด} รายงานอย่างน้อย \textbf{accuracy} ต่อระดับ \(\sigma\) และแสดง \textbf{confusion matrix} ของระดับที่เป็นตัวแทน (เช่น \(\sigma=4\) สำหรับ drift เล็กน้อย) เพื่ออธิบายรูปแบบความผิดพลาด (เช่น สลับโซนที่ติดกัน)
+\end{enumerate}
+
+\begin{table}[H]
+    \captionsetup{position=bottom}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.0cm}|p{9.0cm}|}
+        \hline
+        \textbf{รายการ log (localization robustness)} & \textbf{ฟิลด์ขั้นต่ำ} \\ \hline
+        การทดลอง & \texttt{experiment\_id}, \texttt{seed}, \(\sigma\), \texttt{radio\_map\_version}, \texttt{profile} (=Profile-A) \\ \hline
+        อินพุต/เอาต์พุต & \texttt{sample\_id}, \(\mathbf{r}\) หรือ \(\tilde{\mathbf{r}}\) (หลังจัดเรียงมิติ), \(y_{\mathrm{true}}\), \(\hat{y}_{\mathrm{KNN}}\), \(\hat{y}_{\mathrm{XGB}}\) \\ \hline
+        เวลา/บริบท & \texttt{eval\_ts}, \texttt{device\_id} (ถ้ามีเส้นทางจริง), หมายเหตุสภาพแวดล้อม (ถ้ามี) \\ \hline
+    \end{tabular}
+    \caption{ฟิลด์ขั้นต่ำของ log สำหรับการทดสอบความทนทาน RSSI (KNN vs XGBoost)}
+    \label{tab:ch3_loc_robust_log}
+\end{table}
+
+ผลจากการทดสอบเสริมนี้ถูกรายงานในบทที่~\ref{chapter4} เพื่อใช้เป็นหลักฐานประกอบการอภิปรายข้อจำกัดและความเหมาะสมของการเลือก KNN สำหรับระบบต้นแบบ
+
+\subsection{การประเมิน UX/UI ผู้ดูแล}
+\label{sec:ch3_test_ux}
+
+แผนการประเมินผู้ดูแลหรือผู้เกี่ยวข้องกำหนดเป็นงานที่ต้องทำจริงบนระบบ เช่น การค้นหาข้อมูลย้อนหลัง การตอบสนองต่อการแจ้งเตือน และการใช้งานหน้าจอหลักของแดชบอร์ด
+เครื่องมือเก็บข้อมูลอาจใช้แบบสอบถามหรือการสังเกตการณ์ตามที่ออกแบบในโครงงาน โดยไม่ขยายผลเกินขนาดตัวอย่าง
+
+\subsubsection{แบบสอบถามอิเล็กทรอนิกส์ (เช่น Google Form)}
+
+ใช้แบบสอบถามอิเล็กทรอนิกส์ (เช่น Google Form) โครงสร้างประกอบด้วยส่วนข้อมูลทั่วไปของผู้ตอบ (ตามที่เหมาะสมและไม่ละเมิดความเป็นส่วนตัว) รายการงานที่ให้ทดลองบนระบบจริง (เช่น ติดตามโซน รับทราบการแจ้งเตือน เปิดประวัติ) และข้อความแบบมาตราส่วน Likert สำหรับมิติเช่น ความง่ายในการใช้งาน ความชัดเจนของข้อมูล ความเหมาะสมของการแจ้งเตือน และความน่าเชื่อถือโดยรวม
+ไม่รายงานค่าตัวเลขหรือสถิติจากแบบสอบถามในบทนี้; ผลสรุปนำเสนอในบทที่~\ref{chapter4}
+
+\subsection{การประเมินโมดูล LLM ผ่าน MCP}
+\label{sec:ch3_eval_llm_metrics}
+
+\subsubsection{ความสอดคล้องระหว่างผู้ให้คะแนน (IRR) สำหรับการเลือกเครื่องมือ MCP}
+\label{sec:ch3_eval_irr}
+
+กำหนดแผนผังการเข้ารหัสว่าในแต่ละ log การสนทนา ผู้ให้คะแนนควรเลือกเครื่องมือ MCP ที่เหมาะสมจากรายการที่อนุญาตหรือระบุว่าไม่ควรเรียกเครื่องมือ
+ระบุจำนวนผู้ให้คะแนน เกณฑ์การคำนวณความสอดคล้อง (เช่น Cohen's \(\kappa\) สำหรับสองผู้ให้คะแนน หรือ Fleiss' \(\kappa\) หากมีมากกว่าสองคน) และกฎการตัดสินเมื่อความเห็นไม่ตรงกัน (adjudication)
+ค่าความสอดคล้องและการอภิปรายนำเสนอในบทที่~\ref{chapter4}
+
+\subsubsection{ความใกล้เคียงเชิงข้อความของเอาต์พุต LLM}
+\label{sec:ch3_eval_text_sim}
+
+กำหนดข้อความอ้างอิง (reference) สำหรับสถานการณ์หรือคำถามที่เลือกไว้ล่วงหน้า แล้ววัดความใกล้เคียงระหว่างเอาต์พุตของโมเดลกับข้อความอ้างอิงด้วยตัวชี้วัดที่เลือก เช่น ความคล้ายคลึงคอไซน์บนเวกเตอร์ embedding หรือค่า BLEU ตามความเหมาะสมของงาน
+ระบุว่าตัวชี้วัดใช้เมื่อใด (เช่น หลังแต่ละคำถามในชุดทดสอบที่ควบคุม) โดยไม่รายงานค่าที่วัดได้ในบทนี้
+
+\subsubsection{เวลาหน่วงแบบปลายทางปลายทางของ LLM}
+\label{sec:ch3_eval_llm_latency}
+
+นิยามช่วงเวลาที่วัดจาก \textbf{คำถามของผู้ใช้} จนถึง \textbf{การเรียกเครื่องมือ MCP เสร็จสมบูรณ์} (ได้ผลลัพธ์จากเครื่องมือและส่งกลับในลำดับการทำงาน) ไม่รวมการแสดงผลบนหน้าจอหากแยก timestamp ได้
+บันทึก log อย่างน้อย: เวลาที่รับคำถาม เวลาที่เริ่มเรียกเครื่องมือแต่ละครั้ง เวลาที่เครื่องมือตอบกลับ และเวลาที่ลำดับงานเสร็จสิ้น รวมถึงการทดลองอุ่นเครื่อง (warm-up) และจำนวนครั้งซ้ำต่อสถานการณ์
+ตัวเลข latency รายงานในบทที่~\ref{chapter4}
+
+\subsection{เกณฑ์สรุปผลและการบันทึกข้อมูล}
+
+เกณฑ์สรุปผลระบุเป็นนิยามตัวชี้วัดที่วัดได้ภายใต้สี่ประเด็นข้างต้น เช่น ค่ามาตราส่วน Likert รายมิติจากแบบสอบถาม UX ค่า \(\kappa\) หรือตัวชี้วัดความสอดคล้องของ IRR ค่าความใกล้เคียงเชิงข้อความ และสถิติเวลาแฝงของ LLM/MCP
+การบันทึกข้อมูลการประเมินต้องเชื่อมโยงกับชุดพารามิเตอร์ในหัวข้อ~\ref{sec:ch3_params} เพื่อให้สามารถทำซ้ำและอภิปรายในบทที่~\ref{chapter4} ได้อย่างสอดคล้องกัน
+
+\section{สรุปขั้นตอนการดำเนินงาน}
+
+บทนี้สรุปลำดับการดำเนินงานจากการกำหนดบริบทและข้อจำกัด การแปลงวัตถุประสงค์ในบทที่~\ref{chapter1} เป็นความต้องการระบบ การออกแบบโมดูลอุปกรณ์ การระบุตำแหน่งในอาคาร เซิร์ฟเวอร์และฐานข้อมูล แอปพลิเคชัน การบูรณาการ Home Assistant และ MCP รวมถึงแผนการประเมินผล (สี่ประเด็นด้าน UX/UI และ LLM/MCP และการทดสอบเสริมด้านความทนทานของ localization) และพารามิเตอร์อ้างอิง Profile-A
+ขั้นตอนเหล่านี้เป็นโครงร่างสำหรับการติดตั้งและการรายงานผลในบทที่~\ref{chapter4} โดยไม่ทับซ้อนกับเนื้อหาทฤษฎีในบทที่~\ref{chapter2}

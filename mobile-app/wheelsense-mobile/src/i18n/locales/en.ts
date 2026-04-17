@@ -12,7 +12,7 @@ export default {
   },
   setup: {
     subtitle: "Mobile Companion",
-    description: "Connect via MQTT to start BLE scanning, step tracking, and health monitoring",
+    description: "Connect this phone to MQTT so the portal, telemetry, pairing, and alerts stay in sync",
     deviceName: "Device Name",
     deviceNamePlaceholder: "e.g. Nurse-Station-01",
     mqttBroker: "MQTT Broker",
@@ -28,7 +28,7 @@ export default {
     connectionFailed: "Connection Failed",
     connectionFailedDetail: "Could not connect to {{host}}:{{port}}",
     checkBroker: "Check broker address and try again",
-    footerHint: "No server login needed — communicates via MQTT"
+    footerHint: "Portal login happens in WebView; native screens stay focused on telemetry and runtime"
   },
   home: {
     status: "Status",

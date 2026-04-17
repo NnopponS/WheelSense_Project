@@ -17,7 +17,6 @@ import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useAppStore } from '../store/useAppStore';
 import { useBLEScanner } from '../services/BLEScanner';
 import { usePolar } from '../services/PolarService';
-import { colors } from '../theme/tokens';
 
 // ==================== INTERFACES ====================
 
@@ -51,11 +50,9 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
   const store = useAppStore();
   const bleScanner = useBLEScanner();
   const polar = usePolar();
-
-  const portal = (store.settings.portalBaseUrl || '').trim();
-  const propUrl = (serverUrl || '').trim();
-  const baseUrl =
-    propUrl || (portal.length > 0 ? portal.replace(/\/$/, '') : '') || 'http://wheelsense.local';
+  
+  const baseUrl = serverUrl || store.settings.serverUrl;
+  const authToken = store.authToken;
 
   // ==================== INJECTED JAVASCRIPT ====================
 
@@ -64,6 +61,9 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
       // Mark as mobile app
       window.__WHEELSENSE_MOBILE__ = true;
       window.__WHEELSENSE_MOBILE_VERSION__ = '1.0.0';
+      
+      // Inject auth token for seamless login
+      ${authToken ? `window.__WHEELSENSE_AUTH_TOKEN__ = '${authToken}';` : ''}
       
       // Mobile app bridge
       window.WheelSenseMobile = {
@@ -108,7 +108,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
           return {
             platform: '${store.appMode}',
             version: '1.0.0',
-            deviceId: '${store.deviceId || 'unknown'}'
+            deviceId: '${store.user?.id || 'unknown'}'
           };
         },
         
@@ -136,20 +136,13 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
         }
       });
       
-      // Notify when page is ready (SPA may have fired the load event before this script runs)
-      function postPageLoaded() {
-        try {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'PAGE_LOADED',
-            payload: { url: window.location.href }
-          }));
-        } catch (e) {}
-      }
-      if (document.readyState === 'complete') {
-        postPageLoaded();
-      } else {
-        window.addEventListener('load', postPageLoaded);
-      }
+      // Notify when page is ready
+      window.addEventListener('load', function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'PAGE_LOADED',
+          payload: { url: window.location.href }
+        }));
+      });
       
       // Override console.log to send to React Native
       const originalLog = console.log;
@@ -202,6 +195,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
           
         case 'PAGE_LOADED':
           setIsLoading(false);
+          onLoadEnd?.();
           break;
           
         case 'CONSOLE_LOG':
@@ -215,7 +209,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
     } catch (error) {
       console.error('[WebView] Failed to handle message:', error);
     }
-  }, [bleScanner, polar]);
+  }, [bleScanner, polar, onLoadEnd]);
 
   const handleBLEScanRequest = useCallback(async () => {
     try {
@@ -252,9 +246,8 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
   }, [onLoadStart]);
 
   const handleLoadEnd = useCallback(() => {
-    setIsLoading(false);
-    onLoadEnd?.();
-  }, [onLoadEnd]);
+    // Loading state is set by PAGE_LOADED message
+  }, []);
 
   const handleError = useCallback((error: any) => {
     console.error('[WebView] Load error:', error);
@@ -304,7 +297,6 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
       <StatusBar barStyle="dark-content" />
       
       <WebView
-        key={baseUrl}
         ref={webViewRef}
         source={{ uri: baseUrl }}
         userAgent={USER_AGENT}
@@ -340,7 +332,7 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
       
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color="#0052cc" />
           <Text style={styles.loadingText}>Loading WheelSense...</Text>
         </View>
       )}
@@ -353,22 +345,22 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: '#fff',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.surface,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.textMuted,
+    color: '#666',
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
@@ -376,17 +368,17 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#333',
     marginBottom: 8,
   },
   errorText: {
     fontSize: 16,
-    color: colors.textMuted,
+    color: '#666',
     textAlign: 'center',
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#0052cc',
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 8,

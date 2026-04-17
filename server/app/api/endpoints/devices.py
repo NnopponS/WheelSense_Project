@@ -172,7 +172,7 @@ async def assign_patient_from_device(
             registry_device_id=device_id,
             details={"patient_id": None, "device_role": body.device_role},
         )
-        publish_mobile_device_config_background(device_id, None)
+        publish_mobile_device_config_background(device_id, None, None)
         return {"status": "ok", "patient_id": None}
     await device_activity_service.log_event(
         db,
@@ -182,7 +182,7 @@ async def assign_patient_from_device(
         registry_device_id=device_id,
         details={"patient_id": row.patient_id, "device_role": row.device_role},
     )
-    publish_mobile_device_config_background(device_id, row.patient_id)
+    publish_mobile_device_config_background(device_id, row.patient_id, None)
     return {
         "status": "ok",
         "patient_id": row.patient_id,
@@ -225,7 +225,7 @@ async def assign_caregiver_from_device_route(
         registry_device_id=device_id,
         details={"caregiver_id": row.caregiver_id, "device_role": row.device_role},
     )
-    publish_mobile_device_config_resolved_background(device_id)
+    publish_mobile_device_config_background(device_id, None, row.caregiver_id)
     return {
         "status": "ok",
         "caregiver_id": row.caregiver_id,

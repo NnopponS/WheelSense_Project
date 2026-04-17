@@ -1,11 +1,12 @@
 /**
- * WheelSense Mobile App - API Service (Legacy)
- * REST API client — retained for future direct-server features.
- * In MQTT-first mode, most communication goes through MQTTService.
+ * WheelSense Mobile App - API Service
+ * REST API client for WheelSense backend
  */
 
 import { Platform } from 'react-native';
 import {
+  User,
+  AuthResponse,
   Patient,
   Alert,
   WorkflowTask,
@@ -32,14 +33,20 @@ class APIService {
   }
 
   private getBaseUrl(): string {
-    return this.baseUrl || 'http://localhost:8000';
+    const store = useAppStore.getState();
+    return this.baseUrl || store.settings.serverUrl;
   }
 
   private async getHeaders(): Promise<Record<string, string>> {
+    const store = useAppStore.getState();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
+
+    if (store.authToken) {
+      headers['Authorization'] = `Bearer ${store.authToken}`;
+    }
 
     return headers;
   }
@@ -75,6 +82,11 @@ class APIService {
           status_code: response.status,
         }));
         
+        // Handle auth errors
+        if (response.status === 401) {
+          useAppStore.getState().clearAuth();
+        }
+        
         throw new Error(errorData.detail || `HTTP ${response.status}`);
       }
 
@@ -108,6 +120,46 @@ class APIService {
 
   private delete<T>(endpoint: string): Promise<T> {
     return this.request<T>('DELETE', endpoint);
+  }
+
+  // ==================== AUTH ====================
+
+  async login(username: string, password: string): Promise<AuthResponse> {
+    const response = await this.post<AuthResponse>('/auth/login', {
+      username,
+      password,
+    });
+
+    // Store auth data
+    useAppStore.getState().setAuth(response.access_token, response.user);
+    
+    return response;
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await this.post('/auth/logout');
+    } finally {
+      useAppStore.getState().clearAuth();
+    }
+  }
+
+  async getCurrentUser(): Promise<User> {
+    return this.get<User>('/auth/me');
+  }
+
+  async refreshSession(): Promise<void> {
+    try {
+      const user = await this.getCurrentUser();
+      const store = useAppStore.getState();
+      if (store.authToken) {
+        store.setAuth(store.authToken, user);
+      }
+    } catch (error) {
+      console.error('[API] Session refresh failed:', error);
+      useAppStore.getState().clearAuth();
+      throw error;
+    }
   }
 
   // ==================== PATIENTS ====================
@@ -237,6 +289,12 @@ export const API = new APIService();
 
 export function useAPI() {
   return {
+    // Auth
+    login: API.login.bind(API),
+    logout: API.logout.bind(API),
+    getCurrentUser: API.getCurrentUser.bind(API),
+    refreshSession: API.refreshSession.bind(API),
+    
     // Patients
     getPatients: API.getPatients.bind(API),
     getPatient: API.getPatient.bind(API),

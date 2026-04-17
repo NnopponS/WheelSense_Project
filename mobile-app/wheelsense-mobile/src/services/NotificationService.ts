@@ -5,33 +5,20 @@
 
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { Alert, WorkflowTask } from '../types';
-import { isExpoGo } from '../utils/runtimeEnvironment';
-
-function getEasProjectId(): string | undefined {
-  const id = Constants.expoConfig?.extra?.eas?.projectId;
-  return typeof id === 'string' ? id : undefined;
-}
 
 // ==================== NOTIFICATION CONFIG ====================
 
-function ensureForegroundNotificationHandler(): void {
-  if (isExpoGo()) {
-    return;
-  }
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
-}
+// Configure how notifications appear when app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 // ==================== NOTIFICATION SERVICE ====================
 
@@ -46,15 +33,6 @@ class NotificationService {
     if (this.isInitialized) {
       return true;
     }
-
-    if (isExpoGo()) {
-      console.log(
-        '[Notifications] Expo Go: remote push is disabled (SDK 53+). Use a development build for full expo-notifications support.'
-      );
-      return false;
-    }
-
-    ensureForegroundNotificationHandler();
 
     try {
       // Request permissions
@@ -71,6 +49,7 @@ class NotificationService {
       this.setupListeners();
 
       this.isInitialized = true;
+      useAppStore.getState().setNotificationsEnabled(true);
       
       console.log('[Notifications] Initialized successfully');
       return true;
@@ -182,12 +161,12 @@ class NotificationService {
     switch (actionIdentifier) {
       case 'acknowledge':
         if (data?.alertId) {
-          this.handleAcknowledgeAlert(Number(data.alertId));
+          this.handleAcknowledgeAlert(data.alertId);
         }
         break;
       case 'complete':
         if (data?.taskId) {
-          this.handleCompleteTask(Number(data.taskId));
+          this.handleCompleteTask(data.taskId);
         }
         break;
       case 'view':
@@ -247,11 +226,9 @@ class NotificationService {
           severity: alert.severity,
         },
         categoryIdentifier: 'alert',
-        priority: alert.severity === 'critical'
-          ? Notifications.AndroidNotificationPriority.MAX
-          : Notifications.AndroidNotificationPriority.HIGH,
-      } as Notifications.NotificationContentInput,
-      trigger: null,
+        priority: alert.severity === 'critical' ? Notifications.AndroidNotificationPriority.MAX : Notifications.AndroidNotificationPriority.HIGH,
+      },
+      trigger: null, // Show immediately
     });
   }
 
@@ -274,75 +251,14 @@ class NotificationService {
     });
   }
 
-  /** Local notification when an alert JSON arrives on `WheelSense/alerts/{patient_id}` (MQTT). */
-  async notifyAlertFromMqtt(payload: Record<string, unknown>): Promise<void> {
-    if (isExpoGo()) {
-      return;
-    }
-    const { alertsEnabled, linkedPatientId } = useAppStore.getState().settings;
-    if (alertsEnabled === false || linkedPatientId == null) {
-      console.log('[Notifications] Skipping MQTT alert: alerts disabled or device not paired to a patient');
-      return;
-    }
-    ensureForegroundNotificationHandler();
-    try {
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== 'granted') {
-        console.warn('[Notifications] Skipping MQTT alert: permission not granted');
-        return;
-      }
-    } catch (e) {
-      console.warn('[Notifications] Permission check failed', e);
-      return;
-    }
-
-    const title =
-      (typeof payload.title === 'string' && payload.title.trim()) ||
-      `${String(payload.severity || 'alert').toUpperCase()}: ${String(payload.alert_type || 'Alert')}`;
-    const body =
-      (typeof payload.description === 'string' && payload.description.trim()) ||
-      'WheelSense alert';
-
-    const rawId = payload.alert_id;
-    const alertId =
-      typeof rawId === 'number'
-        ? rawId
-        : typeof rawId === 'string' && rawId.trim()
-          ? Number(rawId)
-          : undefined;
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data: {
-          type: 'alert',
-          alertId: Number.isFinite(alertId) ? alertId : undefined,
-          patientId:
-            payload.patient_id != null && payload.patient_id !== ''
-              ? Number(payload.patient_id)
-              : undefined,
-          severity: payload.severity,
-          source: 'mqtt',
-        },
-        categoryIdentifier: 'alert',
-        priority:
-          payload.severity === 'critical'
-            ? Notifications.AndroidNotificationPriority.MAX
-            : Notifications.AndroidNotificationPriority.HIGH,
-      } as Notifications.NotificationContentInput,
-      trigger: null,
-    });
-  }
-
   async scheduleLocalNotification(
     title: string,
     body: string,
     data?: Record<string, any>,
     delaySeconds?: number
   ): Promise<string> {
-    const trigger: Notifications.NotificationTriggerInput | null = delaySeconds
-      ? { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: delaySeconds, repeats: false }
+    const trigger = delaySeconds
+      ? { seconds: delaySeconds }
       : null;
 
     const identifier = await Notifications.scheduleNotificationAsync({
@@ -389,16 +305,10 @@ class NotificationService {
   // ==================== GET PUSH TOKEN ====================
 
   async getPushToken(): Promise<string | null> {
-    if (isExpoGo()) {
-      return null;
-    }
     try {
-      const projectId = getEasProjectId();
-      if (!projectId) {
-        console.warn('[Notifications] Missing extra.eas.projectId in app config — cannot fetch Expo push token.');
-        return null;
-      }
-      const token = await Notifications.getExpoPushTokenAsync({ projectId });
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId: 'wheelsense-mobile-project',
+      });
       return token.data;
     } catch (error) {
       console.error('[Notifications] Failed to get push token:', error);
@@ -433,7 +343,7 @@ export function useNotifications() {
   const store = useAppStore();
   
   return {
-    isEnabled: false, // notifications enabled tracked locally
+    isEnabled: store.notificationsEnabled,
     initialize: () => NotificationManager.initialize(),
     scheduleAlert: (alert: Alert) => NotificationManager.scheduleAlertNotification(alert),
     scheduleTask: (task: WorkflowTask) => NotificationManager.scheduleTaskNotification(task),

@@ -2,7 +2,7 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [README.md](file://README.md)
 - [server/app/main.py](file://server/app/main.py)
 - [server/app/mqtt_handler.py](file://server/app/mqtt_handler.py)
@@ -70,7 +70,7 @@ WEB --> API
 
 **Section sources**
 - [README.md:5-13](file://README.md#L5-L13)
-- [ARCHITECTURE.md:3-22](file://docs/ARCHITECTURE.md#L3-L22)
+- [ARCHITECTURE.md:3-22](file://ARCHITECTURE.md#L3-L22)
 
 ## Core Components
 - Presentation layer: Next.js role-based dashboards and a proxy to FastAPI (/api/*).
@@ -85,7 +85,7 @@ Key runtime characteristics:
 - Optional simulator profile for development and E2E testing.
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 - [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
 - [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
 - [server/app/mcp/server.py:110-120](file://server/app/mcp/server.py#L110-L120)
@@ -137,7 +137,7 @@ MAIN --> RET
 - [server/app/mcp/server.py:110-120](file://server/app/mcp/server.py#L110-L120)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 - [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
 
 ## Detailed Component Analysis
@@ -164,7 +164,7 @@ D --> I
 - [server/app/api/router.py:16-159](file://server/app/api/router.py#L16-L159)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 - [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
 
 ### Event-Driven Architecture with MQTT
@@ -208,7 +208,7 @@ API->>DB : Apply command acknowledgment
 - [server/app/mqtt_handler.py:575-588](file://server/app/mqtt_handler.py#L575-L588)
 
 **Section sources**
-- [ARCHITECTURE.md:7-19](file://docs/ARCHITECTURE.md#L7-L19)
+- [ARCHITECTURE.md:7-19](file://ARCHITECTURE.md#L7-L19)
 - [server/app/mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
 
 ### Microservices Pattern and Domain-Driven Design
@@ -251,7 +251,7 @@ RET --> SYS
 - [server/app/mcp/server.py:283-800](file://server/app/mcp/server.py#L283-L800)
 
 **Section sources**
-- [ARCHITECTURE.md:23-139](file://docs/ARCHITECTURE.md#L23-L139)
+- [ARCHITECTURE.md:23-139](file://ARCHITECTURE.md#L23-L139)
 - [server/app/mcp/server.py:110-120](file://server/app/mcp/server.py#L110-L120)
 
 ### System Boundary Diagrams
@@ -292,7 +292,7 @@ NEXT --> API
 - [server/homeassistant/configuration.yaml:1-62](file://server/homeassistant/configuration.yaml#L1-L62)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 
 ### Data Flow Patterns
 - Telemetry ingestion: Device publishes WheelSense/data; backend persists IMU, RSSI, motion, and optional Polar HR; room predictions and vitals are published back on MQTT.
@@ -316,7 +316,7 @@ PublishVitals --> End
 - [server/app/mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 
 ### Security Boundaries and Integration Points
 - Authentication: Session-based with HttpOnly ws_token cookie; JWT injected by proxy for API requests; backend validates sessions and revokes tokens.
@@ -350,7 +350,7 @@ Next-->>Browser : UI update
 - [server/app/mcp/server.py:113-129](file://server/app/mcp/server.py#L113-L129)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 
 ### Scalability Considerations and Deployment Topology
 - Horizontal scaling: FastAPI supports multiple replicas behind a reverse proxy; stateless design favors read replicas for analytics and read-heavy endpoints.
@@ -385,7 +385,7 @@ API1 --> RET
 - [server/app/main.py:26-66](file://server/app/main.py#L26-L66)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 - [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
 
 ## Dependency Analysis

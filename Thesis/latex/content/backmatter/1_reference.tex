@@ -1,0 +1,31 @@
+%%=================================================
+%% References
+%%=================================================
+%% \bibliography refers to your BibTeX .bib file, e.g. refs.bib
+\backmatter
+\cleardoublepage  %% needed to ensure TOC page number is correct
+\phantomsection
+\raggedright
+\renewcommand{\bibname}{รายการอ้างอิง}
+%\renewcommand{\bibname}{บรรณานุกรม}
+
+\addtocontents{toc}{\protect\vspace{\baselineskip}}
+\addcontentsline{toc}{chapter}{\bibname}
+\addtocontents{toc}{\protect\vspace{\baselineskip}}
+
+%{หนังสือและบทความในหนังสือ}
+%\printbibliography[type=book]
+
+%{บทความวารสาร}
+%{บทความหนังสือพิมพ์}
+%\printbibliography[type=article]
+
+%{วิทยานิพนธ์}
+%\printbibliography[type=phdthesis]
+%\printbibliography[type=masterthesis]
+
+%{สื่ออิเล็กทรอนิกส์}
+%\printbibliography[type=misc]
+
+%% no categories for now
+\printbibliography

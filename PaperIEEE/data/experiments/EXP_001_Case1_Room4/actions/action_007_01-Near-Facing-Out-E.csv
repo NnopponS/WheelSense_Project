@@ -1,0 +1,24 @@
+timestamp,S1_RSSI,S2_RSSI,S3_RSSI,S4_RSSI,action_label,experiment_id,sub_action_label
+2026-03-08 12:43:57.489,-67,-73,,-63,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:57.681,-65,,,-60,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:57.874,,-79,,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:58.076,,,-68,-64,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:58.275,-67,,,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:58.473,,-76,,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:58.669,-64,,-58,-62,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:58.877,,-72,-59,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:59.072,-66,,,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:59.268,,-69,,-62,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:59.269,,,-59,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:43:59.654,-65,-69,-66,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:00.051,-77,-69,-56,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:00.250,-65,-69,-60,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:00.446,-65,-67,-55,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:00.641,-66,-67,-60,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:00.836,-66,,,-63,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:01.046,-66,-69,-67,-61,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:01.245,-66,-70,-56,-61,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:01.443,-66,,,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:01.829,,-69,-60,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:02.042,-77,,,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E
+2026-03-08 12:44:02.238,,-69,-73,,01-Near-Facing-Out,EXP_001,01-Near-Facing-Out-E

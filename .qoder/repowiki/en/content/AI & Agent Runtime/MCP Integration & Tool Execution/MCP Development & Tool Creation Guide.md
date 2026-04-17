@@ -10,7 +10,7 @@
 - [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
 - [main.py](file://server/app/agent_runtime/main.py)
 - [service.py](file://server/app/agent_runtime/service.py)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [test_mcp_server.py](file://server/tests/test_mcp_server.py)
 - [test_mcp_auth.py](file://server/tests/test_mcp_auth.py)
 - [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
@@ -91,7 +91,7 @@ J --> C
 - [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
 - [main.py](file://server/app/agent_runtime/main.py)
 - [service.py](file://server/app/agent_runtime/service.py)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [test_mcp_server.py](file://server/tests/test_mcp_server.py)
 - [test_mcp_auth.py](file://server/tests/test_mcp_auth.py)
 - [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
@@ -153,7 +153,7 @@ AR->>MCP : "Build plan and confirm before execution"
 - [server.py](file://server/app/mcp/server.py)
 - [main.py](file://server/app/agent_runtime/main.py)
 - [service.py](file://server/app/agent_runtime/service.py)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 
 ## Detailed Component Analysis
 
@@ -253,14 +253,14 @@ References:
 - Internal propose/execute endpoints: [main.py](file://server/app/agent_runtime/main.py)
 - Execution orchestration: [service.py](file://server/app/agent_runtime/service.py)
 - ADR on LLM-native routing: [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
-- Chat actions flow: [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- Chat actions flow: [ARCHITECTURE.md](file://ARCHITECTURE.md)
 
 **Section sources**
 - [llm_tool_router.py](file://server/app/agent_runtime/llm_tool_router.py)
 - [main.py](file://server/app/agent_runtime/main.py)
 - [service.py](file://server/app/agent_runtime/service.py)
 - [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 
 ### Practical Examples and Patterns
 - Read-only tool example: list_visible_patients returns filtered patient summaries.

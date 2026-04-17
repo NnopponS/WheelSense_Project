@@ -1,0 +1,10 @@
+%%================================================
+%% Abstract - English
+%%================================================
+
+This project develops a prototype smart environment for wheelchair users to improve safety, convenience, and independence in indoor settings, with an emphasis on an end-to-end data pipeline suitable for near real-time caregiver monitoring and decision support.
+The wheelchair device (M5StickC Plus2) collects motion signals via an IMU, battery status, and BLE RSSI scans for indoor localization. Indoor positioning uses BLE beacons and RSSI fingerprinting, with K-Nearest Neighbors (KNN) inference performed on the server under a reproducible fingerprint collection protocol and a fixed evaluation parameter profile.
+To support contextual situational awareness while avoiding continuous video streaming, an edge camera node, \texttt{Node\_Tsimcam} (ESP32-S3), transmits still photos over MQTT using a chunked payload scheme with an HTTP upload fallback when necessary; camera data is used for contextual verification and is not a primary feature input to the localization model.
+Physiological monitoring integrates Polar Verity Sense signals (e.g., heart rate and PPG) into the same telemetry pipeline, complemented by rule-based anomaly detection from accelerometer signals for baseline alerting. The application layer includes a caregiver web dashboard and a cross-platform mobile app (React Native + Expo) supporting portable usage and a walking-mode telemetry path, alongside Home Assistant integration for context-aware automation.
+The system also incorporates a local large language model (Gemma 4B) via the Model Context Protocol (MCP) under a propose--confirm--execute safety workflow to constrain tool usage and support grounded summarization.
+The prototype demonstrates an end-to-end pipeline from sensing to visualization. Remaining challenges include timestamp alignment across subsystems and deployment complexity, which motivate future improvements toward broader deployment in homes, hospitals, and assisted-care settings.

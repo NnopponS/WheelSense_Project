@@ -3,7 +3,7 @@
 <cite>
 **Referenced Files in This Document**
 - [README.md](file://README.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [server/AGENTS.md](file://server/AGENTS.md)
 - [server/docker-compose.yml](file://server/docker-compose.yml)
 - [server/pyproject.toml](file://server/pyproject.toml)
@@ -80,13 +80,13 @@ PROXY --> API
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:3-21](file://docs/ARCHITECTURE.md#L3-L21)
+- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
 - [server/AGENTS.md:34-46](file://server/AGENTS.md#L34-L46)
 - [frontend/README.md:24-51](file://frontend/README.md#L24-L51)
 
 **Section sources**
 - [README.md:1-74](file://README.md#L1-L74)
-- [ARCHITECTURE.md:3-21](file://docs/ARCHITECTURE.md#L3-L21)
+- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
 - [server/docker-compose.yml:1-10](file://server/docker-compose.yml#L1-L10)
 
 ## Core Components
@@ -127,11 +127,11 @@ F --> J["Home Assistant Integration<br/>/api/ha/*"]
 
 **Diagram sources**
 - [server/AGENTS.md:322-341](file://server/AGENTS.md#L322-L341)
-- [ARCHITECTURE.md:3-21](file://docs/ARCHITECTURE.md#L3-L21)
+- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
 
 **Section sources**
 - [server/AGENTS.md:34-46](file://server/AGENTS.md#L34-L46)
-- [ARCHITECTURE.md:23-111](file://docs/ARCHITECTURE.md#L23-L111)
+- [ARCHITECTURE.md:23-111](file://ARCHITECTURE.md#L23-L111)
 
 ## Detailed Component Analysis
 
@@ -175,12 +175,12 @@ Proxy-->>UI : "ExecutionStepList"
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:93-111](file://docs/ARCHITECTURE.md#L93-L111)
+- [ARCHITECTURE.md:93-111](file://ARCHITECTURE.md#L93-L111)
 - [server/AGENTS.md:402-425](file://server/AGENTS.md#L402-L425)
 
 **Section sources**
 - [server/AGENTS.md:126-291](file://server/AGENTS.md#L126-L291)
-- [ARCHITECTURE.md:23-111](file://docs/ARCHITECTURE.md#L23-L111)
+- [ARCHITECTURE.md:23-111](file://ARCHITECTURE.md#L23-L111)
 
 ### Frontend: Role-Based Dashboards and AI Chat
 - Next.js 16 with App Router, cookie-based auth, and a canonical /api/* proxy to the backend
@@ -204,7 +204,7 @@ ShowAnswer --> Done
 
 **Diagram sources**
 - [frontend/README.md:199-330](file://frontend/README.md#L199-L330)
-- [ARCHITECTURE.md:93-111](file://docs/ARCHITECTURE.md#L93-L111)
+- [ARCHITECTURE.md:93-111](file://ARCHITECTURE.md#L93-L111)
 
 **Section sources**
 - [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
@@ -270,11 +270,11 @@ AgentRuntime --> MCPServer : "calls tools"
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:27-80](file://docs/ARCHITECTURE.md#L27-L80)
+- [ARCHITECTURE.md:27-80](file://ARCHITECTURE.md#L27-L80)
 - [server/AGENTS.md:426-466](file://server/AGENTS.md#L426-L466)
 
 **Section sources**
-- [ARCHITECTURE.md:23-127](file://docs/ARCHITECTURE.md#L23-L127)
+- [ARCHITECTURE.md:23-127](file://ARCHITECTURE.md#L23-L127)
 - [server/AGENTS.md:426-486](file://server/AGENTS.md#L426-L486)
 
 ## Dependency Analysis
@@ -333,7 +333,7 @@ FW2["Firmware: Node_Tsimcam"] --> MQTT
 **Section sources**
 - [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
 - [frontend/README.md:41-51](file://frontend/README.md#L41-L51)
-- [ARCHITECTURE.md:128-139](file://docs/ARCHITECTURE.md#L128-L139)
+- [ARCHITECTURE.md:128-139](file://ARCHITECTURE.md#L128-L139)
 
 ## Conclusion
 WheelSense delivers a cohesive IoT + clinical workflow platform integrating hardware telemetry, secure AI/MCP orchestration, and role-based dashboards. Its modular architecture, strong access controls, and scalable runtime make it suitable for healthcare facilities seeking improved patient monitoring, care coordination, and operational insights. The platform’s documented ADRs and evolving frontend/backend contracts provide a clear path for continued development and deployment.

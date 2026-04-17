@@ -3,7 +3,7 @@
 <cite>
 **Referenced Files in This Document**
 - [README.md](file://README.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [server/docs/CONTRIBUTING.md](file://server/docs/CONTRIBUTING.md)
 - [server/pyproject.toml](file://server/pyproject.toml)
 - [server/mypy.ini](file://server/mypy.ini)
@@ -23,7 +23,9 @@
 - [server/scripts/start-prod.ps1](file://server/scripts/start-prod.ps1)
 - [server/tests/test_agent_runtime.py](file://server/tests/test_agent_runtime.py)
 - [server/tests/test_chat_actions_integration.py](file://server/tests/test_chat_actions_integration.py)
-- [docs/plans/wheelsense-full-roadmap.md](file://docs/plans/wheelsense-full-roadmap.md)
+- [testing/hospital-simulation/DESIGN.md](file://testing/hospital-simulation/DESIGN.md)
+- [testing/ux-testing-report.md](file://testing/ux-testing-report.md)
+- [wheelsense-full-roadmap-plan.md](file://wheelsense-full-roadmap-plan.md)
 </cite>
 
 ## Table of Contents
@@ -46,7 +48,8 @@ The repository is organized into three primary runtime layers and supporting doc
 - server/: FastAPI backend, PostgreSQL models, MQTT ingestion, MCP/LLM integration, CLI, and Home Assistant integration
 - frontend/: Next.js 16 role-based dashboards and UI components
 - firmware/: PlatformIO projects for M5StickCPlus2 (wheelchair telemetry) and Node_Tsimcam (camera/beacon)
-- docs/: architecture overview, ADRs, design notes (`docs/design/`), and implementation plans
+- docs/: ADRs and implementation plans
+- testing/: UX/browser tests and hospital-simulation test design/report
 - Code_Review/: iterative audits and closure logs
 
 ```mermaid
@@ -56,24 +59,24 @@ F["firmware/"]
 S["server/"]
 FE["frontend/"]
 end
-subgraph "Docs & QA"
+subgraph "Docs & Testing"
 D["docs/"]
-T["server/tests"]
+TST["testing/"]
 CR["Code_Review/"]
 end
 F --> S
 S --> FE
 D -. "ADR/process" .-> S
 D -. "ADR/process" .-> FE
-T -. "pytest" .-> S
-T -. "pytest" .-> FE
+TST -. "QA" .-> S
+TST -. "QA" .-> FE
 CR -. "Audit" .-> S
 CR -. "Audit" .-> FE
 ```
 
 **Section sources**
 - [README.md:1-74](file://README.md#L1-L74)
-- [ARCHITECTURE.md:1-275](file://docs/ARCHITECTURE.md#L1-L275)
+- [ARCHITECTURE.md:1-275](file://ARCHITECTURE.md#L1-L275)
 
 ## Core Components
 - Backend runtime (Python)
@@ -116,11 +119,11 @@ FE --> SV
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:322-351](file://docs/ARCHITECTURE.md#L322-L351)
+- [ARCHITECTURE.md:322-351](file://ARCHITECTURE.md#L322-L351)
 - [server/AGENTS.md:386-425](file://server/AGENTS.md#L386-L425)
 
 **Section sources**
-- [ARCHITECTURE.md:1-275](file://docs/ARCHITECTURE.md#L1-L275)
+- [ARCHITECTURE.md:1-275](file://ARCHITECTURE.md#L1-L275)
 - [server/AGENTS.md:1-614](file://server/AGENTS.md#L1-L614)
 
 ## Detailed Component Analysis
@@ -159,7 +162,7 @@ Best practices
 **Section sources**
 - [frontend/eslint.config.mjs:1-19](file://frontend/eslint.config.mjs#L1-L19)
 - [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 - [server/AGENTS.md:560-590](file://server/AGENTS.md#L560-L590)
 
 ### Firmware Coding Standards and Style Guides (C++)
@@ -187,11 +190,15 @@ Best practices
   - Coverage targets and quality gates (coverage, type checks, lint, security scanning)
 - Frontend testing
   - TanStack Query patterns, suspense boundaries, and role-specific UI flows
-- End-to-end and UX flows
-  - Prefer automated checks in `server/tests` and targeted frontend verification; ad-hoc browser reports previously lived under a removed `testing/` tree
+- End-to-end simulation
+  - Hospital-day simulation design with parallel agents and success criteria
+- UX/browser testing
+  - Automated browser testing across roles with screenshot capture and error logging
 
 **Section sources**
 - [server/AGENTS.md:524-559](file://server/AGENTS.md#L524-L559)
+- [testing/hospital-simulation/DESIGN.md:1-62](file://testing/hospital-simulation/DESIGN.md#L1-L62)
+- [testing/ux-testing-report.md:1-45](file://testing/ux-testing-report.md#L1-L45)
 
 ### Architectural Decision Record (ADR) Process
 - Purpose
@@ -214,7 +221,7 @@ Best practices
   - Iterative code review closures and remediation logs
 
 **Section sources**
-- [wheelsense-full-roadmap.md:1-173](file://docs/plans/wheelsense-full-roadmap.md#L1-L173)
+- [wheelsense-full-roadmap-plan.md:1-173](file://wheelsense-full-roadmap-plan.md#L1-L173)
 - [Code_Review/iter-1/README.md:1-10](file://Code_Review/iter-1/README.md#L1-L10)
 
 ### Development Workflow, Branching Strategies, and Version Control Practices
@@ -242,7 +249,7 @@ Best practices
 **Section sources**
 - [server/docker-compose.yml:1-9](file://server/docker-compose.yml#L1-L9)
 - [server/docker-compose.data-prod.yml:1-28](file://server/docker-compose.data-prod.yml#L1-L28)
-- [wheelsense-full-roadmap.md:156-173](file://docs/plans/wheelsense-full-roadmap.md#L156-L173)
+- [wheelsense-full-roadmap-plan.md:156-173](file://wheelsense-full-roadmap-plan.md#L156-L173)
 
 ### Debugging Procedures, Profiling Techniques, and Performance Optimization
 - Backend
@@ -255,7 +262,7 @@ Best practices
 **Section sources**
 - [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
 - [server/AGENTS.md:322-351](file://server/AGENTS.md#L322-L351)
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 - [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
 
 ### Contribution Guidelines, Community Standards, and Collaboration Practices
@@ -268,7 +275,7 @@ Best practices
 
 **Section sources**
 - [server/docs/CONTRIBUTING.md:67-79](file://server/docs/CONTRIBUTING.md#L67-L79)
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 - [server/AGENTS.md:599-614](file://server/AGENTS.md#L599-L614)
 
 ### Code Documentation Standards and Testing Requirements
@@ -277,11 +284,13 @@ Best practices
 - Frontend
   - Generated OpenAPI types, role contracts, and UI component responsibilities
 - Testing
-  - Focused PyTest suites under `server/tests`, ADR-0007 service-layer expectations, and targeted frontend checks
+  - Scenario-based hospital simulation, automated browser testing, and focused PyTest suites
 
 **Section sources**
 - [docs/adr/0007-tdd-service-layer-architecture.md:1-63](file://docs/adr/0007-tdd-service-layer-architecture.md#L1-L63)
 - [server/AGENTS.md:524-559](file://server/AGENTS.md#L524-L559)
+- [testing/hospital-simulation/DESIGN.md:1-62](file://testing/hospital-simulation/DESIGN.md#L1-L62)
+- [testing/ux-testing-report.md:1-45](file://testing/ux-testing-report.md#L1-L45)
 
 ### Deployment Procedures
 - Production mode
@@ -345,7 +354,7 @@ PKG --> |"TanStack Query, OpenAPI"| PKG
 **Section sources**
 - [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
 - [server/AGENTS.md:322-351](file://server/AGENTS.md#L322-L351)
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 - [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
 
 ## Conclusion
@@ -365,5 +374,5 @@ These guidelines consolidate WheelSense Platform development practices across Py
 
 **Section sources**
 - [server/AGENTS.md:524-559](file://server/AGENTS.md#L524-L559)
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 - [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)

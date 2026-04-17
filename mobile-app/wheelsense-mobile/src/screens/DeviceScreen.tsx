@@ -13,49 +13,49 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { usePolarStore, useBeacons, useAppStore } from '../store/useAppStore';
+import { usePolar, useBeacons, useAppStore } from '../store/useAppStore';
 import { Polar as PolarService } from '../services/PolarService';
 import { BLEScanner } from '../services/BLEScanner';
 import { PolarDevice, BLEBeacon } from '../types';
-import { colors, radius, space } from '../theme/tokens';
 
 type DeviceScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Devices'>;
 };
 
 export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
-  const { t } = useTranslation();
-  const polar = usePolarStore();
+  const polar = usePolar();
   const beacons = useBeacons();
   const settings = useAppStore((state) => state.settings);
   
   const [isScanningPolar, setIsScanningPolar] = useState(false);
+  const [foundPolarDevices, setFoundPolarDevices] = useState<PolarDevice[]>([]);
   const [connectingDeviceId, setConnectingDeviceId] = useState<string | null>(null);
-
-  const foundPolarDevices = polar.polarDiscoveredDevices;
 
   // Polar device discovery
   const scanForPolarDevices = async () => {
     if (!PolarService.isAvailable()) {
-      Alert.alert(t('common.error'), t('device.polarNotAvailable'));
+      Alert.alert('Error', 'Polar SDK is not available on this device');
       return;
     }
 
     setIsScanningPolar(true);
-    polar.clearPolarDiscovery();
+    setFoundPolarDevices([]);
 
     try {
       await PolarService.searchForDevice();
+      
+      // Wait for devices to be found (simulated - in real app, listen to discovery events)
+      setTimeout(() => {
+        setIsScanningPolar(false);
+      }, 10000);
     } catch (error) {
       console.error('[DeviceScreen] Polar scan failed:', error);
-      Alert.alert(t('common.error'), t('device.polarScanFailed'));
-    } finally {
       setIsScanningPolar(false);
+      Alert.alert('Error', 'Failed to scan for Polar devices');
     }
   };
 
@@ -64,9 +64,9 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
     
     try {
       await PolarService.connect(deviceId);
-      Alert.alert(t('common.success'), t('device.polarConnected'));
+      Alert.alert('Success', 'Connected to Polar device');
     } catch (error: any) {
-      Alert.alert(t('device.connectionFailed'), error.message || 'Failed to connect');
+      Alert.alert('Connection Failed', error.message || 'Failed to connect');
     } finally {
       setConnectingDeviceId(null);
     }
@@ -75,9 +75,9 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
   const disconnectPolar = async () => {
     try {
       await PolarService.disconnect();
-      Alert.alert(t('home.disconnected'), t('device.polarDisconnected'));
+      Alert.alert('Disconnected', 'Polar device disconnected');
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message || 'Failed to disconnect');
+      Alert.alert('Error', error.message || 'Failed to disconnect');
     }
   };
 
@@ -85,7 +85,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
     try {
       await PolarService.startHRStreaming();
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message);
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -97,7 +97,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
     try {
       await PolarService.startPPGStreaming();
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message);
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -133,35 +133,35 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
           <>
             {/* Polar Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('device.polarTitle')}</Text>
+              <Text style={styles.sectionTitle}>Polar Verity Sense</Text>
               
-              {!PolarService.isAvailable() ? (
+              {!polar.isAvailable ? (
                 <View style={styles.unavailableCard}>
                   <Text style={styles.unavailableText}>
-                    {t('device.polarNotAvailable')}
+                    Polar SDK not available
                   </Text>
                 </View>
-              ) : polar.isPolarConnected ? (
+              ) : polar.isConnected ? (
                 <View style={styles.connectedCard}>
                   <View style={styles.deviceHeader}>
                     <Text style={styles.deviceName}>
-                      {polar.polarDevice?.name || t('device.polarTitle')}
+                      {polar.device?.name || 'Polar Device'}
                     </Text>
                     <View style={styles.statusBadge}>
-                      <Text style={styles.statusText}>{t('device.polarConnected')}</Text>
+                      <Text style={styles.statusText}>Connected</Text>
                     </View>
                   </View>
                   
-                  {polar.polarDevice?.batteryLevel !== undefined && (
+                  {polar.device?.batteryLevel !== undefined && (
                     <Text style={styles.batteryText}>
-                      {t('device.polarBattery', { level: polar.polarDevice.batteryLevel })}
+                      Battery: {polar.device.batteryLevel}%
                     </Text>
                   )}
                   
                   {polar.lastHR && (
                     <View style={styles.metricRow}>
-                      <Text style={styles.metricLabel}>{t('home.heartRate')}:</Text>
-                      <Text style={styles.metricValue}>{polar.lastHR.bpm} {t('home.bpm')}</Text>
+                      <Text style={styles.metricLabel}>Heart Rate:</Text>
+                      <Text style={styles.metricValue}>{polar.lastHR.bpm} BPM</Text>
                     </View>
                   )}
                   
@@ -170,13 +170,13 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
                       style={[styles.actionButton, styles.startButton]}
                       onPress={startHR}
                     >
-                      <Text style={styles.buttonText}>{t('device.polarStartHR')}</Text>
+                      <Text style={styles.buttonText}>Start HR</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.stopButton]}
                       onPress={stopHR}
                     >
-                      <Text style={styles.buttonText}>{t('device.polarStopHR')}</Text>
+                      <Text style={styles.buttonText}>Stop HR</Text>
                     </TouchableOpacity>
                   </View>
                   
@@ -185,13 +185,13 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
                       style={[styles.actionButton, styles.startButton]}
                       onPress={startPPG}
                     >
-                      <Text style={styles.buttonText}>{t('device.polarStartPPG')}</Text>
+                      <Text style={styles.buttonText}>Start PPG</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.stopButton]}
                       onPress={stopPPG}
                     >
-                      <Text style={styles.buttonText}>{t('device.polarStopPPG')}</Text>
+                      <Text style={styles.buttonText}>Stop PPG</Text>
                     </TouchableOpacity>
                   </View>
                   
@@ -199,7 +199,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
                     style={[styles.disconnectButton]}
                     onPress={disconnectPolar}
                   >
-                    <Text style={styles.disconnectButtonText}>{t('device.polarDisconnect')}</Text>
+                    <Text style={styles.disconnectButtonText}>Disconnect</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -213,14 +213,14 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
                       <ActivityIndicator color="#fff" />
                     ) : (
                       <Text style={styles.scanButtonText}>
-                        {t('device.polarScan')}
+                        Scan for Polar Devices
                       </Text>
                     )}
                   </TouchableOpacity>
                   
                   {foundPolarDevices.length > 0 && (
                     <View style={styles.deviceList}>
-                      <Text style={styles.listTitle}>{t('device.polarFound')}</Text>
+                      <Text style={styles.listTitle}>Found Devices:</Text>
                       {foundPolarDevices.map((device) => (
                         <TouchableOpacity
                           key={device.deviceId}
@@ -243,14 +243,14 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
             {/* BLE Beacons Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{t('device.beaconsTitle')}</Text>
+                <Text style={styles.sectionTitle}>BLE Beacons</Text>
                 <TouchableOpacity
                   style={styles.scanBeaconButton}
                   onPress={() => BLEScanner.startScanning()}
                   disabled={beacons.isScanningBeacons}
                 >
                   <Text style={styles.scanBeaconText}>
-                    {beacons.isScanningBeacons ? t('device.beaconsScanning') : t('device.beaconsScan')}
+                    {beacons.isScanningBeacons ? 'Scanning...' : 'Scan'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -258,7 +258,7 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
               {beacons.detectedBeacons.length === 0 ? (
                 <View style={styles.emptyCard}>
                   <Text style={styles.emptyText}>
-                    {t('device.beaconsEmpty')}
+                    No beacons detected. Tap Scan to search.
                   </Text>
                 </View>
               ) : null}
@@ -277,191 +277,183 @@ export const DeviceScreen: React.FC<DeviceScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: '#f5f5f5',
   },
   listContent: {
-    padding: space.md,
+    padding: 16,
   },
   section: {
-    marginBottom: space.lg,
+    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: space.sm + 2,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#333',
   },
   unavailableCard: {
-    backgroundColor: colors.primaryMuted,
-    padding: space.md,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: '#ffebee',
+    padding: 16,
+    borderRadius: 8,
   },
   unavailableText: {
-    color: colors.danger,
+    color: '#c62828',
     textAlign: 'center',
   },
   connectedCard: {
-    backgroundColor: colors.surface,
-    padding: space.md,
-    borderRadius: radius.sm,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.success,
+    borderColor: '#4caf50',
   },
   deviceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: space.sm,
+    marginBottom: 8,
   },
   deviceName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: '#333',
   },
   statusBadge: {
-    backgroundColor: colors.success,
+    backgroundColor: '#4caf50',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   statusText: {
-    color: colors.surface,
+    color: '#fff',
     fontSize: 12,
     fontWeight: '600',
   },
   batteryText: {
     fontSize: 14,
-    color: colors.textMuted,
-    marginBottom: space.sm + 2,
+    color: '#666',
+    marginBottom: 12,
   },
   metricRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: space.sm,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#eee',
   },
   metricLabel: {
     fontSize: 14,
-    color: colors.textMuted,
+    color: '#666',
   },
   metricValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.danger,
+    color: '#e53935',
   },
   buttonRow: {
     flexDirection: 'row',
-    marginTop: space.sm + 2,
+    marginTop: 12,
     gap: 8,
   },
   actionButton: {
     flex: 1,
-    padding: space.sm + 2,
-    borderRadius: radius.sm,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
   startButton: {
-    backgroundColor: colors.success,
+    backgroundColor: '#4caf50',
   },
   stopButton: {
-    backgroundColor: colors.danger,
+    backgroundColor: '#f44336',
   },
   buttonText: {
-    color: colors.surface,
+    color: '#fff',
     fontWeight: '600',
   },
   disconnectButton: {
-    backgroundColor: colors.textMuted,
-    padding: space.sm + 2,
-    borderRadius: radius.sm,
+    backgroundColor: '#757575',
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: space.sm + 2,
+    marginTop: 12,
   },
   disconnectButtonText: {
-    color: colors.surface,
+    color: '#fff',
     fontWeight: '600',
   },
   scanSection: {
-    backgroundColor: colors.surface,
-    padding: space.md,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
   },
   scanButton: {
-    backgroundColor: colors.primary,
-    padding: space.md,
-    borderRadius: radius.sm,
+    backgroundColor: '#0052cc',
+    padding: 16,
+    borderRadius: 8,
     alignItems: 'center',
   },
   scanButtonText: {
-    color: colors.surface,
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
   deviceList: {
-    marginTop: space.md,
+    marginTop: 16,
   },
   listTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
-    marginBottom: space.sm,
+    color: '#333',
+    marginBottom: 8,
   },
   deviceItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: space.sm + 2,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.sm,
-    marginBottom: space.sm,
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    marginBottom: 8,
   },
   deviceItemName: {
     fontSize: 14,
-    color: colors.text,
+    color: '#333',
   },
   scanBeaconButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
+    backgroundColor: '#0052cc',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 4,
   },
   scanBeaconText: {
-    color: colors.surface,
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
   },
   emptyCard: {
-    backgroundColor: colors.surface,
-    padding: space.lg,
-    borderRadius: radius.sm,
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 8,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   emptyText: {
-    color: colors.textMuted,
+    color: '#999',
     textAlign: 'center',
   },
   beaconItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    padding: space.md,
-    borderRadius: radius.sm,
-    marginBottom: space.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   beaconInfo: {
     flex: 1,
@@ -469,11 +461,11 @@ const styles = StyleSheet.create({
   beaconName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: '#333',
   },
   beaconMac: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: '#999',
     marginTop: 4,
   },
   beaconSignal: {
@@ -485,13 +477,13 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
   signalStrong: {
-    color: colors.success,
+    color: '#4caf50',
   },
   signalMedium: {
     color: '#ff9800',
   },
   signalWeak: {
-    color: colors.danger,
+    color: '#f44336',
   },
 });
 

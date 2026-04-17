@@ -18,23 +18,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { useSettings, useAppMode, useAppStore } from '../store/useAppStore';
+import { useSettings, useAppMode } from '../store/useAppStore';
 import { mqttService } from '../services/MQTTService';
 import { BLEScanner } from '../services/BLEScanner';
 import { NotificationManager } from '../services/NotificationService';
-import { setBackgroundMonitoringEnabled } from '../services/BackgroundRuntimeService';
-import { useTranslation } from 'react-i18next';
-import { colors, radius, space } from '../theme/tokens';
 
 type SettingsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 };
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
-  const { t, i18n } = useTranslation();
   const { settings, updateSettings, resetSettings } = useSettings();
   const { appMode, setAppMode } = useAppMode();
   
+  const [serverUrl, setServerUrl] = useState(settings.serverUrl);
   const [mqttBroker, setMqttBroker] = useState(settings.mqttBroker);
   const [mqttPort, setMqttPort] = useState(settings.mqttPort.toString());
   const [scanInterval, setScanInterval] = useState(settings.scanInterval.toString());
@@ -42,33 +39,33 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
   const saveSettings = () => {
     updateSettings({
+      serverUrl,
       mqttBroker,
       mqttPort: parseInt(mqttPort, 10) || 1883,
       scanInterval: parseInt(scanInterval, 10) || 5000,
       telemetryInterval: parseInt(telemetryInterval, 10) || 1000,
     });
     
-    
-    Alert.alert(t('common.success'), t('settings.settingsSaved'));
+    Alert.alert('Success', 'Settings saved successfully');
   };
 
   const handleReset = () => {
     Alert.alert(
-      t('settings.resetDefaults'),
-      t('settings.resetConfirm'),
+      'Reset Settings',
+      'Are you sure you want to reset all settings to defaults?',
       [
-        { text: t('common.cancel'), style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: t('common.reset'),
+          text: 'Reset',
           style: 'destructive',
           onPress: () => {
             resetSettings();
-            const s = useAppStore.getState().settings;
-            setMqttBroker(s.mqttBroker);
-            setMqttPort(String(s.mqttPort));
-            setScanInterval(String(s.scanInterval));
-            setTelemetryInterval(String(s.telemetryInterval));
-            Alert.alert(t('common.success'), t('settings.settingsReset'));
+            setServerUrl(settings.serverUrl);
+            setMqttBroker(settings.mqttBroker);
+            setMqttPort(settings.mqttPort.toString());
+            setScanInterval(settings.scanInterval.toString());
+            setTelemetryInterval(settings.telemetryInterval.toString());
+            Alert.alert('Success', 'Settings reset to defaults');
           },
         },
       ]
@@ -77,14 +74,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
   const testMQTTConnection = async () => {
     try {
-      const connected = mqttService.isConnectedToBroker();
-      if (connected) {
-        Alert.alert(t('common.success'), t('settings.mqttConnected'));
-      } else {
-        Alert.alert(t('home.disconnected'), t('settings.mqttNotConnected'));
-      }
+      await MQTT.connect({
+        host: mqttBroker,
+        port: parseInt(mqttPort, 10) || 1883,
+        clientId: `test_${Date.now()}`,
+      });
+      Alert.alert('Success', 'MQTT connection successful');
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message || 'Unable to check MQTT status');
+      Alert.alert('Connection Failed', error.message || 'Failed to connect to MQTT broker');
     }
   };
 
@@ -96,9 +93,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         { type: 'test' },
         2
       );
-      Alert.alert(t('common.success'), t('settings.notificationScheduled'));
+      Alert.alert('Success', 'Test notification scheduled (will appear in 2 seconds)');
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.message || 'Failed to schedule notification');
+      Alert.alert('Error', error.message || 'Failed to schedule notification');
     }
   };
 
@@ -107,12 +104,29 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       <StatusBar style="dark" />
       
       <ScrollView style={styles.scrollView}>
-        {/* MQTT Settings */}
+        {/* Server Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.mqttConfig')}</Text>
+          <Text style={styles.sectionTitle}>Server Configuration</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('settings.mqttBroker')}</Text>
+            <Text style={styles.label}>Server URL</Text>
+            <TextInput
+              style={styles.input}
+              value={serverUrl}
+              onChangeText={setServerUrl}
+              placeholder="https://wheelsense.local"
+              autoCapitalize="none"
+              keyboardType="url"
+            />
+          </View>
+        </View>
+
+        {/* MQTT Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>MQTT Configuration</Text>
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>MQTT Broker</Text>
             <TextInput
               style={styles.input}
               value={mqttBroker}
@@ -123,7 +137,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('settings.mqttPort')}</Text>
+            <Text style={styles.label}>MQTT Port</Text>
             <TextInput
               style={styles.input}
               value={mqttPort}
@@ -137,16 +151,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             style={styles.testButton}
             onPress={testMQTTConnection}
           >
-            <Text style={styles.testButtonText}>{t('settings.testMQTT')}</Text>
+            <Text style={styles.testButtonText}>Test MQTT Connection</Text>
           </TouchableOpacity>
         </View>
 
         {/* Scanning Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.scanConfig')}</Text>
+          <Text style={styles.sectionTitle}>Scanning Configuration</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('settings.bleScanInterval')}</Text>
+            <Text style={styles.label}>BLE Scan Interval (ms)</Text>
             <TextInput
               style={styles.input}
               value={scanInterval}
@@ -157,7 +171,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('settings.telemetryInterval')}</Text>
+            <Text style={styles.label}>Telemetry Interval (ms)</Text>
             <TextInput
               style={styles.input}
               value={telemetryInterval}
@@ -168,66 +182,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
         </View>
 
-        {(!!settings.portalBaseUrl?.trim() || settings.linkedPatientId != null) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Portal & pairing</Text>
-            {!!settings.portalBaseUrl?.trim() && (
-              <Text style={styles.metaText} selectable>
-                {settings.portalBaseUrl?.trim()}
-              </Text>
-            )}
-            {settings.linkedPatientId != null && (
-              <Text style={styles.metaText}>
-                Patient ID: {settings.linkedPatientId}
-              </Text>
-            )}
-            <Text style={styles.metaHint}>
-              Values are pushed from the server over MQTT when an admin pairs this device.
-            </Text>
-          </View>
-        )}
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.background')}</Text>
-          <View style={styles.modeRow}>
-            <View style={styles.modeInfo}>
-              <Text style={styles.modeLabel}>{t('home.backgroundMonitoring')}</Text>
-              <Text style={styles.modeDescription}>{t('home.backgroundMonitoringHint')}</Text>
-            </View>
-            <Switch
-              value={!!settings.backgroundMonitoringEnabled}
-              onValueChange={(value) => {
-                if (value) {
-                  Alert.alert(t('home.backgroundMonitoringTitle'), t('home.backgroundMonitoringExplain'), [
-                    { text: t('common.cancel'), style: 'cancel' },
-                    {
-                      text: t('common.ok'),
-                      onPress: () => setBackgroundMonitoringEnabled(true),
-                    },
-                  ]);
-                } else {
-                  setBackgroundMonitoringEnabled(false);
-                }
-              }}
-              trackColor={{ false: '#767577', true: '#0052cc' }}
-              thumbColor="#f4f3f4"
-            />
-          </View>
-        </View>
-
         {/* App Mode */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.appMode')}</Text>
+          <Text style={styles.sectionTitle}>App Mode</Text>
           
           <View style={styles.modeRow}>
             <View style={styles.modeInfo}>
               <Text style={styles.modeLabel}>
-                {appMode === 'wheelchair' ? `🦽 ${t('settings.wheelchairMode')}` : `🚶 ${t('settings.walkingMode')}`}
+                {appMode === 'wheelchair' ? '🦽 Wheelchair Mode' : '🚶 Walking Mode'}
               </Text>
               <Text style={styles.modeDescription}>
                 {appMode === 'wheelchair'
-                  ? t('settings.wheelchairDesc')
-                  : t('settings.walkingDesc')}
+                  ? 'For wheelchair users with M5StickC gateway'
+                  : 'For independent walking with mobile sensors'}
               </Text>
             </View>
             <Switch
@@ -239,38 +206,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           </View>
         </View>
 
-        {/* Language Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
-          <View style={styles.languageRow}>
-            <TouchableOpacity 
-              style={[styles.languageBtn, i18n.language === 'en' && styles.languageBtnActive]}
-              onPress={() => i18n.changeLanguage('en')}
-            >
-              <Text style={[styles.languageBtnText, i18n.language === 'en' && styles.languageBtnTextActive]}>
-                {t('settings.english')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.languageBtn, i18n.language === 'th' && styles.languageBtnActive]}
-              onPress={() => i18n.changeLanguage('th')}
-            >
-              <Text style={[styles.languageBtnText, i18n.language === 'th' && styles.languageBtnTextActive]}>
-                {t('settings.thai')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Notifications */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
+          <Text style={styles.sectionTitle}>Notifications</Text>
           
           <TouchableOpacity
             style={styles.testButton}
             onPress={testNotifications}
           >
-            <Text style={styles.testButtonText}>{t('settings.testNotification')}</Text>
+            <Text style={styles.testButtonText}>Test Push Notification</Text>
           </TouchableOpacity>
         </View>
 
@@ -280,21 +224,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
             style={styles.saveButton}
             onPress={saveSettings}
           >
-            <Text style={styles.saveButtonText}>{t('settings.saveSettings')}</Text>
+            <Text style={styles.saveButtonText}>Save Settings</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
             style={styles.resetButton}
             onPress={handleReset}
           >
-            <Text style={styles.resetButtonText}>{t('settings.resetDefaults')}</Text>
+            <Text style={styles.resetButtonText}>Reset to Defaults</Text>
           </TouchableOpacity>
         </View>
 
         {/* Version Info */}
         <View style={styles.versionSection}>
-          <Text style={styles.versionText}>{t('settings.version')} v1.0.0</Text>
-          <Text style={styles.buildText}>{t('settings.build')} 2026.04.16</Text>
+          <Text style={styles.versionText}>WheelSense Mobile v1.0.0</Text>
+          <Text style={styles.buildText}>Build 2026.04.16</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -304,62 +248,49 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: '#f5f5f5',
   },
   scrollView: {
     flex: 1,
   },
   section: {
-    backgroundColor: colors.surface,
-    margin: space.md,
-    marginBottom: space.sm,
-    padding: space.md,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: '#fff',
+    margin: 16,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 8,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: space.md,
-  },
-  metaText: {
-    fontSize: 14,
-    color: colors.text,
-    marginBottom: space.sm,
-  },
-  metaHint: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: space.sm,
+    color: '#333',
+    marginBottom: 16,
   },
   inputGroup: {
-    marginBottom: space.md,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text,
-    marginBottom: space.sm,
+    color: '#333',
+    marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    padding: space.sm + 2,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
-    backgroundColor: colors.surfaceMuted,
-    color: colors.text,
+    backgroundColor: '#f9f9f9',
   },
   testButton: {
-    backgroundColor: colors.primaryMuted,
-    padding: space.sm + 2,
-    borderRadius: radius.sm,
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
   testButtonText: {
-    color: colors.primary,
+    color: '#0052cc',
     fontWeight: '600',
   },
   modeRow: {
@@ -369,82 +300,53 @@ const styles = StyleSheet.create({
   },
   modeInfo: {
     flex: 1,
-    marginRight: space.md,
+    marginRight: 16,
   },
   modeLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: '#333',
   },
   modeDescription: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: '#666',
     marginTop: 4,
   },
   saveButton: {
-    backgroundColor: colors.primary,
-    padding: space.md,
-    borderRadius: radius.sm,
+    backgroundColor: '#0052cc',
+    padding: 16,
+    borderRadius: 8,
     alignItems: 'center',
   },
   saveButtonText: {
-    color: colors.surface,
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
   resetButton: {
-    backgroundColor: colors.surfaceMuted,
-    padding: space.md,
-    borderRadius: radius.sm,
+    backgroundColor: '#f5f5f5',
+    padding: 16,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: space.sm + 2,
-    borderWidth: 1,
-    borderColor: colors.border,
+    marginTop: 12,
   },
   resetButtonText: {
-    color: colors.danger,
+    color: '#f44336',
     fontSize: 16,
     fontWeight: '600',
   },
   versionSection: {
     alignItems: 'center',
-    padding: space.lg,
+    padding: 24,
   },
   versionText: {
     fontSize: 14,
-    color: colors.textMuted,
+    color: '#666',
   },
   buildText: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: '#999',
     marginTop: 4,
-  },
-  languageRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  languageBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: space.sm + 2,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    backgroundColor: colors.surfaceMuted,
-  },
-  languageBtnActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryMuted,
-  },
-  languageBtnText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textMuted,
-  },
-  languageBtnTextActive: {
-    color: colors.primary,
-    fontWeight: '600',
   },
 });
 

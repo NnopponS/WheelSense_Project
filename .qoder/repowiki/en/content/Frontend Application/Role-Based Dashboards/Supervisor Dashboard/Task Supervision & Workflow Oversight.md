@@ -13,7 +13,7 @@
 - [frontend/lib/workflowTaskBoard.ts](file://frontend/lib/workflowTaskBoard.ts)
 - [frontend/components/supervisor/DataTableCard.tsx](file://frontend/components/supervisor/DataTableCard.tsx)
 - [frontend/components/supervisor/SummaryStatCard.tsx](file://frontend/components/supervisor/SummaryStatCard.tsx)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 </cite>
 
 ## Table of Contents
@@ -122,7 +122,7 @@ Q-->>OC : Render queue, reports, audit
 - [frontend/components/workflow/OperationsConsole.tsx:763-800](file://frontend/components/workflow/OperationsConsole.tsx#L763-L800)
 
 **Section sources**
-- [ARCHITECTURE.md:249-251](file://docs/ARCHITECTURE.md#L249-L251)
+- [ARCHITECTURE.md:249-251](file://ARCHITECTURE.md#L249-L251)
 
 ## Detailed Component Analysis
 
@@ -340,7 +340,7 @@ WTK --> WTBL["workflowTaskBoard utils"]
 - [frontend/lib/workflowTaskBoard.ts:6-47](file://frontend/lib/workflowTaskBoard.ts#L6-L47)
 
 **Section sources**
-- [ARCHITECTURE.md:249-251](file://docs/ARCHITECTURE.md#L249-L251)
+- [ARCHITECTURE.md:249-251](file://ARCHITECTURE.md#L249-L251)
 
 ## Performance Considerations
 - Use paginated and sortable tables for large datasets.

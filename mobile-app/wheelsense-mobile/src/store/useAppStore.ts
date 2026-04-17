@@ -1,29 +1,30 @@
 /**
  * WheelSense Mobile App - Zustand Store
- * Global state management for MQTT connection, devices, and app settings
+ * Global state management for auth, devices, and app settings
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  User,
+  UserRole,
+  Patient,
   AppMode,
   BLEBeacon,
   HeartRateData,
   PPGData,
   PolarDevice,
   AppSettings,
-  WalkStepData,
-  RoomPredictionResult,
 } from '../types';
 
 // ==================== STORE INTERFACES ====================
 
-interface ConnectionState {
-  deviceId: string;
-  deviceName: string;
-  isMQTTConnected: boolean;
-  isDeviceRegistered: boolean;
+interface AuthState {
+  authToken: string | null;
+  refreshToken: string | null;
+  user: User | null;
+  isAuthenticated: boolean;
 }
 
 interface DeviceState {
@@ -31,39 +32,31 @@ interface DeviceState {
   polarDevice: PolarDevice | null;
   isPolarConnected: boolean;
   isPolarScanning: boolean;
-  /** Ephemeral BLE scan results (Polar / Verity names); not persisted */
-  polarDiscoveredDevices: PolarDevice[];
   lastHR?: HeartRateData;
   lastPPG?: PPGData;
-
+  
   // BLE beacons
   detectedBeacons: BLEBeacon[];
   closestBeacon?: BLEBeacon;
   isScanningBeacons: boolean;
-
+  
   // App mode
   appMode: AppMode;
-
-  // Walk steps
-  walkSteps: WalkStepData | null;
-
-  // Room prediction (from server)
-  roomPrediction: RoomPredictionResult | null;
 }
 
 interface UIState {
   isLoading: boolean;
   error: string | null;
   currentScreen: string;
+  notificationsEnabled: boolean;
 }
 
 // ==================== STORE ACTIONS ====================
 
-interface ConnectionActions {
-  setMQTTConnected: (connected: boolean) => void;
-  setDeviceRegistered: (registered: boolean) => void;
-  setDeviceInfo: (deviceId: string, deviceName: string) => void;
-  disconnectAll: () => void;
+interface AuthActions {
+  setAuth: (token: string, user: User) => void;
+  clearAuth: () => void;
+  updateUser: (user: Partial<User>) => void;
 }
 
 interface DeviceActions {
@@ -71,52 +64,41 @@ interface DeviceActions {
   setPolarDevice: (device: PolarDevice | null) => void;
   setPolarConnection: (connected: boolean) => void;
   setPolarScanning: (scanning: boolean) => void;
-  clearPolarDiscovery: () => void;
-  reportPolarDiscovered: (device: PolarDevice) => void;
   setLastHR: (hr: HeartRateData) => void;
   setLastPPG: (ppg: PPGData) => void;
-
+  
   // Beacon actions
   addBeacon: (beacon: BLEBeacon) => void;
   updateBeacon: (nodeKey: string, updates: Partial<BLEBeacon>) => void;
   removeStaleBeacons: (maxAgeMs: number) => void;
   clearBeacons: () => void;
   setScanningBeacons: (scanning: boolean) => void;
-
+  
   // App mode
   setAppMode: (mode: AppMode) => void;
-
-  // Walk steps
-  setWalkSteps: (steps: WalkStepData) => void;
-  clearWalkSteps: () => void;
-
-  // Room prediction
-  setRoomPrediction: (prediction: RoomPredictionResult | null) => void;
 }
 
 interface UIActions {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setCurrentScreen: (screen: string) => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
   clearError: () => void;
 }
 
 // ==================== DEFAULT SETTINGS ====================
 
 const defaultSettings: AppSettings = {
-  deviceName: '',
-  mqttBroker: 'broker.emqx.io',
+  serverUrl: 'https://wheelsense.local',
+  mqttBroker: 'wheelsense.local',
   mqttPort: 1883,
-  scanInterval: 5000,
-  telemetryInterval: 3000,
-  language: 'en',
-  portalBaseUrl: '',
-  backgroundMonitoringEnabled: false,
+  scanInterval: 5000,      // 5 seconds
+  telemetryInterval: 1000, // 1 second
 };
 
 // ==================== STORE DEFINITION ====================
 
-interface AppStore extends ConnectionState, DeviceState, UIState, ConnectionActions, DeviceActions, UIActions {
+interface AppStore extends AuthState, DeviceState, UIState, AuthActions, DeviceActions, UIActions {
   settings: AppSettings;
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetSettings: () => void;
@@ -125,71 +107,64 @@ interface AppStore extends ConnectionState, DeviceState, UIState, ConnectionActi
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
-      // Connection state
-      deviceId: '',
-      deviceName: '',
-      isMQTTConnected: false,
-      isDeviceRegistered: false,
+      // Auth state
+      authToken: null,
+      refreshToken: null,
+      user: null,
+      isAuthenticated: false,
 
       // Device state
       polarDevice: null,
       isPolarConnected: false,
       isPolarScanning: false,
-      polarDiscoveredDevices: [],
       detectedBeacons: [],
       closestBeacon: undefined,
       isScanningBeacons: false,
       appMode: 'walking',
-      walkSteps: null,
-      roomPrediction: null,
 
       // UI state
       isLoading: false,
       error: null,
       currentScreen: 'home',
+      notificationsEnabled: false,
 
       // Settings
       settings: defaultSettings,
 
-      // Connection actions
-      setMQTTConnected: (connected) =>
-        set({ isMQTTConnected: connected, error: null }),
-
-      setDeviceRegistered: (registered) =>
-        set({ isDeviceRegistered: registered }),
-
-      setDeviceInfo: (deviceId, deviceName) =>
-        set({ deviceId, deviceName }),
-
-      disconnectAll: () =>
+      // Auth actions
+      setAuth: (token, user) =>
         set({
-          isMQTTConnected: false,
-          isDeviceRegistered: false,
-          detectedBeacons: [],
-          closestBeacon: undefined,
-          roomPrediction: null,
-          walkSteps: null,
-          polarDiscoveredDevices: [],
+          authToken: token,
+          user,
+          isAuthenticated: true,
+          error: null,
         }),
 
+      clearAuth: () =>
+        set({
+          authToken: null,
+          refreshToken: null,
+          user: null,
+          isAuthenticated: false,
+        }),
+
+      updateUser: (userUpdates) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userUpdates } : null,
+        })),
+
       // Polar actions
-      setPolarDevice: (device) => set({ polarDevice: device }),
+      setPolarDevice: (device) =>
+        set({
+          polarDevice: device,
+          isPolarConnected: !!device,
+        }),
 
       setPolarConnection: (connected) =>
         set({ isPolarConnected: connected }),
 
       setPolarScanning: (scanning) =>
         set({ isPolarScanning: scanning }),
-
-      clearPolarDiscovery: () => set({ polarDiscoveredDevices: [] }),
-
-      reportPolarDiscovered: (device) =>
-        set((state) => {
-          if (state.polarDiscoveredDevices.some((x) => x.deviceId === device.deviceId)) {
-            return {};
-          }
-          return { polarDiscoveredDevices: [...state.polarDiscoveredDevices, device] };
-        }),
 
       setLastHR: (hr) =>
         set({ lastHR: hr }),
@@ -203,19 +178,22 @@ export const useAppStore = create<AppStore>()(
           const existingIndex = state.detectedBeacons.findIndex(
             (b) => b.nodeKey === beacon.nodeKey
           );
-
+          
           let newBeacons: BLEBeacon[];
           if (existingIndex >= 0) {
+            // Update existing beacon
             newBeacons = [...state.detectedBeacons];
             newBeacons[existingIndex] = beacon;
           } else {
+            // Add new beacon
             newBeacons = [...state.detectedBeacons, beacon];
           }
-
+          
+          // Find closest beacon (highest RSSI = closest)
           const closest = newBeacons.reduce((prev, current) =>
             current.rssi > prev.rssi ? current : prev
           );
-
+          
           return {
             detectedBeacons: newBeacons,
             closestBeacon: closest,
@@ -235,13 +213,14 @@ export const useAppStore = create<AppStore>()(
           const filtered = state.detectedBeacons.filter(
             (b) => now - b.lastSeen < maxAgeMs
           );
-
+          
+          // Recalculate closest beacon
           const closest = filtered.length > 0
             ? filtered.reduce((prev, current) =>
                 current.rssi > prev.rssi ? current : prev
               )
             : undefined;
-
+          
           return {
             detectedBeacons: filtered,
             closestBeacon: closest,
@@ -261,17 +240,6 @@ export const useAppStore = create<AppStore>()(
       setAppMode: (mode) =>
         set({ appMode: mode }),
 
-      // Walk steps
-      setWalkSteps: (steps) =>
-        set({ walkSteps: steps }),
-
-      clearWalkSteps: () =>
-        set({ walkSteps: null }),
-
-      // Room prediction
-      setRoomPrediction: (prediction) =>
-        set({ roomPrediction: prediction }),
-
       // UI actions
       setLoading: (loading) =>
         set({ isLoading: loading }),
@@ -281,6 +249,9 @@ export const useAppStore = create<AppStore>()(
 
       setCurrentScreen: (screen) =>
         set({ currentScreen: screen }),
+
+      setNotificationsEnabled: (enabled) =>
+        set({ notificationsEnabled: enabled }),
 
       clearError: () =>
         set({ error: null }),
@@ -298,11 +269,12 @@ export const useAppStore = create<AppStore>()(
       name: 'wheelsense-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        deviceId: state.deviceId,
-        deviceName: state.deviceName,
-        isDeviceRegistered: state.isDeviceRegistered,
+        authToken: state.authToken,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
         settings: state.settings,
         appMode: state.appMode,
+        notificationsEnabled: state.notificationsEnabled,
       }),
     }
   )
@@ -310,34 +282,29 @@ export const useAppStore = create<AppStore>()(
 
 // ==================== SELECTORS ====================
 
-export const useConnection = () => {
+export const useAuth = () => {
   const store = useAppStore();
   return {
-    deviceId: store.deviceId,
-    deviceName: store.deviceName,
-    isMQTTConnected: store.isMQTTConnected,
-    isDeviceRegistered: store.isDeviceRegistered,
-    setMQTTConnected: store.setMQTTConnected,
-    setDeviceRegistered: store.setDeviceRegistered,
-    setDeviceInfo: store.setDeviceInfo,
-    disconnectAll: store.disconnectAll,
+    authToken: store.authToken,
+    user: store.user,
+    isAuthenticated: store.isAuthenticated,
+    setAuth: store.setAuth,
+    clearAuth: store.clearAuth,
+    updateUser: store.updateUser,
   };
 };
 
-export const usePolarStore = () => {
+export const usePolar = () => {
   const store = useAppStore();
   return {
     polarDevice: store.polarDevice,
     isPolarConnected: store.isPolarConnected,
     isPolarScanning: store.isPolarScanning,
-    polarDiscoveredDevices: store.polarDiscoveredDevices,
     lastHR: store.lastHR,
     lastPPG: store.lastPPG,
     setPolarDevice: store.setPolarDevice,
     setPolarConnection: store.setPolarConnection,
     setPolarScanning: store.setPolarScanning,
-    clearPolarDiscovery: store.clearPolarDiscovery,
-    reportPolarDiscovered: store.reportPolarDiscovered,
     setLastHR: store.setLastHR,
     setLastPPG: store.setLastPPG,
   };
@@ -362,23 +329,6 @@ export const useAppMode = () => {
   return {
     appMode: store.appMode,
     setAppMode: store.setAppMode,
-  };
-};
-
-export const useWalkSteps = () => {
-  const store = useAppStore();
-  return {
-    walkSteps: store.walkSteps,
-    setWalkSteps: store.setWalkSteps,
-    clearWalkSteps: store.clearWalkSteps,
-  };
-};
-
-export const useRoomPrediction = () => {
-  const store = useAppStore();
-  return {
-    roomPrediction: store.roomPrediction,
-    setRoomPrediction: store.setRoomPrediction,
   };
 };
 

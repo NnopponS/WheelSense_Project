@@ -23,12 +23,14 @@ export function getPersonnelPath(role: string): string {
 
 /** Get patients roster path based on role. */
 export function getPatientsPath(role: string): string {
+  if (role === "patient") return "/patient?tab=profile";
   if (role === "admin") return "/admin/patients";
   return `/${role.replaceAll("_", "-")}/patients`;
 }
 
 /** Get caregivers / staff directory path based on role. */
 export function getCaregiversPath(role: string): string {
+  if (role === "patient") return "/patient";
   if (role === "admin") return "/admin/caregivers";
   return `/${role.replaceAll("_", "-")}/caregivers`;
 }
@@ -47,6 +49,7 @@ export function getFacilityManagementPath(role: string): string {
 
 /** Get path to patient detail profile based on user role. */
 export function getPatientDetailPath(role: string, patientId: number | string): string {
+  if (role === "patient") return "/patient?tab=profile";
   if (role === "admin") return `/admin/patients/${patientId}`;
   return `/${role.replaceAll("_", "-")}/patients/${patientId}`;
 }

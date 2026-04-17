@@ -506,6 +506,10 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
 
   const polarSnapshot = detail?.polar_metrics ?? detail?.polar_vitals ?? null;
 
+  const linkedPatientId = detail?.patient?.patient_id ?? null;
+  const linkedCaregiverId = detail?.caregiver?.caregiver_id ?? null;
+  const currentRoomId = currentRoom?.id ?? null;
+
   useEffect(() => {
     if (!detail || detail.device_id !== deviceId) return;
     setDisplayNameDraft(detail.display_name ?? "");
@@ -515,16 +519,40 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     setLatestPhotoImageBroken(false);
   }, [detail?.latest_photo?.url, detail?.device_id]);
 
+  // Keep assignment pickers in sync with the server, but do not re-run on every device-detail
+  // poll (new `detail` object) — that wiped in-progress dropdown selections and forced the
+  // patient/staff tab back to "patient" whenever neither side was linked yet.
   useEffect(() => {
-    if (!detail) return;
-
+    if (!deviceId) return;
     patientForm.reset({
-      patientId: detail.patient?.patient_id ? String(detail.patient.patient_id) : EMPTY_SELECT_VALUE,
+      patientId: linkedPatientId != null ? String(linkedPatientId) : EMPTY_SELECT_VALUE,
     });
+  }, [deviceId, linkedPatientId, patientForm]);
+
+  useEffect(() => {
+    if (!deviceId) return;
     caregiverForm.reset({
-      caregiverId: detail.caregiver?.caregiver_id ? String(detail.caregiver.caregiver_id) : EMPTY_SELECT_VALUE,
+      caregiverId: linkedCaregiverId != null ? String(linkedCaregiverId) : EMPTY_SELECT_VALUE,
     });
-    setIdentityTab(detail.patient ? "patient" : detail.caregiver ? "staff" : "patient");
+  }, [deviceId, linkedCaregiverId, caregiverForm]);
+
+  // Follow server-linked identity. Deps are primitive assignment ids only so device-detail polling
+  // does not re-run this and snap back to the patient tab while the user is on staff (both unlinked).
+  useEffect(() => {
+    if (!deviceId) return;
+    if (linkedPatientId != null) {
+      setIdentityTab("patient");
+      return;
+    }
+    if (linkedCaregiverId != null) {
+      setIdentityTab("staff");
+      return;
+    }
+    setIdentityTab("patient");
+  }, [deviceId, linkedPatientId, linkedCaregiverId]);
+
+  useEffect(() => {
+    if (!deviceId) return;
 
     if (currentRoom) {
       setScopeBuilding(facilityKey(currentRoom));
@@ -539,7 +567,7 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
         roomId: EMPTY_SELECT_VALUE,
       });
     }
-  }, [currentRoom, detail, patientForm, caregiverForm, roomForm]);
+  }, [deviceId, currentRoomId, currentRoom, roomForm]);
 
   const refreshAfterMutation = async () => {
     await Promise.all([

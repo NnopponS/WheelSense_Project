@@ -1,20 +1,16 @@
 /**
  * WheelSense Mobile App - Polar Verity Sense Service
- * Native PolarBleSdk (optional Expo module) or BLE GATT HR fallback via react-native-ble-plx.
- * Full PPG requires polarofficial/polar-ble-sdk native integration.
+ * Integrates with Polar BLE SDK for HR and PPG data streaming
  */
 
-import { NativeEventEmitter, NativeModules, type NativeModule } from 'react-native';
-import type { Device } from 'react-native-ble-plx';
+import { NativeEventEmitter, NativeModules, Platform } from 'react-native';
 import { PolarDevice, HeartRateData, PPGData } from '../types';
 import { useAppStore } from '../store/useAppStore';
-import {
-  canUsePolarBlePlx,
-  connectPolarPlx,
-  scanPolarDevicesPlx,
-  startPlxHrMonitor,
-} from './polarBlePlx';
-import { mqttService } from './MQTTService';
+
+// ==================== POLAR SDK INTERFACE ====================
+
+// Note: react-native-polar-ble-sdk is a community wrapper
+// Install: npm install react-native-polar-ble-sdk
 
 interface PolarBleSdkType {
   connectToDevice(deviceId: string): Promise<void>;
@@ -28,91 +24,89 @@ interface PolarBleSdkType {
   searchForDevice(): Promise<void>;
 }
 
-function loadNativePolarModule(): PolarBleSdkType | null {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { requireNativeModule } = require('expo-modules-core') as {
-      requireNativeModule: (name: string) => PolarBleSdkType;
-    };
-    return requireNativeModule('PolarBleSdk');
-  } catch {
-    try {
-      const { PolarBleSdk: PolarModule } = NativeModules as {
-        PolarBleSdk?: PolarBleSdkType;
-      };
-      return PolarModule ?? null;
-    } catch {
-      return null;
-    }
-  }
-}
-
-let PolarBleSdk: PolarBleSdkType | null = loadNativePolarModule();
+// Try to import the native module
+let PolarBleSdk: PolarBleSdkType | null = null;
 let eventEmitter: NativeEventEmitter | null = null;
 
-if (PolarBleSdk) {
-  try {
-    eventEmitter = new NativeEventEmitter(PolarBleSdk as unknown as NativeModule);
-  } catch {
-    eventEmitter = null;
+try {
+  const { PolarBleSdk: PolarModule } = NativeModules;
+  if (PolarModule) {
+    PolarBleSdk = PolarModule;
+    eventEmitter = new NativeEventEmitter(PolarModule);
   }
+} catch (error) {
+  console.warn('[Polar] SDK not available:', error);
 }
+
+// ==================== POLAR SERVICE ====================
 
 class PolarService {
   private deviceId: string | null = null;
   private isConnected = false;
   private listeners: Array<() => void> = [];
-  private usePlx = false;
-  private plxDevice: Device | null = null;
-  private hrSubscription: { remove: () => void } | null = null;
 
   constructor() {
     this.setupEventListeners();
   }
 
+  // ==================== EVENT LISTENERS ====================
+
   private setupEventListeners(): void {
     if (!eventEmitter) {
+      console.warn('[Polar] Event emitter not available');
       return;
     }
 
-    const deviceFoundListener = eventEmitter.addListener(
-      'deviceFound',
-      (ev: { deviceId: string; name?: string }) => {
-        useAppStore.getState().reportPolarDiscovered({
-          deviceId: ev.deviceId,
-          name: ev.name || 'Polar',
-        });
-      },
-    );
-
+    // Connection state changes
     const connectionListener = eventEmitter.addListener(
       'connectionState',
-      (event: { deviceId: string; connected: boolean }) => {
+      (event: { deviceId: string; connected: boolean; error?: string }) => {
+        console.log('[Polar] Connection state:', event);
+        
         this.isConnected = event.connected;
+        
         if (event.connected) {
           this.deviceId = event.deviceId;
           useAppStore.getState().setPolarConnection(true);
         } else {
           useAppStore.getState().setPolarConnection(false);
         }
-      },
+      }
     );
 
+    // Heart rate data
     const hrListener = eventEmitter.addListener(
       'hrData',
-      (data: { hr: number; rrs?: number[]; rrAvailable?: boolean; contactStatus?: boolean }) => {
+      (data: {
+        hr: number;
+        rrs?: number[];
+        rrAvailable?: boolean;
+        contactStatus?: boolean;
+      }) => {
+        console.log('[Polar] HR data:', data);
+        
         const hrData: HeartRateData = {
           bpm: data.hr,
           rr_intervals: data.rrs,
           timestamp: Date.now(),
         };
+        
         useAppStore.getState().setLastHR(hrData);
-      },
+      }
     );
 
+    // PPG data (Verity Sense specific)
     const ppgListener = eventEmitter.addListener(
       'ppgData',
-      (data: { ppg0: number; ppg1: number; ppg2: number; ambient: number; timestamp?: number }) => {
+      (data: {
+        ppg0: number;
+        ppg1: number;
+        ppg2: number;
+        ambient: number;
+        timestamp?: number;
+      }) => {
+        console.log('[Polar] PPG data:', data);
+        
         const ppgData: PPGData = {
           ppg0: data.ppg0,
           ppg1: data.ppg1,
@@ -120,32 +114,45 @@ class PolarService {
           ambient: data.ambient,
           timestamp: data.timestamp || Date.now(),
         };
+        
         useAppStore.getState().setLastPPG(ppgData);
-      },
+      }
     );
 
-    const batteryListener = eventEmitter.addListener('batteryLevel', (level: number) => {
-      const store = useAppStore.getState();
-      if (store.polarDevice) {
-        store.setPolarDevice({
-          ...store.polarDevice,
-          batteryLevel: level,
-        });
+    // Battery level
+    const batteryListener = eventEmitter.addListener(
+      'batteryLevel',
+      (level: number) => {
+        console.log('[Polar] Battery level:', level);
+        
+        const store = useAppStore.getState();
+        if (store.polarDevice) {
+          store.setPolarDevice({
+            ...store.polarDevice,
+            batteryLevel: level,
+          });
+        }
       }
-    });
+    );
 
-    const firmwareListener = eventEmitter.addListener('firmwareVersion', (version: string) => {
-      const store = useAppStore.getState();
-      if (store.polarDevice) {
-        store.setPolarDevice({
-          ...store.polarDevice,
-          firmwareVersion: version,
-        });
+    // Firmware version
+    const firmwareListener = eventEmitter.addListener(
+      'firmwareVersion',
+      (version: string) => {
+        console.log('[Polar] Firmware version:', version);
+        
+        const store = useAppStore.getState();
+        if (store.polarDevice) {
+          store.setPolarDevice({
+            ...store.polarDevice,
+            firmwareVersion: version,
+          });
+        }
       }
-    });
+    );
 
+    // Store listeners for cleanup
     this.listeners = [
-      () => deviceFoundListener.remove(),
       () => connectionListener.remove(),
       () => hrListener.remove(),
       () => ppgListener.remove(),
@@ -154,164 +161,182 @@ class PolarService {
     ];
   }
 
+  // ==================== CONNECTION ====================
+
   async connect(deviceId: string): Promise<void> {
-    if (PolarBleSdk) {
-      this.usePlx = false;
+    if (!PolarBleSdk) {
+      throw new Error('Polar BLE SDK not available');
+    }
+
+    try {
+      console.log('[Polar] Connecting to:', deviceId);
+      
       await PolarBleSdk.connectToDevice(deviceId);
+      
       this.deviceId = deviceId;
-      this.isConnected = true;
+      
+      // Set device in store
       useAppStore.getState().setPolarDevice({
         deviceId,
         name: 'Polar Verity Sense',
       });
-      useAppStore.getState().setPolarConnection(true);
-      void mqttService.publishRegistration().catch(() => undefined);
-      return;
+      
+      console.log('[Polar] Connected successfully');
+    } catch (error) {
+      console.error('[Polar] Connection failed:', error);
+      throw error;
     }
-
-    if (!canUsePolarBlePlx()) {
-      throw new Error('Polar BLE SDK not available and BLE stack is unavailable');
-    }
-
-    this.usePlx = true;
-    const dev = await connectPolarPlx(deviceId);
-    this.plxDevice = dev;
-    this.deviceId = deviceId;
-    this.isConnected = true;
-    useAppStore.getState().setPolarDevice({
-      deviceId,
-      name: dev.name || dev.localName || 'Polar',
-    });
-    useAppStore.getState().setPolarConnection(true);
-    void mqttService.publishRegistration().catch(() => undefined);
   }
 
   async disconnect(): Promise<void> {
-    if (this.usePlx) {
-      await this.stopAllStreaming();
-      try {
-        await this.plxDevice?.cancelConnection();
-      } catch {
-        /* ignore */
-      }
-      this.plxDevice = null;
-      this.deviceId = null;
-      this.isConnected = false;
-      this.usePlx = false;
-      useAppStore.getState().setPolarDevice(null);
-      useAppStore.getState().setPolarConnection(false);
-      void mqttService.publishRegistration().catch(() => undefined);
-      return;
-    }
-
     if (!PolarBleSdk || !this.deviceId) {
       return;
     }
 
     try {
+      console.log('[Polar] Disconnecting from:', this.deviceId);
+      
+      // Stop all streaming first
       await this.stopAllStreaming();
+      
       await PolarBleSdk.disconnectFromDevice(this.deviceId);
+      
       this.deviceId = null;
       this.isConnected = false;
+      
       useAppStore.getState().setPolarDevice(null);
       useAppStore.getState().setPolarConnection(false);
-      void mqttService.publishRegistration().catch(() => undefined);
+      
+      console.log('[Polar] Disconnected');
     } catch (error) {
       console.error('[Polar] Disconnect error:', error);
       throw error;
     }
   }
 
+  // ==================== STREAMING ====================
+
   async startHRStreaming(): Promise<void> {
-    if (PolarBleSdk && !this.usePlx) {
-      if (!this.isConnected) {
-        throw new Error('Not connected to Polar device');
-      }
+    if (!PolarBleSdk) {
+      throw new Error('Polar BLE SDK not available');
+    }
+
+    if (!this.isConnected) {
+      throw new Error('Not connected to Polar device');
+    }
+
+    try {
+      console.log('[Polar] Starting HR streaming');
       await PolarBleSdk.startHrStreaming();
-      return;
+    } catch (error) {
+      console.error('[Polar] Failed to start HR streaming:', error);
+      throw error;
     }
-
-    if (this.usePlx && this.plxDevice) {
-      this.hrSubscription?.remove();
-      this.hrSubscription = startPlxHrMonitor(this.plxDevice, (bpm) => {
-        useAppStore.getState().setLastHR({
-          bpm,
-          timestamp: Date.now(),
-        });
-      });
-      return;
-    }
-
-    throw new Error('Not connected to Polar device');
   }
 
   async stopHRStreaming(): Promise<void> {
-    if (PolarBleSdk && !this.usePlx && this.isConnected) {
-      await PolarBleSdk.stopHrStreaming();
+    if (!PolarBleSdk || !this.isConnected) {
+      return;
     }
-    this.hrSubscription?.remove();
-    this.hrSubscription = null;
+
+    try {
+      console.log('[Polar] Stopping HR streaming');
+      await PolarBleSdk.stopHrStreaming();
+    } catch (error) {
+      console.error('[Polar] Failed to stop HR streaming:', error);
+    }
   }
 
   async startPPGStreaming(): Promise<void> {
-    if (!PolarBleSdk || this.usePlx) {
-      throw new Error('PPG streaming requires the native Polar SDK (polarofficial/polar-ble-sdk)');
+    if (!PolarBleSdk) {
+      throw new Error('Polar BLE SDK not available');
     }
+
     if (!this.isConnected) {
       throw new Error('Not connected to Polar device');
     }
-    await PolarBleSdk.startPpgStreaming();
+
+    try {
+      console.log('[Polar] Starting PPG streaming');
+      await PolarBleSdk.startPpgStreaming();
+    } catch (error) {
+      console.error('[Polar] Failed to start PPG streaming:', error);
+      throw error;
+    }
   }
 
   async stopPPGStreaming(): Promise<void> {
-    if (!PolarBleSdk || this.usePlx) {
+    if (!PolarBleSdk || !this.isConnected) {
       return;
     }
-    if (!this.isConnected) {
-      return;
+
+    try {
+      console.log('[Polar] Stopping PPG streaming');
+      await PolarBleSdk.stopPpgStreaming();
+    } catch (error) {
+      console.error('[Polar] Failed to stop PPG streaming:', error);
     }
-    await PolarBleSdk.stopPpgStreaming();
   }
 
   async startAccStreaming(): Promise<void> {
-    if (!PolarBleSdk || this.usePlx) {
-      throw new Error('ACC streaming requires the native Polar SDK');
+    if (!PolarBleSdk) {
+      throw new Error('Polar BLE SDK not available');
     }
+
     if (!this.isConnected) {
       throw new Error('Not connected to Polar device');
     }
-    await PolarBleSdk.startAccStreaming();
+
+    try {
+      console.log('[Polar] Starting ACC streaming');
+      await PolarBleSdk.startAccStreaming();
+    } catch (error) {
+      console.error('[Polar] Failed to start ACC streaming:', error);
+      throw error;
+    }
   }
 
   async stopAccStreaming(): Promise<void> {
-    if (!PolarBleSdk || this.usePlx) {
+    if (!PolarBleSdk || !this.isConnected) {
       return;
     }
-    if (!this.isConnected) {
-      return;
+
+    try {
+      console.log('[Polar] Stopping ACC streaming');
+      await PolarBleSdk.stopAccStreaming();
+    } catch (error) {
+      console.error('[Polar] Failed to stop ACC streaming:', error);
     }
-    await PolarBleSdk.stopAccStreaming();
   }
 
   async stopAllStreaming(): Promise<void> {
     await Promise.all([
       this.stopHRStreaming(),
-      this.stopPPGStreaming().catch(() => undefined),
-      this.stopAccStreaming().catch(() => undefined),
+      this.stopPPGStreaming(),
+      this.stopAccStreaming(),
     ]);
   }
 
+  // ==================== DEVICE DISCOVERY ====================
+
   async searchForDevice(): Promise<void> {
-    useAppStore.getState().clearPolarDiscovery();
-    if (PolarBleSdk) {
-      await PolarBleSdk.searchForDevice();
-      return;
+    if (!PolarBleSdk) {
+      throw new Error('Polar BLE SDK not available');
     }
-    await scanPolarDevicesPlx(12000);
+
+    try {
+      console.log('[Polar] Searching for devices...');
+      await PolarBleSdk.searchForDevice();
+    } catch (error) {
+      console.error('[Polar] Search failed:', error);
+      throw error;
+    }
   }
 
+  // ==================== UTILITY ====================
+
   isAvailable(): boolean {
-    return PolarBleSdk != null || canUsePolarBlePlx();
+    return PolarBleSdk !== null;
   }
 
   getDeviceId(): string | null {
@@ -322,22 +347,22 @@ class PolarService {
     return this.isConnected;
   }
 
-  usesPlxFallback(): boolean {
-    return this.usePlx;
-  }
-
   cleanup(): void {
-    this.disconnect().catch(() => undefined);
+    this.disconnect();
     this.listeners.forEach((remove) => remove());
     this.listeners = [];
   }
 }
 
+// ==================== SINGLETON INSTANCE ====================
+
 export const Polar = new PolarService();
+
+// ==================== HOOK ====================
 
 export function usePolar() {
   const store = useAppStore();
-
+  
   return {
     device: store.polarDevice,
     isConnected: store.isPolarConnected,

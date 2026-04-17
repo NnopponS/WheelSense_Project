@@ -7,7 +7,7 @@
 - [FloorplanRoleViewer](file://frontend/components/floorplan/FloorplanRoleViewer.tsx)
 - [floorplanLayout](file://frontend/lib/floorplanLayout.ts)
 - [floorplanRoomResolve](file://frontend/lib/floorplanRoomResolve.ts)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [floorplans.py (models)](file://server/app/models/floorplans.py)
 - [floorplans.py (service)](file://server/app/services/floorplans.py)
 - [floorplans.py (endpoint)](file://server/app/api/endpoints/floorplans.py)

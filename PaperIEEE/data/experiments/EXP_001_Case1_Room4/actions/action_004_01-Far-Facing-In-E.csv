@@ -1,0 +1,22 @@
+timestamp,S1_RSSI,S2_RSSI,S3_RSSI,S4_RSSI,action_label,experiment_id,sub_action_label
+2026-03-08 12:40:48.762,-70,-60,-57,-59,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:49.142,-72,-59,-55,-48,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:49.358,,-54,-54,-53,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:49.550,-68,-54,-55,-49,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:49.742,,-59,-54,-69,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:49.934,-71,-54,-56,-53,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:50.141,-66,-57,,-59,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:50.344,-66,-57,-56,-58,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:50.542,-71,-55,-55,-48,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:50.738,-71,,,-49,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:50.939,-66,-57,-56,-59,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:51.519,-71,-59,-57,-49,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:51.918,,-55,,,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:51.919,-65,,-55,-49,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:52.308,,-55,-54,-53,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:52.499,-64,,,,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:52.692,-67,-59,-55,-59,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:53.077,-68,-59,-55,-58,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:53.271,,-59,,-58,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:53.272,-67,,-56,,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E
+2026-03-08 12:40:53.466,-71,-59,-56,-49,01-Far-Facing-In,EXP_001,01-Far-Facing-In-E

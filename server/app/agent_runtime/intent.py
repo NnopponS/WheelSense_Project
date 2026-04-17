@@ -34,6 +34,7 @@ TOOL_INTENT_METADATA: dict[str, dict[str, Any]] = {
     "get_ai_runtime_summary": {"playbook": "system", "permission_basis": ["ai_settings.read"], "risk_level": "low", "read_only": True},
     "get_patient_vitals": {"playbook": "clinical-triage", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
     "get_patient_timeline": {"playbook": "clinical-triage", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
+    "list_patient_caregivers": {"playbook": "patient-management", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
     "create_workflow_task": {"playbook": "workflow", "permission_basis": ["workflow.write"], "risk_level": "medium", "read_only": False},
     "update_workflow_task_status": {"playbook": "workflow", "permission_basis": ["workflow.write"], "risk_level": "medium", "read_only": False},
     "send_message": {"playbook": "workflow", "permission_basis": ["workflow.write"], "risk_level": "medium", "read_only": False},
@@ -278,6 +279,18 @@ def pick_patient_id_for_followup(message: str, context: ConversationContext | No
     num = re.fullmatch(r"(\d+)", m)
     if num:
         return int(num.group(1))
+    # First-person self-service (room / identity / care team) when a single focused patient is seeded.
+    if context.last_focused_patient_id is not None and re.search(
+        r"(?:ฉัน|ผม|ดิฉัน).{0,24}(?:อยู่)?(?:ห้องไหน|ที่ไหน|ห้องอะไร)"
+        r"|(?:ตอนนี้|วันนี้|ขณะนี้)\s*(?:ฉัน|ผม|ดิฉัน)\s*(?:อยู่)?(?:ห้องไหน|ที่ไหน|ห้องอะไร)"
+        r"|(?:ฉัน|ผม|ดิฉัน)\s*(?:คือใคร|เป็นใคร|ชื่ออะไร)"
+        r"|(?:ใครดูแลฉัน|ใครดูแล\s*ฉัน|ทีมดูแล(?:ของฉัน)?|พยาบาลประจำตัว(?:ของฉัน)?|พยาบาลประจำ)"
+        r"|(?:who\s+am\s+i|what\s+is\s+my\s+name)\b"
+        r"|(?:what|which)\s+room\s+(?:am\s+i\s+in|is\s+my\s+room)|\bmy\s+room\b",
+        m,
+        flags=re.IGNORECASE,
+    ):
+        return int(context.last_focused_patient_id)
     roster = [e for e in context.last_entities if e.get("type") == "patient" and e.get("id") is not None]
     if len(roster) == 1:
         return int(roster[0]["id"])
@@ -360,6 +373,27 @@ class IntentClassifier:
         Returns list of (pattern, intent, playbook, metadata) tuples.
         """
         return [
+            # First-person / self: room location, identity, assigned care team (before generic roster regexes).
+            (
+                r"(?:ตอนนี้|วันนี้|ขณะนี้)?\s*(?:ฉัน|ผม|ดิฉัน)\s*(?:อยู่)?(?:ห้องไหน|ที่ไหน|ห้องอะไร)(?:\s*(?:ครับ|คะ|ฮะ|นะ))?"
+                r"|(?:what|which)\s+room\s+(?:am\s+i\s+in|is\s+my\s+room)|\bmy\s+room\b",
+                "patients.read.self_room",
+                "patient-management",
+                {"immediate_read_context_tool": "get_patient_details"},
+            ),
+            (
+                r"(?:ฉัน|ผม|ดิฉัน)\s*(?:คือใคร|เป็นใคร|ชื่ออะไร)|(?:who\s+am\s+i|what\s+is\s+my\s+name)\b",
+                "patients.read.self_identity",
+                "patient-management",
+                {"immediate_read_context_tool": "get_patient_details"},
+            ),
+            (
+                r"(?:ใครดูแลฉัน|ใครดูแล\s*ฉัน|ทีมดูแล(?:ของฉัน)?|พยาบาลประจำตัว(?:ของฉัน)?|พยาบาลประจำ"
+                r"|ใครเป็นผู้ดูแล(?:ของ)?ฉัน|who\s+(?:is\s+)?(?:taking\s+care\s+of\s+me|my\s+(?:nurse|care\s+team)))(?:\s*$|[?.!]\s*$)?",
+                "patients.read.self_caregivers",
+                "patient-management",
+                {"immediate_read_context_tool": "list_patient_caregivers"},
+            ),
             # Thai: vitals / health slice follow-ups (need patient context from prior list/detail)
             # "ประวัติสุขภาพ" maps here: get_patient_vitals returns readings + clinical observations.
             (

@@ -136,8 +136,8 @@ export interface BatteryData {
 
 export interface TelemetryPayload {
   device_id: string;
-  device_type: 'mobile_phone' | 'mobile_app';
-  hardware_type: 'mobile_phone' | 'mobile_app';
+  device_type: 'mobile_app';
+  hardware_type: 'mobile_app';
   firmware: string;
   seq: number;
   timestamp: string;
@@ -149,7 +149,6 @@ export interface TelemetryPayload {
   ppg?: PPGData;
   battery?: BatteryData;
   app_mode?: 'wheelchair' | 'walking';
-  walk_steps?: WalkStepData;
 }
 
 // ==================== POLAR SENSOR TYPES ====================
@@ -173,43 +172,6 @@ export interface PolarDevice {
   name: string;
   batteryLevel?: number;
   firmwareVersion?: string;
-}
-
-// ==================== WALK STEP TYPES ====================
-
-export interface WalkStepData {
-  steps: number;
-  distance_m?: number;
-  timestamp: number;
-  session_start: number;
-}
-
-// ==================== MOBILE REGISTRATION TYPES ====================
-
-export interface MobileRegistration {
-  device_id: string;
-  device_name: string;
-  platform: string;
-  os_version: string;
-  app_version: string;
-  hardware_type: 'mobile_phone' | 'mobile_app';
-  timestamp: string;
-  /** When set, server upserts a polar_sense registry row linked to this phone. */
-  companion_polar?: {
-    polar_device_id: string;
-    name?: string;
-    firmware_version?: string;
-  };
-}
-
-// ==================== ROOM PREDICTION TYPES ====================
-
-export interface RoomPredictionResult {
-  room_id: number | null;
-  room_name: string;
-  confidence: number;
-  model_type: string;
-  strategy?: string;
 }
 
 // ==================== ALERT TYPES ====================
@@ -268,23 +230,11 @@ export interface BLEBeacon {
 export type AppMode = 'wheelchair' | 'walking';
 
 export interface AppSettings {
-  deviceName: string;
+  serverUrl: string;
   mqttBroker: string;
   mqttPort: number;
   scanInterval: number;
   telemetryInterval: number;
-  language: string; // 'en' | 'th'
-  /** Public web app URL (HTTPS), pushed via MQTT `WheelSense/config/*`. */
-  portalBaseUrl?: string;
-  /** Patient linked to this mobile device in admin; used for `WheelSense/alerts/{id}` subscribe. */
-  linkedPatientId?: number;
-  /** Server: subscribe to alert MQTT only when true and `linkedPatientId` is set. */
-  alertsEnabled?: boolean;
-  /**
-   * When true, registers BackgroundFetch to periodically reconnect MQTT, scan nodes, publish steps (iOS), and send telemetry.
-   * OS scheduling applies; not real-time 24/7 without a native foreground service.
-   */
-  backgroundMonitoringEnabled?: boolean;
 }
 
 // ==================== NOTIFICATION TYPES ====================

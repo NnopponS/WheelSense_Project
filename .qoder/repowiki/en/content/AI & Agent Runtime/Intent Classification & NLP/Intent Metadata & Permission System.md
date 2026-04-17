@@ -8,7 +8,7 @@
 - [mcp/server.py](file://server/app/mcp/server.py)
 - [mcp/auth.py](file://server/app/mcp/auth.py)
 - [api/dependencies.py](file://server/app/api/dependencies.py)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [ActionPlanPreview.tsx](file://frontend/components/ai/ActionPlanPreview.tsx)
 - [test_agent_runtime.py](file://server/tests/test_agent_runtime.py)
 - [test_chat_actions_integration.py](file://server/tests/test_chat_actions_integration.py)

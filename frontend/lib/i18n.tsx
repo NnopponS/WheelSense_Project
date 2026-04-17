@@ -2909,7 +2909,7 @@ const translations = {
     en: "Your personal care dashboard",
     th: "แดชบอร์ดการดูแลส่วนตัวของคุณ",
   },
-  "patient.page.roomLocationTitle": { en: "Your room", th: "ห้องพักของคุณ" },
+  "patient.page.roomLocationTitle": { en: "Your current location", th: "ตำแหน่งปัจจุบันของคุณ" },
   "patient.hub.overview": { en: "Overview", th: "ภาพรวม" },
   "patient.hub.profile": { en: "Profile", th: "โปรไฟล์" },
   "patient.hub.support": { en: "Support", th: "ซัพพอร์ต" },

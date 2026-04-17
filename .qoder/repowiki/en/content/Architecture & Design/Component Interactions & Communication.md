@@ -18,7 +18,7 @@
 - [0014-llm-native-mcp-tool-routing.md](file://docs/adr/0014-llm-native-mcp-tool-routing.md)
 - [0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
 - [0005-camera-photo-only-internet-independent.md](file://docs/adr/0005-camera-photo-only-internet-independent.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 </cite>
 
 ## Table of Contents
@@ -225,13 +225,13 @@ Proxy-->>Browser : Response
 - [auth.py:57-105](file://server/app/api/endpoints/auth.py#L57-L105)
 - [auth.py:588-626](file://server/app/services/auth.py#L588-L626)
 - [route.ts:127-258](file://frontend/app/api/[[...path]]/route.ts#L127-L258)
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 
 **Section sources**
 - [auth.py:57-105](file://server/app/api/endpoints/auth.py#L57-L105)
 - [auth.py:588-626](file://server/app/services/auth.py#L588-L626)
 - [route.ts:127-258](file://frontend/app/api/[[...path]]/route.ts#L127-L258)
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 
 ### Real-Time Updates and Cross-Component Data Sharing
 - REST endpoints serve telemetry and workflow data; clients use TanStack Query for caching and polling.

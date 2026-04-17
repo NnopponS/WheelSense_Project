@@ -2,7 +2,7 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [README.md](file://README.md)
 - [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
 - [main.py](file://server/app/main.py)
@@ -75,7 +75,7 @@ S_MCP --> |"MCP tools"| S_API
 
 **Section sources**
 - [README.md:5-13](file://README.md#L5-L13)
-- [ARCHITECTURE.md:3-21](file://docs/ARCHITECTURE.md#L3-L21)
+- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
 
 ## Core Components
 - Firmware telemetry contract and topics define what devices publish and subscribe, including wheelchair IMU/motion/battery and camera registration/status/photo payloads.
@@ -228,7 +228,7 @@ FE-->>Browser : Render role dashboard
 - [constants.ts:1-2](file://frontend/lib/constants.ts#L1-L2)
 
 **Section sources**
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 - [login/page.tsx:26-38](file://frontend/app/login/page.tsx#L26-L38)
 - [RoleSidebar.tsx:60-77](file://frontend/components/RoleSidebar.tsx#L60-L77)
 - [RoleShell.tsx:29-42](file://frontend/components/RoleShell.tsx#L29-L42)
@@ -325,7 +325,7 @@ Patient --> Proxy
 - [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
 
 **Section sources**
-- [ARCHITECTURE.md:140-183](file://docs/ARCHITECTURE.md#L140-L183)
+- [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
 - [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
 - [routes.ts:1-17](file://frontend/lib/routes.ts#L1-L17)
 

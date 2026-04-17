@@ -2,7 +2,7 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [main.py](file://server/app/main.py)
 - [config.py](file://server/app/config.py)
 - [router.py](file://server/app/api/router.py)
@@ -77,7 +77,7 @@ API --> SVC
 - [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
 
 **Section sources**
-- [ARCHITECTURE.md:3-21](file://docs/ARCHITECTURE.md#L3-L21)
+- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
 - [main.py:68-86](file://server/app/main.py#L68-L86)
 - [router.py:16-154](file://server/app/api/router.py#L16-L154)
 
@@ -91,7 +91,7 @@ API --> SVC
 - Event-driven communication: MQTT topics for telemetry, camera frames, and device commands; MCP for AI tool orchestration.
 
 **Section sources**
-- [ARCHITECTURE.md:23-139](file://docs/ARCHITECTURE.md#L23-L139)
+- [ARCHITECTURE.md:23-139](file://ARCHITECTURE.md#L23-L139)
 - [base.py:13-89](file://server/app/services/base.py#L13-L89)
 - [dependencies.py:25-120](file://server/app/api/dependencies.py#L25-L120)
 - [session.py:52-55](file://server/app/db/session.py#L52-L55)
@@ -308,7 +308,7 @@ API-->>FE : 200 OK
 
 **Section sources**
 - [main.py:43-61](file://server/app/main.py#L43-L61)
-- [ARCHITECTURE.md:23-139](file://docs/ARCHITECTURE.md#L23-L139)
+- [ARCHITECTURE.md:23-139](file://ARCHITECTURE.md#L23-L139)
 - [AppProviders.tsx:10-42](file://frontend/components/providers/AppProviders.tsx#L10-L42)
 - [auth-store.ts:1-38](file://frontend/lib/stores/auth-store.ts#L1-L38)
 

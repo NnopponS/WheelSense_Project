@@ -368,7 +368,7 @@ Topics currently used by runtime code:
 | `WheelSense/mobile/{device_id}/register` | mobile app -> server | Upserts `mobile_phone` registry row; optional JSON `companion_polar` (`polar_device_id`, `name`, …) upserts a linked `polar_sense` device and mirrors patient/caregiver assignments |
 | `WheelSense/mobile/{device_id}/walkstep` | mobile app -> server | Step-count deltas for activity timeline |
 | `WheelSense/mobile/{device_id}/control` | server -> mobile app | control channel (reserved) |
-| `WheelSense/config/{device_id}` | server -> mobile / firmware | **Retained** JSON: `portal_base_url` (when `PORTAL_BASE_URL` set), `linked_patient_id`, `alerts_enabled`. Re-published on mobile MQTT register, server startup (all mobile devices), and after mobile telemetry offline→online gap. |
+| `WheelSense/config/{device_id}` | server -> mobile / firmware | **Retained** JSON: `portal_base_url` (when `PORTAL_BASE_URL` set), `linked_patient_id`, optional `linked_caregiver_id`, `linked_person_type`, and `alerts_enabled`. Re-published on mobile MQTT register, server startup (all mobile devices), and after mobile telemetry offline→online gap. |
 | `WheelSense/config/all` | server / sidecar -> subscribers | **Retained** broadcast `portal_base_url` (API bootstrap + Cloudflare sidecar) |
 | `WheelSense/alerts/{patient_id}` or `WheelSense/alerts/{device_id}` | server -> subscribers | Fall detection and **new clinical alerts** (REST/MCP `alert_service.create` publishes JSON with `alert_id`, severity, title, description) |
 | `WheelSense/{device_id}/control` | server -> wheelchair | motion/device commands |
@@ -400,10 +400,10 @@ The camera firmware also listens to:
 
 The **WheelSense mobile app** (development build with native MQTT) subscribes to:
 
-- `WheelSense/config/{device_id}` and `WheelSense/config/all` (intervals, `portal_base_url`, `linked_patient_id`)
+- `WheelSense/config/{device_id}` and `WheelSense/config/all` (intervals, `portal_base_url`, pairing hints such as `linked_patient_id` / `linked_caregiver_id`)
 - `WheelSense/mobile/{device_id}/control`
 - `WheelSense/room/{device_id}`
-- `WheelSense/alerts/{patient_id}` after the server pushes a non-null `linked_patient_id` for that device
+- `WheelSense/alerts/{patient_id}` after the server pushes a non-null `linked_patient_id` for that device, or `WheelSense/alerts/{device_id}` when the device is paired to staff/caregiver context
 
 ## Current Data Flow
 

@@ -3,7 +3,7 @@
 <cite>
 **Referenced Files in This Document**
 - [README.md](file://README.md)
-- [ARCHITECTURE.md](file://docs/ARCHITECTURE.md)
+- [ARCHITECTURE.md](file://ARCHITECTURE.md)
 - [server/app/mcp/server.py](file://server/app/mcp/server.py)
 - [server/app/agent_runtime/service.py](file://server/app/agent_runtime/service.py)
 - [server/app/api/endpoints/workflow.py](file://server/app/api/endpoints/workflow.py)
@@ -63,11 +63,11 @@ WEB --> |"HTTP/HTTPS"| API
 
 **Diagram sources**
 - [README.md:7-19](file://README.md#L7-L19)
-- [ARCHITECTURE.md:3-21](file://docs/ARCHITECTURE.md#L3-L21)
+- [ARCHITECTURE.md:3-21](file://ARCHITECTURE.md#L3-L21)
 
 **Section sources**
 - [README.md:1-74](file://README.md#L1-L74)
-- [ARCHITECTURE.md:1-275](file://docs/ARCHITECTURE.md#L1-L275)
+- [ARCHITECTURE.md:1-275](file://ARCHITECTURE.md#L1-L275)
 
 ## Core Components
 - Real-time wheelchair monitoring and room localization: MQTT telemetry ingestion, RSSI-based room prediction, and floorplan presence rendering.
@@ -78,7 +78,7 @@ WEB --> |"HTTP/HTTPS"| API
 - Analytics reporting: alert summaries, vitals averages, and ward-level statistics.
 
 **Section sources**
-- [ARCHITECTURE.md:23-275](file://docs/ARCHITECTURE.md#L23-L275)
+- [ARCHITECTURE.md:23-275](file://ARCHITECTURE.md#L23-L275)
 - [server/app/mcp/server.py:1-2803](file://server/app/mcp/server.py#L1-L2803)
 - [server/app/agent_runtime/service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
 - [server/app/api/endpoints/workflow.py:1-1013](file://server/app/api/endpoints/workflow.py#L1-L1013)
@@ -119,12 +119,12 @@ S --> HA
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:140-218](file://docs/ARCHITECTURE.md#L140-L218)
+- [ARCHITECTURE.md:140-218](file://ARCHITECTURE.md#L140-L218)
 - [server/app/mcp/server.py:110-2803](file://server/app/mcp/server.py#L110-L2803)
 - [server/app/agent_runtime/service.py:122-146](file://server/app/agent_runtime/service.py#L122-L146)
 
 **Section sources**
-- [ARCHITECTURE.md:23-184](file://docs/ARCHITECTURE.md#L23-L184)
+- [ARCHITECTURE.md:23-184](file://ARCHITECTURE.md#L23-L184)
 
 ## Detailed Feature Analysis
 
@@ -166,7 +166,7 @@ Practical examples:
 **Section sources**
 - [server/AGENTS.md:48-58](file://server/AGENTS.md#L48-L58)
 - [server/app/services/localization_setup.py:330-557](file://server/app/services/localization_setup.py#L330-L557)
-- [ARCHITECTURE.md:164-220](file://docs/ARCHITECTURE.md#L164-L220)
+- [ARCHITECTURE.md:164-220](file://ARCHITECTURE.md#L164-L220)
 
 ### Secure AI Agent Runtime with MCP Integration
 - Business value: Intelligent, role-aware assistance for clinical tasks, device control, and triage without bypassing access policies.
@@ -199,7 +199,7 @@ AR-->>Chat : ExecutionStepList and completion
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:81-127](file://docs/ARCHITECTURE.md#L81-L127)
+- [ARCHITECTURE.md:81-127](file://ARCHITECTURE.md#L81-L127)
 - [server/app/agent_runtime/service.py:346-520](file://server/app/agent_runtime/service.py#L346-L520)
 - [server/app/mcp/server.py:113-133](file://server/app/mcp/server.py#L113-L133)
 
@@ -208,7 +208,7 @@ Practical examples:
 - Device control assistant: Validate scope and describe exact command before execution.
 
 **Section sources**
-- [ARCHITECTURE.md:23-127](file://docs/ARCHITECTURE.md#L23-L127)
+- [ARCHITECTURE.md:23-127](file://ARCHITECTURE.md#L23-L127)
 - [server/app/agent_runtime/service.py:1-561](file://server/app/agent_runtime/service.py#L1-L561)
 - [server/app/mcp/server.py:1-2803](file://server/app/mcp/server.py#L1-L2803)
 
@@ -245,7 +245,7 @@ P --> P3["Messages"]
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:185-220](file://docs/ARCHITECTURE.md#L185-L220)
+- [ARCHITECTURE.md:185-220](file://ARCHITECTURE.md#L185-L220)
 - [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 Practical examples:
@@ -253,7 +253,7 @@ Practical examples:
 - Observer monitoring: Live floor map with alert counts and room capture capability.
 
 **Section sources**
-- [ARCHITECTURE.md:185-220](file://docs/ARCHITECTURE.md#L185-L220)
+- [ARCHITECTURE.md:185-220](file://ARCHITECTURE.md#L185-L220)
 - [frontend/components/dashboard/DashboardFloorplanPanel.tsx:1-30](file://frontend/components/dashboard/DashboardFloorplanPanel.tsx#L1-L30)
 
 ### Workflow Orchestration and Care Task Management
@@ -345,7 +345,7 @@ Practical examples:
 
 **Section sources**
 - [server/app/api/endpoints/analytics.py:1-49](file://server/app/api/endpoints/analytics.py#L1-L49)
-- [ARCHITECTURE.md:240-267](file://docs/ARCHITECTURE.md#L240-L267)
+- [ARCHITECTURE.md:240-267](file://ARCHITECTURE.md#L240-L267)
 
 ## Dependency Analysis
 The system exhibits clear separation of concerns:
@@ -365,11 +365,11 @@ MCP --> SRV
 ```
 
 **Diagram sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 - [server/app/mcp/server.py:1-2803](file://server/app/mcp/server.py#L1-L2803)
 
 **Section sources**
-- [ARCHITECTURE.md:140-184](file://docs/ARCHITECTURE.md#L140-L184)
+- [ARCHITECTURE.md:140-184](file://ARCHITECTURE.md#L140-L184)
 - [server/app/mcp/server.py:1-2803](file://server/app/mcp/server.py#L1-L2803)
 
 ## Performance Considerations
