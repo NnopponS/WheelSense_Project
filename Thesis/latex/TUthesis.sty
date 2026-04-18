@@ -29,6 +29,8 @@
 \setlength{\topmargin}{0.18in}         %% 1in top margin
 \setlength{\textwidth}{6.085in}        %% 5.76in text - 1.25in rt margin
 \setlength{\textheight}{9.69in}        %% Body ht for 1in margins
+%% fancyhdr needs at least ~14.5pt; default 12pt triggers warnings on running heads
+\setlength{\headheight}{14.49998pt}
 \addtolength{\topmargin}{-\headheight} %% No header, so compensate
 \addtolength{\topmargin}{-\headsep}    %% for header height and separation
 \flushbottom
@@ -122,7 +124,7 @@
 \renewcommand{\chaptername}{บทที่}
 \renewcommand{\appendixname}{ภาคผนวก}
 \renewcommand{\bibname}{รายการอ้างอิง}
-\renewcommand{\listfigurename}{สารบัญรูปภาพ}
+\renewcommand{\listfigurename}{สารบัญภาพ}
 \renewcommand{\listtablename}{สารบัญตาราง}
 \renewcommand{\tablename}{ตารางที่}
 \RequirePackage{fancyhdr}
@@ -236,14 +238,15 @@
     }%
 }
 
-%% Change font size of chapter* headings
+%% Change font size of chapter* headings (สารบัญ / สารบัญตาราง / สารบัญภาพ / ฯลฯ)
+%% ลดช่องว่างเหนือ–ใต้หัวให้สอดคล้องการจัดวางจริง (เดิม 50pt + 40pt ห่างจากเลขหน้ามากเกินไป)
 \def\@makeschapterhead#1{%
-    \vspace*{50\p@}%
+    \vspace*{14\p@}%
     {\parindent \z@ \centering
     \normalfont
     \interlinepenalty\@M
     \LARGE \bfseries  #1\par\nobreak
-    \vskip 40\p@
+    \vskip 18\p@
     }%
 }
 
@@ -300,11 +303,8 @@
 \addtocontents{lol}{~\hfill\textnormal{หน้า}\par}
 
 
-%% add ต่อ
-\DeclareRobustCommand*{\contheading}{%
-    \afterpage{{\normalfont\large\centering
-    \hfill สารบัญ - ต่อ~\hfill\textnormal{หน้า}\par\bigskip}}%
-}
+%% หัว "สารบัญ - ต่อ" ระหว่างหน้า (ปิดการใช้งาน — ไม่เรียกจาก thesis.tex)
+\DeclareRobustCommand*{\contheading}{}
 
 %% Add space in table of contents when starting backmatter
 \renewcommand\backmatter{%
@@ -335,14 +335,15 @@
 }
 
 
-%% Format/width of TOC lines
+%% Format/width of TOC lines (ลด indent ซ้ายให้เนื้อหาเริ่มใกล้ขอบมากขึ้น — ตัวเลขหน้ายังชิดขวา)
 \renewcommand{\@dotsep}{10000}  %% remove dots
-\renewcommand*\l@chapter{\@dottedtocline{1}{1.8em}{2.4em}}
-\renewcommand*\l@section{\@dottedtocline{2}{4.2em}{1.8em}}
-\renewcommand*\l@subsection{\@dottedtocline{3}{6.0em}{2.4em}}
-\renewcommand*\l@figure{\@dottedtocline{1}{1.8em}{2.4em}}
+\renewcommand*\l@chapter{\@dottedtocline{1}{1.2em}{2.4em}}
+\renewcommand*\l@section{\@dottedtocline{2}{3.4em}{1.8em}}
+\renewcommand*\l@subsection{\@dottedtocline{3}{5.0em}{2.4em}}
+\renewcommand*\l@figure{\@dottedtocline{1}{1.2em}{2.4em}}
+\renewcommand*\l@table{\@dottedtocline{1}{1.2em}{2.4em}}
 
-\renewcommand*\l@subsubsection{\@dottedtocline{4}{8.4em}{3em}}
+\renewcommand*\l@subsubsection{\@dottedtocline{4}{6.8em}{3em}}
 
 
 %% Font sizes
@@ -353,7 +354,7 @@
 
 
 \renewcommand\headrulewidth{0pt}
-\rhead{\vspace*{1.5\baselineskip}\thepage}
+\rhead{\thepage}
 
 \fancypagestyle{plain}{
 \fancyfoot{}

@@ -4,9 +4,18 @@
 % comment/uncomment any tables/lists that you desire
 \cleardoublepage
 \phantomsection
-\addcontentsline{toc}{section}{สารบัญ}
-\addtocontents{toc}{\protect\vspace{\baselineskip}}
+%% ไม่ใส่ ``สารบัญ'' เป็นหัวข้อในสารบัญเอง (ให้สอดคล้องตัวอย่างจัดเล่ม)
 \tableofcontents
+
+%\newpage
+%%=================================================
+%% Tables page (before figures — matches faculty example order)
+%%=================================================
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{section}{สารบัญตาราง}
+\addtocontents{toc}{\protect\vspace{\baselineskip}}
+\listoftables
 
 %\newpage
 %%=================================================
@@ -14,19 +23,9 @@
 %%=================================================
 \cleardoublepage
 \phantomsection
-\addcontentsline{toc}{section}{สารบัญรูป}
+\addcontentsline{toc}{section}{สารบัญภาพ}
 \addtocontents{toc}{\protect\vspace{\baselineskip}}
 \listoffigures
-
-%\newpage
-%%=================================================
-%% Tables page
-%%=================================================
-\cleardoublepage
-\phantomsection
-\addcontentsline{toc}{section}{สารบัญตาราง}
-\addtocontents{toc}{\protect\vspace{\baselineskip}}
-\listoftables
 
 
 %\newpage

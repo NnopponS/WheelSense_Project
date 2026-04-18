@@ -5,12 +5,13 @@ alwaysApply: true
 
 # WheelSense thesis (LaTeX)
 
-- **Submission PDF source:** build from [`latex/thesis.tex`](latex/thesis.tex) only.
-- **Body chapters:** keep thesis body in `latex/content/chapters/chapter1.tex` ... `chapter5.tex`.
+- **Canonical faculty template (structure/style reference):** [`Thesis/Example/reporttemplate-0.0.1/`](Thesis/Example/reporttemplate-0.0.1/) (TU ECE `reporttemplate` v0.0.1). Prefer matching layout, front-matter patterns, and `TUthesis`/`mystyle` conventions to that tree unless a documented exception is required.
+- **Submission PDF source:** build from [`Thesis/latex/thesis.tex`](Thesis/latex/thesis.tex) only.
+- **Body chapters:** keep thesis body in [`Thesis/latex/content/chapters/`](Thesis/latex/content/chapters/) (`chapter1.tex` … `chapter5.tex`).
 - **Do not reintroduce template chapter:** never add `\include{example}` or merge old sample chapter content into `thesis.tex`.
-- **Cookbook separation:** [`latex/doc/latex-writing-guide-chapter.tex`](latex/doc/latex-writing-guide-chapter.tex) is reference/demo material, not thesis body.
-- **Cookbook standalone build:** compile [`latex/latex-writing-guide.tex`](latex/latex-writing-guide.tex) separately from `latex/`.
-- **Metadata + bibliography:** project metadata in [`latex/meta/info.tex`](latex/meta/info.tex), references in [`latex/bib/refs.bib`](latex/bib/refs.bib).
+- **Cookbook separation:** [`Thesis/latex/doc/latex-writing-guide-chapter.tex`](Thesis/latex/doc/latex-writing-guide-chapter.tex) is reference/demo material, not thesis body.
+- **Cookbook standalone build:** compile [`Thesis/latex/latex-writing-guide.tex`](Thesis/latex/latex-writing-guide.tex) separately from [`Thesis/latex/`](Thesis/latex/).
+- **Metadata + bibliography:** project metadata in [`Thesis/latex/meta/info.tex`](Thesis/latex/meta/info.tex), references in [`Thesis/latex/bib/refs.bib`](Thesis/latex/bib/refs.bib).
 
 ## TU thesis formatting baseline
 

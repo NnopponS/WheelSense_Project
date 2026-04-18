@@ -82,7 +82,7 @@
 \begin{document}
 \frontmatter
 
-\addtocontents{toc}{\contheading}
+%% ไม่ใช้หัว "สารบัญ - ต่อ" ระหว่างหน้าสารบัญ (เดิม: \addtocontents{toc}{\contheading})
 \setlength{\parskip}{0pt plus1pt minus1pt}
 
 \include{front/1_with_logo_th}
@@ -94,7 +94,8 @@
 \include{front/7_ack_th}
 \include{front/8_toc_lof_lot_lol}
 \IfAddAcronyms{
-	\include{front/9_acronyms}
+	% ใช้ \input เพื่อไม่ให้ซ้อน \clearpage ของ \include กับหน้า \chapter* จนเกิดหน้าว่างก่อนรายการสัญลักษณ์
+	\input{front/9_acronyms}
 }
 %%=================================================
 %% Chapters
@@ -107,11 +108,11 @@
 %% Introduction
 \include{content/chapters/chapter1}
 
-%% ทฤษฎีหรืองานที่เกี่ยวข้อง
+%% วรรณกรรมและงานวิจัยที่เกี่ยวข้อง
 %% Literature Review
 \include{content/chapters/chapter2}
 
-%% การดําเนินงาน
+%% การดำเนินงาน / วิธีวิจัย
 %% Methodology
 \include{content/chapters/chapter3}
 

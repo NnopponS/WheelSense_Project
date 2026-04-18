@@ -4,6 +4,8 @@
 
 อ้างอิงแม่แบบรายงาน LaTeX ของภาควิชาวิศวกรรมไฟฟ้าและคอมพิวเตอร์ โดยเอกสารหลักจัดทำด้วย LaTeX
 
+โฟลเดอร์ [`Example/reporttemplate-0.0.1/`](Example/reporttemplate-0.0.1/) เป็น **สำเนาอ้างอิง** ของแม่แบบทางการ [tueceproj/reporttemplate](https://github.com/tueceproj/reporttemplate) แท็ก **v0.0.1** (โครงสร้างไฟล์ภายใต้ `latex/` เทียบกับโปรเจกต์นี้ได้: โปรเจกต์ใช้ `meta/info.tex` และพาธ `content/...` ตามที่จัดโครงใน `latex/` ที่นี่) — ใช้เปรียบเทียบรูปแบบกับไฟล์หลัก [`latex/thesis.tex`](latex/thesis.tex) เท่านั้น ไม่ได้คอมไพล์เป็น PDF ของวิทยานิพนธ์นี้
+
 ## ไฟล์ที่ต้องเขียน
 
 1. `latex/meta/info.tex`

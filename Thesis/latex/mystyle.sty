@@ -25,10 +25,13 @@
 %% Float (tables/figures)
 \usepackage{array}
 \usepackage{float,newfloat}
+\usepackage{needspace}
+\usepackage{placeins}
 \usepackage{multirow}
 \usepackage{graphicx}
 \usepackage{caption,subcaption}
 \usepackage{booktabs, threeparttable}
+\usepackage{longtable}
 \usepackage{tcolorbox}
 
 
@@ -67,9 +70,7 @@
 %%=================================================
 \setlength{\parindent}{0.8in}
 \linespread{1.8}
-%% TUthesis sets \flushbottom (stretches partial pages to full height). For body text
-%% spacing closer to a typical document, use ragged bottom instead.
-\raggedbottom
+%% Match reporttemplate v0.0.1: TUthesis uses \flushbottom (do not override with \raggedbottom).
 %%=================================================
 %% END OPTION Layout
 %%=================================================
@@ -166,11 +167,14 @@
 %%=================================================
 %% START OPTION Hyperref
 %%=================================================
+%% Upstream reporttemplate v0.0.1 uses blue here; black reads correctly in print/PDF submission.
 \hypersetup{
     colorlinks=true,
-    linkcolor=blue,
-    urlcolor=blue,
-    citecolor=blue
+    linkcolor=black,
+    urlcolor=black,
+    citecolor=black,
+    filecolor=black,
+    menucolor=black,
     %linktoc=all
 }
 %% The hyperef package load the url package
