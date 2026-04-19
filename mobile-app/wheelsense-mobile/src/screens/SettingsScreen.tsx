@@ -74,7 +74,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
   const testMQTTConnection = async () => {
     try {
-      await MQTT.connect({
+      await mqttService.connect({
         host: mqttBroker,
         port: parseInt(mqttPort, 10) || 1883,
         clientId: `test_${Date.now()}`,

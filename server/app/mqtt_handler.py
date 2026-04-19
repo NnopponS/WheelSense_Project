@@ -51,6 +51,52 @@ _fall_cooldown: dict[str, float] = {}
 # Monotonic clock of last mobile telemetry per device — detect offline→online to re-push MQTT config.
 _mobile_last_telemetry_mono: dict[str, float] = {}
 
+# Rate limiting: device_id -> (count, first_seen_timestamp)
+_rate_limiter: dict[str, tuple[int, float]] = {}
+MAX_MQTT_MESSAGES_PER_MINUTE = 120  # Per-device rate limit
+MAX_MQTT_PAYLOAD_SIZE = 64 * 1024  # 64KB max payload
+
+
+def _is_rate_limited(device_id: str) -> bool:
+    """Check if device has exceeded rate limit. Returns True if should block."""
+    now = time.monotonic()
+    count, first_seen = _rate_limiter.get(device_id, (0, now))
+
+    # Reset if window expired (1 minute)
+    if now - first_seen > 60:
+        _rate_limiter[device_id] = (1, now)
+        return False
+
+    # Check limit
+    if count >= MAX_MQTT_MESSAGES_PER_MINUTE:
+        return True
+
+    # Increment counter
+    _rate_limiter[device_id] = (count + 1, first_seen)
+    return False
+
+
+def _validate_payload_size(payload: bytes) -> bool:
+    """Validate payload size to prevent memory exhaustion."""
+    return len(payload) <= MAX_MQTT_PAYLOAD_SIZE
+
+
+def _extract_device_id_from_topic(topic: str, payload: bytes) -> str | None:
+    """Extract device_id from topic or payload for rate limiting."""
+    # Try to extract from topic pattern: WheelSense/mobile/{device_id}/telemetry
+    parts = topic.split("/")
+    if len(parts) >= 3:
+        if parts[1] == "mobile" or parts[1] == "camera":
+            return parts[2]
+        # For WheelSense/data, extract from payload
+        if parts[1] == "data":
+            try:
+                data = json.loads(payload)
+                return data.get("device_id")
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                pass
+    return None
+
 MOBILE_ONLINE_CONFIG_GAP_SEC = 75.0
 FALL_COOLDOWN_SECONDS = 30.0
 FALL_AZ_THRESHOLD = 3.0
@@ -120,6 +166,17 @@ async def mqtt_listener():
                 async for message in client.messages:
                     topic = str(message.topic)
                     try:
+                        # Validate payload size
+                        if not _validate_payload_size(message.payload):
+                            logger.warning("Oversized MQTT payload from %s: %d bytes", topic, len(message.payload))
+                            continue
+
+                        # Extract device_id for rate limiting
+                        device_id = _extract_device_id_from_topic(topic, message.payload)
+                        if device_id and _is_rate_limited(device_id):
+                            logger.warning("Rate limit exceeded for device %s", device_id)
+                            continue
+
                         if topic == "WheelSense/data":
                             await _handle_telemetry(message.payload, client)
                         elif topic.startswith("WheelSense/mobile/") and topic.endswith("/telemetry"):
@@ -801,13 +858,31 @@ async def _upsert_node_status_snapshot(session, device: Device, status: dict) ->
     session.add(device)
 
 
+def _sanitize_filename(value: str) -> str:
+    """Sanitize string for safe filename use. Removes path traversal chars."""
+    import re
+    # Remove any characters that could be used for path traversal
+    sanitized = re.sub(r'[\\/:*?"<>|]', "_", value)
+    # Limit length
+    return sanitized[:128]
+
+
 async def _persist_photo_bytes(device_id: str, photo_id: str, payload: bytes, save_dir: str | None):
     target_dir = save_dir or PHOTO_SAVE_DIR
     os.makedirs(target_dir, exist_ok=True)
     ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{device_id}_{ts_str}_{photo_id}.jpg"
+    # Sanitize inputs to prevent path traversal
+    safe_device_id = _sanitize_filename(device_id)
+    safe_photo_id = _sanitize_filename(photo_id)
+    filename = f"{safe_device_id}_{ts_str}_{safe_photo_id}.jpg"
     filepath = os.path.join(target_dir, filename)
-    with open(filepath, "wb") as handle:
+    # Ensure the resolved path is within target_dir (prevent path traversal)
+    resolved_path = os.path.normpath(filepath)
+    resolved_target = os.path.normpath(target_dir)
+    if not resolved_path.startswith(resolved_target):
+        logger.error("Path traversal attempt detected: %s", filepath)
+        raise ValueError("Invalid filename: path traversal detected")
+    with open(resolved_path, "wb") as handle:
         handle.write(payload)
     logger.info("Photo assembled: %s (%d bytes)", filepath, len(payload))
 

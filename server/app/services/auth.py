@@ -584,6 +584,43 @@ class AuthService:
             return None
         return user
 
+    # Maximum concurrent sessions per user
+    MAX_CONCURRENT_SESSIONS = 5
+
+    @staticmethod
+    async def _revoke_oldest_user_sessions(
+        session: AsyncSession,
+        user_id: int,
+        keep_session_id: str | None = None,
+    ) -> None:
+        """Revoke oldest active sessions to enforce MAX_CONCURRENT_SESSIONS limit."""
+        from sqlalchemy import select, update
+
+        # Count active sessions
+        stmt = (
+            select(AuthSession)
+            .where(
+                AuthSession.user_id == user_id,
+                AuthSession.revoked_at.is_(None),
+                AuthSession.expires_at > datetime.now(timezone.utc),
+            )
+            .order_by(AuthSession.created_at.desc())
+        )
+        result = await session.execute(stmt)
+        active_sessions = result.scalars().all()
+
+        if len(active_sessions) >= AuthService.MAX_CONCURRENT_SESSIONS:
+            # Revoke oldest sessions (keeping the new one if specified)
+            sessions_to_revoke = active_sessions[
+                AuthService.MAX_CONCURRENT_SESSIONS - 1 :
+            ]
+            for old_session in sessions_to_revoke:
+                if keep_session_id and old_session.id == keep_session_id:
+                    continue
+                old_session.revoked_at = datetime.now(timezone.utc)
+                session.add(old_session)
+            await session.commit()
+
     @staticmethod
     async def login_for_access_token(
         session: AsyncSession,
@@ -593,7 +630,7 @@ class AuthService:
         user_agent: str | None = None,
         ip_address: str | None = None,
     ) -> Token:
-        """Authenticate and generate JWT."""
+        """Authenticate and generate JWT with session rotation."""
         user = await AuthService.authenticate_user(session, username, password)
         if not user:
             raise HTTPException(
@@ -605,6 +642,9 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
             )
+
+        # Enforce concurrent session limit before creating new session
+        await AuthService._revoke_oldest_user_sessions(session, user.id)
 
         expires_at = AuthService._expires_at()
         auth_session = await AuthService._create_auth_session(

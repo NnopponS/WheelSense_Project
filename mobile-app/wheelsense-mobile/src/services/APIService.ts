@@ -57,7 +57,9 @@ class APIService {
     method: string,
     endpoint: string,
     body?: any,
-    customHeaders?: Record<string, string>
+    customHeaders?: Record<string, string>,
+    retryCount = 3,
+    retryDelay = 1000
   ): Promise<T> {
     const url = `${this.getBaseUrl()}${API_BASE}${endpoint}`;
     const headers = { ...(await this.getHeaders()), ...customHeaders };
@@ -73,33 +75,61 @@ class APIService {
       options.body = JSON.stringify(body);
     }
 
-    try {
-      const response = await fetch(url, options);
-      
-      if (!response.ok) {
-        const errorData: ApiError = await response.json().catch(() => ({
-          detail: 'Unknown error',
-          status_code: response.status,
-        }));
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < retryCount; attempt++) {
+      try {
+        const response = await fetch(url, options);
         
-        // Handle auth errors
-        if (response.status === 401) {
-          useAppStore.getState().clearAuth();
+        if (!response.ok) {
+          const errorData: ApiError = await response.json().catch(() => ({
+            detail: 'Unknown error',
+            status_code: response.status,
+          }));
+          
+          // Handle auth errors - don't retry on 401
+          if (response.status === 401) {
+            useAppStore.getState().clearAuth();
+            throw new Error(errorData.detail || `HTTP ${response.status}`);
+          }
+          
+          // Don't retry on client errors (4xx) except 408 (Request Timeout)
+          if (response.status >= 400 && response.status < 500 && response.status !== 408) {
+            throw new Error(errorData.detail || `HTTP ${response.status}`);
+          }
+          
+          // Retry on server errors (5xx) and 408
+          throw new Error(`Retryable error: HTTP ${response.status}`);
+        }
+
+        // Handle empty responses
+        if (response.status === 204) {
+          return {} as T;
+        }
+
+        return await response.json();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        // Don't retry if it's an auth error or client error (except network errors)
+        if (lastError.message.includes('HTTP 401') || 
+            lastError.message.includes('HTTP 403') ||
+            lastError.message.includes('HTTP 404')) {
+          throw lastError;
         }
         
-        throw new Error(errorData.detail || `HTTP ${response.status}`);
+        // Check if this is the last attempt
+        if (attempt < retryCount - 1) {
+          const delay = retryDelay * Math.pow(2, attempt); // Exponential backoff
+          console.log(`[API] Retry ${attempt + 1}/${retryCount - 1} after ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
-
-      // Handle empty responses
-      if (response.status === 204) {
-        return {} as T;
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error(`[API] ${method} ${endpoint} failed:`, error);
-      throw error;
     }
+
+    // All retries exhausted
+    console.error(`[API] ${method} ${endpoint} failed after ${retryCount} attempts:`, lastError);
+    throw lastError || new Error('Request failed after retries');
   }
 
   private get<T>(endpoint: string): Promise<T> {
