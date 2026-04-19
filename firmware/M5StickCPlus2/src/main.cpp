@@ -12,6 +12,7 @@
 #include <ArduinoJson.h>
 #include <time.h>
 #include <WiFi.h>
+#include <esp_task_wdt.h>  // ESP32 Watchdog Timer
 
 // Timing
 unsigned long lastPublish = 0;
@@ -148,9 +149,16 @@ void setup() {
     WiFi.setSleep(true);
 
     Serial.println("WheelSense v" FIRMWARE_VERSION " Started");
+
+    // Initialize watchdog timer (30 seconds timeout)
+    esp_task_wdt_init(30, true);
+    esp_task_wdt_add(NULL);  // Add current task to watchdog
+    Serial.println("[INIT] Watchdog timer enabled (30s timeout)");
 }
 
 void loop() {
+    // Feed the watchdog timer at start of each loop iteration
+    esp_task_wdt_reset();
     const unsigned long now = millis();
     M5.update();
     InputMgr.update();
@@ -330,6 +338,8 @@ void loop() {
             if (n > 0 && n < sizeof(telBuf) - 1) {
                 NetworkMgr.publish(DEFAULT_MQTT_TOPIC_DATA, telBuf);
                 telemetrySeq++;
+            } else if (n >= sizeof(telBuf)) {
+                Serial.println("[ERROR] Telemetry JSON too large, dropping message");
             }
         }
         lastPublish = now;
