@@ -67,3 +67,14 @@ mobile-app/.android-sdk/
 # IDE / local build artifacts (mobile)
 mobile-app/**/.idea/
 mobile-app/**/*.apk
+
+# AI/IDE agent directories
+.agents/
+.claude/
+.cursor/
+.qoder/
+code_review/
+
+# Thesis (local only, not part of platform)
+Thesis/
+Thesis-v2.zip
