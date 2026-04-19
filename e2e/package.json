@@ -1,0 +1,28 @@
+{
+  "name": "wheelsense-platform",
+  "version": "1.0.0",
+  "description": "WheelSense is an IoT + clinical workflow platform for wheelchair monitoring, room localization, patient workflows, smart-device control, and role-based web dashboards.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NnopponS/WheelSense_Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NnopponS/WheelSense_Project/issues"
+  },
+  "homepage": "https://github.com/NnopponS/WheelSense_Project#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0"
+  }
+}
