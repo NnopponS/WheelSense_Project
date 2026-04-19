@@ -145,7 +145,34 @@ npm run test:e2e
 
 ### Pre-commit
 
-Run checks before committing:
+Install and run pre-commit hooks for automatic quality checks:
+
+```bash
+# Install pre-commit (one-time setup)
+cd server
+pip install -r requirements.txt
+cd ..
+pre-commit install --install-hooks
+
+# Run pre-commit manually on all files
+pre-commit run --all-files
+
+# Run pre-commit on staged files
+pre-commit run
+```
+
+Pre-commit hooks will automatically run before each commit to catch:
+- Python linting and formatting (Ruff, Black, MyPy)
+- TypeScript/JavaScript linting (ESLint)
+- C++ formatting (clang-format)
+- General file quality (trailing whitespace, merge conflicts, etc.)
+
+If you need to skip hooks (not recommended):
+```bash
+git commit --no-verify -m "your message"
+```
+
+Run checks manually before committing:
 
 ```bash
 # Backend

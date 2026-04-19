@@ -51,12 +51,10 @@ jobs:
     - name: Run Ruff linting
       working-directory: ./server
       run: ruff check .
-      continue-on-error: true
     
     - name: Check Black formatting
       working-directory: ./server
       run: black --check .
-      continue-on-error: true
     
     - name: Run backend tests
       working-directory: ./server
@@ -88,12 +86,10 @@ jobs:
     - name: Run ESLint
       working-directory: ./frontend
       run: npm run lint
-      continue-on-error: true
     
     - name: Type check
       working-directory: ./frontend
       run: npm run type-check
-      continue-on-error: true
     
     - name: Build frontend
       working-directory: ./frontend
@@ -124,4 +120,3 @@ jobs:
     - name: Run E2E tests
       working-directory: ./e2e
       run: npx playwright test
-      continue-on-error: true
