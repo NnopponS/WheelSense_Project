@@ -1,0 +1,51 @@
+{
+  "character": {
+    "id": "ea0cf36c-23a2-4f1a-9882-8301b17eb11a",
+    "name": "air conditioner",
+    "prompt": "This is not a Humanoid but it's air conditioner. just create it. ",
+    "size": {
+      "width": 108,
+      "height": 108
+    },
+    "template_id": "mannequin",
+    "directions": 4,
+    "view": "low top-down",
+    "created_at": "2026-04-11T06:11:22.860047+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "west": "rotations/west.png",
+      "east": "rotations/east.png",
+      "north": "rotations/north.png"
+    },
+    "animations": {
+      "animation-65529e8c": {
+        "north": [
+          "animations/animation-65529e8c/north/frame_000.png",
+          "animations/animation-65529e8c/north/frame_001.png",
+          "animations/animation-65529e8c/north/frame_002.png",
+          "animations/animation-65529e8c/north/frame_003.png",
+          "animations/animation-65529e8c/north/frame_004.png",
+          "animations/animation-65529e8c/north/frame_005.png",
+          "animations/animation-65529e8c/north/frame_006.png",
+          "animations/animation-65529e8c/north/frame_007.png",
+          "animations/animation-65529e8c/north/frame_008.png"
+        ],
+        "south": [
+          "animations/animation-65529e8c/south/frame_000.png",
+          "animations/animation-65529e8c/south/frame_001.png",
+          "animations/animation-65529e8c/south/frame_002.png",
+          "animations/animation-65529e8c/south/frame_003.png",
+          "animations/animation-65529e8c/south/frame_004.png",
+          "animations/animation-65529e8c/south/frame_005.png",
+          "animations/animation-65529e8c/south/frame_006.png",
+          "animations/animation-65529e8c/south/frame_007.png",
+          "animations/animation-65529e8c/south/frame_008.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T08:45:21.152379"
+}

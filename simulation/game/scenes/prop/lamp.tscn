@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://bxtohbpvsdqw7"]
+
+[ext_resource type="Texture2D" uid="uid://l8ahivvxjoay" path="res://assets/Modern tiles_Free/Interiors_free/16x16/2.png" id="1_72t4t"]
+[ext_resource type="Script" uid="uid://byc82ag2pw64k" path="res://scripts/lamp.gd" id="1_hxjgs"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_chisw"]
+atlas = ExtResource("1_72t4t")
+region = Rect2(64, 362, 64, 181)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0crtg"]
+atlas = ExtResource("1_72t4t")
+region = Rect2(192, 362, 64, 181)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7kaad"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_chisw")
+}],
+"loop": true,
+"name": &"OFF",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0crtg")
+}],
+"loop": true,
+"name": &"ON",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_26yh8"]
+size = Vector2(50, 72)
+
+[node name="Lamp" type="Node2D" unique_id=247573832 groups=["lamp"]]
+script = ExtResource("1_hxjgs")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=641872849]
+position = Vector2(0, -44)
+sprite_frames = SubResource("SpriteFrames_7kaad")
+animation = &"OFF"
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1147416870]
+visible = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=991313126]
+position = Vector2(0, -60)
+shape = SubResource("RectangleShape2D_26yh8")

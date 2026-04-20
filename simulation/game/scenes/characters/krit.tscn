@@ -1,0 +1,587 @@
+[gd_scene format=3 uid="uid://bfjsopja24efc"]
+
+[ext_resource type="Script" uid="uid://xva5an27633w" path="res://scripts/characters/krit.gd" id="1_eqwd8"]
+[ext_resource type="Texture2D" uid="uid://c5xnsoa2lpqyv" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_000.png" id="1_k54gu"]
+[ext_resource type="Texture2D" uid="uid://j155ip4vhcbs" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/east/frame_000.png" id="1_w2m5p"]
+[ext_resource type="Texture2D" uid="uid://dxenl0epok7i5" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_001.png" id="2_7hhea"]
+[ext_resource type="Texture2D" uid="uid://cw8jd0ypvxkow" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/east/frame_001.png" id="2_vku5s"]
+[ext_resource type="Texture2D" uid="uid://nwyyss1eylyl" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/east/frame_002.png" id="3_qjgah"]
+[ext_resource type="Texture2D" uid="uid://c1hfqyas5y5o6" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_002.png" id="3_xose5"]
+[ext_resource type="Texture2D" uid="uid://cavli3out8j7n" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/east/frame_003.png" id="4_exalm"]
+[ext_resource type="Texture2D" uid="uid://c4iwwwcispdqs" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_003.png" id="4_q4fkf"]
+[ext_resource type="Texture2D" uid="uid://c02ho1ere2ti3" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_004.png" id="5_4uhs3"]
+[ext_resource type="Texture2D" uid="uid://cjf0m3vxiet7u" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/north/frame_000.png" id="5_gwfhm"]
+[ext_resource type="Texture2D" uid="uid://8x8xnjrmj5cs" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_005.png" id="6_13gwm"]
+[ext_resource type="Texture2D" uid="uid://cr84e2vjypqqv" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/north/frame_001.png" id="6_xe0mw"]
+[ext_resource type="Texture2D" uid="uid://dgot81bd1gvv3" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_006.png" id="7_f1m1x"]
+[ext_resource type="Texture2D" uid="uid://ww8xdakb0mbe" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/north/frame_002.png" id="7_fpeyc"]
+[ext_resource type="Texture2D" uid="uid://fkgr4xdk3mti" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/north/frame_003.png" id="8_eouei"]
+[ext_resource type="Texture2D" uid="uid://bxov0khfr64b" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_007.png" id="8_s1xyo"]
+[ext_resource type="Texture2D" uid="uid://bg5ot3qupggob" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_008.png" id="9_o7qpe"]
+[ext_resource type="Texture2D" uid="uid://dchj6f5rdc3xb" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/south/frame_000.png" id="9_oq0vg"]
+[ext_resource type="Texture2D" uid="uid://cqde4le0uac5h" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/south/frame_001.png" id="10_k54gu"]
+[ext_resource type="Texture2D" uid="uid://cmtihqjpa0ten" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_001.png" id="10_krq1k"]
+[ext_resource type="Texture2D" uid="uid://b2op1g7uchy8u" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_002.png" id="11_7gu2l"]
+[ext_resource type="Texture2D" uid="uid://b4y4u10o7wnts" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/south/frame_002.png" id="11_7hhea"]
+[ext_resource type="Texture2D" uid="uid://bws1hyyxesqsd" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_003.png" id="12_0r23c"]
+[ext_resource type="Texture2D" uid="uid://c1ylhqjnfepxc" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Breathing_Idle-fd118402/south/frame_003.png" id="12_xose5"]
+[ext_resource type="Texture2D" uid="uid://divb4uvelsuen" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/east/frame_000.png" id="13_q4fkf"]
+[ext_resource type="Texture2D" uid="uid://c3yqaihpgj2e1" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_004.png" id="13_y7w8a"]
+[ext_resource type="Texture2D" uid="uid://dtsqj433rdaib" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/east/frame_001.png" id="14_4uhs3"]
+[ext_resource type="Texture2D" uid="uid://cuhnmsq3xh6cg" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_005.png" id="14_vg75p"]
+[ext_resource type="Texture2D" uid="uid://qcp04ree5cv2" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/east/frame_002.png" id="15_13gwm"]
+[ext_resource type="Texture2D" uid="uid://dt6pd82iucvxr" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_006.png" id="15_avvi7"]
+[ext_resource type="Texture2D" uid="uid://dm648puew1mme" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/east/frame_003.png" id="16_f1m1x"]
+[ext_resource type="Texture2D" uid="uid://lq346mbi6x0l" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_007.png" id="16_otdjs"]
+[ext_resource type="Texture2D" uid="uid://1toqraq1enjh" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_008.png" id="17_48bim"]
+[ext_resource type="Texture2D" uid="uid://bjeos0ph7gou5" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/east/frame_004.png" id="17_s1xyo"]
+[ext_resource type="Texture2D" uid="uid://c2pdbfy2paemv" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/east/frame_005.png" id="18_o7qpe"]
+[ext_resource type="Texture2D" uid="uid://dtk17viphfq75" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/north/frame_000.png" id="19_g8uht"]
+[ext_resource type="Texture2D" uid="uid://xrx62u0mxt86" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/north/frame_001.png" id="20_k4rfc"]
+[ext_resource type="Texture2D" uid="uid://sdjaip8aayiv" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/north/frame_002.png" id="21_w1wxx"]
+[ext_resource type="Texture2D" uid="uid://budfss4hjshei" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/north/frame_003.png" id="22_nkt6n"]
+[ext_resource type="Texture2D" uid="uid://brxt6s68l71mm" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/north/frame_004.png" id="23_5p2wa"]
+[ext_resource type="Texture2D" uid="uid://bgsop50visd0u" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/north/frame_005.png" id="24_yqxtb"]
+[ext_resource type="Texture2D" uid="uid://dvhehtoy2acdk" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/south/frame_000.png" id="25_onfrc"]
+[ext_resource type="Texture2D" uid="uid://h05d2h3bt5dm" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/south/frame_001.png" id="26_krq1k"]
+[ext_resource type="Texture2D" uid="uid://bibw3l7csbit4" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/south/frame_002.png" id="27_7gu2l"]
+[ext_resource type="Texture2D" uid="uid://dwp7bfpwqenoa" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/south/frame_003.png" id="28_0r23c"]
+[ext_resource type="Texture2D" uid="uid://b1mwjhgyqbl08" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/south/frame_004.png" id="29_y7w8a"]
+[ext_resource type="Texture2D" uid="uid://bo08fdbo3qjix" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_001.png" id="30_ad1e3"]
+[ext_resource type="Texture2D" uid="uid://cca7s20rltmmv" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/Walking-3085d7d5/south/frame_005.png" id="30_vg75p"]
+[ext_resource type="Texture2D" uid="uid://b2wffhmwi25nu" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_002.png" id="31_qnh5y"]
+[ext_resource type="Texture2D" uid="uid://b27owr5n3jsij" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_003.png" id="32_eqwd8"]
+[ext_resource type="Texture2D" uid="uid://cvsdx7nnoqfqk" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_004.png" id="33_ugq0r"]
+[ext_resource type="Texture2D" uid="uid://mch4crvq3vu1" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_005.png" id="34_j8ofn"]
+[ext_resource type="Texture2D" uid="uid://cbrydqvruaboe" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_006.png" id="35_62kyf"]
+[ext_resource type="Texture2D" uid="uid://ccjpfoqn5j02y" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_007.png" id="36_ymghh"]
+[ext_resource type="Texture2D" uid="uid://dnj6ml5do7vgs" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_008.png" id="37_ar5a0"]
+[ext_resource type="Texture2D" uid="uid://buubphoe7nd7o" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/playing_the_smart_phone-ea579f4a/south/frame_001.png" id="38_ad1e3"]
+[ext_resource type="Texture2D" uid="uid://du4vgk0os7gp3" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/playing_the_smart_phone-ea579f4a/south/frame_002.png" id="39_qnh5y"]
+[ext_resource type="Texture2D" uid="uid://dwcf35tj83sba" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/playing_the_smart_phone-ea579f4a/south/frame_003.png" id="40_eqwd8"]
+[ext_resource type="Texture2D" uid="uid://x8f54kcomte3" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/playing_the_smart_phone-ea579f4a/south/frame_004.png" id="41_ugq0r"]
+[ext_resource type="Texture2D" uid="uid://6qaaxvsrdc7f" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/playing_the_smart_phone-ea579f4a/south/frame_005.png" id="42_j8ofn"]
+[ext_resource type="Texture2D" uid="uid://tsafempdbgfp" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/playing_the_smart_phone-ea579f4a/south/frame_006.png" id="43_62kyf"]
+[ext_resource type="Texture2D" uid="uid://c4r52jnnhvtxg" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/playing_the_smart_phone-ea579f4a/south/frame_007.png" id="44_ymghh"]
+[ext_resource type="Texture2D" uid="uid://kubc75barr87" path="res://assets/Modern tiles_Free/Characters_free/Krit/animations/playing_the_smart_phone-ea579f4a/south/frame_008.png" id="45_ar5a0"]
+[ext_resource type="PackedScene" uid="uid://twue4lu1appd" path="res://scenes/prop/menu.tscn" id="64_qnh5y"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g8uht"]
+atlas = ExtResource("1_k54gu")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k4rfc"]
+atlas = ExtResource("2_7hhea")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w1wxx"]
+atlas = ExtResource("3_xose5")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nkt6n"]
+atlas = ExtResource("4_q4fkf")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5p2wa"]
+atlas = ExtResource("5_4uhs3")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_yqxtb"]
+atlas = ExtResource("6_13gwm")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_onfrc"]
+atlas = ExtResource("7_f1m1x")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_krq1k"]
+atlas = ExtResource("8_s1xyo")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7gu2l"]
+atlas = ExtResource("9_o7qpe")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h5ylq"]
+atlas = ExtResource("10_krq1k")
+region = Rect2(0, 0, 52, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5cluj"]
+atlas = ExtResource("11_7gu2l")
+region = Rect2(0, 0, 52, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6w8lo"]
+atlas = ExtResource("12_0r23c")
+region = Rect2(0, 0, 52, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gm27c"]
+atlas = ExtResource("13_y7w8a")
+region = Rect2(0, 0, 52, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t150h"]
+atlas = ExtResource("14_vg75p")
+region = Rect2(0, 0, 52, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8tt7m"]
+atlas = ExtResource("15_avvi7")
+region = Rect2(0, 0, 52, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2dyyf"]
+atlas = ExtResource("16_otdjs")
+region = Rect2(0, 0, 52, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8ct6u"]
+atlas = ExtResource("17_48bim")
+region = Rect2(0, 0, 52, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_avvi7"]
+atlas = ExtResource("1_w2m5p")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_otdjs"]
+atlas = ExtResource("2_vku5s")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_48bim"]
+atlas = ExtResource("3_qjgah")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ad1e3"]
+atlas = ExtResource("4_exalm")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qnh5y"]
+atlas = ExtResource("5_gwfhm")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eqwd8"]
+atlas = ExtResource("6_xe0mw")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ugq0r"]
+atlas = ExtResource("7_fpeyc")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j8ofn"]
+atlas = ExtResource("8_eouei")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_62kyf"]
+atlas = ExtResource("9_oq0vg")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ymghh"]
+atlas = ExtResource("10_k54gu")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ar5a0"]
+atlas = ExtResource("11_7hhea")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7fftg"]
+atlas = ExtResource("12_xose5")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tern2"]
+atlas = ExtResource("30_ad1e3")
+region = Rect2(0, 0, 47, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l7476"]
+atlas = ExtResource("31_qnh5y")
+region = Rect2(0, 0, 47, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4ipyc"]
+atlas = ExtResource("32_eqwd8")
+region = Rect2(0, 0, 47, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_v6c3i"]
+atlas = ExtResource("33_ugq0r")
+region = Rect2(0, 0, 47, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aeipt"]
+atlas = ExtResource("34_j8ofn")
+region = Rect2(0, 0, 47, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rqss7"]
+atlas = ExtResource("35_62kyf")
+region = Rect2(0, 0, 47, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s3f5k"]
+atlas = ExtResource("36_ymghh")
+region = Rect2(0, 0, 47, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qmsu5"]
+atlas = ExtResource("37_ar5a0")
+region = Rect2(0, 0, 47, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nacyq"]
+atlas = ExtResource("38_ad1e3")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kh5xd"]
+atlas = ExtResource("39_qnh5y")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_feyp7"]
+atlas = ExtResource("40_eqwd8")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2ywtx"]
+atlas = ExtResource("41_ugq0r")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pch81"]
+atlas = ExtResource("42_j8ofn")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c8rm0"]
+atlas = ExtResource("43_62kyf")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g0r75"]
+atlas = ExtResource("44_ymghh")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5hu0n"]
+atlas = ExtResource("45_ar5a0")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_c8fr2"]
+atlas = ExtResource("13_q4fkf")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g63us"]
+atlas = ExtResource("14_4uhs3")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wnm5n"]
+atlas = ExtResource("15_13gwm")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fy01t"]
+atlas = ExtResource("16_f1m1x")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0noj4"]
+atlas = ExtResource("17_s1xyo")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ibstt"]
+atlas = ExtResource("18_o7qpe")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2kvkb"]
+atlas = ExtResource("19_g8uht")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_37agd"]
+atlas = ExtResource("20_k4rfc")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ldfuf"]
+atlas = ExtResource("21_w1wxx")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_482y0"]
+atlas = ExtResource("22_nkt6n")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k72eb"]
+atlas = ExtResource("23_5p2wa")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q6wsn"]
+atlas = ExtResource("24_yqxtb")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_af7xw"]
+atlas = ExtResource("25_onfrc")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_drqd8"]
+atlas = ExtResource("26_krq1k")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_msepx"]
+atlas = ExtResource("27_7gu2l")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0hj4d"]
+atlas = ExtResource("28_0r23c")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_iaqwd"]
+atlas = ExtResource("29_y7w8a")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_26ugc"]
+atlas = ExtResource("30_vg75p")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_5c4gm"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g8uht")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k4rfc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w1wxx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nkt6n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5p2wa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_yqxtb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_onfrc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_krq1k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7gu2l")
+}],
+"loop": false,
+"name": &"falling_south",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h5ylq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5cluj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6w8lo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gm27c")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t150h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8tt7m")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2dyyf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8ct6u")
+}],
+"loop": false,
+"name": &"female_nurse",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_avvi7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_otdjs")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_48bim")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ad1e3")
+}],
+"loop": true,
+"name": &"idle_east",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qnh5y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eqwd8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ugq0r")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j8ofn")
+}],
+"loop": true,
+"name": &"idle_north",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_62kyf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ymghh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ar5a0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7fftg")
+}],
+"loop": true,
+"name": &"idle_south",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tern2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l7476")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4ipyc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_v6c3i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aeipt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rqss7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s3f5k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qmsu5")
+}],
+"loop": false,
+"name": &"male_nurse",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nacyq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kh5xd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_feyp7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2ywtx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pch81")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c8rm0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g0r75")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5hu0n")
+}],
+"loop": false,
+"name": &"playing_phone",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_c8fr2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g63us")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wnm5n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fy01t")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0noj4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ibstt")
+}],
+"loop": true,
+"name": &"walk_east",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2kvkb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_37agd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ldfuf")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_482y0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k72eb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q6wsn")
+}],
+"loop": true,
+"name": &"walk_north",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_af7xw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_drqd8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_msepx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0hj4d")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_iaqwd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_26ugc")
+}],
+"loop": true,
+"name": &"walk_south",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_w2m5p"]
+height = 40.0
+
+[node name="Krit" type="CharacterBody2D" unique_id=790627515 groups=["NPC"]]
+script = ExtResource("1_eqwd8")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=801882984]
+position = Vector2(0, -37)
+sprite_frames = SubResource("SpriteFrames_5c4gm")
+animation = &"idle_south"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=103281672]
+position = Vector2(0, -21)
+shape = SubResource("CapsuleShape2D_w2m5p")
+
+[node name="Timer" type="Timer" parent="." unique_id=937785898]
+
+[node name="HTTPRequest" type="HTTPRequest" parent="." unique_id=231365937]
+
+[node name="Menu" parent="." unique_id=830386094 instance=ExtResource("64_qnh5y")]
+visible = false
+offset_left = 40.0
+offset_top = -131.0
+offset_right = 229.0
+offset_bottom = 58.0

@@ -58,6 +58,7 @@ from .shift_checklist import ShiftChecklistState
 from .shift_checklist_user_template import ShiftChecklistUserTemplate
 from .tasks import Task, TaskReport
 from .task_management import PatientFixRoutine, RoutineTask, RoutineTaskLog
+from .sim_game import SimGameActorMap, SimGameRoomMap
 
 __all__ = [
     "Base",
@@ -139,4 +140,7 @@ __all__ = [
     "RoutineTask",
     "RoutineTaskLog",
     "PatientFixRoutine",
+    # Simulator ↔ Godot game bridge
+    "SimGameActorMap",
+    "SimGameRoomMap",
 ]

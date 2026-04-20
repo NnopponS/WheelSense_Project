@@ -8,9 +8,10 @@ from .endpoints import (
     workspaces, devices, rooms, telemetry, localization, motion,
     patients, caregivers, facilities, vitals, timeline, alerts,
     auth, users, homeassistant, retention, cameras, analytics,
-    chat, ai_settings, workflow, floorplans, care, medication, service_requests, profile_images, demo_control,
+    chat, ai_settings, workflow, floorplans, care, medication, service_requests, profile_images,
     support, calendar, chat_actions, shift_checklist, mcp_auth, task_management, tasks,
 )
+from app.config import settings
 from app.localization import is_model_ready
 
 api_router = APIRouter(prefix="/api")
@@ -112,12 +113,26 @@ api_router.include_router(
     tags=["chat-actions"],
     dependencies=[Depends(get_current_active_user)],
 )
-api_router.include_router(
-    demo_control.router,
-    prefix="/demo",
-    tags=["demo-control"],
-    dependencies=[Depends(get_current_active_user)],
-)
+# ── Simulator-only routers ───────────────────────────────────────────────────
+# Mounted only when ENV_MODE=simulator so production builds don't even expose
+# the OpenAPI schema for these routes. See app/sim/__init__.py for contract.
+if settings.is_simulator_mode:
+    from app.sim.endpoints import demo_control as _sim_demo_control
+    from app.sim.endpoints import game as _sim_game
+
+    api_router.include_router(
+        _sim_demo_control.router,
+        prefix="/demo",
+        tags=["demo-control"],
+        dependencies=[Depends(get_current_active_user)],
+    )
+    # Game bridge: REST requires JWT via standard header; WebSocket uses
+    # its own query-param token check so it cannot share the HTTP guard.
+    api_router.include_router(
+        _sim_game.router,
+        prefix="/sim/game",
+        tags=["sim-game"],
+    )
 api_router.include_router(
     admin_database.router,
     prefix="/admin/database",

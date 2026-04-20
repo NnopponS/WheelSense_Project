@@ -1,0 +1,86 @@
+{
+  "character": {
+    "id": "d818fa36-8c33-40b0-b035-9ad692e92b39",
+    "name": "a male nurse",
+    "prompt": "a male nurse",
+    "size": {
+      "width": 80,
+      "height": 80
+    },
+    "template_id": "mannequin",
+    "directions": 4,
+    "view": "low top-down",
+    "created_at": "2026-04-06T08:09:16.642716+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "west": "rotations/west.png",
+      "east": "rotations/east.png",
+      "north": "rotations/north.png"
+    },
+    "animations": {
+      "playing_the_smart_phone-291d73e2": {
+        "south": [
+          "animations/playing_the_smart_phone-291d73e2/south/frame_000.png",
+          "animations/playing_the_smart_phone-291d73e2/south/frame_001.png",
+          "animations/playing_the_smart_phone-291d73e2/south/frame_002.png",
+          "animations/playing_the_smart_phone-291d73e2/south/frame_003.png",
+          "animations/playing_the_smart_phone-291d73e2/south/frame_004.png",
+          "animations/playing_the_smart_phone-291d73e2/south/frame_005.png",
+          "animations/playing_the_smart_phone-291d73e2/south/frame_006.png",
+          "animations/playing_the_smart_phone-291d73e2/south/frame_007.png",
+          "animations/playing_the_smart_phone-291d73e2/south/frame_008.png"
+        ]
+      },
+      "Breathing_Idle-046c2e3c": {
+        "south": [
+          "animations/Breathing_Idle-046c2e3c/south/frame_000.png",
+          "animations/Breathing_Idle-046c2e3c/south/frame_001.png",
+          "animations/Breathing_Idle-046c2e3c/south/frame_002.png",
+          "animations/Breathing_Idle-046c2e3c/south/frame_003.png"
+        ],
+        "east": [
+          "animations/Breathing_Idle-046c2e3c/east/frame_000.png",
+          "animations/Breathing_Idle-046c2e3c/east/frame_001.png",
+          "animations/Breathing_Idle-046c2e3c/east/frame_002.png",
+          "animations/Breathing_Idle-046c2e3c/east/frame_003.png"
+        ],
+        "north": [
+          "animations/Breathing_Idle-046c2e3c/north/frame_000.png",
+          "animations/Breathing_Idle-046c2e3c/north/frame_001.png",
+          "animations/Breathing_Idle-046c2e3c/north/frame_002.png",
+          "animations/Breathing_Idle-046c2e3c/north/frame_003.png"
+        ]
+      },
+      "Walking-5950b10a": {
+        "north": [
+          "animations/Walking-5950b10a/north/frame_000.png",
+          "animations/Walking-5950b10a/north/frame_001.png",
+          "animations/Walking-5950b10a/north/frame_002.png",
+          "animations/Walking-5950b10a/north/frame_003.png",
+          "animations/Walking-5950b10a/north/frame_004.png",
+          "animations/Walking-5950b10a/north/frame_005.png"
+        ],
+        "east": [
+          "animations/Walking-5950b10a/east/frame_000.png",
+          "animations/Walking-5950b10a/east/frame_001.png",
+          "animations/Walking-5950b10a/east/frame_002.png",
+          "animations/Walking-5950b10a/east/frame_003.png",
+          "animations/Walking-5950b10a/east/frame_004.png",
+          "animations/Walking-5950b10a/east/frame_005.png"
+        ],
+        "south": [
+          "animations/Walking-5950b10a/south/frame_000.png",
+          "animations/Walking-5950b10a/south/frame_001.png",
+          "animations/Walking-5950b10a/south/frame_002.png",
+          "animations/Walking-5950b10a/south/frame_003.png",
+          "animations/Walking-5950b10a/south/frame_004.png",
+          "animations/Walking-5950b10a/south/frame_005.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-13T03:09:19.556025"
+}

@@ -1,0 +1,96 @@
+{
+  "character": {
+    "id": "447e7c15-1606-411d-ace6-38a45ba05640",
+    "name": "a nurse",
+    "prompt": "a nurse",
+    "size": {
+      "width": 80,
+      "height": 80
+    },
+    "template_id": "mannequin",
+    "directions": 4,
+    "view": "low top-down",
+    "created_at": "2026-04-06T06:48:50.542049+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "west": "rotations/west.png",
+      "east": "rotations/east.png",
+      "north": "rotations/north.png"
+    },
+    "animations": {
+      "Walking-f30a6892": {
+        "east": [
+          "animations/Walking-f30a6892/east/frame_000.png",
+          "animations/Walking-f30a6892/east/frame_001.png",
+          "animations/Walking-f30a6892/east/frame_002.png",
+          "animations/Walking-f30a6892/east/frame_003.png",
+          "animations/Walking-f30a6892/east/frame_004.png",
+          "animations/Walking-f30a6892/east/frame_005.png"
+        ],
+        "south": [
+          "animations/Walking-f30a6892/south/frame_000.png",
+          "animations/Walking-f30a6892/south/frame_001.png",
+          "animations/Walking-f30a6892/south/frame_002.png",
+          "animations/Walking-f30a6892/south/frame_003.png",
+          "animations/Walking-f30a6892/south/frame_004.png",
+          "animations/Walking-f30a6892/south/frame_005.png"
+        ],
+        "north": [
+          "animations/Walking-f30a6892/north/frame_000.png",
+          "animations/Walking-f30a6892/north/frame_001.png",
+          "animations/Walking-f30a6892/north/frame_002.png",
+          "animations/Walking-f30a6892/north/frame_003.png",
+          "animations/Walking-f30a6892/north/frame_004.png",
+          "animations/Walking-f30a6892/north/frame_005.png"
+        ],
+        "west": [
+          "animations/Walking-f30a6892/west/frame_000.png",
+          "animations/Walking-f30a6892/west/frame_001.png",
+          "animations/Walking-f30a6892/west/frame_002.png",
+          "animations/Walking-f30a6892/west/frame_003.png",
+          "animations/Walking-f30a6892/west/frame_004.png",
+          "animations/Walking-f30a6892/west/frame_005.png"
+        ]
+      },
+      "Breathing_Idle-9e76f8f6": {
+        "east": [
+          "animations/Breathing_Idle-9e76f8f6/east/frame_000.png",
+          "animations/Breathing_Idle-9e76f8f6/east/frame_001.png",
+          "animations/Breathing_Idle-9e76f8f6/east/frame_002.png",
+          "animations/Breathing_Idle-9e76f8f6/east/frame_003.png"
+        ],
+        "north": [
+          "animations/Breathing_Idle-9e76f8f6/north/frame_000.png",
+          "animations/Breathing_Idle-9e76f8f6/north/frame_001.png",
+          "animations/Breathing_Idle-9e76f8f6/north/frame_002.png",
+          "animations/Breathing_Idle-9e76f8f6/north/frame_003.png"
+        ],
+        "south": [
+          "animations/Breathing_Idle-9e76f8f6/south/frame_000.png",
+          "animations/Breathing_Idle-9e76f8f6/south/frame_001.png",
+          "animations/Breathing_Idle-9e76f8f6/south/frame_002.png",
+          "animations/Breathing_Idle-9e76f8f6/south/frame_003.png"
+        ]
+      },
+      "playing_the_smart_phone-73a2ede8": {
+        "south": [
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_000.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_001.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_002.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_003.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_004.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_005.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_006.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_007.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_008.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_009.png",
+          "animations/playing_the_smart_phone-73a2ede8/south/frame_010.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-13T02:41:39.685457"
+}

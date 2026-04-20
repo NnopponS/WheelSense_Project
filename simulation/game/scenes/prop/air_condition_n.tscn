@@ -1,0 +1,97 @@
+[gd_scene format=3 uid="uid://ck717vbnib7fn"]
+
+[ext_resource type="Script" uid="uid://df6mf8dntci63" path="res://scripts/air_condition.gd" id="1_aut8u"]
+[ext_resource type="Texture2D" uid="uid://cedv51jqvpfjw" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_000.png" id="1_vd2eg"]
+[ext_resource type="Texture2D" uid="uid://b7dued7cq7htc" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_001.png" id="2_aut8u"]
+[ext_resource type="Texture2D" uid="uid://dshvlcy4j1row" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_002.png" id="3_2dan1"]
+[ext_resource type="Texture2D" uid="uid://dk5g4pgn3cx4i" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_003.png" id="4_drsyx"]
+[ext_resource type="Texture2D" uid="uid://cxpml7qmmlj2l" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_004.png" id="5_t7qnb"]
+[ext_resource type="Texture2D" uid="uid://bpyl07hmortv7" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_005.png" id="6_iqoly"]
+[ext_resource type="Texture2D" uid="uid://co44oce0n15nu" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_006.png" id="7_vc6kw"]
+[ext_resource type="Texture2D" uid="uid://1m8qvkhqmtwg" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_007.png" id="8_axq3m"]
+[ext_resource type="Texture2D" uid="uid://da7vvspsw7pjr" path="res://assets/Modern tiles_Free/Interiors_free/16x16/aircon/animations/animation-65529e8c/north/frame_008.png" id="9_b1twn"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_603k0"]
+atlas = ExtResource("1_vd2eg")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hdpo6"]
+atlas = ExtResource("2_aut8u")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sjw10"]
+atlas = ExtResource("3_2dan1")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xo4ji"]
+atlas = ExtResource("4_drsyx")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4yue0"]
+atlas = ExtResource("5_t7qnb")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hwpjd"]
+atlas = ExtResource("6_iqoly")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dhios"]
+atlas = ExtResource("7_vc6kw")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w8yid"]
+atlas = ExtResource("8_axq3m")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2b7vj"]
+atlas = ExtResource("9_b1twn")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_p3rxx"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_603k0")
+}],
+"loop": true,
+"name": &"OFF",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hdpo6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sjw10")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xo4ji")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4yue0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hwpjd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dhios")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w8yid")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2b7vj")
+}],
+"loop": true,
+"name": &"ON",
+"speed": 5.0
+}]
+
+[node name="Air_condition_north" type="Node2D" unique_id=1158752029 groups=["ac"]]
+script = ExtResource("1_aut8u")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1467029308]
+position = Vector2(0, -9)
+scale = Vector2(1.25, 1.25)
+sprite_frames = SubResource("SpriteFrames_p3rxx")
+animation = &"OFF"

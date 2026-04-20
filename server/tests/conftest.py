@@ -22,6 +22,11 @@ os.environ["WHEELSENSE_ENABLE_MCP"] = "0"
 # Keep pytest fast: skip sentence-transformers download/load unless a test enables it.
 os.environ["INTENT_SEMANTIC_ENABLED"] = "false"
 os.environ["INTENT_LLM_NORMALIZE_ENABLED"] = "false"
+# Boot the app in simulator mode so sim-only routers (e.g. /api/demo/*) are
+# mounted during tests. Individual tests can flip `settings.env_mode` at
+# request time via monkeypatch; the inline `is_simulator_mode` guards inside
+# endpoints still enforce per-request behavior.
+os.environ["ENV_MODE"] = "simulator"
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient

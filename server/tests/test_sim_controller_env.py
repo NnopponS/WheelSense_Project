@@ -5,7 +5,11 @@ from __future__ import annotations
 import os
 from unittest.mock import patch
 
-from sim_controller import ALERT_THRESHOLDS, SIMULATION_CONFIG, merge_env_sim_overrides
+from app.sim.runtime.sim_controller import (
+    ALERT_THRESHOLDS,
+    SIMULATION_CONFIG,
+    merge_env_sim_overrides,
+)
 
 
 def test_merge_env_vital_update_interval():

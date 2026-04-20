@@ -22,7 +22,7 @@ from app.models.users import AuthSession
 from app.models.core import Device, Room, Workspace
 from app.core.security import create_access_token, get_password_hash
 from app.models.users import User
-from app.services.simulator_reset import get_simulator_status
+from app.sim.services.simulator_reset import get_simulator_status
 
 
 # ── Workspace tests ──────────────────────────────────────────────────────────
@@ -872,7 +872,7 @@ async def test_simulator_command_forbidden_when_not_simulator(client: AsyncClien
 @pytest.mark.asyncio
 async def test_simulator_command_publishes_mqtt_in_simulator_mode(client: AsyncClient, monkeypatch):
     monkeypatch.setattr(settings, "env_mode", "simulator")
-    with patch("app.api.endpoints.demo_control.publish_mqtt", new_callable=AsyncMock) as pub:
+    with patch("app.sim.endpoints.demo_control.publish_mqtt", new_callable=AsyncMock) as pub:
         res = await client.post("/api/demo/simulator/command", json={"command": "pause"})
     assert res.status_code == 200
     body = res.json()

@@ -1,0 +1,125 @@
+{
+  "character": {
+    "id": "7343f6e4-131c-4c95-a43f-d6a2afb9c76e",
+    "name": "He has messy, medium-length brown hair and features thick dark eyebrows, a sturdy jawline, and a slight, neutral smile. James is wearing a detailed dark navy-blue, cable-knit textured sweater, light-blue denim jeans, and brown lace-up boots. He is standing in a relaxed three-quarter view with both hands in his jeans pockets.",
+    "prompt": "He has messy, medium-length brown hair and features thick dark eyebrows, a sturdy jawline, and a slight, neutral smile. James is wearing a detailed dark navy-blue, cable-knit textured sweater, light-blue denim jeans, and brown lace-up boots. He is standing in a relaxed three-quarter view with both hands in his jeans pockets.",
+    "size": {
+      "width": 80,
+      "height": 80
+    },
+    "template_id": "mannequin",
+    "directions": 4,
+    "view": "low top-down",
+    "created_at": "2026-04-13T05:05:49.809521+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "west": "rotations/west.png",
+      "east": "rotations/east.png",
+      "north": "rotations/north.png"
+    },
+    "animations": {
+      "Breathing_Idle-fd118402": {
+        "south": [
+          "animations/Breathing_Idle-fd118402/south/frame_000.png",
+          "animations/Breathing_Idle-fd118402/south/frame_001.png",
+          "animations/Breathing_Idle-fd118402/south/frame_002.png",
+          "animations/Breathing_Idle-fd118402/south/frame_003.png"
+        ],
+        "north": [
+          "animations/Breathing_Idle-fd118402/north/frame_000.png",
+          "animations/Breathing_Idle-fd118402/north/frame_001.png",
+          "animations/Breathing_Idle-fd118402/north/frame_002.png",
+          "animations/Breathing_Idle-fd118402/north/frame_003.png"
+        ],
+        "east": [
+          "animations/Breathing_Idle-fd118402/east/frame_000.png",
+          "animations/Breathing_Idle-fd118402/east/frame_001.png",
+          "animations/Breathing_Idle-fd118402/east/frame_002.png",
+          "animations/Breathing_Idle-fd118402/east/frame_003.png"
+        ]
+      },
+      "Walking-3085d7d5": {
+        "south": [
+          "animations/Walking-3085d7d5/south/frame_000.png",
+          "animations/Walking-3085d7d5/south/frame_001.png",
+          "animations/Walking-3085d7d5/south/frame_002.png",
+          "animations/Walking-3085d7d5/south/frame_003.png",
+          "animations/Walking-3085d7d5/south/frame_004.png",
+          "animations/Walking-3085d7d5/south/frame_005.png"
+        ],
+        "east": [
+          "animations/Walking-3085d7d5/east/frame_000.png",
+          "animations/Walking-3085d7d5/east/frame_001.png",
+          "animations/Walking-3085d7d5/east/frame_002.png",
+          "animations/Walking-3085d7d5/east/frame_003.png",
+          "animations/Walking-3085d7d5/east/frame_004.png",
+          "animations/Walking-3085d7d5/east/frame_005.png"
+        ],
+        "north": [
+          "animations/Walking-3085d7d5/north/frame_000.png",
+          "animations/Walking-3085d7d5/north/frame_001.png",
+          "animations/Walking-3085d7d5/north/frame_002.png",
+          "animations/Walking-3085d7d5/north/frame_003.png",
+          "animations/Walking-3085d7d5/north/frame_004.png",
+          "animations/Walking-3085d7d5/north/frame_005.png"
+        ]
+      },
+      "He_s_falling_on_the_floor-d53a0ac4": {
+        "south": [
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_000.png",
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_001.png",
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_002.png",
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_003.png",
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_004.png",
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_005.png",
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_006.png",
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_007.png",
+          "animations/He_s_falling_on_the_floor-d53a0ac4/south/frame_008.png"
+        ]
+      },
+      "playing_the_smart_phone-ea579f4a": {
+        "south": [
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_000.png",
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_001.png",
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_002.png",
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_003.png",
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_004.png",
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_005.png",
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_006.png",
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_007.png",
+          "animations/playing_the_smart_phone-ea579f4a/south/frame_008.png"
+        ]
+      },
+      "The_female_nurse_is_helping_this_old_man_to_stand-e95526fb": {
+        "south": [
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_000.png",
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_001.png",
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_002.png",
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_003.png",
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_004.png",
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_005.png",
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_006.png",
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_007.png",
+          "animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south/frame_008.png"
+        ]
+      },
+      "The_male_nurse_is_helping_this_old_man_to_stand_up-835de306": {
+        "south": [
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_000.png",
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_001.png",
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_002.png",
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_003.png",
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_004.png",
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_005.png",
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_006.png",
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_007.png",
+          "animations/The_male_nurse_is_helping_this_old_man_to_stand_up-835de306/south/frame_008.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-13T09:16:17.982517"
+}

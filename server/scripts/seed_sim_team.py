@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-"""Seed a minimal simulator-ready workspace: rooms, 5 patients + devices, 4 staff users.
+"""Legacy entry shim — delegates to the game-aligned simulator seeder.
 
-Does not create a second admin account — use the bootstrap admin (BOOTSTRAP_ADMIN_*).
-Aligns workspace name with BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE / bootstrap_demo_workspace_name.
-
-Usage:
-    cd server
-    python scripts/seed_sim_team.py
-    python scripts/seed_sim_team.py --reset
+Kept only so existing Docker compose commands and developer muscle memory
+(`python scripts/seed_sim_team.py`) keep working. All real logic lives in
+`app.sim.runtime.sim_game_seed`.
 """
 
 from __future__ import annotations
@@ -22,19 +18,22 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
 from app.config import settings
+from app.sim.runtime.sim_game_seed import seed_sim_game_workspace
 
 
-def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Seed sim team + 5 patients for MQTT simulator")
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="Seed simulator workspace (delegates to sim_game_seed)."
+    )
     p.add_argument(
         "--workspace",
-        default=(settings.bootstrap_demo_workspace_name or "WheelSense Demo Workspace").strip(),
-        help="Workspace name (default from BOOTSTRAP_DEMO_WORKSPACE_NAME)",
+        default=(settings.bootstrap_demo_workspace_name or "WheelSense Simulation").strip(),
+        help="Workspace name (default from BOOTSTRAP_DEMO_WORKSPACE_NAME).",
     )
     p.add_argument(
         "--reset",
         action="store_true",
-        help="Delete existing workspace with this name before re-seeding",
+        help="Clear workspace-scoped dynamic data before re-seeding.",
     )
     return p.parse_args()
 
@@ -50,10 +49,11 @@ def _configure_console_utf8() -> None:
 
 def main() -> None:
     _configure_console_utf8()
-    args = parse_args()
-    from seed_demo import run_sim_team_seed
-
-    asyncio.run(run_sim_team_seed(args.workspace, args.reset))
+    args = _parse_args()
+    ws_id = asyncio.run(
+        seed_sim_game_workspace(workspace_name=args.workspace, reset=args.reset)
+    )
+    print(f"[seed_sim_team] workspace_id={ws_id} reset={args.reset}")
 
 
 if __name__ == "__main__":

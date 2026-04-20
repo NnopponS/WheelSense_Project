@@ -55,7 +55,7 @@ services:
     command:
       - sh
       - -c
-      - python scripts/seed_sim_team.py && exec python sim_controller.py --routine
+      - python scripts/seed_sim_team.py && exec python -m app.sim.runtime.sim_controller --routine
 
 volumes:
   pgdata-sim:

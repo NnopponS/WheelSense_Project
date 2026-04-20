@@ -1,0 +1,66 @@
+{
+  "character": {
+    "id": "d934b930-216e-40f8-9f5e-fe7b9e2502e7",
+    "name": "The bedridden Patient",
+    "prompt": "The bedridden Patient",
+    "size": {
+      "width": 108,
+      "height": 108
+    },
+    "template_id": "mannequin",
+    "directions": 4,
+    "view": "low top-down",
+    "created_at": "2026-04-11T10:13:36.081959+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "west": "rotations/west.png",
+      "east": "rotations/east.png",
+      "north": "rotations/north.png"
+    },
+    "animations": {
+      "playing_the_smart_phone-7922fbcc": {
+        "south": [
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_000.png",
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_001.png",
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_002.png",
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_003.png",
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_004.png",
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_005.png",
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_006.png",
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_007.png",
+          "animations/playing_the_smart_phone-7922fbcc/south/frame_008.png"
+        ]
+      },
+      "The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f": {
+        "south": [
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_000.png",
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_001.png",
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_002.png",
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_003.png",
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_004.png",
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_005.png",
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_006.png",
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_007.png",
+          "animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_008.png"
+        ]
+      },
+      "The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38": {
+        "south": [
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_000.png",
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_001.png",
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_002.png",
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_003.png",
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_004.png",
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_005.png",
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_006.png",
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_007.png",
+          "animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_008.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-15T05:45:18.032729"
+}

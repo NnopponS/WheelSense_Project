@@ -44,6 +44,33 @@ from app.models.vitals import VitalReading
 
 logger = logging.getLogger("wheelsense.mqtt")
 
+
+async def _should_drop_rssi_for_sim_real_device(
+    session, ws_id: int, device_id: str
+) -> bool:
+    """Return True if we're in simulator mode AND this device belongs to a
+    character configured with sensor_mode=real_device.
+
+    In that case, BLE/RSSI readings must be dropped so localization stays
+    driven by the Godot game (see docs/adr/0018-game-sim-bridge.md). Real
+    vitals (HR/IMU) still persist normally.
+
+    The import is deferred because `app.sim.*` is only safe to import in
+    simulator mode; production boot never reaches this branch.
+    """
+    if not settings.is_simulator_mode:
+        return False
+    try:
+        from app.sim.services.game_bridge import is_rssi_from_real_device_character
+    except Exception:  # noqa: BLE001 — defensive: never break ingest on import errors
+        logger.exception("game-bridge import failed; keeping RSSI as-is")
+        return False
+    try:
+        return await is_rssi_from_real_device_character(session, ws_id, device_id)
+    except Exception:  # noqa: BLE001
+        logger.exception("RSSI filter lookup failed for device=%s", device_id)
+        return False
+
 # Key: "{workspace_id}:{patient_id}" — one localization state per patient (mobile + wheelchair share it).
 _room_tracker: dict[str, dict] = {}
 _photo_buffers: dict[str, dict] = {}

@@ -1,0 +1,379 @@
+[gd_scene format=3 uid="uid://cv4nwfebjf1ob"]
+
+[ext_resource type="Script" uid="uid://c6qav5tb5orfu" path="res://scripts/characters/rattana.gd" id="1_duv6h"]
+[ext_resource type="Texture2D" uid="uid://deuwmcdxhb3wi" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_000.png" id="1_t62w2"]
+[ext_resource type="Texture2D" uid="uid://ccmsup4b86f2j" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_001.png" id="2_oe2rc"]
+[ext_resource type="Texture2D" uid="uid://djmxoq8g3b7ul" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_002.png" id="3_duv6h"]
+[ext_resource type="Texture2D" uid="uid://berlp3lj8fn4l" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_003.png" id="4_14t0d"]
+[ext_resource type="Texture2D" uid="uid://cawf2ylda4hpr" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_004.png" id="5_wa2al"]
+[ext_resource type="Texture2D" uid="uid://ibx3vna7khnw" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_005.png" id="6_fbwhq"]
+[ext_resource type="Texture2D" uid="uid://b62lmbogxcjdm" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_006.png" id="7_50f4u"]
+[ext_resource type="Texture2D" uid="uid://gjxd3rspccjx" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_007.png" id="8_6w2un"]
+[ext_resource type="Texture2D" uid="uid://dw6m771mmn0l7" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south/frame_008.png" id="9_q2o3p"]
+[ext_resource type="Texture2D" uid="uid://os1h2mfafjt2" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_000.png" id="10_e80n4"]
+[ext_resource type="Texture2D" uid="uid://birniqrnvqf8h" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_001.png" id="11_iid0e"]
+[ext_resource type="Texture2D" uid="uid://biqpl188amdvl" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_002.png" id="12_dm7io"]
+[ext_resource type="Texture2D" uid="uid://co0afplk86uk6" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_003.png" id="13_jao3k"]
+[ext_resource type="Texture2D" uid="uid://bdr8qb1f1yrqw" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_004.png" id="14_eho0e"]
+[ext_resource type="Texture2D" uid="uid://c54uk3sll2nqo" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_005.png" id="15_jw8jl"]
+[ext_resource type="Texture2D" uid="uid://blo6g7gpmmwm3" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_006.png" id="16_7hxtb"]
+[ext_resource type="Texture2D" uid="uid://cutcq01645xdt" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_007.png" id="17_3lt71"]
+[ext_resource type="Texture2D" uid="uid://t6rshf1pdrn" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south/frame_008.png" id="18_pcdxo"]
+[ext_resource type="Texture2D" uid="uid://d3gqosjrcsnn5" path="res://assets/Modern tiles_Free/Characters_free/Rattana/rotations/east.png" id="19_34fq1"]
+[ext_resource type="Texture2D" uid="uid://duktith3nwob7" path="res://assets/Modern tiles_Free/Characters_free/Rattana/rotations/north.png" id="20_hwl4j"]
+[ext_resource type="Texture2D" uid="uid://doj0r85qfftlx" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_000.png" id="21_04wxj"]
+[ext_resource type="Texture2D" uid="uid://bfdkpvwnx4evd" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_001.png" id="22_c6lus"]
+[ext_resource type="Texture2D" uid="uid://dun6bancemw5s" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_002.png" id="23_bs2e5"]
+[ext_resource type="Texture2D" uid="uid://br64vk0iebd2v" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_003.png" id="24_q54ot"]
+[ext_resource type="Texture2D" uid="uid://bu4th0jneoj8c" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_004.png" id="25_nmsfu"]
+[ext_resource type="Texture2D" uid="uid://dhwxcmyfboawt" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_005.png" id="26_sycvn"]
+[ext_resource type="Texture2D" uid="uid://dj8sscch22bhg" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_006.png" id="27_8xji4"]
+[ext_resource type="Texture2D" uid="uid://b73qd873qhled" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_007.png" id="28_iblhl"]
+[ext_resource type="Texture2D" uid="uid://ceo3rbp0bqd2s" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/The_male_doctor_helping_the_grandma_to_sit_wheelch-b14ba4c8/south/frame_008.png" id="29_35hw0"]
+[ext_resource type="Texture2D" uid="uid://dpmjvqaftwr4o" path="res://assets/Modern tiles_Free/Characters_free/Rattana/rotations/south.png" id="30_mkwvq"]
+[ext_resource type="Texture2D" uid="uid://msxpvwmju764" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/playing_a_smart_phone.-ae0cccae/south/frame_001.png" id="31_kswt7"]
+[ext_resource type="Texture2D" uid="uid://byl5syhieoat" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/playing_a_smart_phone.-ae0cccae/south/frame_002.png" id="32_ihr4b"]
+[ext_resource type="Texture2D" uid="uid://ddj6p6mqoa624" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/playing_a_smart_phone.-ae0cccae/south/frame_003.png" id="33_i8ats"]
+[ext_resource type="Texture2D" uid="uid://dbf6nqfp3ybk7" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/playing_a_smart_phone.-ae0cccae/south/frame_004.png" id="34_8kuak"]
+[ext_resource type="Texture2D" uid="uid://bllfbp813hql0" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/playing_a_smart_phone.-ae0cccae/south/frame_005.png" id="35_xsndv"]
+[ext_resource type="Texture2D" uid="uid://bbff5ii8dh244" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/playing_a_smart_phone.-ae0cccae/south/frame_006.png" id="36_3sn0k"]
+[ext_resource type="Texture2D" uid="uid://rhmfoqx74r63" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/playing_a_smart_phone.-ae0cccae/south/frame_007.png" id="37_5bcod"]
+[ext_resource type="Texture2D" uid="uid://n5gpeqlykdjg" path="res://assets/Modern tiles_Free/Characters_free/Rattana/animations/playing_a_smart_phone.-ae0cccae/south/frame_008.png" id="38_mcbab"]
+[ext_resource type="PackedScene" uid="uid://twue4lu1appd" path="res://scenes/prop/menu.tscn" id="39_oe2rc"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6tv76"]
+atlas = ExtResource("1_t62w2")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o48pm"]
+atlas = ExtResource("2_oe2rc")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qy3f7"]
+atlas = ExtResource("3_duv6h")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ipmq8"]
+atlas = ExtResource("4_14t0d")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ppef2"]
+atlas = ExtResource("5_wa2al")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_diaq0"]
+atlas = ExtResource("6_fbwhq")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_as5eb"]
+atlas = ExtResource("7_50f4u")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rkar8"]
+atlas = ExtResource("8_6w2un")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h4qvb"]
+atlas = ExtResource("9_q2o3p")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mgpar"]
+atlas = ExtResource("10_e80n4")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b3yj2"]
+atlas = ExtResource("11_iid0e")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k44np"]
+atlas = ExtResource("12_dm7io")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3h1sk"]
+atlas = ExtResource("13_jao3k")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tiokb"]
+atlas = ExtResource("14_eho0e")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hf5y4"]
+atlas = ExtResource("15_jw8jl")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_38hrx"]
+atlas = ExtResource("16_7hxtb")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ok65j"]
+atlas = ExtResource("17_3lt71")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5ors4"]
+atlas = ExtResource("18_pcdxo")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g8r3c"]
+atlas = ExtResource("19_34fq1")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nbqv3"]
+atlas = ExtResource("20_hwl4j")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1ypor"]
+atlas = ExtResource("1_t62w2")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_010ma"]
+atlas = ExtResource("21_04wxj")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ac73e"]
+atlas = ExtResource("22_c6lus")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_srent"]
+atlas = ExtResource("23_bs2e5")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hfbw1"]
+atlas = ExtResource("24_q54ot")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3170l"]
+atlas = ExtResource("25_nmsfu")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qnydj"]
+atlas = ExtResource("26_sycvn")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uny7g"]
+atlas = ExtResource("27_8xji4")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hrd1x"]
+atlas = ExtResource("28_iblhl")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_k5j3m"]
+atlas = ExtResource("29_35hw0")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jguvy"]
+atlas = ExtResource("30_mkwvq")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mpnn4"]
+atlas = ExtResource("31_kswt7")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3ub4v"]
+atlas = ExtResource("32_ihr4b")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t3sw7"]
+atlas = ExtResource("33_i8ats")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nn6c7"]
+atlas = ExtResource("34_8kuak")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_noip2"]
+atlas = ExtResource("35_xsndv")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ufcsp"]
+atlas = ExtResource("36_3sn0k")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4sfsr"]
+atlas = ExtResource("37_5bcod")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u7ru1"]
+atlas = ExtResource("38_mcbab")
+region = Rect2(0, 0, 92, 92)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7r6cd"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6tv76")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o48pm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qy3f7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ipmq8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ppef2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_diaq0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_as5eb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rkar8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h4qvb")
+}],
+"loop": false,
+"name": &"falling_south",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mgpar")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b3yj2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k44np")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3h1sk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tiokb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hf5y4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_38hrx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ok65j")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5ors4")
+}],
+"loop": false,
+"name": &"female_nurse",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g8r3c")
+}],
+"loop": false,
+"name": &"idle_east",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nbqv3")
+}],
+"loop": false,
+"name": &"idle_north",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1ypor")
+}],
+"loop": false,
+"name": &"idle_south",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_010ma")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ac73e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_srent")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hfbw1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3170l")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qnydj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uny7g")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hrd1x")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_k5j3m")
+}],
+"loop": false,
+"name": &"male_nurse",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jguvy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mpnn4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3ub4v")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t3sw7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nn6c7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_noip2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ufcsp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4sfsr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u7ru1")
+}],
+"loop": false,
+"name": &"playing_phone",
+"speed": 10.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_cpjlh"]
+height = 34.0
+
+[node name="Rattana" type="CharacterBody2D" unique_id=821580617 groups=["NPC"]]
+script = ExtResource("1_duv6h")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=995609518]
+position = Vector2(1, -28)
+sprite_frames = SubResource("SpriteFrames_7r6cd")
+animation = &"idle_south"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=808823617]
+position = Vector2(0, -18)
+shape = SubResource("CapsuleShape2D_cpjlh")
+
+[node name="Timer" type="Timer" parent="." unique_id=1409005403]
+
+[node name="HTTPRequest" type="HTTPRequest" parent="." unique_id=236157970]
+
+[node name="Menu" parent="." unique_id=830386094 instance=ExtResource("39_oe2rc")]
+visible = false
+offset_left = 32.0
+offset_top = -98.0
+offset_right = 221.0
+offset_bottom = 91.0

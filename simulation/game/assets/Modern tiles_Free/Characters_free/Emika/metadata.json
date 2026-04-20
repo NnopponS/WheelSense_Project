@@ -1,0 +1,132 @@
+{
+  "character": {
+    "id": "5c24671e-f7c5-4dac-a33e-955c08097d5d",
+    "name": "Elena",
+    "prompt": "A woman with wavy, ash-brown hair, seated in a wheelchair, wearing a dark purple long-sleeved shirt and gray trousers.",
+    "size": {
+      "width": 80,
+      "height": 80
+    },
+    "template_id": "mannequin",
+    "directions": 4,
+    "view": "low top-down",
+    "created_at": "2026-04-06T08:15:54.953828+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "west": "rotations/west.png",
+      "east": "rotations/east.png",
+      "north": "rotations/north.png"
+    },
+    "animations": {
+      "A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731": {
+        "east": [
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_000.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_001.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_002.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_003.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_004.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_005.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_006.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_007.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_008.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_009.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/east/frame_010.png"
+        ],
+        "south": [
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_000.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_001.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_002.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_003.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_004.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_005.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_006.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_007.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_008.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_009.png",
+          "animations/A_caring_male_doctor_sprite_with_short_cropped_bro-b9b13731/south/frame_010.png"
+        ]
+      },
+      "Breathing_Idle-7697ef50": {
+        "north": [
+          "animations/Breathing_Idle-7697ef50/north/frame_000.png",
+          "animations/Breathing_Idle-7697ef50/north/frame_001.png",
+          "animations/Breathing_Idle-7697ef50/north/frame_002.png",
+          "animations/Breathing_Idle-7697ef50/north/frame_003.png"
+        ],
+        "south": [
+          "animations/Breathing_Idle-7697ef50/south/frame_000.png",
+          "animations/Breathing_Idle-7697ef50/south/frame_001.png",
+          "animations/Breathing_Idle-7697ef50/south/frame_002.png",
+          "animations/Breathing_Idle-7697ef50/south/frame_003.png"
+        ],
+        "east": [
+          "animations/Breathing_Idle-7697ef50/east/frame_000.png",
+          "animations/Breathing_Idle-7697ef50/east/frame_001.png",
+          "animations/Breathing_Idle-7697ef50/east/frame_002.png",
+          "animations/Breathing_Idle-7697ef50/east/frame_003.png"
+        ]
+      },
+      "Falling-a257d09a": {
+        "east": [
+          "animations/Falling-a257d09a/east/frame_000.png",
+          "animations/Falling-a257d09a/east/frame_001.png",
+          "animations/Falling-a257d09a/east/frame_002.png",
+          "animations/Falling-a257d09a/east/frame_003.png",
+          "animations/Falling-a257d09a/east/frame_004.png",
+          "animations/Falling-a257d09a/east/frame_005.png",
+          "animations/Falling-a257d09a/east/frame_006.png"
+        ],
+        "south": [
+          "animations/Falling-a257d09a/south/frame_000.png",
+          "animations/Falling-a257d09a/south/frame_001.png",
+          "animations/Falling-a257d09a/south/frame_002.png",
+          "animations/Falling-a257d09a/south/frame_003.png",
+          "animations/Falling-a257d09a/south/frame_004.png",
+          "animations/Falling-a257d09a/south/frame_005.png",
+          "animations/Falling-a257d09a/south/frame_006.png"
+        ],
+        "north": [
+          "animations/Falling-a257d09a/north/frame_000.png",
+          "animations/Falling-a257d09a/north/frame_001.png",
+          "animations/Falling-a257d09a/north/frame_002.png",
+          "animations/Falling-a257d09a/north/frame_003.png",
+          "animations/Falling-a257d09a/north/frame_004.png",
+          "animations/Falling-a257d09a/north/frame_005.png",
+          "animations/Falling-a257d09a/north/frame_006.png"
+        ]
+      },
+      "Getup_1-f6eb306f": {
+        "east": [
+          "animations/Getup_1-f6eb306f/east/frame_000.png",
+          "animations/Getup_1-f6eb306f/east/frame_001.png",
+          "animations/Getup_1-f6eb306f/east/frame_002.png",
+          "animations/Getup_1-f6eb306f/east/frame_003.png",
+          "animations/Getup_1-f6eb306f/east/frame_004.png",
+          "animations/Getup_1-f6eb306f/east/frame_005.png",
+          "animations/Getup_1-f6eb306f/east/frame_006.png",
+          "animations/Getup_1-f6eb306f/east/frame_007.png",
+          "animations/Getup_1-f6eb306f/east/frame_008.png",
+          "animations/Getup_1-f6eb306f/east/frame_009.png",
+          "animations/Getup_1-f6eb306f/east/frame_010.png"
+        ],
+        "south": [
+          "animations/Getup_1-f6eb306f/south/frame_000.png",
+          "animations/Getup_1-f6eb306f/south/frame_001.png",
+          "animations/Getup_1-f6eb306f/south/frame_002.png",
+          "animations/Getup_1-f6eb306f/south/frame_003.png",
+          "animations/Getup_1-f6eb306f/south/frame_004.png",
+          "animations/Getup_1-f6eb306f/south/frame_005.png",
+          "animations/Getup_1-f6eb306f/south/frame_006.png",
+          "animations/Getup_1-f6eb306f/south/frame_007.png",
+          "animations/Getup_1-f6eb306f/south/frame_008.png",
+          "animations/Getup_1-f6eb306f/south/frame_009.png",
+          "animations/Getup_1-f6eb306f/south/frame_010.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-10T11:08:04.933218"
+}

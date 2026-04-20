@@ -1,0 +1,344 @@
+[gd_scene format=3 uid="uid://cuptpavunwguq"]
+
+[ext_resource type="Texture2D" uid="uid://b6s677fodafnm" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_001.png" id="1_b1pk3"]
+[ext_resource type="Script" uid="uid://c4jdp756j07fv" path="res://scripts/wichai.gd" id="1_td2p7"]
+[ext_resource type="Texture2D" uid="uid://bt1kdyhgcjgnb" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0001.png" id="2_8x0ss"]
+[ext_resource type="Texture2D" uid="uid://dgse4uam3c547" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_002.png" id="2_q2vur"]
+[ext_resource type="Texture2D" uid="uid://jeutufu52wia" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0002.png" id="3_04opm"]
+[ext_resource type="Texture2D" uid="uid://njp2jfyjihf7" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_003.png" id="3_td2p7"]
+[ext_resource type="Texture2D" uid="uid://6tmxy0jtxukk" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_004.png" id="4_70ckw"]
+[ext_resource type="Texture2D" uid="uid://bvv5jjcyf4kwi" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0003.png" id="4_mk5i5"]
+[ext_resource type="Texture2D" uid="uid://ck1dmqbljk1t5" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_005.png" id="5_nefx8"]
+[ext_resource type="Texture2D" uid="uid://d0kipm6khk2gf" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0004.png" id="5_x3x1s"]
+[ext_resource type="Texture2D" uid="uid://venocfjq6dxn" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0005.png" id="6_hasv6"]
+[ext_resource type="Texture2D" uid="uid://cnpf3pjbrnejq" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_006.png" id="6_jfngo"]
+[ext_resource type="Texture2D" uid="uid://cvk6rj68y6qyf" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_007.png" id="7_2tdx3"]
+[ext_resource type="Texture2D" uid="uid://b77xg2g0hmj07" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0006.png" id="7_6delg"]
+[ext_resource type="Texture2D" uid="uid://mxpl7im71qeh" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south/frame_008.png" id="8_b8brb"]
+[ext_resource type="Texture2D" uid="uid://dpo8vraklv26d" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0007.png" id="8_j3y0f"]
+[ext_resource type="Texture2D" uid="uid://bd1it4yoenq4e" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0008.png" id="9_gsg6h"]
+[ext_resource type="Texture2D" uid="uid://d18700igc5j26" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_000.png" id="9_qoovf"]
+[ext_resource type="Texture2D" uid="uid://bvtvfrii4eygc" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_001.png" id="10_k6syx"]
+[ext_resource type="Texture2D" uid="uid://dx25cvojwpa1y" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/female/untitled_0009.png" id="10_li811"]
+[ext_resource type="Texture2D" uid="uid://cx8u2pyo5bufw" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_002.png" id="11_ql842"]
+[ext_resource type="Texture2D" uid="uid://dncobbg3fwuy0" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_003.png" id="12_8x0ss"]
+[ext_resource type="Texture2D" uid="uid://c3wonp0rfy3hg" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_004.png" id="13_04opm"]
+[ext_resource type="Texture2D" uid="uid://cvamlnpyivfhe" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_005.png" id="14_mk5i5"]
+[ext_resource type="Texture2D" uid="uid://dlfktm1v3oumn" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_006.png" id="15_x3x1s"]
+[ext_resource type="Texture2D" uid="uid://b8cfo38sytag6" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_007.png" id="16_hasv6"]
+[ext_resource type="Texture2D" uid="uid://dpvbcong1cgnm" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south/frame_008.png" id="17_6delg"]
+[ext_resource type="Texture2D" uid="uid://dyto6vaj8tuh8" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_000.png" id="18_j3y0f"]
+[ext_resource type="Texture2D" uid="uid://c4gv6x1phnmy4" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_001.png" id="19_gsg6h"]
+[ext_resource type="Texture2D" uid="uid://b3dlcfvm6mnoy" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_002.png" id="20_li811"]
+[ext_resource type="Texture2D" uid="uid://gb856cdcatmv" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_003.png" id="21_3oeff"]
+[ext_resource type="Texture2D" uid="uid://djdhqo5at4eqq" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_004.png" id="22_qytle"]
+[ext_resource type="Texture2D" uid="uid://chvv30mcifl5y" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_005.png" id="23_f4ecp"]
+[ext_resource type="Texture2D" uid="uid://dydrdi8udtel0" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_006.png" id="24_kg2t3"]
+[ext_resource type="Texture2D" uid="uid://cjok3xgs872xq" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_007.png" id="25_mtfkd"]
+[ext_resource type="Texture2D" uid="uid://72mpbdytuo8p" path="res://assets/Modern tiles_Free/Characters_free/Wichai/animations/playing_the_smart_phone-7922fbcc/south/frame_008.png" id="26_tc08h"]
+[ext_resource type="PackedScene" uid="uid://twue4lu1appd" path="res://scenes/prop/menu.tscn" id="27_q2vur"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3oeff"]
+atlas = ExtResource("2_8x0ss")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qytle"]
+atlas = ExtResource("3_04opm")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f4ecp"]
+atlas = ExtResource("4_mk5i5")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kg2t3"]
+atlas = ExtResource("5_x3x1s")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mtfkd"]
+atlas = ExtResource("6_hasv6")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tc08h"]
+atlas = ExtResource("7_6delg")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q24ly"]
+atlas = ExtResource("8_j3y0f")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2a74x"]
+atlas = ExtResource("9_gsg6h")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_te4fl"]
+atlas = ExtResource("10_li811")
+region = Rect2(1, 0, 54, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ailq8"]
+atlas = ExtResource("9_qoovf")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jmusa"]
+atlas = ExtResource("10_k6syx")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_psr8a"]
+atlas = ExtResource("11_ql842")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bpwcm"]
+atlas = ExtResource("12_8x0ss")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_50qbk"]
+atlas = ExtResource("13_04opm")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_emq53"]
+atlas = ExtResource("14_mk5i5")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eo48y"]
+atlas = ExtResource("15_x3x1s")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_60a13"]
+atlas = ExtResource("16_hasv6")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_63f70"]
+atlas = ExtResource("17_6delg")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ahe3w"]
+atlas = ExtResource("18_j3y0f")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q7jm2"]
+atlas = ExtResource("1_b1pk3")
+region = Rect2(0, 0, 55, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_oe3t7"]
+atlas = ExtResource("2_q2vur")
+region = Rect2(0, 0, 55, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_th103"]
+atlas = ExtResource("3_td2p7")
+region = Rect2(0, 0, 55, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g5cjk"]
+atlas = ExtResource("4_70ckw")
+region = Rect2(0, 0, 55, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hjs8b"]
+atlas = ExtResource("5_nefx8")
+region = Rect2(0, 0, 55, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_06uwd"]
+atlas = ExtResource("6_jfngo")
+region = Rect2(0, 0, 55, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fmej1"]
+atlas = ExtResource("7_2tdx3")
+region = Rect2(0, 0, 55, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xxva0"]
+atlas = ExtResource("8_b8brb")
+region = Rect2(0, 0, 55, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y88ux"]
+atlas = ExtResource("18_j3y0f")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dkf7d"]
+atlas = ExtResource("19_gsg6h")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_02jn1"]
+atlas = ExtResource("20_li811")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0jrhm"]
+atlas = ExtResource("21_3oeff")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tanrr"]
+atlas = ExtResource("22_qytle")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dos88"]
+atlas = ExtResource("23_f4ecp")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_slpqv"]
+atlas = ExtResource("24_kg2t3")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5uaj2"]
+atlas = ExtResource("25_mtfkd")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ehup0"]
+atlas = ExtResource("26_tc08h")
+region = Rect2(0, 0, 108, 108)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_q24ly"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_3oeff")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qytle")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f4ecp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kg2t3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mtfkd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tc08h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q24ly")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2a74x")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_te4fl")
+}],
+"loop": true,
+"name": &"female_nurse",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ailq8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jmusa")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_psr8a")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bpwcm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_50qbk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_emq53")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eo48y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_60a13")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_63f70")
+}],
+"loop": false,
+"name": &"heart_attack",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ahe3w")
+}],
+"loop": false,
+"name": &"idle_south",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q7jm2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oe3t7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_th103")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g5cjk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hjs8b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_06uwd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fmej1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xxva0")
+}],
+"loop": true,
+"name": &"male_nurse",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y88ux")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dkf7d")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_02jn1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0jrhm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_tanrr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dos88")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_slpqv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5uaj2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ehup0")
+}],
+"loop": false,
+"name": &"playing_phone",
+"speed": 10.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2a74x"]
+size = Vector2(30, 27)
+
+[node name="Wichai" type="CharacterBody2D" unique_id=1826639376 groups=["NPC"]]
+script = ExtResource("1_td2p7")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1941560724]
+scale = Vector2(1.4, 1.4)
+sprite_frames = SubResource("SpriteFrames_q24ly")
+animation = &"idle_south"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=335983719]
+position = Vector2(-1, -6.5)
+shape = SubResource("RectangleShape2D_2a74x")
+
+[node name="HTTPRequest" type="HTTPRequest" parent="." unique_id=1980908099]
+
+[node name="Menu" parent="." unique_id=830386094 instance=ExtResource("27_q2vur")]
+visible = false
+offset_left = 42.0
+offset_top = -105.0
+offset_right = 231.0
+offset_bottom = 84.0
+scale = Vector2(0.9, 0.9)
