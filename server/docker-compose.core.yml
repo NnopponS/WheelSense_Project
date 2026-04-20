@@ -1,6 +1,6 @@
-# Shared application stack (no Postgres). Combine with exactly one of:
-#   docker-compose.data-prod.yml  OR  docker-compose.data-mock.yml
-# Entry points: docker-compose.yml (prod DB) or docker-compose.sim.yml (mock/sim DB).
+# Shared application stack (Mosquitto, Web UI, optional services). Combine with exactly one of:
+#   docker-compose.data-prod.yml  OR  docker-compose.data-sim.yml
+# Entry points: docker-compose.yml (prod DB) or docker-compose.sim.yml (sim DB).
 
 services:
   mosquitto:
@@ -54,8 +54,6 @@ services:
     volumes:
       - profile_images:/app/storage/profile_images
     depends_on:
-      db:
-        condition: service_healthy
       mosquitto:
         condition: service_healthy
 
@@ -70,10 +68,7 @@ services:
       - "8010:8010"
     environment:
       SECRET_KEY: ${SECRET_KEY:-wheelsense-local-dev-secret-key}
-      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
-      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
       SERVER_BASE_URL: ${SERVER_BASE_URL:-http://wheelsense-platform-server:8000}
-      # Call back into the platform MCP Streamable HTTP endpoint (see FastMCP streamable_http_path).
       AGENT_RUNTIME_MCP_TOOL_TRANSPORT: ${AGENT_RUNTIME_MCP_TOOL_TRANSPORT:-http}
       MCP_STREAMABLE_HTTP_URL: ${MCP_STREAMABLE_HTTP_URL:-http://wheelsense-platform-server:8000/mcp/mcp}
       AGENT_RUNTIME_URL: ${AGENT_RUNTIME_URL:-http://wheelsense-agent-runtime:8010}
@@ -85,7 +80,6 @@ services:
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
       INTENT_SEMANTIC_ENABLED: ${INTENT_SEMANTIC_ENABLED:-false}
       INTENT_LLM_NORMALIZE_ENABLED: ${INTENT_LLM_NORMALIZE_ENABLED:-false}
-      # Agent routing: `intent` (classifier) or `llm_tools` (Ollama tool-calling router; needs OLLAMA_BASE_URL).
       AGENT_ROUTING_MODE: ${AGENT_ROUTING_MODE:-intent}
       AGENT_LLM_ROUTER_MODEL: ${AGENT_LLM_ROUTER_MODEL:-}
     depends_on:
@@ -139,8 +133,8 @@ services:
     network_mode: bridge
 
 volumes:
-  profile_images:
   mosquitto_data:
   mosquitto_log:
   ollama_data:
   copilot_sessions:
+  profile_images:

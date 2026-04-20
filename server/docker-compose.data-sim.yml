@@ -1,39 +1,49 @@
-# Mock/simulator Postgres (pgdata-sim) + synthetic MQTT worker. Merged with docker-compose.core.yml via docker-compose.sim.yml.
+# Simulator-mode Postgres (pgdata_sim) + synthetic MQTT worker. Merged with docker-compose.core.yml via docker-compose.sim.yml.
 
 services:
-  db:
+  wheelsense-db-sim:
+    container_name: wheelsense-db-sim
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: wheelsense_sim
       POSTGRES_USER: wheelsense
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_sim_pass}
     ports:
       - "5432:5432"
     volumes:
-      - pgdata-sim:/var/lib/postgresql/data
+      - pgdata_sim:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wheelsense"]
+      test: ["CMD-SHELL", "pg_isready -U wheelsense -d wheelsense_sim"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # DB-specific environment overrides (merged with core service definition)
   wheelsense-platform-server:
+    depends_on:
+      wheelsense-db-sim:
+        condition: service_healthy
     environment:
       ENV_MODE: simulator
-      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense_sim
-      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense_sim
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_sim_pass}@wheelsense-db-sim:5432/wheelsense_sim
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_sim_pass}@wheelsense-db-sim:5432/wheelsense_sim
       BOOTSTRAP_DEMO_WORKSPACE_NAME: ${BOOTSTRAP_DEMO_WORKSPACE_NAME:-WheelSense Demo Workspace}
 
+  wheelsense-agent-runtime:
+    environment:
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_sim_pass}@wheelsense-db-sim:5432/wheelsense_sim
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_sim_pass}@wheelsense-db-sim:5432/wheelsense_sim
+
+  # Simulator worker (unique to sim mode)
   wheelsense-simulator:
-    # No fixed container_name: avoids conflict with orphaned containers from older stacks
     build:
       context: .
       dockerfile: Dockerfile
     image: wheelsense-platform-wheelsense-platform-server
     restart: unless-stopped
     depends_on:
-      db:
+      wheelsense-db-sim:
         condition: service_healthy
       mosquitto:
         condition: service_healthy
@@ -41,8 +51,8 @@ services:
         condition: service_started
     environment:
       PYTHONUNBUFFERED: "1"
-      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense_sim
-      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense_sim
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_sim_pass}@wheelsense-db-sim:5432/wheelsense_sim
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_sim_pass}@wheelsense-db-sim:5432/wheelsense_sim
       MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
@@ -58,4 +68,4 @@ services:
       - python scripts/seed_sim_team.py && exec python -m app.sim.runtime.sim_controller --routine
 
 volumes:
-  pgdata-sim:
+  pgdata_sim:

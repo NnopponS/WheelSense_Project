@@ -5,28 +5,31 @@
 \contentsline {table}{\numberline {1.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตารางการดำเนินงานโครงงาน (ส.ค.--พ.ค.)}}{10}{table.caption.19}%
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลประชากรผู้สูงอายุในประเทศไทยและความต้องการการดูแล}}{12}{table.caption.20}%
-\contentsline {table}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การสังเคราะห์ช่องว่างของงานวิจัยที่เกี่ยวข้อง}}{16}{table.caption.26}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเปรียบเทียบระบบ IoT แบบโอเพนซอร์สและเชิงพาณิชย์สำหรับงานดูแลผู้สูงอายุ}}{18}{table.caption.24}%
+\contentsline {table}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเปรียบเทียบความแม่นยำของเทคนิคระบุตำแหน่งภายในอาคาร}}{19}{table.caption.26}%
+\contentsline {table}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเปรียบเทียบระดับคุณภาพการบริการ (QoS) ของ MQTT}}{25}{table.caption.28}%
+\contentsline {table}{\numberline {2.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สังเคราะห์งานวิจัยและระบบที่เกี่ยวข้องในระดับกรอบความสามารถ}}{35}{table.caption.36}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces คำศัพท์และข้อตกลงการเรียกชื่อที่ใช้ในบทที่ 3}}{19}{table.caption.27}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การโยงวัตถุประสงค์กับความต้องการ โมดูล และการประเมินเชิงวิจัย (traceability)}}{20}{table.caption.28}%
-\contentsline {table}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การจับคู่ข้อความเชิงตรวจสอบได้กับตัวแปร ตัวชี้วัด และวิธีการวิเคราะห์}}{21}{table.caption.29}%
-\contentsline {table}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปฮาร์ดแวร์ บทบาท สัญญาณที่เกี่ยวข้อง และข้อกำหนดเพื่อการทำซ้ำ}}{22}{table.caption.30}%
-\contentsline {table}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปซอฟต์แวร์/บริการหลักและบทบาทในระบบต้นแบบ}}{23}{table.caption.31}%
-\contentsline {table}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนที่หัวข้อ MQTT หลักของระบบ WheelSense (อ้างอิงเชิงวิศวกรรมจาก \texttt {server/AGENTS.md})}}{26}{table.caption.35}%
-\contentsline {table}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces โครงสร้าง payload ขั้นต่ำของข้อความจากอุปกรณ์บนเก้าอี้รถเข็น}}{27}{table.caption.36}%
-\contentsline {table}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปฟิลด์ขั้นต่ำตามกลุ่มข้อมูลสำหรับการทำซ้ำและ audit}}{37}{table.caption.39}%
-\contentsline {table}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เส้นทาง telemetry จากอุปกรณ์บนเก้าอี้รถเข็น}}{44}{table.caption.40}%
-\contentsline {table}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: RSSI และการระบุตำแหน่ง}}{44}{table.caption.41}%
-\contentsline {table}{\numberline {3.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เส้นทางภาพจากโหนดกล้อง}}{45}{table.caption.42}%
-\contentsline {table}{\numberline {3.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เซิร์ฟเวอร์ ฐานข้อมูล และไคลเอนต์ผู้ดูแล}}{45}{table.caption.43}%
-\contentsline {table}{\numberline {3.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: Home Assistant และ MCP/LLM}}{45}{table.caption.44}%
-\contentsline {table}{\numberline {3.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Profile-A: พารามิเตอร์ด้านการเก็บ fingerprint และการระบุตำแหน่ง}}{47}{table.caption.45}%
-\contentsline {table}{\numberline {3.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Profile-A: พารามิเตอร์ด้านอุปกรณ์ เครือข่าย ระบบบริการ และ MCP/LLM}}{48}{table.caption.46}%
-\contentsline {table}{\numberline {3.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Deployment gates สำหรับยืนยันความพร้อมก่อนเก็บข้อมูลหรือก่อนการประเมิน}}{50}{table.caption.47}%
-\contentsline {table}{\numberline {3.17}{\ignorespaces \xpg@aux {}{thai}\ignorespaces QC gates สำหรับชุดข้อมูล fingerprint ก่อนฝึกโมเดล}}{51}{table.caption.48}%
-\contentsline {table}{\numberline {3.18}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เกณฑ์ความพร้อมแบบบูรณาการ (readiness checks) ก่อนการประเมินสี่ประเด็น — ไม่ใช่ตัวชี้วัดประเมินผลแยกจากหัวข้อ~\ref {sec:ch3_test_plan}}}{52}{table.caption.49}%
-\contentsline {table}{\numberline {3.19}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟิลด์ขั้นต่ำของ log สำหรับการประเมิน LLM/MCP}}{53}{table.caption.50}%
-\contentsline {table}{\numberline {3.20}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟิลด์ขั้นต่ำของ log สำหรับการทดสอบความทนทาน RSSI (KNN vs XGBoost)}}{56}{table.caption.51}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces คำศัพท์และข้อตกลงการเรียกชื่อที่ใช้ในบทที่ 3}}{38}{table.caption.37}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การโยงวัตถุประสงค์กับความต้องการ โมดูล และการประเมินเชิงวิจัย (traceability)}}{39}{table.caption.38}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การจับคู่ข้อความเชิงตรวจสอบได้กับตัวแปร ตัวชี้วัด และวิธีการวิเคราะห์}}{40}{table.caption.39}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปฮาร์ดแวร์ บทบาท สัญญาณที่เกี่ยวข้อง และข้อกำหนดเพื่อการทำซ้ำ}}{41}{table.caption.40}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปซอฟต์แวร์/บริการหลักและบทบาทในระบบต้นแบบ}}{42}{table.caption.41}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนที่หัวข้อ MQTT หลักของระบบ WheelSense (อ้างอิงเชิงวิศวกรรมจาก \texttt {server/AGENTS.md})}}{45}{table.caption.45}%
+\contentsline {table}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces โครงสร้าง payload ขั้นต่ำของข้อความจากอุปกรณ์บนเก้าอี้รถเข็น}}{46}{table.caption.46}%
+\contentsline {table}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปฟิลด์ขั้นต่ำตามกลุ่มข้อมูลสำหรับการทำซ้ำและ audit}}{56}{table.caption.49}%
+\contentsline {table}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เส้นทาง telemetry จากอุปกรณ์บนเก้าอี้รถเข็น}}{63}{table.caption.50}%
+\contentsline {table}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: RSSI และการระบุตำแหน่ง}}{63}{table.caption.51}%
+\contentsline {table}{\numberline {3.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เส้นทางภาพจากโหนดกล้อง}}{64}{table.caption.52}%
+\contentsline {table}{\numberline {3.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เซิร์ฟเวอร์ ฐานข้อมูล และไคลเอนต์ผู้ดูแล}}{64}{table.caption.53}%
+\contentsline {table}{\numberline {3.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: Home Assistant และ MCP/LLM}}{64}{table.caption.54}%
+\contentsline {table}{\numberline {3.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Profile-A: พารามิเตอร์ด้านการเก็บ fingerprint และการระบุตำแหน่ง}}{66}{table.caption.55}%
+\contentsline {table}{\numberline {3.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Profile-A: พารามิเตอร์ด้านอุปกรณ์ เครือข่าย ระบบบริการ และ MCP/LLM}}{67}{table.caption.56}%
+\contentsline {table}{\numberline {3.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Deployment gates สำหรับยืนยันความพร้อมก่อนเก็บข้อมูลหรือก่อนการประเมิน}}{69}{table.caption.57}%
+\contentsline {table}{\numberline {3.17}{\ignorespaces \xpg@aux {}{thai}\ignorespaces QC gates สำหรับชุดข้อมูล fingerprint ก่อนฝึกโมเดล}}{70}{table.caption.58}%
+\contentsline {table}{\numberline {3.18}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เกณฑ์ความพร้อมแบบบูรณาการ (readiness checks) ก่อนการประเมินสี่ประเด็น — ไม่ใช่ตัวชี้วัดประเมินผลแยกจากหัวข้อ~\ref {sec:ch3_test_plan}}}{71}{table.caption.59}%
+\contentsline {table}{\numberline {3.19}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟิลด์ขั้นต่ำของ log สำหรับการประเมิน LLM/MCP}}{72}{table.caption.60}%
+\contentsline {table}{\numberline {3.20}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟิลด์ขั้นต่ำของ log สำหรับการทดสอบความทนทาน RSSI (KNN vs XGBoost)}}{75}{table.caption.61}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

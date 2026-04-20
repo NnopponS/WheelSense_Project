@@ -173,7 +173,7 @@ class Settings(BaseSettings):
         # Environment-aware defaults
         db_name = "wheelsense_sim" if self.is_simulator_mode else "wheelsense_prod"
         port = "5432" if self.is_simulator_mode else "5433"
-        password = self.postgres_password if hasattr(self, 'postgres_password') else "wheelsense_dev"
+        password = "wheelsense_sim_pass" if self.is_simulator_mode else "wheelsense_prod_pass"
         return f"postgresql+asyncpg://wheelsense:{password}@localhost:{port}/{db_name}"
 
     @property
@@ -184,7 +184,7 @@ class Settings(BaseSettings):
         # Environment-aware defaults
         db_name = "wheelsense_sim" if self.is_simulator_mode else "wheelsense_prod"
         port = "5432" if self.is_simulator_mode else "5433"
-        password = self.postgres_password if hasattr(self, 'postgres_password') else "wheelsense_dev"
+        password = "wheelsense_sim_pass" if self.is_simulator_mode else "wheelsense_prod_pass"
         return f"postgresql://wheelsense:{password}@localhost:{port}/{db_name}"
 
     @field_validator("env_mode", mode="before")

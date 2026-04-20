@@ -1,6 +1,6 @@
 # Production DB mode: merges shared stack + Postgres (pgdata-prod) + Cloudflare quick tunnel sidecar.
-# Mock/sim: use docker-compose.sim.yml (add `-f docker-compose.cf-tunnel.yml` if you want the tunnel).
-# Alternative without sim file: `docker compose -f docker-compose.core.yml -f docker-compose.data-mock.yml up -d`.
+# Sim mode: use docker-compose.sim.yml (add `-f docker-compose.cf-tunnel.yml` if you want the tunnel).
+# Alternative sim file: `docker compose -f docker-compose.core.yml -f docker-compose.data-sim.yml up -d`.
 # Requires Docker Compose v2 with `include` (Docker Desktop 4.24+ / Compose 2.20+).
 
 name: wheelsense-platform

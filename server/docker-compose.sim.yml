@@ -1,5 +1,5 @@
-# Mock/sim DB mode: same images/build as production entry, different Postgres volume + simulator.
-# Do not run both this and docker-compose.yml at once (same host ports).
+# Sim DB mode: same images/build as production entry, different Postgres volume + simulator.
+# Can run simultaneously with docker-compose.yml (different host ports: 5432 for sim, 5433 for prod).
 
 name: wheelsense-platform
 

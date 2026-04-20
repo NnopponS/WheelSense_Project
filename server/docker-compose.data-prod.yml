@@ -1,28 +1,38 @@
-# Production-mode Postgres (pgdata-prod). Merged with docker-compose.core.yml via docker-compose.yml.
+# Production-mode Postgres (pgdata_prod). Merged with docker-compose.core.yml via docker-compose.yml.
 
 services:
-  db:
+  wheelsense-db-prod:
+    container_name: wheelsense-db-prod
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: wheelsense_prod
       POSTGRES_USER: wheelsense
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_prod_pass}
     ports:
       - "5433:5432"
     volumes:
-      - pgdata-prod:/var/lib/postgresql/data
+      - pgdata_prod:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wheelsense"]
+      test: ["CMD-SHELL", "pg_isready -U wheelsense -d wheelsense_prod"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  # DB-specific environment overrides (merged with core service definition)
   wheelsense-platform-server:
+    depends_on:
+      wheelsense-db-prod:
+        condition: service_healthy
     environment:
       ENV_MODE: production
-      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense_prod
-      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense_prod
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_prod_pass}@wheelsense-db-prod:5432/wheelsense_prod
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_prod_pass}@wheelsense-db-prod:5432/wheelsense_prod
+
+  wheelsense-agent-runtime:
+    environment:
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_prod_pass}@wheelsense-db-prod:5432/wheelsense_prod
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_prod_pass}@wheelsense-db-prod:5432/wheelsense_prod
 
 volumes:
-  pgdata-prod:
+  pgdata_prod:
