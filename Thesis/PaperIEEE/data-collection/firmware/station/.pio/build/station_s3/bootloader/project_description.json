@@ -1,0 +1,25 @@
+{
+    "project_name":       "bootloader",
+    "project_path":       "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/bootloader/subproject",
+    "build_dir":          "C:/Users/worap/Documents/TSE/PaperIEEE/data-collection/firmware/station/.pio/build/station_s3/bootloader",
+    "config_file":        "C:/Users/worap/Documents/TSE/PaperIEEE/data-collection/firmware/station/sdkconfig.station_s3",
+    "config_defaults":    "",
+    "bootloader_elf":     "",
+    "app_elf":            "bootloader.elf",
+    "app_bin":            "bootloader.bin",
+    "git_revision":       "5.0.2",
+    "target":             "esp32s3",
+    "rev":                "",
+    "min_rev":            "0",
+    "max_rev":            "99",
+    "phy_data_partition": "",
+    "monitor_baud" :      "115200",
+    "monitor_toolprefix": "xtensa-esp32s3-elf-",
+    "config_environment" : {
+        "COMPONENT_KCONFIGS" : "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/efuse/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_common/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_hw_support/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_system/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/freertos/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/hal/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/log/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/newlib/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/soc/Kconfig;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/spi_flash/Kconfig",
+        "COMPONENT_KCONFIGS_PROJBUILD" : "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/bootloader/Kconfig.projbuild;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_app_format/Kconfig.projbuild;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_rom/Kconfig.projbuild;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esptool_py/Kconfig.projbuild;C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/partition_table/Kconfig.projbuild"
+    },
+    "build_components" : [ "bootloader", "bootloader_support", "efuse", "esp_app_format", "esp_common", "esp_hw_support", "esp_rom", "esp_system", "esptool_py", "freertos", "hal", "log", "main", "micro-ecc", "newlib", "partition_table", "soc", "spi_flash", "xtensa", "" ],
+    "build_component_paths" : [ "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/bootloader", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/bootloader_support", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/efuse", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_app_format", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_common", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_hw_support", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_rom", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esp_system", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/esptool_py", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/freertos", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/hal", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/log", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/bootloader/subproject/main", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/bootloader/subproject/components/micro-ecc", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/newlib", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/partition_table", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/soc", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/spi_flash", "C:/Users/worap/.platformio/packages/framework-espidf@3.50002.230601/components/xtensa", "" ],
+    "debug_prefix_map_gdbinit": ""
+}

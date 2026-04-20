@@ -1,0 +1,11 @@
+You are predicting labels for a BLE RSSI test dataset with simulated anchor failure (1 anchor(s) lost).
+
+Task: Predict Facing in (0) or Facing out (1)
+
+Attached CSV format:
+- id: Row identifier
+- time_based_rssi: One string per episode. Semicolon (;) separates time steps. Each step is timestamp,r1,r2,r3,r4 (RSSI in dBm for 4 BLE anchors). Blanks indicate missing values. NOTE: 1 anchor(s) have been removed (their values are blank).
+
+Output: Table with columns: id, predicted (0 or 1).
+
+I will merge your output with held-out labels for evaluation.

@@ -1,0 +1,150 @@
+% !TEX encoding = UTF-8 Unicode
+% !TEX TS-program = xelatex
+%%=================================================
+%%
+%% Department of Electrical and Computer Engineering
+%% Project Report Template
+%%
+%% 1. "thesis.tex" - Only need to comment/uncomment parts that need compiled.
+%%
+%% 2. "meta/info.tex" - Edit this file to define all your strings.
+%%
+%% 3. Edit these files for your report:
+%%    1. content/frontmatter/abstract_th.tex       - บทคัดย่อ ภาษาไทย
+%%    2. content/frontmatter/abstract_en.tex       - บทคัดย่อ ภาษาอังกฤษ
+%%    3. content/frontmatter/ack_th.tex            - กิตติกรรมประกาศ ภาษาไทย
+%%    4. content/frontmatter/ack_en.tex            - กิตติกรรมประกาศ ภาษาอังกฤษ (ไม่ได้ใช้)
+%%    5. content/frontmatter/acronyms.tex          - คำย่อต่าง ๆ (ถ้ามี)
+%%    6. content/chapters/chapter[1-5].tex         - รายงานแต่ละบท (บทที่ 1 - 5)
+%%    7. bib/refs.bib                              - รายการเอกสารอ้างอิง
+%%    8. content/appendices/appendix[A,B,...].tex - ภาคผนวก ก ข ...
+%%    (optional) doc/latex-writing-guide-chapter.tex + latex-writing-guide.tex - ตัวอย่าง LaTeX คอมไพล์แยก
+%%
+%%=================================================
+\documentclass[12pt,a4paper,oneside]{book}
+\newcommand{\mycomment}[1]{}
+
+%%=================================================
+%% START Packages
+%%=================================================
+
+%% Required packages for thesis layout (do not remove)
+\usepackage{TUthesis}
+
+%% Put everything else in "mystyle" package
+\usepackage{mystyle}
+
+%%=================================================
+%% END Packages
+%%=================================================
+
+
+%%=================================================
+%% START Project info
+%%=================================================
+
+%% Edit project information in the file "meta/info.tex"
+\input{meta/info}
+
+%%=================================================
+%% END Project info
+%%=================================================
+
+%%+++++++++++++++++++++++++++++++++++++++++++++++++
+%% EDIT - Uncomment the type of report to compile
+%%+++++++++++++++++++++++++++++++++++++++++++++++++
+%\setReportType{Sample}
+%\setReportType{Proposal}
+%\setReportType{Progress 1}
+%\setReportType{Progress 2}
+\setReportType{Final}
+
+%%+++++++++++++++++++++++++++++++++++++++++++++++++
+%% EDIT - Uncomment this line if you have acronyms page
+%%+++++++++++++++++++++++++++++++++++++++++++++++++
+\addAcronyms{true}
+
+%%+++++++++++++++++++++++++++++++++++++++++++++++++
+%% EDIT - Uncomment this line if you have listings page
+%%+++++++++++++++++++++++++++++++++++++++++++++++++
+\addListOfListings{true}
+
+%%+++++++++++++++++++++++++++++++++++++++++++++++++
+%% EDIT - Uncomment this line if you have appendix page(s)
+%%+++++++++++++++++++++++++++++++++++++++++++++++++
+\addAppendix{true}
+
+
+%%#################################################
+%% No need to edit anything below this.
+%%#################################################
+
+\begin{document}
+\frontmatter
+
+%% ไม่ใช้หัว "สารบัญ - ต่อ" ระหว่างหน้าสารบัญ (เดิม: \addtocontents{toc}{\contheading})
+\setlength{\parskip}{0pt plus1pt minus1pt}
+
+\include{front/1_with_logo_th}
+\include{front/2_without_logo_th}
+\include{front/3_without_logo_en}
+\include{front/4_signature}
+\include{front/5_abstract_th}
+\include{front/6_abstract_en}
+\include{front/7_ack_th}
+\include{front/8_toc_lof_lot_lol}
+\IfAddAcronyms{
+	% ใช้ \input เพื่อไม่ให้ซ้อน \clearpage ของ \include กับหน้า \chapter* จนเกิดหน้าว่างก่อนรายการสัญลักษณ์
+	\input{front/9_acronyms}
+}
+%%=================================================
+%% Chapters
+%%=================================================
+\mainmatter
+
+%% Edit the files content/chapters/chapter1.tex, content/chapters/chapter2.tex, ...
+
+%% บทนำ
+%% Introduction
+\include{content/chapters/chapter1}
+
+%% วรรณกรรมและงานวิจัยที่เกี่ยวข้อง
+%% Literature Review
+\include{content/chapters/chapter2}
+
+%% การดำเนินงาน / วิธีวิจัย
+%% Methodology
+\include{content/chapters/chapter3}
+
+%% ผลการดำเนินงาน
+%% Finding and Results
+\include{content/chapters/chapter4}
+
+%% สรุปโครงงาน
+%% Conclusions and Recommendations
+\include{content/chapters/chapter5}
+
+%% LaTeX writing examples (lists, figures, cites): compile separately via latex-writing-guide.tex
+
+%%=================================================
+%% References
+%%=================================================
+\include{content/backmatter/1_reference}
+
+%%=================================================
+%% Appendices
+%%=================================================
+%% Edit the files content/appendices/appendixA.tex, content/appendices/appendixB.tex, ...
+%% If you have more appendices, add appendC, appendD, ...
+\IfAddAppendix{
+	\appendix
+	\appendixpage
+	\include{content/appendices/appendixA}
+	\include{content/appendices/appendixB}
+	\include{content/appendices/appendixC}
+	\include{content/appendices/appendixD}
+	\include{content/appendices/appendixE}
+	\include{content/appendices/appendixF}
+}
+
+\end{document}

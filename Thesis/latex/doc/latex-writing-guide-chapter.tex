@@ -1,0 +1,582 @@
+\chapter{ตัวอย่างการเขียน LaTeX}
+\label{example}
+
+\section{โครงสร้างของ Template}
+ในไฟล์ zip ประกอบด้วยไฟล์ต่าง ๆ ดังต่อไปนี้
+\begin{enumerate}[1.]
+    \item \filename{thesis.tex} เป็นไฟล์หลักที่ประกอบด้วย ไฟล์ย่อยต่างๆ ตลอดจนข้อมูลของวิทยานิพนธ์ เช่น ชื่อวิทยานิพนธ์ทั้งภาษาไทย และอังกฤษ ชื่อผู้แต่ง ชื่อกรรมการสอบวิทยานิพนธ์
+    \item \filename{meta/info.tex} - ไฟล์ที่กำหนดข้อมูลของโครงงาน
+    \item \filename{content/frontmatter/abstract_th.tex} - ไฟล์ที่เขียนบทคัดย่อ ภาษาไทย
+    \item \filename{content/frontmatter/abstract_en.tex} - ไฟล์ที่เขียนบทคัดย่อ ภาษาอังกฤษ
+    \item \filename{content/frontmatter/acronyms.tex} - ไฟล์ที่เขียนสัญลักษณ์ หรือคำย่อ (ถ้าใช้)
+    \item \filename{content/frontmatter/ack_th.tex} - ไฟล์ที่เขียนกิตติกรรมประกาศ ภาษาไทย
+    \item \filename{content/frontmatter/ack_en.tex} - ไฟล์เขียนกิตติกรรมประกาศ ภาษาอังกฤษ (ไม่ใช้ไฟล์นี้)
+    \item \filename{content/chapters/chapter[1..5].tex} - ไฟล์ของบทต่าง ๆ ศึกษารายละเอียดของบทต่าง ๆ ในคู่มือวิทยานิพนธ์~\cite{tu:2556fk}
+    \item \filename{content/appendices/appendix[A..B].tex} - ไฟล์ภาคผนวก %% โดยภาคผนวกมีได้สูงสุด 10 ภาคผนวก
+    \item \filename{bib/refs.bib} - ไฟล์ฐานข้อมูลรายการอ้างอิง (Bibliography) ในรูปแบบ BibTeX
+    \item \filename{TUthesis.sty} - ไฟล์ template style สำหรับมหาวิทยาลัยธรรมศาสตร์ (ไม่จำเป็นต้องแก้ไขไฟล์นี้)
+    \item \filename{mystyle.sty} - ไฟล์ template style สำหรับปรับแต่งรายงานโครงงาน (ไม่จำเป็นต้องแก้ไขไฟล์นี้)
+    \item \filename{doc/latex-writing-guide-chapter.tex} - ไฟล์ตัวอย่างการเขียน LaTeX (คอมไพล์แยกผ่าน \filename{latex-writing-guide.tex})
+\end{enumerate}
+
+\newpage
+\section{การเขียน LaTeX}
+สามารถอ่านจากบทความต่าง ๆ
+\begin{enumerate}[1.]
+    \item บทแนะนำ LaTeX 2e แบบไม่ค่อยย่อ แปลโดย คุณจักรภาษณ์ วิศวกุล\\
+    \url{http://zelmanov.ptep-online.com/ctan/lshort_thai.pdf}
+
+    %%\item ตัวอย่างคำสั่ง LaTeX ของภาควิชาคณิตศาสตร์ คณะวิทยาศาสตร์ ม. เชียงใหม่\\
+    %% Link down
+    %%\url{http://www.math.science.cmu.ac.th/thanasak/pow/CMU_LaTeX_2010_All.pdf} %%
+    \item บทแนะนำ LaTeX 2e แบบไม่ค่อยย่อ ภาษาอังกฤษ โดย Tobias Oetiker\\
+    \url{https://tobi.oetiker.ch/lshort/lshort.pdf}
+
+    \item ตัวอย่างคำสั่ง LaTeX ของภาควิชาคณิตศาสตร์ คณะวิทยาศาสตร์ ม. เกษตรศาสตร์\\
+    \url{http://maths.sci.ku.ac.th/th/service/training/2556/2555-06-17_1/doc_xelatex.pdf}
+
+    \item Thesis template และแนะนำการใช้ LaTeX ของอาจารย์ \mbox{ดร. ฑิตยา หวานวารี}  ภาควิชาคณิตศาสตร์และวิทยาการคอมพิวเตอร์ คณะวิทยาศาสตร์ จุฬาลงกรณ์มหาวิทยาลัย\\
+    \url{http://pioneer.netserv.chula.ac.th/~wdittaya/}
+
+    \item LaTeX ใน Wikibook\\
+    \url{https://en.wikibooks.org/wiki/LaTeX}
+
+    \item การใช้ Endnote กับ Latex และ BibTeX\\
+    \url{http://www.rhizobia.co.nz/latex/convert}
+\end{enumerate}
+
+\newpage
+\section{การใช้ฟอนต์}
+\
+ฟอนต์หลักที่ได้กำหนดไว้แล้วในรายงานคือ \texttt{TH Sarabun New} การใช้งานฟอนต์ สามารถเลือกรูปแบบการแสดงได้ดังนี้
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{threeparttable}
+        \caption{รูปแบบการแสดงฟอนต์}
+        \label{tab:font style}
+        \begin{tabular}{l c C{6cm} c}
+            \toprule
+            \textbf{รูปแบบ} & \textbf{คำสั่ง} & \textbf{ตัวอย่างการใช้คำสั่ง} & \textbf{ผลการแสดง} \\
+            \midrule
+            ตัวหนา & \verb|\textbf{text}| & \verb|\textbf{|พลังของแผ่นดิน\verb|}| & \textbf{พลังของแผ่นดิน} \\
+            ตัวเอียง & \verb|\textit{text}| & \verb|\textit{|พลังของแผ่นดิน\verb|}| & \textit{พลังของแผ่นดิน} \\
+            ตัวเอียงและหนา & \verb|\textit{\textbf{text}}| & \verb|\textit{\textbf{|พลังของแผ่นดิน\verb|}}| & \textit{\textbf{พลังของแผ่นดิน}} \\
+            ตัวหนาและเอียง & \verb|\textbf{\textit{text}}| & \verb|\textbf{\textit{|พลังของแผ่นดิน\verb|}}| & \textbf{\textit{พลังของแผ่นดิน}} \\
+            ขีดเส้นใต้ & \verb|\underline{text}| & \verb|\underline{|พลังของแผ่นดิน\verb|}| & \underline{พลังของแผ่นดิน} \\
+            ตัวหนาและเอียง\footnotetext[1]{test} & \verb|\underline{\textit{text}}| & \verb|\underline{\textit{|พลังของแผ่นดิน\verb|}}| & \underline{\textit{พลังของแผ่นดิน}} \\
+            เน้นข้อความ\tnote{1} & \verb|\emph{text}| & \verb|\emph{|พลังของแผ่นดิน\verb|}| & \emph{พลังของแผ่นดิน} \\
+            \bottomrule
+        \end{tabular}
+        \begin{tablenotes}
+            \item [1] ปกติจะแสดงเป็นแบบเดียวกับตัวเอียง (italic)
+        \end{tablenotes}
+    \end{threeparttable}
+\end{table}
+
+LaTeX มีคำสั่งในการเปลี่ยนขนาดฟอนต์ แต่สำหรับในรายงานโครงงาน ไม่จำเป็นต้องเปลี่ยนขนาดฟอนต์ คำสั่งใน \autoref{tab:font size} เหล่านี้จะเปลี่ยนขนาดของฟอนต์ที่ใช้ในสภาพแวดล้อม\mbox{ปัจจุบัน} จนกว่าจะมีการใช้คำสั่งเปลี่ยนขนาดใหม่
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{threeparttable}
+        \caption{เปลี่ยนขนาดของฟอนต์}
+        \label{tab:font size}
+        \begin{tabular}{l C{6cm} c}
+            \toprule
+            \textbf{คำสั่ง} & \textbf{ตัวอย่างการใช้คำสั่ง} & \textbf{ผลการแสดง} \\
+            \midrule
+            \verb|\tiny| & \verb|\tiny| พลังของแผ่นดิน & \tiny พลังของแผ่นดิน \\
+            \verb|\scriptsize| & \verb|\scriptsize|พลังของแผ่นดิน| & \scriptsize พลังของแผ่นดิน \\
+            \verb|\footnotesize| & \verb|\footnotesize| พลังของแผ่นดิน & \footnotesize พลังของแผ่นดิน \\
+            \verb|\small| & \verb|\small| พลังของแผ่นดิน & \small พลังของแผ่นดิน \\
+            \verb|\normalsize| & \verb|\normalsize|พลังของแผ่นดิน & \normalsize พลังของแผ่นดิน \\
+            \verb|\large| & \verb|\large| พลังของแผ่นดิน & \large พลังของแผ่นดิน \\
+            \verb|\Large| & \verb|\Large| พลังของแผ่นดิน & \Large พลังของแผ่นดิน \\
+            \verb|\LARGE| & \verb|\LARGE| พลังของแผ่นดิน & \LARGE พลังของแผ่นดิน \\
+            \verb|\huge| & \verb|\huge| พลังของแผ่นดิน & \huge พลังของแผ่นดิน \\
+            \verb|\Huge| & \verb|\Huge| พลังของแผ่นดิน & \Huge พลังของแผ่นดิน \\
+            \bottomrule
+        \end{tabular}
+    \end{threeparttable}
+\end{table}
+
+ในกรณีที่ต้องการเปลี่ยนขนาดฟอนต์เฉพาะบางส่วนของข้อความ ให้เขียนคำสั่งภายในสภาพแวดล้อมปิด (อยู่ภายในเล็บวงเล็บปีกกา) เช่น \verb|{\footnotesize test}|
+
+\newpage
+\section{การเพิ่มรายการ (List)}
+
+รูปแบบคำสั่งในการเขียนรายการใน LaTeX คือ
+
+\begin{lstlisting}[caption={รูปแบบคำสั่งในการเขียนรายการ (list)}, label={list:list format},language=TeX]
+\begin{|\textcolor{blue}{list\_type}|}
+    \item รายการที่ 1
+    \item รายการที่ 2
+    \item รายการที่ 3
+\end{|\textcolor{blue}{list\_type}|}
+\end{lstlisting}
+
+โดย \textcolor{blue}{\texttt{list\_type}} ใน \autoref{list:list format} มีอยู่ 3 แบบคือ
+
+\begin{itemize}[noitemsep]
+    \item \textbf{\color{blue}itemize} รายการแบบใช้สัญลักษณ์ (เช่น bullet point)
+    \item \textbf{\color{blue}enumerate} รายการแบบใช้ตัวเลข (หรือตัวอักษร เช่น 1. (a))
+    \item \textbf{\color{blue}description} รายการแบบการอธิบายคำ
+\end{itemize}
+
+%%=================================================
+%% Itemize
+%%=================================================
+
+\subsection{ตัวอย่างรายการแบบ \textcolor{blue}{itemize}}
+
+\begin{exampleBox}[sidebyside]{รายการแบบ defaut (bullet)}
+\begin{lstlisting}[frame=none,language={[LaTeX]TeX}]
+\begin{itemize}
+    \item รายการที่ 1
+    \item รายการที่ 2
+    \item รายการที่ 3
+\end{itemize}
+\end{lstlisting}
+\tcblower
+\begin{itemize}[noitemsep]
+    \item รายการที่ 1
+    \item รายการที่ 2
+    \item รายการที่ 3
+\end{itemize}
+\end{exampleBox}
+
+
+\begin{exampleBox}[sidebyside]{รายการซ้อนกัน (nested list)}
+\small
+\begin{lstlisting}[frame=none,language={[LaTeX]TeX}]
+\begin{itemize}
+    \item รายการระดับ 1
+    \begin{itemize}
+        \item รายการระดับ 2
+        \begin{itemize}
+            \item รายการระดับ 3
+            \begin{itemize}
+                \item รายการระดับ 4
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\end{lstlisting}
+\tcblower
+\small
+\begin{itemize}[noitemsep,leftmargin=*,label=\textbullet]
+    \item รายการระดับ 1
+    \begin{itemize}
+        \item รายการระดับ 2
+        \begin{itemize}
+            \item รายการระดับ 3
+            \begin{itemize}
+                \item รายการระดับ 4
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\end{exampleBox}
+
+
+\begin{exampleBox}[lefthand ratio=0.55,sidebyside]{เปลี่ยนสัญลักษณ์ที่ระดับต่าง ๆ}
+\small
+\begin{lstlisting}[frame=none,language={[LaTeX]TeX}]
+\begin{itemize}[\textbullet]
+    \item รายการระดับ 1
+    \begin{itemize}[\textendash]
+        \item รายการระดับ 2
+        \begin{itemize}[$\ast$]
+            \item รายการระดับ 3
+            \begin{itemize}[$\square$]
+                \item รายการระดับ 4
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\end{lstlisting}
+\tcblower
+\small
+\begin{itemize}[\textbullet,noitemsep,leftmargin=*,]
+    \item รายการระดับ 1
+    \begin{itemize}[\textendash]
+        \item รายการระดับ 2
+        \begin{itemize}[$\ast$]
+            \item รายการระดับ 3
+            \begin{itemize}[$\square$]
+                \item รายการระดับ 4
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\end{exampleBox}
+
+%%=================================================
+%% Enumerate
+%%=================================================
+
+\subsection{ตัวอย่างรายการแบบ \textcolor{blue}{enumerate}}
+
+\begin{exampleBox}[sidebyside]{รายการมีลำดับแบบ defaut (ลำดับเป็นตัวเลขอารบิก)}
+\begin{lstlisting}[frame=none,language={[LaTeX]TeX}]
+\begin{enumerate}
+    \item รายการที่ 1
+    \item รายการที่ 2
+    \item รายการที่ 3
+\end{enumerate}
+\end{lstlisting}
+\tcblower
+\begin{enumerate}[noitemsep]
+    \item รายการที่ 1
+    \item รายการที่ 2
+    \item รายการที่ 3
+\end{enumerate}
+\end{exampleBox}
+
+\begin{exampleBox}[sidebyside]{รายการซ้อนกัน (nested list)}
+\small
+\begin{lstlisting}[frame=none,language={[LaTeX]TeX}]
+\begin{enumerate}
+    \item รายการระดับ 1
+    \begin{enumerate}
+        \item รายการระดับ 2
+        \begin{enumerate}
+            \item รายการระดับ 3
+            \begin{enumerate}
+                \item รายการระดับ 4
+            \end{enumerate}
+        \end{enumerate}
+    \end{enumerate}
+\end{enumerate}
+\end{lstlisting}
+\tcblower
+\small
+\begin{enumerate}
+    \item รายการระดับ 1
+    \begin{enumerate}
+        \item รายการระดับ 2
+        \begin{enumerate}
+            \item รายการระดับ 3
+            \begin{enumerate}
+                \item รายการระดับ 4
+            \end{enumerate}
+        \end{enumerate}
+    \end{enumerate}
+\end{enumerate}
+\end{exampleBox}
+
+\begin{exampleBox}[sidebyside]{เปลี่ยนหมายเลขลำดับที่ระดับต่าง ๆ}
+\small
+\begin{lstlisting}[frame=none,language={[LaTeX]TeX}]
+\begin{enumerate}[1.]
+    \item รายการระดับ 1
+    \item รายการระดับ 1
+    \item รายการระดับ 1
+    \begin{enumerate}[(a)]
+        \item รายการระดับ 2
+        \item รายการระดับ 2
+        \item รายการระดับ 2
+        \begin{enumerate}[A)]
+            \item รายการระดับ 3
+            \item รายการระดับ 3
+            \item รายการระดับ 3
+            \begin{enumerate}[i.]
+                \item รายการระดับ 4
+                \item รายการระดับ 4
+                \item รายการระดับ 4
+            \end{enumerate}
+        \end{enumerate}
+    \end{enumerate}
+\end{enumerate}
+\end{lstlisting}
+\tcblower
+\small
+\begin{enumerate}[1.]
+    \item รายการระดับ 1
+    \item รายการระดับ 1
+    \item รายการระดับ 1
+    \begin{enumerate}[(a)]
+        \item รายการระดับ 2
+        \item รายการระดับ 2
+        \item รายการระดับ 2
+        \begin{enumerate}[A)]
+            \item รายการระดับ 3
+            \item รายการระดับ 3
+            \item รายการระดับ 3
+            \begin{enumerate}[i.]
+                \item รายการระดับ 4
+                \item รายการระดับ 4
+                \item รายการระดับ 4
+            \end{enumerate}
+        \end{enumerate}
+    \end{enumerate}
+\end{enumerate}
+\end{exampleBox}
+
+
+\begin{exampleBox}[lefthand ratio=0.55,sidebyside]{เปลี่ยนหมายเลขลำดับที่ระดับต่าง ๆ โดยใช้หมายเลขหัวข้อ}
+\scriptsize
+\begin{lstlisting}[frame=none,language={[LaTeX]TeX}]
+\begin{enumerate}[\thesection.\arabic*]
+    \item รายการระดับ 1
+    \item รายการระดับ 1
+    \item รายการระดับ 1
+    \begin{enumerate}[\theenumi.\arabic*]
+        \item รายการระดับ 2
+        \item รายการระดับ 2
+        \item รายการระดับ 2
+        \begin{enumerate}[\theenumii.\arabic*]
+            \item รายการระดับ 3
+            \item รายการระดับ 3
+            \item รายการระดับ 3
+            \begin{enumerate}[\theenumiii.\arabic*]
+                \item รายการระดับ 4
+                \item รายการระดับ 4
+                \item รายการระดับ 4
+            \end{enumerate}
+        \end{enumerate}
+    \end{enumerate}
+\end{enumerate}
+\end{lstlisting}
+\tcblower
+\scriptsize
+\begin{enumerate}[\thesection.\arabic*]
+    \item รายการระดับ 1
+    \item รายการระดับ 1
+    \item รายการระดับ 1
+    \begin{enumerate}[\theenumi.\arabic*]
+        \item รายการระดับ 2
+        \item รายการระดับ 2
+        \item รายการระดับ 2
+        \begin{enumerate}[\theenumii.\arabic*]
+            \item รายการระดับ 3
+            \item รายการระดับ 3
+            \item รายการระดับ 3
+            \begin{enumerate}[\theenumiii.\arabic*]
+                \item รายการระดับ 4
+                \item รายการระดับ 4
+                \item รายการระดับ 4
+            \end{enumerate}
+        \end{enumerate}
+    \end{enumerate}
+\end{enumerate}
+\end{exampleBox}
+\newpage
+\section{การเพิ่มรูป}
+
+\begin{exampleBox}[lefthand ratio=0.7,sidebyside]{เพิ่มรูปโดยใช้สภาพแวดล้อม \texttt{figure}}
+\footnotesize
+\begin{lstlisting}[frame=none]
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=2cm]{figures/tu-logo-bw.jpg}
+    \caption{ตราธรรมจักร}
+    \label{fig:thammajak}
+\end{figure}
+\end{lstlisting}
+\tcblower
+\footnotesize
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=2cm]{figures/tu-logo-bw.jpg}
+    \caption{ตราธรรมจักร}
+    \label{fig:thammajak}
+\end{figure}
+\end{exampleBox}
+
+การเขียนคำอธิบายรูป ในกรณีที่เป็นรูปที่สร้างขึ้นเอง ไม่จำเป็นต้องระบุแหล่งที่มา ให้ใช้คำสั่ง \latex{\caption{figure description}} เช่น ใน \autoref{fig:thammajak} ให้ใช้คำสั่ง \verb|\caption{|ตราธรรมจักร\verb|}|
+
+วิธีการอ้างอิงถึงรูป ให้ใช้คำสั่ง \latex{\ref{label}} หรือ \latex{\autoref{label}} เช่น หากต้องการอ้างอิงถึง \autoref{fig:thammajak} ข้างต้น ให้พิมพ์ รูปที่ \latex{\ref{fig:thammajak}} หรือ \latex{\autoref{fig:thammajak}}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=2cm]{figures/tu-logo-bw.jpg}
+    \captionsource{ตราธรรมจักร}{\url{https://tu.ac.th/thammasat-identity}}
+    \label{fig:thammajak 2}
+\end{figure}
+
+แต่ถ้าได้รูปมาจากที่อื่น ให้ระบุแหล่งที่มาด้วย โดยให้ใช้คำสั่ง \latex{\captionsource{figure description}{figure source}} เช่น หากต้องการระบุแหล่งที่มาใน \autoref{fig:thammajak 2} ให้พิมพ์คำสั่ง \\ \verb|\captionsource{|ตราธรรมจักร\verb|}{\url{https://tu.ac.th/thammasat-identity}}|
+
+\begin{exampleBox}{แสดงหลายรูปย่อยโดยใช้สภาพแวดล้อม \texttt{subfigure}}
+\footnotesize
+\begin{lstlisting}[frame=none]
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=1.5in]{tu-logo-bw}
+        \caption{|ตราธรรมจักร ขาวดำ|}
+        \label{fig:thammajak bw}
+    \end{subfigure}
+    ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+      %(or a blank line to force the subfigure onto a new line)
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=1.5in]{tu-logo-color}
+        \caption{|ตราธรรมจักร สี|}
+        \label{fig:thammajak color}
+    \end{subfigure}
+    \caption{|ตราธรรมจักร ขาวดำและสี|}\label{fig:thammajak both color}
+\end{figure}
+\end{lstlisting}
+\tcblower
+\footnotesize
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=1.5in]{tu-logo-bw}
+        \caption{ตราธรรมจักร ขาวดำ}
+        \label{fig:thammajak bw}
+    \end{subfigure}
+    ~ %add desired spacing between images, e. g. ~, \quad, \qquad, \hfill etc.
+    %(or a blank line to force the subfigure onto a new line)
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=1.5in]{tu-logo-color}
+        \caption{ตราธรรมจักร สี}
+        \label{fig:thammajak color}
+    \end{subfigure}
+    \caption{ตราธรรมจักร ขาวดำและสี}\label{fig:thammajak both color}
+\end{figure}
+\end{exampleBox}
+
+
+\newpage
+\section{การเพิ่มตาราง}
+
+\begin{exampleBox}{เพิ่มตาราง ใช้เส้นขอบขั้น}
+\begin{lstlisting}[frame=none,escapeinside={!}{!}]
+\begin{table}[H]
+    \centering
+    \caption{!ตัวอย่างตาราง!}
+    \label{tab:table 1}
+    \begin{tabular}{| c | c | p{3cm} | p{3cm} |}
+        \hline
+        !หัวตาราง 1! & !หัวตาราง 1! & !หัวตาราง 1! & !หัวตาราง 1! \\
+        \hline
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        \hline
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        \hline
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        \hline
+    \end{tabular}
+\end{table}
+\end{lstlisting}
+\tcblower
+\begin{table}[H]
+    \centering
+    \caption{ตัวอย่างตาราง}
+    \label{tab:table 1}
+    \begin{tabular}{| c | c | p{3cm} | p{3cm} |}
+        \hline
+        หัวตาราง 1 & หัวตาราง 1 & หัวตาราง 1 & หัวตาราง 1 \\
+        \hline
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        \hline
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        \hline
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        \hline
+    \end{tabular}
+\end{table}
+\end{exampleBox}
+
+\newpage
+\begin{exampleBox}{เพิ่มตาราง}
+\begin{lstlisting}[frame=none]
+\begin{table}
+    \centering
+    \caption{|ตัวอย่างตาราง|}
+    \label{tab:table 2}
+    \begin{tabular}{c c p{3cm} p{3cm}}
+        \toprule
+        |หัวตาราง 1| & |หัวตาราง 1| & |หัวตาราง 1| & |หัวตาราง 1| \\
+        \midrule
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+\end{lstlisting}
+\tcblower
+\begin{table}[H]
+    \centering
+    \caption{ตัวอย่างตาราง ไม่มีเส้นขอบขั้น}
+    \label{tab:table 2}
+    \begin{tabular}{c c p{3cm} p{3cm}}
+        \toprule
+        หัวตาราง 1 & หัวตาราง 1 & หัวตาราง 1 & หัวตาราง 1 \\
+        \midrule
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        ข้อมูล & ข้อมูล & ข้อมูล & ข้อมูล \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+\end{exampleBox}
+
+\newpage
+\section{การอ้างอิง (รายการอ้างอิง)}
+รูปแบบที่ตั้งไว้ใน template นี้ โดยคำสั่งที่กำหนดไว้ ใน \filename{mystyle.sty} คือ
+\begin{enumerate}
+    \item \latex{\usepackage[backend=biber,style=ieee,bibencoding=utf8]{biblatex}}
+    \item \latex{\addbibresource{bib/refs.bib}} โดย \filename{bib/refs.bib} คือไฟล์ฐานข้อมูลรายการอ้างอิงในรูปแบบ BibTeX
+    \item เวลาอ้างอิง ให้ใช้คำสั่ง \latex{\cite{key}}
+\end{enumerate}
+
+\subsection{ตัวอย่างการอ้างอิง}
+
+\subsubsection{การอ้างอิงหนังสือ}
+
+ให้เขียนข้อมูลรายการของหนังสือที่ต้องการอ้างอิง เก็บไว้ในไฟล์ \filename{bib/refs.bib} ตัวอย่างเช่น \autoref{list:ref book}
+
+\begin{lstlisting}[caption={ตัวอย่างการอ้างอิงหนังสือ},label={list:ref book}]
+@book{Oversampling:1992,
+    editor        = "J. C. Candy and G. C. Temes",
+    title         = "Oversampling Delta-Sigma Data Converters Theory,
+                     Design and Simulation",
+    publisher     = "{IEEE} Press.",
+    location      = "New York",
+    year          = "1992"
+}
+\end{lstlisting}
+
+ชื่อที่ต้องใช้ในการอ้างอิงสำหรับ \autoref{list:ref book} คือ \latex{Oversampling:1992} โดยเราสามารถ\mbox{กำหนด}ชื่อนี้ได้เอง การอ้างอิงใน \autoref{list:ref book} ให้ใช้คำสั่ง \latex{\cite{Oversampling:1992}} \cite{Oversampling:1992}
+
+
+\begin{lstlisting}[caption={ตัวอย่างการอ้างอิงบทความ},label={list:ref article}]
+@article{Midgap:1997,
+    author        = "A. Castaldini and A. Cavallini and B. Fraboni
+                     and P. Fernandez and J. Piqueras",
+    title         = "Midgap Traps Related to Compensation Processes in
+                     {CdTe} Alloys",
+    journaltitle  = "Phys. Rev. B.",
+    volume        = "56",
+    number        = "23",
+    year          = "1997",
+    pages         = "14897-14900"
+}
+\end{lstlisting}
+
+สำหรับข้อมูลใน \autoref{list:ref article} ชื่อที่จะใช้ในการอ้างอิงคือ \latex{Midgap:1997} โดยการ\mbox{อ้างอิง} ให้ใช้คำสั่ง \latex{\cite{Midgap:1997}} \cite{Midgap:1997}
+
+\subsubsection{การอ้างอิงเอกสารออนไลน์}
+
+\begin{lstlisting}[caption={ตัวอย่างการอ้างอิงเอกสารออนไลน์ 1},label={list:ref online 1}]
+@misc{NFC,
+author        = "|{เสฏฐวุฒิ แสนนาม}|",
+title         = "{NFC}",
+year          = "2013",
+howpublished  = "|\url{https://www.thaicert.or.th/papers/general/2013/pa2013ge001.html}|",
+}
+\end{lstlisting}
+
+การอ้างอิงใน \autoref{list:ref online 1} ให้ใช้คำสั่ง \latex{\cite{NFC}} \cite{NFC}
+
+

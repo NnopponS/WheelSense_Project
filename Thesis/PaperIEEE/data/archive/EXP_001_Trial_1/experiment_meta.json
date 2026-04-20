@@ -1,0 +1,50 @@
+{
+  "experiment_id": "EXP_001",
+  "dir_name": "EXP_001_Trial_1",
+  "name": "Trial 1",
+  "description": "",
+  "created_at": "2026-03-03T15:15:21.473001",
+  "updated_at": "2026-03-08T10:50:12.153522",
+  "stations": [
+    "S1",
+    "S2",
+    "S3",
+    "S4"
+  ],
+  "actions": [
+    {
+      "id": 1,
+      "label": "4 cornors in 1 room",
+      "csv_file": "action_001_4_cornors_in_1_room.csv",
+      "start_time": "2026-03-03T15:15:31.746585",
+      "end_time": "2026-03-03T15:16:23.646683",
+      "sample_count": 521
+    },
+    {
+      "id": 2,
+      "label": "S1-S2-S3-S4 เปิดปิดประตู",
+      "csv_file": "action_002_S1-S2-S3-S4_____________.csv",
+      "start_time": "2026-03-03T15:28:59.475550",
+      "end_time": "2026-03-03T15:30:21.983036",
+      "sample_count": 1241
+    },
+    {
+      "id": 3,
+      "label": "test",
+      "csv_file": "action_003_test.csv",
+      "start_time": "2026-03-08T10:45:09.756693",
+      "end_time": "2026-03-08T10:45:43.592293",
+      "sample_count": 1028
+    },
+    {
+      "id": 4,
+      "label": "test2",
+      "csv_file": "action_004_test2.csv",
+      "start_time": "2026-03-08T10:49:47.702025",
+      "end_time": "2026-03-08T10:50:12.153522",
+      "sample_count": 647
+    }
+  ],
+  "total_samples": 3437,
+  "floorplan": null
+}

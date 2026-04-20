@@ -1,0 +1,24 @@
+timestamp,S1_RSSI,S2_RSSI,S3_RSSI,S4_RSSI,action_label,experiment_id,sub_action_label
+2026-03-08 12:46:12.656,-70,-65,-62,-65,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:12.858,-70,-69,-70,-64,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:13.068,-75,-66,-71,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:13.273,-70,,-62,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:13.473,-69,-69,,-64,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:13.671,,-65,,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:13.877,-69,-76,,-79,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:14.097,,-65,,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:14.355,-70,,,-73,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:14.599,,-66,,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:14.816,-73,,,-64,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:15.036,-76,-70,,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:15.302,-78,-69,-64,-78,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:15.713,-67,,-64,-63,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:15.912,,-67,,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:16.110,,,-64,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:16.322,-71,-74,,-62,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:16.541,-72,-71,,-62,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:16.774,-68,-68,-62,-73,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:16.978,-69,-68,-63,-65,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:17.212,,-78,-61,-62,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:17.417,,,-71,,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
+2026-03-08 12:46:17.418,-76,-70,-67,-71,02-Near-Facing-Out,EXP_001,02-Near-Facing-Out-E
