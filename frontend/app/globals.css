@@ -324,3 +324,66 @@ body {
     0 14px 42px -10px color-mix(in srgb, var(--destructive) 28%, transparent),
     var(--shadow-elevated);
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * Elder-friendly font scaling (ws-role-elder)
+ * Applied when font scale > 1.0 for accessibility
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+
+.ws-role-elder {
+  font-size: calc(1rem * var(--ws-font-scale, 1));
+}
+
+.ws-role-elder h1,
+.ws-role-elder .text-3xl {
+  font-size: calc(1.875rem * var(--ws-font-scale, 1));
+}
+
+.ws-role-elder h2,
+.ws-role-elder .text-2xl {
+  font-size: calc(1.5rem * var(--ws-font-scale, 1));
+}
+
+.ws-role-elder h3,
+.ws-role-elder .text-xl {
+  font-size: calc(1.25rem * var(--ws-font-scale, 1));
+}
+
+.ws-role-elder .text-lg {
+  font-size: calc(1.125rem * var(--ws-font-scale, 1));
+}
+
+.ws-role-elder .text-base {
+  font-size: calc(1rem * var(--ws-font-scale, 1));
+}
+
+.ws-role-elder .text-sm {
+  font-size: calc(0.875rem * var(--ws-font-scale, 1));
+}
+
+.ws-role-elder .text-xs {
+  font-size: calc(0.75rem * var(--ws-font-scale, 1));
+}
+
+/* Larger touch targets for elderly users */
+.ws-role-elder button,
+.ws-role-elder [role="button"] {
+  min-height: calc(2.75rem * var(--ws-font-scale, 1));
+  min-width: calc(2.75rem * var(--ws-font-scale, 1));
+}
+
+/* Increased spacing for readability */
+.ws-role-elder .p-4 {
+  padding: calc(1rem * var(--ws-font-scale, 1));
+}
+
+.ws-role-elder .gap-4 {
+  gap: calc(1rem * var(--ws-font-scale, 1));
+}
+
+/* High contrast focus indicators */
+.ws-role-elder *:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}

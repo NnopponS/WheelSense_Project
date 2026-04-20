@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, Siren, Clock3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/lib/i18n";
+import { useFontScale } from "@/hooks/useFontScale";
 import { cn } from "@/lib/utils";
 
 type HeroMode = "alert" | "task" | "idle";
@@ -33,6 +34,7 @@ export interface ObserverNextActionHeroProps {
  */
 export function ObserverNextActionHero(props: ObserverNextActionHeroProps) {
   const { t } = useTranslation();
+  const { elderClass } = useFontScale();
   const {
     mode,
     title,
@@ -84,7 +86,7 @@ export function ObserverNextActionHero(props: ObserverNextActionHeroProps) {
     <section
       aria-labelledby="observer-hero-title"
       aria-live="polite"
-      className={frameClass}
+      className={cn(frameClass, elderClass)}
     >
       <div className="flex items-start gap-3 md:gap-4">
         <div className={iconWrap} aria-hidden>

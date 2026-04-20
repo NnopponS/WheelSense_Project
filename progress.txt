@@ -60,7 +60,10 @@ Added `ObserverNextActionHero` that surfaces the top alert or task with a single
 New: `frontend/components/observer/ObserverNextActionHero.tsx`; `acknowledgeHeroAlertMutation` reuses `/api/alerts/{id}/acknowledge`.
 i18n keys `observer.hero.*` EN/TH.
 Build GREEN.
-FOLLOW-UP (future turn): font-scale preference hook + `.ws-role-elder` CSS.
+FOLLOW-UP DONE (turn 12):
+- Font-scale preference hook: `frontend/hooks/useFontScale.ts` + tests
+- `.ws-role-elder` CSS utilities in `frontend/app/globals.css`
+- Integrated into `ObserverNextActionHero` for elder-friendly UX
 
 ### PHASE 5 — Supervisor health queue (`/supervisor`) — DONE (turn 2)
 Added `SupervisorHealthQueue` card filtering tasks assigned to the current user.
