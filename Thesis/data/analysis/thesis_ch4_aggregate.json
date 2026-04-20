@@ -1,0 +1,422 @@
+{
+  "metadata": {
+    "schema_version": "1.1",
+    "purpose": "Single machine-readable bundle for Chapter 4 numeric claims: LLM/MCP (filled from export), component/E2E/field (bounded qualitative + nulls until log export).",
+    "generated_at_utc": "2026-04-18T14:52:12Z",
+    "evaluation_window": {
+      "label_th": "หน้าต่างผลหลักในเล่ม (อ้างอิงบทที่ 4)",
+      "ux_google_form_date_thai": "17 เมษายน พ.ศ. 2569",
+      "llm_batch_metadata_utc": "2026-04-18T13:22:14.980250Z",
+      "offline_loc_evidence": "IEEE companion / offline BLE dataset — Sangsasri2026BLEMotionLLM (คนละชุดจากสตรีม WheelSense)",
+      "note": "UTC timestamps under llm_mcp_eval.metadata refer to the evaluation export run, not a single continuous field-deployment interval."
+    },
+    "paths": {
+      "llm_export_source": "data/analysis/llm_mcp_eval_results.json",
+      "this_file": "data/analysis/thesis_ch4_aggregate.json",
+      "merge_script": "latex/scripts/merge_ch4_aggregate.py"
+    },
+    "component_e2e_status": "partial",
+    "minimum_samples_note": "Report p50/p95 only when n meets protocol in Chapter 3; document window in caption.",
+    "llm_export_source": "data/analysis/llm_mcp_eval_results.json",
+    "metric_extraction_notes": {
+      "imu_effective_rate": "Hz from median Δt between consecutive IMU samples in device log windows; exclude empty windows.",
+      "telemetry_publish_interval": "ms between MQTT telemetry rows per device_id; report p50/p95 over stable windows.",
+      "ble_scan_cadence": "ms between RSSI vector updates / scan cycles as logged on device.",
+      "mqtt_ingest_ratio": "count(rows ingested)/count(messages published) per session where both logs exist.",
+      "e2e_latency_paths": "Intervals CSV: columns load_profile,path_key,latency_ms — see latex/scripts/ch4_percentiles_from_interval_csv.py",
+      "e2e_integrity_recovery": "Event rates and recovery times from server/MQTT logs under normal vs stress load_profiles in e2e.load_profiles."
+    }
+  },
+  "llm_mcp_eval": {
+    "source_file": "data/analysis/llm_mcp_eval_results.json",
+    "metadata": {
+      "generated_at_utc": "2026-04-18T13:22:14.980250Z",
+      "freeze_profile_A": {
+        "warmup_per_scenario": 3,
+        "repeat_per_scenario": 5
+      },
+      "model_name_env": "gemma3:4b",
+      "ollama_host_env": "http://127.0.0.1:11434",
+      "jsonl_temp_path": "C:\\Users\\PC\\AppData\\Local\\Temp\\tmpujzjr9ib.jsonl",
+      "scenarios_file": "D:\\witty\\Doc\\Thesis\\mcp_llm\\eval\\scenarios.yaml",
+      "disclaimer_cohens_kappa": "True Cohen's kappa with R=2 human raters requires offline scoring; see eval/irr_rater_template.csv.",
+      "irr_human_template_relative": "mcp_llm/eval/irr_rater_template.csv"
+    },
+    "latency_ms": {
+      "chapter4_labels": {
+        "question_to_first_tool_start_ms": {
+          "n": 30,
+          "mean_ms": 34268.31,
+          "p50_ms": 24665.304,
+          "p95_ms": 100123.396
+        },
+        "llm_phase_timestamp_received_to_t_after_llm_ms": {
+          "n": 30,
+          "mean_ms": 34268.291,
+          "p50_ms": 24665.304,
+          "p95_ms": 100123.396
+        },
+        "tool_call_to_tool_result_ms_router_execute": {
+          "n": 38,
+          "mean_ms": 245.95,
+          "p50_ms": 177.569,
+          "p95_ms": 638.919
+        },
+        "last_tool_result_to_workflow_done_ms": {
+          "n": 30,
+          "mean_ms": 4.221,
+          "p50_ms": 0.0,
+          "p95_ms": 24.566
+        },
+        "question_to_final_response_workflow_done_ms": {
+          "n": 30,
+          "mean_ms": 34582.863,
+          "p50_ms": 24959.535,
+          "p95_ms": 100171.0
+        }
+      },
+      "notes": "Segments align with tab:ch4_llm_latency when tools exist; rows with no tools omit first-tool and tool-span pool may be smaller."
+    },
+    "text_similarity": {
+      "embedding_model": "all-MiniLM-L6-v2",
+      "metric": "cosine_similarity_embedding",
+      "by_scenario": {
+        "dev_light_on": {
+          "n": 5,
+          "mean": 0.5512,
+          "stdev": 0.0
+        },
+        "dev_tv_off": {
+          "n": 5,
+          "mean": 0.5619,
+          "stdev": 0.0
+        },
+        "chat_greeting": {
+          "n": 5,
+          "mean": 0.452,
+          "stdev": 0.0068
+        },
+        "schedule_add": {
+          "n": 5,
+          "mean": 0.8469,
+          "stdev": 0.0
+        },
+        "rag_style_health": {
+          "n": 5,
+          "mean": 0.3571,
+          "stdev": 0.356
+        },
+        "multi_device": {
+          "n": 5,
+          "mean": 0.7156,
+          "stdev": 0.0
+        }
+      },
+      "by_text_similarity_row": {
+        "status_tools": {
+          "n": 15,
+          "mean": 0.6095,
+          "stdev": 0.0777
+        },
+        "practical_advice": {
+          "n": 10,
+          "mean": 0.4045,
+          "stdev": 0.2426
+        },
+        "alert_rules": {
+          "n": 5,
+          "mean": 0.8469,
+          "stdev": 0.0
+        }
+      }
+    },
+    "irr_proxy": {
+      "method": "Automated proxy: compare gold_tool from scenarios.yaml to first executed_tools[].tool; __content_only__ matches __no_tool__. This is not Cohen's kappa between human raters.",
+      "overall_accuracy": 1.0,
+      "total_comparisons": 30,
+      "per_scenario": {
+        "dev_light_on": {
+          "gold_tool": "e_device_control",
+          "agreement_rate": 1.0,
+          "n": 5
+        },
+        "dev_tv_off": {
+          "gold_tool": "e_device_control",
+          "agreement_rate": 1.0,
+          "n": 5
+        },
+        "chat_greeting": {
+          "gold_tool": "chat_message",
+          "agreement_rate": 1.0,
+          "n": 5
+        },
+        "schedule_add": {
+          "gold_tool": "schedule_modifier",
+          "agreement_rate": 1.0,
+          "n": 5
+        },
+        "rag_style_health": {
+          "gold_tool": "rag_query",
+          "agreement_rate": 1.0,
+          "n": 5
+        },
+        "multi_device": {
+          "gold_tool": "e_device_control",
+          "agreement_rate": 1.0,
+          "n": 5
+        }
+      },
+      "mismatches": [],
+      "mismatches_truncated": false
+    },
+    "batch_quality": {
+      "runs_used_for_percentiles_n": 30,
+      "classified_failures_in_export": {
+        "parse_failure_excluded_from_pool": 0,
+        "workflow_abort_excluded_from_pool": 0,
+        "notes_th": "สอดคล้ายข้อความใน Chapter 4 subsubsection การจำแนกความสำเร็จของรอบ batch"
+      }
+    }
+  },
+  "irr_human": {
+    "status": "pending_rater_scores",
+    "raters_planned_R": 2,
+    "template_relative": "mcp_llm/eval/irr_rater_template.csv",
+    "cohens_kappa": null,
+    "adjudication_cases_count": null,
+    "notes_th": "เมื่อครบคะแนนจากผู้ให้คะแนนสองคน ให้คำนวณ Cohen's kappa และอัปเดตแถวแรกของตาราง tab:ch4_irr_summary แล้วรัน merge_ch4_aggregate.py เพื่อเก็บค่าในไฟล์นี้"
+  },
+  "component_metrics": {
+    "wheelchair": [
+      {
+        "table_row_key": "imu_effective_rate",
+        "label_th": "IMU effective rate",
+        "observed_summary": "ยังไม่สรุป Hz รวมในเล่ม; ระหว่างสาธิตไม่พบช่องว่างสตรีม IMU ที่ผู้ใช้รายงาน",
+        "n_windows": null,
+        "unit": "Hz"
+      },
+      {
+        "table_row_key": "telemetry_publish_interval",
+        "label_th": "Telemetry publish interval",
+        "observed_summary": "พฤติกรรมสอดคล้ายคาบ 1 วินาทีในช่วงสาธิตหลัก; ยังไม่รายงาน p50/p95 ในเล่ม",
+        "n_windows": null,
+        "unit": "ms"
+      },
+      {
+        "table_row_key": "ble_scan_cadence",
+        "label_th": "BLE scan/update cadence",
+        "observed_summary": "ตั้งค่าตาม Profile-A บนอุปกรณ์; ยังไม่รวมสถิติ jitter จาก log ในเล่ม",
+        "n_windows": null,
+        "unit": "ms"
+      },
+      {
+        "table_row_key": "polar_stream",
+        "label_th": "Polar stream availability",
+        "observed_summary": "เมื่อสวมใส่และจับคู่สำเร็จ พบสตรีม HR ในเซสชันสาธิต; บางรอบขาดเซ็นเซอร์ตามข้อจำกัดการสวมใส่",
+        "n_windows": null,
+        "unit": "qualitative"
+      },
+      {
+        "table_row_key": "mqtt_ingest_ratio",
+        "label_th": "สัดส่วนข้อความ MQTT ที่ถูก ingest",
+        "observed_summary": "ไม่พบช่องว่างของ seq ที่ผู้ดูแลรายงานในเซสชันสาธิตหลัก; ยังไม่คำนวณร้อยละจาก DB ในเล่ม",
+        "n_windows": null,
+        "unit": "ratio"
+      }
+    ],
+    "camera": [
+      {
+        "table_row_key": "chunk_size",
+        "observed_summary": "ตรงตามโปรไฟล์ 12288 B ในชุดทดสอบที่บันทึกไว้",
+        "n": null
+      },
+      {
+        "table_row_key": "reassembly_success",
+        "observed_summary": "ไม่พบความล้มเหลวการประกอบที่ผู้ดูแลรายงานในเซสชันสาธิตหลัก; ยังไม่มีสัดส่วนจาก log",
+        "n": null
+      },
+      {
+        "table_row_key": "time_per_image",
+        "observed_summary": "ยังไม่สรุป ms/ภาพในเล่ม",
+        "n": null
+      }
+    ],
+    "server": [
+      {
+        "table_row_key": "mqtt_broker_ready",
+        "observed_summary": "ผ่านเกณฑ์ readiness ก่อน UX และก่อนรอบ batch LLM",
+        "n": null
+      },
+      {
+        "table_row_key": "api_health",
+        "observed_summary": "ตอบ 200 ในการตรวจก่อนทดสอบผู้ใช้และก่อนประเมิน LLM",
+        "n": null
+      },
+      {
+        "table_row_key": "dashboard_poll",
+        "observed_summary": "ตั้งค่าตาม Profile-A; ความล่าช้าที่ผู้ใช้รับรู้ผูกกับคาบ poll",
+        "n": null
+      },
+      {
+        "table_row_key": "retention_disk",
+        "observed_summary": "ยังไม่รายงาน GB ที่ใช้จริง; ไม่พบเหตุเต็มดิสก์ที่หยุดการทดลองในรอบหลัก",
+        "n": null
+      }
+    ]
+  },
+  "e2e": {
+    "load_profiles": {
+      "normal": "Raspberry Pi 5 deployment; single web/mobile session; no abnormal continuous image stream; no overlapping LLM eval sessions.",
+      "stress": "Continuous camera stream with 1000ms telemetry; concurrent LLM/MCP chat per tab:ch4_llm_eval_freeze; dashboard alert polling."
+    },
+    "latency_ms_by_path": [
+      {
+        "key": "device_to_db_telemetry",
+        "normal": {
+          "p50": null,
+          "p95": null,
+          "n": null
+        },
+        "stress": {
+          "p50": null,
+          "p95": null,
+          "n": null
+        }
+      },
+      {
+        "key": "rssi_to_prediction_db",
+        "normal": {
+          "p50": null,
+          "p95": null,
+          "n": null
+        },
+        "stress": {
+          "p50": null,
+          "p95": null,
+          "n": null
+        }
+      },
+      {
+        "key": "alert_to_ui",
+        "normal": {
+          "p50": null,
+          "p95": null,
+          "n": null
+        },
+        "stress": {
+          "p50": null,
+          "p95": null,
+          "n": null
+        }
+      },
+      {
+        "key": "camera_to_reassembly",
+        "normal": {
+          "p50": null,
+          "p95": null,
+          "n": null
+        },
+        "stress": {
+          "p50": null,
+          "p95": null,
+          "n": null
+        }
+      }
+    ],
+    "throughput": [
+      {
+        "layer": "telemetry_rows_per_min_db",
+        "normal": null,
+        "stress": null,
+        "n": null
+      },
+      {
+        "layer": "knn_predictions_per_min",
+        "normal": null,
+        "stress": null,
+        "n": null
+      },
+      {
+        "layer": "image_chunks_per_min",
+        "normal": null,
+        "stress": null,
+        "n": null
+      },
+      {
+        "layer": "api_requests_per_min_before_queueing",
+        "normal": null,
+        "stress": null,
+        "n": null
+      }
+    ],
+    "integrity_rates": [
+      {
+        "key": "mqtt_gaps",
+        "normal": null,
+        "stress": null,
+        "n_events": null
+      },
+      {
+        "key": "duplicate_seq",
+        "normal": null,
+        "stress": null,
+        "n_events": null
+      },
+      {
+        "key": "incomplete_image_set",
+        "normal": null,
+        "stress": null,
+        "n_events": null
+      }
+    ],
+    "recovery_ms": [
+      {
+        "key": "mqtt_device_drop",
+        "p50": null,
+        "p95": null,
+        "n": null
+      },
+      {
+        "key": "camera_wifi_drop",
+        "p50": null,
+        "p95": null,
+        "n": null
+      },
+      {
+        "key": "api_db_on_pi",
+        "p50": null,
+        "p95": null,
+        "n": null
+      }
+    ]
+  },
+  "field_observation": {
+    "rows": [
+      {
+        "key": "telemetry_chain",
+        "qualitative_th": "เชิงปฏิบัติการ: ไม่มีช่วงขาดยาวที่ผู้ดูแลรายงานในเซสชันทดลองหลัก",
+        "numeric": null
+      },
+      {
+        "key": "alert_ui",
+        "qualitative_th": "เชิงปฏิบัติการ: เห็นเหตุการณ์ภายในกรอบเวลาที่สอดคล้องคาบ poll",
+        "numeric": null
+      },
+      {
+        "key": "rssi_real_building",
+        "qualitative_th": "เชิงปฏิบัติการ: พบการกระโดดของโซนเมื่อมีผู้คนและวัตถุเคลื่อนที่ใกล้เส้นทาง",
+        "numeric": null
+      },
+      {
+        "key": "caregiver_channel",
+        "qualitative_th": "สอดคล้องแนวโน้ม UX ในหัวข้อผลการประเมิน UX/UI",
+        "numeric": null
+      },
+      {
+        "key": "expert_ai",
+        "qualitative_th": "ยังไม่จัดชุดประเมินคู่ครบในเล่ม; ใช้ข้อความระบบประกอบการสนทนาเป็นหลัก",
+        "numeric": null
+      }
+    ]
+  }
+}

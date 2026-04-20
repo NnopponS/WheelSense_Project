@@ -1,0 +1,26 @@
+timestamp,S1_RSSI,S2_RSSI,S3_RSSI,S4_RSSI,action_label,experiment_id,sub_action_label
+2026-03-08 12:38:17.343,-68,-57,-66,-39,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:17.580,-65,-58,-60,-41,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:17.779,-65,,-67,-39,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:17.970,-64,,-58,-41,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:18.173,-65,,-65,,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:18.377,,,,-39,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:18.572,-66,,-59,,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:18.768,,,,-43,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:18.984,,-56,,,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:18.985,-65,-59,-57,,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:19.196,,-59,,-39,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:19.598,-72,-59,-61,-42,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:19.817,,,-57,,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:20.017,-64,-57,,-45,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:20.212,-64,-57,-65,-44,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:20.419,-64,-58,-57,-42,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:20.614,-65,-58,-65,-72,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:20.809,-66,-57,-65,-44,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:21.018,-66,,,,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:21.214,-64,-58,-60,-42,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:21.410,-65,-57,-57,-40,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:21.606,,-66,,,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:21.607,-64,-57,-57,-39,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:21.801,-66,-57,-64,,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S
+2026-03-08 12:38:22.195,-64,-57,-64,-44,01-Near-Facing-In,EXP_001,01-Near-Facing-In-S

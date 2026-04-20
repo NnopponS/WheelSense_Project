@@ -1,0 +1,402 @@
+{
+  "experiment_id": "EXP_004",
+  "dir_name": "EXP_004_Case2_Boundary_Transition",
+  "name": "Case2_Boundary_Transition",
+  "description": "",
+  "created_at": "2026-03-08T14:05:12.141221",
+  "updated_at": "2026-03-08T15:26:59.575901",
+  "stations": [
+    "S1",
+    "S2",
+    "S3",
+    "S4"
+  ],
+  "actions": [
+    {
+      "id": 1,
+      "label": "01_in_Room4_Cornor3",
+      "csv_file": "action_001_01_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:09:01.964796",
+      "end_time": "2026-03-08T15:09:14.064570",
+      "sample_count": 43
+    },
+    {
+      "id": 2,
+      "label": "02_in_Room4_Cornor3",
+      "csv_file": "action_002_02_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:09:19.412078",
+      "end_time": "2026-03-08T15:09:31.699229",
+      "sample_count": 36
+    },
+    {
+      "id": 3,
+      "label": "03_in_Room4_Cornor3",
+      "csv_file": "action_003_03_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:09:36.611427",
+      "end_time": "2026-03-08T15:09:48.767749",
+      "sample_count": 38
+    },
+    {
+      "id": 4,
+      "label": "04_in_Room4_Cornor3",
+      "csv_file": "action_004_04_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:10:18.062054",
+      "end_time": "2026-03-08T15:10:29.650580",
+      "sample_count": 38
+    },
+    {
+      "id": 5,
+      "label": "05_in_Room4_Cornor3",
+      "csv_file": "action_005_05_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:10:35.099358",
+      "end_time": "2026-03-08T15:10:47.246880",
+      "sample_count": 36
+    },
+    {
+      "id": 6,
+      "label": "06_in_Room4_Cornor3",
+      "csv_file": "action_006_06_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:10:52.906961",
+      "end_time": "2026-03-08T15:11:05.856470",
+      "sample_count": 45
+    },
+    {
+      "id": 7,
+      "label": "07_in_Room4_Cornor3",
+      "csv_file": "action_007_07_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:11:11.416160",
+      "end_time": "2026-03-08T15:11:23.806232",
+      "sample_count": 41
+    },
+    {
+      "id": 8,
+      "label": "08_in_Room4_Cornor3",
+      "csv_file": "action_008_08_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:11:30.165581",
+      "end_time": "2026-03-08T15:11:42.924666",
+      "sample_count": 42
+    },
+    {
+      "id": 9,
+      "label": "09_in_Room4_Cornor3",
+      "csv_file": "action_009_09_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:11:47.867850",
+      "end_time": "2026-03-08T15:12:00.394417",
+      "sample_count": 37
+    },
+    {
+      "id": 10,
+      "label": "10_in_Room4_Cornor3",
+      "csv_file": "action_010_10_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:12:05.922646",
+      "end_time": "2026-03-08T15:12:19.237079",
+      "sample_count": 39
+    },
+    {
+      "id": 11,
+      "label": "11_in_Room4_Cornor3",
+      "csv_file": "action_011_11_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:12:23.705023",
+      "end_time": "2026-03-08T15:12:35.836684",
+      "sample_count": 44
+    },
+    {
+      "id": 12,
+      "label": "12_in_Room4_Cornor3",
+      "csv_file": "action_012_12_in_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:12:40.472102",
+      "end_time": "2026-03-08T15:12:54.085000",
+      "sample_count": 43
+    },
+    {
+      "id": 13,
+      "label": "01_in_Room4_Cornor1",
+      "csv_file": "action_013_01_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:13:04.758029",
+      "end_time": "2026-03-08T15:13:16.909320",
+      "sample_count": 38
+    },
+    {
+      "id": 14,
+      "label": "02_in_Room4_Cornor1",
+      "csv_file": "action_014_02_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:13:21.598544",
+      "end_time": "2026-03-08T15:13:34.501672",
+      "sample_count": 41
+    },
+    {
+      "id": 15,
+      "label": "03_in_Room4_Cornor1",
+      "csv_file": "action_015_03_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:13:39.307249",
+      "end_time": "2026-03-08T15:13:52.402360",
+      "sample_count": 42
+    },
+    {
+      "id": 16,
+      "label": "04_in_Room4_Cornor1",
+      "csv_file": "action_016_04_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:14:24.628075",
+      "end_time": "2026-03-08T15:14:37.058106",
+      "sample_count": 45
+    },
+    {
+      "id": 17,
+      "label": "05_in_Room4_Cornor1",
+      "csv_file": "action_017_05_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:14:48.164735",
+      "end_time": "2026-03-08T15:15:00.432106",
+      "sample_count": 35
+    },
+    {
+      "id": 18,
+      "label": "06_in_Room4_Cornor1",
+      "csv_file": "action_018_06_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:15:04.416193",
+      "end_time": "2026-03-08T15:15:17.705068",
+      "sample_count": 42
+    },
+    {
+      "id": 19,
+      "label": "07_in_Room4_Cornor1",
+      "csv_file": "action_019_07_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:15:23.537741",
+      "end_time": "2026-03-08T15:15:35.994079",
+      "sample_count": 45
+    },
+    {
+      "id": 20,
+      "label": "08_in_Room4_Cornor1",
+      "csv_file": "action_020_08_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:15:41.791190",
+      "end_time": "2026-03-08T15:16:01.930832",
+      "sample_count": 39
+    },
+    {
+      "id": 21,
+      "label": "09_in_Room4_Cornor1",
+      "csv_file": "action_021_09_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:16:11.762341",
+      "end_time": "2026-03-08T15:16:50.929246",
+      "sample_count": 40
+    },
+    {
+      "id": 22,
+      "label": "10_in_Room4_Cornor1",
+      "csv_file": "action_022_10_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:18:06.609481",
+      "end_time": "2026-03-08T15:18:20.412322",
+      "sample_count": 38
+    },
+    {
+      "id": 23,
+      "label": "11_in_Room4_Cornor1",
+      "csv_file": "action_023_11_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:18:36.407351",
+      "end_time": "2026-03-08T15:18:48.946085",
+      "sample_count": 41
+    },
+    {
+      "id": 24,
+      "label": "12_in_Room4_Cornor1",
+      "csv_file": "action_024_12_in_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:18:54.584142",
+      "end_time": "2026-03-08T15:19:11.825394",
+      "sample_count": 42
+    },
+    {
+      "id": 25,
+      "label": "01_Out_Room4_Cornor3",
+      "csv_file": "action_025_01_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:19:34.735394",
+      "end_time": "2026-03-08T15:19:47.476537",
+      "sample_count": 35
+    },
+    {
+      "id": 26,
+      "label": "02_Out_Room4_Cornor3",
+      "csv_file": "action_026_02_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:19:52.044858",
+      "end_time": "2026-03-08T15:20:05.554112",
+      "sample_count": 43
+    },
+    {
+      "id": 27,
+      "label": "03_Out_Room4_Cornor3",
+      "csv_file": "action_027_03_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:20:10.198371",
+      "end_time": "2026-03-08T15:20:22.266626",
+      "sample_count": 47
+    },
+    {
+      "id": 28,
+      "label": "04_Out_Room4_Cornor3",
+      "csv_file": "action_028_04_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:20:28.909642",
+      "end_time": "2026-03-08T15:20:41.233521",
+      "sample_count": 40
+    },
+    {
+      "id": 29,
+      "label": "05_Out_Room4_Cornor3",
+      "csv_file": "action_029_05_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:20:45.703054",
+      "end_time": "2026-03-08T15:20:58.814814",
+      "sample_count": 40
+    },
+    {
+      "id": 30,
+      "label": "06_Out_Room4_Cornor3",
+      "csv_file": "action_030_06_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:21:03.185636",
+      "end_time": "2026-03-08T15:21:17.999801",
+      "sample_count": 43
+    },
+    {
+      "id": 31,
+      "label": "07_Out_Room4_Cornor3",
+      "csv_file": "action_031_07_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:21:23.402000",
+      "end_time": "2026-03-08T15:21:37.485835",
+      "sample_count": 39
+    },
+    {
+      "id": 32,
+      "label": "08_Out_Room4_Cornor3",
+      "csv_file": "action_032_08_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:21:42.437494",
+      "end_time": "2026-03-08T15:21:58.216505",
+      "sample_count": 36
+    },
+    {
+      "id": 33,
+      "label": "09_Out_Room4_Cornor3",
+      "csv_file": "action_033_09_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:22:03.260376",
+      "end_time": "2026-03-08T15:22:14.762483",
+      "sample_count": 39
+    },
+    {
+      "id": 34,
+      "label": "10_Out_Room4_Cornor3",
+      "csv_file": "action_034_10_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:22:20.356168",
+      "end_time": "2026-03-08T15:22:32.507395",
+      "sample_count": 36
+    },
+    {
+      "id": 35,
+      "label": "11_Out_Room4_Cornor3",
+      "csv_file": "action_035_11_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:22:37.786739",
+      "end_time": "2026-03-08T15:22:51.808826",
+      "sample_count": 36
+    },
+    {
+      "id": 36,
+      "label": "12_Out_Room4_Cornor3",
+      "csv_file": "action_036_12_Out_Room4_Cornor3.csv",
+      "start_time": "2026-03-08T15:22:57.511940",
+      "end_time": "2026-03-08T15:23:10.721597",
+      "sample_count": 35
+    },
+    {
+      "id": 37,
+      "label": "01_Out_Room4_Cornor1",
+      "csv_file": "action_037_01_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:23:26.344850",
+      "end_time": "2026-03-08T15:23:37.809928",
+      "sample_count": 42
+    },
+    {
+      "id": 38,
+      "label": "02_Out_Room4_Cornor1",
+      "csv_file": "action_038_02_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:23:45.189714",
+      "end_time": "2026-03-08T15:23:56.668193",
+      "sample_count": 44
+    },
+    {
+      "id": 39,
+      "label": "03_Out_Room4_Cornor1",
+      "csv_file": "action_039_03_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:24:01.385156",
+      "end_time": "2026-03-08T15:24:14.605627",
+      "sample_count": 44
+    },
+    {
+      "id": 40,
+      "label": "04_Out_Room4_Cornor1",
+      "csv_file": "action_040_04_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:24:21.381097",
+      "end_time": "2026-03-08T15:24:32.772743",
+      "sample_count": 32
+    },
+    {
+      "id": 41,
+      "label": "05_Out_Room4_Cornor1",
+      "csv_file": "action_041_05_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:24:38.086154",
+      "end_time": "2026-03-08T15:24:49.659657",
+      "sample_count": 42
+    },
+    {
+      "id": 42,
+      "label": "06_Out_Room4_Cornor1",
+      "csv_file": "action_042_06_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:24:55.502332",
+      "end_time": "2026-03-08T15:25:09.296028",
+      "sample_count": 42
+    },
+    {
+      "id": 43,
+      "label": "07_Out_Room4_Cornor1",
+      "csv_file": "action_043_07_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:25:13.651783",
+      "end_time": "2026-03-08T15:25:25.352473",
+      "sample_count": 40
+    },
+    {
+      "id": 44,
+      "label": "08_Out_Room4_Cornor1",
+      "csv_file": "action_044_08_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:25:29.995845",
+      "end_time": "2026-03-08T15:25:42.574860",
+      "sample_count": 46
+    },
+    {
+      "id": 45,
+      "label": "09_Out_Room4_Cornor1",
+      "csv_file": "action_045_09_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:25:48.800728",
+      "end_time": "2026-03-08T15:26:02.993802",
+      "sample_count": 39
+    },
+    {
+      "id": 46,
+      "label": "10_Out_Room4_Cornor1",
+      "csv_file": "action_046_10_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:26:09.216640",
+      "end_time": "2026-03-08T15:26:21.436473",
+      "sample_count": 37
+    },
+    {
+      "id": 47,
+      "label": "11_Out_Room4_Cornor1",
+      "csv_file": "action_047_11_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:26:26.560143",
+      "end_time": "2026-03-08T15:26:39.201969",
+      "sample_count": 37
+    },
+    {
+      "id": 48,
+      "label": "12_Out_Room4_Cornor1",
+      "csv_file": "action_048_12_Out_Room4_Cornor1.csv",
+      "start_time": "2026-03-08T15:26:43.889496",
+      "end_time": "2026-03-08T15:26:59.575901",
+      "sample_count": 40
+    }
+  ],
+  "total_samples": 1924,
+  "floorplan": null
+}

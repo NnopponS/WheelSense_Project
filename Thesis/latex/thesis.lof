@@ -1,0 +1,22 @@
+\vspace {-0.5cm}
+~\hfill \textnormal {หน้า}\par 
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพสะท้อนปัญหาด้านการเข้าถึงสิ่งอำนวยความสะดวก}}{1}{figure.caption.13}%
+\contentsline {figure}{\numberline {1.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การระบุตำแหน่งผู้ใช้งานในพื้นที่ต่าง ๆ ของอาคารด้วย BLE Beacons และบริบทเทคโนโลยีที่เกี่ยวข้อง}}{2}{figure.caption.14}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเปรียบเทียบขั้นตอนการดูแลแบบดั้งเดิมกับการใช้ระบบอัจฉริยะ}}{13}{figure.caption.21}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรม IoT แบบละเอียด 5 ชั้นสำหรับระบบดูแลผู้สูงอายุ}}{13}{figure.caption.22}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับการรับส่งข้อความในโพรโทคอล MQTT ตามระดับ QoS}}{14}{figure.caption.23}%
+\contentsline {figure}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมการเชื่อมต่อ LLM กับเครื่องมือภายนอกผ่าน Model Context Protocol (MCP)}}{15}{figure.caption.24}%
+\contentsline {figure}{\numberline {2.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces องค์ประกอบความปลอดภัยของข้อมูลและการประเมินความพึงพอใจของผู้ใช้}}{16}{figure.caption.25}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพรวมสถาปัตยกรรมและการไหลของข้อมูลของระบบ WheelSense}}{24}{figure.caption.32}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผังหัวข้อ MQTT (topic map) และชนิดข้อมูลของ WheelSense}}{24}{figure.caption.33}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ไทม์ไลน์การวัดเวลาแฝง (latency) แบบ end-to-end: อุปกรณ์$\rightarrow $MQTT$\rightarrow $ingestion$\rightarrow $DB$\rightarrow $API$\rightarrow $แอปผู้ดูแล/เครื่องมือ MCP}}{24}{figure.caption.34}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับขั้นตอนการระบุตำแหน่ง: ออฟไลน์สร้าง fingerprint และออนไลน์ทำนายด้วย KNN พร้อมกลยุทธ์สำรอง}}{33}{figure.caption.37}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แบบจำลองเชิงตรรกะของข้อมูล (logical model): กลุ่ม registry, time-series, predictions, alerts และ media metadata}}{36}{figure.caption.38}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsfinish 
+\contentsfinish 

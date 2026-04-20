@@ -1,0 +1,25 @@
+timestamp,S1_RSSI,S2_RSSI,S3_RSSI,S4_RSSI,action_label,experiment_id,sub_action_label
+2026-03-08 12:42:01.329,-55,-66,-64,-56,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:01.330,-66,-68,-61,-49,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:01.530,-57,-69,-62,-49,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:01.723,-55,-64,-80,-49,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:01.916,-57,-69,-62,-54,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:02.119,,-71,,,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:02.309,-65,,-62,-56,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:02.502,,-64,,,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:02.694,-56,,-62,-49,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:02.886,,-70,,,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:03.104,,-71,-62,-54,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:03.306,-54,,,,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:03.691,-66,-71,-61,-57,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:03.884,-57,-67,-62,-54,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:04.079,-54,-65,-76,-49,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:04.276,-57,-72,-62,-57,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:04.469,-57,-73,-60,-53,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:04.666,-57,,,-50,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:04.859,-68,-72,-61,-54,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:05.066,-66,-62,-74,-49,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:05.280,,-72,,-49,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:05.281,-66,-72,-64,-54,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:05.690,-67,-71,-68,-57,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N
+2026-03-08 12:42:06.137,-54,-68,-62,-54,02-Far-Facing-In,EXP_001,02-Far-Facing-In-N

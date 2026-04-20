@@ -1,0 +1,30 @@
+\chapter{การอ้างอิง}
+
+ระบบอ้างอิงในรูปแบบของมหาวิทยาลัยธรรมศาสตร์ มีอยู่  3 รูปแบบ คือ
+\begin{enumerate}[leftmargin=0pt,itemindent=0.6in]
+\item แบบ Vancouver (ซึ่งเป็นรูปแบบที่ ใช้ใน template นี้ )
+\item แบบ Turabian 
+\item แบบ APA
+\end{enumerate}
+
+\section{Vancouver}
+ซึ่งเป็นรูปแบบที่ตั้งไว้ใน template นี้ โดย คำสั่งที่กำหนดไว้ ใน thesis.tex คือ 
+\begin{enumerate}[leftmargin=0pt,itemindent=0.6in]
+{\tt
+\item  \lstinline|\usepackage[superscript]{cite}| 
+ 
+\item  \lstinline|\bibliographystyle{vancouver}|
+\item  \lstinline|\bibliography{refs}|} โดย refs คือ Bibtex file 
+
+
+\end{enumerate}
+
+\section{APA}
+จำเป็นที่ต้องปิดคำสั่ง แบบ Vancouver ก่อน และเพิ่มคำสั่ง {\tt \lstinline|\usepackage{apacite}| }
+และ {\tt \lstinline|\bibliographystyle{apacite}|}  แทน เวลา cite ใช้ {\tt \lstinline|\cite{key}|},  {\tt \lstinline|\citeauthor{key}|},
+\\ และ {\tt \lstinline|\citeyear{key}|} เป็นต้น
+
+\section{TURABIAN}
+พบว่ามีปัญหา ไม่สามารถสร้างการอ้างอิงแบบเชิงอรรถได้ 
+
+

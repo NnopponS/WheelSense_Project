@@ -1,0 +1,28 @@
+1. unsupervised + post label
+2. supervised
+3. LLM
+
+
+
+
+old technic paper is still work with same ML but LLM reasoning is rsing to day if we input raw data to the ai
+is still work 
+
+we create an experiment that about location because Signal is unstable
+
+reasoning process of LLM can handle numeric data like traditional ML for Localization Problem 
+
+
+
+Have solution in each case 
+in 4 room 
+20 room in room 1 and error rate from TP
+
+
+
+LLM can search the data but traditional machine learing is not have memory and can not search
+
+using short static data too llm ex 5 form 20 
+
+
+check the reasoning what LLM think and why it can use coroect in localization problem

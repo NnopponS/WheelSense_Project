@@ -1,0 +1,193 @@
+\vspace {-0.5cm}
+~\hfill \textnormal {หน้า\\}\par 
+\xpg@aux {}{thai}
+\contentsline {section}{บทคัดย่อภาษาไทย}{(1)}{table.caption.2}%
+\vspace {\baselineskip }
+\contentsline {section}{บทคัดย่อภาษาอังกฤษ}{(3)}{table.caption.3}%
+\vspace {\baselineskip }
+\contentsline {section}{กิตติกรรมประกาศ}{(5)}{chapter*.4}%
+\vspace {\baselineskip }
+\contentsline {section}{สารบัญตาราง}{(11)}{section*.7}%
+\vspace {\baselineskip }
+\contentsline {section}{สารบัญภาพ}{(13)}{section*.9}%
+\vspace {\baselineskip }
+\contentsline {section}{สัญลักษณ์และคำย่อ}{(14)}{section*.11}%
+\vspace {\baselineskip }
+\contentsline {chapter}{\numberline {บทที่ 1}บทนำ}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}ที่มา และความสำคัญ}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}วัตถุประสงค์}{4}{section.1.2}%
+\contentsline {section}{\numberline {1.3}ขอบเขตงานวิจัย}{5}{section.1.3}%
+\contentsline {section}{\numberline {1.4}แผนการดำเนินงาน}{7}{section.1.4}%
+\contentsline {section}{\numberline {1.5}ระยะเวลาดำเนินงาน}{9}{section.1.5}%
+\contentsline {section}{\numberline {1.6}ประโยชน์ที่คาดว่าจะได้รับ}{11}{section.1.6}%
+\contentsline {chapter}{\numberline {บทที่ 2}วรรณกรรมและงานวิจัยที่เกี่ยวข้อง}{12}{chapter.2}%
+\contentsline {section}{\numberline {2.1}บริบทและความท้าทายในการดูแลผู้สูงอายุ}{12}{section.2.1}%
+\contentsline {section}{\numberline {2.2}เทคโนโลยีอินเทอร์เน็ตของสรรพสิ่งและเครือข่ายเซ็นเซอร์}{13}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}สถาปัตยกรรม IoT และเซ็นเซอร์สวมใส่}{13}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.2.2}การระบุตำแหน่งภายในอาคาร (IPS) และการส่งข้อมูลใกล้เวลาจริง}{14}{subsection.2.2.2}%
+\contentsline {section}{\numberline {2.3}ปัญญาประดิษฐ์และสถาปัตยกรรมแบบจำลองภาษา}{14}{section.2.3}%
+\contentsline {section}{\numberline {2.4}ความปลอดภัยสารสนเทศและการประเมินระบบ}{15}{section.2.4}%
+\contentsline {section}{\numberline {2.5}งานวิจัยที่เกี่ยวข้องและช่องว่างการวิจัย}{15}{section.2.5}%
+\contentsline {chapter}{\numberline {บทที่ 3}วิธีการวิจัย}{18}{chapter.3}%
+\contentsline {section}{\numberline {3.1}คำศัพท์ สัญลักษณ์ และข้อตกลงการเรียกชื่อในบทนี้}{18}{section.3.1}%
+\contentsline {section}{\numberline {3.2}กรอบวิธีดำเนินงานเชิงระบบและการโยงกับวัตถุประสงค์}{19}{section.3.2}%
+\contentsline {section}{\numberline {3.3}สมมุติฐาน ตัวแปร และกรอบการประเมิน}{20}{section.3.3}%
+\contentsline {section}{\numberline {3.4}เครื่องมือและสภาพแวดล้อมที่ใช้ในการพัฒนาและทดสอบ}{21}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}ฮาร์ดแวร์}{21}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}ซอฟต์แวร์และบริการหลัก}{22}{subsection.3.4.2}%
+\contentsline {section}{\numberline {3.5}ภาพรวมสถาปัตยกรรมและการไหลของข้อมูลของระบบ WheelSense}{23}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}เส้นทางข้อมูลหลัก}{25}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}สัญญาแลกเปลี่ยนข้อมูลผ่าน MQTT (topics และ payload)}{26}{subsection.3.5.2}%
+\contentsline {subsubsection}{\numberline {3.5.2.1}ข้อความจากอุปกรณ์บนเก้าอี้รถเข็น (Wheelchair telemetry)}{27}{subsubsection.3.5.2.1}%
+\contentsline {subsubsection}{\numberline {3.5.2.2}ข้อความจากโหนดกล้อง (Camera photo/control)}{27}{subsubsection.3.5.2.2}%
+\contentsline {subsubsection}{\numberline {3.5.2.3}ข้อความจากแอปพลิเคชันมือถือ (Mobile telemetry)}{28}{subsubsection.3.5.2.3}%
+\contentsline {section}{\numberline {3.6}บริบทการทดลองและข้อจำกัดการดำเนินงาน}{28}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}พื้นที่ทดสอบและผู้มีส่วนได้ส่วนเสีย}{28}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}ภาวะเดิมและข้อจำกัดเชิงเทคนิค}{28}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}ความเที่ยงตรงของเครื่องมือ ความเชื่อมั่นของการวัด และภัยคุกคามต่อความน่าเชื่อถือ}{28}{subsection.3.6.3}%
+\contentsline {section}{\numberline {3.7}โมดูลอุปกรณ์บนเก้าอี้รถเข็น}{29}{section.3.7}%
+\contentsline {subsection}{\numberline {3.7.1}สถาปัตยกรรมฝั่งอุปกรณ์}{29}{subsection.3.7.1}%
+\contentsline {subsection}{\numberline {3.7.2}เซ็นเซอร์ IMU และข้อมูลการเคลื่อนไหว}{30}{subsection.3.7.2}%
+\contentsline {subsubsection}{\numberline {3.7.2.1}สมการประมวลผลสัญญาณการเคลื่อนที่ฝั่งอุปกรณ์ (อ้างอิงเฟิร์มแวร์)}{30}{subsubsection.3.7.2.1}%
+\contentsline {subsection}{\numberline {3.7.3}Polar Verity Sense และสัญญาณสรีระศาสตร์}{31}{subsection.3.7.3}%
+\contentsline {subsection}{\numberline {3.7.4}กลไกตรวจจับความผิดปกติแบบกฎเกณฑ์}{31}{subsection.3.7.4}%
+\contentsline {subsection}{\numberline {3.7.5}การสื่อสารไร้สายและการรายงานสถานะ}{32}{subsection.3.7.5}%
+\contentsline {section}{\numberline {3.8}โหนดกล้องแบบขอบเครือข่าย (ESP32-S3)}{32}{section.3.8}%
+\contentsline {subsection}{\numberline {3.8.1}พารามิเตอร์การสตรีมและการควบคุม}{32}{subsection.3.8.1}%
+\contentsline {section}{\numberline {3.9}ระบบระบุตำแหน่งภายในอาคาร}{32}{section.3.9}%
+\contentsline {subsection}{\numberline {3.9.1}โครงข่าย BLE และการรวบรวม RSSI}{32}{subsection.3.9.1}%
+\contentsline {subsection}{\numberline {3.9.2}การสร้าง fingerprint และแผนที่สัญญาณ}{33}{subsection.3.9.2}%
+\contentsline {subsection}{\numberline {3.9.3}การประมาณตำแหน่งแบบออนไลน์ด้วย KNN}{34}{subsection.3.9.3}%
+\contentsline {subsubsection}{\numberline {3.9.3.1}สมการจับคู่ KNN บนเซิร์ฟเวอร์ (สอดคล้อง scikit-learn)}{34}{subsubsection.3.9.3.1}%
+\contentsline {subsection}{\numberline {3.9.4}นิยามเวกเตอร์ฟีเจอร์และการจัดการสัญญาณที่ขาดหาย}{35}{subsection.3.9.4}%
+\contentsline {subsection}{\numberline {3.9.5}กลยุทธ์สำรองและ baseline เชิงปฏิบัติการ (max-RSSI)}{35}{subsection.3.9.5}%
+\contentsline {subsection}{\numberline {3.9.6}กรณีขอบเขตของข้อมูลและข้อจำกัด}{36}{subsection.3.9.6}%
+\contentsline {section}{\numberline {3.10}แพลตฟอร์มเซิร์ฟเวอร์และฐานข้อมูล}{36}{section.3.10}%
+\contentsline {subsubsection}{\numberline {3.10.0.1}สรุปชุดฟิลด์ขั้นต่ำสำหรับการทำซ้ำและการตรวจสอบย้อนหลัง (schema audit)}{36}{subsubsection.3.10.0.1}%
+\contentsline {subsection}{\numberline {3.10.1}สถาปัตยกรรมบริการ}{37}{subsection.3.10.1}%
+\contentsline {subsection}{\numberline {3.10.2}ฐานข้อมูลและโมเดลข้อมูล}{37}{subsection.3.10.2}%
+\contentsline {subsection}{\numberline {3.10.3}Pipeline ข้อมูลแบบเรียลไทม์}{37}{subsection.3.10.3}%
+\contentsline {subsubsection}{\numberline {3.10.3.1}ขั้นตอน ingestion/validation และกฎความถูกต้องขั้นต่ำ}{38}{subsubsection.3.10.3.1}%
+\contentsline {subsubsection}{\numberline {3.10.3.2}การจัดการลำดับข้อมูลและกรณี out-of-order}{38}{subsubsection.3.10.3.2}%
+\contentsline {subsubsection}{\numberline {3.10.3.3}การประกอบคืนภาพ (chunk reassembly) และความทนทานต่อความผิดพลาด}{39}{subsubsection.3.10.3.3}%
+\contentsline {subsubsection}{\numberline {3.10.3.4}การเผยแพร่สู่ผู้ใช้และกลไกอัปเดตแบบใกล้เวลาจริง}{39}{subsubsection.3.10.3.4}%
+\contentsline {subsubsection}{\numberline {3.10.3.5}นโยบายการเก็บรักษาข้อมูล (retention) และบันทึกระบบ (logging)}{39}{subsubsection.3.10.3.5}%
+\contentsline {subsection}{\numberline {3.10.4}การติดตั้งและการกำหนดค่า}{40}{subsection.3.10.4}%
+\contentsline {section}{\numberline {3.11}แอปพลิเคชันเว็บสำหรับผู้ดูแล}{40}{section.3.11}%
+\contentsline {subsection}{\numberline {3.11.1}เทคโนโลยีและโครงสร้างโปรเจกต์}{40}{subsection.3.11.1}%
+\contentsline {subsection}{\numberline {3.11.2}การเชื่อมต่อข้อมูลแบบเรียลไทม์}{40}{subsection.3.11.2}%
+\contentsline {subsection}{\numberline {3.11.3}หน้าจอหลักและการทำงานของผู้ดูแล}{40}{subsection.3.11.3}%
+\contentsline {section}{\numberline {3.12}แอปพลิเคชันมือถือ}{41}{section.3.12}%
+\contentsline {section}{\numberline {3.13}Home Assistant และระบบอัตโนมัติ}{41}{section.3.13}%
+\contentsline {subsection}{\numberline {3.13.1}การเชื่อมต่อและข้อมูลที่แลกเปลี่ยน}{41}{subsection.3.13.1}%
+\contentsline {subsection}{\numberline {3.13.2}รูปแบบ automation ตามบริบท}{41}{subsection.3.13.2}%
+\contentsline {subsection}{\numberline {3.13.3}ความปลอดภัยและการตั้งค่า}{42}{subsection.3.13.3}%
+\contentsline {section}{\numberline {3.14}Local LLM และ MCP}{42}{section.3.14}%
+\contentsline {subsection}{\numberline {3.14.1}บทบาทและขอบเขตการใช้งาน}{42}{subsection.3.14.1}%
+\contentsline {subsection}{\numberline {3.14.2}รูปแบบการทำงานแบบยืนยันก่อนกระทำ (Propose--Confirm--Execute) และโหมดการจัดเส้นทาง}{42}{subsection.3.14.2}%
+\contentsline {subsection}{\numberline {3.14.3}เครื่องมือและแหล่งข้อมูล}{42}{subsection.3.14.3}%
+\contentsline {subsection}{\numberline {3.14.4}การทำงานร่วมกับแอปพลิเคชันและเซิร์ฟเวอร์}{43}{subsection.3.14.4}%
+\contentsline {section}{\numberline {3.15}ความปลอดภัย ความเป็นส่วนตัว และจริยธรรมข้อมูล}{43}{section.3.15}%
+\contentsline {section}{\numberline {3.16}กรณีขัดข้องที่คาดหมายและมาตรการรองรับ}{43}{section.3.16}%
+\contentsline {subsection}{\numberline {3.16.1}อุปกรณ์บนเก้าอี้รถเข็นและเส้นทาง telemetry}{44}{subsection.3.16.1}%
+\contentsline {subsection}{\numberline {3.16.2}RSSI/Localization}{44}{subsection.3.16.2}%
+\contentsline {subsection}{\numberline {3.16.3}โหนดกล้องและเส้นทางภาพ}{45}{subsection.3.16.3}%
+\contentsline {subsection}{\numberline {3.16.4}เซิร์ฟเวอร์/ฐานข้อมูล/ไคลเอนต์}{45}{subsection.3.16.4}%
+\contentsline {subsection}{\numberline {3.16.5}Home Assistant และ MCP/LLM}{45}{subsection.3.16.5}%
+\contentsline {section}{\numberline {3.17}พารามิเตอร์และการตั้งค่าหลัก}{46}{section.3.17}%
+\contentsline {subsection}{\numberline {3.17.1}Evaluation profile สำหรับการรายงานผลในบทที่ 4}{46}{subsection.3.17.1}%
+\contentsline {section}{\numberline {3.18}โปรโตคอลการติดตั้ง เก็บข้อมูล และความพร้อมของระบบ}{49}{section.3.18}%
+\contentsline {subsection}{\numberline {3.18.1}โปรโตคอลการติดตั้งระบบบน Raspberry Pi 5 (Deployment protocol)}{49}{subsection.3.18.1}%
+\contentsline {subsubsection}{\numberline {3.18.1.1}เงื่อนไขก่อนเริ่ม (preconditions checklist)}{49}{subsubsection.3.18.1.1}%
+\contentsline {subsubsection}{\numberline {3.18.1.2}ขั้นตอนนำระบบขึ้น (bring-up steps)}{49}{subsubsection.3.18.1.2}%
+\contentsline {subsubsection}{\numberline {3.18.1.3}เกณฑ์ผ่าน (deployment gates)}{50}{subsubsection.3.18.1.3}%
+\contentsline {subsection}{\numberline {3.18.2}โปรโตคอลการเก็บ fingerprint (Offline fingerprint protocol)}{50}{subsection.3.18.2}%
+\contentsline {subsection}{\numberline {3.18.3}นิยามข้อเท็จจริงอ้างอิง (ground truth) และการจัดแนวเชิงเวลา}{50}{subsection.3.18.3}%
+\contentsline {subsubsection}{\numberline {3.18.3.1}ขั้นตอนปฏิบัติ}{51}{subsubsection.3.18.3.1}%
+\contentsline {subsubsection}{\numberline {3.18.3.2}Fingerprint QC gates}{51}{subsubsection.3.18.3.2}%
+\contentsline {subsection}{\numberline {3.18.4}การตรวจสอบการทำงานแบบบูรณาการเบื้องต้น (ไม่ใช่ชุดประเมินเชิงวิจัยแยก)}{51}{subsection.3.18.4}%
+\contentsline {subsubsection}{\numberline {3.18.4.1}สคริปต์สถานการณ์ (scenario script)}{51}{subsubsection.3.18.4.1}%
+\contentsline {subsubsection}{\numberline {3.18.4.2}E2E gates}{52}{subsubsection.3.18.4.2}%
+\contentsline {subsection}{\numberline {3.18.5}โปรโตคอลการประเมิน UX (Caregiver UX protocol)}{52}{subsection.3.18.5}%
+\contentsline {subsection}{\numberline {3.18.6}โปรโตคอลการประเมิน LLM/MCP}{53}{subsection.3.18.6}%
+\contentsline {section}{\numberline {3.19}แผนการประเมินผล}{53}{section.3.19}%
+\contentsline {subsection}{\numberline {3.19.1}วัตถุประสงค์การประเมิน}{53}{subsection.3.19.1}%
+\contentsline {subsection}{\numberline {3.19.2}กลุ่มตัวอย่าง การควบคุมสภาพ และหลักการวิเคราะห์เชิงสถิติ}{54}{subsection.3.19.2}%
+\contentsline {subsection}{\numberline {3.19.3}สรุปสี่ประเด็นประเมิน}{54}{subsection.3.19.3}%
+\contentsline {subsection}{\numberline {3.19.4}การทดสอบเสริม: ความทนทานของการระบุตำแหน่งต่อ RSSI drift แบบจำลอง (Gaussian noise injection)}{55}{subsection.3.19.4}%
+\contentsline {subsubsection}{\numberline {3.19.4.1}แนวคิดและการสร้างชุดทดสอบที่มีสัญญาณรบกวน}{55}{subsubsection.3.19.4.1}%
+\contentsline {subsubsection}{\numberline {3.19.4.2}โปรโตคอลการประเมินและตัวชี้วัด}{55}{subsubsection.3.19.4.2}%
+\contentsline {subsection}{\numberline {3.19.5}การประเมิน UX/UI ผู้ดูแล}{56}{subsection.3.19.5}%
+\contentsline {subsubsection}{\numberline {3.19.5.1}แบบสอบถามอิเล็กทรอนิกส์ (เช่น Google Form)}{56}{subsubsection.3.19.5.1}%
+\contentsline {subsection}{\numberline {3.19.6}การประเมินโมดูล LLM ผ่าน MCP}{57}{subsection.3.19.6}%
+\contentsline {subsubsection}{\numberline {3.19.6.1}ความสอดคล้องระหว่างผู้ให้คะแนน (IRR) สำหรับการเลือกเครื่องมือ MCP}{57}{subsubsection.3.19.6.1}%
+\contentsline {subsubsection}{\numberline {3.19.6.2}ความใกล้เคียงเชิงข้อความของเอาต์พุต LLM}{57}{subsubsection.3.19.6.2}%
+\contentsline {subsubsection}{\numberline {3.19.6.3}เวลาหน่วงแบบปลายทางปลายทางของ LLM}{57}{subsubsection.3.19.6.3}%
+\contentsline {subsection}{\numberline {3.19.7}เกณฑ์สรุปผลและการบันทึกข้อมูล}{57}{subsection.3.19.7}%
+\contentsline {section}{\numberline {3.20}สรุปขั้นตอนการดำเนินงาน}{58}{section.3.20}%
+\contentsline {chapter}{\numberline {บทที่ 4}ผลการดำเนินงานและอภิปรายผล}{59}{chapter.4}%
+\contentsline {section}{\numberline {4.1}การติดตั้งอุปกรณ์และระบบ}{59}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}การติดตั้งอุปกรณ์บนเก้าอี้รถเข็น}{59}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}การติดตั้งโหนดและจุดรวมข้อมูลภายในอาคาร}{59}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}การติดตั้งเซิร์ฟเวอร์}{59}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}การทดสอบระบบ}{60}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}ผลการทดสอบฮาร์ดแวร์}{60}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}ผลการทดสอบซอฟต์แวร์}{60}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}ผลการทดสอบแบบบูรณาการ}{60}{subsection.4.2.3}%
+\contentsline {section}{\numberline {4.3}การทดสอบในสภาพแวดล้อมจริง}{60}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}การตีความพฤติกรรมด้วย AI และการประเมินโดยผู้เชี่ยวชาญ}{61}{subsection.4.3.1}%
+\contentsline {section}{\numberline {4.4}อภิปรายผล}{61}{section.4.4}%
+\contentsline {chapter}{\numberline {บทที่ 5}สรุปผลการดำเนินงาน อุปสรรค และการพัฒนาในอนาคต}{62}{chapter.5}%
+\contentsline {section}{\numberline {5.1}สรุปผลโครงงาน}{62}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}ผลสำเร็จตามวัตถุประสงค์หลัก}{62}{subsection.5.1.1}%
+\contentsline {section}{\numberline {5.2}ปัญหาและอุปสรรค}{63}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}ข้อจำกัดเชิงเทคนิค}{63}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}ข้อจำกัดเชิงข้อมูลและการใช้งานระบบ}{63}{subsection.5.2.2}%
+\contentsline {section}{\numberline {5.3}ข้อเสนอแนะในการพัฒนาต่อ}{63}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}การปรับสถาปัตยกรรมระบบ}{63}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}การพัฒนา AI และระบบอัตโนมัติ}{63}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}การประเมินผลระยะยาว}{63}{subsection.5.3.3}%
+\vspace {\baselineskip }
+\contentsline {chapter}{รายการอ้างอิง}{65}{section*.52}%
+\vspace {\baselineskip }
+\contentsline {chapter}{ภาคผนวก}{68}{section*.54}%
+\contentsline {section}{ภาคผนวก ก: ภาคผนวก ก: โครงสร้างคลังซอร์สโค้ดและแนวทางการติดตั้งระบบต้นแบบ}{69}{appendix.A}%
+\contentsline {section}{\numberline {ก.1}*}{69}{section.A.1}%
+\contentsline {section}{\numberline {ก.2}*}{70}{section.A.2}%
+\contentsline {section}{\numberline {ก.3}*}{70}{section.A.3}%
+\contentsline {section}{\numberline {ก.4}*}{71}{section.A.4}%
+\contentsline {section}{\numberline {ก.5}*}{71}{section.A.5}%
+\contentsline {section}{\numberline {ก.6}*}{72}{section.A.6}%
+\contentsline {section}{ภาคผนวก ข: ภาคผนวก ข: สัญญาข้อมูล MQTT และ telemetry ของอุปกรณ์ภาคสนาม}{73}{appendix.B}%
+\contentsline {section}{\numberline {ข.1}*}{73}{section.B.1}%
+\contentsline {section}{\numberline {ข.2}*}{73}{section.B.2}%
+\contentsline {section}{\numberline {ข.3}*}{74}{section.B.3}%
+\contentsline {section}{\numberline {ข.4}*}{74}{section.B.4}%
+\contentsline {section}{\numberline {ข.5}*}{75}{section.B.5}%
+\contentsline {section}{ภาคผนวก ฃ: ภาคผนวก ค: ทะเบียนเครื่องมือ MCP และการจัดหมวดความสามารถของระบบ}{76}{appendix.C}%
+\contentsline {section}{\numberline {ฃ.1}*}{76}{section.C.1}%
+\contentsline {section}{\numberline {ฃ.2}*}{76}{section.C.2}%
+\contentsline {section}{\numberline {ฃ.3}*}{77}{section.C.3}%
+\contentsline {section}{\numberline {ฃ.4}*}{78}{section.C.4}%
+\contentsline {section}{\numberline {ฃ.5}*}{78}{section.C.5}%
+\contentsline {section}{ภาคผนวก ค: ภาคผนวก ง: ลำดับการย้ายสคีมาฐานข้อมูลด้วย Alembic}{79}{appendix.D}%
+\contentsline {section}{\numberline {ค.1}*}{79}{section.D.1}%
+\contentsline {section}{\numberline {ค.2}*}{79}{section.D.2}%
+\contentsline {section}{\numberline {ค.3}*}{80}{section.D.3}%
+\contentsline {section}{\numberline {ค.4}*}{81}{section.D.4}%
+\contentsline {section}{\numberline {ค.5}*}{81}{section.D.5}%
+\contentsline {section}{ภาคผนวก ฅ: ภาคผนวก จ: แบบสอบถามและขั้นตอนการประเมิน UX ของผู้ดูแล}{82}{appendix.E}%
+\contentsline {section}{\numberline {ฅ.1}*}{82}{section.E.1}%
+\contentsline {section}{\numberline {ฅ.2}*}{82}{section.E.2}%
+\contentsline {section}{\numberline {ฅ.3}*}{82}{section.E.3}%
+\contentsline {section}{\numberline {ฅ.4}*}{83}{section.E.4}%
+\contentsline {section}{\numberline {ฅ.5}*}{83}{section.E.5}%
+\contentsline {section}{\numberline {ฅ.6}*}{83}{section.E.6}%
+\contentsline {section}{ภาคผนวก ฆ: ภาคผนวก ฉ: แพ็กเกจการประเมิน MCP เส้นทาง IRR และข้อความอ้างอิงสำหรับ LLM}{85}{appendix.F}%
+\contentsline {section}{\numberline {ฆ.1}*}{85}{section.F.1}%
+\contentsline {section}{\numberline {ฆ.2}*}{85}{section.F.2}%
+\contentsline {section}{\numberline {ฆ.3}*}{86}{section.F.3}%
+\contentsline {section}{\numberline {ฆ.4}*}{86}{section.F.4}%
+\contentsline {section}{\numberline {ฆ.5}*}{86}{section.F.5}%
+\contentsline {section}{\numberline {ฆ.6}*}{87}{section.F.6}%
+\contentsfinish 
