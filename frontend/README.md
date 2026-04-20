@@ -20,6 +20,7 @@ The frontend is a Next.js 16 App Router application for the WheelSense platform.
 - **@dnd-kit/core** + **@dnd-kit/utilities** — pointer drag-and-drop for the shared workflow **task board** (column moves call existing `PATCH /api/workflow/tasks/{id}`)
 - **Sonner** (`sonner`) for global toast/snackbar (mounted via `components/SonnerToaster.tsx` inside `AppProviders`)
 - **TipTap** (`@tiptap/react`, `@tiptap/starter-kit`, link + placeholder extensions) for rich **unified task** report templates in `components/tasks/CreateTaskDialog.tsx` / `components/tasks/RichReportEditor.tsx`
+- **EaseAI Chat** (`components/ai/AIChatPopup.tsx`) — 3-stage AI assistant flow (propose → confirm → execute) via agent runtime; floating FAB `EaseAIFab` on `/patient` and `/observer` with TH voice hints
 - **`CreateTaskDialog`** (`components/tasks/CreateTaskDialog.tsx`) creates **ad-hoc (`specific`)** unified tasks only: **multi-assignee** selection, **optional start/end `datetime-local`**, **per-subtask report notes** (`report_spec.body_html`), and **multi-patient** selection by issuing one `POST /api/tasks/` per selected patient (or a single unlinked task when none are selected). **Daily / routine** coverage uses the **งานประจำวัน** control on `TasksPageLayout` (`RoutineDayOverviewSheet`), not this dialog. `useCreateTask` owns cache invalidation only; the dialog controls success/error toasts.
 - `lib/api.ts` fetch wrapper for auth and error handling
 
@@ -112,6 +113,10 @@ After changing `i18n.tsx` or consumers:
 cd frontend
 npm run build
 ```
+
+### Sweep status (2026-04)
+
+Phase 8 full i18n sweep completed: 115 keys added across 6 batches covering all primary surfaces (patient, observer, supervisor, head-nurse, admin). Batches included shared chrome, patient hub, observer dashboard, supervisor dashboard, head-nurse main dashboard + sub-pages (staff, specialists, alerts), and admin residuals. QueryFn strings and backend API paths remain untranslated per audit plan.
 
 ## Route Groups
 
@@ -369,6 +374,28 @@ The app runs on `http://localhost:3000`.
 | `npm run openapi:types` | Export FastAPI OpenAPI and regenerate `lib/api/generated/schema.ts` |
 
 <!-- END AUTO-GENERATED:frontend-scripts -->
+
+## Accessibility Standards (WCAG AA for Older Caregivers)
+
+The frontend follows accessibility standards optimized for older caregivers:
+
+| Element | Minimum Size | Tailwind Class | Rationale |
+|---------|--------------|----------------|-----------|
+| Body text | 16px | `text-base` | Readable base font |
+| UI text | 14px | `text-sm` | Minimum for labels, buttons |
+| Button height | 44px | `h-11` | WCAG 2.5.5 touch target |
+| Input height | 48px | `h-12` | Comfortable touch target |
+| Action icons | 24px | `h-5 w-5` | Visible, tappable icons |
+| Card titles | 18px | `text-lg` | Clear hierarchy |
+
+### Implementation Notes
+
+- **Never use `text-xs`** (12px) for interactive elements; use `text-sm` minimum
+- **Button minimum height**: 44px (`h-11`) for all interactive buttons
+- **Icon minimum size**: 24px (`h-5 w-5`) for icons inside buttons or links
+- **Input minimum height**: 48px for text inputs, selects, and triggers
+
+See `docs/ACCESSIBILITY_REFACTOR.md` for the 2026-04 refactor details.
 
 ## Admin Patient Preview
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   History,
   MessageCircle,
@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { API_BASE } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
 import { ActionPlanPreview } from "./ActionPlanPreview";
+import type { AITraceChip } from "./AITraceChips";
 import { ExecutionStepList, type StepResult } from "./ExecutionStepList";
 import type { components } from "@/lib/api/generated/schema";
 
@@ -57,6 +58,7 @@ type ActionProposal = {
   actions?: ProposedAction[] | null;
   mode?: "answer" | "plan";
   execution_plan?: ExecutionPlan | null;
+  ai_trace?: AITraceChip[] | null;
 };
 
 type ExecuteResponse = {
@@ -98,12 +100,14 @@ function ThinkingIndicator() {
   );
 }
 
-export default function AIChatPopup() {
+export default function AIChatPopup({ onClose }: { onClose?: () => void } = {}) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const pagePatientId = useMemo(() => {
     const m = pathname?.match(/^\/(?:admin|head-nurse|supervisor|observer)\/patients\/(\d+)/);
     return m ? parseInt(m[1], 10) : null;
   }, [pathname]);
+  const showAiTrace = searchParams?.get("ai_trace") === "1";
 
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -303,16 +307,19 @@ export default function AIChatPopup() {
         }
       }
 
-      const proposalRes = await fetch(`${API_BASE}/chat/actions/propose`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          conversation_id: convId,
-          message: userMessage.content,
-          messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
-          ...(pagePatientId != null ? { page_patient_id: pagePatientId } : {}),
-        }),
-      });
+      const proposalRes = await fetch(
+        showAiTrace ? `${API_BASE}/chat/actions/propose?ai_trace=1` : `${API_BASE}/chat/actions/propose`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({
+            conversation_id: convId,
+            message: userMessage.content,
+            messages: nextMessages.map((m) => ({ role: m.role, content: m.content })),
+            ...(pagePatientId != null ? { page_patient_id: pagePatientId } : {}),
+          }),
+        },
+      );
 
       if (proposalRes.status === 404 || proposalRes.status === 405) {
         await fallbackSendStream(nextMessages, convId ?? null);
@@ -338,7 +345,7 @@ export default function AIChatPopup() {
     } finally {
       setLoading(false);
     }
-  }, [authHeaders, conversationId, input, loadConversations, messages, pagePatientId]);
+  }, [authHeaders, conversationId, input, loadConversations, messages, pagePatientId, showAiTrace]);
 
   const activeExecutionPlan = proposal ? coerceExecutionPlan(proposal) : null;
 
@@ -538,7 +545,10 @@ export default function AIChatPopup() {
               <button
                 type="button"
                 className="rounded-lg p-1 hover:bg-surface-container transition-smooth"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  onClose?.();
+                }}
                 aria-label="Close"
               >
                 <X className="h-4 w-4" aria-hidden />
@@ -615,6 +625,7 @@ export default function AIChatPopup() {
                     resetExecutionState();
                   }}
                   isConfirming={confirmingActions}
+                  trace={proposal.ai_trace ?? []}
                 />
               </div>
             ) : null}

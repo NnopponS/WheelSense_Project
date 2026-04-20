@@ -49,6 +49,7 @@ interface UIState {
   error: string | null;
   currentScreen: string;
   notificationsEnabled: boolean;
+  pendingDeepLink: string | null;
 }
 
 // ==================== STORE ACTIONS ====================
@@ -127,6 +128,7 @@ export const useAppStore = create<AppStore>()(
       error: null,
       currentScreen: 'home',
       notificationsEnabled: false,
+      pendingDeepLink: null,
 
       // Settings
       settings: defaultSettings,

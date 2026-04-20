@@ -8,7 +8,7 @@ from app.agent_runtime.llm_tool_router import (
     build_openai_tools_for_role,
 )
 from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
-from app.services.ai_chat import ParsedToolCall
+from app.services.ai_chat import ParsedToolCall, get_role_mcp_tool_allowlist
 
 
 def test_build_openai_tools_admin_covers_registry() -> None:
@@ -16,16 +16,18 @@ def test_build_openai_tools_admin_covers_registry() -> None:
     names = {t["function"]["name"] for t in tools}
     assert "list_visible_patients" in names
     assert "get_message_recipients" in names
-    assert names == set(_WORKSPACE_TOOL_REGISTRY.keys())
+    assert "execute_python_code" not in names
+    assert names == get_role_mcp_tool_allowlist()["admin"]
+    assert names < set(_WORKSPACE_TOOL_REGISTRY.keys())
 
 
-def test_validate_calls_filters_disallowed_for_patient() -> None:
+def test_validate_calls_keeps_patient_allowed_tools() -> None:
     calls = [
         ParsedToolCall(id="1", name="send_message", arguments={"body": "x"}),
         ParsedToolCall(id="2", name="get_system_health", arguments={}),
     ]
     out = _validate_calls_for_role("patient", calls)
-    assert [c.name for c in out] == ["get_system_health"]
+    assert [c.name for c in out] == ["send_message", "get_system_health"]
 
 
 def test_read_only_routing_excludes_writes() -> None:

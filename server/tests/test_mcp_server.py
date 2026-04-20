@@ -74,7 +74,10 @@ def test_mcp_admin_allowlist_matches_registry():
     from app.services.ai_chat import get_role_mcp_tool_allowlist
 
     admin_tools = get_role_mcp_tool_allowlist()["admin"]
-    assert admin_tools == set(_WORKSPACE_TOOL_REGISTRY.keys())
+    registry_tools = set(_WORKSPACE_TOOL_REGISTRY.keys())
+    assert "execute_python_code" in registry_tools
+    assert "execute_python_code" not in admin_tools
+    assert admin_tools == registry_tools - {"execute_python_code"}
 
 
 def test_mcp_streamable_http_lifespan_target_is_inner_starlette_not_auth_middleware():

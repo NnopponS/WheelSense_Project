@@ -4,7 +4,7 @@ from sqlalchemy import func
 
 """Service layer for Analytics computations."""
 
-import datetime
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.future import select
 
@@ -44,7 +44,7 @@ class AnalyticsService:
     @staticmethod
     async def get_vitals_averages(session: AsyncSession, ws_id: int, hours: int = 24) -> VitalsAverageOut:
         """Calculate average vitals over the last N hours."""
-        since = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
+        since = datetime.now(timezone.utc) - timedelta(hours=hours)
 
         stmt = select(
             func.avg(VitalReading.heart_rate_bpm),
@@ -85,6 +85,3 @@ class AnalyticsService:
             active_alerts=active_alerts,
             critical_patients=0,  # to be defined with acuity scores
         )
-
-    from sqlalchemy.ext.asyncio import AsyncSession
-    from sqlalchemy import func

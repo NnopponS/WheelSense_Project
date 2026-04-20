@@ -27,7 +27,12 @@ from app.models.chat_actions import ChatAction
 from app.models.core import Workspace
 from app.models.users import User
 from app.models.workflow import AuditTrailEvent
-from app.schemas.agent_runtime import AgentRuntimeExecuteResponse, ExecutionPlan, ExecutionPlanStep
+from app.schemas.agent_runtime import (
+    AgentRuntimeExecuteResponse,
+    AgentRuntimeProposeResponse,
+    ExecutionPlan,
+    ExecutionPlanStep,
+)
 from app.schemas.chat_actions import ChatActionProposeIn
 from app.services import ai_chat, agent_runtime_client
 
@@ -258,7 +263,6 @@ async def test_execution_plan_in_proposed_changes(
         ),
     )
 
-    # Verify execution plan is stored
     stored_changes = proposed.proposed_changes or {}
     assert "execution_plan" in stored_changes
     stored_plan = stored_changes["execution_plan"]
@@ -267,6 +271,84 @@ async def test_execution_plan_in_proposed_changes(
     assert stored_plan["risk_level"] == "high"
     assert len(stored_plan["steps"]) == 1
     assert stored_plan["steps"][0]["tool_name"] == "acknowledge_alert"
+
+
+@pytest.mark.asyncio
+async def test_propose_endpoint_includes_ai_trace_when_requested(
+    client: AsyncClient,
+    admin_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    token = create_access_token(subject=str(admin_user.id), role=admin_user.role)
+    admin_user._access_token = token  # type: ignore[attr-defined]
+
+    monkeypatch.setattr(
+        "app.services.agent_runtime_client.propose_turn",
+        AsyncMock(
+            return_value=AgentRuntimeProposeResponse(
+                mode="plan",
+                assistant_reply="Plan ready.",
+                plan=ExecutionPlan(
+                    playbook="clinical-triage",
+                    summary="Acknowledge alert 123",
+                    model_target="copilot:gpt-4.1",
+                    steps=[
+                        ExecutionPlanStep(
+                            id="ack-123",
+                            title="Acknowledge alert 123",
+                            tool_name="acknowledge_alert",
+                            arguments={"alert_id": 123},
+                        )
+                    ],
+                ),
+                action_payload={
+                    "title": "Acknowledge alert 123",
+                    "action_type": "mcp_plan",
+                    "summary": "Acknowledge alert 123",
+                    "proposed_changes": {
+                        "execution_plan": {
+                            "playbook": "clinical-triage",
+                            "summary": "Acknowledge alert 123",
+                            "model_target": "copilot:gpt-4.1",
+                            "steps": [
+                                {
+                                    "id": "ack-123",
+                                    "title": "Acknowledge alert 123",
+                                    "tool_name": "acknowledge_alert",
+                                    "arguments": {"alert_id": 123},
+                                    "risk_level": "medium",
+                                    "permission_basis": ["alerts.manage"],
+                                    "affected_entities": [],
+                                    "requires_confirmation": True,
+                                }
+                            ],
+                        }
+                    },
+                },
+                grounding={
+                    "classification_method": "easeai_pipeline_v2",
+                    "ai_trace": [
+                        {"layer": 1, "label": "Intent Router", "outcome": "accept"},
+                        {"layer": 3, "label": "Behavioral State", "outcome": "pending"},
+                    ],
+                },
+            )
+        ),
+    )
+
+    response = await client.post(
+        "/api/chat/actions/propose?ai_trace=1",
+        json={
+            "message": "acknowledge alert #123",
+            "messages": [{"role": "user", "content": "acknowledge alert #123"}],
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["ai_trace"][0]["label"] == "Intent Router"
+    assert payload["ai_trace"][1]["outcome"] == "pending"
 
 
 @pytest.mark.asyncio

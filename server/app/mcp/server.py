@@ -2623,6 +2623,26 @@ async def create_alert(alert_type: str, description: str, severity: str = "mediu
         return {"id": alert.id, "alert_type": alert.alert_type, "severity": alert.severity, "status": alert.status}
 
 
+@mcp.tool(name="sos_create_alert", description="Patient-only SOS: create a high-severity emergency alert scoped to the signed-in patient. Cannot be called by staff.",
+          annotations=mcp_types.ToolAnnotations(title="SOS Alert", readOnlyHint=False, destructiveHint=False))
+async def sos_create_alert(description: str, severity: str = "high") -> dict[str, Any]:
+    actor = require_actor_context()
+    if actor.role != "patient":
+        raise PermissionError("sos_create_alert can only be called by a patient user")
+    if actor.patient_id is None:
+        raise ValueError("Patient actor context is missing patient_id")
+    async with AsyncSessionLocal() as db:
+        payload = AlertCreate(
+            alert_type="sos",
+            description=description,
+            severity=severity,
+            patient_id=actor.patient_id,
+            device_id=None,
+        )
+        alert = await alert_service.create(db, actor.workspace_id, payload)
+        return {"id": alert.id, "alert_type": alert.alert_type, "severity": alert.severity, "status": alert.status}
+
+
 @mcp.tool(name="get_alert_details", description="Get details of a specific alert by ID.",
           annotations=mcp_types.ToolAnnotations(title="Get Alert Details", readOnlyHint=True))
 async def get_alert_details(alert_id: int) -> dict[str, Any]:
@@ -2765,6 +2785,7 @@ _WORKSPACE_TOOL_REGISTRY: dict[str, Callable[..., Awaitable[Any]]] = {
     "add_health_observation": add_health_observation,
     "add_timeline_event": add_timeline_event,
     "create_alert": create_alert,
+    "sos_create_alert": sos_create_alert,
     "get_alert_details": get_alert_details,
     "list_all_alerts": list_all_alerts,
 }

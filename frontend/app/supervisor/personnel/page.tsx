@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import { Suspense } from "react";
@@ -77,7 +77,7 @@ function PatientsContent() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-xs text-muted-foreground">ID #{row.original.id}</p>
+            <p className="text-sm text-muted-foreground">ID #{row.original.id}</p>
           </div>
         ),
       },

@@ -232,7 +232,7 @@ export default function AdminDashboardPage() {
                 <CheckCircle2 className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("admin.labelApiStatus")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -251,7 +251,7 @@ export default function AdminDashboardPage() {
                 <Globe className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("admin.labelMqttBroker")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -272,7 +272,7 @@ export default function AdminDashboardPage() {
                 <Bot className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("admin.labelMlPipeline")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -291,7 +291,7 @@ export default function AdminDashboardPage() {
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("admin.labelActiveUsers")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -325,19 +325,19 @@ export default function AdminDashboardPage() {
             {/* Fleet Summary */}
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-border/70 px-3 py-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("devices.online")}</p>
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">{t("devices.online")}</p>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-emerald-600">
                   {totalDevicesOnline}
                 </p>
               </div>
               <div className="rounded-xl border border-border/70 px-3 py-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("devices.offline")}</p>
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">{t("devices.offline")}</p>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-red-600">
                   {totalDevicesOffline}
                 </p>
               </div>
               <div className="rounded-xl border border-border/70 px-3 py-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("admin.labelSmartDevicesFleet")}
                 </p>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">

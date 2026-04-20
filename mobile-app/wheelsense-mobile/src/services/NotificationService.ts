@@ -7,7 +7,8 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
-import { Alert, WorkflowTask } from '../types';
+import { Alert, WorkflowTask, UserRole } from '../types';
+import { alertsInboxUrl } from '../utils/alertsInboxUrl';
 
 // ==================== NOTIFICATION CONFIG ====================
 
@@ -201,11 +202,15 @@ class NotificationService {
   }
 
   private handleNavigateToDetail(data: any): void {
-    // Store navigation intent for when app opens
-    if (data?.type && data?.id) {
-      // This will be handled by the navigation system when app opens
-      console.log('[Notifications] Navigate to:', data.type, data.id);
-    }
+    const store = useAppStore.getState();
+    const role = (store.user?.role || 'observer') as UserRole;
+    const alertId = data?.alertId as number | undefined;
+    const path = alertsInboxUrl(role, alertId);
+
+    // Store navigation intent for WebView deep-link
+    console.log('[Notifications] Deep-link to:', path);
+    // The WebView component reads this to navigate after app opens
+    useAppStore.setState({ pendingDeepLink: path });
   }
 
   // ==================== SCHEDULE NOTIFICATIONS ====================

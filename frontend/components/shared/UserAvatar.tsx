@@ -58,7 +58,7 @@ export default function UserAvatar({
   return (
     <div
       className={`rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${fallbackClassName} ${className}`}
-      style={{ width: sizePx, height: sizePx, fontSize: sizePx > 36 ? 14 : 12 }}
+      style={{ width: sizePx, height: sizePx, fontSize: Math.max(14, sizePx / 2.5) }}
       aria-hidden
     >
       {initialsFromUsername(username)}

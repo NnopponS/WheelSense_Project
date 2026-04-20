@@ -157,7 +157,8 @@ body {
     linear-gradient(180deg, var(--background), color-mix(in srgb, var(--background) 88%, var(--muted) 12%));
   color: var(--foreground);
   font-family: var(--font-sans);
-  line-height: 1.5;
+  font-size: 16px; /* Explicit base font size for older users */
+  line-height: 1.6; /* Increased line height for better readability */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

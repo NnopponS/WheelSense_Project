@@ -99,7 +99,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
   }, [tasks, t]);
 
   if (isLoading) {
-    return <div className="p-8 text-center">Loading statistics...</div>;
+    return <div className="p-8 text-center">{t("headNurse.statsLoading")}</div>;
   }
 
   if (!stats) {
@@ -107,7 +107,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center justify-center py-12">
           <BarChart3 className="h-12 w-12 text-muted-foreground/20 mb-4" />
-          <p className="text-muted-foreground">No tasks available to generate statistics.</p>
+          <p className="text-muted-foreground">{t("headNurse.statsNoTasks")}</p>
         </CardContent>
       </Card>
     );
@@ -172,7 +172,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">Tasks past their due date</p>
+            <p className="text-xs text-muted-foreground">{t("headNurse.statsOverdue")}</p>
           </CardContent>
         </Card>
       </div>
@@ -185,7 +185,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
               <PieChartIcon className="h-5 w-5 text-primary" />
               Task Status Distribution
             </CardTitle>
-            <CardDescription>Breakdown of tasks by their current status</CardDescription>
+            <CardDescription>{t("headNurse.statsByStatus")}</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -217,7 +217,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
               <Users className="h-5 w-5 text-primary" />
               Staff Workload
             </CardTitle>
-            <CardDescription>Number of tasks assigned to each staff member</CardDescription>
+            <CardDescription>{t("headNurse.statsByStaff")}</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -251,7 +251,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
               <BarChart3 className="h-5 w-5 text-primary" />
               Priority Distribution
             </CardTitle>
-            <CardDescription>Tasks grouped by priority level</CardDescription>
+            <CardDescription>{t("headNurse.statsByPriority")}</CardDescription>
           </CardHeader>
           <CardContent className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -284,7 +284,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
               <ListTodo className="h-5 w-5 text-primary" />
               Task Types
             </CardTitle>
-            <CardDescription>Routine vs. Specific tasks</CardDescription>
+            <CardDescription>{t("headNurse.statsByType")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6 pt-4">
@@ -292,7 +292,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
                 <div key={type.name} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      {index === 0 ? <ListTodo className="h-4 w-4 text-blue-500" /> : <RefreshCw className="h-4 w-4 text-emerald-500" />}
+                      {index === 0 ? <ListTodo className="h-5 w-5 text-blue-500" /> : <RefreshCw className="h-5 w-5 text-emerald-500" />}
                       <span className="font-medium">{type.name}</span>
                     </div>
                     <span className="text-muted-foreground">{type.count} tasks ({Math.round(type.count / stats.total * 100)}%)</span>

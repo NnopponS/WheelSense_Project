@@ -542,7 +542,7 @@ function RoomInspectorContent({
             disabled={!selectedPresenceRoom?.camera_summary?.capture_available || captureBusy}
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-smooth hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {captureBusy ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+            {captureBusy ? <RefreshCcw className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
             Capture now
           </button>
           <button
@@ -550,7 +550,7 @@ function RoomInspectorContent({
             onClick={() => void refetchPresence()}
             className="inline-flex items-center gap-2 rounded-xl border border-outline-variant/30 px-4 py-2 text-sm font-medium text-foreground transition-smooth hover:bg-surface-container-low"
           >
-            <RefreshCcw className="h-4 w-4" />
+            <RefreshCcw className="h-5 w-5" />
             Refresh
           </button>
         </div>

@@ -15,7 +15,8 @@ If you are changing backend behavior, read this first.
 - 105+ MCP workspace tools in `_WORKSPACE_TOOL_REGISTRY` with scope-based authorization across multiple domains
 - 6 role-based prompts for safe AI assistance
 - 4 MCP resources for real-time workspace data
-- Agent runtime: plan/ground/execute flow with execution plan persistence; optional `AGENT_ROUTING_MODE=llm_tools` on `wheelsense-agent-runtime` (see `docker-compose.core.yml`, `docs/ENV.md`, ADR 0014)
+- Agent runtime: 5-layer EaseAI intelligence pipeline (ADR 0015) with deterministic intent routing, context validation, behavioral state tracking, constrained LLM synthesis, and safety-checked tool execution; legacy `AGENT_ROUTING_MODE=llm_tools` still available behind `EASEAI_PIPELINE_V2=0` (see `docker-compose.core.yml`, `docs/ENV.md`, ADR 0014, ADR 0015)
+- Patient-exclusive MCP tools: `sos_create_alert` (patient-only SOS creation, `_PATIENT_EXCLUSIVE_TOOLS` frozenset excludes from staff allowlists)
 - Chat actions: 3-stage confirmation flow (propose → confirm → execute)
 - Remote MCP OAuth with scope narrowing support
 - Runtime version exposed by `app.main`: `3.2.0`
@@ -42,7 +43,7 @@ High-level flow:
 3. `server/app/mqtt_handler.py` ingests MQTT data, resolves the registered device, writes DB rows, and triggers derived flows
 4. FastAPI exposes REST endpoints for the web app and operator tools
 5. `server/app/mcp_server.py` / `server/app/mcp/*` expose the authenticated MCP surface with workspace tools in `_WORKSPACE_TOOL_REGISTRY`, 6 prompts, 4 resources
-6. `server/app/agent_runtime/*` acts as the first-party MCP client/orchestrator for chat: default **intent** routing (`IntentClassifier` + plan/execute), optional **`llm_tools`** routing (`llm_tool_router.py`: follows workspace primary AI — Copilot JSON tool list first when `AI_PROVIDER`/workspace is copilot, Ollama native `tools=` first when ollama; cross-fallback, then intent classifier)
+6. `server/app/agent_runtime/*` acts as the first-party MCP client/orchestrator for chat: 5-layer EaseAI pipeline (ADR 0015) with L1 deterministic intent routing, L2 context validation, L3 async behavioral state, L4 constrained LLM synthesis, L5 safety-checked execution; legacy **intent** routing and **`llm_tools`** routing remain available behind `EASEAI_PIPELINE_V2=0`
 7. `frontend/` consumes backend APIs through its own `/api/*` proxy, including AI chat with 3-stage action flow
 
 ## Core Invariants
@@ -101,6 +102,7 @@ docker compose up -d --build
 When running in simulator mode, admins can reset to baseline state:
 
 - **`wheelsense-simulator` container:** On startup it runs `scripts/seed_sim_team.py` before `sim_controller.py`. If the demo workspace **already has any devices or patients**, that seed step **skips** so admin registry deletes are not undone on every restart. Set environment variable **`SIM_FORCE_SEED=1`** (see `server/docs/ENV.md`) on the simulator service to force a full baseline re-seed. Room demo mappings skip overwriting `rooms.node_device_id` when a room is already linked.
+- **Fresh boot (2026-04):** The server container boot command uses `alembic upgrade heads` (not `head`) because the repo currently has two Alembic heads (`e7f8a9b0c1d2`, `r2s3t4u5v6w7`). This ensures fresh compose startup succeeds even when the database schema does not yet exist.
 - **API:** `POST /api/demo/simulator/reset` (clears dynamic data, re-seeds baseline)
 - **API:** `GET /api/demo/simulator/status` (returns env mode + statistics; **any authenticated** user; reset remains admin-only; status queries use the request `get_db` session, not a separate `AsyncSessionLocal` scope; missing optional domain tables are treated as zero-count so status does not fail with 500 during partial rollout states)
 - **UI:** Admin Settings > Server > "Reset Simulator Data" button (visible only in simulator mode)
@@ -130,6 +132,7 @@ EaseAI visibility vs enforcement:
 | Layer | Location | Role |
 | --- | --- | --- |
 | LLM tool list | `get_role_mcp_tool_allowlist()` in `server/app/services/ai_chat.py` | Which workspace MCP tools the model may propose |
+| Patient-exclusive | `_PATIENT_EXCLUSIVE_TOOLS` frozenset in `ai_chat.py` | Tools only callable by patient role (e.g., `sos_create_alert`) |
 | MCP handler | `_require_scope(...)` in `server/app/mcp/server.py` | JWT / MCP token scopes on the actor context |
 | Session scopes | `ROLE_TOKEN_SCOPES` in `server/app/api/dependencies.py` | Default scopes embedded in login JWT when the client does not request a subset |
 | OAuth MCP tokens | `ROLE_MCP_SCOPES` / `ALL_MCP_SCOPES` in `server/app/schemas/mcp_auth.py` | Issued MCP bearer tokens; `/.well-known/oauth-protected-resource/mcp` uses `list(ALL_MCP_SCOPES)` for `scopes_supported` |
@@ -580,6 +583,12 @@ Primary command:
 cd server
 python -m pytest tests/ --ignore=scripts/ -q
 ```
+
+Pytest harness notes:
+
+- `server/pytest.ini` registers the repo-local `integration` marker used by task/service tests.
+- `server/pytest.ini` filters the known `python-jose` `datetime.utcnow()` deprecation noise so suite output stays focused on repo warnings.
+- `server/tests/conftest.py` patches `aiomqtt` socket-close teardown during tests to avoid unraisable `Event loop is closed` noise after pytest shuts down the loop.
 
 Use focused suites after changes in these areas:
 

@@ -85,6 +85,7 @@ The WheelSense implementation adds:
 | `list_active_alerts` | `alerts.read` | List active workspace alerts |
 | `acknowledge_alert` | `alerts.manage` | Acknowledge an alert |
 | `resolve_alert` | `alerts.manage` | Resolve an alert with note |
+| `sos_create_alert` | `patients.read` | **Patient-only** SOS creation; requires `actor.role == "patient"` and `actor.patient_id` |
 
 ### Room Tools
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import { useMemo } from "react";
@@ -136,7 +136,7 @@ export default function HeadNurseSpecialistsPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-xs text-muted-foreground">{row.original.specialty}</p>
+            <p className="text-sm text-muted-foreground">{row.original.specialty}</p>
           </div>
         ),
       },
@@ -181,37 +181,37 @@ export default function HeadNurseSpecialistsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Add Specialist</CardTitle>
+          <CardTitle className="text-base">{t("headNurse.specialists.addTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="space-y-2">
-                <Label>First name</Label>
-                <Input {...form.register("firstName")} placeholder="First name" />
+                <Label>{t("headNurse.specialists.firstNameLabel")}</Label>
+                <Input {...form.register("firstName")} placeholder={t("headNurse.specialists.firstNamePlaceholder")} />
                 {form.formState.errors.firstName ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.firstName.message}</p>
+                  <p className="text-sm text-destructive">{form.formState.errors.firstName.message}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>Last name</Label>
-                <Input {...form.register("lastName")} placeholder="Last name" />
+                <Label>{t("headNurse.specialists.lastNameLabel")}</Label>
+                <Input {...form.register("lastName")} placeholder={t("headNurse.specialists.lastNamePlaceholder")} />
                 {form.formState.errors.lastName ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.lastName.message}</p>
+                  <p className="text-sm text-destructive">{form.formState.errors.lastName.message}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>Specialty</Label>
-                <Input {...form.register("specialty")} placeholder="Specialty" />
+                <Label>{t("headNurse.specialists.specialtyLabel")}</Label>
+                <Input {...form.register("specialty")} placeholder={t("headNurse.specialists.specialtyPlaceholder")} />
                 {form.formState.errors.specialty ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.specialty.message}</p>
+                  <p className="text-sm text-destructive">{form.formState.errors.specialty.message}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t("headNurse.specialists.statusLabel")}</Label>
                 <Controller
                   control={form.control}
                   name="isActive"
@@ -221,8 +221,8 @@ export default function HeadNurseSpecialistsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="true">Active</SelectItem>
-                        <SelectItem value="false">Inactive</SelectItem>
+                        <SelectItem value="true">{t("headNurse.specialists.statusActive")}</SelectItem>
+                        <SelectItem value="false">{t("headNurse.specialists.statusInactive")}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -230,27 +230,27 @@ export default function HeadNurseSpecialistsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>License number</Label>
-                <Input {...form.register("licenseNumber")} placeholder="License #" />
+                <Label>{t("headNurse.specialists.licenseLabel")}</Label>
+                <Input {...form.register("licenseNumber")} placeholder={t("headNurse.specialists.licensePlaceholder")} />
               </div>
 
               <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input {...form.register("phone")} placeholder="Phone" />
+                <Label>{t("headNurse.specialists.phoneLabel")}</Label>
+                <Input {...form.register("phone")} placeholder={t("headNurse.specialists.phonePlaceholder")} />
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label>Email</Label>
-                <Input {...form.register("email")} placeholder="Email" />
+                <Label>{t("headNurse.specialists.emailLabel")}</Label>
+                <Input {...form.register("email")} placeholder={t("headNurse.specialists.emailPlaceholder")} />
                 {form.formState.errors.email ? (
-                  <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+                  <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
                 ) : null}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea rows={3} {...form.register("notes")} placeholder="Optional notes" />
+              <Label>{t("headNurse.specialists.notesLabel")}</Label>
+              <Textarea rows={3} {...form.register("notes")} placeholder={t("headNurse.specialists.notesPlaceholder")} />
             </div>
 
             {saveError ? <p className="text-sm text-destructive">{saveError}</p> : null}

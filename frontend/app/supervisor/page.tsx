@@ -19,10 +19,12 @@ import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPa
 import { useTranslation } from "@/lib/i18n";
 import { api } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/datetime";
+import { useAuth } from "@/hooks/useAuth";
 import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SupervisorHealthQueue } from "@/components/supervisor/SupervisorHealthQueue";
 import type {
   CareDirectiveOut,
   CareTaskOut,
@@ -33,6 +35,7 @@ import type {
 
 export default function SupervisorDashboardPage() {
   const { t } = useTranslation();
+  const { user: me } = useAuth();
   const queryClient = useQueryClient();
   const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
   const [pendingDirectiveId, setPendingDirectiveId] = useState<number | null>(null);
@@ -128,6 +131,25 @@ export default function SupervisorDashboardPage() {
     onSettled: () => setPendingTaskId(null),
   });
 
+  const acceptTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      await api.updateWorkflowTask(taskId, { status: "in_progress" });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "tasks"] });
+    },
+    onSettled: () => setPendingTaskId(null),
+  });
+
+  const handleAcceptTask = (taskId: number) => {
+    setPendingTaskId(taskId);
+    acceptTaskMutation.mutate(taskId);
+  };
+  const handleCompleteHealthTask = (taskId: number) => {
+    setPendingTaskId(taskId);
+    completeTaskMutation.mutate(taskId);
+  };
+
   const acknowledgeDirectiveMutation = useMutation({
     mutationFn: async (directiveId: number) => {
       await api.acknowledgeWorkflowDirective(directiveId, {
@@ -174,6 +196,16 @@ export default function SupervisorDashboardPage() {
         </div>
       </div>
 
+      {/* Supervisor health queue — tasks assigned to me */}
+      <SupervisorHealthQueue
+        currentUserId={me?.id ?? null}
+        tasks={tasks}
+        patients={patients}
+        onAccept={handleAcceptTask}
+        onComplete={handleCompleteHealthTask}
+        pendingTaskId={pendingTaskId}
+      />
+
       {/* Stats Overview */}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
@@ -183,7 +215,7 @@ export default function SupervisorDashboardPage() {
                 <Siren className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("supervisor.page.criticalAlerts")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -204,7 +236,7 @@ export default function SupervisorDashboardPage() {
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("supervisor.page.openTasks")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -223,7 +255,7 @@ export default function SupervisorDashboardPage() {
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("supervisor.page.patientsInZone")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -242,7 +274,7 @@ export default function SupervisorDashboardPage() {
                 <Eye className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("supervisor.page.directivesTitle")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">

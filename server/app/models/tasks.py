@@ -88,6 +88,16 @@ class Task(Base):
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
+    def __init__(self, **kwargs):
+        kwargs.setdefault("description", "")
+        kwargs.setdefault("priority", "normal")
+        kwargs.setdefault("status", "pending")
+        kwargs.setdefault("assigned_user_ids", [])
+        kwargs.setdefault("subtasks", [])
+        kwargs.setdefault("report_template", {})
+        kwargs.setdefault("is_active", True)
+        super().__init__(**kwargs)
+
 
 class TaskReport(Base):
     """Structured completion report for a task (immutable once submitted)."""
@@ -129,3 +139,9 @@ class TaskReport(Base):
         server_default="[]",
     )
     submitted_at = Column(DateTime(timezone=True), default=utcnow)
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("report_data", {})
+        kwargs.setdefault("notes", "")
+        kwargs.setdefault("attachments", [])
+        super().__init__(**kwargs)

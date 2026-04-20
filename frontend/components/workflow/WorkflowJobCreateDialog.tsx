@@ -325,13 +325,13 @@ export function WorkflowJobCreateDialog({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className={sectionLabel}>{t("workflowJobs.formSectionSteps")}</p>
               <div className="flex flex-wrap gap-1.5">
-                <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => applyPreset("vitals")}>
+                <Button type="button" variant="outline" size="sm" className="h-11 text-sm" onClick={() => applyPreset("vitals")}>
                   {t("workflowJobs.preset.addVitals")}
                 </Button>
-                <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => applyPreset("meds")}>
+                <Button type="button" variant="outline" size="sm" className="h-11 text-sm" onClick={() => applyPreset("meds")}>
                   {t("workflowJobs.preset.addMeds")}
                 </Button>
-                <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => applyPreset("doc")}>
+                <Button type="button" variant="outline" size="sm" className="h-11 text-sm" onClick={() => applyPreset("doc")}>
                   {t("workflowJobs.preset.addDoc")}
                 </Button>
               </div>

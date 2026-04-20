@@ -148,9 +148,9 @@ export function NotificationDrawer({
                   variant="ghost"
                   size="sm"
                   onClick={onMarkAllAsRead}
-                  className="h-8 text-xs"
+                  className="h-11 text-sm"
                 >
-                  <CheckCheck className="mr-1 h-3.5 w-3.5" />
+                  <CheckCheck className="mr-1 h-5 w-5" />
                   {t("notifications.markAllRead")}
                 </Button>
               )}
@@ -159,9 +159,9 @@ export function NotificationDrawer({
                   variant="ghost"
                   size="sm"
                   onClick={onClearAll}
-                  className="h-8 text-xs text-destructive hover:text-destructive"
+                  className="h-11 text-sm text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="mr-1 h-3.5 w-3.5" />
+                  <Trash2 className="mr-1 h-5 w-5" />
                   {t("notifications.clear")}
                 </Button>
               )}

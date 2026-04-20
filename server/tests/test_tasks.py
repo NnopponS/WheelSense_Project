@@ -249,9 +249,19 @@ class TestTaskServiceIntegration:
     @pytest.mark.asyncio
     async def test_list_tasks_empty(self, mock_db, task_service_instance):
         """Test listing tasks when none exist."""
-        mock_db.execute = AsyncMock(return_value=MagicMock(all=MagicMock(return_value=[])))
-        
-        tasks = await task_service_instance.list_tasks(mock_db, workspace_id=1)
+        mock_db.execute = AsyncMock(
+            return_value=MagicMock(
+                scalars=MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
+            )
+        )
+
+        tasks = await task_service_instance.list_tasks(
+            mock_db,
+            1,
+            user_id=1,
+            user_role="head_nurse",
+            visible_patient_ids=None,
+        )
         assert tasks == []
 
     @pytest.mark.asyncio
@@ -263,9 +273,16 @@ class TestTaskServiceIntegration:
     @pytest.mark.asyncio
     async def test_get_task_not_found(self, mock_db, task_service_instance):
         """Test getting non-existent task."""
-        mock_db.execute = AsyncMock(return_value=MagicMock(scalars=MagicMock(first=MagicMock(return_value=None))))
-        
-        task = await task_service_instance.get_task(mock_db, task_id=999, workspace_id=1)
+        mock_db.get = AsyncMock(return_value=None)
+
+        task = await task_service_instance.get_task(
+            mock_db,
+            1,
+            999,
+            user_id=1,
+            user_role="head_nurse",
+            visible_patient_ids=None,
+        )
         assert task is None
 
 
@@ -281,13 +298,10 @@ class TestTaskServiceUnit:
     def test_task_board_response_structure(self):
         """Test TaskBoardResponse structure."""
         response = TaskBoardResponse(
-            users=[],
-            total_tasks=0,
-            completed_tasks=0,
+            rows=[],
         )
-        assert response.total_tasks == 0
-        assert response.completed_tasks == 0
-        assert response.users == []
+        assert response.shift_date is None
+        assert response.rows == []
 
 
 # ── Edge Cases ────────────────────────────────────────────────────────────────

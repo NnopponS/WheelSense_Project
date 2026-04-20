@@ -90,6 +90,11 @@ def _build_execution_message(action, execution_result: dict) -> str:
     return f"Executed `{tool_name}` successfully."
 
 
+def _should_include_ai_trace(value: str | None) -> bool:
+    normalized = (value or "").strip().lower()
+    return normalized in {"1", "true", "yes", "on"}
+
+
 @router.get("/actions", response_model=list[ChatActionOut])
 async def list_actions(
     limit: int = Query(100, ge=1, le=500),
@@ -125,6 +130,7 @@ async def get_action(
 async def propose_action(
     body: ChatActionProposalRequest | ChatActionProposeIn,
     request: Request,
+    ai_trace: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
@@ -236,6 +242,11 @@ async def propose_action(
         summary=summary,
         actions=actions,
         execution_plan=runtime.plan,
+        ai_trace=(
+            list(runtime.grounding.get("ai_trace") or [])
+            if _should_include_ai_trace(ai_trace)
+            else None
+        ),
     )
 
 

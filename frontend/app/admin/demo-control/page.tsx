@@ -224,7 +224,7 @@ export default function AdminDemoControlPage() {
       <section className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">
               <Shield className="h-3.5 w-3.5" />
               Manual Testing Suite
             </div>
@@ -726,9 +726,9 @@ export default function AdminDemoControlPage() {
                 ))}
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">Target preview: {targetPreview}</p>
+            <p className="text-sm text-muted-foreground mt-2">Target preview: {targetPreview}</p>
             {itemPreview ? (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Selected item: #{itemPreview.id} {valueFromItem(itemPreview)}
               </p>
             ) : null}
@@ -740,25 +740,25 @@ export default function AdminDemoControlPage() {
             <CardContent className="space-y-4 p-5">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Current State</p>
+                  <p className="text-sm uppercase tracking-[0.22em] text-muted-foreground">Current State</p>
                   <h2 className="text-lg font-semibold text-foreground">Workspace Resources</h2>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-                  <p className="text-xs text-muted-foreground">Patients</p>
+                  <p className="text-sm text-muted-foreground">Patients</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{activePatients.length}</p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-                  <p className="text-xs text-muted-foreground">Staff</p>
+                  <p className="text-sm text-muted-foreground">Staff</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{staffUsers.length}</p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-                  <p className="text-xs text-muted-foreground">Rooms</p>
+                  <p className="text-sm text-muted-foreground">Rooms</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{rooms.length}</p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-                  <p className="text-xs text-muted-foreground">Alerts</p>
+                  <p className="text-sm text-muted-foreground">Alerts</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{alerts.length}</p>
                 </div>
               </div>
@@ -769,7 +769,7 @@ export default function AdminDemoControlPage() {
             <CardContent className="space-y-3 p-5">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Command log</p>
+                  <p className="text-sm uppercase tracking-[0.22em] text-muted-foreground">Command log</p>
                   <h3 className="text-base font-semibold text-foreground">Latest actions</h3>
                 </div>
                 <Badge variant="outline">{logs.length}</Badge>
@@ -788,9 +788,9 @@ export default function AdminDemoControlPage() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-medium text-foreground">{entry.title}</p>
-                      <span className="text-xs text-muted-foreground">{entry.at}</span>
+                      <span className="text-sm text-muted-foreground">{entry.at}</span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{entry.detail}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{entry.detail}</p>
                   </div>
                 ))}
               </div>

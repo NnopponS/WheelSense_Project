@@ -329,7 +329,7 @@ export default function AdminCaregiversPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-xs text-muted-foreground">{row.original.email}</p>
+            <p className="text-sm text-muted-foreground">{row.original.email}</p>
           </div>
         ),
       },
@@ -378,7 +378,7 @@ export default function AdminCaregiversPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-sm">
               {row.original.scheduleType}
             </Badge>
           </div>
@@ -405,7 +405,7 @@ export default function AdminCaregiversPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="text-sm">{formatDateTime(row.original.startsAt)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.startsAt)}</p>
+            <p className="text-sm text-muted-foreground">{formatRelativeTime(row.original.startsAt)}</p>
           </div>
         ),
       },
@@ -421,7 +421,7 @@ export default function AdminCaregiversPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="text-xs text-muted-foreground">{row.original.description}</p>
+            <p className="text-sm text-muted-foreground">{row.original.description}</p>
           </div>
         ),
       },
@@ -448,7 +448,7 @@ export default function AdminCaregiversPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="text-sm">{formatDateTime(row.original.dueAt)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.dueAt)}</p>
+            <p className="text-sm text-muted-foreground">{formatRelativeTime(row.original.dueAt)}</p>
           </div>
         ),
       },
@@ -548,25 +548,25 @@ export default function AdminCaregiversPage() {
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Admins</p>
+            <p className="text-sm text-muted-foreground">Admins</p>
             <p className="text-xl font-semibold">{staffByRole.admin}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Head Nurses</p>
+            <p className="text-sm text-muted-foreground">Head Nurses</p>
             <p className="text-xl font-semibold">{staffByRole.head_nurse}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Supervisors</p>
+            <p className="text-sm text-muted-foreground">Supervisors</p>
             <p className="text-xl font-semibold">{staffByRole.supervisor}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Observers</p>
+            <p className="text-sm text-muted-foreground">Observers</p>
             <p className="text-xl font-semibold">{staffByRole.observer}</p>
           </CardContent>
         </Card>
@@ -605,7 +605,7 @@ export default function AdminCaregiversPage() {
                 <Plus className="h-4 w-4" />
                 Quick Create Task
               </CardTitle>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Queue a ward action and assign it to a caregiver.
               </p>
             </CardHeader>
@@ -625,7 +625,7 @@ export default function AdminCaregiversPage() {
                     placeholder="e.g., Check vital signs"
                   />
                   {taskForm.formState.errors.title ? (
-                    <p className="text-xs text-destructive">{taskForm.formState.errors.title.message}</p>
+                    <p className="text-sm text-destructive">{taskForm.formState.errors.title.message}</p>
                   ) : null}
                 </div>
 
@@ -638,7 +638,7 @@ export default function AdminCaregiversPage() {
                     rows={2}
                   />
                   {taskForm.formState.errors.description ? (
-                    <p className="text-xs text-destructive">{taskForm.formState.errors.description.message}</p>
+                    <p className="text-sm text-destructive">{taskForm.formState.errors.description.message}</p>
                   ) : null}
                 </div>
 
@@ -717,7 +717,7 @@ export default function AdminCaregiversPage() {
                   />
                 </div>
 
-                {taskSaveError ? <p className="text-xs text-destructive">{taskSaveError}</p> : null}
+                {taskSaveError ? <p className="text-sm text-destructive">{taskSaveError}</p> : null}
 
                 <Button type="submit" className="w-full" disabled={createTaskMutation.isPending}>
                   {createTaskMutation.isPending ? "Creating..." : "Create task"}
@@ -733,7 +733,7 @@ export default function AdminCaregiversPage() {
                 <CalendarClock className="h-4 w-4" />
                 Quick Create Schedule
               </CardTitle>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Publish a recurring ward schedule and optionally assign it to a caregiver.
               </p>
             </CardHeader>
@@ -753,7 +753,7 @@ export default function AdminCaregiversPage() {
                     placeholder="e.g., Morning rounds"
                   />
                   {scheduleForm.formState.errors.title ? (
-                    <p className="text-xs text-destructive">{scheduleForm.formState.errors.title.message}</p>
+                    <p className="text-sm text-destructive">{scheduleForm.formState.errors.title.message}</p>
                   ) : null}
                 </div>
 
@@ -783,7 +783,7 @@ export default function AdminCaregiversPage() {
                   <Label htmlFor="schedule-starts">Starts at</Label>
                   <Input id="schedule-starts" type="datetime-local" {...scheduleForm.register("startsAt")} />
                   {scheduleForm.formState.errors.startsAt ? (
-                    <p className="text-xs text-destructive">{scheduleForm.formState.errors.startsAt.message}</p>
+                    <p className="text-sm text-destructive">{scheduleForm.formState.errors.startsAt.message}</p>
                   ) : null}
                 </div>
 
@@ -829,7 +829,7 @@ export default function AdminCaregiversPage() {
                   />
                 </div>
 
-                {scheduleSaveError ? <p className="text-xs text-destructive">{scheduleSaveError}</p> : null}
+                {scheduleSaveError ? <p className="text-sm text-destructive">{scheduleSaveError}</p> : null}
 
                 <Button type="submit" className="w-full" disabled={createScheduleMutation.isPending}>
                   {createScheduleMutation.isPending ? "Creating..." : "Create schedule"}

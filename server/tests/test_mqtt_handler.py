@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 import json
 from datetime import datetime, UTC
@@ -20,7 +21,7 @@ from app.mqtt_handler import (
 )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def active_workspace():
     async with _SessionFactory() as session:
         ws = Workspace(name="Test WS", is_active=True)

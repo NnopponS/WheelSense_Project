@@ -91,7 +91,7 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
         <TopBar onMenuClick={() => setMobileNavOpen(true)} />
 
         {/* Main Content */}
-        <main className={cn("min-w-0 flex-1 overflow-y-auto p-4 sm:p-6", mainClassName)}>{children}</main>
+        <main className={cn("min-w-0 flex-1 overflow-y-auto p-6 sm:p-8", mainClassName)}>{children}</main>
       </div>
 
       {/* AI Chat Popup */}

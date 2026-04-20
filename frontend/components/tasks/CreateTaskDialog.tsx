@@ -644,7 +644,7 @@ export function CreateTaskDialog({
                                             value={subRole || undefined}
                                             onValueChange={(v) => setSubRole(v as StaffRoleValue)}
                                           >
-                                            <SelectTrigger className="h-8 rounded-lg text-xs">
+                                            <SelectTrigger className="h-11 rounded-lg text-sm">
                                               <SelectValue placeholder={t("tasks.selectRole")} />
                                             </SelectTrigger>
                                             <SelectContent>

@@ -361,7 +361,7 @@ export default function PatientRoomControlsPage() {
     <div className="space-y-6 pb-6 animate-fade-in">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
             <Home className="h-3.5 w-3.5" />
             {t("patient.roomControls.badge")}
           </div>
@@ -488,7 +488,7 @@ function DeviceCard({
             </div>
             <div className="min-w-0">
               <CardTitle className="truncate text-base">{device.name}</CardTitle>
-              <CardDescription className="truncate font-mono text-xs">{device.ha_entity_id}</CardDescription>
+              <CardDescription className="truncate font-mono text-sm">{device.ha_entity_id}</CardDescription>
             </div>
           </div>
           <Badge variant={kind === "unsupported" ? "outline" : "secondary"}>{humanizeDeviceType(device.device_type)}</Badge>
@@ -518,14 +518,14 @@ function DeviceCard({
             {error}
           </div>
         ) : snapshot?.message ? (
-          <p className="text-xs text-muted-foreground">{snapshot.message}</p>
+          <p className="text-sm text-muted-foreground">{snapshot.message}</p>
         ) : null}
 
         {kind === "unsupported" ? (
           <div className="space-y-3 rounded-xl border border-dashed border-border/70 bg-muted/20 p-4">
             <p className="text-sm text-muted-foreground">{t("patient.roomControls.readOnlyNotice")}</p>
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
                 <span>{t("patient.roomControls.refreshDevice")}</span>
               </div>
@@ -538,10 +538,10 @@ function DeviceCard({
           <div className="space-y-4 rounded-xl border border-border/70 bg-muted/20 p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
                   {t("patient.roomControls.supportedActions")}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {canSetTemperature ? t("patient.roomControls.temperatureHelp") : t("patient.roomControls.controlHint")}
                 </p>
               </div>
@@ -570,7 +570,7 @@ function DeviceCard({
 
             {kind === "climate" && canSetTemperature ? (
               <div className="space-y-2">
-                <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
                   {t("patient.roomControls.setTemperature")}
                 </label>
                 <div className="flex gap-2">
@@ -617,8 +617,8 @@ function InfoTile({
 }) {
   return (
     <div className="rounded-xl border border-border/70 bg-background/70 px-3 py-2">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-sm font-medium text-foreground ${mono ? "font-mono break-all text-xs" : ""}`}>{value}</p>
+      <p className="text-sm uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-sm font-medium text-foreground ${mono ? "font-mono break-all text-sm" : ""}`}>{value}</p>
     </div>
   );
 }

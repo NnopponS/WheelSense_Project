@@ -30,9 +30,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { GetPatientResponse } from "@/lib/api/task-scope-types";
 import { PatientMySensors } from "@/components/patient/PatientMySensors";
 import { PatientCareRoadmap } from "@/components/patient/PatientCareRoadmap";
+import { PatientSosHero } from "@/components/patient/PatientSosHero";
 import { HubTabBar, useHubTab, type HubTab } from "@/components/shared/HubTabBar";
 import ReportIssueForm from "@/components/support/ReportIssueForm";
 import UserAvatar from "@/components/shared/UserAvatar";
+import { EaseAIFab } from "@/components/ai/EaseAIFab";
 import { withPatientPreview } from "@/lib/patientPortalPreview";
 
 type MeProfileResponse = {
@@ -193,6 +195,7 @@ export default function PatientDashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-6 animate-fade-in">
+      <EaseAIFab />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -292,6 +295,7 @@ function OverviewTab({
 
   return (
     <>
+      <PatientSosHero isPending={isPending} onRaise={onRaise} />
       <PatientCareRoadmap patientId={patientId} />
       <PatientMySensors patientId={patientId} />
 
@@ -428,8 +432,8 @@ function ProfileTab({
     <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
       <Card className="border-border/70">
         <CardHeader>
-          <CardTitle>My profile</CardTitle>
-          <CardDescription>Account and patient identity are shown together for self-check.</CardDescription>
+          <CardTitle>{t("patient.profileTitle")}</CardTitle>
+          <CardDescription>{t("patient.profileDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="flex items-center gap-4">
@@ -465,8 +469,8 @@ function ProfileTab({
 
       <Card className="border-border/70">
         <CardHeader>
-          <CardTitle>Account contact</CardTitle>
-          <CardDescription>Your account mirrors the patient record for self-check. Editing stays staff-managed.</CardDescription>
+          <CardTitle>{t("patient.contactTitle")}</CardTitle>
+          <CardDescription>{t("patient.contactDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -487,7 +491,7 @@ function ProfileTab({
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border/70 bg-muted/15 p-3">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
     </div>
   );

@@ -11,7 +11,8 @@
     "web": "expo start --web",
     "prebuild:android": "expo prebuild --platform android",
     "build:apk": "powershell -ExecutionPolicy Bypass -File ./scripts/build-release-apk.ps1",
-    "build:apk:eas": "eas build -p android --profile preview"
+    "build:apk:eas": "eas build -p android --profile preview",
+    "test": "jest"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -48,7 +49,19 @@
     "@expo/config-plugins": "~54.0.4",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "~54.0.10",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.12",
+    "babel-jest": "^29.7.0",
+    "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "babel-jest"
+    },
+    "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json"],
+    "testPathIgnorePatterns": ["/node_modules/", "/android/", "/ios/"],
+    "testMatch": ["**/src/**/__tests__/**/*.(ts|tsx)", "**/src/**/?(*.)+(spec|test).(ts|tsx)"]
+  }
 }

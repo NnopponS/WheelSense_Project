@@ -17,5 +17,4 @@ class PhotoRecordOut(PhotoRecordBase):
     timestamp: datetime
     url: str # Virtual field for frontend access
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

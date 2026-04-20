@@ -717,7 +717,7 @@ export default function MlCalibrationClient() {
                   </div>
                 </div>
                 {locReadiness && locReadiness.missing.length > 0 && (
-                  <p className="text-[11px] text-amber-700">
+                  <p className="text-xs text-amber-700">
                     Missing: {locReadiness.missing.join(", ")}
                   </p>
                 )}
@@ -739,7 +739,7 @@ export default function MlCalibrationClient() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <Label>Localization Strategy</Label>
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     Saved: <span className="font-semibold text-foreground">{locConfig?.strategy ?? "—"}</span>
                   </span>
                 </div>
@@ -809,7 +809,7 @@ export default function MlCalibrationClient() {
                 )}
                 Retrain from Database
               </Button>
-              <p className="text-[10px] text-foreground-variant italic px-1 text-center">
+              <p className="text-xs text-foreground-variant italic px-1 text-center">
                 Uses existing RSSI fingerprint data in the database.
               </p>
             </CardContent>

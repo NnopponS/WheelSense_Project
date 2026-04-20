@@ -249,7 +249,7 @@ export default function AdminSupportPage() {
     <div className="space-y-6 pb-6 animate-fade-in">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5" />
             {t("admin.support.badge")}
           </div>
@@ -306,9 +306,9 @@ export default function AdminSupportPage() {
                             {ticketStatusLabel(ticket.status, t)}
                           </Badge>
                         </div>
-                        <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{ticket.description}</p>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span className="rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-muted/60">
+                        <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">{ticket.description}</p>
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span className="rounded px-2 py-0.5 text-sm font-medium uppercase tracking-wide bg-muted/60">
                             {ticketPriorityLabel(ticket.priority, t)}
                           </span>
                           <div className="flex items-center gap-1">
@@ -332,10 +332,10 @@ export default function AdminSupportPage() {
                       <Badge variant={statusVariant(selectedTicket.status)}>
                           {ticketStatusLabel(selectedTicket.status, t)}
                         </Badge>
-                        <span className="rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-muted/60">
+                        <span className="rounded px-2 py-0.5 text-sm font-medium uppercase tracking-wide bg-muted/60">
                           {ticketPriorityLabel(selectedTicket.priority, t)}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-sm text-muted-foreground">
                           {t("admin.support.ticketIdLabel").replace("{id}", String(selectedTicket.id))}
                         </span>
                       </div>
@@ -387,13 +387,13 @@ export default function AdminSupportPage() {
                             ) : (
                               <div className="flex h-full flex-col items-center justify-center p-2 text-center">
                                 <Paperclip className="mb-1 h-6 w-6 text-muted-foreground" />
-                                <span className="w-full truncate px-1 text-[10px] text-muted-foreground">
+                                <span className="w-full truncate px-1 text-sm text-muted-foreground">
                                   {file.filename}
                                 </span>
                               </div>
                             )}
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                              <span className="text-xs font-medium text-white">{t("admin.support.view")}</span>
+                              <span className="text-sm font-medium text-white">{t("admin.support.view")}</span>
                             </div>
                           </a>
                         ))}
@@ -415,10 +415,10 @@ export default function AdminSupportPage() {
                             </div>
                             <div className="flex-1 rounded-xl bg-muted/40 p-3">
                               <div className="mb-1 flex items-start justify-between">
-                                <span className="text-xs font-medium">
+                                <span className="text-sm font-medium">
                                   {t("admin.support.userPrefix")} {comment.author_user_id ?? "?"}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground">
+                                <span className="text-sm text-muted-foreground">
                                   {formatDateTime(comment.created_at)}
                                 </span>
                               </div>
@@ -476,7 +476,7 @@ export default function AdminSupportPage() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                    <Label className="text-sm uppercase tracking-wide text-muted-foreground">
                       {t("admin.support.statusFilter")}
                     </Label>
                     <Select
@@ -527,15 +527,15 @@ export default function AdminSupportPage() {
                               {patientLabelMap.get(request.patient_id ?? 0) ??
                                 t("admin.support.patientNumber").replace("{id}", String(request.patient_id ?? "?"))}
                             </h4>
-                            <p className="text-xs text-muted-foreground">{t(requestTypeLabelKey(request.service_type))}</p>
+                            <p className="text-sm text-muted-foreground">{t(requestTypeLabelKey(request.service_type))}</p>
                           </div>
                           <Badge variant={statusVariant(request.status)} className="shrink-0">
                             {serviceRequestStatusLabel(request.status, t)}
                           </Badge>
                         </div>
-                        <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{request.note}</p>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span className="rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-muted/60">
+                        <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">{request.note}</p>
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span className="rounded px-2 py-0.5 text-sm font-medium uppercase tracking-wide bg-muted/60">
                             #{request.id}
                           </span>
                           <div className="flex items-center gap-1">
@@ -561,7 +561,7 @@ export default function AdminSupportPage() {
                       <Badge variant="outline" className="capitalize">
                         {t(requestTypeLabelKey(selectedRequest.service_type))}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-sm text-muted-foreground">
                         {t("admin.support.ticketIdLabel").replace("{id}", String(selectedRequest.id))}
                       </span>
                     </div>
@@ -617,7 +617,7 @@ export default function AdminSupportPage() {
                       </div>
                       {selectedRequest.resolution_note ? (
                         <div className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
-                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
                             {t("admin.support.resolutionNote")}
                           </p>
                           <p className="mt-1 whitespace-pre-wrap">{selectedRequest.resolution_note}</p>
@@ -627,7 +627,7 @@ export default function AdminSupportPage() {
                   </div>
 
                   {selectedRequest.resolved_at ? (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {t("admin.support.resolvedAt")}: {formatDateTime(selectedRequest.resolved_at)}
                     </p>
                   ) : null}

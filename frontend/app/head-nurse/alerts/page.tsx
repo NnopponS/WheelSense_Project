@@ -292,30 +292,30 @@ export default function HeadNurseAlertsPage() {
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search title, type, patient"
+          placeholder={t("headNurse.alerts.searchPlaceholder")}
         />
 
         <Select value={status} onValueChange={(value) => setStatus(value as AlertStatusFilter)}>
           <SelectTrigger>
-            <SelectValue placeholder="Filter status" />
+            <SelectValue placeholder={t("headNurse.alerts.filterStatusPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="acknowledged">Acknowledged</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
+            <SelectItem value="all">{t("headNurse.alerts.filterStatusAll")}</SelectItem>
+            <SelectItem value="active">{t("headNurse.alerts.statusActive")}</SelectItem>
+            <SelectItem value="acknowledged">{t("headNurse.alerts.statusAcknowledged")}</SelectItem>
+            <SelectItem value="resolved">{t("headNurse.alerts.statusResolved")}</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={severity} onValueChange={(value) => setSeverity(value as AlertSeverityFilter)}>
           <SelectTrigger>
-            <SelectValue placeholder="Filter severity" />
+            <SelectValue placeholder={t("headNurse.alerts.filterSeverityPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All severity</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
-            <SelectItem value="warning">Warning</SelectItem>
-            <SelectItem value="info">Info</SelectItem>
+            <SelectItem value="all">{t("headNurse.alerts.filterSeverityAll")}</SelectItem>
+            <SelectItem value="critical">{t("headNurse.alerts.severityCritical")}</SelectItem>
+            <SelectItem value="warning">{t("headNurse.alerts.severityWarning")}</SelectItem>
+            <SelectItem value="info">{t("headNurse.alerts.severityInfo")}</SelectItem>
           </SelectContent>
         </Select>
       </section>

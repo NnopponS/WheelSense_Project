@@ -14,12 +14,12 @@ export default function LanguageSwitcher() {
   return (
     <button
       onClick={toggle}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-foreground-variant hover:bg-surface-container-high transition-smooth cursor-pointer"
+      className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground-variant hover:bg-surface-container-high transition-smooth cursor-pointer"
       aria-label="Switch language"
       title={locale === "en" ? "เปลี่ยนเป็นภาษาไทย" : "Switch to English"}
     >
-      <Globe className="w-4 h-4" />
-      <span className="uppercase tracking-wide text-xs font-semibold">
+      <Globe className="w-5 h-5" />
+      <span className="uppercase tracking-wide font-semibold" style={{ fontSize: '14px' }}>
         {locale === "en" ? "EN" : "TH"}
       </span>
     </button>

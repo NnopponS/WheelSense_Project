@@ -131,16 +131,16 @@ export function TaskReportAttachmentsBar({
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-lg h-8 gap-1.5"
+            className="rounded-lg h-11 gap-1.5"
             disabled={disabled || uploading}
             onClick={() => inputRef.current?.click()}
           >
             {uploading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Paperclip className="h-3.5 w-3.5" />
+              <Paperclip className="h-5 w-5" />
             )}
-            <span className="text-xs">PDF / Image</span>
+            <span className="text-sm">PDF / Image</span>
           </Button>
         ) : null}
         {list.map((item) => (

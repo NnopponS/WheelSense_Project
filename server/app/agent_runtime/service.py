@@ -28,12 +28,17 @@ from app.schemas.chat_actions import ChatActionProposeIn
 from app.services import ai_chat
 from app.services.patient import patient_service
 from app.agent_runtime.llm_tool_router import propose_llm_tool_turn
+from app.agent_runtime.orchestrator import orchestrate_turn
 from app.agent_runtime.intent import (
     ConversationContext,
     IntentClassifier,
     get_classifier,
     LOW_CONFIDENCE_THRESHOLD,
 )
+from app.agent_runtime.layers.contracts import ActorFacts, SafeFailure, new_correlation
+from app.agent_runtime.layers.layer3_behavioral_state import schedule_behavioral_state_refresh
+from app.agent_runtime.layers.layer5_safety_execution import execute_confirmed_plan
+from app.agent_runtime.layers.observability import PipelineEventEmitter, get_default_emitter
 from app.agent_runtime.language_bridge import normalize_message_for_intent
 from app.agent_runtime.conversation_fastpath import is_general_conversation_only
 
@@ -212,6 +217,29 @@ def _get_or_create_context(conversation_id: int | None) -> ConversationContext:
     if conversation_id not in _conversation_contexts:
         _conversation_contexts[conversation_id] = ConversationContext()
     return _conversation_contexts[conversation_id]
+
+
+def _build_ai_trace(events: list[Any]) -> list[dict[str, Any]]:
+    labels = {
+        1: "Intent Router",
+        2: "Context Engine",
+        3: "Behavioral State",
+        4: "LLM Synthesis",
+        5: "Safety Execution",
+    }
+    latest_by_layer: dict[int, Any] = {}
+    for event in events:
+        latest_by_layer[event.layer] = event
+    return [
+        {
+            "layer": layer,
+            "label": labels.get(layer, f"Layer {layer}"),
+            "phase": event.phase,
+            "outcome": event.outcome,
+            "latency_ms": event.latency_ms,
+        }
+        for layer, event in sorted(latest_by_layer.items())
+    ]
 
 
 async def _seed_page_patient_context(
@@ -454,6 +482,144 @@ async def propose_turn(
     await _seed_page_patient_context(conversation_id, page_patient_id, actor_access_token)
     await _seed_patient_self_context(conversation_id, actor_access_token)
 
+    if settings.easeai_pipeline_v2:
+        classifier = get_classifier()
+        context = _get_or_create_context(conversation_id)
+        emitter = PipelineEventEmitter(capacity=64)
+        async with AsyncSessionLocal() as db:
+            user, workspace = await _load_runtime_actor_context(db, actor_access_token)
+            actor = ActorFacts(
+                role=user.role,
+                user_id=user.id,
+                workspace_id=user.workspace_id,
+                patient_id=getattr(user, "patient_id", None),
+            )
+            orchestrated = await orchestrate_turn(
+                actor=actor,
+                message=message,
+                context=context,
+                classifier=classifier,
+                system_state={},
+                emitter=emitter,
+            )
+            if isinstance(orchestrated, SafeFailure):
+                return AgentRuntimeProposeResponse(
+                    mode="answer",
+                    assistant_reply=orchestrated.localized(actor.locale),
+                    grounding={
+                        "correlation_id": orchestrated.correlation_id,
+                        "reason_code": orchestrated.reason_code,
+                        "classification_method": "easeai_pipeline_v2",
+                        "ai_trace": _build_ai_trace(emitter.events_for(orchestrated.correlation_id)),
+                    },
+                )
+            schedule_behavioral_state_refresh(
+                correlation_id=orchestrated.correlation_id,
+                actor=actor,
+                message=message,
+                context=context,
+                synthesis=orchestrated,
+                emitter=emitter,
+            )
+            if orchestrated.mode == "tool" and orchestrated.immediate_tool_name is not None:
+                result = await _call_mcp_tool(
+                    actor_access_token,
+                    orchestrated.immediate_tool_name,
+                    orchestrated.immediate_tool_arguments,
+                )
+                _ingest_patient_context_from_tool_result(
+                    conversation_id,
+                    orchestrated.immediate_tool_name,
+                    result,
+                    orchestrated.immediate_tool_arguments,
+                )
+                assistant_reply = await ai_chat.collect_grounded_tool_answer(
+                    db=db,
+                    user=user,
+                    workspace=workspace,
+                    user_message=message,
+                    tool_name=orchestrated.immediate_tool_name,
+                    tool_result=result,
+                )
+                return AgentRuntimeProposeResponse(
+                    mode="answer",
+                    assistant_reply=assistant_reply,
+                    grounding={
+                        "tool_name": orchestrated.immediate_tool_name,
+                        "result": result,
+                        "confidence": orchestrated.confidence,
+                        "correlation_id": orchestrated.correlation_id,
+                        "classification_method": "easeai_pipeline_v2",
+                        "ai_trace": _build_ai_trace(emitter.events_for(orchestrated.correlation_id)),
+                    },
+                )
+            if orchestrated.mode == "plan" and orchestrated.execution_plan is not None:
+                plan = orchestrated.execution_plan
+                assistant_reply = await ai_chat.collect_plan_confirmation_reply(
+                    db=db,
+                    user=user,
+                    workspace=workspace,
+                    user_message=message,
+                    execution_plan=plan,
+                )
+                steps = [
+                    {
+                        "intent": step.title,
+                        "tool_name": step.tool_name,
+                        "arguments": step.arguments,
+                        "permission_basis": step.permission_basis,
+                        "affected_entities": step.affected_entities,
+                        "risk_level": step.risk_level,
+                    }
+                    for step in plan.steps
+                ]
+                action_payload = ChatActionProposeIn(
+                    conversation_id=conversation_id,
+                    title=plan.summary,
+                    action_type="mcp_plan",
+                    tool_name=None,
+                    tool_arguments={},
+                    summary=plan.summary,
+                    proposed_changes={
+                        "mode": "plan",
+                        "execution_plan": plan.model_dump(mode="json"),
+                        "steps": steps,
+                        "affected_entities": plan.affected_entities,
+                        "permission_basis": plan.permission_basis,
+                        "reasoning_target": plan.reasoning_target,
+                        "model_target": plan.model_target,
+                        "intent_confidence": orchestrated.confidence,
+                    },
+                )
+                return AgentRuntimeProposeResponse(
+                    mode="plan",
+                    assistant_reply=assistant_reply,
+                    plan=plan,
+                    action_payload=action_payload.model_dump(mode="json"),
+                    grounding={
+                        "confidence": orchestrated.confidence,
+                        "correlation_id": orchestrated.correlation_id,
+                        "classification_method": "easeai_pipeline_v2",
+                        "ai_trace": _build_ai_trace(emitter.events_for(orchestrated.correlation_id)),
+                    },
+                )
+
+        try:
+            reply = await _collect_ai_reply(actor_access_token=actor_access_token, messages=messages)
+        except Exception:
+            logger.exception("AI fallback failed during propose_turn v2")
+            reply = (
+                "AI service is temporarily unavailable right now. "
+                "Please try again shortly."
+            )
+        return AgentRuntimeProposeResponse(
+            mode="answer",
+            assistant_reply=reply,
+            grounding={
+                "classification_method": "easeai_pipeline_v2",
+            },
+        )
+
     # Obvious chitchat: answer immediately via chat model (skip intent, MCP, LLM normalize).
     if settings.intent_ai_conversation_fastpath_enabled and is_general_conversation_only(message):
         logger.info("Conversation fast path: using direct AI reply for message=%r", message[:80])
@@ -649,6 +815,27 @@ async def execute_plan(
     actor_access_token: str,
     execution_plan: ExecutionPlan,
 ) -> AgentRuntimeExecuteResponse:
+    if settings.easeai_pipeline_v2:
+        async with AsyncSessionLocal() as db:
+            user, _workspace = await _load_runtime_actor_context(db, actor_access_token)
+        actor = ActorFacts(
+            role=user.role,
+            user_id=user.id,
+            workspace_id=user.workspace_id,
+            patient_id=getattr(user, "patient_id", None),
+        )
+        executed = await execute_confirmed_plan(
+            correlation=new_correlation(),
+            actor=actor,
+            actor_access_token=actor_access_token,
+            execution_plan=execution_plan,
+            call_tool=_call_mcp_tool,
+            emitter=get_default_emitter(),
+        )
+        if isinstance(executed, SafeFailure):
+            raise HTTPException(status_code=403, detail=executed.localized(actor.locale))
+        return executed
+
     step_results: list[dict[str, Any]] = []
     last_message = execution_plan.summary
     for step in execution_plan.steps:

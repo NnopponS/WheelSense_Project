@@ -383,7 +383,7 @@ export default function HeadNurseStaffPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {row.original.role || t("clinical.role.caregiverFallback")}
             </p>
           </div>
@@ -431,7 +431,7 @@ export default function HeadNurseStaffPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="text-xs text-muted-foreground">{row.original.scheduleType}</p>
+            <p className="text-sm text-muted-foreground">{row.original.scheduleType}</p>
           </div>
         ),
       },
@@ -452,7 +452,7 @@ export default function HeadNurseStaffPage() {
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.startsAt)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.startsAt)}</p>
+            <p className="text-sm text-muted-foreground">{formatRelativeTime(row.original.startsAt)}</p>
           </div>
         ),
       },
@@ -468,7 +468,7 @@ export default function HeadNurseStaffPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
+            <p className="line-clamp-2 text-sm text-muted-foreground">{row.original.description}</p>
           </div>
         ),
       },
@@ -508,7 +508,7 @@ export default function HeadNurseStaffPage() {
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.dueAt)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.dueAt)}</p>
+            <p className="text-sm text-muted-foreground">{formatRelativeTime(row.original.dueAt)}</p>
           </div>
         ),
       },
@@ -572,9 +572,9 @@ export default function HeadNurseStaffPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Staff & Shift Operations</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t("headNurse.staffTitle")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Team availability, schedules, and execution-ready task board for the ward.
+          {t("headNurse.staffSubtitle")}
         </p>
       </div>
 
@@ -590,14 +590,14 @@ export default function HeadNurseStaffPage() {
           type="text"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search nurse, role, phone, email"
+          placeholder={t("headNurse.staffSearchPlaceholder")}
           className="pl-9"
         />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Quick Create</CardTitle>
+          <CardTitle className="text-base">{t("headNurse.quickCreateTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 lg:grid-cols-2">
@@ -609,36 +609,36 @@ export default function HeadNurseStaffPage() {
               })}
             >
               <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">Create task</p>
-                <p className="text-xs text-muted-foreground">Queue a ward action and assign it to a caregiver.</p>
+                <p className="text-sm font-medium text-foreground">{t("headNurse.quickCreateTaskLabel")}</p>
+                <p className="text-sm text-muted-foreground">{t("headNurse.quickCreateTaskDesc")}</p>
               </div>
 
               <div className="space-y-2">
-                <Label>Title</Label>
-                <Input {...taskForm.register("title")} placeholder="Patient check-in" />
+                <Label>{t("headNurse.quickCreateTitleLabel")}</Label>
+                <Input {...taskForm.register("title")} placeholder={t("headNurse.quickCreateTitlePlaceholder")} />
                 {taskForm.formState.errors.title ? (
-                  <p className="text-xs text-destructive">{taskForm.formState.errors.title.message}</p>
+                  <p className="text-sm text-destructive">{taskForm.formState.errors.title.message}</p>
                 ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea rows={3} {...taskForm.register("description")} placeholder="Short execution note" />
+                <Label>{t("headNurse.quickCreateDescLabel")}</Label>
+                <Textarea rows={3} {...taskForm.register("description")} placeholder={t("headNurse.quickCreateDescPlaceholder")} />
                 {taskForm.formState.errors.description ? (
-                  <p className="text-xs text-destructive">{taskForm.formState.errors.description.message}</p>
+                  <p className="text-sm text-destructive">{taskForm.formState.errors.description.message}</p>
                 ) : null}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Priority</Label>
+                  <Label>{t("headNurse.quickCreatePriorityLabel")}</Label>
                   <Controller
                     control={taskForm.control}
                     name="priority"
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
+                          <SelectValue placeholder={t("headNurse.quickCreatePriorityPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
                           {TASK_PRIORITY_OPTIONS.map((priority) => (
@@ -653,24 +653,24 @@ export default function HeadNurseStaffPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Due at</Label>
+                  <Label>{t("headNurse.quickCreateDueLabel")}</Label>
                   <Input type="datetime-local" {...taskForm.register("dueAt")} />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Schedule</Label>
+                  <Label>{t("headNurse.quickCreateScheduleLabel")}</Label>
                   <Controller
                     control={taskForm.control}
                     name="scheduleId"
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Optional schedule" />
+                          <SelectValue placeholder={t("headNurse.quickCreateSchedulePlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={EMPTY_SELECT}>No schedule</SelectItem>
+                          <SelectItem value={EMPTY_SELECT}>{t("headNurse.quickCreateNoSchedule")}</SelectItem>
                           {scheduleRows.map((schedule) => (
                             <SelectItem key={schedule.id} value={String(schedule.id)}>
                               #{schedule.id} {schedule.title}
@@ -690,10 +690,10 @@ export default function HeadNurseStaffPage() {
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Optional caregiver" />
+                          <SelectValue placeholder={t("headNurse.scheduleCaregiverPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={EMPTY_SELECT}>Unassigned</SelectItem>
+                          <SelectItem value={EMPTY_SELECT}>{t("headNurse.scheduleUnassigned")}</SelectItem>
                           {assignablePortalUsers.map((user) => (
                             <SelectItem key={user.id} value={String(user.id)}>
                               {labelPortalUser(user, caregiverById)}
@@ -722,30 +722,30 @@ export default function HeadNurseStaffPage() {
               })}
             >
               <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">Create schedule</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm font-medium text-foreground">{t("headNurse.scheduleTitle")}</p>
+                <p className="text-sm text-muted-foreground">
                   Publish a recurring ward schedule and optionally assign it to a caregiver.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Title</Label>
-                <Input {...scheduleForm.register("title")} placeholder="Evening rounds" />
+                <Label>{t("headNurse.scheduleTitleLabel")}</Label>
+                <Input {...scheduleForm.register("title")} placeholder={t("headNurse.scheduleTitlePlaceholder")} />
                 {scheduleForm.formState.errors.title ? (
-                  <p className="text-xs text-destructive">{scheduleForm.formState.errors.title.message}</p>
+                  <p className="text-sm text-destructive">{scheduleForm.formState.errors.title.message}</p>
                 ) : null}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Type</Label>
+                  <Label>{t("headNurse.scheduleTypeLabel")}</Label>
                   <Controller
                     control={scheduleForm.control}
                     name="scheduleType"
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder={t("headNurse.scheduleTypePlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
                           {SCHEDULE_TYPE_OPTIONS.map((scheduleType) => (
@@ -760,25 +760,22 @@ export default function HeadNurseStaffPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Starts at</Label>
+                  <Label>{t("headNurse.scheduleStartsLabel")}</Label>
                   <Input type="datetime-local" {...scheduleForm.register("startsAt")} />
                   {scheduleForm.formState.errors.startsAt ? (
-                    <p className="text-xs text-destructive">{scheduleForm.formState.errors.startsAt.message}</p>
+                    <p className="text-sm text-destructive">{scheduleForm.formState.errors.startsAt.message}</p>
                   ) : null}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Recurrence rule</Label>
-                <Input
-                  {...scheduleForm.register("recurrenceRule")}
-                  placeholder="RRULE:FREQ=DAILY"
-                />
+                <Label>{t("headNurse.scheduleRecurrenceLabel")}</Label>
+                <Input {...scheduleForm.register("recurrenceRule")} placeholder={t("headNurse.scheduleRecurrencePlaceholder")} />
               </div>
 
               <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea rows={3} {...scheduleForm.register("notes")} placeholder="Optional schedule notes" />
+                <Label>{t("headNurse.scheduleNotesLabel")}</Label>
+                <Textarea rows={3} {...scheduleForm.register("notes")} placeholder={t("headNurse.scheduleNotesPlaceholder")} />
               </div>
 
               <div className="space-y-2">
@@ -789,10 +786,10 @@ export default function HeadNurseStaffPage() {
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Optional caregiver" />
+                        <SelectValue placeholder={t("headNurse.scheduleCaregiverPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={EMPTY_SELECT}>Unassigned</SelectItem>
+                        <SelectItem value={EMPTY_SELECT}>{t("headNurse.scheduleUnassigned")}</SelectItem>
                         {assignablePortalUsers.map((user) => (
                           <SelectItem key={user.id} value={String(user.id)}>
                             {labelPortalUser(user, caregiverById)}
@@ -816,7 +813,7 @@ export default function HeadNurseStaffPage() {
       </Card>
 
       <DataTableCard
-        title="Caregiver Roster"
+        title={t("headNurse.rosterTitle")}
         description="Current staff directory with active-state visibility."
         data={caregiverRows}
         columns={caregiversColumns}
@@ -825,7 +822,7 @@ export default function HeadNurseStaffPage() {
       />
 
       <DataTableCard
-        title="Upcoming Schedules"
+        title={t("headNurse.upcomingSchedulesTitle")}
         description="Scheduled rounds ordered by start time."
         data={scheduleRows}
         columns={schedulesColumns}
@@ -834,7 +831,7 @@ export default function HeadNurseStaffPage() {
       />
 
       <DataTableCard
-        title="Open Task Board"
+        title={t("headNurse.openTaskBoardTitle")}
         description="Pending and in-progress tasks with inline status actions."
         data={taskRows}
         columns={tasksColumns}

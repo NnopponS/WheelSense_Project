@@ -188,7 +188,7 @@ function ScheduleContent() {
       <section className="grid grid-cols-3 gap-3">
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">
               {t("patient.schedule.statAllEvents")}
             </p>
             <p className="mt-1 text-2xl font-semibold tabular-nums">{stats.total}</p>
@@ -196,13 +196,13 @@ function ScheduleContent() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("calendar.today")}</p>
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">{t("calendar.today")}</p>
             <p className="mt-1 text-2xl font-semibold tabular-nums text-primary">{stats.today}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            <p className="text-sm uppercase tracking-wide text-muted-foreground">
               {t("patient.schedule.statCompleted")}
             </p>
             <p className="mt-1 text-2xl font-semibold tabular-nums">{stats.completed}</p>

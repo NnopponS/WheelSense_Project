@@ -133,10 +133,10 @@ export default function ObserverAlertsQueue() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="text-xs text-muted-foreground">{row.original.alertType}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.description}</p>
+            <p className="text-sm text-muted-foreground">{row.original.alertType}</p>
+            <p className="line-clamp-2 text-sm text-muted-foreground">{row.original.description}</p>
             {row.original.patientId != null ? (
-              <p className="pt-1 text-xs text-foreground">
+              <p className="pt-1 text-sm text-foreground">
                 <span className="font-medium">{row.original.patientName}</span>
                 {row.original.patientRoomLine ? (
                   <span className="text-muted-foreground"> · {row.original.patientRoomLine}</span>
@@ -152,7 +152,7 @@ export default function ObserverAlertsQueue() {
         cell: ({ row }) => (
           <div className="space-y-0.5">
             <p className="font-medium text-foreground">{row.original.patientName}</p>
-            <p className="text-xs text-muted-foreground">{row.original.patientRoomLine}</p>
+            <p className="text-sm text-muted-foreground">{row.original.patientRoomLine}</p>
           </div>
         ),
       },
@@ -185,7 +185,7 @@ export default function ObserverAlertsQueue() {
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {formatRelativeTime(row.original.timestamp)}
             </p>
           </div>

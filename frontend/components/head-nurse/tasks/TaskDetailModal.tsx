@@ -73,6 +73,7 @@ import type { ListPatientsResponse } from "@/lib/api/task-scope-types";
 import { getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { RichReportEditor } from "@/components/tasks/RichReportEditor";
 import { TaskReportAttachmentsBar } from "@/components/tasks/TaskReportAttachmentsBar";
+import { useTranslation } from "@/lib/i18n";
 
 interface TaskDetailModalProps {
   task: TaskOut;
@@ -208,6 +209,7 @@ export function TaskDetailModal({
   canManage = false,
   canExecute = false,
 }: TaskDetailModalProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("details");
   const [editedFields, setEditedFields] = useState<Partial<TaskUpdate>>({});
   const [hasChanges, setHasChanges] = useState(false);
@@ -470,7 +472,7 @@ export function TaskDetailModal({
               >
                 <div className="px-6 py-5 space-y-5">
                   <div className="space-y-1.5">
-                    <Label htmlFor="task-title">Title</Label>
+                    <Label htmlFor="task-title">{t("headNurse.taskModal.titleLabel")}</Label>
                     {canManage ? (
                       <Input
                         id="task-title"
@@ -487,7 +489,7 @@ export function TaskDetailModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="task-description">Description</Label>
+                    <Label htmlFor="task-description">{t("headNurse.taskModal.descriptionLabel")}</Label>
                     {canManage ? (
                       <Textarea
                         id="task-description"
@@ -498,7 +500,7 @@ export function TaskDetailModal({
                           handleFieldChange("description", e.target.value)
                         }
                         rows={3}
-                        placeholder="Add description..."
+                        placeholder={t("headNurse.taskModal.descriptionPlaceholder")}
                       />
                     ) : (
                       <div className="text-sm px-3 py-2 bg-muted/30 rounded-md min-h-[60px]">
@@ -509,7 +511,7 @@ export function TaskDetailModal({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label>Priority</Label>
+                      <Label>{t("headNurse.taskModal.priorityLabel")}</Label>
                       {canManage ? (
                         <Select
                           value={editedFields.priority ?? task.priority}
@@ -539,7 +541,7 @@ export function TaskDetailModal({
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label>Status</Label>
+                      <Label>{t("headNurse.taskModal.statusLabel")}</Label>
                       {(canManage || canExecute) ? (
                         <Select
                           value={editedFields.status ?? task.status}
@@ -569,7 +571,7 @@ export function TaskDetailModal({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label>Patient</Label>
+                      <Label>{t("headNurse.taskModal.patientLabel")}</Label>
                       {task.patient_name ? (
                         <Link
                           href={patientHref}
@@ -585,7 +587,7 @@ export function TaskDetailModal({
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label>Assignee</Label>
+                      <Label>{t("headNurse.taskModal.assigneeLabel")}</Label>
                       <div className="text-sm flex items-center gap-1.5">
                         <User className="h-3.5 w-3.5 text-muted-foreground" />
                         {task.assigned_user_name || "Unassigned"}
@@ -594,7 +596,7 @@ export function TaskDetailModal({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label>Created By</Label>
+                    <Label>{t("headNurse.taskModal.createdByLabel")}</Label>
                     <div className="text-sm">
                       {task.created_by_user_name || "—"}
                     </div>
@@ -602,7 +604,7 @@ export function TaskDetailModal({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="task-due">Due Date</Label>
+                      <Label htmlFor="task-due">{t("headNurse.taskModal.dueDateLabel")}</Label>
                       {canManage ? (
                         <Input
                           id="task-due"
@@ -631,7 +633,7 @@ export function TaskDetailModal({
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label>Shift Date</Label>
+                      <Label>{t("headNurse.taskModal.shiftDateLabel")}</Label>
                       <div className="text-sm">
                         {formatDateShort(task.shift_date)}
                       </div>
@@ -640,11 +642,11 @@ export function TaskDetailModal({
 
                   <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
                     <div>
-                      <span className="font-medium">Created:</span>{" "}
+                      <span className="font-medium">{t("headNurse.taskModal.createdLabel")}</span>{" "}
                       {formatDate(task.created_at)}
                     </div>
                     <div>
-                      <span className="font-medium">Updated:</span>{" "}
+                      <span className="font-medium">{t("headNurse.taskModal.updatedLabel")}</span>{" "}
                       {formatDate(task.updated_at)}
                     </div>
                   </div>
@@ -694,7 +696,7 @@ export function TaskDetailModal({
                   {totalSubtasks > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">Progress</span>
+                        <span className="font-medium">{t("headNurse.taskModal.progressLabel")}</span>
                         <span className="text-muted-foreground">
                           {completedSubtasks}/{totalSubtasks} completed
                         </span>
@@ -786,11 +788,11 @@ export function TaskDetailModal({
                                       }))
                                     }
                                   />
-                                  <span>Add to patient calendar</span>
+                                  <span>{t("headNurse.taskModal.addToCalendar")}</span>
                                 </label>
                                 {subtask.report_spec?.patient_calendar_sync ? (
                                   <div className="space-y-1">
-                                    <Label className="text-xs text-muted-foreground">Patient</Label>
+                                    <Label className="text-xs text-muted-foreground">{t("headNurse.taskModal.patientLabel")}</Label>
                                     <Select
                                       value={(() => {
                                         const pid =
@@ -810,8 +812,8 @@ export function TaskDetailModal({
                                         }))
                                       }
                                     >
-                                      <SelectTrigger className="h-8 text-xs">
-                                        <SelectValue placeholder="Select patient" />
+                                      <SelectTrigger className="h-11 text-sm">
+                                        <SelectValue placeholder={t("headNurse.taskModal.selectPatient")} />
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="__pick__" disabled>
@@ -858,7 +860,7 @@ export function TaskDetailModal({
                         onKeyDown={(e) =>
                           e.key === "Enter" && handleAddSubtask()
                         }
-                        placeholder="Add new subtask..."
+                        placeholder={t("headNurse.taskModal.subtaskPlaceholder")}
                         className="flex-1"
                       />
                       <Button
@@ -1000,7 +1002,7 @@ export function TaskDetailModal({
                           className="space-y-4"
                         >
                           <div className="flex items-center justify-between">
-                            <h3 className="font-semibold">Submit Report</h3>
+                            <h3 className="font-semibold">{t("headNurse.taskModal.submitReportTitle")}</h3>
                             <Button
                               type="button"
                               variant="ghost"
@@ -1017,7 +1019,7 @@ export function TaskDetailModal({
                           {(task.report_template?.mode || "").toLowerCase() ===
                           "rich" ? (
                             <div className="space-y-2">
-                              <Label>Report</Label>
+                              <Label>{t("headNurse.taskModal.reportLabel")}</Label>
                               <Controller
                                 control={reportForm.control}
                                 name="body_html"
@@ -1030,7 +1032,7 @@ export function TaskDetailModal({
                                         : ""
                                     }
                                     onChange={field.onChange}
-                                    placeholder="Enter the formal report…"
+                                    placeholder={t("headNurse.taskModal.reportPlaceholder")}
                                     minHeightClassName="min-h-[160px]"
                                   />
                                 )}
@@ -1150,7 +1152,7 @@ export function TaskDetailModal({
                             <Textarea
                               id="report-notes"
                               {...reportForm.register("notes")}
-                              placeholder="Add any additional notes..."
+                              placeholder={t("headNurse.taskModal.notesPlaceholder")}
                               rows={2}
                             />
                           </div>
@@ -1269,7 +1271,7 @@ export function TaskDetailModal({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogTitle>{t("headNurse.taskModal.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete &quot;{task.title}&quot;? This action cannot
               be undone.

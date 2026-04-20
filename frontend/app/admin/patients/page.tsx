@@ -315,7 +315,7 @@ export default function AdminPatientsPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {t("patients.recordId")} #{row.original.id}
             </p>
           </div>
@@ -341,7 +341,7 @@ export default function AdminPatientsPage() {
                 : t("patients.unassignedShort")}
             </p>
             {row.original.roomId === null && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-sm">
                 {t("patients.needsAssignment")}
               </Badge>
             )}
@@ -359,7 +359,7 @@ export default function AdminPatientsPage() {
                 : t("patients.unassignedShort")}
             </p>
             {row.original.assignedCaregiversCount > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {row.original.assignedCaregiversCount === 1
                   ? t("adminPatients.caregiversAssignedOne")
                   : t("adminPatients.caregiversAssignedMany").replace(
@@ -378,7 +378,7 @@ export default function AdminPatientsPage() {
           <div className="space-y-1">
             <p>{row.original.admissionDate ? formatDateTime(row.original.admissionDate) : "-"}</p>
             {row.original.admissionDate && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {formatRelativeTime(row.original.admissionDate)}
               </p>
             )}
@@ -535,7 +535,7 @@ export default function AdminPatientsPage() {
           <TabsTrigger value="routines">
             {t("adminPatients.tabRoutines")}
             {upcomingRoutines.length > 0 && (
-              <Badge variant="secondary" className="ml-2 text-xs">
+              <Badge variant="secondary" className="ml-2 text-sm">
                 {upcomingRoutines.length}
               </Badge>
             )}

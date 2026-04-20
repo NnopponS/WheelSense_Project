@@ -10,6 +10,7 @@ Covers:
 
 import json
 import pytest
+import pytest_asyncio
 from unittest.mock import AsyncMock, patch
 
 from sqlalchemy import select
@@ -24,7 +25,7 @@ from tests.conftest import _get_session_factory
 _SessionFactory = _get_session_factory()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def ws_with_patient():
     """Create workspace + patient + device assignment for MQTT tests."""
     async with _SessionFactory() as session:

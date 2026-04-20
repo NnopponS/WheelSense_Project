@@ -42,6 +42,12 @@ export interface NavItem {
    * (e.g. patient dashboard vs Support both use `/patient`).
    */
   inactiveWhenQueryMatch?: { param: string; value: string };
+  /**
+   * Sidebar tier. Defaults to "primary". Items tagged "more" render inside the
+   * collapsible "More" group (see 2026-04-20 UX redesign). Use this to demote
+   * rarely-used surfaces without deleting them.
+   */
+  group?: "primary" | "more";
 }
 
 export interface NavGroup {
@@ -149,8 +155,8 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           icon: Inbox,
           requiredCapability: "messages.manage",
         },
-        { key: "nav.support", href: "/head-nurse/support", icon: Bug },
-        { key: "nav.settings", href: "/head-nurse/settings", icon: Settings },
+        { key: "nav.support", href: "/head-nurse/support", icon: Bug, group: "more" },
+        { key: "nav.settings", href: "/head-nurse/settings", icon: Settings, group: "more" },
       ],
     },
   ],
@@ -189,8 +195,8 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           icon: Inbox,
           requiredCapability: "messages.manage",
         },
-        { key: "nav.support", href: "/supervisor/support", icon: Bug },
-        { key: "nav.settings", href: "/supervisor/settings", icon: Settings },
+        { key: "nav.support", href: "/supervisor/support", icon: Bug, group: "more" },
+        { key: "nav.settings", href: "/supervisor/settings", icon: Settings, group: "more" },
       ],
     },
   ],
@@ -229,9 +235,10 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           href: "/observer/messages",
           icon: Inbox,
           requiredCapability: "messages.manage",
+          group: "more",
         },
-        { key: "nav.support", href: "/observer/support", icon: Bug },
-        { key: "nav.settings", href: "/observer/settings", icon: Settings },
+        { key: "nav.support", href: "/observer/support", icon: Bug, group: "more" },
+        { key: "nav.settings", href: "/observer/settings", icon: Settings, group: "more" },
       ],
     },
   ],
@@ -251,23 +258,27 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           href: "/patient/schedule",
           icon: HeartPulse,
           activeForPaths: ["/patient/services", "/patient/pharmacy"],
+          group: "more",
         },
         {
           key: "nav.messages",
           href: "/patient/messages",
           icon: MessageSquare,
+          group: "more",
         },
         {
           key: "nav.support",
           href: "/patient?tab=support",
           icon: Bug,
           activeWhenQueryMatch: { param: "tab", value: "support" },
+          group: "more",
         },
         {
           key: "nav.settings",
           href: "/patient/settings",
           icon: Settings,
           activeForPaths: ["/account"],
+          group: "more",
         },
       ],
     },
@@ -296,4 +307,26 @@ export function filterNavItemsByCapability(
       ),
     }))
     .filter((group) => group.items.length > 0);
+}
+
+/**
+ * Split items inside every nav group into primary vs "more" buckets based on
+ * `NavItem.group`. Used by `RoleSidebar` to render primary items inline and
+ * wrap "more" items behind a collapsible disclosure.
+ */
+export function partitionNavByGroup(config: RoleNavConfig): {
+  primary: RoleNavConfig;
+  more: NavItem[];
+} {
+  const primary: RoleNavConfig = [];
+  const more: NavItem[] = [];
+  for (const group of config) {
+    const primaryItems = group.items.filter((item) => (item.group ?? "primary") === "primary");
+    const moreItems = group.items.filter((item) => item.group === "more");
+    if (primaryItems.length > 0) {
+      primary.push({ ...group, items: primaryItems });
+    }
+    more.push(...moreItems);
+  }
+  return { primary, more };
 }

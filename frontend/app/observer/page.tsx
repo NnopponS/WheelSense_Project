@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShiftChecklistMePanel } from "@/components/shift-checklist/ShiftChecklistMePanel";
+import { ObserverNextActionHero } from "@/components/observer/ObserverNextActionHero";
+import { EaseAIFab } from "@/components/ai/EaseAIFab";
 import type {
   CareTaskOut,
   ListAlertsResponse,
@@ -155,6 +157,16 @@ export default function ObserverDashboardPage() {
     onError: () => setTaskActionError(t("observer.page.taskActionError")),
   });
 
+  const acknowledgeHeroAlertMutation = useMutation({
+    mutationFn: (alertId: number) => api.acknowledgeAlert(alertId, {}),
+    onSuccess: async () => {
+      setTaskActionError(null);
+      await queryClient.invalidateQueries({ queryKey: ["observer", "dashboard", "alerts"] });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: () => setTaskActionError(t("observer.page.taskActionError")),
+  });
+
   // Data processing
   const patients = useMemo(
     () => (patientsQuery.data ?? []) as ListPatientsResponse,
@@ -238,8 +250,85 @@ export default function ObserverDashboardPage() {
     return { total, completed, remaining, percent };
   }, [checklist]);
 
+  // Next-action hero: pick highest-severity active alert, else top-priority task.
+  const heroSelection = useMemo(() => {
+    const severityRank: Record<string, number> = { critical: 0, warning: 1, info: 2 };
+    const activeAlerts = alerts
+      .filter((a) => a.status === "active")
+      .sort((a, b) => (severityRank[a.severity] ?? 9) - (severityRank[b.severity] ?? 9));
+    if (activeAlerts.length > 0) {
+      const top = activeAlerts[0];
+      const patient = top.patient_id != null ? patientById.get(top.patient_id) : undefined;
+      const subtitleParts: string[] = [];
+      if (patient) {
+        const name = [patient.first_name, patient.last_name].filter(Boolean).join(" ").trim();
+        if (name) subtitleParts.push(name);
+      }
+      if (top.description) subtitleParts.push(top.description);
+      return {
+        mode: "alert" as const,
+        alertId: top.id,
+        taskId: null as number | null,
+        title: top.title,
+        subtitle: subtitleParts.join(" · "),
+        severity:
+          top.severity === "critical"
+            ? ("critical" as const)
+            : top.severity === "warning"
+              ? ("warning" as const)
+              : ("info" as const),
+        severityLabel: top.severity,
+      };
+    }
+    if (myTasks.length > 0) {
+      const top = myTasks[0];
+      const patient = top.patient_id != null ? patientById.get(top.patient_id) : undefined;
+      const subtitleParts: string[] = [];
+      if (patient) {
+        const name = [patient.first_name, patient.last_name].filter(Boolean).join(" ").trim();
+        if (name) subtitleParts.push(name);
+      }
+      if (top.due_at) subtitleParts.push(formatRelativeTime(top.due_at));
+      return {
+        mode: "task" as const,
+        alertId: null as number | null,
+        taskId: top.id,
+        title: top.title ?? t("observer.page.untitledTask"),
+        subtitle: subtitleParts.join(" · "),
+        severity:
+          top.priority === "critical"
+            ? ("critical" as const)
+            : top.priority === "high"
+              ? ("warning" as const)
+              : ("info" as const),
+        severityLabel: taskPriorityLabel(t, top.priority ?? "normal"),
+      };
+    }
+    return {
+      mode: "idle" as const,
+      alertId: null as number | null,
+      taskId: null as number | null,
+      title: undefined,
+      subtitle: undefined,
+      severity: "idle" as const,
+      severityLabel: undefined,
+    };
+  }, [alerts, myTasks, patientById, t]);
+
+  const heroPending =
+    acknowledgeHeroAlertMutation.isPending || completeDashboardTaskMutation.isPending;
+
+  const onHeroPrimaryAction = () => {
+    if (heroSelection.mode === "alert" && heroSelection.alertId != null) {
+      acknowledgeHeroAlertMutation.mutate(heroSelection.alertId);
+    } else if (heroSelection.mode === "task" && heroSelection.taskId != null) {
+      completeDashboardTaskMutation.mutate(heroSelection.taskId);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-6 animate-fade-in">
+      <EaseAIFab />
       {/* Header */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
@@ -278,6 +367,17 @@ export default function ObserverDashboardPage() {
         </div>
       ) : null}
 
+      {/* Elder-friendly next action hero */}
+      <ObserverNextActionHero
+        mode={heroSelection.mode}
+        title={heroSelection.title}
+        subtitle={heroSelection.subtitle}
+        severity={heroSelection.severity}
+        severityLabel={heroSelection.severityLabel}
+        isPending={heroPending}
+        onPrimaryAction={onHeroPrimaryAction}
+      />
+
       {/* Stats Overview */}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
@@ -287,7 +387,7 @@ export default function ObserverDashboardPage() {
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("observer.page.statMyPatients")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -306,7 +406,7 @@ export default function ObserverDashboardPage() {
                 <ListTodo className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("observer.page.statMyTasks")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -325,7 +425,7 @@ export default function ObserverDashboardPage() {
                 <CheckSquare className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("observer.page.statChecklist")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -346,7 +446,7 @@ export default function ObserverDashboardPage() {
                 <AlertTriangle className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("observer.page.statAlerts")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">

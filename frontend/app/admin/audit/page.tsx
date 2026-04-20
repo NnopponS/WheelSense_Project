@@ -45,7 +45,7 @@ export default function AdminAuditPage() {
         ) : !data?.length ? (
           <p className="text-sm text-foreground-variant">—</p>
         ) : (
-          <table className="w-full text-[11px] sm:text-xs leading-snug">
+          <table className="w-full text-sm sm:text-sm leading-snug">
             <thead>
               <tr className="text-left text-foreground-variant border-b border-outline-variant/20">
                 <th className="pb-1.5 pr-2 font-medium">Time</th>
@@ -70,7 +70,7 @@ export default function AdminAuditPage() {
                     {row.entity_type}
                     {row.entity_id != null ? ` #${row.entity_id}` : ""}
                   </td>
-                  <td className="py-1.5 text-foreground-variant max-w-[min(28rem,45vw)] truncate font-mono text-[10px] sm:text-[11px]">
+                  <td className="py-1.5 text-foreground-variant max-w-[min(28rem,45vw)] truncate font-mono text-sm sm:text-sm">
                     {JSON.stringify(row.details)}
                   </td>
                 </tr>

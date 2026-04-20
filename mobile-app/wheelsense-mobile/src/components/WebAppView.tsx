@@ -17,11 +17,13 @@ import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useAppStore } from '../store/useAppStore';
 import { useBLEScanner } from '../services/BLEScanner';
 import { usePolar } from '../services/PolarService';
+import { buildFontScaleInject } from '../utils/fontScaleInject';
 
 // ==================== INTERFACES ====================
 
 interface WebAppViewProps {
   serverUrl?: string;
+  fontScale?: number;
   onError?: (error: any) => void;
   onLoadStart?: () => void;
   onLoadEnd?: () => void;
@@ -38,6 +40,7 @@ const USER_AGENT = 'WheelSenseMobileApp/1.0';
 
 export const WebAppView: React.FC<WebAppViewProps> = ({
   serverUrl,
+  fontScale,
   onError,
   onLoadStart,
   onLoadEnd,
@@ -53,6 +56,18 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
   
   const baseUrl = serverUrl || store.settings.serverUrl;
   const authToken = store.authToken;
+  const pendingDeepLink = store.pendingDeepLink;
+
+  // Handle deep-link from notification
+  useEffect(() => {
+    if (pendingDeepLink && webViewRef.current) {
+      const url = `${baseUrl}${pendingDeepLink}`;
+      webViewRef.current.injectJavaScript(
+        `window.location.pathname = '${pendingDeepLink}'; true;`
+      );
+      useAppStore.setState({ pendingDeepLink: null });
+    }
+  }, [pendingDeepLink, baseUrl]);
 
   // ==================== INJECTED JAVASCRIPT ====================
 
@@ -156,6 +171,8 @@ export const WebAppView: React.FC<WebAppViewProps> = ({
       
       true;
     })();
+
+${buildFontScaleInject(fontScale ?? 1.0)}
   `;
 
   // ==================== MESSAGE HANDLING ====================

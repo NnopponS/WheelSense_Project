@@ -236,7 +236,7 @@ export function TaskChecklistCard({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full h-8 text-xs"
+                className="w-full h-11 text-sm"
                 onClick={() => setExpanded(!expanded)}
               >
                 {expanded ? (
@@ -246,7 +246,7 @@ export function TaskChecklistCard({
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="mr-1 h-3.5 w-3.5" />
+                    <ChevronDown className="mr-1 h-5 w-5" />
                     Show {localTasks.length - maxDisplay} More
                   </>
                 )}

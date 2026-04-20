@@ -907,13 +907,13 @@ export default function AiSettingsPanel() {
                 </div>
               ))
             ) : (
-              <Badge variant="warning">No Ollama models installed</Badge>
+              <Badge variant="warning">{t("admin.ai.noOllamaModels")}</Badge>
             )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-[1fr_auto]">
             <div className="space-y-2">
-              <Label htmlFor="ollama-pull-model">Model to pull</Label>
+              <Label htmlFor="ollama-pull-model">{t("admin.ai.ollamaPullModelLabel")}</Label>
               <Select
                 value={(PULL_PRESETS as readonly string[]).includes(pullName) ? pullName : PULL_OTHER}
                 onValueChange={(value) => {

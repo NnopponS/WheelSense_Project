@@ -5,7 +5,8 @@ WheelSense is an IoT + clinical workflow platform for wheelchair monitoring, roo
 ## Repository Layout
 
 - `server/` - FastAPI backend, PostgreSQL models, MQTT ingestion, ML/localization, CLI, Home Assistant integration
-- `frontend/` - Next.js 16 web app with role-based dashboards
+- `frontend/` - Next.js 16 web app with role-based dashboards and EaseAI chat (3-stage propose/confirm/execute)
+- `mobile-app/` - React Native/Expo app with BLE beacon scanning, Polar Sense integration, offline SOS queue, and WebView embedding
 - `firmware/` - PlatformIO firmware for the wheelchair device (`M5StickCPlus2`) and camera/beacon node (`Node_Tsimcam`)
 - `.agents/` - shared workflow memory and change logs for AI/humans
 - `.cursor/` - Cursor-specific skills, rules, and subagent prompts
@@ -98,6 +99,11 @@ Comprehensive documentation is available in [`docs/wiki/`](docs/wiki/README.md):
 - [Forms & Validation](docs/wiki/Frontend%20Application/Forms%20%26%20Validation.md)
 
 #### 🤖 AI & Agent Runtime
+- [EaseAI Pipeline](docs/wiki/AI%20%26%20Agent%20Runtime/EaseAI%20Pipeline.md) - 5-layer intelligence pipeline (L1 intent routing, L2 context validation, L3 behavioral state, L4 LLM synthesis, L5 safety execution)
+- [MCP System](docs/MCP-README.md) - Model Context Protocol implementation with 105+ workspace tools, role-based prompts, and OAuth scope narrowing
+
+#### 📱 Mobile Application
+- [Mobile App Overview](mobile-app/wheelsense-mobile/README.md) - React Native app with feature parity: BLE scanning, Polar Sense, offline SOS queue, role-aware WebView landing, and push notification deep-links
 - [Intent Classification & NLP](docs/wiki/AI%20%26%20Agent%20Runtime/Intent%20Classification%20%26%20NLP/Intent%20Classification%20%26%20NLP.md)
 - [MCP Integration & Tool Execution](docs/wiki/AI%20%26%20Agent%20Runtime/MCP%20Integration%20%26%20Tool%20Execution/MCP%20Integration%20%26%20Tool%20Execution.md)
 - [Chat Actions & Three-Stage Flow](docs/wiki/AI%20%26%20Agent%20Runtime/Chat%20Actions%20%26%20Three-Stage%20Flow/Chat%20Actions%20%26%20Three-Stage%20Flow.md)

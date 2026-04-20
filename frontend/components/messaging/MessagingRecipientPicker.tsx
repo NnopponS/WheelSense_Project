@@ -135,7 +135,7 @@ export function MessagingRecipientPicker({
                 onClick={() => onChange(String(r.id))}
               >
                 <span className="mt-0.5 shrink-0 text-muted-foreground">
-                  {isSel ? <Check className="h-4 w-4 text-primary" /> : <span className="inline-block h-4 w-4" />}
+                  {isSel ? <Check className="h-5 w-5 text-primary" /> : <span className="inline-block h-5 w-5" />}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="font-medium text-foreground">{r.display_name}</span>

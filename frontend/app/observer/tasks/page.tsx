@@ -1,11 +1,12 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/lib/i18n";
 import { TasksPageLayout } from "@/components/tasks/TasksPageLayout";
 
 /**
  * Observer Tasks Page
- * 
+ *
  * Observers can:
  * - View assigned tasks only (read-only)
  * - Execute tasks by updating status and submitting reports
@@ -15,11 +16,12 @@ import { TasksPageLayout } from "@/components/tasks/TasksPageLayout";
 export default function ObserverTasksPage() {
   const { user } = useAuth();
   const currentUserId = user?.id;
+  const { t } = useTranslation();
 
   return (
     <TasksPageLayout
-      title="My Tasks"
-      description="Complete your assigned tasks and submit reports"
+      title={t("observer.page.statMyTasks")}
+      description={t("observer.page.tasksDescription")}
       role="observer"
       canCreate={false}
       canManage={false}

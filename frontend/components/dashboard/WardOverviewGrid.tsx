@@ -161,12 +161,12 @@ export function WardOverviewGrid({
             onValueChange={(v) => setViewMode(v as ViewMode)}
             className="w-auto"
           >
-            <TabsList className="h-8">
-              <TabsTrigger value="grid" className="px-2 h-6 text-xs">
-                <Grid3X3 className="h-3.5 w-3.5" />
+            <TabsList className="h-11">
+              <TabsTrigger value="grid" className="px-4 h-11 text-sm">
+                <Grid3X3 className="h-5 w-5" />
               </TabsTrigger>
-              <TabsTrigger value="compact" className="px-2 h-6 text-xs">
-                <LayoutGrid className="h-3.5 w-3.5" />
+              <TabsTrigger value="compact" className="px-4 h-11 text-sm">
+                <LayoutGrid className="h-5 w-5" />
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -178,16 +178,16 @@ export function WardOverviewGrid({
               onValueChange={setSelectedFloor}
               className="w-auto"
             >
-              <TabsList className="h-8">
-                <TabsTrigger value="all" className="px-2 h-6 text-xs">
-                  <Building2 className="h-3.5 w-3.5 mr-1" />
+              <TabsList className="h-11">
+                <TabsTrigger value="all" className="px-4 h-11 text-sm">
+                  <Building2 className="h-5 w-5 mr-2" />
                   All Floors
                 </TabsTrigger>
                 {floors.map((floor) => (
                   <TabsTrigger
                     key={floor}
                     value={floor}
-                    className="px-2 h-6 text-xs"
+                    className="px-4 h-11 text-sm"
                   >
                     {floor}
                   </TabsTrigger>

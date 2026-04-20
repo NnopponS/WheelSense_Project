@@ -505,7 +505,7 @@ function PersonnelPageContent() {
                       </div>
                       <div>
                         <p className="font-medium">{row.first_name} {row.last_name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {formatUserRole(row.role, t)} - {row.department || t("personnel.noDepartment")} - #{row.id}
                         </p>
                       </div>
@@ -551,7 +551,7 @@ function PersonnelPageContent() {
                       </div>
                       <div>
                         <p className="font-medium">{row.first_name} {row.last_name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {t("personnel.role.patient")} #{row.id}
                           {row.nickname ? ` - ${row.nickname}` : ""}
                         </p>
@@ -596,7 +596,7 @@ function PersonnelPageContent() {
                       </div>
                       <div>
                         <p className="font-medium">{row.username}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {t("personnel.accountLineAccount")} #{row.id} - {formatUserRole(row.role, t)}
                           {row.caregiver_id ? ` - ${t("personnel.lineStaffRef")}${row.caregiver_id}` : ""}
                           {row.patient_id ? ` - ${t("personnel.linePatientRef")}${row.patient_id}` : ""}
@@ -688,7 +688,7 @@ function PersonnelPageContent() {
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             <div className="space-y-5">
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("caregivers.sectionAbout")}</p>
+                <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-variant">{t("caregivers.sectionAbout")}</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                 <Label htmlFor="ps-first">{t("personnel.firstName")}</Label>
@@ -742,7 +742,7 @@ function PersonnelPageContent() {
                 </div>
               </section>
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
+                <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
                 {canManageAccounts ? (
                   <div className="mb-4 flex items-start gap-3">
                     <Checkbox
@@ -754,7 +754,7 @@ function PersonnelPageContent() {
                       <Label htmlFor="ps-create-login" className="cursor-pointer font-medium leading-snug">
                         {t("personnel.createLoginLabel")}
                       </Label>
-                      <p className="text-xs text-muted-foreground">{t("personnel.createLoginHint")}</p>
+                      <p className="text-sm text-muted-foreground">{t("personnel.createLoginHint")}</p>
                     </div>
                   </div>
                 ) : null}
@@ -798,7 +798,7 @@ function PersonnelPageContent() {
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             <div className="space-y-5">
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.detailAbout")}</p>
+                <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.detailAbout")}</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <div>
                 <Label htmlFor="pp-first">{t("personnel.firstName")}</Label>
@@ -874,7 +874,7 @@ function PersonnelPageContent() {
                 </div>
               </section>
               <section className="rounded-2xl border border-outline-variant/20 bg-surface-container-low px-4 py-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
+                <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground-variant">{t("patients.sectionLinkedAccounts")}</p>
                 {canManageAccounts ? (
                   <div className="mb-4 flex items-start gap-3">
                     <Checkbox
@@ -886,7 +886,7 @@ function PersonnelPageContent() {
                       <Label htmlFor="pp-create-login" className="cursor-pointer font-medium leading-snug">
                         {t("personnel.createLoginLabel")}
                       </Label>
-                      <p className="text-xs text-muted-foreground">{t("personnel.createLoginHint")}</p>
+                      <p className="text-sm text-muted-foreground">{t("personnel.createLoginHint")}</p>
                     </div>
                   </div>
                 ) : null}

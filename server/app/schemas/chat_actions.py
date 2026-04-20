@@ -99,3 +99,4 @@ class ChatActionProposalResponse(BaseModel):
     summary: str = ""
     actions: list[ChatActionProposalItem] = Field(default_factory=list)
     execution_plan: ExecutionPlan | None = None
+    ai_trace: list[dict[str, Any]] | None = None

@@ -82,12 +82,45 @@ Every MCP request carries authenticated actor context via contextvars:
 
 The `wheelsense-agent-runtime` service (`server/app/agent_runtime/`) provides plan/ground/execute orchestration:
 
+#### 5-Layer EaseAI Intelligence Pipeline (ADR 0015)
+
+The runtime now implements a five-layer pipeline for deterministic intent routing, context validation, behavioral state tracking, constrained LLM synthesis, and safety-checked tool execution:
+
+| Layer | Module | Blocking? | Responsibility |
+|-------|--------|-----------|----------------|
+| L1 — Deterministic Intent Router | `agent_runtime/layers/layer1_intent_router.py` | yes | Classify intent + taxonomy check + confidence score; reject unsafe/out-of-scope deterministically (no LLM). |
+| L2 — Context Requirement Engine | `agent_runtime/layers/layer2_context_engine.py` | yes | Assemble minimal structured context from contracts + live system state; produce a **Validated Context Package** consumed by L4. Fails if required facts missing (e.g., patient_id for patient-scoped tools). |
+| L3 — Behavioral State Engine | `agent_runtime/layers/layer3_behavioral_state.py` + async worker | **no** (async) | Analyze historical data + user profile; persist **Versioned Behavioral State**. Statistically grounded; separated from real-time flow; does not trigger tools. |
+| L4 — Constrained LLM Synthesis | `agent_runtime/layers/layer4_constrained_synthesis.py` | yes | Schema-compliant tool instructions + grounded response. Uses ONLY the validated context from L2 plus (optional) snapshot of L3 state. Existing `llm_tool_router` + `intent` handlers become strategies here. |
+| L5 — Safety Check & Tool Execution | `agent_runtime/layers/layer5_safety_execution.py` | yes | Validate proposed plan against policy; on invalid → safe-failure path. On valid → atomic tool execution + state update. Mutating plans still go through propose/confirm/execute (chat_actions). |
+| Observability (cross-cutting) | `agent_runtime/layers/observability.py` + `pipeline_events` table | both | Record events from every layer; enable auditing/debugging; link intent → execution flow via correlation id. |
+
+**Control Flow:**
+```
+request
+  → L1.route(actor, message) → IntentDecision | Reject
+  → L2.assemble(decision) → ValidatedContextPackage | MissingFacts
+  → L4.synthesize(package, L3_snapshot_optional) → PlanOrAnswer
+  → L5.guard_and_execute(plan) → ExecutionResult | SafeFailure
+  → response
+
+async (non-blocking): L3.update(workspace_id, user_id) every N events
+```
+
+All layers emit `PipelineEvent` with shared `correlation_id` (UUID v7). Frontend may expose trace with `?ai_trace=1` query param on propose calls.
+
+**Data Contracts:**
+- `ValidatedContextPackage` — pydantic model returned by L2: `{ correlation_id, actor, intent, required_facts: dict, system_state_snapshot: dict, policy_tags: list[str] }`.
+- `BehavioralStateSnapshot` — row in `behavioral_states` table keyed by `(workspace_id, user_id, version)` with JSON `profile`, `last_updated`, `inputs_hash`.
+- `PipelineEvent` — row in `pipeline_events` table: `correlation_id`, `layer`, `phase`, `payload_json`, `latency_ms`, `outcome`, `error`.
+
+**Legacy Routing Mode** (behind `EASEAI_PIPELINE_V2=0` or when env flag not set):
 1. **Routing mode** (`AGENT_ROUTING_MODE` in `server/app/config.py`, documented in `server/docs/ENV.md`):
-   - **`intent`** (default): **Intent classification** (`intent.py`) — regex-first, optional multilingual embedding similarity, optional one-shot LLM paraphrase to English for a second pass when the first pass finds no tool. MCP tool names and JSON contracts stay English end-to-end. Per-`conversation_id` context (`last_patient_cards`, `last_focused_patient_id`) is refreshed after immediate MCP patient reads in `service.py` so Thai/English vitals or timeline/history follow-ups resolve `patient_id` and stay grounded instead of returning generic “no data” chat answers.
+   - **`intent`** (default): **Intent classification** (`intent.py`) — regex-first, optional multilingual embedding similarity, optional one-shot LLM paraphrase to English for a second pass when the first pass finds no tool. MCP tool names and JSON contracts stay English end-to-end. Per-`conversation_id` context (`last_patient_cards`, `last_focused_patient_id`) is refreshed after immediate MCP patient reads in `service.py` so Thai/English vitals or timeline/history follow-ups resolve `patient_id` and stay grounded instead of returning generic "no data" chat answers.
    - **`llm_tools`**: **LLM tool router** (`llm_tool_router.py`) — OpenAI-style `tools` / `tool_calls` against **Ollama** at `OLLAMA_BASE_URL` (with JSON tool-list fallback from the workspace chat provider if needed). Read-only tool selections can run during propose and are summarized in one reply; any write still becomes an `ExecutionPlan` and the chat-actions confirm/execute path. On failure or empty selection, runtime **falls back** to the `intent` pipeline.
 2. Obvious greetings or thanks skip both routers and call the workspace chat model directly (`conversation_fastpath.py` + `INTENT_AI_CONVERSATION_FASTPATH_ENABLED`).
 3. **Plan generation**: Builds `ExecutionPlan` with steps, risk levels, permission basis when mutations or multi-step work require confirmation.
-4. **MCP execution**: First-party path uses `execute_workspace_tool` with the user’s JWT-derived actor context (not the public `/mcp` streamable client in all deployments).
+4. **MCP execution**: First-party path uses `execute_workspace_tool` with the user's JWT-derived actor context (not the public `/mcp` streamable client in all deployments).
 5. **Confirmed execution**: Runs plan steps sequentially after the user confirms in the UI.
 
 ### Chat Actions 3-Stage Flow

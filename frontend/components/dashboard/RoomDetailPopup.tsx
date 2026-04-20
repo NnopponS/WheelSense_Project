@@ -170,24 +170,24 @@ export function RoomDetailPopup({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-11 w-11"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(getPatientDetailPath(role, patient.id));
                             }}
                           >
-                            <Activity className="h-4 w-4" />
+                            <Activity className="h-5 w-5" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-11 w-11"
                             onClick={(e) => {
                               e.stopPropagation();
                               // Open message dialog
                             }}
                           >
-                            <MessageSquare className="h-4 w-4" />
+                            <MessageSquare className="h-5 w-5" />
                           </Button>
                         </div>
                       </div>

@@ -117,22 +117,22 @@ export default function RoleSwitcher() {
         className="flex min-w-0 items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-2 text-left text-sm font-medium text-foreground transition-smooth hover:bg-surface-container-high"
         title={t("shell.viewMode")}
       >
-        <SwitchCamera className="h-4 w-4 text-primary" />
+        <SwitchCamera className="h-5 w-5 text-primary" />
         <span className="hidden min-w-0 flex-col text-left sm:flex">
-          <span className="text-[10px] uppercase tracking-wider text-outline">{t("shell.actAsButtonLabel")}</span>
+          <span className="text-sm uppercase tracking-wider text-outline">{t("shell.actAsButtonLabel")}</span>
           <span className="truncate text-sm font-medium text-foreground">{t(currentRole.labelKey)}</span>
         </span>
         <span className="sm:hidden">{t(currentRole.labelKey)}</span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
       </button>
 
       {isOpen ? (
         <div className="absolute right-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] origin-top-right overflow-hidden rounded-xl border border-outline-variant/30 bg-surface-container-lowest shadow-lg shadow-black/5 animate-fade-in">
           <div className="border-b border-outline-variant/10 px-3 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-outline">
+            <p className="text-sm font-semibold uppercase tracking-wider text-outline">
               {t("shell.actAsPanelTitle")}
             </p>
-            <p className="mt-1 text-xs text-foreground-variant">{t("shell.actAsPanelHint")}</p>
+            <p className="mt-1 text-sm text-foreground-variant">{t("shell.actAsPanelHint")}</p>
           </div>
 
           <div className="flex flex-wrap gap-2 p-3">
@@ -142,7 +142,7 @@ export default function RoleSwitcher() {
                 setSelectedRole("all");
                 setQuery("");
               }}
-              className={`min-w-[5.5rem] flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-smooth sm:min-w-0 sm:flex-none ${
+              className={`min-w-[5.5rem] flex-1 rounded-lg px-2 py-2 text-sm font-medium transition-smooth sm:min-w-0 sm:flex-none ${
                 selectedRole === "all"
                   ? "bg-primary text-on-primary"
                   : "bg-surface-container text-foreground-variant hover:bg-surface-container-high"
@@ -158,7 +158,7 @@ export default function RoleSwitcher() {
                   setSelectedRole(role.id);
                   setQuery("");
                 }}
-                className={`min-w-[5.5rem] flex-1 rounded-lg px-2 py-2 text-xs font-medium transition-smooth sm:min-w-0 sm:flex-none ${
+                className={`min-w-[5.5rem] flex-1 rounded-lg px-2 py-2 text-sm font-medium transition-smooth sm:min-w-0 sm:flex-none ${
                   selectedRole === role.id
                     ? "bg-primary text-on-primary"
                     : "bg-surface-container text-foreground-variant hover:bg-surface-container-high"
@@ -171,7 +171,7 @@ export default function RoleSwitcher() {
 
           <div className="border-t border-outline-variant/10 p-3">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-outline" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-outline" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -180,7 +180,7 @@ export default function RoleSwitcher() {
                 autoComplete="off"
               />
             </div>
-            {error ? <p className="mt-2 text-xs text-error">{error}</p> : null}
+            {error ? <p className="mt-2 text-sm text-error">{error}</p> : null}
 
             <div className="mt-3 max-h-72 space-y-1 overflow-y-auto">
               {loading ? (
@@ -201,11 +201,11 @@ export default function RoleSwitcher() {
                         <span className="block truncate font-medium text-foreground">
                           {result.display_name || result.username}
                         </span>
-                        <span className="block truncate text-xs text-foreground-variant">
+                        <span className="block truncate text-sm text-foreground-variant">
                           {result.username} · {roleBit} · #{result.id}
                         </span>
                       </span>
-                      <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-sm font-medium text-primary">
                         {actingUserId === result.id ? t("shell.actAsStarting") : t("shell.actAsAct")}
                       </span>
                     </button>

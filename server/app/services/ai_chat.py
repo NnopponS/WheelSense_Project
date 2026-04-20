@@ -120,6 +120,12 @@ _ADMIN_ONLY_TOOLS: frozenset[str] = frozenset(
 )
 
 # Tools head_nurse has that supervisor does not (management writes)
+_PATIENT_EXCLUSIVE_TOOLS: frozenset[str] = frozenset(
+    {
+        "sos_create_alert",
+    }
+)
+
 _HEAD_NURSE_EXTRA_TOOLS: frozenset[str] = frozenset(
     {
         "create_patient_record",
@@ -233,13 +239,13 @@ _OBSERVER_READ: frozenset[str] = frozenset(
 @lru_cache(maxsize=1)
 def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
     all_tools = _all_mcp_workspace_tool_names()
-    head_nurse = all_tools - _ADMIN_ONLY_TOOLS
+    head_nurse = all_tools - _ADMIN_ONLY_TOOLS - _PATIENT_EXCLUSIVE_TOOLS
     # Supervisor matches head_nurse minus operational/registry writes in _HEAD_NURSE_EXTRA_TOOLS
     # and vitals/timeline note tools (supervisor is not in ROLE_CARE_NOTE_WRITERS).
     supervisor = head_nurse - _HEAD_NURSE_EXTRA_TOOLS - _CARE_NOTE_WRITER_TOOLS
-    observer = _OBSERVER_READ | _OBSERVER_ONLY_WRITE
+    observer = (_OBSERVER_READ | _OBSERVER_ONLY_WRITE) - _PATIENT_EXCLUSIVE_TOOLS
     return {
-        "admin": set(all_tools - _EASEAI_FORBIDDEN_TOOLS),
+        "admin": set(all_tools - _EASEAI_FORBIDDEN_TOOLS - _PATIENT_EXCLUSIVE_TOOLS),
         "head_nurse": set(head_nurse),
         "supervisor": set(supervisor),
         "observer": set(observer),
@@ -268,8 +274,9 @@ def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
             "list_prescriptions",
             "list_pharmacy_orders",
             "request_pharmacy_order",
-            # Alerts (own)
+            # Alerts (own) — includes patient-scoped SOS creation
             "list_active_alerts",
+            "sos_create_alert",
             # Service & support requests
             "create_service_request",
             "list_service_requests",

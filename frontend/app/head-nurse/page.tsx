@@ -19,6 +19,7 @@ import {
   Calendar,
 } from "lucide-react";
 import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
+import { HeadNurseSituationBanner } from "@/components/head-nurse/HeadNurseSituationBanner";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
@@ -257,6 +258,14 @@ export default function HeadNurseDashboardPage() {
         </div>
       </div>
 
+      {/* Command overview: situation snapshot (2026-04-20 redesign) */}
+      <HeadNurseSituationBanner
+        alerts={alerts}
+        patients={patients}
+        caregivers={caregivers}
+        tasks={tasks}
+      />
+
       {/* Stats Overview */}
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
@@ -266,7 +275,7 @@ export default function HeadNurseDashboardPage() {
                 <Users className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("dash.totalPatients")}</p>
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">{t("dash.totalPatients")}</p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
                   {wardSummary?.total_patients ?? patients.length}
                 </p>
@@ -285,7 +294,7 @@ export default function HeadNurseDashboardPage() {
                 <Bell className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("dash.activeAlerts")}</p>
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">{t("dash.activeAlerts")}</p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
                   {activeAlerts.length}
                 </p>
@@ -304,7 +313,7 @@ export default function HeadNurseDashboardPage() {
                 <ClipboardList className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("headNurse.openTasks")}</p>
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">{t("headNurse.openTasks")}</p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
                   {openTasks.length}
                 </p>
@@ -323,7 +332,7 @@ export default function HeadNurseDashboardPage() {
                 <Calendar className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
                   {t("headNurse.upcomingSchedules")}
                 </p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
@@ -416,7 +425,7 @@ export default function HeadNurseDashboardPage() {
                     className="inline-flex max-w-[200px] items-center gap-2 rounded-full border border-border/80 bg-background/90 py-1 pl-1 pr-2.5 shadow-sm"
                   >
                     <span
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground"
                       aria-hidden
                     >
                       {staffInitials(c)}
@@ -424,7 +433,7 @@ export default function HeadNurseDashboardPage() {
                     <span className="min-w-0 truncate text-xs font-medium text-foreground">
                       {c.first_name} {c.last_name}
                     </span>
-                    <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-[10px] font-normal">
+                    <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-xs font-normal">
                       {caregiverRoleLabel(c.role, t)}
                     </Badge>
                   </div>

@@ -92,37 +92,37 @@ export function RichReportEditor({
             type="button"
             variant={editor.isActive("bold") ? "secondary" : "ghost"}
             size="sm"
-            className="h-8 w-8 p-0"
+            className="h-11 w-11 p-0"
             onClick={() => editor.chain().focus().toggleBold().run()}
           >
-            <Bold className="h-4 w-4" />
+            <Bold className="h-5 w-5" />
           </Button>
           <Button
             type="button"
             variant={editor.isActive("italic") ? "secondary" : "ghost"}
             size="sm"
-            className="h-8 w-8 p-0"
+            className="h-11 w-11 p-0"
             onClick={() => editor.chain().focus().toggleItalic().run()}
           >
-            <Italic className="h-4 w-4" />
+            <Italic className="h-5 w-5" />
           </Button>
           <Button
             type="button"
             variant={editor.isActive("bulletList") ? "secondary" : "ghost"}
             size="sm"
-            className="h-8 w-8 p-0"
+            className="h-11 w-11 p-0"
             onClick={() => editor.chain().focus().toggleBulletList().run()}
           >
-            <List className="h-4 w-4" />
+            <List className="h-5 w-5" />
           </Button>
           <Button
             type="button"
             variant={editor.isActive("orderedList") ? "secondary" : "ghost"}
             size="sm"
-            className="h-8 w-8 p-0"
+            className="h-11 w-11 p-0"
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
           >
-            <ListOrdered className="h-4 w-4" />
+            <ListOrdered className="h-5 w-5" />
           </Button>
         </div>
       ) : null}

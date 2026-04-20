@@ -399,7 +399,7 @@ function FacilityManagementPageContent() {
                             <div>
                               <p className="font-medium">{facility.name}</p>
                               {facility.address && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <p className="text-sm text-muted-foreground flex items-center gap-1">
                                   <MapPin className="h-3 w-3" />
                                   {facility.address}
                                 </p>
@@ -432,7 +432,7 @@ function FacilityManagementPageContent() {
                           </div>
                         </div>
                         {facility.description && (
-                          <p className="mt-3 text-xs text-muted-foreground line-clamp-2">
+                          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
                             {facility.description}
                           </p>
                         )}
@@ -510,7 +510,7 @@ function FacilityManagementPageContent() {
                               <p className="font-medium">
                                 {floor.name || `Floor ${floor.floor_number}`}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-sm text-muted-foreground">
                                 Floor #{floor.floor_number}
                               </p>
                             </div>

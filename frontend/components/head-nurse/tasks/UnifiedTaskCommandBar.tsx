@@ -147,10 +147,10 @@ export function UnifiedTaskCommandBar({ tasks, isLoading, onExport }: UnifiedTas
           <Button
             variant="outline"
             size="sm"
-            className="h-8 gap-1.5 text-xs"
+            className="h-11 gap-2 text-sm"
             onClick={onExport || (() => toast.info("Export feature coming soon"))}
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="h-5 w-5" />
             {t("tasks.export")}
           </Button>
         </div>

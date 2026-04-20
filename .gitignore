@@ -78,3 +78,9 @@ code_review/
 # Thesis (local only, not part of platform)
 Thesis/
 Thesis-v2.zip
+
+# Test Results
+test-results/
+e2e/test-results/
+frontend/test-results/
+

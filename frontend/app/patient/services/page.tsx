@@ -121,7 +121,7 @@ function PatientServicesContent() {
     <div className="space-y-6 pb-6 animate-fade-in">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium uppercase tracking-wide text-muted-foreground">
             <ConciergeBell className="h-3.5 w-3.5" />
             {t("patient.services.badge")}
           </div>
@@ -197,7 +197,7 @@ function PatientServicesContent() {
                     ? t("patient.services.adminPreviewRequiredTitle")
                     : t("patient.page.notLinkedTitle")}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {adminWithoutPatientPreview
                     ? t("patient.services.adminPreviewRequiredBody")
                     : t("patient.page.notLinkedBody")}
@@ -217,22 +217,22 @@ function PatientServicesContent() {
                           <Badge variant={requestStatusTone(request.status)} className="capitalize">
                             {request.status.replace("_", " ")}
                           </Badge>
-                          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          <span className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
                             {t(serviceTypeLabelKey(request.service_type))}
                           </span>
                         </div>
                         {request.title ? <p className="text-sm font-medium text-foreground">{request.title}</p> : null}
                         <p className="text-sm text-foreground whitespace-pre-wrap">{request.note}</p>
                         {request.claimed_by_user_id != null ? (
-                          <p className="text-xs text-muted-foreground">{t("patient.services.claimedHint")}</p>
+                          <p className="text-sm text-muted-foreground">{t("patient.services.claimedHint")}</p>
                         ) : null}
                         {request.resolution_note ? (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                             {t("patient.services.resolutionLabel")}: {request.resolution_note}
                           </p>
                         ) : null}
                       </div>
-                      <div className="text-right text-xs text-muted-foreground">
+                      <div className="text-right text-sm text-muted-foreground">
                         <p>{formatDateTime(request.created_at)}</p>
                         <p>{formatRelativeTime(request.created_at)}</p>
                       </div>
@@ -244,7 +244,7 @@ function PatientServicesContent() {
               <div className="rounded-xl border border-dashed border-border/70 px-3 py-10 text-center">
                 <Sparkles className="mx-auto h-10 w-10 text-muted-foreground/50" />
                 <p className="mt-3 text-sm font-medium text-muted-foreground">{t("patient.services.emptyHistoryTitle")}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{t("patient.services.emptyHistoryBody")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{t("patient.services.emptyHistoryBody")}</p>
               </div>
             )}
           </CardContent>

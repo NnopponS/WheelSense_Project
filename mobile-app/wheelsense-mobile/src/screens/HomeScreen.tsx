@@ -24,6 +24,8 @@ import { BLEScanner } from '../services/BLEScanner';
 import { mqttService } from '../services/MQTTService';
 import { Polar } from '../services/PolarService';
 import { Alert as AlertType, WorkflowTask } from '../types';
+import { GlobalSosButton } from '../components/GlobalSosButton';
+import { alertsInboxUrl } from '../utils/alertsInboxUrl';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -43,6 +45,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [activeAlerts, setActiveAlerts] = useState<AlertType[]>([]);
   const [pendingTasks, setPendingTasks] = useState<WorkflowTask[]>([]);
   const [isMQTTConnected, setIsMQTTConnected] = useState(false);
+
+  // Role-aware landing: navigate to WebView with role-specific path
+  useEffect(() => {
+    if (user?.role) {
+      const landingPath = alertsInboxUrl(user.role as any);
+      navigation.navigate('WebView', { path: landingPath });
+    }
+  }, [user?.role]);
 
   // Initialize services on mount
   useEffect(() => {
@@ -149,6 +159,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
+      <GlobalSosButton />
       
       {/* Header */}
       <View style={styles.header}>

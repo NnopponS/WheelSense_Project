@@ -9,8 +9,12 @@ A cross-platform mobile application for the WheelSense IoT + clinical workflow p
 - **Polar Verity Sense Integration**: Connects to Polar devices for heart rate and PPG monitoring
 - **MQTT Telemetry**: Transmits sensor data to WheelSense MQTT broker
 - **WebView Integration**: Embeds the WheelSense web frontend with seamless authentication
-- **Push Notifications**: Receives alerts and workflow updates
+- **Push Notifications**: Receives alerts and workflow updates with deep-link to role-specific WebView paths
 - **Role-Based Access**: Supports all WheelSense roles (admin, head_nurse, supervisor, observer, patient)
+- **Global SOS Button**: Floating SOS button for patient role with offline fallback queue
+- **Offline Queue**: AsyncStorage-backed action queue for offline SOS/alert/message operations
+- **Font Scale Injection**: User-configurable font scale applied to WebView via CSS injection
+- **Role-Aware Landing**: Auto-navigates WebView to role-specific path on login
 
 ### App Modes
 - **Wheelchair Mode**: For wheelchair users with M5StickC gateway
@@ -61,12 +65,13 @@ A cross-platform mobile application for the WheelSense IoT + clinical workflow p
 mobile-app/wheelsense-mobile/
 ├── src/
 │   ├── components/
-│   │   └── WebAppView.tsx      # WebView for embedded frontend
+│   │   ├── WebAppView.tsx      # WebView for embedded frontend with deep-link support
+│   │   └── GlobalSosButton.tsx # Patient-only floating SOS button
 │   ├── navigation/
 │   │   └── AppNavigator.tsx    # React Navigation setup
 │   ├── screens/
 │   │   ├── LoginScreen.tsx     # Authentication
-│   │   ├── HomeScreen.tsx      # Main dashboard
+│   │   ├── HomeScreen.tsx      # Main dashboard with role-aware landing
 │   │   ├── WebViewScreen.tsx   # Full-screen WebView
 │   │   ├── DeviceScreen.tsx    # BLE/Polar device management
 │   │   ├── SettingsScreen.tsx  # App configuration
@@ -76,13 +81,16 @@ mobile-app/wheelsense-mobile/
 │   │   ├── BLEScanner.ts       # BLE beacon scanning
 │   │   ├── MQTTService.ts      # MQTT telemetry
 │   │   ├── PolarService.ts     # Polar Verity Sense SDK
-│   │   └── NotificationService.ts # Push notifications
+│   │   ├── NotificationService.ts # Push notifications with deep-link
+│   │   └── OfflineQueue.ts     # Offline action queue (AsyncStorage)
 │   ├── store/
-│   │   └── useAppStore.ts      # Zustand store
+│   │   └── useAppStore.ts      # Zustand store (includes pendingDeepLink)
 │   ├── types/
 │   │   └── index.ts            # TypeScript types
-│   └── utils/
-│       └── index.ts            # Utility functions
+│   ├── utils/
+│   │   ├── index.ts            # Utility functions
+│   │   ├── alertsInboxUrl.ts   # Role→WebView path mapping
+│   │   └── fontScaleInject.ts  # Font scale CSS injection builder
 ├── App.tsx                     # Main entry point
 ├── app.json                    # Expo configuration
 └── package.json

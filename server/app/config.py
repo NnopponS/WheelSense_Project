@@ -105,6 +105,8 @@ class Settings(BaseSettings):
     intent_ai_conversation_fastpath_enabled: bool = True
     # Agent propose_turn routing: intent (classifier) | llm_tools (workspace-primary AI picks MCP tools).
     agent_routing_mode: Literal["intent", "llm_tools"] = "intent"
+    # Feature flag for ADR 0015 five-layer pipeline orchestration (Slice 3+).
+    easeai_pipeline_v2: bool = False
     # When set, Ollama tool-calling leg uses this model name (OpenAI-compatible /v1); defaults to ai_default_model.
     agent_llm_router_model: str = ""
     # GitHub OAuth App (Device Flow) — used for Copilot CLI token acquisition

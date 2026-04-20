@@ -238,7 +238,7 @@ function DevicesPageContent() {
                       </div>
                       <div className="min-w-0">
                         <CardTitle className="truncate text-base">{device.name}</CardTitle>
-                        <p className="truncate font-mono text-xs text-muted-foreground">
+                        <p className="truncate font-mono text-sm text-muted-foreground">
                           {device.ha_entity_id}
                         </p>
                       </div>
@@ -291,7 +291,7 @@ function DevicesPageContent() {
                     </div>
                     <div className="min-w-0">
                       <CardTitle className="truncate text-base">{title}</CardTitle>
-                      <p className="truncate font-mono text-xs text-muted-foreground">{device.device_id}</p>
+                      <p className="truncate font-mono text-sm text-muted-foreground">{device.device_id}</p>
                     </div>
                   </div>
                   <Badge variant={online ? "success" : "warning"}>
@@ -320,7 +320,7 @@ function DevicesPageContent() {
                   <div className="space-y-1">
                     <p className="text-muted-foreground">{t("devices.lastSeen")}</p>
                     <p className="text-foreground">{device.last_seen ? formatDateTime(device.last_seen) : "-"}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {device.last_seen ? formatRelativeTime(device.last_seen) : "-"}
                     </p>
                   </div>

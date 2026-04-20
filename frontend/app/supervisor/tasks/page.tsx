@@ -1,12 +1,13 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/lib/i18n";
 import { TasksPageLayout } from "@/components/tasks/TasksPageLayout";
 import type { TaskOut } from "@/types/tasks";
 
 /**
  * Supervisor Tasks Page
- * 
+ *
  * Supervisors can:
  * - View all tasks in the workspace (read-only)
  * - Execute assigned tasks (update status, submit reports)
@@ -16,6 +17,7 @@ import type { TaskOut } from "@/types/tasks";
 export default function SupervisorTasksPage() {
   const { user } = useAuth();
   const currentUserId = user?.id;
+  const { t } = useTranslation();
 
   // Filter to show only tasks assigned to this supervisor or unassigned
   const filterTasks = (tasks: TaskOut[]) => {
@@ -26,8 +28,8 @@ export default function SupervisorTasksPage() {
 
   return (
     <TasksPageLayout
-      title="My Tasks"
-      description="View and execute your assigned tasks"
+      title={t("supervisor.tasksTitle")}
+      description={t("supervisor.tasksDescription")}
       role="supervisor"
       canCreate={false}
       canManage={false}

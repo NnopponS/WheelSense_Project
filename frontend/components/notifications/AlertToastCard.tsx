@@ -95,7 +95,7 @@ export function AlertToastCard({
           type="button"
           size="sm"
           variant="default"
-          className="h-8 text-xs"
+          className="h-11 text-sm"
           onClick={() => {
             sonnerToast.dismiss(toastId);
             onNavigateInbox();
@@ -108,7 +108,7 @@ export function AlertToastCard({
             type="button"
             size="sm"
             variant="secondary"
-            className="h-8 text-xs"
+            className="h-11 text-sm"
             disabled={busy}
             onClick={() => void acknowledge()}
           >

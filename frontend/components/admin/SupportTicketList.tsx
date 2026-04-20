@@ -213,7 +213,7 @@ export function SupportTicketList({ tickets, onTicketClick }: SupportTicketListP
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search tickets..."
+            placeholder={t("admin.support.searchPlaceholder")}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="pl-9"
@@ -223,27 +223,27 @@ export function SupportTicketList({ tickets, onTicketClick }: SupportTicketListP
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-36">
             <Filter className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={t("admin.support.filterStatusPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="in-progress">In Progress</SelectItem>
-            <SelectItem value="resolved">Resolved</SelectItem>
+            <SelectItem value="all">{t("admin.support.filterStatusAll")}</SelectItem>
+            <SelectItem value="open">{t("admin.support.statusOpen")}</SelectItem>
+            <SelectItem value="in-progress">{t("admin.support.statusInProgress")}</SelectItem>
+            <SelectItem value="resolved">{t("admin.support.statusResolved")}</SelectItem>
           </SelectContent>
         </Select>
 
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
           <SelectTrigger className="w-36">
             <AlertCircle className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Priority" />
+            <SelectValue placeholder={t("admin.support.filterPriorityPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Priorities</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
+            <SelectItem value="all">{t("admin.support.filterPriorityAll")}</SelectItem>
+            <SelectItem value="low">{t("admin.support.priorityLow")}</SelectItem>
+            <SelectItem value="medium">{t("admin.support.priorityMedium")}</SelectItem>
+            <SelectItem value="high">{t("admin.support.priorityHigh")}</SelectItem>
+            <SelectItem value="urgent">{t("admin.support.priorityUrgent")}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -289,8 +289,8 @@ export function SupportTicketList({ tickets, onTicketClick }: SupportTicketListP
                   {tickets.length === 0 ? (
                     <div className="flex flex-col items-center gap-2">
                       <MessageSquare className="h-8 w-8 opacity-50" />
-                      <p>No support tickets yet.</p>
-                      <p className="text-sm">Create a new ticket to get help from the Head Nurse team.</p>
+                      <p>{t("admin.support.noTickets")}</p>
+                      <p className="text-sm">{t("admin.support.noTicketsDesc")}</p>
                     </div>
                   ) : (
                     "No tickets match your filters."

@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/lib/api";
 import type { components } from "@/lib/api/generated/schema";
 import { useTranslation } from "@/lib/i18n";
+import { AITraceChips, type AITraceChip } from "./AITraceChips";
 
 type ExecutionPlan = components["schemas"]["ExecutionPlan"];
 type EntityReference = { type: string; id: string | number; name?: string };
@@ -29,6 +30,7 @@ interface ActionPlanPreviewProps {
   onConfirm: () => void;
   onCancel: () => void;
   isConfirming?: boolean;
+  trace?: AITraceChip[];
 }
 
 interface ResolvedEntity {
@@ -119,6 +121,7 @@ export function ActionPlanPreview({
   onConfirm,
   onCancel,
   isConfirming = false,
+  trace = [],
 }: ActionPlanPreviewProps) {
   const { t } = useTranslation();
   const [resolvedEntities, setResolvedEntities] = useState<ResolvedEntity[]>([]);
@@ -316,6 +319,8 @@ export function ActionPlanPreview({
             </div>
           )}
         </div>
+
+        {trace.length > 0 && <AITraceChips trace={trace} />}
 
         {/* Error State */}
         {error && (

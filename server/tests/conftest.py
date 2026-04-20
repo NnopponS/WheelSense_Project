@@ -10,6 +10,8 @@ import os
 import tempfile
 from unittest.mock import AsyncMock, patch
 
+import aiomqtt.client
+
 # ── Must be set BEFORE any app import so Settings() reads them ───────────────
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["DATABASE_URL_SYNC"] = "sqlite:///:memory:"
@@ -36,6 +38,23 @@ from app.models.users import User
 # ── Shared in-memory engine (StaticPool keeps same connection across tests) ──
 _engine = None
 _SessionFactory = None
+
+
+def _patch_aiomqtt_test_cleanup() -> None:
+    """Avoid aiomqtt teardown noise when pytest closes the event loop first."""
+    original_on_socket_close = aiomqtt.client.Client._on_socket_close
+
+    def _safe_on_socket_close(self, client, userdata, sock):
+        try:
+            return original_on_socket_close(self, client, userdata, sock)
+        except RuntimeError as exc:
+            if "Event loop is closed" not in str(exc):
+                raise
+
+    aiomqtt.client.Client._on_socket_close = _safe_on_socket_close
+
+
+_patch_aiomqtt_test_cleanup()
 
 
 def _get_engine():

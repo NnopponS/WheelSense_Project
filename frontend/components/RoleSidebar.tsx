@@ -2,10 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { hasCapability, type AppRole } from "@/lib/permissions";
-import { getNavConfig, filterNavItemsByCapability, type RoleNavConfig, type NavItem } from "@/lib/sidebarConfig";
+import {
+  getNavConfig,
+  filterNavItemsByCapability,
+  partitionNavByGroup,
+  type RoleNavConfig,
+  type NavItem,
+} from "@/lib/sidebarConfig";
 import {
   Sheet,
   SheetContent,
@@ -13,7 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { LogOut, Activity } from "lucide-react";
+import { LogOut, ChevronDown, MoreHorizontal } from "lucide-react";
 import UserAvatar from "@/components/shared/UserAvatar";
 import Logo from "@/components/shared/Logo";
 import { cn } from "@/lib/utils";
@@ -64,6 +71,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
   const router = useRouter();
   const { user, logout } = useAuth();
   const { t } = useTranslation();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const navConfig: RoleNavConfig = user ? getNavConfig(user.role) : [];
 
@@ -71,6 +79,8 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
   const filteredConfig = user
     ? filterNavItemsByCapability(navConfig, (cap) => hasCapability(user.role as AppRole, cap))
     : [];
+
+  const { primary: primaryConfig, more: moreItems } = partitionNavByGroup(filteredConfig);
 
   function handleLogout() {
     logout();
@@ -115,13 +125,13 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
         href={item.href}
         onClick={closeMobileNav}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors group",
+          "flex items-center gap-3 rounded-lg px-4 py-3 text-base font-medium transition-colors group",
           active
             ? "bg-primary text-primary-foreground"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",
         )}
       >
-        <Icon className={cn("h-5 w-5 shrink-0", active ? "text-primary-foreground" : "text-muted-foreground")} />
+        <Icon className={cn("h-6 w-6 shrink-0", active ? "text-primary-foreground" : "text-muted-foreground")} />
         <span className="flex-1">{t(item.key)}</span>
         {item.badge && <span className="ml-auto flex h-2 w-2 rounded-full bg-destructive" />}
         {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
@@ -138,8 +148,8 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
             <Logo size={28} className="text-primary" />
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-bold leading-tight text-foreground">WheelSense</h1>
-            <p className="text-[11px] text-muted-foreground">{t("shell.platformSubtitle")}</p>
+            <h1 className="truncate text-base font-bold leading-tight text-foreground">{t("shell.platformName")}</h1>
+            <p className="text-xs text-muted-foreground">{t("shell.platformSubtitle")}</p>
           </div>
         </div>
 
@@ -148,16 +158,47 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
           {!user ? (
             <NavSkeleton />
           ) : (
-            filteredConfig.map((group, groupIndex) => (
-              <div key={groupIndex}>
-                {group.categoryKey && (
-                  <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                    {t(group.categoryKey)}
-                  </p>
-                )}
-                <div className="space-y-0.5">{group.items.map((item) => renderNavItem(item))}</div>
-              </div>
-            ))
+            <>
+              {primaryConfig.map((group, groupIndex) => (
+                <div key={groupIndex}>
+                  {group.categoryKey && (
+                    <p className="mb-2 px-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      {t(group.categoryKey)}
+                    </p>
+                  )}
+                  <div className="space-y-0.5">{group.items.map((item) => renderNavItem(item))}</div>
+                </div>
+              ))}
+
+              {moreItems.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setMoreOpen((v) => !v)}
+                    aria-expanded={moreOpen}
+                    aria-controls="role-sidebar-more-list"
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-base font-medium transition-colors",
+                      "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <MoreHorizontal className="h-6 w-6 shrink-0 text-muted-foreground" />
+                    <span className="flex-1 text-left">{t("nav.more")}</span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 shrink-0 transition-transform",
+                        moreOpen ? "rotate-180" : "rotate-0",
+                      )}
+                    />
+                  </button>
+                  {moreOpen && (
+                    <div id="role-sidebar-more-list" className="mt-1 space-y-0.5 pl-2">
+                      {moreItems.map((item) => renderNavItem(item))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </nav>
 
@@ -169,9 +210,9 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
               handleLogout();
               closeMobileNav();
             }}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-base font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           >
-            <LogOut className="h-5 w-5 shrink-0" />
+            <LogOut className="h-6 w-6 shrink-0" />
             <span className="flex-1 text-left">{t("auth.logout")}</span>
           </button>
         </div>
@@ -186,7 +227,7 @@ export default function RoleSidebar({ mobileOpen = false, onMobileOpenChange }: 
               <UserAvatar username={user.username} profileImageUrl={user.profile_image_url} sizePx={32} />
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">{user.username}</p>
-                <p className="text-[11px] text-muted-foreground">{t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}</p>
+                <p className="text-xs text-muted-foreground">{t(ROLE_LABEL_KEYS[user.role] ?? "shell.roleAdmin")}</p>
               </div>
             </Link>
           </div>

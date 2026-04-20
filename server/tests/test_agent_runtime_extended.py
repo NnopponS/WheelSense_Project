@@ -27,6 +27,7 @@ from app.schemas.agent_runtime import (
     ExecutionPlan,
     ExecutionPlanStep,
 )
+from app.agent_runtime.layers.contracts import SafeFailure
 from app.schemas.chat import ChatMessagePart
 from app.services import agent_runtime_client
 from app.agent_runtime.service import (
@@ -71,6 +72,91 @@ async def test_propose_conversation_fast_path_skips_mcp(
     assert "สวัสดี" in result.assistant_reply
     assert result.grounding.get("classification_method") == "conversation_fastpath_ai"
     mock_ai.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_propose_turn_v2_returns_safe_failure_answer(
+    runtime_test_user: User,
+    runtime_test_workspace: Workspace,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr("app.config.settings.easeai_pipeline_v2", True)
+    monkeypatch.setattr(
+        "app.agent_runtime.service.orchestrate_turn",
+        AsyncMock(
+            return_value=SafeFailure(
+                correlation_id="corr-1",
+                reason_code="policy_denied",
+                message_en="Blocked by safety policy.",
+                message_th="ถูกบล็อกโดยนโยบายความปลอดภัย",
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "app.agent_runtime.service._load_runtime_actor_context",
+        AsyncMock(
+            side_effect=lambda *_args, **_kwargs: _runtime_actor_context(
+                runtime_test_user, runtime_test_workspace
+            )
+        ),
+    )
+
+    token = f"token_{runtime_test_user.id}"
+    result = await propose_turn(
+        actor_access_token=token,
+        message="show me all patients",
+        messages=[ChatMessagePart(role="user", content="show me all patients")],
+        conversation_id=None,
+    )
+
+    assert result.mode == "answer"
+    assert result.assistant_reply == "Blocked by safety policy."
+    assert result.grounding["classification_method"] == "easeai_pipeline_v2"
+    assert result.grounding["reason_code"] == "policy_denied"
+
+
+@pytest.mark.asyncio
+async def test_execute_plan_v2_delegates_to_pipeline_executor(
+    runtime_test_user: User,
+    runtime_test_workspace: Workspace,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr("app.config.settings.easeai_pipeline_v2", True)
+    mocked = AsyncMock(
+        return_value=AgentRuntimeExecuteResponse(
+            message="Executed via v2.",
+            execution_result={"steps": [], "pipeline_version": "v2"},
+        )
+    )
+    monkeypatch.setattr("app.agent_runtime.service.execute_confirmed_plan", mocked)
+    monkeypatch.setattr(
+        "app.agent_runtime.service._load_runtime_actor_context",
+        AsyncMock(
+            side_effect=lambda *_args, **_kwargs: _runtime_actor_context(
+                runtime_test_user, runtime_test_workspace
+            )
+        ),
+    )
+
+    plan = ExecutionPlan(
+        playbook="clinical-triage",
+        summary="Acknowledge alert 1",
+        model_target="copilot:gpt-4.1",
+        steps=[
+            ExecutionPlanStep(
+                id="ack-1",
+                title="Acknowledge alert 1",
+                tool_name="acknowledge_alert",
+                arguments={"alert_id": 1},
+            )
+        ],
+    )
+
+    token = f"token_{runtime_test_user.id}"
+    result = await execute_plan(actor_access_token=token, execution_plan=plan)
+
+    assert result.message == "Executed via v2."
+    mocked.assert_awaited_once()
 
 
 @pytest.mark.asyncio

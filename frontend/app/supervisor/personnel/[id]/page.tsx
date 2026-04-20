@@ -244,7 +244,7 @@ export default function SupervisorPatientDetailPage() {
         cell: ({ row }) => (
           <div className="space-y-1 text-sm">
             <p className="text-foreground">{formatDateTime(row.original.timestamp)}</p>
-            <p className="text-xs text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
+            <p className="text-sm text-muted-foreground">{formatRelativeTime(row.original.timestamp)}</p>
           </div>
         ),
       },
@@ -284,7 +284,7 @@ export default function SupervisorPatientDetailPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="text-xs text-muted-foreground">{row.original.description}</p>
+            <p className="text-sm text-muted-foreground">{row.original.description}</p>
           </div>
         ),
       },
@@ -383,7 +383,7 @@ export default function SupervisorPatientDetailPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="line-clamp-2 text-xs text-muted-foreground">{row.original.text}</p>
+            <p className="line-clamp-2 text-sm text-muted-foreground">{row.original.text}</p>
           </div>
         ),
       },
@@ -562,7 +562,7 @@ export default function SupervisorPatientDetailPage() {
 function QuickInfo({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );

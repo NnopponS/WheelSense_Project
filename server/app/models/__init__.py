@@ -1,5 +1,6 @@
 from __future__ import annotations
 from .base import Base
+from .agent_runtime import BehavioralState, PipelineEventRecord
 from .core import (
     Workspace,
     Device,
@@ -60,6 +61,8 @@ from .task_management import PatientFixRoutine, RoutineTask, RoutineTaskLog
 
 __all__ = [
     "Base",
+    "PipelineEventRecord",
+    "BehavioralState",
     "User",
     "AuthSession",
     "MCPToken",

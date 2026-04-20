@@ -74,7 +74,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-card/95 backdrop-blur">
       {impersonation.active ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-foreground sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 text-base text-foreground sm:px-6">
           <p className="min-w-0">
             <span className="font-semibold">{t("shell.impersonationActingAs")}</span>{" "}
             <span className="font-medium">
@@ -104,23 +104,23 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
             onClick={onMenuClick}
             aria-label={t("shell.openNavigation")}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
           </Button>
         ) : null}
         {title ? (
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold leading-tight text-foreground sm:text-lg">
+            <h1 className="truncate text-lg font-semibold leading-tight text-foreground sm:text-xl">
               {title}
             </h1>
-            {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
+            {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
           </div>
         ) : null}
         </div>
 
         <div className="mx-0 hidden min-w-0 flex-1 md:flex md:max-w-md lg:mx-8">
           <div className="relative w-full">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input type="text" placeholder={t("shell.search")} className="pl-9" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input type="text" placeholder={t("shell.search")} className="pl-10" />
           </div>
         </div>
 
@@ -132,7 +132,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
               variant="secondary" 
               className="hidden sm:inline-flex bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-100"
             >
-              <Beaker className="mr-1 h-3 w-3" />
+              <Beaker className="mr-1 h-5 w-5" />
               SIM
             </Badge>
           ) : null}
@@ -157,7 +157,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
                 setAlertSoundOn(next);
               }}
             >
-              {alertSoundOn ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+              {alertSoundOn ? <Volume2 className="h-6 w-6" /> : <VolumeX className="h-6 w-6" />}
             </Button>
           ) : null}
 
@@ -181,10 +181,10 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
               />
               </Link>
               <div className="hidden min-w-0 lg:block">
-                <p className="truncate text-sm font-medium leading-tight text-foreground">
+                <p className="truncate text-base font-medium leading-tight text-foreground">
                   {user.username}
                 </p>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {t(ROLE_LABELS[user.role] ?? "shell.roleAdmin")}
                 </p>
               </div>
