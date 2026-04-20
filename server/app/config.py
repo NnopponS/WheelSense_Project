@@ -23,9 +23,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Database
-    database_url: str = "postgresql+asyncpg://wheelsense:wheelsense_dev@localhost:5432/wheelsense"
-    database_url_sync: str = "postgresql://wheelsense:wheelsense_dev@localhost:5432/wheelsense"
+    # Database (environment-aware defaults)
+    database_url: str = ""
+    database_url_sync: str = ""
 
     # MQTT
     mqtt_broker: str = "localhost"
@@ -164,6 +164,28 @@ class Settings(BaseSettings):
     @property
     def is_simulator_mode(self) -> bool:
         return self.env_mode.lower() == "simulator"
+
+    @property
+    def resolved_database_url(self) -> str:
+        """Return database URL with environment-aware defaults."""
+        if self.database_url:
+            return self.database_url
+        # Environment-aware defaults
+        db_name = "wheelsense_sim" if self.is_simulator_mode else "wheelsense_prod"
+        port = "5432" if self.is_simulator_mode else "5433"
+        password = self.postgres_password if hasattr(self, 'postgres_password') else "wheelsense_dev"
+        return f"postgresql+asyncpg://wheelsense:{password}@localhost:{port}/{db_name}"
+
+    @property
+    def resolved_database_url_sync(self) -> str:
+        """Return sync database URL with environment-aware defaults."""
+        if self.database_url_sync:
+            return self.database_url_sync
+        # Environment-aware defaults
+        db_name = "wheelsense_sim" if self.is_simulator_mode else "wheelsense_prod"
+        port = "5432" if self.is_simulator_mode else "5433"
+        password = self.postgres_password if hasattr(self, 'postgres_password') else "wheelsense_dev"
+        return f"postgresql://wheelsense:{password}@localhost:{port}/{db_name}"
 
     @field_validator("env_mode", mode="before")
     @classmethod

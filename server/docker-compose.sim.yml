@@ -5,4 +5,4 @@ name: wheelsense-platform
 
 include:
   - path: docker-compose.core.yml
-  - path: docker-compose.data-mock.yml
+  - path: docker-compose.data-sim.yml

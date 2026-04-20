@@ -5,7 +5,8 @@ from typing import Any, AsyncGenerator
 from app.config import settings
 
 # Production PostgreSQL engine (pool_size not compatible with SQLite)
-_is_sqlite = "sqlite" in settings.database_url
+# Use resolved database URLs with environment-aware defaults
+_is_sqlite = "sqlite" in settings.resolved_database_url
 _engine_kwargs: dict[str, Any] = {"echo": settings.debug}
 if not _is_sqlite:
     _engine_kwargs.update({"pool_size": 5, "max_overflow": 10})
@@ -20,7 +21,7 @@ def get_async_engine() -> Any:
     if _async_engine is None:
         from sqlalchemy.ext.asyncio import create_async_engine
 
-        _async_engine = create_async_engine(settings.database_url, **_engine_kwargs)
+        _async_engine = create_async_engine(settings.resolved_database_url, **_engine_kwargs)
     return _async_engine
 
 
@@ -40,7 +41,7 @@ def get_sync_engine() -> Any:
     if _sync_engine is None:
         from sqlalchemy import create_engine
 
-        _sync_engine = create_engine(settings.database_url_sync, echo=False)
+        _sync_engine = create_engine(settings.resolved_database_url_sync, echo=False)
     return _sync_engine
 
 

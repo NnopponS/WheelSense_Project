@@ -5,7 +5,7 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: wheelsense
+      POSTGRES_DB: wheelsense_prod
       POSTGRES_USER: wheelsense
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_dev}
     ports:
@@ -21,8 +21,8 @@ services:
   wheelsense-platform-server:
     environment:
       ENV_MODE: production
-      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
-      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense_prod
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_dev}@db:5432/wheelsense_prod
 
 volumes:
   pgdata-prod:
