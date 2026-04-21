@@ -1,690 +1,422 @@
 %%================================================
-%% Chapter 2 - วรรณกรรมและงานวิจัยที่เกี่ยวข้อง
+%% Chapter 2 - Literature Review and Theory
 %%================================================
-\chapter{วรรณกรรมและงานวิจัยที่เกี่ยวข้อง}
+\chapter{วรรณกรรมและทฤษฎีที่เกี่ยวข้อง}
 \label{chapter2}
 
-% ป้องกันการขึ้นบรรทัดใหม่กลางคำภาษาไทย
-\hyphenpenalty=10000
-\exhyphenpenalty=10000
-% ลด penalty ของการเว้นช่องว่างให้ LaTeX ยอมเว้นช่องมากกว่าการแยกคำ
-\emergencystretch=3em
-\tolerance=2000
-\hbadness=10000
+\section{บริบทการดูแลผู้สูงอายุและความท้าทายในสถานดูแล}
+\label{sec:ch2_care_context}
 
-\tikzset{ch2arrow/.style={-{Latex[length=2mm]}}}
+การเปลี่ยนผ่านสู่สังคมสูงวัย (Aging Society) ส่งผลกระทบโดยตรงต่อระบบการจัดการในสถานดูแลผู้สูงอายุ (Nursing Homes หรือ Care Facilities) ซึ่งต้องรองรับผู้รับบริการที่มีความเปราะบางและมีความต้องการที่หลากหลายมากขึ้น \cite{WHO2021DecadeAgeing} ในบริบทของสถานดูแลขนาดกลางถึงใหญ่ เช่น บ้านพักคนชราวาสนะเวศม์ ซึ่งมีพื้นที่กว้างขวางและมีอาคารพักอาศัยหลายหลัง ความท้าทายที่สำคัญคืออัตราส่วนระหว่างบุคลากรและผู้สูงอายุ โดยในขณะที่สถานดูแลระดับพรีเมียมอาจมีอัตราส่วนที่ 1:1 ถึง 1:4 แต่ในสถานดูแลของรัฐหรือสถานดูแลขนาดใหญ่ทั่วไป อัตราส่วนผู้ดูแลต่อผู้สูงอายุอาจสูงถึง 1:20 โดยเฉพาะในช่วงเวรกลางคืน \cite{Schulz2020CaregiverBurden, SituationThaiElderly2022} ซึ่งเป็นตัวเลขที่สะท้อนถึงวิกฤตการขาดแคลนแรงงานในภาคส่วนการดูแลผู้สูงอายุทั้งในระดับประเทศและระดับโลก การมีผู้ดูแลเพียง 1 คนต่อผู้รับบริการ 20 ท่าน ทำให้เกิด "ช่องว่างในการเฝ้าระวัง" (Monitoring Gap) ที่รุนแรง และความเสี่ยงต่อการเกิดอุบัติเหตุหรือภาวะฉุกเฉินที่ไม่ได้รับการตอบสนองทันท่วงที
 
-\newcommand{\plannedchtwofigure}[5]{%
-\begin{figure}[htbp]
-    \centering
-    \IfFileExists{assets/figures/chapter2/#2}{%
-        \includegraphics[width=#3\textwidth]{assets/figures/chapter2/#2}%
-    }{%
-        \fbox{\parbox[c][0.20\textheight][c]{0.9\textwidth}{\centering\small #4}}%
-    }
-    \caption{#5}
-    \label{#1}
-\end{figure}
-}
-
-\section{การดูแลผู้สูงอายุในบ้านพักคนชราและความท้าทายเชิงปฏิบัติการ}
-
-\subsection{สถานการณ์ผู้สูงอายุและผู้ใช้เก้าอี้รถเข็นในประเทศไทย}
-การเปลี่ยนผ่านสู่สังคมสูงวัยทำให้สถานพักผู้สูงอายุและหน่วยดูแลระยะยาวต้องรองรับผู้รับบริการที่มีความต้องการซับซ้อนมากขึ้น ทั้งด้านการเคลื่อนไหว ความเสี่ยงต่อการหกล้ม และการพึ่งพาอุปกรณ์ช่วยเหลือ เช่น เก้าอี้รถเข็นและอุปกรณ์สวมใส่ติดตามสุขภาพ ภาพรวมเชิงประชากรนี้ทำให้การดูแลไม่อาจพึ่งพาการสังเกตด้วยมนุษย์เพียงอย่างเดียว แต่ต้องใช้ระบบข้อมูลที่ช่วยให้เห็นสถานะผู้รับบริการอย่างต่อเนื่องและตีความได้ในระดับปฏิบัติการ \cite{WHO2021DecadeAgeing,NSO2021OlderPersonsSurvey}.
-
-ตารางที่~\ref{tab:ch2_thailand_demographics} แสดงข้อมูลประชากรผู้สูงอายุในประเทศไทย ซึ่งเผยให้เห็นว่าประเทศไทยกำลังเข้าสู่สังคมสูงวัยอย่างรวดเร็ว โดยคาดว่าในปี พ.ศ. 2040 จะมีผู้สูงอายุคิดเป็นสัดส่วนมากกว่าหนึ่งในสามของประชากรทั้งหมด
+ในการปฏิบัติงานจริง ภายในสถานดูแลมีการแบ่งบทบาทหน้าที่ของบุคลากรอย่างเป็นระบบ โดยหน้าที่หลักสรุปได้ดังตารางที่~\ref{tab:ch2_staff_roles} โดยมีการกำหนดให้ข้อความชิดซ้ายเพื่อให้อ่านง่ายและลดความผิดพลาดในการสื่อสาร:
 
 \begin{table}[htbp]
     \centering
-    \caption{ข้อมูลประชากรผู้สูงอายุในประเทศไทยและความต้องการการดูแล}
-    \label{tab:ch2_thailand_demographics}
-    \footnotesize
-    \setlength{\tabcolsep}{5pt}
-    \begin{tabular}{|l|c|c|c|c|}
+    \caption{บทบาทหน้าที่และความรับผิดชอบของบุคลากรในสถานดูแลผู้สูงอายุ}
+    \label{tab:ch2_staff_roles}
+    \small
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}p{9.0cm}|}
         \hline
-        \textbf{ปี} & \textbf{ผู้สูงอายุ 60+} & \textbf{ผู้สูงอายุ 80+} & \textbf{ผู้พิการทางการเคลื่อนไหว} & \textbf{ผู้ต้องการการดูแลระยะยาว} \\
-        & (\%) & (\%) & (\%) & (\%) \\
-        \hline
-        พ.ศ. 2020 & 19.2 & 2.1 & 3.1 & 1.8 \\
-        พ.ศ. 2025 & 21.5 & 2.6 & 3.4 & 2.1 \\
-        พ.ศ. 2030 & 25.1 & 3.2 & 3.8 & 2.6 \\
-        พ.ศ. 2035 & 28.7 & 4.1 & 4.2 & 3.1 \\
-        พ.ศ. 2040 & 32.3 & 5.3 & 4.7 & 3.8 \\
-        \hline
+        \textbf{ตำแหน่ง} & \textbf{หน้าที่และความรับผิดชอบหลัก} \\ \hline
+        พยาบาลวิชาชีพ & ประเมินอาการทางคลินิก วางแผนการพยาบาล จัดการยา และตัดสินใจในภาวะฉุกเฉิน \\ \hline
+        ผู้ช่วยพยาบาล / ผู้ดูแล & ดูแลกิจวัตรประจำวัน (ADL) เช่น การอาบน้ำ การป้อนอาหาร การเคลื่อนย้าย และสังเกตอาการเบื้องต้น \\ \hline
+        นักกายภาพบำบัด & ฟื้นฟูสมรรถภาพการเคลื่อนไหว ฝึกการเดิน และดูแลการใช้อุปกรณ์ช่วยเดินหรือเก้าอี้รถเข็น \\ \hline
+        เจ้าหน้าที่ธุรการ / Supervisor & จัดการข้อมูลผู้รับบริการ ตารางเวรบุคลากร และประสานงานระหว่างครอบครัวกับทีมดูแล \\ \hline
     \end{tabular}
 \end{table}
 
-จากตารางจะเห็นว่าจำนวนผู้ที่ต้องการการดูแลเพิ่มขึ้นอย่างต่อเนื่อง ซึ่งสอดคล้องกับความต้องการระบบติดตามที่มีประสิทธิภาพสูงขึ้น การวิเคราะห์ภาระการดูแลสามารถคำนวณได้จากสมการ
-\begin{equation}
-    B = \sum_{i=1}^{n} \frac{w_i \cdot c_i}{s_i}
-    \label{eq:ch2_caregiver_burden}
-\end{equation}
-เมื่อ $B$ คือภาระการดูแลรวม $w_i$ คือน้ำหนักความซับซ้อนของผู้รับบริการคนที่ $i$ $c_i$ คือจำนวนชั่วโมงการดูแลต่อวัน และ $s_i$ คือจำนวนผู้ดูแลที่มี \cite{Schulz2020CaregiverBurden}
+\section{แนวคิด IoT, Smart Environment และ Ambient Assisted Living}
+\label{sec:ch2_iot_aal}
 
-\subsection{รูปแบบและบทบาทการดูแลในสถานพักผู้สูงอายุ}
-วรรณกรรมด้านการพยาบาลระยะยาวอธิบายว่างานดูแลในสถานพักผู้สูงอายุมีลักษณะเป็นงานประสานหลายบทบาท ตั้งแต่พยาบาล ผู้ช่วยพยาบาล ผู้ดูแลประจำหอพัก ไปจนถึงผู้บริหารเวร ซึ่งต้องแลกเปลี่ยนข้อมูลเกี่ยวกับกิจวัตร ความผิดปกติ และความเสี่ยงรายบุคคลอย่างต่อเนื่อง ความซับซ้อนดังกล่าวทำให้คุณภาพของระบบติดตามไม่ได้ขึ้นกับความแม่นยำทางเทคนิคเพียงอย่างเดียว แต่ขึ้นกับว่าสามารถสนับสนุนการรับรู้สถานการณ์ร่วมกันของทีมดูแลได้มากเพียงใด \cite{Bowers2000NursingWorkload,Schulz2020CaregiverBurden}.
-
-รูปที่~\ref{fig:ch2_care_workflow} แสดงขั้นตอนการทำงานในระบบดูแลผู้สูงอายุแบบดั้งเดิมเทียบกับระบบที่ใช้เทคโนโลยีช่วยเหลือ ซึ่งเผยให้เห็นว่าการนำเข้าระบบติดตามอัตโนมัติสามารถลดภาระการบันทึกและเพิ่มประสิทธิภาพการสื่อสารระหว่างบุคลากรได้
+เทคโนโลยีสารสนเทศถูกนำมาประยุกต์ใช้เพื่อปิดช่องว่างในการดูแล โดยมีแนวคิดพื้นฐาน 3 ระระดับที่เกี่ยวเนื่องกัน ดังแสดงในรูปที่~\ref{fig:ch2_aal_arch}
 
 \begin{figure}[htbp]
     \centering
-    \resizebox{0.95\linewidth}{!}{%
     \begin{tikzpicture}[
-        node distance=10mm and 10mm, every node/.style={font=\footnotesize},
-        role/.style={draw, rounded corners, align=center, minimum width=2.2cm, minimum height=0.9cm, fill=blue!10},
-        process/.style={draw, rounded corners, align=center, minimum width=2.2cm, minimum height=0.9cm, fill=green!10},
-        system/.style={draw, rounded corners, align=center, minimum width=2.4cm, minimum height=0.9cm, fill=orange!15},
-        arrow/.style={-{Latex[length=1.5mm]}, thick},
-        panel/.style={draw, rounded corners, dashed, inner sep=4mm}
+        node distance=8mm,
+        layer/.style={draw, rectangle, rounded corners, align=center, minimum width=10cm, minimum height=1cm, font=\small},
+        arrow/.style={-Latex, thick}
     ]
-        %% แถวบน: ระบบดั้งเดิม
-        \node[font=\small\bfseries] (tleft) at (0,1.4) {(ก) ระบบดั้งเดิม};
-        \node[role] (patient) at (0,0) {ผู้ป่วย};
-        \node[role, right=of patient] (nurse1) {พยาบาล};
-        \node[role, right=of nurse1] (caregiver1) {ผู้ดูแล};
-        \node[process, below=of patient] (paper1) {บันทึก\\กระดาษ};
-        \node[process, below=of nurse1] (verbal1) {สื่อสาร\\ด้วยวาจา};
-        \node[process, below=of caregiver1] (delay1) {ตอบสนอง\\ล่าช้า};
-        \draw[arrow] (patient)    -- (nurse1);
-        \draw[arrow] (nurse1)     -- (caregiver1);
-        \draw[arrow] (patient)    -- (paper1);
-        \draw[arrow] (nurse1)     -- (verbal1);
-        \draw[arrow] (caregiver1) -- (delay1);
-        \begin{scope}[on background layer]
-            \node[panel, fit=(tleft)(patient)(caregiver1)(paper1)(delay1)] {};
-        \end{scope}
+        \node[layer, fill=blue!15] (app) {\textbf{Application Layer}\\(Nursing Dashboard, AI Assistant, Emergency Alerts)};
+        \node[layer, fill=green!15, below=of app] (proc) {\textbf{Processing \& Data Layer}\\(Cloud/Edge Server, Data Storage, Context Analysis)};
+        \node[layer, fill=orange!15, below=of proc] (comm) {\textbf{Communication Layer}\\(WiFi, Bluetooth/BLE, MQTT, Gateway)};
+        \node[layer, fill=gray!15, below=of comm] (sense) {\textbf{Perception \& Sensing Layer}\\(Wearable Sensors, Wheelchair Node, Environmental Beacons)};
 
-        %% แถวล่าง: ระบบที่ปรับปรุง (วางต่ำกว่า 6 cm เพื่อไม่ให้ซ้อน)
-        \node[font=\small\bfseries] (tright) at (0,-5.3) {(ข) ระบบที่ปรับปรุงด้วยเทคโนโลยีช่วยเหลือ};
-        \node[role] (patient2) at (-2.0,-6.7) {ผู้ป่วย};
-        \node[system, right=of patient2] (sys2) {ระบบติดตาม\\อัจฉริยะ};
-        \node[role, right=of sys2] (nurse2) {พยาบาล};
-        \node[role, right=of nurse2] (care2) {ผู้ดูแล};
-        \node[process, below=of patient2] (auto) {ติดตาม\\อัตโนมัติ};
-        \node[process, below=of sys2] (dash) {แดชบอร์ด\\แบบเรียลไทม์};
-        \node[process, below=of nurse2] (alert) {แจ้งเตือน\\เชิงบริบท};
-        \node[process, below=of care2] (audit) {บันทึก\\ย้อนกลับ};
-        \draw[arrow] (patient2) -- (sys2);
-        \draw[arrow] (sys2)     -- (nurse2);
-        \draw[arrow] (nurse2)   -- (care2);
-        \draw[arrow] (patient2) -- (auto);
-        \draw[arrow] (sys2)     -- (dash);
-        \draw[arrow] (nurse2)   -- (alert);
-        \draw[arrow] (care2)    -- (audit);
-        \begin{scope}[on background layer]
-            \node[panel, fit=(tright)(patient2)(care2)(auto)(audit)] {};
-        \end{scope}
-    \end{tikzpicture}%
-    }
-    \caption{การเปรียบเทียบขั้นตอนการทำงานในระบบดูแลผู้สูงอายุแบบดั้งเดิม~(ก) กับระบบที่ใช้เทคโนโลยีช่วยเหลือ~(ข)}
-    \label{fig:ch2_care_workflow}
-\end{figure}
-
-\subsection{ภาระงาน ความเหนื่อยล้าจากการแจ้งเตือน และข้อจำกัดของระบบบันทึก}
-งานวิจัยด้านภาระผู้ดูแลชี้ว่าความเครียดสะสมและภาระการตัดสินใจแบบต่อเนื่องเป็นปัจจัยสำคัญที่ลดคุณภาพการดูแล โดยเฉพาะเมื่อข้อมูลกระจายอยู่ในบันทึกกระดาษ โทรศัพท์ และการส่งต่อด้วยวาจา ขณะเดียวกัน ระบบแจ้งเตือนที่ออกแบบไม่ดีอาจสร้างภาวะ alert fatigue จนทำให้เจ้าหน้าที่ละเลยสัญญาณสำคัญ \cite{Schulz2020CaregiverBurden,Gates2018AlertFatigue,Cheung2019PaperRecordsLongTermCare}.
-
-การวัดภาระงานเชิงปริมาณใช้เครื่องมือหลายชิ้น เครื่องมือที่ได้รับการยอมรับกว้างขวางที่สุดคือ NASA Task Load Index (NASA-TLX) ซึ่งประเมิน 6 มิติ ได้แก่ ภาระทางจิต ภาระทางกาย ภาระเชิงเวลา ประสิทธิภาพของตนเอง ความพยายาม และความหงุดหงิด \cite{Hart1988_NASATLX} นอกจากนี้ยังมี Zarit Burden Interview สำหรับผู้ดูแลในครอบครัว ซึ่งครอบคลุมทั้งภาระทางกายและผลกระทบทางอารมณ์ \cite{Zarit1980_BurdenInterview,Hoonakker2011_NASATLX_Nurses}. Paine และคณะจำแนกภาวะความเหนื่อยล้าจากการแจ้งเตือน (alarm/alert fatigue) ออกเป็นสามแบบ ได้แก่ \textit{desensitization fatigue}, \textit{cognitive fatigue} และ \textit{action fatigue} \cite{Paine2016_clinical_alarm_fatigue_review,Gates2018AlertFatigue} การจำแนกเช่นนี้ช่วยให้การออกแบบระบบแจ้งเตือนสามารถเลือกมาตรการบรรเทาเฉพาะประเภทได้
-
-ในด้านระบบบันทึก Cheung และคณะเปรียบเทียบบันทึกกระดาษกับบันทึกอิเล็กทรอนิกส์ในสถานดูแลระยะยาว พบว่าบันทึกอิเล็กทรอนิกส์ช่วยลดเวลาค้นข้อมูลย้อนหลังและลดความถี่ของข้อมูลสูญหาย แต่ต้องแลกกับเวลาบันทึกต่อครั้งที่อาจยาวนานขึ้นเมื่อผู้ใช้ยังไม่คุ้นกับระบบ \cite{Cheung2019PaperRecordsLongTermCare,Menachemi2011_BenefitsEHR}.
-
-\section{อินเทอร์เน็ตของสรรพสิ่งและสภาพแวดล้อมอัจฉริยะ}
-
-แนวคิดอินเทอร์เน็ตของสรรพสิ่งและสภาพแวดล้อมอัจฉริยะถูกใช้เป็นกรอบอธิบายว่าระบบติดตามในอาคารควรแปลงข้อมูลจากโลกกายภาพไปเป็นข้อมูลเชิงปฏิบัติการอย่างไร โดยสาระสำคัญไม่ได้อยู่ที่จำนวนอุปกรณ์ แต่คือการเชื่อมต่อระหว่างการรับรู้ การสื่อสาร การประมวลผล และการแสดงผลให้รองรับภารกิจดูแลที่ต่อเนื่อง \cite{Atzori2010IoTSurvey,Al-Fuqaha2015IoT,Rashidi2013AALSurvey}.
-
-ก่อนแสดงภาพรวมเชิงสถาปัตยกรรม ควรย้ำว่าภาพในรูปที่~\ref{fig:ch2_iot_aal_layers} เป็นเพียงกรอบแนวคิดทางทฤษฎีสำหรับการอธิบายการไหลของข้อมูลจากเซ็นเซอร์ไปสู่การตัดสินใจ มิใช่แผนผังการติดตั้งของระบบใดระบบหนึ่งโดยตรง \cite{Atzori2010IoTSurvey,Al-Fuqaha2015IoT}.
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}[node distance=8mm, every node/.style={font=\small}]
-        \node (sense) [draw, rounded corners, align=center, minimum width=0.82\linewidth] {ชั้นการรับรู้ข้อมูล\\{\footnotesize เซ็นเซอร์สภาพแวดล้อม เซ็นเซอร์สวมใส่ และข้อมูลบริบท}};
-        \node (network) [draw, rounded corners, align=center, below=of sense, minimum width=0.82\linewidth] {ชั้นการสื่อสาร\\{\footnotesize Bluetooth Low Energy, Wi-Fi, MQTT, HTTP}};
-        \node (service) [draw, rounded corners, align=center, below=of network, minimum width=0.82\linewidth] {ชั้นบริการและการประมวลผล\\{\footnotesize การรวมข้อมูล การระบุตำแหน่ง การแจ้งเตือน และการอนุมานบริบท}};
-        \node (app) [draw, rounded corners, align=center, below=of service, minimum width=0.82\linewidth] {ชั้นแอปพลิเคชันและการช่วยตัดสินใจ\\{\footnotesize แดชบอร์ด ระบบติดตามผู้ดูแล และผู้ช่วยปัญญาประดิษฐ์}};
-        \draw[ch2arrow] (sense) -- (network);
-        \draw[ch2arrow] (network) -- (service);
-        \draw[ch2arrow] (service) -- (app);
+        \draw[arrow] (sense) -- (comm);
+        \draw[arrow] (comm) -- (proc);
+        \draw[arrow] (proc) -- (app);
+        
+        \draw[Latex-Latex, dashed, gray] ([xshift=5.2cm]sense.south) -- ([xshift=5.2cm]app.north) node[midway, sloped, above] {AAL Architecture};
     \end{tikzpicture}
-    \caption{กรอบแนวคิดของระบบ IoT และสภาพแวดล้อมอัจฉริยะสำหรับงานดูแลในอาคาร}
-    \label{fig:ch2_iot_aal_layers}
+    \caption{สถาปัตยกรรม 4 ชั้นของระบบ Ambient Assisted Living (AAL)}
+    \label{fig:ch2_aal_arch}
 \end{figure}
 
-จากรูปที่~\ref{fig:ch2_iot_aal_layers} จะเห็นว่าวรรณกรรมด้าน AAL มองคุณค่าของระบบติดตามผ่านความสามารถในการเชื่อมโยงข้อมูลหลายแหล่งเข้ากับงานดูแลจริง เช่น การระบุตำแหน่ง การติดตามการเคลื่อนไหว และการแจ้งเตือนแบบมีบริบท มากกว่าการเพิ่มอุปกรณ์แยกส่วนโดยไม่มีชั้นประมวลผลและประสานงานที่ชัดเจน \cite{Rashidi2013AALSurvey,Al-Fuqaha2015IoT}.
+แนวคิด \textbf{Ambient Assisted Living (AAL)} คือการบูรณาการเทคโนโลยี \textbf{Internet of Things (IoT)} และ \textbf{Smart Environment (สภาพแวดล้อมอัจฉริยะ)} เข้าด้วยกัน เพื่อสร้างระบบสนับสนุนการใช้ชีวิตของผู้สูงอายุ โดย IoT ทำหน้าที่เป็นโครงสร้างพื้นฐานในการตรวจวัดและสื่อสารข้อมูลจากอุปกรณ์สวมใส่ \cite{Atzori2010IoTSurvey} ในขณะที่สภาพแวดล้อมอัจฉริยะจะช่วยประมวลผลให้พื้นที่นั้นสามารถรับรู้และตอบสนองต่อพฤติกรรมของมนุษย์ได้อย่างแนบเนียน \cite{Rashidi2013AALSurvey} การผสานรวมกันนี้ทำให้ระบบ AAL สามารถมุ่งเน้นที่ความปลอดภัย ความเป็นอิสระ และการเฝ้าระวังแบบไม่ล่วงละเมิดความเป็นส่วนตัว (Non-intrusive) ซึ่งถือเป็นหัวใจสำคัญในการเปลี่ยนผ่านจากการดูแลเชิงรับ (Reactive Care) ไปสู่การดูแลเชิงรุก (Proactive Care) ที่ตอบสนองต่อเหตุฉุกเฉินหรือความผิดปกติได้อย่างทันท่วงที
 
-รูปที่~\ref{fig:ch2_detailed_iot_architecture} แสดงสถาปัตยกรรม IoT แบบละเอียดสำหรับระบบดูแลผู้สูงอายุ ซึ่งแบ่งออกเป็น 7 ชั้นที่ทำงานร่วมกันเพื่อให้บริการติดตามและดูแลอย่างครบวงจร
 
-\begin{figure}[tbp]
+\clearpage
+\section{ทฤษฎีระบบระบุตำแหน่งภายในอาคาร}
+\label{sec:ch2_ips}
+
+เนื่องจากระบบระบุตำแหน่งผ่านดาวเทียม (GPS) มีข้อจำกัดในการใช้งานภายในอาคารเนื่องจากสัญญาณถูกบดบังด้วยโครงสร้างอาคาร ระบบระบุตำแหน่งภายในอาคาร (Indoor Positioning System: IPS) จึงถูกพัฒนาขึ้นเพื่อระบุพิกัดในพื้นที่ปิด เทคนิคการระบุตำแหน่งพื้นฐานที่แพร่หลายมีดังนี้:
+
+\subsection{เทคนิคเชิงระยะทาง (Range-based Techniques)}
+อาศัยการคำนวณระยะทางระหว่างตัวรับและตัวส่งสัญญาณ โดยเทคนิคที่แพร่หลายที่สุดคือ \textbf{Trilateration} ซึ่งคำนวณจุดตัดของวงกลม 3 วงที่เกิดจากจุดอ้างอิงอ้างอิง 3 จุด ดังรูปที่~\ref{fig:ch2_trilateration}
+
+\begin{figure}[!ht]
     \centering
-    \resizebox{0.85\linewidth}{!}{%
-    \begin{tikzpicture}[
-        every node/.style={font=\footnotesize},
-        title/.style={draw, rounded corners, align=center, minimum width=14cm, minimum height=0.7cm, fill=blue!12, font=\footnotesize\bfseries},
-        sub/.style={draw, rounded corners, align=center, minimum width=4.2cm, minimum height=1.0cm, fill=gray!8},
-        arrow/.style={-{Latex[length=2mm]}, thick}
-    ]
-        \def\rowsep{2.2}
-
-        \node[title] (physical)    at (0, 0*\rowsep) {ชั้นกายภาพ (Physical Layer)};
-        \node[sub, below=2mm of physical.south west, anchor=north west] (sensors)        {เซ็นเซอร์\\IMU, PPG, GPS};
-        \node[sub, right=3mm of sensors]                                  (actuators)      {อัคเตอร์เอเตอร์\\เสียง, ไฟ, แจ้งเตือน};
-        \node[sub, right=3mm of actuators]                                (devices)        {อุปกรณ์สวมใส่\\และเก้าอี้รถเข็น};
-
-        \node[title, below=16mm of physical] (network) {ชั้นเครือข่าย (Network Layer)};
-        \node[sub, below=2mm of network.south west, anchor=north west] (protocols)       {โพรโทคอล\\BLE, Wi-Fi, 4G/5G};
-        \node[sub, right=3mm of protocols]                              (mqtt)            {การสื่อสาร\\MQTT, HTTP, CoAP};
-        \node[sub, right=3mm of mqtt]                                   (security)        {ความปลอดภัย\\TLS, OAuth 2.0};
-
-        \node[title, below=16mm of network] (processing) {ชั้นประมวลผลข้อมูล (Data Processing Layer)};
-        \node[sub, below=2mm of processing.south west, anchor=north west] (filtering)    {การกรอง\\Noise/Kalman};
-        \node[sub, right=3mm of filtering]                                 (fusion)       {การผสานเซ็นเซอร์\\Sensor fusion};
-        \node[sub, right=3mm of fusion]                                    (analytics)    {การวิเคราะห์\\Pattern \& ML};
-
-        \node[title, below=16mm of processing] (service) {ชั้นบริการ (Service Layer)};
-        \node[sub, below=2mm of service.south west, anchor=north west] (positioning)     {บริการตำแหน่ง\\Fingerprinting};
-        \node[sub, right=3mm of positioning]                            (monitoring)      {บริการติดตาม\\Alerts \& activity};
-        \node[sub, right=3mm of monitoring]                             (storage)         {บริการจัดเก็บ\\Time-series};
-
-        \node[title, below=16mm of service] (application) {ชั้นแอปพลิเคชัน (Application Layer)};
-        \node[sub, below=2mm of application.south west, anchor=north west] (dashboard)   {แดชบอร์ด\\Real-time};
-        \node[sub, right=3mm of dashboard]                                  (mobile)      {แอปมือถือ\\Notifications};
-        \node[sub, right=3mm of mobile]                                     (ai)          {ผู้ช่วย AI\\Summarisation};
-
-        \node[title, below=16mm of application] (business) {ชั้นธุรกิจและการตัดสินใจ (Business Layer)};
-
-        \draw[arrow] (physical.east) ++(0.1,0) -- ++(0.8,0) |- (network.east);
-        \draw[arrow] (network.east)  ++(0.1,0) -- ++(0.8,0) |- (processing.east);
-        \draw[arrow] (processing.east) ++(0.1,0) -- ++(0.8,0) |- (service.east);
-        \draw[arrow] (service.east)    ++(0.1,0) -- ++(0.8,0) |- (application.east);
-        \draw[arrow] (application.east) ++(0.1,0) -- ++(0.8,0) |- (business.east);
-    \end{tikzpicture}%
-    }
-    \caption{สถาปัตยกรรม IoT แบบละเอียดสำหรับระบบดูแลผู้สูงอายุ โดยแต่ละชั้นมีองค์ประกอบย่อยที่ทำงานร่วมกันเพื่อส่งข้อมูลขึ้นไปสู่ชั้นธุรกิจ}
-    \label{fig:ch2_detailed_iot_architecture}
+    \begin{tikzpicture}[scale=0.6]
+        % Define coordinates for 3 anchors
+        \coordinate (A1) at (0,0);
+        \coordinate (A2) at (5,1);
+        \coordinate (A3) at (2,4);
+        
+        % Define radii
+        \def\rOne{3}
+        \def\rTwo{2.5}
+        \def\rThree{2.1}
+        
+        % Intersection point (approximate for illustration)
+        \coordinate (P) at (2.4, 1.8);
+        
+        % Draw circles
+        \draw[thick, blue!50] (A1) circle (\rOne);
+        \draw[thick, red!50] (A2) circle (\rTwo);
+        \draw[thick, green!50] (A3) circle (\rThree);
+        
+        % Draw anchors
+        \filldraw (A1) circle (2pt) node[below left] {$A_1(x_1, y_1)$};
+        \filldraw (A2) circle (2pt) node[right] {$A_2(x_2, y_2)$};
+        \filldraw (A3) circle (2pt) node[above] {$A_3(x_3, y_3)$};
+        
+        % Draw target point P
+        \filldraw[red] (P) circle (3pt) node[below right, font=\bfseries] {$P(x, y)$};
+        
+        % Draw lines for radii
+        \draw[dashed, gray] (A1) -- (P) node[midway, above left, black] {$d_1$};
+        \draw[dashed, gray] (A2) -- (P) node[midway, above right, black] {$d_2$};
+        \draw[dashed, gray] (A3) -- (P) node[midway, left, black] {$d_3$};
+        
+    \end{tikzpicture}
+    \caption{หลักการระบุตำแหน่งแบบ Trilateration จากจุดอ้างอิง 3 จุด}
+    \label{fig:ch2_trilateration}
 \end{figure}
 
-การไหลของข้อมูลในระบบ IoT สามารถอธิบายได้ด้วยสมการการส่งผ่านข้อมูล\mbox{แบบเรียลไทม์}
+หลักการของ Trilateration คือการหาจุดตัดของวงกลม 3 วง โดยพิกัดเป้าหมาย $(x, y)$ สามารถคำนวณได้จากความสัมพันธ์ระหว่างพิกัดจุดอ้างอิง $(x_i, y_i)$ และระยะทาง $d_i$ ดังสมการ:
+
 \begin{equation}
-    D_{processed}(t) = f_{processing}(D_{raw}(t), C(t), H(t))
-    \label{eq:ch2_data_flow}
-\end{equation}
-เมื่อ $D_{processed}(t)$ คือข้อมูลที่ผ่านการประมวลผล $f_{processing}$ คือฟังก์ชันการประมวลผล $D_{raw}(t)$ คือข้อมูลดิบจากเซ็นเซอร์ $C(t)$ คือบริบทปัจจุบัน และ $H(t)$ ค่าประวัติข้อมูล \cite{Al-Fuqaha2015IoT}
-
-\subsection{พื้นฐานของอินเทอร์เน็ตของสรรพสิ่งและสถาปัตยกรรมเชิงชั้น}
-อินเทอร์เน็ตของสรรพสิ่ง (Internet of Things; IoT) เป็นกระบวนทัศน์ที่ทำให้วัตถุในโลกจริงกลายเป็นหน่วยข้อมูลที่ระบุตัวตนได้ ติดต่อสื่อสารกันเองได้ และให้บริการผ่านเครือข่ายได้ โดย Atzori และคณะนิยามองค์ประกอบสามประการของ IoT ได้แก่ การระบุตัวตน (identification) การรับรู้สภาพแวดล้อม (sensing) และการให้บริการ (service-oriented interaction) \cite{Atzori2010IoTSurvey}. ในบริบทของการดูแลผู้สูงอายุ IoT เหมาะสมเพราะผู้สูงอายุในสถานพักดูแลมักพักอยู่ในพื้นที่จำกัด ความต้องการด้านการดูแลเป็น 24/7 และข้อมูลจากเซ็นเซอร์สามารถใช้ซ้ำในหลายวัตถุประสงค์พร้อมกัน \cite{Rashidi2013AALSurvey,Al-Fuqaha2015IoT}.
-
-งานสำรวจของ Al-Fuqaha และคณะเสนอการมองระบบ IoT เป็นสถาปัตยกรรมหลายชั้น 5 ชั้น \cite{Al-Fuqaha2015IoT,Atzori2010IoTSurvey}. ชั้นแรกคือ \textit{ชั้นการรับรู้} (perception/sensing layer) ชั้นที่สองคือ \textit{ชั้นเครือข่าย} (network layer) ชั้นที่สามคือ \textit{ชั้นประมวลผล} (processing/middleware layer) ชั้นที่สี่คือ \textit{ชั้นบริการ} (service layer) และชั้นที่ห้าคือ \textit{ชั้นประยุกต์} (application/business layer) กรอบสถาปัตยกรรม 5 ชั้นนี้ช่วยแยกการอภิปรายเชิงทฤษฎีออกจากรายละเอียดการพัฒนา และเอื้อต่อ \textit{separation of concerns} ที่ชัดเจน \cite{Al-Fuqaha2015IoT,Razzaq2020_microservices_IoT_architecture_review}.
-
-\subsection{การประยุกต์ใช้ในการดูแลผู้สูงอายุและการประมวลผลแบบลำดับชั้น}
-แนวคิดสภาพแวดล้อมช่วยเหลือการดำรงชีวิต (Ambient Assisted Living; AAL) เป็นการขยาย IoT ให้มุ่งสนับสนุนความเป็นอิสระของผู้สูงอายุในที่พักอาศัย Rashidi และ Mihailidis เสนอว่า AAL ครอบคลุมห้ามิติ ได้แก่ การติดตามสุขภาพ การช่วยเหลือกิจวัตรประจำวัน การรับรู้สภาพจิตใจ การสื่อสารกับครอบครัวและทีมดูแล และการสนับสนุนผู้ดูแลในภาระงาน \cite{Rashidi2013AALSurvey}. ประเด็นสำคัญในการออกแบบระบบ AAL คือการจัดสมดุลระหว่างสามคู่ trade-off หลัก ได้แก่ usability กับ privacy, automation กับ human control และ technology push กับ user acceptance \cite{Blackman2016_AAL_review,Schulz2020CaregiverBurden,Gates2018AlertFatigue}.
-
-สถาปัตยกรรมการประมวลผลแบบลำดับชั้นแบ่งการประมวลผลออกเป็น 3 ระดับตามระยะห่างจากแหล่งข้อมูล ได้แก่ \textbf{ขอบเครือข่าย} (edge) \textbf{หมอก} (fog) และ \textbf{คลาวด์} (cloud) \cite{Shi2016_EdgeComputing,Bonomi2012_FogComputing} การเลือกระดับประมวลผลขึ้นกับเวลาแฝงที่ยอมรับได้ ปริมาณข้อมูล ความเป็นส่วนตัว และต้นทุนการประมวลผล ในงานดูแลผู้สูงอายุ การแบ่งหน้าที่ที่พบบ่อยคือ การตรวจจับเหตุฉุกเฉินเกิดที่ขอบเครือข่าย การผสานข้อมูลเกิดที่หมอก และการฝึกโมเดลเกิดที่คลาวด์ \cite{Dastjerdi2016_FogHealthIoT}
-
-\subsection{ฝาแฝดดิจิทัลและการเปรียบเทียบระบบโอเพนซอร์สกับเชิงพาณิชย์}
-\label{sec:ch2_oss_vs_commercial}
-ฝาแฝดดิจิทัล (digital twin) คือการสร้างแบบจำลองเสมือนของวัตถุกายภาพหรือกระบวนการในโลกจริง โดยเชื่อมข้อมูลเซ็นเซอร์เข้ากับแบบจำลองอย่างต่อเนื่อง Grieves เสนอองค์ประกอบสามส่วน ได้แก่ \textit{physical entity}, \textit{virtual entity} และ \textit{data link} \cite{Grieves2017_DigitalTwin,Tao2019_DigitalTwinReview} ประโยชน์ในระบบดูแลมีสามประการ คือ การจำลองสถานการณ์ก่อนเปลี่ยนกฎการแจ้งเตือน การตรวจสอบเหตุการณ์ย้อนหลัง และการฝึกบุคลากรด้วยสภาพแวดล้อมจำลอง \cite{Pirbhulal2022_DigitalTwinHealth}.
-
-
-ระบบ IoT สำหรับสถานพักดูแลผู้สูงอายุมีทั้งตัวเลือกโอเพนซอร์สและตัวเลือกเชิงพาณิชย์ ซึ่งมีข้อได้เปรียบและข้อจำกัดต่างกัน ตารางที่~\ref{tab:ch2_oss_vs_commercial} สรุปการเปรียบเทียบ
-
-\begin{table}[htbp]
-    \centering
-    \caption{การเปรียบเทียบระบบ IoT แบบโอเพนซอร์สและเชิงพาณิชย์สำหรับงานดูแลผู้สูงอายุ}
-    \label{tab:ch2_oss_vs_commercial}
-    \footnotesize
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|p{3.2cm}|p{4.8cm}|p{4.8cm}|}
-        \hline
-        \textbf{มิติเปรียบเทียบ} & \textbf{โอเพนซอร์ส (เช่น Mosquitto, Home Assistant)} & \textbf{เชิงพาณิชย์ (เช่น AWS IoT, Azure IoT)} \\
-        \hline
-        ต้นทุนเริ่มต้น & ฟรี (เสียค่าฮาร์ดแวร์และการดูแลเท่านั้น) & มีค่าบริการตามปริมาณอุปกรณ์/ข้อความ \\
-        \hline
-        ความยืดหยุ่นในการปรับแต่ง & สูง (เข้าถึงโค้ดได้ทั้งหมด) & จำกัดตามฟีเจอร์ที่ vendor ให้ \\
-        \hline
-        การตรวจสอบด้านความปลอดภัย & ตรวจสอบโค้ดได้เอง เหมาะกับข้อมูลอ่อนไหว & ขึ้นกับการรับรองของ vendor (ISO, SOC2) \\
-        \hline
-        ภาระการดูแลรักษา & ตกที่ทีมผู้ใช้งานทั้งหมด & vendor ดูแลโครงสร้างพื้นฐานและ patching \\
-        \hline
-        การรับประกันและสนับสนุน & จากชุมชนหรือที่ปรึกษาเสริม & SLA เชิงพาณิชย์และ 24/7 support \\
-        \hline
-        ความพร้อมของบุคลากร & ต้องการทีมที่เข้าใจ Linux, MQTT, Docker & รองรับด้วย SDK และ web console \\
-        \hline
-        การปฏิบัติตามกฎหมาย & ปรับได้ตาม PDPA/HIPAA โดยตรง & ขึ้นกับ region และข้อตกลงบริการ \\
-        \hline
-        ความเหมาะสมกับงานวิจัย & สูงกว่า (ทำซ้ำและวิเคราะห์ได้เต็ม) & จำกัดด้วย API ที่ vendor เปิด \\
-        \hline
-    \end{tabular}
-\end{table}
-
-งานศึกษาของ Aceto และคณะที่เปรียบเทียบ IoT platform ทั้งสองกลุ่มพบว่าไม่มีฝ่ายใดเหนือกว่าอย่างเด็ดขาด การเลือกขึ้นกับสามปัจจัยหลัก ได้แก่ ความสามารถของทีม ข้อกำหนดด้านการปฏิบัติตามกฎหมาย และโมเดลธุรกิจของผู้ใช้ระบบ \cite{Aceto2019_IndustryIoT}. โดยทั่วไป งานวิจัยระดับต้นแบบและโครงการเริ่มต้นนิยมเลือกโอเพนซอร์สเพราะยืดหยุ่นและไม่ต้องผูกติดกับ vendor ส่วนการติดตั้งในระดับองค์กรขนาดใหญ่ที่ต้องการ SLA ที่ชัดเจนนิยมเลือกเชิงพาณิชย์ แม้จะต้องแลกกับค่าใช้จ่ายและการปรับแต่งที่จำกัดกว่า
-
-\section{ระบบระบุตำแหน่งภายในอาคารด้วยสัญญาณวิทยุ}
-
-\subsection{หลักการระบุตำแหน่งภายในอาคารและภาพรวมเทคนิค}
-ระบบระบุตำแหน่งภายในอาคารเกิดขึ้นจากข้อจำกัดของ GNSS หรือ GPS ที่ทำงานได้ไม่ดีในอาคารที่มีผนังหลายชั้นและการสะท้อนของสัญญาณสูง วรรณกรรมจึงเสนอเทคนิคหลายกลุ่ม เช่น fingerprinting, lateration, angulation, dead reckoning และการผสานหลายเซ็นเซอร์ โดยแต่ละวิธีมีจุดแลกเปลี่ยนระหว่างความแม่นยำ ต้นทุนการติดตั้ง และภาระการสอบเทียบ \cite{Zafari2019IPSSurvey,Mautz2012IndoorPositioning}.
-
-\subsection{สัญญาณบลูทูธพลังงานต่ำและแบบจำลอง path-loss}
-Bluetooth Low Energy ได้รับความนิยมในงานระบุตำแหน่งภายในอาคารเพราะใช้พลังงานต่ำ ต้นทุนอุปกรณ์ไม่สูง และรองรับโครงสร้างพื้นฐานแบบ beacon ได้กว้างขวาง อย่างไรก็ตาม ค่า RSSI มีความผันผวนจากการกั้นของร่างกาย เฟอร์นิเจอร์ และมัลติเพธ แบบจำลอง log-distance path-loss ที่พบได้ทั่วไปในงานวรรณกรรมระบุตำแหน่งภายในอาคารสามารถเขียนในรูปสมการที่~\eqref{eq:ch2_pathloss} ~\cite{Rappaport2002_WirelessCommunications,BluetoothSIG2023CoreSpec,Faragher2015BLEAccuracy}
-
-\begin{equation}\label{eq:ch2_pathloss}
-\mathrm{RSSI}(d) = \mathrm{RSSI}_0 - 10\,n\,\log_{10}\!\left(\frac{d}{d_0}\right) + X_\sigma
+\text{พิกัด } P(x, y) \text{ คำนวณได้จากระบบสมการ:} \quad
+\begin{cases}
+(x - x_1)^2 + (y - y_1)^2 = d_1^2 \\
+(x - x_2)^2 + (y - y_2)^2 = d_2^2 \\
+(x - x_3)^2 + (y - y_3)^2 = d_3^2 
+\end{cases}
+\label{eq:ch2_trilateration_sys}
 \end{equation}
 
-โดยที่ $\mathrm{RSSI}_0$ คือค่าความแรงสัญญาณอ้างอิงที่ระยะ $d_0$ (ปกติ $d_0 = 1$ เมตร), $n$ คือสัมประสิทธิ์ path-loss ของสภาพแวดล้อม และ $X_\sigma$ คือองค์ประกอบสุ่มแบบ log-normal shadowing ที่มีส่วนเบี่ยงเบนมาตรฐาน $\sigma$ แบบจำลองนี้จึงเหมาะเป็นเพียงกรอบวิเคราะห์เบื้องต้น ไม่ใช่ตัวแทนสภาพภาคสนามอย่างสมบูรณ์ ซึ่งเป็นเหตุผลที่งานวิจัยสมัยใหม่หันไปใช้ fingerprinting ร่วมกับการเรียนรู้ของเครื่องแทนการแปลงตรงจาก RSSI เป็นระยะทาง~\cite{Kaemarungsi2012RSSIAnalysis}
+เมื่อ $(x_i, y_i)$ คือพิกัดของจุดอ้างอิงที่ $i$ และ $d_i$ คือระยะทางที่วัดได้จากจุดอ้างอิงนั้นๆ การแก้สมการเพื่อหาพิกัด $(x, y)$ สามารถทำได้โดยการนำสมการที่ 1 ไปลบออกจากสมการที่ 2 และ 3 เพื่อกำจัดตัวแปรยกกำลังสอง จะได้ระบบสมการเชิงเส้นในรูปแบบเมทริกซ์ $AX = B$ ดังสมการ~(\ref{eq:ch2_trilateration_matrix}):
 
-รูปที่~\ref{fig:ch2_rssi_pathloss} แสดงความสัมพันธ์ระหว่างระยะทางและค่า RSSI ในสภาพแวดล้อมภายในอาคาร ซึ่งเผยให้เห็นว่าค่า RSSI มีการลดลงแบบทวีคูณตามระยะทาง แต่มีความผันผวนสูงเนื่องจากสิ่งกีดขวางในอาคาร
+\begin{equation}
+\begin{bmatrix}
+2(x_2 - x_1) & 2(y_2 - y_1) \\
+2(x_3 - x_1) & 2(y_3 - y_1)
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix}
+=
+\begin{bmatrix}
+(x_2^2 - x_1^2) + (y_2^2 - y_1^2) + (d_1^2 - d_2^2) \\
+(x_3^2 - x_1^2) + (y_3^2 - y_1^2) + (d_1^2 - d_3^2)
+\end{bmatrix}
+\label{eq:ch2_trilateration_matrix}
+\end{equation}
 
-\begin{figure}[tbp]
+ซึ่งพิกัดเป้าหมาย $P(x, y)$ จะคำนวณได้จากการหาอินเวอร์สของเมทริกซ์ $A$ ต่อไป
+
+สำหรับการหาระยะทาง ($d$) จากความแรงของสัญญาณวิทยุ มักใช้แบบจำลองการลดทอนของสัญญาณ (Log-distance Path Loss Model) ดังรูปที่~\ref{fig:ch2_rssi_dist} และสมการ~(\ref{eq:ch2_pathloss}):
+
+\begin{figure}[!ht]
     \centering
-    \begin{tikzpicture}[scale=0.75, every node/.style={font=\footnotesize}]
+    \begin{tikzpicture}[scale=1.1]
         % Axes
-        \draw[->] (0,0) -- (6,0) node[right] {ระยะทาง (เมตร)};
-        \draw[->] (0,0) -- (0,5) node[above] {RSSI (dBm)};
+        \draw[->] (0,-4) -- (6,-4) node[right] {ระยะทาง $d$ (เมตร)};
+        \draw[->] (0,-4) -- (0,0.5) node[above] {RSSI (dBm)};
         
-        % Grid
-        \foreach \x in {1,2,3,4,5} {
-            \draw[gray,very thin] (\x,0) -- (\x,5);
-            \node[below] at (\x,0) {\x};
-        }
-        \foreach \y in {-100,-90,-80,-70,-60} {
-            \draw[gray,very thin] (0,\y/20+5) -- (6,\y/20+5);
-            \node[left] at (0,\y/20+5) {\y};
-        }
+        % Curve
+        \draw[thick, blue, domain=0.5:5.5, smooth, variable=\x] plot ({\x}, {-1 - 1.5*log10(\x)});
         
-        % Theoretical path-loss model
-        \draw[blue,thick,domain=0.5:5.5,smooth,variable=\x] 
-            plot ({\x},{-60-20*ln(\x)/ln(10)});
-        \node[blue,right] at ({4.5},{-60-20*ln(4.5)/ln(10)+0.3}) {แบบจำลองทฤษฎี};
+        \node[blue, right] at (2.5,-2.2) {$\mathrm{RSSI}(d) = \mathrm{RSSI}(d_0) - 10n \log_{10}(d)$};
         
-        % Measured data points with variance
-        \foreach \x/\y in {1/-65, 1.5/-72, 2/-78, 2.5/-82, 3/-85, 3.5/-88, 4/-90, 4.5/-92, 5/-94} {
-            \draw[red,fill=red] (\x,\y/20+5) circle (2pt);
-        }
-        \foreach \x/\y in {1/-68, 1.5/-69, 2/-76, 2.5/-79, 3/-83, 3.5/-86, 4/-88, 4.5/-90, 5/-92} {
-            \draw[red,fill=red] (\x,\y/20+5) circle (2pt);
-        }
-        \foreach \x/\y in {1/-62, 1.5/-75, 2/-80, 2.5/-85, 3/-87, 3.5/-90, 4/-92, 4.5/-94, 5/-96} {
-            \draw[red,fill=red] (\x,\y/20+5) circle (2pt);
-        }
-        \node[red,right] at (4.5,-94/20+5) {ข้อมูลจริงวัด};
-        
-        % Legend
-        \node[draw,fill=white,align=center] at (1,4.5) {สภาพแวดล้อม: อาคารคอนกรีต\\$n= 2.5$, $\sigma$ = 4 dB};
+        % Reference point at 1m
+        \filldraw (1,-1) circle (1.5pt);
+        \draw[dashed] (1,-4) -- (1,-1) node[midway, left, font=\scriptsize] {$1$ ม.};
+        \draw[dashed] (0,-1) -- (1,-1) node[left] {$\mathrm{RSSI}(d_0)$};
     \end{tikzpicture}
-    \caption{ความสัมพันธ์ระหว่างระยะทางและค่า RSSI ในสภาพแวดล้อมภายในอาคาร}
-    \label{fig:ch2_rssi_pathloss}
+    \caption{ความสัมพันธ์ระหว่างค่า RSSI และระยะทางตามแบบจำลอง Path Loss}
+    \label{fig:ch2_rssi_dist}
 \end{figure}
 
-ตารางที่~\ref{tab:ch2_positioning_accuracy} เปรียบเทียบความแม่นยำของเทคนิคระบุตำแหน่งภายในอาคารที่แตกต่างกัน ซึ่งแสดงให้เห็นว่าแต่ละวิธีมีจุดแลกเปลี่ยนระหว่างความแม่นยำ ต้นทุน และความซับซ้อนในการติดตั้ง
-
-\begin{table}[htbp]
-    \centering
-    \caption{การเปรียบเทียบความแม่นยำของเทคนิคระบุตำแหน่งภายในอาคาร}
-    \label{tab:ch2_positioning_accuracy}
-    \footnotesize
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|l|c|c|c|c|c|}
-        \hline
-        \textbf{เทคนิค} & \textbf{ความแม่นยำ} & \textbf{ต้นทุน} & \textbf{ความซับซ้อน} & \textbf{ข้อดี} & \textbf{ข้อจำกัด} \\
-        \hline
-        RSSI Fingerprinting & 2-5 เมตร & ต่ำ & กลาง & ไม่ต้องติดตั้งเพิ่ม & ต้องสร้างฐานข้อมูล \\
-        \hline
-        Trilateration & 3-8 เมตร & ต่ำ & ต่ำ & คำนวณง่าย & ผันผวนสูง \\
-        \hline
-        Wi-Fi RTT & 1-3 เมตร & สูง & กลาง & แม่นยำสูง & ต้องอุปกรณ์พิเศษ \\
-        \hline
-        UWB TDoA & 0.1-0.5 เมตร & สูงมาก & สูง & แม่นยำที่สุด & ต้นทุนสูงมาก \\
-        \hline
-        Computer Vision & 0.5-2 เมตร & กลาง & สูง & ให้บริบทเพิ่ม & ต้องกล้องเพียงพอ \\
-        \hline
-        Sensor Fusion & 1-3 เมตร & กลาง & สูง & ทนทานต่อความผิดพลาด & ซับซ้อนสูง \\
-        \hline
-    \end{tabular}
-\end{table}
-
-การเลือกเทคนิคที่เหมาะสมสำหรับระบบดูแลผู้สูงอายุจึงต้องคำนึงถึงปัจจัยหลายด้าน รวมถึงความสามารถในการบำรุงรักษา ความยอมรับของผู้ใช้ และความเข้ากันได้กับโครงสร้างพื้นฐานที่มีอยู่แล้ว \cite{Zafari2019IPSSurvey,Mautz2012IndoorPositioning}
-
-\subsection{อัลกอริทึมเพื่อนบ้านใกล้สุดและการประยุกต์ใช้กับ RSSI}
-เมื่อข้อมูล RSSI ถูกจัดให้อยู่ในรูปเวกเตอร์ลายนิ้วมือของตำแหน่ง การจำแนกตำแหน่งสามารถทำได้ด้วยแนวคิดเพื่อนบ้านใกล้สุด ($k$-NN) ที่อาศัยระยะห่างแบบยูคลิดระหว่างเวกเตอร์ทดสอบ $\mathbf{x}$ และเวกเตอร์อ้างอิง $\mathbf{y}$ ตามสมการที่~\eqref{eq:ch2_euclidean} แล้วให้ตำแหน่งของตัวอย่างทดสอบเป็นผลโหวตเสียงข้างมากจากเพื่อนบ้าน $k$ ตัวที่ใกล้ที่สุด~\cite{Cover1967NearestNeighbor,Bahl2000RADAR}
-
-\begin{equation}\label{eq:ch2_euclidean}
-d(\mathbf{x},\mathbf{y}) = \sqrt{\sum_{i=1}^{m} (x_i - y_i)^2}
-\end{equation}
-
-รูปแบบขยายที่ใช้ในงานระบุตำแหน่งคือ weighted $k$-NN ซึ่งให้น้ำหนักเพื่อนบ้านแต่ละตัวแปรผันตามส่วนกลับของระยะ ตามสมการที่~\eqref{eq:ch2_weighted_knn} เพื่อลดผลกระทบของเพื่อนบ้านที่อยู่ไกลและเพิ่มความเสถียรของการพยากรณ์เมื่อสัญญาณ RSSI มีสัญญาณรบกวนมาก~\cite{Zafari2019IPSSurvey,Kaemarungsi2012RSSIAnalysis}
-
-\begin{equation}\label{eq:ch2_weighted_knn}
-\hat{c}(\mathbf{x}) = \arg\max_{c}\, \sum_{i \in \mathcal{N}_k(\mathbf{x})} \frac{1}{d(\mathbf{x},\mathbf{y}_i) + \varepsilon}\,\mathbf{1}[c_i = c]
-\end{equation}
-
-โดยที่ $\mathcal{N}_k(\mathbf{x})$ คือเซตของเพื่อนบ้าน $k$ ตัวที่ใกล้ที่สุด, $c_i$ คือป้ายกำกับห้องของเพื่อนบ้านตัวที่ $i$ และ $\varepsilon$ คือค่าคงที่เล็กเพื่อป้องกันการหารด้วยศูนย์ วิธี $k$-NN และ weighted $k$-NN ได้รับความนิยมเพราะตีความง่ายและใช้เป็น baseline ที่แข็งแรงในการเปรียบเทียบกับวิธีที่ซับซ้อนกว่า เช่น Random Forest และ XGBoost ในงานระบุตำแหน่งภายในอาคาร~\cite{Chen2016XGBoost,Malik2021_indoor_localization_survey}.
-
-\subsection{อัลกอริทึมเรียนรู้ของเครื่อง การประเมินความมั่นใจ และการผสานเซ็นเซอร์}
-เมื่อขยับจาก $k$-NN ไปสู่อัลกอริทึมต้นไม้ตัดสินใจรวม (ensemble) เช่น Random Forest และ XGBoost จะได้ความสามารถในการจัดการฟีเจอร์ที่ไม่เชิงเส้นและทนต่อสัญญาณรบกวนดีขึ้น \cite{Chen2016XGBoost,Malik2021_indoor_localization_survey} การเปรียบเทียบเชิงระบบจึงต้องพิจารณาทั้งความแม่นยำ ความเสถียร ต้นทุนการฝึก และความสามารถในการอธิบายผล.
-
-การประเมินความมั่นใจของผลจำแนกตำแหน่งใช้แนวทาง \textit{margin} ระหว่างความน่าจะเป็นของชั้นที่ได้คะแนนสูงสุดกับชั้นรองลงมา และ \textit{entropy} ของการแจกแจงหลังแบบ softmax \cite{Settles2009_ActiveLearningSurvey,Gal2016_DropoutUncertainty} เทคนิคเหล่านี้ช่วยลดการกระโดดของโซนที่แสดงผลแก่ผู้ดูแล.
-
-
-ทฤษฎีการผสานเซ็นเซอร์หลายชนิด (multi-sensor fusion) เสนอว่าข้อมูลจากเซ็นเซอร์ต่างประเภทที่มีสัญญาณรบกวนอิสระต่อกันสามารถนำมารวมกันเพื่อได้ค่าประมาณที่แม่นยำกว่าและเสถียรกว่าเซ็นเซอร์ใดเซ็นเซอร์หนึ่งเพียงลำพัง \cite{Hall1997_MultiSensorFusion,Khaleghi2013_MultisensorDataFusion} กรอบการผสานที่พบบ่อยแบ่งเป็นสามระดับ ได้แก่ การผสานระดับข้อมูลดิบ (data-level) การผสานระดับฟีเจอร์ (feature-level) และการผสานระดับการตัดสินใจ (decision-level) ซึ่งเลือกใช้ตามความซับซ้อนของงานและข้อจำกัดด้านเวลา ในการระบุตำแหน่งภายในอาคาร การผสาน BLE RSSI กับ IMU และข้อมูลภาพมักใช้การผสานระดับฟีเจอร์หรือระดับการตัดสินใจ โดยใช้ตัวกรองคาลมานหรือ particle filter เป็นกลไกรวมสถานะต่อเนื่องในเวลา \cite{Welch2006KalmanFilter,Thrun2005_ProbabilisticRobotics}.
-
-\section{เซ็นเซอร์สวมใส่และการตรวจวัดสัญญาณทางกาย}
-
-\subsection{หลักการของหน่วยวัดเชิงเฉื่อย}
-หน่วยวัดเชิงเฉื่อยประกอบด้วย accelerometer และ gyroscope ซึ่งใช้ประมาณการเร่งเชิงเส้นและอัตราการหมุนของวัตถุ การตีความข้อมูลจาก IMU สำหรับงานดูแลจึงมักมุ่งไปที่การจำแนกกิจกรรมพื้นฐาน การเปลี่ยนอิริยาบถ และการตรวจจับความผิดปกติแบบฉับพลัน มากกว่าการประมาณวิถีแบบละเอียดระดับนำร่อง \cite{IMUTheory2010InertialNavigation,Stankovic1988MisconceptionsRT}.
-
-การผสานข้อมูลจากเซ็นเซอร์หลายตัวใน IMU สามารถทำได้ด้วยตัวกรอง Kalman แบบขยาย (Extended Kalman Filter) ซึ่งสามารถอธิบายได้ด้วยสมการ
 \begin{equation}
-    \hat{x}_{k|k} = \hat{x}_{k|k-1} + K_k(z_k - h(\hat{x}_{k|k-1}))
-    \label{eq:ch2_kalman_filter}
+\mathrm{RSSI}(d) = \mathrm{RSSI}(d_0) - 10n \log_{10}\left(\frac{d}{d_0}\right) + X_{\sigma}
+\label{eq:ch2_pathloss}
 \end{equation}
-เมื่อ $\hat{x}_{k|k}$ คือสถานะที่ประมาณณ์ที่เวลา $k$ $\hat{x}_{k|k-1}$ คือการพยากรณ์สถานะ $K_k$ คืออัตราส่วนการแก้ไขของ Kalman $z_k$ คือการวัดจากเซ็นเซอร์ และ $h(\cdot)$ คือฟังก์ชันการสังเกต \cite{Welch2006KalmanFilter}.
+เมื่อ $\mathrm{RSSI}(d)$ คือกำลังสัญญาณที่ได้รับที่ระยะ $d$, $\mathrm{RSSI}(d_0)$ คือกำลังสัญญาณอ้างอิงที่ระยะ 1 เมตร, $n$ คือค่าสัมประสิทธิ์การสูญเสียสัญญาณในพื้นที่ และ $X_{\sigma}$ คือสัญญาณรบกวนที่มีการกระจายตัวแบบปกติ \cite{Kaemarungsi2012RSSIAnalysis}
 
-สำหรับการตรวจจับกิจกรรม ฟีเจอร์ที่ใช้บ่อยได้แก่ค่าเฉลี่ยและค่าเบี่ยงเบนมาตรฐานของสัญญาณความเร่ง
+\clearpage
+\subsection{เทคนิคการสร้างแผนที่สัญญาณ (Fingerprinting)}
+เป็นวิธีที่นิยมใช้ในอาคารที่มีโครงสร้างซับซ้อน แบ่งเป็น 2 ขั้นตอนหลัก ดังแสดงกระบวนการในรูปที่~\ref{fig:ch2_fingerprinting}:
+\begin{enumerate}
+    \item \textbf{Offline Phase:} เก็บข้อมูลความแรงสัญญาณ (RSSI) จากตัวส่งสัญญาณทุกจุดในแต่ละพิกัดพื้นที่ เพื่อสร้างเป็น "ลายนิ้วมือสัญญาณ" (Radio Map)
+    \item \textbf{Online Phase:} นำสัญญาณที่วัดได้จริงเปรียบเทียบกับ Radio Map โดยใช้อัลกอริทึม เช่น K-Nearest Neighbors (KNN) เพื่อหาตำแหน่งที่ใกล้เคียงที่สุด
+\end{enumerate}
+
+สำหรับการคำนวณความใกล้เคียงระหว่างสัญญาณที่วัดได้แบบเรียลไทม์กับลายนิ้วมือสัญญาณในฐานข้อมูล มักใช้การหาระยะห่างแบบยูคลิด (Euclidean Distance) ดังสมการ:
 \begin{equation}
-    \mu_a = \frac{1}{N}\sum_{i=1}^{N} a_i, \quad \sigma_a = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(a_i - \mu_a)^2}
-    \label{eq:ch2_acceleration_features}
+D_j = \sqrt{\sum_{i=1}^{N} (\mathrm{RSSI}_{i} - \mathrm{RSSI}_{i,j})^2}
+\label{eq:ch2_knn_distance}
 \end{equation}
-เมื่อ $a_i$ คือค่าความเร่งตัวอย่างที่ $i$ และ $N$ คือจำนวนตัวอย่างในหน้าต่างเวลา \cite{Lara2013HumanActivityRecognition}.
-
-\subsection{การตรวจวัดอัตราการเต้นของหัวใจด้วยแสง}
-การวัดสัญญาณชีพด้วยเทคนิค photoplethysmography อาศัยการเปลี่ยนแปลงการสะท้อนหรือการดูดกลืนแสงตามปริมาตรเลือดที่เปลี่ยนไปในหลอดเลือด ทำให้สามารถประมาณอัตราการเต้นของหัวใจได้ในอุปกรณ์สวมใส่ขนาดเล็ก แม้ว่าวิธีนี้เหมาะกับการติดตามแบบไม่รุกราน แต่คุณภาพสัญญาณอาจลดลงจากการเคลื่อนไหว การสวมใส่ไม่กระชับ และสภาพผิวหนังที่แตกต่างกัน \cite{Allen2007PPG,Polar2023PPGWhitepaper}.
-
-รูปที่~\ref{fig:ch2_ppg_processing} แสดงขั้นตอนการประมวลผลสัญญาณ PPG จากข้อมูลดิบจนถึงการประมาณค่าอัตราการเต้นของหัวใจ ซึ่งประกอบด้วยการกรองสัญญาณรบกวน การตรวจจับคลื่น และการคำนวณช่วงเวลาระหว่างคลื่น
+เมื่อ $D_j$ คือระยะห่างแบบยูคลิดระหว่างสัญญาณที่วัดได้กับลายนิ้วมือสัญญาณที่จุดอ้างอิง $j$, $N$ คือจำนวนจุดส่งสัญญาณ (Beacon) ทั้งหมดที่ครอบคลุม, $\mathrm{RSSI}_{i}$ คือค่าความแรงสัญญาณจาก Beacon ตัวที่ $i$ ที่วัดได้ในขณะนั้น และ $\mathrm{RSSI}_{i,j}$ คือค่าความแรงสัญญาณจาก Beacon ตัวที่ $i$ ณ จุดอ้างอิง $j$ ในฐานข้อมูล โดยระบบจะเลือกตำแหน่งอ้างอิงที่มีค่า $D_j$ ต่ำที่สุด หรือเฉลี่ยจาก $K$ จุดที่ต่ำที่สุด เพื่อใช้เป็นพิกัดเป้าหมาย
 
 \begin{figure}[htbp]
     \centering
-    \resizebox{\linewidth}{!}{%
-    \begin{tikzpicture}[node distance=6mm and 7mm, every node/.style={font=\footnotesize},
-        block/.style={draw, rounded corners, align=center, minimum width=2.1cm, minimum height=0.9cm, fill=blue!10},
-        signal/.style={draw, align=center, minimum width=1.9cm, minimum height=0.9cm, fill=green!10},
-        arrow/.style={-{Latex[length=1.5mm]}, thick}]
-
-        \node (raw) [signal] {สัญญาณ PPG\\(ดิบ)};
-        \node (filter) [block, right=of raw] {ตัวกรอง Band-pass\\0.5--4\,Hz};
-        \node (normalized) [signal, right=of filter] {สัญญาณ\\ที่ปรับปรุงแล้ว};
-        \node (peak) [block, right=of normalized] {ตัวตรวจจับ\\คลื่นสูงสุด};
-        \node (peaks) [signal, right=of peak] {ตำแหน่งคลื่น\\(RR interval)};
-        \node (hr) [block, right=of peaks] {คำนวณ\\$\mathrm{HR}=60/\overline{RR}$};
-        \node (output) [signal, right=of hr] {อัตราการเต้น\\ของหัวใจ (BPM)};
-
-        \draw[arrow] (raw) -- (filter);
-        \draw[arrow] (filter) -- (normalized);
-        \draw[arrow] (normalized) -- (peak);
-        \draw[arrow] (peak) -- (peaks);
-        \draw[arrow] (peaks) -- (hr);
-        \draw[arrow] (hr) -- (output);
-
-        \node (quality) [block, below=12mm of peak, fill=orange!10] {ตรวจสอบ\\คุณภาพสัญญาณ};
-        \draw[arrow, dashed] (normalized.south) |- (quality.west);
-        \draw[arrow, dashed] (quality.east) -| (peaks.south);
-    \end{tikzpicture}%
-    }
-    \caption{ขั้นตอนการประมวลผลสัญญาณ PPG เพื่อประมาณอัตราการเต้นของหัวใจ เส้นทึบคือเส้นทางประมวลผลหลัก เส้นประคือเส้นทางตรวจสอบคุณภาพสัญญาณที่ป้อนกลับ}
-    \label{fig:ch2_ppg_processing}
+    \begin{tikzpicture}[scale=0.9, node distance=1.5cm and 2cm]
+        % Offline Phase
+        \node[draw, rectangle, rounded corners, fill=blue!10, text width=3cm, align=center] (offline) {\textbf{Offline Phase}\\เก็บลายนิ้วมือสัญญาณ\\(Radio Map)};
+        
+        % Online Phase
+        \node[draw, rectangle, rounded corners, fill=green!10, text width=3cm, align=center, right=of offline] (online) {\textbf{Online Phase}\\เปรียบเทียบสัญญาณ\\(Pattern Matching)};
+        
+        % Location Output
+        \node[draw, rectangle, fill=orange!10, text width=2.5cm, align=center, right=of online] (output) {\textbf{พิกัดตำแหน่ง}\\$(x,y)$};
+        
+        \draw[-Latex, thick] (offline) -- (online) node[midway, above, font=\scriptsize] {ฐานข้อมูล RSSI};
+        \draw[-Latex, thick] (online) -- (output);
+    \end{tikzpicture}
+    \caption{ขั้นตอนการระบุตำแหน่งด้วยเทคนิค Fingerprinting}
+    \label{fig:ch2_fingerprinting}
 \end{figure}
 
-การคำนวณอัตราการเต้นของหัวใจจากช่วงเวลาระหว่างคลื่น (RR intervals) สามารถทำได้ดังสมการ
-\begin{equation}
-    \text{HR}_{\text{BPM}} = \frac{60}{\frac{1}{N-1}\sum_{i=1}^{N-1} (t_{i+1} - t_i)}
-    \label{eq:ch2_heart_rate_calculation}
-\end{equation}
-เมื่อ $t_i$ คือเวลาที่คลื่นสูงสุดที่ $i$ และ $N$ คือจำนวนคลื่นที่ตรวจจับได้ \cite{Allen2007PPG}
+\clearpage
+\section{เทคโนโลยีเซ็นเซอร์สำหรับการตรวจวัดกิจกรรม}
+\label{sec:ch2_sensors}
 
-\subsection{การตรวจจับการล้ม ดัชนี HRV และคุณภาพสัญญาณ}
-การประมวลผลสัญญาณจาก IMU และ PPG ต้องคำนึงถึงทฤษฎีการสุ่มสัญญาณตามหลัก Nyquist-Shannon \cite{Shannon1949Communication,IMUTheory2010InertialNavigation}.
+เทคโนโลยีเซ็นเซอร์แบบสวมใส่เป็นองค์ประกอบสำคัญในระบบติดตามและดูแลสุขภาพ แบ่งออกเป็นเซ็นเซอร์ทางสรีรวิทยา (Physiological Sensors) และเซ็นเซอร์ทางกายภาพ (Inertial Sensors)
 
-การตรวจจับการล้มเป็นงานที่สำคัญมากในผู้สูงอายุ วิธีการแบ่งออกเป็นสามกลุ่ม ได้แก่ \textit{กฎเกณฑ์ค่าเกณฑ์} (threshold-based) \textit{การเรียนรู้ของเครื่องแบบตื้น} (shallow ML) และ \textit{การเรียนรู้เชิงลึก} (deep learning) แต่ละกลุ่มมีข้อแลกเปลี่ยนระหว่างความแม่นยำ ทรัพยากรประมวลผล และความสามารถในการตีความ \cite{WHO2021DecadeAgeing,Igual2013_FallDetectionSurvey,Wang2019_DL_sensor_activity_recognition_survey,Ramachandran2020_FallDetectionDL}.
+\subsection{Photoplethysmography (PPG)}
 
-ดัชนีความแปรปรวนของอัตราการเต้นหัวใจ (Heart Rate Variability; HRV) เป็นตัวชี้วัดสำคัญของสมดุลระบบประสาทอัตโนมัติ ดัชนีที่ใช้บ่อย ได้แก่ RMSSD, SDNN และ pNN50 \cite{TaskForce1996_HRVGuidelines,Shaffer2017_HRVReview}. ในด้านคุณภาพสัญญาณ PPG 
-การวัดอัตราการเต้นหัวใจจาก PPG มีความเสี่ยงต่อ motion artifact การสวมใส่ไม่กระชับ และสภาพผิวหนัง ทำให้ต้องมีดัชนีคุณภาพสัญญาณ (Signal Quality Index; SQI) เพื่อคัดกรองช่วงที่สัญญาณเชื่อถือได้ Elgendi เสนอ SQI หลายแบบรวมถึง perfusion index, kurtosis-based และ entropy-based ซึ่งใช้เกณฑ์ต่างกันในการประเมินคุณภาพ \cite{Elgendi2016_PPGSQI,Orphanidou2015_SQI} ระบบในภาคสนามมักใช้ SQI เป็นตัวกรองก่อนเข้าสู่ขั้นการคำนวณ HR เพื่อลดการรายงานค่าที่เพี้ยน และบางระบบจะแสดงระดับความเชื่อถือของค่าวัดแก่ผู้ใช้โดยตรง แทนการแสดงเพียงตัวเลข BPM.
+เซ็นเซอร์ PPG ตรวจวัดการเปลี่ยนแปลงของปริมาตรเลือดในหลอดเลือดฝอยด้วยการฉายแสงและวัดการสะท้อน ดังแสดงในรูปที่~\ref{fig:ch2_ppg_principle} ข้อมูลหลักที่ได้คืออนุกรมเวลาของช่วงระหว่างจังหวะหัวใจ (RR-interval) ซึ่งนำไปคำนวณค่าต่างๆ ดังนี้
 
-\section{การสื่อสารแบบเผยแพร่-สมัครรับและระบบใกล้เวลาจริง}
-
-\subsection{รูปแบบการสื่อสารเผยแพร่-สมัครรับ}
-สถาปัตยกรรมแบบ publish-subscribe ช่วยลดการพึ่งพาระหว่างผู้ผลิตข้อมูลและผู้ใช้ข้อมูลโดยให้แต่ละฝ่ายสื่อสารผ่านหัวข้อหรือ event bus กลาง จึงเหมาะกับระบบดูแลที่มีอุปกรณ์หลายประเภทและมีผู้รับข้อมูลหลายบทบาท เช่น แดชบอร์ดผู้ดูแล ระบบแจ้งเตือน และบริการวิเคราะห์ที่ทำงานพร้อมกัน แต่ไม่จำเป็นต้องรู้ตำแหน่งเครือข่ายของกันและกันโดยตรง \cite{Eugster2003PublishSubscribe,Al-Fuqaha2015IoT}.
-
-\subsection{โพรโทคอล MQTT และคุณภาพการบริการ}
-MQTT เป็นโพรโทคอลแบบเบาที่ออกแบบมาสำหรับสภาพแวดล้อมเครือข่ายที่มีข้อจำกัดและการส่งข้อมูลเหตุการณ์ต่อเนื่อง โดยรองรับแนวคิด topic hierarchy, retained message และ quality of service หลายระดับ การเลือกใช้ MQTT ในระบบดูแลจึงมีเหตุผลเชิงทฤษฎีจากความสามารถในการกระจายข้อมูลเซ็นเซอร์แบบหลวมตัวเชื่อม ขณะที่ยังควบคุมความน่าเชื่อถือของการส่งต่อได้ตามระดับความสำคัญของข้อมูล \cite{OASIS2019MQTTv5,Eugster2003PublishSubscribe}.
-
-ตารางที่~\ref{tab:ch2_mqtt_qos} เปรียบเทียบระดับคุณภาพการบริการ (QoS) ของ MQTT ซึ่งแสดงให้เห็นการแลกเปลี่ยนระหว่างประสิทธิภาพและความน่าเชื่อถือในการส่งข้อมูล
-
-\begin{table}[htbp]
+\begin{figure}[!ht]
     \centering
-    \caption{การเปรียบเทียบระดับคุณภาพการบริการ (QoS) ของ MQTT}
-    \label{tab:ch2_mqtt_qos}
-    \footnotesize
-    \setlength{\tabcolsep}{5pt}
-    \begin{tabular}{|l|c|c|c|c|c|}
-        \hline
-        \textbf{QoS Level} & \textbf{การรับประกัน} & \textbf{จำนวนส่ง} & \textbf{ความล่าช้า} & \textbf{แบนด์วิดท์} & \textbf{กรณีใช้งาน} \\
-        \hline
-        QoS 0 & ไม่รับประกัน & 1 & ต่ำสุด & ต่ำสุด & ข้อมูลเซ็นเซอร์ที่ส่งต่อเนื่อง \\
-        \hline
-        QoS 1 & อย่างน้อย 1 ครั้ง & 1-3 & ปานกลาง & ปานกลาง & แจ้งเตือนเหตุการณ์สำคัญ \\
-        \hline
-        QoS 2 & พอดี 1 ครั้ง & 4 & สูง & สูง & คำสั่งควบคุมอุปกรณ์ \\
-        \hline
-    \end{tabular}
-\end{table}
+    \begin{tikzpicture}[scale=0.85]
+        % Wrist/skin surface
+        \fill[brown!20] (0,-0.3) rectangle (8,0);
+        \node[font=\scriptsize, gray] at (4,-0.15) {ผิวหนัง / หลอดเลือดฝอย};
 
-รูปที่~\ref{fig:ch2_mqtt_flow} แสดงขั้นตอนการไหลของข้อความในระบบ MQTT สำหรับแต่ละระดับ QoS ซึ่งเผยให้เห็นกลไกการยืนยันการรับส่งที่แตกต่างกัน
+        % LED (emitter)
+        \draw[fill=green!40, rounded corners=3pt] (1.5,0) rectangle (2.5,0.7);
+        \node[font=\scriptsize] at (2,0.35) {LED};
+        \draw[->, green!70!black, very thick] (2,0) -- (2,-0.28);
 
-\begin{figure}[tbp]
-    \centering
-    \resizebox{0.85\linewidth}{!}{%
-    \begin{tikzpicture}[
-        every node/.style={font=\footnotesize},
-        lane/.style={draw, rounded corners, align=center, minimum width=2.2cm, minimum height=0.7cm, fill=blue!10, font=\footnotesize\bfseries},
-        broker/.style={draw, rounded corners, align=center, minimum width=2.2cm, minimum height=0.7cm, fill=orange!15, font=\footnotesize\bfseries},
-        title/.style={font=\small\bfseries},
-        msg/.style={-{Latex[length=1.5mm]}, thick},
-        ctrl/.style={-{Latex[length=1.5mm]}, thick, dashed}
-    ]
+        % Reflected light
+        \draw[->, green!70!black, very thick, dashed] (4,-0.28) -- (4.5,0.1);
 
-        % === QoS 0 === row at y in [6.2 .. 4.2]
-        \node[title] at (3.5,7.0) {QoS 0 — At most once (fire-and-forget)};
-        \node[lane]   (p0) at (0,6.5) {Publisher};
-        \node[broker] (b0) at (3.5,6.5) {Broker};
-        \node[lane]   (s0) at (7,6.5) {Subscriber};
-        \draw[densely dotted] (p0) -- ++(0,-1.6);
-        \draw[densely dotted] (b0) -- ++(0,-1.6);
-        \draw[densely dotted] (s0) -- ++(0,-1.6);
-        \draw[msg] ([yshift=-5mm]p0.south) -- node[above,font=\scriptsize]{PUBLISH} ([yshift=-5mm]b0.south);
-        \draw[msg] ([yshift=-12mm]b0.south) -- node[above,font=\scriptsize]{PUBLISH} ([yshift=-12mm]s0.south);
+        % Photodetector
+        \draw[fill=blue!30, rounded corners=3pt] (4,0) rectangle (5,0.7);
+        \node[font=\scriptsize] at (4.5,0.35) {Detector};
 
-        % === QoS 1 === row at y in [3.3 .. 0.8]
-        \node[title] at (3.5,4.2) {QoS 1 — At least once (acknowledged delivery)};
-        \node[lane]   (p1) at (0,3.7) {Publisher};
-        \node[broker] (b1) at (3.5,3.7) {Broker};
-        \node[lane]   (s1) at (7,3.7) {Subscriber};
-        \draw[densely dotted] (p1) -- ++(0,-2.6);
-        \draw[densely dotted] (b1) -- ++(0,-2.6);
-        \draw[densely dotted] (s1) -- ++(0,-2.6);
-        \draw[msg]  ([yshift=-5mm]p1.south)  -- node[above,font=\scriptsize]{PUBLISH}       ([yshift=-5mm]b1.south);
-        \draw[ctrl] ([yshift=-11mm]b1.south) -- node[above,font=\scriptsize]{PUBACK}         ([yshift=-11mm]p1.south);
-        \draw[msg]  ([yshift=-17mm]b1.south) -- node[above,font=\scriptsize]{PUBLISH}       ([yshift=-17mm]s1.south);
+        % Blood vessel
+        \draw[fill=red!30] (2.8,-0.15) ellipse (0.4 and 0.12);
+        \draw[fill=red!30] (3.6,-0.15) ellipse (0.4 and 0.12);
 
-        % === QoS 2 === row at y in [0 .. -3]
-        \node[title] at (3.5,0.4) {QoS 2 — Exactly once (four-way handshake)};
-        \node[lane]   (p2) at (0,-0.1) {Publisher};
-        \node[broker] (b2) at (3.5,-0.1) {Broker};
-        \node[lane]   (s2) at (7,-0.1) {Subscriber};
-        \draw[densely dotted] (p2) -- ++(0,-3.6);
-        \draw[densely dotted] (b2) -- ++(0,-3.6);
-        \draw[densely dotted] (s2) -- ++(0,-3.6);
-        \draw[msg]  ([yshift=-5mm]p2.south)  -- node[above,font=\scriptsize]{PUBLISH}       ([yshift=-5mm]b2.south);
-        \draw[ctrl] ([yshift=-11mm]b2.south) -- node[above,font=\scriptsize]{PUBREC}         ([yshift=-11mm]p2.south);
-        \draw[ctrl] ([yshift=-17mm]p2.south) -- node[above,font=\scriptsize]{PUBREL}         ([yshift=-17mm]b2.south);
-        \draw[ctrl] ([yshift=-23mm]b2.south) -- node[above,font=\scriptsize]{PUBCOMP}        ([yshift=-23mm]p2.south);
-        \draw[msg]  ([yshift=-29mm]b2.south) -- node[above,font=\scriptsize]{PUBLISH}       ([yshift=-29mm]s2.south);
-    \end{tikzpicture}%
-    }
-    \caption{ลำดับการส่งข้อความใน MQTT แต่ละระดับ QoS เส้นทึบคือข้อความข้อมูล เส้นประคือข้อความควบคุมที่ใช้ยืนยันสถานะระหว่างคู่สื่อสาร}
-    \label{fig:ch2_mqtt_flow}
+        % PPG waveform
+        \begin{scope}[xshift=0.5cm, yshift=1.0cm]
+            \draw[->] (0,0) -- (7,0) node[right, font=\scriptsize] {เวลา (s)};
+            \draw[->] (0,0) -- (0,1.2) node[above, font=\scriptsize] {แอมพลิจูด};
+            \draw[thick, red, smooth] plot[domain=0:6.5, samples=200]
+                (\x, {0.3 + 0.5*sin(deg(\x*3.14)) + 0.2*sin(deg(\x*6.28))});
+            \draw[dashed, gray] (1.0,0) -- (1.0,0.95) node[above, font=\tiny] {$RR_1$};
+            \draw[dashed, gray] (3.0,0) -- (3.0,0.95) node[above, font=\tiny] {$RR_2$};
+            \draw[<->, blue] (1.0,-0.25) -- (3.0,-0.25) node[midway, below, font=\tiny] {RR-interval};
+        \end{scope}
+    \end{tikzpicture}
+    \caption{หลักการทำงานของเซ็นเซอร์ PPG และรูปคลื่นที่ได้พร้อมช่วง RR-interval}
+    \label{fig:ch2_ppg_principle}
 \end{figure}
 
-การเลือกระดับ QoS ที่เหมาะสมขึ้นอยู่กับลักษณะข้อมูลและความสำคัญของเหตุการณ์ ในบริบทระบบดูแลผู้สูงอายุ ข้อมูลเซ็นเซอร์ที่ส่งต่อเนื่องเช่นตำแหน่งหรืออัตราการเต้นของหัวใจสามารถใช้ QoS 0 ได้ แต่เหตุการณ์สำคัญเช่นการตรวจพบการหกล้มหรือแจ้งเตือนฉุกเฉินควรใช้ QoS 1 เพื่อให้แน่ใจว่าข้อความถูกส่งถึงผู้รับอย่างน้อยหนึ่งครั้ง \cite{OASIS2019MQTTv5,EclipseMosquitto2024}.
-
-\subsection{ข้อกำหนดของระบบใกล้เวลาจริงเชิงนุ่ม}
-งานดูแลผู้สูงอายุส่วนใหญ่ไม่ใช่ระบบ hard real-time ที่ความล่าช้าแม้เพียงเล็กน้อยถือเป็นความล้มเหลวเด็ดขาด แต่เป็น soft real-time system ที่ยังต้องควบคุม latency, jitter และภาวะคอขวดให้คงอยู่ในขอบเขตที่ยอมรับได้ต่อการตัดสินใจของมนุษย์ งานคลาสสิกด้านการจัดตารางงานและการทำความเข้าใจระบบเวลาจริงจึงช่วยวางกรอบว่าควรวัดระบบจากความทันเวลาในเชิงบริการ ไม่ใช่เพียงความเร็วสูงสุดในห้องทดลอง~\cite{Liu1973SchedulingHardRT,Stankovic1988MisconceptionsRT,Dean2013TailLatency}
-
-ในแง่เชิงปริมาณ ทฤษฎีคิว Little's Law ให้ความสัมพันธ์ระหว่างจำนวนงานเฉลี่ยในระบบ ($L$), อัตราการมาของงาน ($\lambda$) และเวลารอเฉลี่ย ($W$) ตามสมการที่~\eqref{eq:ch2_little} ความสัมพันธ์นี้ใช้ประเมินได้ว่าเมื่อ throughput เข้าใกล้ความสามารถของผู้บริโภค เวลารอโดยเฉลี่ยในคิว MQTT และคิวประมวลผลของ FastAPI จะเพิ่มขึ้นแบบไม่เชิงเส้น
-
-\begin{equation}\label{eq:ch2_little}
-L = \lambda\,W
-\end{equation}
-
-นอกจากนี้ ความล่าช้าแบบ end-to-end ของระบบที่รับข้อมูลจากอุปกรณ์ผ่าน MQTT ไปจนถึงหน้าจอผู้ใช้ สามารถแตกเป็นองค์ประกอบย่อยได้ตามสมการที่~\eqref{eq:ch2_latency_decomp} เพื่อประโยชน์ในการออกแบบการวัดและหาคอขวด~\cite{Dean2013TailLatency,Jensen2017_time_series_management_survey}
-
-\begin{equation}\label{eq:ch2_latency_decomp}
-T_{\mathrm{e2e}} = T_{\mathrm{sense}} + T_{\mathrm{net}} + T_{\mathrm{broker}} + T_{\mathrm{process}} + T_{\mathrm{db}} + T_{\mathrm{ui}}
-\end{equation}
-
-โดยที่ $T_{\mathrm{sense}}$ คือเวลาตั้งแต่เซ็นเซอร์ตรวจจับเหตุการณ์จริง, $T_{\mathrm{net}}$ คือ network transport delay, $T_{\mathrm{broker}}$ คือเวลาที่ข้อความรอใน MQTT broker, $T_{\mathrm{process}}$ คือเวลาประมวลผลของ FastAPI worker, $T_{\mathrm{db}}$ คือเวลาเขียน/อ่านฐานข้อมูล และ $T_{\mathrm{ui}}$ คือเวลาอัปเดตหน้าจอ การแตกส่วนนี้เอื้อต่อการวัดในเชิงสถาปัตยกรรมที่ใช้จริงในบทที่~\ref{chapter4}
-
-\subsection{การควบคุมแรงดันย้อนกลับและการไหลของข้อความ}
-ในระบบเผยแพร่-สมัครรับที่มีอัตราการผลิตข้อความไม่สม่ำเสมอ การควบคุมแรงดันย้อนกลับ (back-pressure) และการควบคุมการไหล (flow control) เป็นกลไกจำเป็นเพื่อป้องกันไม่ให้ผู้บริโภคถูกข้อความท่วมจนระบบล้ม \cite{Kleppmann2017_DDIA} เทคนิคที่พบได้บ่อยคือการใช้คิวขอบเขต (bounded queue) ที่เมื่อเต็มแล้วจะส่งสัญญาณกลับไปที่ผู้ผลิตให้ชะลอการส่ง, การทิ้งข้อความเก่าที่หมดอายุ และการรวมข้อความ (batching) เพื่อลดภาระของการประมวลผลต่อหน่วย \cite{Akidau2015_DataflowModel} ในบริบท MQTT การใช้ QoS 0 สำหรับข้อมูลที่ส่งต่อเนื่องและ QoS 1 สำหรับเหตุการณ์สำคัญเป็นรูปแบบที่ทำให้ back-pressure เกิดโดยธรรมชาติ เพราะ QoS ระดับสูงกว่าจะทำให้ขั้นตอนส่งและตอบรับช้าลงเมื่อผู้รับไม่พร้อม.
-
-\subsection{การจัดเก็บเหตุการณ์เทียบกับการจัดเก็บสถานะภาพรวม}
-การจัดเก็บเหตุการณ์ (event sourcing) คือแนวทางที่เก็บการเปลี่ยนแปลงทุกครั้งของระบบในรูปแบบลำดับเหตุการณ์ที่แก้ไขไม่ได้ และสามารถสร้างสถานะปัจจุบันขึ้นมาใหม่ได้จากลำดับเหตุการณ์นั้น \cite{Fowler2005_EventSourcing} แนวทางนี้แตกต่างจากการจัดเก็บสถานะภาพรวม (snapshot storage) ที่บันทึกเฉพาะค่าปัจจุบันของแต่ละ entity การเลือกใช้ทั้งสองรูปแบบจึงมีข้อแลกเปลี่ยน event sourcing ให้ประโยชน์ด้านการตรวจสอบย้อนหลังและการวิเคราะห์รูปแบบเหตุการณ์ แต่ต้องแลกกับความซับซ้อนของการประมวลผลสถานะปัจจุบัน ในทางปฏิบัติ ระบบดูแลมักผสมทั้งสองแบบ โดยใช้ event log สำหรับ audit และ snapshot สำหรับ UI ที่ต้องตอบสนองเร็ว \cite{Kleppmann2017_DDIA}.
-
-\subsection{ทฤษฎี CAP กับการเลือกแบบจำลองความสอดคล้องของข้อมูล}
-ทฤษฎีบท CAP ของ Brewer ระบุว่าระบบแบบกระจายไม่สามารถให้คุณสมบัติสามประการพร้อมกันได้ ได้แก่ ความสอดคล้อง (consistency) ความพร้อมใช้งาน (availability) และการทนต่อการตัดขาดของเครือข่าย (partition tolerance) \cite{Brewer2012_CAP_reviewed,Gilbert2002_CAP_proof} ในทางปฏิบัติ ระบบแบบกระจายต้องเลือกระหว่างคู่ CP (สอดคล้อง + ทนต่อการตัดขาด) และ AP (พร้อมใช้ + ทนต่อการตัดขาด) การพัฒนาต่อจากทฤษฎีเดิมเสนอ PACELC ที่เพิ่มมุมของ latency เข้ามา สำหรับสภาวะที่ไม่มีการตัดขาด ซึ่งสะท้อนว่าแม้เครือข่ายปกติ การเลือกระดับความสอดคล้องก็ยังมีผลต่อ latency \cite{Abadi2012_PACELC} ในงานดูแลผู้สูงอายุ การเลือก eventual consistency สำหรับข้อมูลที่ไม่เร่งด่วน เช่น ประวัติกิจกรรม และ strong consistency สำหรับเหตุการณ์แจ้งเตือน เป็นรูปแบบที่เหมาะสม.
-
-\section{แบบจำลองภาษาขนาดใหญ่}
-
-\plannedchtwofigure{fig:ch2_llm_architecture}{llm_architecture.png}{0.8}{ภาพอธิบายสถาปัตยกรรมของแบบจำลองภาษาและการประมวลผลเชิงสนทนา}{สถาปัตยกรรมของแบบจำลองภาษาและการประมวลผลเชิงสนทนาเบื้องต้น}
-
-\subsection{สถาปัตยกรรม Transformer การปรับแต่งคำสั่ง และแบบจำลองเชิงสนทนา}
-แบบจำลองภาษาขนาดใหญ่สมัยใหม่ตั้งอยู่บนสถาปัตยกรรม Transformer ซึ่งใช้กลไก self-attention เพื่อประเมินความสัมพันธ์ระหว่างโทเคนได้แบบขนานและในบริบทระยะยาว \cite{Vaswani2017Attention,Brown2020GPT3}. การนำ LLM มาใช้ในระบบโต้ตอบพึ่งพาทั้ง pretraining ขนาดใหญ่และการปรับพฤติกรรมผ่าน instruction tuning หรือ RLHF อย่างไรก็ดี วรรณกรรมเตือนว่าโมเดลเชิงสนทนามีความเสี่ยงด้าน hallucination และต้องถูกวางในระบบควบคุมที่ตรวจสอบย้อนกลับได้ \cite{Ouyang2022InstructGPT}.
-
-\subsection{การประมวลผลในเครื่องและการลดความแม่นยำของน้ำหนัก}
-แนวโน้มของโมเดลขนาดเล็กแต่ยังมีประสิทธิภาพดีทำให้การประมวลผลในองค์กรเป็นไปได้มากขึ้น \cite{Touvron2023Llama,Gemma2024Report}. การลดความแม่นยำของน้ำหนัก (model quantization) เช่น INT8 หรือ INT4 ช่วยลดขนาดและเพิ่มความเร็ว โดยเทคนิค post-training quantization เช่น GPTQ และ AWQ รักษาคุณภาพได้ใกล้เคียงรุ่นเต็ม \cite{Dettmers2022_LLMint8,Frantar2023_GPTQ,Lin2024_AWQ}.
-
-\subsection{การสร้างข้อมูลผิดเพี้ยน การบรรเทา และเมตริกประเมินคุณภาพ}
-การสร้างข้อมูลผิดเพี้ยน (hallucination) แบ่งเป็น \textit{intrinsic} และ \textit{extrinsic hallucination} \cite{Ji2023_HallucinationSurvey} มาตรการบรรเทาประกอบด้วย RAG \cite{Lewis2020_RAG} constrained decoding และ self-consistency checking \cite{Wang2023_SelfConsistency}. ในด้านการประเมินคุณภาพข้อความ เมตริกพื้นฐานเช่น BLEU และ ROUGE เน้น n-gram overlap \cite{Papineni2002_BLEU,Lin2004_ROUGE} ขณะที่ BERTScore และ LLM-as-judge ให้ผลสอดคล้องกับมนุษย์สูงกว่าในงานเปิดปลาย \cite{Zhang2020_BERTScore,Zheng2023_LLMJudge}.
-
-\section{โพรโทคอลบริบทระหว่างเครื่องจักรสำหรับผู้ช่วยปัญญาประดิษฐ์}
-
-\plannedchtwofigure{fig:ch2_mcp_flow}{mcp_flow.png}{0.8}{ภาพแสดงโครงสร้างและการไหลของข้อมูลใน Model Context Protocol (MCP)}{โครงสร้างและการไหลของข้อมูลใน Model Context Protocol (MCP)}
-
-\subsection{ความหมาย จุดประสงค์ และองค์ประกอบของ MCP}
-Model Context Protocol เสนอรูปแบบมาตรฐานสำหรับเชื่อมแบบจำลองภาษากับทรัพยากรภายนอก โดยแยกบริบทเป็น tools, resources และ prompts \cite{Anthropic2024MCP,Schick2023Toolformer,Yao2023ReAct}.
-
-\subsection{รูปแบบเอเจนต์ภาษาและการดำเนินการแบบเสนอ-ยืนยัน-ดำเนินการ}
-รูปแบบ ReAct ให้โมเดลสลับระหว่างเหตุผลและเครื่องมือ \cite{Yao2023ReAct} Toolformer ปรับแต่งโมเดลให้เรียก API เอง \cite{Schick2023Toolformer} และ Reflexion เพิ่มกลไกสะท้อนข้อผิดพลาด \cite{Shinn2023_Reflexion}. รูปแบบเสนอ-ยืนยัน-ดำเนินการเหมาะกับโดเมนดูแลเพราะยังคงให้มนุษย์อยู่ในวงจรตัดสินใจ \cite{Anthropic2024MCP}.
-
-\subsection{กลไกความปลอดภัย การตรวจสอบย้อนหลัง และมนุษย์ในวงจร}
-กลไก human-in-the-loop ถือเป็นมาตรฐานความปลอดภัยในโดเมนที่มีผลกระทบต่อคน \cite{Amershi2019_HumanAIGuidelines} Constitutional AI เสนอให้โมเดลปฏิเสธคำสั่งที่ขัดกับกฎ \cite{Bai2022_ConstitutionalAI} และการเก็บ log ของ context package ที่โมเดลใช้ เครื่องมือที่ถูกเรียก และผลลัพธ์ที่คืนกลับ ช่วยรองรับการตรวจสอบย้อนหลัง \cite{Mitchell2019_ModelCards,Raji2020_CloseAccountabilityGap,HHS2013HIPAASecurityRule}.
-
-\section{การควบคุมการเข้าถึงและความปลอดภัยข้อมูลในระบบสารสนเทศสุขภาพ}
-
-\plannedchtwofigure{fig:ch2_security_rbac}{security_rbac.png}{0.75}{ภาพอธิบายโครงสร้าง RBAC และการยืนยันตัวตนด้วย JWT/OAuth 2.0}{โครงสร้างการควบคุมการเข้าถึงด้วย RBAC และการยืนยันตัวตนผ่าน JWT/OAuth 2.0}
-
-\subsection{RBAC, JWT และ OAuth 2.0}
-การควบคุมการเข้าถึงตามบทบาท (RBAC) ผูกสิทธิ์เข้ากับหน้าที่งานแทนรายบุคคล \cite{Sandhu1996RBAC,NIST2010RBACGuide} สามารถขยายเป็น ABAC เพื่อครอบคลุมเงื่อนไขซับซ้อน \cite{NIST2014ABACGuide}. การยืนยันตัวตนใช้โทเคน JWT \cite{RFC7519JWT,NIST2017DigitalIdentity} ร่วมกับ OAuth 2.0 ที่กำหนด scope ตามหลัก least privilege \cite{RFC6749OAuth2,Saltzer1975_SecuringInformation}.
-
-\subsection{มาตรการคุ้มครองข้อมูลส่วนบุคคลเชิงเทคนิค}
-พระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคลของประเทศไทย พ.ศ.~2562 และกรอบ HIPAA ของสหรัฐอเมริกา ต่างกำหนดให้ผู้ควบคุมข้อมูลต้องมีมาตรการคุ้มครองข้อมูลเชิงเทคนิคและเชิงองค์กร เช่น การเข้ารหัสลับขณะส่งและขณะพัก การบันทึกการเข้าถึง การแยกสภาพแวดล้อมทดสอบออกจากข้อมูลจริง และการจำกัดอายุของข้อมูลระบุตัวตน \cite{PDPA2019Thailand,HHS2013HIPAASecurityRule,ISO27799_2016} มาตรฐาน ISO/IEC 27799 สำหรับระบบสารสนเทศสุขภาพระบุเพิ่มเติมให้มีการจำแนกระดับความอ่อนไหวของข้อมูลและการปฏิบัติการทำให้ข้อมูลไม่ระบุตัวตน (de-identification) ก่อนการใช้งานสำหรับการวิจัยหรือการอภิปรายข้ามทีม \cite{ISO27799_2016,ElEmam2013_deidentification}.
-
-\section{การประเมินประสบการณ์ผู้ใช้และการทดสอบทางสถิติ}
-
-\plannedchtwofigure{fig:ch2_ux_evaluation}{ux_evaluation.png}{0.75}{ภาพแสดงกรอบการประเมิน UX ด้วย SUS และ CSUQ}{กรอบการประเมินประสบการณ์ผู้ใช้ด้วยเครื่องมือมาตรฐาน (SUS และ CSUQ)}
-
-\subsection{มาตราส่วน Likert และมาตรวัด SUS}
-การประเมินประสบการณ์ผู้ใช้ใช้มาตราส่วน Likert สะท้อนระดับความพึงพอใจ \cite{Likert1932Technique,Brooke1996SUS} โดยคำนวณค่าเฉลี่ยถ่วงน้ำหนักตามสมการ
+\textbf{(1) อัตราการเต้นของหัวใจ (Heart Rate):}
 \begin{equation}
-    \bar{x}_w = \frac{\sum_{i=1}^{k} f_i \cdot w_i}{\sum_{i=1}^{k} f_i}
-    \label{eq:ch2_weighted_mean}
+\mathrm{HR} = \frac{60}{\overline{RR}}
+\label{eq:ch2_hr}
 \end{equation}
-เมื่อ $f_i$ คือความถี่ของคำตอบที่ระดับ $i$ และ $w_i$ คือน้ำหนักของระดับนั้น \cite{Likert1932Technique,Sullivan2013_AnalyzingLikert,Boone2012_LikertData,Field2013DiscoveringStats}. มาตรวัด SUS ใช้ 10 ข้อคำถามแปลงเป็นคะแนน 0--100 โดยคะแนนเกิน 80.3 จัดเป็นระดับดีเยี่ยม \cite{Brooke1996SUS,Bangor2008_EmpiricalSUS,Lewis2018_SUS_psychometrics}.
+เมื่อ $\overline{RR}$ คือค่าเฉลี่ยของช่วง RR-interval (วินาที) และ $\mathrm{HR}$ มีหน่วยเป็น bpm (ครั้งต่อนาที)
 
-\subsection{หลักพิจารณาของนีลเซ็นและแบบสอบถาม CSUQ}
-หลักพิจารณา 10 ข้อของนีลเซ็นเป็นกรอบประเมินเชิงคุณภาพ \cite{Nielsen1994Heuristics,Nielsen1990_HeuristicEvaluation}. แบบสอบถาม CSUQ ประกอบด้วย 19 ข้อครอบคลุม system usefulness, information quality และ interface quality \cite{Lewis1995_CSUQ,Lewis2018_SUS_psychometrics}.
-
-\subsection{ทฤษฎีความสอดคล้องระหว่างผู้ประเมิน}
-การประเมินความสอดคล้องระหว่างผู้ประเมินสามารถใช้สถิติ Cohen's kappa ได้จากสมการ
+\textbf{(2) ความแปรปรวนของอัตราการเต้นของหัวใจ (HRV) ด้วย SDNN:}
 \begin{equation}
-    \kappa = \frac{p_o - p_e}{1 - p_e}
-    \label{eq:ch2_cohen_kappa}
+\mathrm{SDNN} = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(RR_i - \overline{RR})^2}
+\label{eq:ch2_sdnn}
 \end{equation}
-เมื่อ $p_o$ คือความสอดคล้องที่สังเกตได้ และ $p_e$ คือความสอดคล้องที่คาดหวังโดยการสุ่ม \cite{Cohen1960Kappa}.
+เมื่อ $N$ คือจำนวนช่วง RR ทั้งหมด และ $RR_i$ คือช่วง RR ที่ $i$ ค่า SDNN ที่ต่ำลงบ่งบอกถึงระบบประสาทอัตโนมัติที่ตอบสนองน้อยลง
 
-สำหรับการทดสอบความแตกต่างระหว่างกลุ่มที่เป็นอิสระกัน สามารถใช้การทดสอบ t สำหรับตัวอย่างอิสระได้จากสมการ
+\textbf{(3) RMSSD สำหรับประเมินกิจกรรมประสาทพาราซิมพาเทติก:}
 \begin{equation}
-    t = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}}
-    \label{eq:ch2_independent_t_test}
+\mathrm{RMSSD} = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N-1}(RR_{i+1} - RR_i)^2}
+\label{eq:ch2_rmssd}
 \end{equation}
-เมื่อ $\bar{x}_1, \bar{x}_2$ คือค่าเฉลี่ยของกลุ่มที่ 1 และ 2, $s_1^2, s_2^2$ คือความแปรปรวน และ $n_1, n_2$ คือขนาดตัวอย่าง \cite{Field2013DiscoveringStats}.
+ค่า RMSSD นิยมใช้ตรวจจับความเครียดทางกายภาพ (Physical Stress) เพราะสะท้อนการควบคุมอัตราการเต้นของหัวใจในช่วงสั้น
 
-สำหรับการวิเคราะห์ความสัมพันธ์ระหว่างตัวแปร สามารถใช้สัมประสิทธิ์สหสัมพันธ์ของ Pearson ได้จากสมการ
-\begin{equation}
-    r = \frac{\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^{n}(x_i - \bar{x})^2 \sum_{i=1}^{n}(y_i - \bar{y})^2}}
-    \label{eq:ch2_pearson_correlation}
-\end{equation}
-เมื่อ $x_i, y_i$ คือค่าของตัวแปรที่ $i$ และ $\bar{x}, \bar{y}$ คือค่าเฉลี่ยของแต่ละตัวแปร \cite{Field2013DiscoveringStats}.
+\subsection{Inertial Measurement Unit (IMU)}
 
-\subsection{การรายงานเวลาแฝงด้วยเปอร์เซ็นไทล์}
-สำหรับระบบใกล้เวลาจริงที่ต้องประเมินความลื่นไหลของประสบการณ์ผู้ใช้ การรายงาน latency ด้วยค่าเปอร์เซ็นไทล์ เช่น p50, p95 และ p99 มีประโยชน์มากกว่าการรายงานค่าเฉลี่ยเพียงค่าเดียว เพราะช่วยเปิดเผย tail latency ที่ผู้ใช้ปลายทางสัมผัสได้จริงเมื่อระบบเกิดภาวะโหลดสูงหรือคอขวดเป็นครั้งคราว แนวคิดนี้เหมาะกับแดชบอร์ดและระบบแจ้งเตือนที่ความล่าช้าส่วนปลายมีผลต่อความเชื่อถือของผู้ใช้โดยตรง \cite{Dean2013TailLatency,Liu1973SchedulingHardRT}.
+เซ็นเซอร์ IMU ประกอบด้วย Accelerometer วัดความเร่งในสามแกน $(a_x, a_y, a_z)$ และ Gyroscope วัดอัตราการหมุน $(\omega_x, \omega_y, \omega_z)$ ในระบบที่ติดตั้งอุปกรณ์บนล้อเก้าอี้รถเข็น ดังรูปที่~\ref{fig:ch2_imu_wheel} การคำนวณระยะทางอาศัย \textbf{Gyroscope} แกน Z เป็นหลัก เพื่อวัดอัตราการหมุนของล้อและแปลงเป็นการเคลื่อนที่เชิงเส้นผ่านรัศมีล้อ
 
-\section{ซอฟต์แวร์และเครื่องมือทางวิศวกรรมที่เกี่ยวข้อง}
-\label{sec:ch2_software_tools}
-
-\plannedchtwofigure{fig:ch2_software_stack}{software_stack.png}{0.9}{ภาพรวมของสแต็กซอฟต์แวร์และเครื่องมือทางวิศวกรรมที่ใช้ในระบบสมัยใหม่}{ภาพรวมของสแต็กซอฟต์แวร์และเครื่องมือทางวิศวกรรมหลักที่ถูกใช้ในระบบข้อมูลร่วมสมัย}
-
-หัวข้อนี้สรุปภาพรวมของซอฟต์แวร์และเครื่องมือโอเพนซอร์สหลักที่ถูกใช้กว้างขวางในระบบข้อมูลและระบบปัญญาประดิษฐ์ร่วมสมัย เพื่อให้ผู้อ่านเข้าใจพื้นฐานของเครื่องมือในเชิงวิชาการก่อนการอ่านวิธีดำเนินการวิจัยในบทที่~\ref{chapter3} ซึ่งจะเป็นผู้เสนอทางเลือกและเหตุผลของการเลือกใช้งานจริง การอภิปรายในส่วนนี้ยึดแนวทางเดียวกับตัวอย่างปริญญานิพนธ์ที่อ้างถึงเครื่องมือในฐานะองค์ความรู้ของวงการ มิใช่การพิสูจน์การตัดสินใจของผู้วิจัย \cite{FastAPI2024,PostgreSQL2024,NextJS2024,Ollama2024}.
-
-\subsection{เว็บเฟรมเวิร์ก ฐานข้อมูล และโบรกเกอร์ข้อความ}
-กรอบบริการเว็บในภาษาไพทอนสมัยใหม่เช่น FastAPI ใช้ \texttt{async/await} แบบฝังตัว ทำให้รับข้อมูลต่อเนื่องได้อย่างมีประสิทธิภาพ \cite{FastAPI2024,ASGI2024,Pydantic2024,OpenAPI2024}. ด้านฐานข้อมูล PostgreSQL เป็น RDBMS หลักที่รองรับข้อมูล time-series ผ่านการแบ่งพาร์ทิชัน และจัดการข้อมูลกึ่งโครงสร้างผ่าน JSONB \cite{PostgreSQL2024,Obe2017_PostgreSQL_in_Action} การเชื่อมต่อมักใช้ ORM เช่น SQLAlchemy ทำงานร่วมกับเครื่องมือจัดการ schema อย่าง Alembic \cite{SQLAlchemy2024,Alembic2024}. สำหรับการเชื่อมต่ออุปกรณ์ขอบเครือข่าย โบรกเกอร์ข้อความ MQTT เช่น Eclipse Mosquitto มีบทบาทสำคัญด้วยการใช้ทรัพยากรต่ำและรองรับฟีเจอร์อย่าง LWT สำหรับความเสถียรของระบบ IoT \cite{EclipseMosquitto2024,OASIS2019MQTTv5,Mishra2018_MQTT_survey}.
-
-\subsection{กรอบส่วนหน้าและการพัฒนาแอปพลิเคชันข้ามแพลตฟอร์ม}
-ในฝั่งส่วนหน้า กรอบการทำงานเช่น Next.js บน React สนับสนุนการแสดงผลฝั่งเซิร์ฟเวอร์แบบไฮบริดและการกำหนดเส้นทางระดับไฟล์ \cite{NextJS2024,React2024}. การจัดการสถานะฝั่งเครื่องลูกข่ายนิยมใช้ TanStack Query สำหรับการเรียกและจัดการข้อมูล ขณะที่ Tailwind CSS ทำหน้าที่กำหนดรูปแบบอย่างเป็นระบบ \cite{TanStackQuery2024,TailwindCSS2024,Mikkonen2023_WebFrameworksSurvey}. สำหรับอุปกรณ์เคลื่อนที่ React Native และ Expo ช่วยย่นระยะเวลาการพัฒนาแอปข้ามแพลตฟอร์มทั้ง iOS และ Android ผ่าน JavaScript ทำให้ UI มีสัมผัสเสมือน native \cite{ReactNativeDocs,ExpoDocs,Biorn-Hansen2020_HybridApps}.
-
-\subsection{รันไทม์จำลองภาษาและการเชื่อมต่อระบบปัญญาประดิษฐ์}
-รันไทม์จำลองภาษาในเครื่องเช่น Ollama ให้ช่องทางสื่อสารที่สอดคล้องกับ API มาตรฐานและรองรับการจัดการโมเดลที่ความเร็วและหน่วยความจำจำกัด \cite{Ollama2024,Kwon2023_vLLM,HuggingFace2024_TGI}. นอกเหนือจากนี้ Model Context Protocol (MCP) และกรอบการทำงานเช่น FastMCP กลายมาเป็นมาตรฐานสำคัญสำหรับการเชื่อมโมเดลเข้ากับเครื่องมือภายนอก ช่วยให้ระบบจัดการบริบทและความปลอดภัยได้รัดกุมขึ้น โดยไม่ต้องยึดติดกับโมเดลผู้ให้บริการเฉพาะราย \cite{Anthropic2024MCP,ModelContextProtocol,FastMCP2024}.
-
-\section{ทฤษฎีการทำซ้ำและการกำกับระบบปัญญาประดิษฐ์}
-\label{sec:ch2_reproducibility}
-
-\plannedchtwofigure{fig:ch2_mlops_cicd}{mlops_cicd.png}{0.85}{ภาพแสดงวัฏจักรของระบบ CI/CD และ MLOps ในการจัดการระบบ AI}{วัฏจักรการจัดการรหัสและแบบจำลองปัญญาประดิษฐ์ผ่านกลไก CI/CD และ MLOps}
-
-\subsection{คอนเทนเนอร์และการจัดการโครงสร้างพื้นฐานรูปแบบรหัส}
-การสร้างคอนเทนเนอร์ตามแนวทาง FAIR ช่วยให้ระบบสามารถทำซ้ำได้ (reproducibility) ในสภาวะแวดล้อมที่ต่างกัน \cite{Boettiger2015_Docker_reproducible_research,Wilkinson2016_FAIR}. การควบคุมสภาพแวดล้อมผ่านการจัดการแบบ Infrastructure as Code (IaC) เช่น Docker Compose ทำให้ตรวจสอบและย้อนกลับระบบง่ายขึ้น ลดความคลาดเคลื่อนของการทดสอบงานวิจัยข้ามเครื่องประมวลผล \cite{Morris2020_IaC,Hinsen2018_dehydrated_software}.
-
-\subsection{การบูรณาการแบบต่อเนื่องและแนวทาง MLOps}
-ระบบ CI/CD เข้ามาปรับปรุงความเชื่อถือได้ของการติดตั้งและการพัฒนา \cite{Humble2010_ContinuousDelivery} ซึ่งเมื่อนำมารวมกับการจัดการแบบจำลองจึงขยายสู่แนวคิด CD4ML และ MLOps การนำหลักการเหล่านี้มาใช้สามารถจำกัดหนี้ทางเทคนิค (technical debt) ของการอัปเดตโมเดล ให้พร้อมตอบโจทย์การดูแลรักษาระบบระยะยาวในพื้นที่งานจริง \cite{Sato2019_CD4ML,Sculley2015_HiddenTechnicalDebt,Kreuzberger2023_MLOpsOverview,Paleyes2022_ChallengesMLDeployment}.
-
-\section{งานวิจัยที่เกี่ยวข้องและช่องว่างของงานวิจัย}
-
-ก่อนสรุปช่องว่างของงานวิจัย ตารางที่~\ref{tab:ch2_related_work} ใช้เพื่อเปรียบเทียบแนวโน้มของงานที่เกี่ยวข้องในระดับกรอบความสามารถ ไม่ได้มุ่งแสดงผลเชิงทดลองของระบบใดระบบหนึ่ง แต่ใช้ชี้ให้เห็นว่างานส่วนใหญ่ยังเน้นบางมิติของปัญหาแยกจากกัน \cite{Zafari2019IPSSurvey,Rashidi2013AALSurvey,Anthropic2024MCP}.
-
-\begin{table}[htbp]
+\begin{figure}[!ht]
     \centering
-    \caption{สังเคราะห์งานวิจัยและระบบที่เกี่ยวข้องในระดับกรอบความสามารถ}
-    \label{tab:ch2_related_work}
-    \footnotesize
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|p{2.8cm}|p{3.2cm}|p{3.0cm}|p{3.0cm}|p{2.8cm}|}
-        \hline
-        \textbf{กลุ่มงาน} & \textbf{จุดเน้นหลัก} & \textbf{ข้อดี} & \textbf{ข้อจำกัดที่พบบ่อย} & \textbf{ประเด็นที่เกี่ยวข้องกับงานวิจัยนี้} \\
-        \hline
-        งาน IPS ในอาคาร & การประมาณตำแหน่งด้วย RSSI, fingerprinting, หรือแบบจำลองเชิงเรขาคณิต & วัดผลเชิงความแม่นยำได้ชัดเจน & มักไม่เชื่อมกับเวิร์กโฟลว์ผู้ดูแลหรือสัญญาณสุขภาพ & ต้องผสานตำแหน่งเข้ากับบริบทการดูแล \\
-        \hline
-        งาน AAL และ IoT สำหรับผู้สูงอายุ & การติดตามกิจกรรมและความปลอดภัยในชีวิตประจำวัน & เห็นภาพการใช้งานในบริบทดูแลจริง & บางงานยังขาดกลไกสิทธิ์เข้าถึงและการอธิบายผลแก่ผู้ดูแล & ต้องเชื่อม AAL เข้ากับระบบข้อมูลที่ควบคุมสิทธิ์ได้ \\
-        \hline
-        งานผู้ช่วยปัญญาประดิษฐ์และ agentic workflow & การสรุปข้อมูลและเรียกใช้เครื่องมือผ่านภาษาธรรมชาติ & เพิ่มความยืดหยุ่นในการโต้ตอบกับระบบ & เสี่ยงต่อการกระทำผิดบริบทหากไม่มีกลไกกำกับ & ต้องมี propose-confirm-execute และ auditability \\
-        \hline
-        ระบบสารสนเทศสุขภาพเชิงปฏิบัติการ & การจัดการผู้ใช้ สิทธิ์ และบันทึกงานดูแล & รองรับการทำงานเป็นทีมและการตรวจสอบย้อนหลัง & หลายระบบไม่ได้ออกแบบเพื่อรับข้อมูลเซ็นเซอร์แบบต่อเนื่อง & ต้องผสานข้อมูลไหลเข้าแบบใกล้เวลาจริงกับการควบคุมสิทธิ์ \\
-        \hline
-    \end{tabular}
-\end{table}
+    \begin{tikzpicture}[scale=0.9]
+        % Wheel
+        \draw[thick] (0,0) circle (2);
+        \draw[fill=gray!20] (0,0) circle (0.15);
 
-\subsection{งาน IPS และระบบสารสนเทศในสถานพักผู้สูงอายุ}
-งานที่เกี่ยวข้องกับระบบ IPS และระบบสารสนเทศมักแยกการระบุตำแหน่งกับเวิร์กโฟลว์ทางคลินิกออกจากกัน. แม้งานจำนวนมากจะมุ่งเน้นการตรวจจับตำแหน่งและเหตุการณ์การเคลื่อนไหวผ่าน beacon หรือเซ็นเซอร์ แต่หลายครั้งขาดการบูรณาการข้อมูลสู่กระบวนการตัดสินใจของผู้ดูแล ส่งผลให้เกิดช่องว่างระหว่างข้อมูลที่จัดเก็บกับระบบเอกสารเดิม \cite{Bahl2000RADAR,Zafari2019IPSSurvey,CommercialWheelchairTracking2023,Cheung2019PaperRecordsLongTermCare,NursingHomeHealthIT2022,Sandhu1996RBAC}.
+        % Radius arrow
+        \draw[->, blue, thick] (0,0) -- (1.41,1.41) node[midway, above left] {$r$};
 
-\subsection{สภาพแวดล้อมเพื่อการช่วยเหลือผู้สูงอายุ (AAL)}
-งานกลุ่ม AAL พยายามรวมศูนย์ข้อมูลการใช้ชีวิตของผู้สูงอายุผ่านอุปกรณ์และเซ็นเซอร์แวดล้อม เพื่อช่วยให้ผู้ดูแลตอบสนองได้รวดเร็ว ตัวอย่างเช่น CASAS และ SPHERE ได้จำแนกความผิดปกติของกิจกรรมผ่านการเก็บข้อมูลระยะยาว อย่างไรก็ตาม ปัจจัยความสำเร็จของการยอมรับขึ้นอยู่กับการรักษาความเป็นส่วนตัวและการไม่เพิ่มภาระของผู้ใช้มากกว่าเทคโนโลยี \cite{Coradeschi2014_GiraffPlus,Cook2013_CASAS,Zhu2015_SPHERE,Rashidi2013AALSurvey,Blackman2016_AAL_review}.
+        % IMU device on wheel rim
+        \draw[fill=orange!30, rounded corners=2pt] (1.6,1.0) rectangle (2.3,1.6);
+        \node[font=\tiny, align=center] at (1.95,1.3) {IMU\\(M5Stick)};
 
-\subsection{ผู้ช่วยปัญญาประดิษฐ์และการบูรณาการ MCP}
-งานเกี่ยวกับ LLM ในสาขาสุขภาพบ่งชี้ว่าโมเดลภาษาขนาดใหญ่ช่วยสรุปเวชระเบียนและข้อมูลคลินิกได้อย่างมีประสิทธิภาพ แต่ก็มีความเสี่ยงจากข้อมูลผิดเพี้ยน จึงต้องบังคับใช้การกำกับดูแลด้วยมนุษย์ในลูป \cite{Singhal2023_MedPaLM2,Toma2023_ClinicalCamel,Thirunavukarasu2023_LLMsMedicine,Harrer2023_LLMsHealthcareEthics}. ล่าสุด การนำ MCP มาใช้ร่วมกับระบบตัวแทน (Agents) เปิดโอกาสให้เอเจนต์เชื่อมบริการภายนอกในขอบเขตสิทธิ์ที่ตรวจสอบได้ แต่การนำมาใช้ในบริบทสถานพักผู้สูงอายุเพื่อจัดการข้อมูลต่อเนื่องยังเป็นสิ่งที่ใหม่ในงานวิจัย \cite{Anthropic2024MCP,Yao2023ReAct,Schick2023Toolformer}.
+        % Angular velocity arrow
+        \draw[->, red!70, very thick, dashed] (0.8,0) arc[start angle=0, end angle=50, radius=0.8];
+        \node[red!70, font=\small] at (1.2,0.5) {$\omega_z$};
 
-\subsection{ช่องว่างของงานวิจัยและทิศทางของระบบที่เสนอ}
-จากการสังเคราะห์วรรณกรรมพบช่องว่างหลักสามประการ ได้แก่ การขาดระบบที่เชื่อมข้อมูลตำแหน่ง การเคลื่อนไหว และสัญญาณชีพเข้ากับงานดูแลในอาคารเดียวกัน การขาดกลไกผู้ช่วยปัญญาประดิษฐ์ที่มีรูปแบบเสนอ-ยืนยัน-ดำเนินการภายใต้ข้อกำหนดสิทธิ์เข้าถึงที่ชัดเจน และการขาดกรอบประเมินที่วัดทั้งประสิทธิภาพระบบและประสบการณ์ผู้ใช้ในมิติเดียวกัน ดังนั้น ระบบที่เสนอในบทที่~\ref{chapter3} จึงมุ่งอธิบายสถาปัตยกรรมเชิงบูรณาการภายใต้ข้อจำกัดด้านการดูแลจริง มากกว่าจะอ้างว่าปัญหาทั้งหมดแก้ได้ด้วยองค์ประกอบทางเทคนิคเพียงชิ้นเดียว \cite{Schulz2020CaregiverBurden,Gates2018AlertFatigue,Anthropic2024MCP,Nielsen1994Heuristics}.
+        % Arc length label
+        \draw[<->, green!60!black, thick] (2.05,-0.1) arc[start angle=-3, end angle=-45, radius=2.05];
+        \node[green!60!black, font=\scriptsize] at (2.5,-1.2) {$\Delta s = r\,|\Delta\theta|$};
+
+        % Ground
+        \fill[gray!30] (-2.5,-2.1) rectangle (2.5,-2.3);
+        \draw[thick] (-2.5,-2.1) -- (2.5,-2.1);
+        \draw (0,-2) -- (0,-2.1);
+
+        % Label
+        \node[font=\small] at (0,-2.7) {ล้อเก้าอี้รถเข็น};
+    \end{tikzpicture}
+    \caption{หลักการติดตั้ง IMU บนล้อเก้าอี้รถเข็นและการคำนวณระยะทางจากมุมการหมุน}
+    \label{fig:ch2_imu_wheel}
+\end{figure}
+
+\textbf{(1) การลด Noise จากแรงโน้มถ่วงด้วย EMA Low-pass Filter บน Gyroscope:}
+
+เนื่องจาก Gyroscope มีสัญญาณรบกวน (Sensor Noise) และค่าออฟเซตคงที่ (Zero-rate offset) จึงใช้ Exponential Moving Average (EMA) เพื่อลด Noise ก่อนนำไปคำนวณ:
+\begin{equation}
+\tilde{\omega}_{z,k} = \alpha \cdot \omega_{z,k} + (1 - \alpha) \cdot \tilde{\omega}_{z,k-1}
+\label{eq:ch2_ema_lpf}
+\end{equation}
+เมื่อ $\tilde{\omega}_{z,k}$ คืออัตราการหมุนหลังกรองที่เวลา $k$, $\omega_{z,k}$ คือค่าดิบจาก Gyroscope Z, และ $\alpha$ คือค่าคงที่ของ Filter ($0 < \alpha < 1$) นอกจากนี้ยังใช้ Deadband กำจัดสัญญาณรบกวนขนาดเล็ก:
+\begin{equation}
+\hat{\omega}_{z,k} =
+\begin{cases}
+\tilde{\omega}_{z,k} & \text{ถ้า } |\tilde{\omega}_{z,k}| \geq \omega_{\mathrm{dead}} \\
+0 & \text{อื่นๆ}
+\end{cases}
+\label{eq:ch2_deadband}
+\end{equation}
+เมื่อ $\omega_{\mathrm{dead}}$ คือค่า Deadband threshold (หน่วย dps)
+
+\textbf{(2) การคำนวณมุมการหมุนของล้อ:}
+\begin{equation}
+\Delta\theta_k = \hat{\omega}_{z,k} \cdot \frac{\pi}{180} \cdot \Delta t
+\label{eq:ch2_angular_delta}
+\end{equation}
+เมื่อ $\Delta\theta_k$ คือมุมการหมุน (เรเดียน) ในช่วงเวลา $\Delta t$ และการคูณด้วย $\pi/180$ เพื่อแปลงจาก degree/s เป็น rad/s
+
+\textbf{(3) การคำนวณระยะทางผ่านรัศมีล้อ (Wheel Odometry):}
+\begin{equation}
+\Delta s_k = |\Delta\theta_k| \cdot r
+\label{eq:ch2_arc_length}
+\end{equation}
+\begin{equation}
+s_k = s_{k-1} + \Delta s_k
+\label{eq:ch2_odometry}
+\end{equation}
+เมื่อ $r$ คือรัศมีของล้อเก้าอี้รถเข็น (เมตร) และ $\Delta s_k$ คือระยะทางที่เคลื่อนที่ในช่วงเวลา $\Delta t$ วิธีนี้เรียกว่า \textbf{Wheel Odometry} ซึ่งให้ความแม่นยำสูงกว่าการอินทิเกรต Accelerometer โดยตรง เนื่องจากหลีกเลี่ยงปัญหา Drift สะสม
+
+\textbf{(4) การคำนวณความเร็วและความเร่งเชิงเส้น:}
+\begin{equation}
+v_k = \frac{s_{\mathrm{win}}}{T_{\mathrm{win}}}
+\label{eq:ch2_velocity_win}
+\end{equation}
+\begin{equation}
+a_k = \frac{v_k - v_{k-1}}{T_{\mathrm{win}}}
+\label{eq:ch2_accel_win}
+\end{equation}
+เมื่อ $s_{\mathrm{win}}$ คือระยะทางสะสมในหน้าต่างเวลา $T_{\mathrm{win}}$ (Sliding Window) วิธีนี้ช่วยลดผลกระทบจาก Noise ในการประมาณค่าความเร็วและความเร่ง
+
+\textbf{(5) การหาทิศทางการเคลื่อนที่:}
+\begin{equation}
+\mathrm{direction}_k =
+\begin{cases}
++1 & \text{ถ้า } \hat{\omega}_{z,k} > 0 \quad \text{(เดินหน้า)} \\
+-1 & \text{ถ้า } \hat{\omega}_{z,k} < 0 \quad \text{(ถอยหลัง)} \\
+0  & \text{ถ้า } \hat{\omega}_{z,k} = 0 \quad \text{(หยุดนิ่ง)}
+\end{cases}
+\label{eq:ch2_direction}
+\end{equation}
+
+\textbf{(6) การหาทิศทางการเอียง (Orientation) จาก Accelerometer:}
+
+Accelerometer ใช้สำหรับคำนวณมุมเอียงของตัวอุปกรณ์ (Roll/Pitch) เพื่อประเมินสถานะของผู้ใช้งาน:
+\begin{equation}
+\phi = \arctan\!\left(\frac{a_y}{a_z}\right), \quad
+\theta = \arctan\!\left(\frac{-a_x}{\sqrt{a_y^2 + a_z^2}}\right)
+\label{eq:ch2_roll_pitch}
+\end{equation}
+เมื่อ $\phi$ คือมุม Roll และ $\theta$ คือมุม Pitch ซึ่งสามารถนำมาใช้ตรวจจับการเอียงผิดปกติที่อาจบ่งบอกถึงการล้มหรือภาวะฉุกเฉินได้
+
+
+
+
+\section{เทคโนโลยีซอฟต์แวร์และโครงสร้างพื้นฐาน}
+\label{sec:ch2_software_infra}
+
+\subsection{กรอบงานเว็บเซิร์ฟเวอร์และการจัดการฐานข้อมูล}
+\textbf{FastAPI} เป็นกรอบงาน (Framework) สำหรับสร้าง REST API ด้วยภาษา Python ที่เน้นความเร็วและประสิทธิภาพสูง รองรับการทำงานแบบอะซิงโครนัส (Asynchronous) และใช้ Pydantic สำหรับตรวจสอบโครงสร้างข้อมูล (Data Validation) อัตโนมัติ รวมถึงมีระบบ Dependency Injection ที่ช่วยให้จัดการส่วนประกอบต่างๆ ได้อย่างยืดหยุ่น 
+สำหรับการจัดการฐานข้อมูล การใช้ \textbf{SQLAlchemy} ซึ่งเป็น Object-Relational Mapping (ORM) ช่วยแปลงข้อมูลระหว่างฐานข้อมูลเชิงสัมพันธ์และออบเจ็กต์ในโค้ด โดยทำงานร่วมกับ \textbf{Alembic} เพื่อจัดการการเปลี่ยนแปลงโครงสร้างฐานข้อมูล (Database Migrations)
+\textbf{PostgreSQL} เป็นระบบจัดการฐานข้อมูลเชิงสัมพันธ์ที่มีความเสถียรสูง รองรับหลักการ ACID (Atomicity, Consistency, Isolation, Durability) และสามารถจัดการข้อมูลกึ่งโครงสร้าง (Semi-structured data) ผ่านประเภทข้อมูล JSONB ได้อย่างมีประสิทธิภาพ
+
+\subsection{กรอบงานส่วนหน้าและการจัดการสถานะ (Frontend Framework)}
+\textbf{Next.js} เป็น React Framework สำหรับพัฒนาเว็บแอปพลิเคชันแบบ Full-stack รองรับระบบเส้นทางตามหน้า (App Router) และ React Server Components (RSC) ซึ่งช่วยลดภาระการประมวลผลฝั่งไคลเอนต์ 
+สำหรับการจัดการข้อมูลสถานะฝั่งไคลเอนต์ (Client State Management) \textbf{TanStack Query} เป็นไลบรารีที่ช่วยจัดการการแคช (Caching) และการดึงข้อมูลเบื้องหลัง (Background Refetching) 
+ด้านความปลอดภัย การจัดการเซสชันนิยมใช้ \textbf{JSON Web Token (JWT)} ร่วมกับ HttpOnly Cookie เพื่อป้องกันการโจมตีแบบ Cross-Site Scripting (XSS) และใช้หลักการ \textbf{Role-Based Access Control (RBAC)} เพื่อจำกัดสิทธิ์การเข้าถึงทรัพยากรตามบทบาทของผู้ใช้งาน
+
+\subsection{แบบจำลองภาษาขนาดใหญ่ (Large Language Models) และ Ollama}
+\textbf{แบบจำลองภาษาขนาดใหญ่ (LLM)} อาศัยสถาปัตยกรรม Transformer ซึ่งใช้กลไกการให้ความสนใจในตนเอง (Self-attention) ในการประมวลผลความสัมพันธ์ของคำในประโยค ดังสมการ~(\ref{eq:ch2_attention}):
+\begin{equation}
+\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+\label{eq:ch2_attention}
+\end{equation}
+เมื่อ $Q$ (Query), $K$ (Key), และ $V$ (Value) คือเมทริกซ์ที่ได้จากการแปลงข้อมูลนำเข้า และ $d_k$ คือมิติของ Key การใช้ Multi-head Attention ช่วยให้ระบบสามารถจับความสัมพันธ์ที่หลากหลายได้พร้อมกัน
+\textbf{Ollama} เป็นรันไทม์ (Runtime) สำหรับประมวลผล LLM ภายในเครื่อง (On-premise) ซึ่งช่วยจัดการโมเดล การลดขนาดพารามิเตอร์ (Quantization) และให้บริการ API ที่เข้ากันได้กับมาตรฐานสากล ทำให้สามารถใช้งาน AI บนฮาร์ดแวร์ระดับขอบ (Edge Devices) ได้อย่างมีประสิทธิภาพ
+
+\subsection{Model Context Protocol (MCP) และการจำแนกเจตนา}
+\textbf{Model Context Protocol (MCP)} เป็นมาตรฐานเปิดสำหรับเชื่อมต่อผู้ช่วย AI เข้ากับแหล่งข้อมูลและเครื่องมือภายนอก ประกอบด้วยองค์ประกอบหลัก 3 ส่วน ได้แก่ เครื่องมือ (Tools), เทมเพลตคำสั่ง (Prompts), และทรัพยากรข้อมูล (Resources) 
+ในการทำงานของ AI Agent การทำความเข้าใจเจตนาของผู้ใช้ (Intent Classification) มักอาศัยการวัดความคล้ายคลึงของเวกเตอร์ความหมาย เช่น การใช้ Cosine Similarity ดังสมการ~(\ref{eq:ch2_cosine}):
+\begin{equation}
+\mathrm{sim}(u, v) = \frac{u \cdot v}{\|u\| \|v\|}
+\label{eq:ch2_cosine}
+\end{equation}
+เมื่อ $u$ และ $v$ คือเวกเตอร์ตัวแทนของข้อความ เพื่อเปรียบเทียบว่าคำสั่งนั้นใกล้เคียงกับเจตนาใดมากที่สุด
+
+\subsection{เทคโนโลยีคอนเทนเนอร์และโปรโตคอล IoT}
+\textbf{Docker} เป็นแพลตฟอร์มสำหรับสร้างและจัดการคอนเทนเนอร์ (Containerization) ช่วยแยกบริการต่างๆ ออกเป็นส่วนย่อย (Microservices) ทำให้สามารถติดตั้งและขยายระบบได้โดยไม่ผูกติดกับสภาพแวดล้อมของระบบปฏิบัติการ
+\textbf{MQTT (Message Queuing Telemetry Transport)} เป็นโปรโตคอลการสื่อสารแบบ Publish/Subscribe ที่มีนํ้าหนักเบา ออกแบบมาสำหรับอุปกรณ์ IoT ที่มีข้อจำกัดด้านทรัพยากรและแบนด์วิดท์ โดยมีระดับคุณภาพการบริการ (Quality of Service: QoS) 3 ระดับ ได้แก่ QoS 0 (ส่งครั้งเดียวและไม่รอยืนยัน), QoS 1 (รอยืนยันและส่งซ้ำหากไม่ได้รับ), และ QoS 2 (ยืนยันแบบ 4-way handshake เพื่อให้มั่นใจว่าข้อมูลไม่สูญหายและไม่ซ้ำซ้อน)
+
+\subsection{เทคโนโลยีไมโครคอนโทรลเลอร์และฮาร์ดแวร์ระดับขอบ}
+การทำงานของระบบ IoT และระบบระบุตำแหน่ง จำเป็นต้องอาศัยฮาร์ดแวร์แบบฝังตัวเพื่อประมวลผลและสื่อสารข้อมูล:
+\begin{itemize}
+    \item \textbf{ไมโครคอนโทรลเลอร์ (Microcontroller):} ทำหน้าที่เป็นสมองกลฝังตัวสำหรับอ่านค่าจากเซ็นเซอร์ (เช่น IMU) และส่งข้อมูลผ่านเครือข่ายไร้สาย (Wi-Fi หรือ BLE)
+    \item \textbf{คอมพิวเตอร์ระดับขอบ (Edge Server):} เป็นคอมพิวเตอร์ขนาดเล็กที่มีประสิทธิภาพสูงกว่าไมโครคอนโทรลเลอร์ ทำหน้าที่ประมวลผลข้อมูลเบื้องต้น จัดการการเชื่อมต่อเครือข่าย และรองรับการทำงานของคอนเทนเนอร์ เพื่อลดภาระการส่งข้อมูลไปยังคลาวด์ส่วนกลาง
+\end{itemize}

@@ -1,16 +1,16 @@
 [0] Config.pm:328> INFO - This is Biber 2.21
 [0] Config.pm:331> INFO - Logfile is 'thesis.blg'
-[126] biber-MSWIN64:342> INFO - === 
-[168] Biber.pm:421> INFO - Reading 'thesis.bcf'
-[327] Biber.pm:1002> INFO - Found 160 citekeys in bib section 0
-[342] Biber.pm:4487> INFO - Processing section 0
-[353] Biber.pm:4678> INFO - Looking for bibtex file 'bib/refs.bib' for section 0
-[418] bibtex.pm:1713> INFO - LaTeX decoding ...
-[572] bibtex.pm:1519> INFO - Found BibTeX data source 'bib/refs.bib'
-[1540] UCollate.pm:68> INFO - Overriding locale 'th-TH' defaults 'variable = shifted' with 'variable = non-ignorable'
-[1540] UCollate.pm:68> INFO - Overriding locale 'th-TH' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[1540] Biber.pm:4307> INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'th-TH'
-[1672] bbl.pm:676> INFO - Writing 'thesis.bbl' with encoding 'UTF-8'
-[1764] bbl.pm:779> INFO - Output to thesis.bbl
-[1765] Biber.pm:132> WARN - Duplicate entry key: 'FastMCP2024' in file 'bib/refs.bib', skipping ...
-[1765] Biber.pm:134> INFO - WARNINGS: 1
+[156] biber-MSWIN64:342> INFO - === 
+[210] Biber.pm:421> INFO - Reading 'thesis.bcf'
+[357] Biber.pm:1002> INFO - Found 18 citekeys in bib section 0
+[374] Biber.pm:4487> INFO - Processing section 0
+[388] Biber.pm:4678> INFO - Looking for bibtex file 'bib/refs.bib' for section 0
+[467] bibtex.pm:1713> INFO - LaTeX decoding ...
+[683] bibtex.pm:1519> INFO - Found BibTeX data source 'bib/refs.bib'
+[832] UCollate.pm:68> INFO - Overriding locale 'th-TH' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[832] UCollate.pm:68> INFO - Overriding locale 'th-TH' defaults 'variable = shifted' with 'variable = non-ignorable'
+[833] Biber.pm:4307> INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'th-TH'
+[865] bbl.pm:676> INFO - Writing 'thesis.bbl' with encoding 'UTF-8'
+[883] bbl.pm:779> INFO - Output to thesis.bbl
+[884] Biber.pm:132> WARN - Duplicate entry key: 'FastMCP2024' in file 'bib/refs.bib', skipping ...
+[884] Biber.pm:134> INFO - WARNINGS: 1

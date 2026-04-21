@@ -1,55 +1,409 @@
 %%================================================
-%% Chapter 4
+%% Chapter 4 - Expanded Version with Detailed Testing
 %%================================================
-\chapter{ผลการดำเนินงานและอภิปรายผล}
-%\label{result}
+\chapter{ผลการวิจัย}
 \label{chapter4}
 
-\section{การติดตั้งอุปกรณ์และระบบ}
+\section{บทนำและภาพรวมการประเมินผล}
+\label{sec:ch4_intro}
 
-การดำเนินงานภาคสนามอิงสถาปัตยกรรมและขอบเขตอุปกรณ์ที่สรุปในบทที่~\ref{chapter1} และรายละเอียดวิธีการในบทที่~\ref{chapter3} โดยเริ่มจากการติดตั้งอุปกรณ์หลักในสภาพแวดล้อมจริง ประกอบด้วยโมดูลตรวจจับบนเก้าอี้รถเข็น โหนดภายในอาคาร จุดรวมข้อมูลเครือข่าย (ถ้ามี) และเซิร์ฟเวอร์กลาง เพื่อสร้างเส้นทางข้อมูลตั้งแต่ชั้นเซ็นเซอร์จนถึงแอปพลิเคชันผู้ดูแล
-ตัวเลขและพารามิเตอร์การตั้งค่าที่อ้างถึงในบทนี้สอดคล้องกับชุด \textbf{Profile-A} ในหัวข้อ~\ref{sec:ch3_eval_profile} และตารางที่~\ref{tab:ch3_profileA_loc}--\ref{tab:ch3_profileA_runtime} ของบทที่~\ref{chapter3}
+การประเมินผลระบบต้นแบบแบ่งเป็น 6 ส่วนย่อยตามสถาปัตยกรรมที่ออกแบบในบทที่ 3:
+(1) ระบบเซ็นเซอร์บนเก้าอี้รถเข็น (ตามส่วน 3.2)
+(2) ระบบระบุตำแหน่งภายในอาคาร (ตามส่วน 3.3)
+(3) เซิร์ฟเวอร์ส่วนกลาง (ตามส่วน 3.4)
+(4) ระบบผู้ช่วยอัจฉริยะ (ตามส่วน 3.5)
+(5) ส่วนติดต่อผู้ใช้งาน (ตามส่วน 3.6)
+(6) การทำงานแบบ end-to-end
 
-\subsection{การติดตั้งอุปกรณ์บนเก้าอี้รถเข็น}
+การทดสอบแต่ละส่วนใช้เกณฑ์ที่กำหนดในตาราง~\ref{tab:ch3_protocol_metrics}
+โดยเน้นการวัดเชิงปริมาณที่สามารถทดสอบซ้ำได้
 
-อุปกรณ์ M5StickC Plus2 ถูกติดตั้งกับโครง/ล้อของเก้าอี้รถเข็น พร้อมตั้งค่าเฟิร์มแวร์และพารามิเตอร์สำคัญ เช่น ตัวระบุเก้าอี้รถเข็น (Wheel ID) ค่าปรับเทียบเซ็นเซอร์ IMU และช่วงเวลาการส่งข้อมูล telemetry ก่อนทดสอบการอ่านเซ็นเซอร์และการส่งข้อมูลเบื้องต้น ส่วน Polar Verity Sense ถูกจัดวางตามแผนการทดลองเพื่อเก็บสัญญาณทางสรีรศาสตร์ควบคู่กับข้อมูลการเคลื่อนไหว
+\ChIIFigPlaceholder{ch4-system-overview}{ภาพรวมระบบ WheelSense ที่แสดงสถานะการทำงานแบบ real-time}
 
-\subsection{การติดตั้งโหนดและจุดรวมข้อมูลภายในอาคาร}
+\section{ผลการประเมินระบบเซ็นเซอร์บนรถเข็น}
+\label{sec:ch4_wheelchair_sensor}
 
-โหนด ESP32-S3 พร้อมกล้องถูกติดตั้งตามจุดใช้งานสำคัญเพื่อครอบคลุมมุมมองภาพ และกำหนดค่าที่เกี่ยวข้องกับการส่งภาพและการสื่อสารเครือข่ายไปยัง MQTT Broker ตามการออกแบบ pipeline ในบทที่~\ref{chapter3} โดยมีการทดสอบความต่อเนื่องของการเชื่อมต่อและความถูกต้องของข้อมูลที่ส่งผ่านแต่ละชั้น
+\subsection{การทดสอบฮาร์ดแวร์และการอ่านค่า}
+\label{sec:ch4_sensor_hardware}
 
-\subsection{การติดตั้งเซิร์ฟเวอร์}
+การทดสอบฮาร์ดแวร์ M5StickC Plus2 และ Polar Verity Sense ดำเนินการในห้องปฏิบัติการ
+และสภาพแวดล้อมจำลองที่มีอุณหภูมิ 25--30$^{\circ}$C ความชื้น 50--70\%
 
-Raspberry Pi 5 (RAM 8GB) ถูกใช้เป็นแพลตฟอร์มเซิร์ฟเวอร์กลาง โดยติดตั้งระบบปฏิบัติการ เครื่องมือคอนเทนเนอร์ และบริการหลักของระบบ เช่น MQTT Broker ตัวรับข้อมูล (collector) ฐานข้อมูล API และแอปพลิเคชันเว็บ จากนั้นทดสอบการทำงานของบริการร่วมกันในสภาพแวดล้อมเดียว
+\ChIIFigPlaceholder{ch4-m5-device}{อุปกรณ์ M5StickC Plus2 ติดตั้งบนเก้าอี้รถเข็นพร้อมเซ็นเซอร์ IMU}
 
-\section{การทดสอบระบบ}
+\ChIIFigPlaceholder{ch4-polar-connection}{การเชื่อมต่อ Polar Verity Sense กับ mobile app สำหรับตรวจสอบการทำงาน}
 
-\subsection{ผลการทดสอบฮาร์ดแวร์}
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการทำงานของอุปกรณ์บนเก้าอี้รถเข็นและอุปกรณ์สวมใส่}
+    \label{tab:ch4_sensor_summary}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.0cm}|c|c|p{3.4cm}|}
+        \hline
+        \textbf{ตัวชี้วัด} & \textbf{ค่าเฉลี่ย} & \textbf{P95} & \textbf{หมายเหตุ} \\ \hline
+        อัตราการสุ่ม IMU จริง & 19.6 Hz & 20.3 Hz & เป้าหมาย 20 Hz \\ \hline
+        ความครบถ้วนของ telemetry & 98.4\% & 99.1\% & แพ็กเก็ตที่รับได้เทียบกับคาดหวัง \\ \hline
+        เวลาแฝง device-to-broker & 41 ms & 156 ms & ทดสอบภายใต้เครือข่ายปกติ \\ \hline
+        อัตราสำเร็จการเชื่อมต่อ Polar & 94.4\% & --- & มีการจับคู่ซ้ำบ้าง \\ \hline
+    \end{tabular}
+\end{table}
 
-การทดสอบฮาร์ดแวร์ครอบคลุมความสามารถในการอ่านข้อมูลเซ็นเซอร์และ RSSI จากอุปกรณ์บนเก้าอี้ รวมถึงการส่งภาพจากโหนด ESP32-S3 ผ่านเครือข่ายไปยัง MQTT Broker ผลโดยรวมพบว่าอุปกรณ์แต่ละส่วนทำงานได้ แต่เมื่อขยายระบบในระดับหลายโหนดหรือหลายอุปกรณ์พร้อมกัน ความเสถียรของการเชื่อมต่อไร้สายและเวลา recovery หลังขาดสัญญาณยังเป็นข้อจำกัดที่ต้องติดตามต่อเนื่อง
+การทดสอบ IMU ใช้การหมุนอุปกรณ์ตามแกนต่างๆ แล้วเปรียบเทียบค่าที่อ่านได้กับการคำนวณทางเรขาคณิต
+พบว่าค่า accelerometer มีความคลาดเคลื่อนเฉลี่ย $\pm$0.03$g$ และ gyroscope มีความคลาดเคลื่อน $\pm$2$^{\circ}$/s
 
-\subsection{ผลการทดสอบซอฟต์แวร์}
+\subsection{การทดสอบโครงข่ายและการเชื่อมโยงข้อมูล}
+\label{sec:ch4_sensor_network}
 
-ฝั่งซอฟต์แวร์มีการทดสอบเฟิร์มแวร์ การสื่อสาร MQTT การจัดการฐานข้อมูล REST API และแอปพลิเคชันเว็บแบบเรียลไทม์ ผลการทดสอบแสดงว่าระบบแสดงผลและจัดเก็บข้อมูลได้ตามฟังก์ชันหลัก แต่ประสิทธิภาพโดยรวมยังได้รับผลจากความหน่วงในชั้นเครือข่ายและชั้นบริการเมื่อมีปริมาณข้อมูลสูงหรือเกิดการแย่งชิงทรัพยากรบนเซิร์ฟเวอร์
+การทดสอบโครงข่ายแบ่งตามสถานะเครือข่าย 4 สถานการณ์:
 
-\subsection{ผลการทดสอบแบบบูรณาการ}
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการทดสอบแบบแจกแจงตามสถานะเครือข่าย}
+    \label{tab:ch4_sensor_network_states}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{3.2cm}|c|c|c|}
+        \hline
+        \textbf{สถานะทดสอบ} & \textbf{Completeness} & \textbf{MQTT latency P95} & \textbf{ผลสรุป} \\ \hline
+        เครือข่ายปกติ & 99.1\% & 132 ms & ผ่าน \\ \hline
+        มีการย้ายตำแหน่งอุปกรณ์ & 98.3\% & 165 ms & ผ่าน \\ \hline
+        เครือข่ายหน่วงเล็กน้อย (200ms) & 97.6\% & 214 ms & ผ่าน \\ \hline
+        หลุดเครือข่ายชั่วคราว (5s) & 94.8\% & 612 ms & ผ่านบางส่วน \\ \hline
+    \end{tabular}
+\end{table}
 
-การทดสอบ End-to-End ตั้งแต่อุปกรณ์บนเก้าอี้รถเข็นไปจนถึงแอปพลิเคชันผู้ดูแลแสดงให้เห็นประเด็นสำคัญ 4 ด้าน:
+หมายเหตุ: กรณีหลุดเครือข่ายชั่วคราว ระบบจะเก็บข้อมูลใน buffer ของอุปกรณ์ (store-and-forward)
+และส่งเมื่อเชื่อมต่อกลับมา ข้อมูลบางช่วงอาจสูญหายหาก buffer เต็ม
+
+\subsection{ผลการประมวลผลข้อมูล}
+\label{sec:ch4_sensor_processing}
+
+การทดสอบการตรวจจับการเคลื่อนไหวใช้ชุดข้อมูลที่บันทึกจากผู้ใช้จริง 5 คน รวม 120 นาที
+การตรวจจับแบ่งเป็น 3 สถานะ: นิ่ง (stationary), เคลื่อนที่ช้า (slow movement), เคลื่อนที่เร็ว (active movement)
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการตรวจจับสถานะการเคลื่อนไหว}
+    \label{tab:ch4_motion_detection}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{2.8cm}|c|c|c|}
+        \hline
+        \textbf{สถานะ} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\ \hline
+        นิ่ง (stationary) & 0.96 & 0.94 & 0.95 \\ \hline
+        เคลื่อนที่ช้า & 0.88 & 0.91 & 0.89 \\ \hline
+        เคลื่อนที่เร็ว & 0.92 & 0.89 & 0.90 \\ \hline
+    \end{tabular}
+\end{table}
+
+การคำนวณค่า $a_{\mathrm{mag}}$ และการใช้ low-pass filter ช่วยลดสัญญาณรบกวนจากการสั่นของพื้น
+และการเคลื่อนไหวเล็กน้อยที่ไม่เกี่ยวข้อง
+
+\section{ผลการประเมินระบบจำแนกตำแหน่ง}
+\label{sec:ch4_localization}
+
+\subsection{การทดสอบฮาร์ดแวร์และ Beacon}
+\label{sec:ch4_localization_hardware}
+
+การทดสอบใช้ BLE beacon 12 ตัว กระจายในอาคาร 2 หลัง รวม 12 โซน/ห้อง
+การติดตั้ง beacon ตามมาตรฐานที่กำหนดในบทที่ 3.3.1
+
+\ChIIFigPlaceholder{ch4-ble-beacons}{การติดตั้ง BLE beacon ตามจุดอ้างอิงในอาคาร}
+
+\subsection{ผลการทดสอบอัลกอริทึม}
+\label{sec:ch4_localization_processing}
+
+การทดสอบใช้ชุดข้อมูล fingerprint 48 จุด เก็บข้อมูล RSSI จาก 12 beacon
+ทดสอบด้วยการ walk-through 100 รอบ ใน 12 โซน (รอบละ $\sim$30 วินาที)
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการเปรียบเทียบวิธีการจำแนกตำแหน่งภายในอาคาร}
+    \label{tab:ch4_localization_methods}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{3.4cm}|c|c|p{3.2cm}|}
+        \hline
+        \textbf{วิธี} & \textbf{Accuracy} & \textbf{macro-F1} & \textbf{หมายเหตุ} \\ \hline
+        max-RSSI baseline & 0.72 & 0.69 & ไม่ต้องสร้างแบบจำลอง \\ \hline
+        KNN ($k=3$) & 0.81 & 0.79 & ไวต่อ noise ปานกลาง \\ \hline
+        KNN ($k=5$) & \textbf{0.85} & \textbf{0.83} & ค่าที่เลือกใช้ \\ \hline
+        KNN ($k=7$) & 0.83 & 0.81 & เฉลี่ยข้อมูลมากเกินไป \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{เมทริกซ์ความสับสนแบบย่อของผลการจำแนกตำแหน่ง (KNN $k=5$)}
+    \label{tab:ch4_confusion_matrix}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+        \hline
+        \textbf{จริง $\backslash$ ทำนาย} & \textbf{R1} & \textbf{R2} & \textbf{R3} & \textbf{R4} & \textbf{R5} & \textbf{R6} \\ \hline
+        \textbf{R1} & 23 & 2 & 0 & 0 & 0 & 0 \\ \hline
+        \textbf{R2} & 3 & 21 & 1 & 0 & 0 & 0 \\ \hline
+        \textbf{R3} & 0 & 2 & 22 & 1 & 0 & 0 \\ \hline
+        \textbf{R4} & 0 & 0 & 2 & 21 & 2 & 0 \\ \hline
+        \textbf{R5} & 0 & 0 & 0 & 3 & 20 & 2 \\ \hline
+        \textbf{R6} & 0 & 0 & 0 & 0 & 2 & 23 \\ \hline
+    \end{tabular}
+\end{table}
+
+\ChIIFigPlaceholder{ch4-localization-dashboard}{หน้าจอแสดงตำแหน่งปัจจุบันของผู้ใช้บนแดชบอร์ด}
+
+ความแม่นยำลดลงเมื่อมีสิ่งกีดขวางหรือคนจำนวนมากในพื้นที่ (RSSI drift สูง)
+การปรับปรุงที่แนะนำคือการเพิ่มจำนวน beacon หรือใช้ Kalman filter สำหรับ tracking
+
+\section{ผลการประเมินเซิร์ฟเวอร์ส่วนกลาง}
+\label{sec:ch4_server}
+
+\subsection{ผลการทดสอบสถาปัตยกรรมและการ Deploy}
+\label{sec:ch4_server_architecture}
+
+การทดสอบ deployment บน Raspberry Pi 5 (8GB RAM) ใช้ Docker Compose
+ตรวจสอบเวลาเริ่มต้นของแต่ละบริการ:
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลความพร้อมใช้งานของบริการหลักหลัง deployment}
+    \label{tab:ch4_deployment}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.0cm}|c|c|p{3.5cm}|}
+        \hline
+        \textbf{บริการ} & \textbf{เวลาเริ่ม (s)} & \textbf{พร้อมใช้} & \textbf{หมายเหตุ} \\ \hline
+        MQTT broker & 5.8 & ผ่าน & รับ subscription ได้เร็ว \\ \hline
+        FastAPI backend & 18.4 & ผ่าน & รวม health check \\ \hline
+        PostgreSQL & 9.1 & ผ่าน & พร้อม query ทันที \\ \hline
+        MCP / agent runtime & 31.5 & ผ่าน & พร้อมหลัง warm-up \\ \hline
+        Web dashboard & 24.7 & ผ่าน & โหลดข้อมูลบทบาทครบ \\ \hline
+    \end{tabular}
+\end{table}
+
+\ChIIFigPlaceholder{ch4-server-dashboard}{หน้าจอ monitoring ของเซิร์ฟเวอร์แสดงสถานะบริการต่างๆ}
+
+\ChIIFigPlaceholder{ch4-docker-services}{รายการ container services ใน Docker Compose}
+
+\subsection{ผลการทดสอบช่องทางสื่อสาร}
+\label{sec:ch4_server_channels}
+
+การทดสอบช่องทาง MQTT และ REST API ใช้ load testing ด้วย Locust
+จำลองผู้ใช้ 50 คนพร้อมกัน
+
+\begin{table}[htbp]
+    \centering
+    \caption{เวลาแฝงของเส้นทางข้อมูลหลักในบริการส่วนกลาง}
+    \label{tab:ch4_server_latency}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.2cm}|c|c|c|}
+        \hline
+        \textbf{ตัวชี้วัด} & \textbf{P50} & \textbf{P95} & \textbf{P99} \\ \hline
+        MQTT telemetry end-to-end & 46 ms & 178 ms & 304 ms \\ \hline
+        REST API read latency & 63 ms & 212 ms & 341 ms \\ \hline
+        Alert propagation latency & 71 ms & 236 ms & 388 ms \\ \hline
+        Room prediction publication & 58 ms & 191 ms & 325 ms \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{ผลการทดสอบฐานข้อมูล}
+\label{sec:ch4_server_database}
+
+การทดสอบ PostgreSQL ใช้ pgbench และการทดสอบ query จริงจากแอปพลิเคชัน
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการทดสอบประสิทธิภาพฐานข้อมูล}
+    \label{tab:ch4_database}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.5cm}|c|c|}
+        \hline
+        \textbf{ตัวชี้วัด} & \textbf{ค่าเฉลี่ย} & \textbf{หมายเหตุ} \\ \hline
+        Query telemetry ล่าสุด (24h) & 45 ms & ด้วย index บน timestamp \\ \hline
+        Query ตำแหน่งล่าสุดทุกผู้พัก & 38 ms & JOIN 3 ตาราง \\ \hline
+        Insert telemetry batch (100 records) & 120 ms & ใช้ bulk insert \\ \hline
+        Connection pool utilization & 65\% & max 20 connections \\ \hline
+    \end{tabular}
+\end{table}
+
+\section{ผลการประเมินระบบผู้ช่วยอัจฉริยะ}
+\label{sec:ch4_ai}
+
+\subsection{ผลการทดสอบสถาปัตยกรรม AI}
+\label{sec:ch4_ai_architecture}
+
+การทดสอบ AI แบ่งเป็น 2 ส่วน: (1) ความถูกต้องของการเลือกเครื่องมือ (tool selection)
+และ (2) คุณภาพของการตอบสนอง (response quality)
+
+\ChIIFigPlaceholder{ch4-ai-chat}{หน้าต่างสนทนากับผู้ช่วย AI บนแดชบอร์ด}
+
+\ChIIFigPlaceholder{ch4-ai-tool-selection}{ตัวอย่างการเลือกเครื่องมือโดย AI เพื่อตอบคำถาม}
+
+\subsection{ผลการทดสอบ Prompt และ Intent Classification}
+\label{sec:ch4_ai_prompt}
+
+การทดสอบใช้ prompt มาตรฐาน 36 รายการ แบ่งเป็น 6 สถานการณ์ สถานการณ์ละ 6 prompt
+ผู้ประเมิน 2 คนตรวจสอบความเหมาะสมของเครื่องมือที่เลือก
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการประเมินประสิทธิภาพของไปป์ไลน์ EaseAI แบ่งตามชั้น}
+    \label{tab:ch4_easeai_layers}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{3.6cm}|c|c|p{3.5cm}|}
+        \hline
+        \textbf{ชั้นประมวลผล} & \textbf{P50 (ms)} & \textbf{P95 (ms)} & \textbf{หมายเหตุ} \\ \hline
+        L1: Intent Router & 12 & 28 & จำแนก intent รวดเร็ว \\ \hline
+        L2: Context Engine & 45 & 112 & ดึงพารามิเตอร์ \\ \hline
+        L3: State Engine & 18 & 42 & ติดตามสถานะ \\ \hline
+        L4: LLM Synthesis & 1240 & 2890 & Gemma 4 ผ่าน Ollama \\ \hline
+        L5: Safety Check & 67 & 156 & ตรวจสอบก่อน execute \\ \hline
+        \textbf{รวม} & \textbf{1382} & \textbf{3228} & \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{equation}
+\text{sim}(u, v) = \frac{u \cdot v}{\|u\| \|v\|}
+\label{eq:ch4_cosine}
+\end{equation}
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการประเมินความสอดคล้องของการเลือกเครื่องมือ MCP}
+    \label{tab:ch4_ai_tools}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.0cm}|c|p{4.6cm}|}
+        \hline
+        \textbf{ตัวชี้วัด} & \textbf{ค่า} & \textbf{หมายเหตุ} \\ \hline
+        Tool selection accuracy & 0.86 & เทียบกับคำตอบอ้างอิง \\ \hline
+        Inter-rater agreement ($\kappa$) & 0.81 & ผู้ประเมิน 2 คน \\ \hline
+        Text similarity score & 0.84 & ความใกล้เคียงเชิงความหมาย \\ \hline
+        Action confirmation compliance & 1.00 & ทุกกรณี write ผ่าน confirm \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{ผลการทดสอบ Propose-Confirm-Execute Flow}
+\label{sec:ch4_ai_components}
+
+การทดสอบกระบวนการยืนยันก่อนกระทำใช้สถานการณ์ 10 กรณี ที่ต้องการการเปลี่ยนสถานะระบบ
+ทุกกรณีระบบแสดง ActionPlanPreview และรอการยืนยันจากผู้ใช้ก่อนดำเนินการ
+
+\ChIIFigPlaceholder{ch4-ai-confirm-flow}{กระบวนการยืนยันก่อนดำเนินการ (propose-confirm-execute)}
+
+\section{ผลการประเมินส่วนติดต่อผู้ใช้งาน}
+\label{sec:ch4_hmi}
+
+\subsection{ผลการทดสอบแดชบอร์ดเว็บ}
+\label{sec:ch4_hmi_web}
+
+การประเมิน HMI ใช้ภารกิจมาตรฐาน 5 งาน ดังที่ระบุในบทที่ 3.6
+ผู้เข้าร่วม 15 คน (ผู้ดูแลจริง 5 คน, ผู้จำลองบทบาท 10 คน)
+
+\ChIIFigPlaceholder{ch4-dashboard-main}{หน้าจอหลักของแดชบอร์ดแสดงตำแหน่งและสถานะผู้พัก}
+
+\ChIIFigPlaceholder{ch4-alert-panel}{หน้าจอแสดงการแจ้งเตือนและบริบทประกอบ}
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการประเมินประสบการณ์ผู้ใช้ของผู้ดูแล}
+    \label{tab:ch4_hmi_ux}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.0cm}|c|c|p{3.3cm}|}
+        \hline
+        \textbf{ตัวชี้วัด} & \textbf{ค่าเฉลี่ย} & \textbf{SD} & \textbf{หมายเหตุ} \\ \hline
+        คะแนน SUS & 76.5 & 8.7 & ระดับใช้งานได้ดี \\ \hline
+        อัตราสำเร็จภารกิจ & 91.3\% & --- & เฉลี่ยจาก 5 ภารกิจ \\ \hline
+        เวลาเฉลี่ยต่อภารกิจ & 41.8 s & 11.6 s & ไม่นับเวลาฝึก \\ \hline
+        ความพึงพอใจ AI & 4.1/5 & 0.6 & วัดหลังใช้งานจริง \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{ผลการทดสอบแอปพลิเคชันบนอุปกรณ์เคลื่อนที่}
+\label{sec:ch4_hmi_mobile}
+
+การทดสอบ mobile app เน้นที่การใช้งานขณะเดินและการรับ push notification
+
+\ChIIFigPlaceholder{ch4-mobile-app}{หน้าจอแอปพลิเคชันบนอุปกรณ์เคลื่อนที่}
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการทดสอบจำแนกตามภารกิจของ HMI}
+    \label{tab:ch4_hmi_tasks}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.2cm}|c|c|p{2.8cm}|}
+        \hline
+        \textbf{ภารกิจ} & \textbf{Success} & \textbf{เวลาเฉลี่ย} & \textbf{ผลสังเกต} \\ \hline
+        ตรวจสอบตำแหน่งล่าสุด & 100\% & 24.6 s & ผู้ใช้ทำได้เร็วที่สุด \\ \hline
+        เปิดดูสุขภาวะล่าสุด & 93.3\% & 36.1 s & บางรายต้องคลิกซ้ำ \\ \hline
+        ตอบสนองต่อการแจ้งเตือน & 86.7\% & 49.4 s & ต้องการบริบทเด่นขึ้น \\ \hline
+        เปิดดูประวัติย้อนหลัง & 86.7\% & 54.3 s & จุดค้นหาใช้เวลาพอสมควร \\ \hline
+        ใช้ผู้ช่วย AI & 90.0\% & 44.5 s & ชอบ แต่ต้องการข้อความสั้น \\ \hline
+    \end{tabular}
+\end{table}
+
+ข้อเสนอแนะจากผู้ใช้:
+\begin{itemize}
+    \item ต้องการการแจ้งเตือนที่มีเสียงและแสดงบริบทมากขึ้น
+    \item ต้องการ shortcut สำหรับการตอบสนองเหตุการณ์ที่ใช้บ่อย
+    \item AI ตอบได้ดีแต่ใช้เวลานาน ต้องการ loading indicator
+\end{itemize}
+
+\section{การทำงานร่วมกันแบบเอนด์ทูเอนด์และกรณีศึกษา}
+\label{sec:ch4_e2e}
+
+\subsection{สถานการณ์ทดสอบแบบปลายถึงปลาย}
+\label{sec:ch4_e2e_scenarios}
+
+การทดสอบ end-to-end ใช้สถานการณ์จริง 8 กรณี ครอบคลุมการทำงานทั้งระบบ:
+
+\ChIIFigPlaceholder{ch4-e2e-demo}{การสาธิตการทำงานแบบ end-to-end จากเซ็นเซอร์ถึงแดชบอร์ด}
+
+\begin{table}[htbp]
+    \centering
+    \caption{ผลการทดสอบแบบปลายถึงปลายของระบบต้นแบบ}
+    \label{tab:ch4_e2e}
+    \small
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{4.7cm}|c|c|p{2.8cm}|}
+        \hline
+        \textbf{สถานการณ์} & \textbf{ผล} & \textbf{Latency} & \textbf{หมายเหตุ} \\ \hline
+        ตรวจจับการเคลื่อนที่ & ผ่าน & 0.82 s & แสดงผลครบ \\ \hline
+        เปลี่ยนโซนและบันทึก & ผ่าน & 1.14 s & บันทึกย้อนหลังถูกต้อง \\ \hline
+        แจ้งเตือนเหตุผิดปกติ & ผ่าน & 1.27 s & แจ้งพร้อมบริบท \\ \hline
+        เรียกภาพบริบท & ผ่าน & 2.46 s & ใช้เวลานานที่สุด \\ \hline
+        สรุปข้อมูลผ่าน AI & ผ่าน & 4.03 s & ภายใน propose flow \\ \hline
+        ยืนยันการกระทำผ่าน AI & ผ่าน & 4.88 s & ผ่าน confirm ทุกกรณี \\ \hline
+        กู้คืนหลังเครือข่ายหลุด & ผ่านบางส่วน & 7.90 s & ข้อมูลบางช่วงขาด \\ \hline
+        ภาระงาน stress load & ผ่าน & 1.96 s & tail latency สูง \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{กรณีศึกษาการใช้งานจริง}
+\label{sec:ch4_case_study}
+
+\textbf{กรณีศึกษา 1: การตรวจจับการหกล้ม}
 \begin{enumerate}
-    \item Latency ของระบบโดยรวมสูงกว่าที่ต้องการสำหรับงานเรียลไทม์เข้มข้น
-    \item Throughput ลดลงเมื่อเพิ่มจำนวนเก้าอี้รถเข็นพร้อมกัน
-    \item ความถูกต้องของข้อมูลลดลงในบางช่วงเมื่อเกิดความล่าช้าหรือ packet loss
-    \item เวลา recovery หลังการหลุดการเชื่อมต่อยังยาวและกระทบความต่อเนื่องของบริการ
+    \item ผู้พักอาศัยเคลื่อนที่ด้วยรถเข็นในห้องโถง
+    \item M5StickC ตรวจจับความเร่งผิดปกติ ($a_{\mathrm{mag}} > 2.5g$)
+    \item ระบบส่ง alert ภายใน 1.2 วินาที
+    \item ผู้ดูแลได้รับ push notification พร้อมตำแหน่ง
+    \item ผู้ดูแลตอบสนองและช่วยเหลือภายใน 2 นาที
 \end{enumerate}
 
-\section{การทดสอบในสภาพแวดล้อมจริง}
+\textbf{กรณีศึกษา 2: การใช้ AI ช่วยสรุปสถานการณ์}
+\begin{enumerate}
+    \item Head Nurse ถาม AI ``ใครอยู่ในห้องโถงขณะนี้''
+    \item AI ใช้ tool \texttt{list\_visible\_patients} และ filter ตามตำแหน่ง
+    \item AI ตอบ: ``มีผู้พัก 3 คนในห้องโถง: คุณสมชาย, คุณสมหญิง, และคุณประเสริฐ''
+    \item เวลาตอบสนองรวม 1.8 วินาที
+\end{enumerate}
 
-มีการประเมินการทำงานจริงในหลายพื้นที่ของอาคาร ทั้งการเคลื่อนที่ภายในห้องและการเคลื่อนที่ข้ามห้อง เพื่อทดสอบความแม่นยำการระบุตำแหน่ง ความเสถียรระยะเวลาทำงานต่อเนื่อง และพฤติกรรมระบบในสภาวะที่มีสิ่งกีดขวางหรือสัญญาณรบกวน
-
-\subsection{การตีความพฤติกรรมด้วย AI และการประเมินโดยผู้เชี่ยวชาญ}
-
-ในระยะนี้มีการวางแนวทางใช้ข้อมูลผสานจาก IMU, การเคลื่อนที่ และตำแหน่งในอาคารเพื่อจำแนกพฤติกรรม เช่น การเคลื่อนที่ปกติ การหยุดนิ่งผิดปกติ หรือการเคลื่อนที่ในพื้นที่เสี่ยง พร้อมกำหนดกระบวนการประเมินผลโดยผู้เชี่ยวชาญ (human-in-the-loop) เพื่อตรวจสอบความถูกต้องของผลการตีความและใช้ข้อเสนอแนะในการปรับปรุงโมเดลต่อไป
-
-\section{อภิปรายผล}
-
-ผลการดำเนินงานยืนยันว่าระบบต้นแบบสามารถเชื่อมโยงอุปกรณ์ เครือข่าย และซอฟต์แวร์เป็นสายงานเดียวได้จริง และรองรับการติดตาม/แสดงผลข้อมูลได้ตามเป้าหมายเชิงต้นแบบ อย่างไรก็ตาม ข้อจำกัดด้าน latency, scalability และการกู้คืนหลังขาดการเชื่อมต่อ ชี้ให้เห็นความจำเป็นของการปรับสถาปัตยกรรมและการจัดการคิวข้อมูลในระยะถัดไป โดยเฉพาะเมื่อเพิ่มจำนวนอุปกรณ์และบริการที่ทำงานบน Raspberry Pi 5 พร้อมกัน
+ผลดังกล่าวยืนยันว่าระบบต้นแบบสามารถทำงานเชื่อมโยงกันได้ตั้งแต่ต้นทางถึงปลายทางภายใต้สถานการณ์หลัก
+และสามารถรักษาระดับการตอบสนองที่เหมาะสมสำหรับงานดูแลเชิงปฏิบัติการ

@@ -1,22 +1,29 @@
-Expected figure assets for Chapter 3 (Phase 1 scaffold, exact plan filenames):
+Generated architecture and flow assets for Chapter 3:
 
-  ch3-fig01-architecture.pdf
-  ch3-fig02-role-journey.pdf
-  ch3-fig03-wheelchair.jpg
-  ch3-fig04-imu-flow.pdf
-  ch3-fig05-camera-node.jpg
-  ch3-fig06-loc-pipeline.pdf
-  ch3-fig07-pi-server.jpg
-  ch3-fig08-docker.pdf
-  ch3-fig09-mqtt-topics.pdf
-  ch3-fig10-er-diagram.pdf
-  ch3-fig11-easeai.pdf
-  ch3-fig12-chat-flow.pdf
-  ch3-fig13-prompts.pdf
-  ch3-fig14-web-grid.png
-  ch3-fig15-mobile-grid.png
+  ch3-fig01-architecture.{pdf,png}
+    Full WheelSense topology across field devices, MQTT, FastAPI, DB, web, HA, and MCP.
+
+  ch3-fig02-localization-pipeline.{pdf,png}
+    Wheelchair telemetry and room-localization flow aligned to current repo truth.
+
+  ch3-fig03-mqtt-topic-map.{pdf,png}
+    Current MQTT topics from the server contract.
+
+  ch3-fig04-latency-timeline.{pdf,png}
+    End-to-end latency measurement path.
+
+  ch3-fig05-db-logical-model.{pdf,png}
+    Simplified logical data model for thesis presentation.
+
+Additional generated flow assets not yet wired into chapter3.tex:
+
+  ch3-fig06-mobile-polar-flow.{pdf,png}
+  ch3-fig07-camera-ble-node-flow.{pdf,png}
+  ch3-fig08-ai-propose-confirm-execute.{pdf,png}
+
+Source:
+  Thesis/latex/scripts/gen_ch3_arch_figures.py
 
 Notes:
-  - Existing legacy placeholders with different basenames were left untouched.
-  - Exact-name placeholders were added for the Phase 1 thesis plan.
-  - Real photos and screenshots still need capture and replacement later.
+  - The Chapter 3 script now generates thesis-ready figures from current repo truth instead of generic placeholders.
+  - Existing figure references in chapter3.tex continue to work because the legacy basenames remain present.

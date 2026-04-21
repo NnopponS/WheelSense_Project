@@ -1,36 +1,34 @@
 \vspace {-0.5cm}
 ~\hfill \textnormal {หน้า}\par 
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces อุปกรณ์ที่ใช้}}{8}{table.caption.17}%
-\contentsline {table}{\numberline {1.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตารางการดำเนินงานโครงงาน (ส.ค.--พ.ค.)}}{10}{table.caption.19}%
+\contentsline {table}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนการดำเนินงานตลอดโครงการวิจัย}}{5}{table.caption.16}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลประชากรผู้สูงอายุในประเทศไทยและความต้องการการดูแล}}{12}{table.caption.20}%
-\contentsline {table}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเปรียบเทียบระบบ IoT แบบโอเพนซอร์สและเชิงพาณิชย์สำหรับงานดูแลผู้สูงอายุ}}{18}{table.caption.24}%
-\contentsline {table}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเปรียบเทียบความแม่นยำของเทคนิคระบุตำแหน่งภายในอาคาร}}{19}{table.caption.26}%
-\contentsline {table}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเปรียบเทียบระดับคุณภาพการบริการ (QoS) ของ MQTT}}{25}{table.caption.28}%
-\contentsline {table}{\numberline {2.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สังเคราะห์งานวิจัยและระบบที่เกี่ยวข้องในระดับกรอบความสามารถ}}{35}{table.caption.36}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บทบาทหน้าที่และความรับผิดชอบของบุคลากรในสถานดูแลผู้สูงอายุ}}{6}{table.caption.17}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces คำศัพท์และข้อตกลงการเรียกชื่อที่ใช้ในบทที่ 3}}{38}{table.caption.37}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การโยงวัตถุประสงค์กับความต้องการ โมดูล และการประเมินเชิงวิจัย (traceability)}}{39}{table.caption.38}%
-\contentsline {table}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การจับคู่ข้อความเชิงตรวจสอบได้กับตัวแปร ตัวชี้วัด และวิธีการวิเคราะห์}}{40}{table.caption.39}%
-\contentsline {table}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปฮาร์ดแวร์ บทบาท สัญญาณที่เกี่ยวข้อง และข้อกำหนดเพื่อการทำซ้ำ}}{41}{table.caption.40}%
-\contentsline {table}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปซอฟต์แวร์/บริการหลักและบทบาทในระบบต้นแบบ}}{42}{table.caption.41}%
-\contentsline {table}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนที่หัวข้อ MQTT หลักของระบบ WheelSense (อ้างอิงเชิงวิศวกรรมจาก \texttt {server/AGENTS.md})}}{45}{table.caption.45}%
-\contentsline {table}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces โครงสร้าง payload ขั้นต่ำของข้อความจากอุปกรณ์บนเก้าอี้รถเข็น}}{46}{table.caption.46}%
-\contentsline {table}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปฟิลด์ขั้นต่ำตามกลุ่มข้อมูลสำหรับการทำซ้ำและ audit}}{56}{table.caption.49}%
-\contentsline {table}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เส้นทาง telemetry จากอุปกรณ์บนเก้าอี้รถเข็น}}{63}{table.caption.50}%
-\contentsline {table}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: RSSI และการระบุตำแหน่ง}}{63}{table.caption.51}%
-\contentsline {table}{\numberline {3.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เส้นทางภาพจากโหนดกล้อง}}{64}{table.caption.52}%
-\contentsline {table}{\numberline {3.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: เซิร์ฟเวอร์ ฐานข้อมูล และไคลเอนต์ผู้ดูแล}}{64}{table.caption.53}%
-\contentsline {table}{\numberline {3.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Failure modes: Home Assistant และ MCP/LLM}}{64}{table.caption.54}%
-\contentsline {table}{\numberline {3.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Profile-A: พารามิเตอร์ด้านการเก็บ fingerprint และการระบุตำแหน่ง}}{66}{table.caption.55}%
-\contentsline {table}{\numberline {3.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Profile-A: พารามิเตอร์ด้านอุปกรณ์ เครือข่าย ระบบบริการ และ MCP/LLM}}{67}{table.caption.56}%
-\contentsline {table}{\numberline {3.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Deployment gates สำหรับยืนยันความพร้อมก่อนเก็บข้อมูลหรือก่อนการประเมิน}}{69}{table.caption.57}%
-\contentsline {table}{\numberline {3.17}{\ignorespaces \xpg@aux {}{thai}\ignorespaces QC gates สำหรับชุดข้อมูล fingerprint ก่อนฝึกโมเดล}}{70}{table.caption.58}%
-\contentsline {table}{\numberline {3.18}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เกณฑ์ความพร้อมแบบบูรณาการ (readiness checks) ก่อนการประเมินสี่ประเด็น — ไม่ใช่ตัวชี้วัดประเมินผลแยกจากหัวข้อ~\ref {sec:ch3_test_plan}}}{71}{table.caption.59}%
-\contentsline {table}{\numberline {3.19}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟิลด์ขั้นต่ำของ log สำหรับการประเมิน LLM/MCP}}{72}{table.caption.60}%
-\contentsline {table}{\numberline {3.20}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟิลด์ขั้นต่ำของ log สำหรับการทดสอบความทนทาน RSSI (KNN vs XGBoost)}}{75}{table.caption.61}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปสถาปัตยกรรม 3 ระดับของระบบ WheelSense}}{16}{table.caption.22}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เปรียบเทียบคุณสมบัติของอุปกรณ์ฮาร์ดแวร์ภาคสนาม}}{18}{table.caption.25}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อกำหนดและแนวทางการติดตั้ง Node Tsimcam (BLE Beacon)}}{22}{table.caption.29}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces มาตรการรองรับกรณีสัญญาณ Beacon ขาดหาย}}{24}{table.caption.31}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริการหลักในระบบ WheelSense}}{25}{table.caption.33}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เปรียบเทียบช่องทางการสื่อสารในระบบ}}{26}{table.caption.35}%
+\contentsline {table}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces AI Pipeline 5 ชั้นของระบบ WheelSense}}{28}{table.caption.38}%
+\contentsline {table}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สิทธิ์การเข้าถึงเครื่องมือ AI ตามบทบาทผู้ใช้ (Policy Engine)}}{29}{table.caption.40}%
+\contentsline {table}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟีเจอร์หลักของแดชบอร์ดเว็บตามบทบาทผู้ใช้}}{29}{table.caption.41}%
+\contentsline {table}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปโปรโตคอลการทดสอบและเกณฑ์ประเมิน}}{32}{table.caption.44}%
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทำงานของอุปกรณ์บนเก้าอี้รถเข็นและอุปกรณ์สวมใส่}}{34}{table.caption.48}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบแบบแจกแจงตามสถานะเครือข่าย}}{35}{table.caption.49}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการตรวจจับสถานะการเคลื่อนไหว}}{35}{table.caption.50}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการเปรียบเทียบวิธีการจำแนกตำแหน่งภายในอาคาร}}{36}{table.caption.52}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เมทริกซ์ความสับสนแบบย่อของผลการจำแนกตำแหน่ง (KNN $k=5$)}}{36}{table.caption.53}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลความพร้อมใช้งานของบริการหลักหลัง deployment}}{37}{table.caption.55}%
+\contentsline {table}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เวลาแฝงของเส้นทางข้อมูลหลักในบริการส่วนกลาง}}{38}{table.caption.58}%
+\contentsline {table}{\numberline {4.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบประสิทธิภาพฐานข้อมูล}}{38}{table.caption.59}%
+\contentsline {table}{\numberline {4.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินประสิทธิภาพของไปป์ไลน์ EaseAI แบ่งตามชั้น}}{40}{table.caption.62}%
+\contentsline {table}{\numberline {4.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินความสอดคล้องของการเลือกเครื่องมือ MCP}}{40}{table.caption.63}%
+\contentsline {table}{\numberline {4.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินประสบการณ์ผู้ใช้ของผู้ดูแล}}{41}{table.caption.67}%
+\contentsline {table}{\numberline {4.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบจำแนกตามภารกิจของ HMI}}{42}{table.caption.69}%
+\contentsline {table}{\numberline {4.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบแบบปลายถึงปลายของระบบต้นแบบ}}{43}{table.caption.71}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \contentsfinish 

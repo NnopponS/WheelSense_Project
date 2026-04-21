@@ -124,7 +124,7 @@
 \renewcommand{\chaptername}{บทที่}
 \renewcommand{\appendixname}{ภาคผนวก}
 \renewcommand{\bibname}{รายการอ้างอิง}
-\renewcommand{\listfigurename}{สารบัญภาพ}
+\renewcommand{\listfigurename}{สารบัญรูป}
 \renewcommand{\listtablename}{สารบัญตาราง}
 \renewcommand{\tablename}{ตารางที่}
 \RequirePackage{fancyhdr}
@@ -142,25 +142,13 @@
 %\addtocontents{toc}{\vskip -1.2cm}
 %\addtocontents{lof}{\vskip -1.2cm}
 
-%% ใช้ default spacing ของ LaTeX
-%% Uncomment ถ้าจะใช้การเว้นระยะในรูปแบบของ ม.ธ.
-%\titlespacing{\subsection}{0.8in}{1.5ex plus .1ex minus .2ex}{1pc}
-%\titlespacing{\subsubsection}{1.1in}{1.5ex plus .1ex minus .2ex}{1pc}
-
+%% ใช้ default spacing ของ LaTeX ตามรูปแบบของ ม.ธ.
 \titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{0.2cm}{}
 \titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.2cm}{}
 \titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsection}{0.2cm}{}
 
-
-\let\oldsection\section
-\renewcommand{\section}[1]{\oldsection{#1}\setlength{\parindent}{0.8in}}
-
-\let\oldsubsection\subsection
-\renewcommand{\subsection}[1]{\oldsubsection{#1}\setlength{\parindent}{0.8in}}
-
-\let\oldsubsubsection\subsubsection
-\renewcommand{\subsubsection}[1]{\oldsubsubsection{#1}\setlength{\parindent}{1.1in}}
-
+\titlespacing*{\subsection}{0.8in}{1.5ex plus .1ex minus .2ex}{1pc}
+\titlespacing*{\subsubsection}{1.1in}{1.5ex plus .1ex minus .2ex}{1pc}
 
 %% Paragraph packages
 \RequirePackage{indentfirst}
@@ -238,7 +226,7 @@
     }%
 }
 
-%% Change font size of chapter* headings (สารบัญ / สารบัญตาราง / สารบัญภาพ / ฯลฯ)
+%% Change font size of chapter* headings (สารบัญ / สารบัญตาราง / สารบัญรูป / ฯลฯ)
 %% ลดช่องว่างเหนือ–ใต้หัวให้สอดคล้องการจัดวางจริง (เดิม 50pt + 40pt ห่างจากเลขหน้ามากเกินไป)
 \def\@makeschapterhead#1{%
     \vspace*{14\p@}%

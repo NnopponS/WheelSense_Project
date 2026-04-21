@@ -1,42 +1,31 @@
 %%================================================
-%% Appendix B — MQTT telemetry contract
+%% Appendix B — field deployment photo placeholders
 %%================================================
-\chapter{ภาคผนวก ข: สัญญาข้อมูล MQTT และ telemetry ของอุปกรณ์ภาคสนาม}
-\label{app:mqtt_contract}
+\chapter{ภาคผนวก ข: ภาพประกอบการทดลองและการเข้าพื้นที่บ้านพักคนชรา}
+\label{app:field_photos}
 
-ภาคผนวกนี้สรุปสัญญาการสื่อสาร MQTT ของอุปกรณ์ภาคสนามในระบบ WheelSense ตามที่ใช้งานจริงใน firmware และฝั่ง backend เพื่อให้ผู้อ่านสามารถเชื่อมโยงคำอธิบายในบทที่~\ref{chapter3} กับผลการทดสอบภาคสนามในบทที่~\ref{chapter4} ได้ชัดเจนขึ้น
+ภาคผนวกนี้รวบรวมภาพถ่ายการดำเนินการทดลองในสภาพแวดล้อมจริงที่บ้านพักคนชราวาสนะเวศม์ เพื่อยืนยันว่าการติดตั้งอุปกรณ์ การสำรวจสัญญาณ และการใช้งานแดชบอร์ดโดยผู้ดูแลเกิดขึ้นจริง ไม่ใช่การจำลองเชิงบรรยายเท่านั้น ไฟล์ภาพจริงให้ใส่ตาม path ที่ระบุใต้แต่ละภาพประกอบ
 
-\section*{หัวข้อหลักและทิศทางการสื่อสาร}
+\figplaceholder{ทีมวิจัยมาถึงสถานสงเคราะห์คนชราวาสนะเวศม์}{fig:appB_site_arrival}{assets/figures/appendixB/site-arrival.png}
 
-อุปกรณ์เก้าอี้รถเข็นต้นแบบใช้ topic หลัก \texttt{WheelSense/data} สำหรับ publish telemetry จากภาคสนามไปยัง backend ขณะที่คำสั่งควบคุมและการตอบรับคำสั่งถูกแยกไปตาม \texttt{device\_id} ของอุปกรณ์ เช่น \texttt{WheelSense/\{device\_id\}/control} และ \texttt{WheelSense/\{device\_id\}/ack} ส่วนการตั้งค่าอุปกรณ์ใช้ topic \texttt{WheelSense/config/\{device\_id\}} และ \texttt{WheelSense/config/all} เพื่อรองรับทั้งการตั้งค่าเฉพาะอุปกรณ์และแบบรวม
+\figplaceholder{ผังอาคารพื้นที่ทดสอบ}{fig:appB_site_floorplan}{assets/figures/appendixB/site-floorplan.png}
 
-สำหรับโหนดกล้อง \texttt{Node\_Tsimcam} มีการแยก topic registration, status, command ack และ snapshot ออกจาก telemetry ของเก้าอี้รถเข็นอย่างชัดเจน โดยใช้รูปแบบ \texttt{WheelSense/camera/\{device\_id\}/...} ซึ่งช่วยลดความสับสนระหว่างข้อมูลประเภท time-series กับข้อมูลประเภทภาพและสถานะของกล้อง
+\figplaceholder{การติดตั้ง M5StickC บนเก้าอี้รถเข็นผู้ใช้จริง (มุม A)}{fig:appB_install_wheelchair_01}{assets/figures/appendixB/install-wheelchair-01.png}
 
-\section*{โครงสร้าง payload ของอุปกรณ์เก้าอี้รถเข็น}
+\figplaceholder{การติดตั้ง M5StickC บนเก้าอี้รถเข็นผู้ใช้จริง (มุม B)}{fig:appB_install_wheelchair_02}{assets/figures/appendixB/install-wheelchair-02.png}
 
-payload ฝั่งเก้าอี้รถเข็นประกอบด้วยตัวระบุอุปกรณ์และข้อมูลกลุ่มสำคัญอย่างน้อย 4 ส่วน ได้แก่
+\figplaceholder{การติดตั้งโหนด ESP32-S3 บนผนัง}{fig:appB_install_camera_node}{assets/figures/appendixB/install-camera-node.png}
 
-\begin{itemize}
-    \item ข้อมูลระบุตัวอุปกรณ์ เช่น \texttt{device\_id}, \texttt{device\_type}, และ \texttt{hardware\_type}
-    \item ข้อมูล IMU เช่น \texttt{imu.ax}, \texttt{imu.ay}, \texttt{imu.az}, \texttt{imu.gx}, \texttt{imu.gy}, และ \texttt{imu.gz}
-    \item ข้อมูลการเคลื่อนที่ เช่น \texttt{motion.distance\_m}, \texttt{motion.velocity\_ms}, \texttt{motion.accel\_ms2}, และ \texttt{motion.direction}
-    \item ข้อมูลแบตเตอรี่และ RSSI จากโหนด เช่น \texttt{battery.*} และ \texttt{rssi[]} ที่เก็บคู่ค่า \texttt{node}, \texttt{rssi}, และ \texttt{mac}
-\end{itemize}
+\figplaceholder{Raspberry Pi 5 และอุปกรณ์เครือข่ายในห้องควบคุม}{fig:appB_install_server}{assets/figures/appendixB/install-server.png}
 
-การจัดกลุ่มข้อมูลในลักษณะนี้ช่วยให้ backend สามารถใช้ payload เดียวรองรับทั้งการประเมิน motion/fall feature, การจับสถานะพลังงานของอุปกรณ์ และการทำนายตำแหน่งจาก fingerprinting โดยไม่ต้องแยกสายงาน ingest หลายชุดเกินความจำเป็น
+\figplaceholder{ทีมวิจัยทำ fingerprint survey ในแต่ละโซน}{fig:appB_fingerprint_survey}{assets/figures/appendixB/fingerprint-survey.png}
 
-\section*{หัวข้อคำสั่งและการตอบรับของอุปกรณ์เก้าอี้รถเข็น}
+\figplaceholder{การอบรมผู้ดูแลใช้แดชบอร์ด}{fig:appB_caregiver_training}{assets/figures/appendixB/caregiver-training.png}
 
-เมื่อ backend ส่งคำสั่งไปยังอุปกรณ์เก้าอี้รถเข็นผ่าน \texttt{WheelSense/\{device\_id\}/control} อุปกรณ์จะตอบกลับผลการดำเนินการผ่าน topic ack โดย payload อย่างน้อยประกอบด้วย \texttt{command\_id}, \texttt{device\_id}, \texttt{status}, \texttt{command} และอาจมี \texttt{message} หรือ field เฉพาะคำสั่งเพิ่มเติม การมี \texttt{command\_id} ช่วยให้สามารถผูกคำสั่งกับผลลัพธ์ในสายงานตรวจสอบย้อนกลับและสอดคล้องกับแนวคิด audit trail ของแพลตฟอร์ม
+\figplaceholder{ผู้ดูแลใช้งานระบบในเวลาจริง}{fig:appB_caregiver_usage}{assets/figures/appendixB/caregiver-usage.png}
 
-ภาคปฏิบัติจริงยังมีประเด็นสำคัญเรื่อง provisioning ของ \texttt{device\_id} กล่าวคือ identifier ของอุปกรณ์ควรตรงกับ registry ของ backend และในบางสภาพแวดล้อม backend สามารถ auto-register อุปกรณ์ได้เมื่อเงื่อนไขด้าน workspace พร้อม การกำหนดกติกานี้ชัดเจนช่วยลดการสูญหายของ telemetry จากอุปกรณ์ใหม่และทำให้สายงาน field deployment มีเสถียรภาพมากขึ้น
+\figplaceholder{ผู้ใช้สวม Polar Verity Sense}{fig:appB_user_wearing_polar}{assets/figures/appendixB/user-wearing-polar.png}
 
-\section*{สัญญาข้อมูลของโหนดกล้อง}
+\figplaceholder{ผู้ใช้อยู่บนเก้าอี้รถเข็นที่ติดตั้งอุปกรณ์}{fig:appB_user_on_wheelchair}{assets/figures/appendixB/user-on-wheelchair.png}
 
-โหนดกล้องใช้ topic แยกสำหรับ registration, status, ack และภาพ snapshot โดยช่องทางส่งภาพหลักเป็น chunked JSON ผ่าน \texttt{WheelSense/camera/\{device\_id\}/photo} และมี fallback เป็น raw JPEG ผ่าน \texttt{WheelSense/camera/\{device\_id\}/frame} โครงสร้าง chunked photo payload ประกอบด้วย \texttt{photo\_id}, \texttt{device\_id}, \texttt{chunk\_index}, \texttt{total\_chunks} และ \texttt{data} ซึ่งเก็บภาพแบบ base64 encoded JPEG chunk
-
-ฟิลด์สถานะเพิ่มเติมของกล้อง เช่น \texttt{photo\_transport}, \texttt{snapshots\_ok}, \texttt{snapshots\_failed}, \texttt{last\_snapshot\_ms}, และ \texttt{last\_snapshot\_bytes} มีความสำคัญต่อการวิเคราะห์ผลในบทที่~\ref{chapter4} เพราะช่วยอธิบายได้ว่าปัญหาที่เกิดขึ้นอยู่ในชั้นเครือข่าย ชั้นการประกอบภาพ หรือข้อจำกัดของอุปกรณ์ภาคสนามเอง
-
-\section*{ความสำคัญต่อการตีความผลการทดลอง}
-
-การมีสัญญา MQTT ที่ระบุ topic และ payload ชัดเจนทำให้ผลในบทที่~\ref{chapter4} สามารถอธิบายย้อนกลับไปยังแหล่งข้อมูลได้ว่าเมตริกแต่ละตัวมาจาก field ใดและผ่านเส้นทางใดก่อนเข้าสู่ backend ภาคผนวกนี้จึงทำหน้าที่เป็นโครงอ้างอิงทางเทคนิคของสายงาน telemetry ทั้งระบบ และช่วยลดความกำกวมเมื่อต้องแยกวิเคราะห์ปัญหาระหว่างอุปกรณ์ เครือข่าย และบริการฝั่งเซิร์ฟเวอร์
+\figplaceholder{ภาพหมู่ทีมวิจัยกับผู้ดูแลและผู้บริหารศูนย์}{fig:appB_team_photo}{assets/figures/appendixB/team-photo.png}

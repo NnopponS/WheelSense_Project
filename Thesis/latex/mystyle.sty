@@ -65,6 +65,7 @@
 \usepackage{xifthen}
 \usepackage{xparse}
 \usepackage{excludeonly}
+\usepackage{indentfirst}
 
 %% Hyperlinks
 %% Should add hyperref package last
@@ -87,6 +88,18 @@
 \doublehyphendemerits=1000000
 \finalhyphendemerits=1000000
 %% Match reporttemplate v0.0.1: TUthesis uses \flushbottom (do not override with \raggedbottom).
+
+%% ชิดซ้ายทั้งเอกสาร (ทวนหลัง polyglossia/front matter)
+\AtBeginDocument{\RaggedRight}
+
+%% ทับ TUthesis: หัวข้อระดับ section ชิดซ้าย ไม่จัดข้อความยืดเต็มความกว้าง
+\titleformat{\section}{\raggedright\normalfont\Large\bfseries}{\thesection}{0.2cm}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.2cm}{}
+\titleformat{\subsubsection}{\normalfont\normalsize\bfseries}{\thesubsubsection}{0.2cm}{}
+
+\titlespacing*{\subsection}{0.8in}{1.5ex plus .1ex minus .2ex}{1pc}
+\titlespacing*{\subsubsection}{1.1in}{1.5ex plus .1ex minus .2ex}{1pc}
+
 %%=================================================
 %% END OPTION Layout
 %%=================================================
@@ -94,8 +107,8 @@
 %%=================================================
 %% START OPTION Caption
 %%=================================================
-%% Explicit settings for captions
-\captionsetup{format=hang}
+%% Explicit settings for captions (กึ่งกลางหน้ากระดาษ)
+\captionsetup{format=hang,justification=centering,singlelinecheck=true}
 \captionsetup[figure]{position=bottom,format=default}
 \captionsetup[table]{position=top}
 \captionsetup[lstlisting]{skip=10pt}
@@ -249,6 +262,19 @@
     {\textbf{แหล่งที่มา:} #3}%
 }
 
+%% Generic placeholder figure: #1 caption, #2 label (e.g. fig:foo), #3 suggested asset path under assets/figures/
+\newcommand{\figplaceholder}[3]{%
+  \begin{figure}[H]
+    \centering
+    \fbox{\parbox{0.85\textwidth}{\centering\vspace{2.5em}
+      \textit{[ภาพประกอบ]}\\[0.3em]
+      \small #1\\[0.6em]
+      \texttt{\scriptsize #3}
+    \vspace{2.5em}}}
+    \caption{#1}\label{#2}
+  \end{figure}%
+}
+
 %% Placeholder figures for Chapter 2 (replace with \\includegraphics when assets exist under assets/figures/chapter2/)
 \newcommand{\ChIIFigPlaceholder}[2]{%
   \begin{figure}[htbp]
@@ -339,8 +365,9 @@
 }
 
 
-%% New column type
+%% New column types
 \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 %%=================================================
 %% END Misc
 %%=================================================
