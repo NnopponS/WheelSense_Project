@@ -1,33 +1,24 @@
 %%================================================
-%% Chapter 3 - Expanded Version
+%% Chapter 3 - Revised Version
 %%================================================
 \chapter{วิธีการศึกษา}
 \label{chapter3}
 
 \section{การออกแบบระบบ}
 \label{sec:ch3_system_design}
+\noindent
+จากการศึกษาบริบทของสถานดูแลและปัญหาการขาดแคลนบุคลากรในการดูแลผู้ใช้เก้าอี้รถเข็นและผู้สูงอายุในบทที่ 1 ระบบต้นแบบ WheelSense จึงถูกออกแบบขึ้นเพื่อแก้ปัญหาด้านความปลอดภัยและการรับรู้สถานการณ์ โดยมีเป้าหมายเพื่อช่วยให้ผู้ดูแลสามารถติดตามตำแหน่งและรับรู้เหตุผิดปกติได้อย่างรวดเร็ว
+สถาปัตยกรรมของระบบรองรับการทำงานแบบครบวงจร ตั้งแต่การติดตามตำแหน่งแบบเรียลไทม์ การแจ้งเตือนเหตุการณ์ ไปจนถึงการใช้ระบบผู้ช่วยอัจฉริยะ (AI) โครงสร้างสถาปัตยกรรมแบ่งออกเป็น 3 ระดับหลัก ได้แก่
+\begin{enumerate}[nosep]
+    \item \textbf{ระดับอุปกรณ์ภาคสนาม (Firmware Layer)} ประกอบด้วยเซ็นเซอร์บนรถเข็น อุปกรณ์สวมใส่ โทรศัพท์สมาร์ทโฟน และอุปกรณ์อ้างอิงตำแหน่ง ทำหน้าที่อ่านค่าพิกัดและข้อมูลสัญญาณชีพ
+    \item \textbf{ระดับประมวลผลส่วนกลาง (Server Layer)} ประกอบด้วย MQTT Broker, API Server, Database และ AI Service ทำหน้าที่รับข้อมูล วิเคราะห์ และประมวลผล
+    \item \textbf{ระดับส่วนติดต่อผู้ใช้งาน (Frontend Layer)} ประกอบด้วยแดชบอร์ดเว็บและแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ ทำหน้าที่แสดงผลและโต้ตอบกับผู้ใช้งานตามบทบาท
+\end{enumerate}
 
-ระบบต้นแบบ WheelSense ถูกออกแบบขึ้นเพื่อแก้ปัญหาด้านความปลอดภัยและการรับรู้สถานการณ์ในการดูแลผู้ใช้เก้าอี้รถเข็นและผู้สูงอายุในสถานดูแล โดยมีเป้าหมายหลักในการพัฒนาระบบที่สามารถติดตามตำแหน่ง แจ้งเตือนเหตุการณ์ผิดปกติ และสรุปข้อมูลด้านสุขภาวะได้อย่างทันท่วงที สถาปัตยกรรมแบ่งออกเป็น 3 ระดับที่ทำงานประสานกัน ดังแสดงในตารางที่~\ref{tab:ch3_layers}
-
-\begin{table}[htbp]
+\begin{figure}[H]
     \centering
-    \caption{สรุปสถาปัตยกรรม 3 ระดับของระบบ WheelSense}
-    \label{tab:ch3_layers}
-    \small
-    \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{|L{2.5cm}|L{4.0cm}|L{3.5cm}|L{2.5cm}|}
-        \hline
-        \textbf{ระดับ} & \textbf{องค์ประกอบ} & \textbf{หน้าที่หลัก} & \textbf{โปรโตคอล} \\ \hline
-        Firmware & M5StickC Plus2, Polar Verity Sense, BLE Beacon & อ่านค่าเซ็นเซอร์ สแกนสัญญาณ & BLE, Wi-Fi \\ \hline
-        Server & FastAPI, PostgreSQL, Mosquitto, FastMCP & รับข้อมูล วิเคราะห์ แจ้งเตือน & MQTT, REST, WebSocket \\ \hline
-        Frontend & Next.js Dashboard, Mobile App & แสดงผล สั่งการตามบทบาท & HTTPS, WebSocket \\ \hline
-    \end{tabular}
-\end{table}
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}[
-        layer/.style={draw, rectangle, rounded corners, minimum width=11cm, minimum height=1.5cm, align=center, font=\bfseries\large},
+    \begin{tikzpicture}[scale=0.9, transform shape,
+        layer/.style={draw, rectangle, rounded corners, minimum width=10cm, minimum height=1.3cm, align=center, font=\bfseries\large},
         arrow/.style={->, >=stealth, thick}
         ]
         
@@ -46,35 +37,43 @@
     \label{fig:ch3-system-layers}
 \end{figure}
 
-\begin{figure}[htbp]
+ในระดับอุปกรณ์ภาคสนาม ไมโครคอนโทรลเลอร์ M5StickC Plus2 ติดตั้งบนเก้าอี้รถเข็นเพื่ออ่านค่าเซ็นเซอร์วัดแรงเฉื่อย (IMU) แบบ 6 แกน และส่งข้อมูล telemetry ผ่าน Wi-Fi โดยใช้โปรโตคอล MQTT อุปกรณ์สวมใส่ Polar Verity Sense ทำหน้าที่วัดสัญญาณชีพผ่านเซ็นเซอร์แสง (PPG) และส่งข้อมูลอัตราการเต้นของหัวใจไปยังสมาร์ทโฟนของผู้ใช้หรือผู้ดูแลผ่าน Bluetooth Low Energy (BLE) อุปกรณ์ Node Tsimcam ทำหน้าที่เป็นจุดส่งสัญญาณ BLE beacon สำหรับอ้างอิงตำแหน่งภายในอาคาร พร้อมถ่ายภาพประจำจุดตามการตั้งค่า โดยสมาร์ทโฟนยังทำหน้าที่เป็นสะพานเชื่อมต่อข้อมูลสัญญาณชีพจากอุปกรณ์สวมใส่เข้าสู่ระบบเครือข่าย
+
+ระดับประมวลผลส่วนกลางประกอบด้วย MQTT Broker (Eclipse Mosquitto) สำหรับรับส่งข้อมูล telemetry จากอุปกรณ์ภาคสนามแบบ Publish/Subscribe Backend API ที่พัฒนาด้วย FastAPI ทำหน้าที่จัดการตรรกะธุรกิจ ตรวจสอบสิทธิ์การเข้าถึง และประมวลผลคำขอจากฝั่งผู้ใช้งาน ฐานข้อมูล PostgreSQL จัดเก็บทั้งข้อมูลที่มีโครงสร้างและข้อมูลกึ่งโครงสร้าง (JSONB) สำหรับ telemetry ข้อมูลการแจ้งเตือน และบันทึกตรวจสอบ (Audit Log) บริการ AI (Ollama ร่วมกับ FastMCP) ทำหน้าที่เป็นผู้ช่วยอัจฉริยะ รับคำถามจากผู้ใช้งาน วิเคราะห์บริบทระบบ และเรียกใช้เครื่องมือ (Tools) ในระบบผ่าน Model Context Protocol (MCP)
+
+ระดับส่วนติดต่อผู้ใช้งานประกอบด้วยแดชบอร์ดเว็บที่พัฒนาด้วย Next.js และแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ที่พัฒนาด้วย React Native ทั้งสองช่องทางรองรับการเข้าถึงตามบทบาท (Role-based) เช่น ผู้ดูแลระบบ พยาบาลหัวหน้า ผู้สังเกตการณ์ และผู้ใช้เก้าอี้รถเข็น โดยใช้ระบบตรวจสอบสิทธิ์ด้วย JWT ที่จัดเก็บในรูปแบบ HttpOnly cookie
+
+การไหลของข้อมูลในระบบเริ่มจากอุปกรณ์ภาคสนามส่งข้อมูล telemetry ผ่านโปรโตคอล MQTT ไปยัง MQTT Broker จากนั้น Backend API ดึงข้อมูลไปประมวลผล จัดเก็บในฐานข้อมูล PostgreSQL และส่งต่อไปยังหน้าจอผู้ใช้งานผ่าน REST API หรือ WebSocket สำหรับการอัปเดตแบบเรียลไทม์ บริการ AI สื่อสารกับ Backend API เพื่อดึงบริบทระบบและสั่งการผ่านเครื่องมือที่กำหนดไว้ ขณะที่ Frontend ส่งคำสั่งและคำถามจากผู้ใช้งานไปยัง Backend API เพื่อประมวลผลต่อไป
+
+\begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        box/.style={draw, rectangle, rounded corners, minimum width=2.8cm, minimum height=1.2cm, align=center, fill=white, font=\footnotesize},
+    \begin{tikzpicture}[scale=0.85, transform shape,
+        box/.style={draw, rectangle, rounded corners, minimum width=3.2cm, minimum height=1.3cm, align=center, fill=white, font=\footnotesize},
         arrow/.style={->, >=stealth, thick},
         bidir/.style={<->, >=stealth, thick}
         ]
         
         % Firmware Layer
-        \draw[draw=orange, dashed, rounded corners, fill=orange!5] (-6, -1.2) rectangle (6, 1.2);
-        \node[font=\bfseries] at (0, -0.9) {ระดับอุปกรณ์ภาคสนาม (Firmware Layer)};
+        \node[font=\bfseries\small] at (0, -1.6) {ระดับอุปกรณ์ภาคสนาม (Firmware Layer)};
+        \draw[draw=orange, dashed, rounded corners, fill=orange!5] (-7.2, -1.3) rectangle (7.2, 1.3);
         
-        \node[box, fill=orange!10, minimum width=2.5cm] (polar) at (-4.6,0) {Polar Verity\\Sense (HR)};
-        \node[box, fill=orange!20, minimum width=2.5cm] (phone) at (-1.5,0) {Smartphone\\(ผู้ดูแล/ผู้สูงอายุ)};
-        \node[box, fill=orange!20, minimum width=2.5cm] (m5) at (1.5,0) {M5StickC Plus2\\(บนรถเข็น)};
-        \node[box, fill=orange!10, minimum width=2.5cm] (beacon) at (4.6,0) {Node Tsimcam\\(BLE Beacon)};
+        \node[box, fill=orange!10, minimum width=2.8cm] (polar) at (-5.5,0) {Polar Verity\\Sense (HR)};
+        \node[box, fill=orange!20, minimum width=2.8cm] (phone) at (-1.8,0) {Smartphone\\(ผู้ดูแล/ผู้สูงอายุ)};
+        \node[box, fill=orange!20, minimum width=2.8cm] (m5) at (1.8,0) {M5StickC Plus2\\(บนรถเข็น)};
+        \node[box, fill=orange!10, minimum width=2.8cm] (beacon) at (5.5,0) {Node Tsimcam\\(BLE Beacon)};
         
         \draw[arrow] (polar) -- node[above, font=\scriptsize] {BLE} (phone);
         \draw[arrow] (beacon) -- node[above, font=\scriptsize] {BLE} (m5);
-        \draw[arrow] (beacon) to[bend left=25] node[below, font=\scriptsize] {BLE} (phone);
+        \draw[arrow] (beacon) to[bend left=22] node[below, font=\scriptsize] {BLE} (phone);
         
         % Server Layer
-        \draw[draw=blue, dashed, rounded corners, fill=blue!5] (-6, 2.2) rectangle (6, 6.8);
-        \node[font=\bfseries] at (0, 2.5) {ระดับประมวลผลส่วนกลาง (Server Layer)};
+        \node[font=\bfseries\small] at (0, 1.0) {ระดับประมวลผลส่วนกลาง (Server Layer)};
+        \draw[draw=blue, dashed, rounded corners, fill=blue!5] (-7.2, 1.3) rectangle (7.2, 6.8);
         
-        \node[box, fill=blue!20] (mqtt) at (0,3.8) {MQTT Broker\\(Mosquitto)};
-        \node[box, fill=blue!20] (api) at (0,5.5) {Backend API\\(FastAPI)};
-        \node[box, fill=blue!10] (db) at (4,5.5) {Database\\(PostgreSQL)};
-        \node[box, fill=blue!10] (ai) at (-4,5.5) {AI Service\\(FastMCP + Ollama)};
+        \node[box, fill=blue!20, minimum width=3cm] (mqtt) at (0,3.8) {MQTT Broker\\(Mosquitto)};
+        \node[box, fill=blue!20, minimum width=3cm] (api) at (0,5.6) {Backend API\\(FastAPI)};
+        \node[box, fill=blue!10, minimum width=2.8cm] (db) at (4.5,5.6) {Database\\(PostgreSQL)};
+        \node[box, fill=blue!10, minimum width=2.8cm] (ai) at (-4.5,5.6) {AI Service\\(FastMCP + Ollama)};
         
         \draw[arrow] (m5) -- node[right, font=\scriptsize] {MQTT} (mqtt);
         \draw[arrow] (phone) -- node[left, font=\scriptsize] {MQTT} (mqtt);
@@ -83,11 +82,11 @@
         \draw[bidir] (api) -- (ai);
         
         % Frontend Layer
-        \draw[draw=green, dashed, rounded corners, fill=green!5] (-6, 7.8) rectangle (6, 10.2);
-        \node[font=\bfseries] at (0, 9.8) {ระดับส่วนติดต่อผู้ใช้งาน (Frontend Layer)};
+        \node[font=\bfseries\small] at (0, 7.5) {ระดับส่วนติดต่อผู้ใช้งาน (Frontend Layer)};
+        \draw[draw=green, dashed, rounded corners, fill=green!5] (-7.2, 7.8) rectangle (7.2, 10.5);
         
-        \node[box, fill=green!20] (web) at (-2,8.8) {Web Dashboard\\(Next.js)};
-        \node[box, fill=green!20] (mobile) at (2,8.8) {Mobile App\\(React Native)};
+        \node[box, fill=green!20, minimum width=3.2cm] (web) at (-2.5,9.2) {Web Dashboard\\(Next.js)};
+        \node[box, fill=green!20, minimum width=3.2cm] (mobile) at (2.5,9.2) {Mobile App\\(React Native)};
         
         \draw[bidir] (api.north) -- (0, 7.1) -| (web.south);
         \draw[bidir] (api.north) -- (0, 7.1) -| (mobile.south);
@@ -98,103 +97,258 @@
     \label{fig:ch3-system-architecture}
 \end{figure}
 
-\section{การออกแบบอุปกรณ์เซ็นเซอร์ภาคสนาม}
+\FloatBarrier
+\section{การออกแบบเซ็นเซอร์บนเก้าอี้รถเข็น}
 \label{sec:ch3_wheelchair_sensor}
 
 \subsection{ฮาร์ดแวร์}
 \label{sec:ch3_sensor_hardware}
 
-การออกแบบอุปกรณ์ภาคสนามเน้นความยืดหยุ่นในการใช้งาน โดยแบ่งเป็น 3 กลุ่มหลัก ได้แก่ รูปแบบสำหรับผู้ใช้เก้าอี้รถเข็น ซึ่งจะใช้ไมโครคอนโทรลเลอร์ M5StickC Plus2 ติดตั้งที่พนักพิงรถเข็นทำหน้าที่เป็นศูนย์กลาง รูปแบบสำหรับผู้สูงอายุที่เดินได้ปกติ (Ambulatory) รวมถึงบุคลากรผู้ดูแล ซึ่งจะใช้โทรศัพท์สมาร์ทโฟน (Smartphone) เป็นโหนดเซ็นเซอร์เคลื่อนที่ และอุปกรณ์อ้างอิงตำแหน่ง Node Tsimcam (BLE Beacon) ที่ติดตั้งประจำจุดต่างๆ ภายในอาคาร
-
-นอกจากนี้ ระบบยังรับข้อมูลสัญญาณชีพผ่านอุปกรณ์สวมใส่ Polar Verity Sense ซึ่งประยุกต์ใช้เทคนิคแสงเพื่อวัดการไหลเวียนโลหิต (PPG) โดยอุปกรณ์ Polar จะทำการเชื่อมต่อและส่งข้อมูลผ่าน BLE ไปยังโทรศัพท์สมาร์ทโฟนเท่านั้น (ไม่ผ่าน M5StickC) เพื่อส่งข้อมูลเข้าสู่เซิร์ฟเวอร์ รายละเอียดของอุปกรณ์ฮาร์ดแวร์ทั้ง 4 ชนิดสรุปไว้ในตารางที่~\ref{tab:ch3_hw}
+อุปกรณ์ภาคสนามสำหรับการใช้งานบนเก้าอี้รถเข็นใช้ไมโครคอนโทรลเลอร์ M5StickC Plus2 ที่มีเซ็นเซอร์วัดแรงเฉื่อย (IMU) แบบ 6 แกน (MPU-6886) ทำหน้าที่อ่านค่าความเร่งและอัตราการหมุน และเชื่อมต่อเครือข่าย Wi-Fi สำหรับการรายงานค่าเซ็นเซอร์ อุปกรณ์นี้ติดตั้งบนตัวเก้าอี้รถเข็นโดยตรงเพื่อตรวจจับการเคลื่อนที่และสั่นสะเทือนของตัวรถ
 
 \begin{table}[htbp]
     \centering
-    \caption{เปรียบเทียบคุณสมบัติของอุปกรณ์ฮาร์ดแวร์ภาคสนาม}
-    \label{tab:ch3_hw}
+    \caption{คุณสมบัติของไมโครคอนโทรลเลอร์ M5StickC Plus2}
+    \label{tab:ch3_m5_hw}
     \small
     \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{|L{2.5cm}|L{2.8cm}|L{2.8cm}|L{2.6cm}|L{2.3cm}|}
+    \begin{tabular}{|L{3.5cm}|L{9.0cm}|}
         \hline
-        \textbf{คุณสมบัติ} & \textbf{M5StickC Plus2} & \textbf{Smartphone} & \textbf{Polar Verity} & \textbf{Node Tsimcam} \\ \hline
-        กลุ่มผู้ใช้งาน & ผู้ใช้เก้าอี้รถเข็น & ผู้ดูแล / ผู้สูงอายุ & ผู้สูงอายุทุกคน & (ติดตั้งประจำที่) \\ \hline
-        หน้าที่หลัก & ประมวลผล IMU และส่งข้อมูล & ส่งพิกัด, รับค่า HR & วัดชีพจร (PPG) & ส่งสัญญาณอ้างอิง, ถ่ายภาพ \\ \hline
-        ชิป/เซ็นเซอร์ & ESP32, MPU-6886 & GPS, BLE Scanner & เซ็นเซอร์แสง PPG & กล้อง, BLE SoC \\ \hline
-        การส่งข้อมูล & MQTT (Wi-Fi) & MQTT, REST, WS & BLE GATT & BLE Broadcast \\ \hline
-        แบตเตอรี่ & Li-Po 200 mAh & แบตเตอรี่ในตัว & CR2032 & CR2477 \\ \hline
+        \textbf{คุณสมบัติ} & \textbf{รายละเอียด} \\ \hline
+        ชิปหลัก & ESP32-PICO-D4 (Dual-core 240 MHz) \\ \hline
+        เซ็นเซอร์ IMU & MPU-6886 (6-axis: accel + gyro) \\ \hline
+        การเชื่อมต่อ & Wi-Fi 802.11 b/g/n, BLE 4.2 \\ \hline
+        หน้าจอ & TFT LCD 1.14 นิ้ว 135x240 px \\ \hline
+        แบตเตอรี่ & Li-Po 200 mAh \\ \hline
+        การส่งข้อมูล & MQTT ผ่าน Wi-Fi \\ \hline
+        กลุ่มผู้ใช้งาน & ผู้ใช้เก้าอี้รถเข็น \\ \hline
     \end{tabular}
 \end{table}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{ch3-sensor-placement.jpg}
-    \caption{ตำแหน่งการติดตั้งอุปกรณ์ M5StickC Plus2, Polar Verity Sense และ Node Tsimcam ในระบบ}
-    \label{fig:ch3-sensor-placement}
+    \includegraphics[width=0.75\textwidth]{image_ref/M5stickCistall.png}
+    \caption{ตำแหน่งการติดตั้งไมโครคอนโทรลเลอร์ M5StickC Plus2 บนเก้าอี้รถเข็น}
+    \label{fig:ch3-m5-placement}
 \end{figure}
 
-\subsection{โครงข่าย}
+\subsection{โครงข่ายข้อมูล}
 \label{sec:ch3_sensor_network}
 
-เพื่อลดการใช้พลังงานและจัดการความซับซ้อนของการเชื่อมต่อ ระบบจึงแบ่งการสื่อสารออกเป็นสองช่วงหลัก ช่วงแรกเป็นการสื่อสารระหว่างอุปกรณ์สวมใส่และตัวส่งสัญญาณอ้างอิงภายในอาคารกับ M5StickC Plus2 โดยใช้เครือข่าย BLE เป็นหลัก Polar Verity Sense จะทำการส่งข้อมูลสัญญาณชีพผ่านมาตรฐาน BLE GATT Heart Rate Service ในขณะเดียวกัน M5StickC Plus2 จะทำหน้าที่สแกนหาสัญญาณจาก Beacon ที่อยู่รอบตัวเพื่อเก็บค่าระดับความเข้มสัญญาณ (RSSI) ไว้
+M5StickC Plus2 เชื่อมต่อกับเซิร์ฟเวอร์ส่วนกลางผ่านเครือข่าย Wi-Fi โดยใช้โปรโตคอล MQTT เพื่อส่งข้อมูล telemetry ความถี่สูง โปรโตคอล MQTT ถูกเลือกเนื่องจากมี overhead ต่ำ รองรับการเชื่อมต่อที่ไม่เสถียร และสามารถกำหนดหัวข้อ (Topic) เฉพาะสำหรับแต่ละอุปกรณ์ได้ เช่น \texttt{WheelSense/data/<device\_id>} นอกจากนี้ อุปกรณ์ยังสมัครรับหัวข้อคำสั่งควบคุม (\texttt{WheelSense/<device\_id>/control}) และหัวข้ออัปเดตการตั้งค่า (\texttt{WheelSense/config/...}) เพื่อรับคำสั่งจากเซิร์ฟเวอร์แบบเรียลไทม์
 
-ช่วงที่สองเป็นการส่งข้อมูลจากเก้าอี้รถเข็นไปยังเซิร์ฟเวอร์ส่วนกลาง เมื่อ M5StickC Plus2 รวบรวมข้อมูลจากการเคลื่อนไหว สัญญาณชีพ และความเข้มสัญญาณบลูทูธได้แล้ว อุปกรณ์จะส่งข้อมูลทั้งหมดเข้าสู่เครือข่าย Wi-Fi ภายในอาคาร โดยเลือกใช้โปรโตคอล MQTT ซึ่งมีความเบาบางและสามารถรักษาเสถียรภาพได้ดีแม้ในสภาวะที่เครือข่ายไร้สายขาดหายชั่วคราว ข้อมูลจะถูกส่งไปยังหัวข้อ (Topic) ที่ระบุตัวตนของอุปกรณ์อย่างชัดเจนเพื่อป้องกันการปะปนกันของข้อมูลจากหลายอุปกรณ์
+เมื่อเชื่อมต่อ Wi-Fi ไม่สำเร็จ ระบบจะพยายามเชื่อมต่อใหม่ด้วยระยะห่างที่เพิ่มขึ้นแบบเอกซ์โพเนนเชียล (exponential backoff) สูงสุด 60 วินาที สำหรับการเชื่อมต่อ MQTT หากหลุดการเชื่อมต่อจะพยายามเชื่อมต่อใหม่ทุก 2 วินาที และเพิ่มระยะห่างขึ้นจนถึง 60 วินาทีเช่นกัน การสมัครรับหัวข้อหลังเชื่อมต่อ MQTT สำเร็จประกอบด้วยหัวข้อการตั้งค่า คำสั่งควบคุม และการยืนยัน (acknowledgement)
 
-\begin{figure}[htbp]
+ตารางที่~\ref{tab:ch3_mqtt_topics} แสดงโครงสร้างหัวข้อ (Topic Tree) ของระบบ WheelSense ซึ่งแบ่งตามทิศทางการไหลของข้อมูล ระหว่างอุปกรณ์ภาคสนามกับเซิร์ฟเวอร์ส่วนกลาง
+
+\begin{table}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{ch3-wheelchair-network.png}
-    \caption{เส้นทางข้อมูลจากอุปกรณ์บนเก้าอี้รถเข็นสู่บริการส่วนกลาง}
+    \caption{โครงสร้างหัวข้อ MQTT ในระบบ WheelSense}
+    \label{tab:ch3_mqtt_topics}
+    \tiny
+    \setlength{\tabcolsep}{2pt}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\centering\arraybackslash}p{2.0cm}|>{\raggedright\arraybackslash}p{5.9cm}|}
+        \hline
+        \textbf{หัวข้อ (Topic)} & \textbf{ทิศทาง} & \textbf{รายละเอียด} \\ \hline
+        \texttt{WheelSense/data} & อุปกรณ์$\rightarrow$เซิร์ฟเวอร์ & Telemetry รวม IMU, RSSI, motion, battery \\ \hline
+        \texttt{WheelSense/camera/+/registration} & อุปกรณ์$\rightarrow$เซิร์ฟเวอร์ & ลงทะเบียนกล้อง Node Tsimcam \\ \hline
+        \texttt{WheelSense/camera/+/status} & อุปกรณ์$\rightarrow$เซิร์ฟเวอร์ & สถานะและภาพถ่ายของกล้อง \\ \hline
+        \texttt{WheelSense/+/ack} & อุปกรณ์$\rightarrow$เซิร์ฟเวอร์ & ยืนยันการรับคำสั่ง \\ \hline
+        \texttt{WheelSense/vitals/\{patient\_id\}} & เซิร์ฟเวอร์$\rightarrow$อุปกรณ์ & ส่งต่อข้อมูลสัญญาณชีพ \\ \hline
+        \texttt{WheelSense/room/\{device\_id\}} & เซิร์ฟเวอร์$\rightarrow$อุปกรณ์ & ผลการทำนายตำแหน่งห้อง \\ \hline
+        \texttt{WheelSense/alerts/\{patient\}} & เซิร์ฟเวอร์$\rightarrow$อุปกรณ์ & แจ้งเตือนเหตุการณ์สำคัญ \\ \hline
+        \texttt{WheelSense/config/\{device\_id\}} & เซิร์ฟเวอร์$\rightarrow$อุปกรณ์ & อัปเดตการตั้งค่าเฉพาะอุปกรณ์ \\ \hline
+        \texttt{WheelSense/config/all} & เซิร์ฟเวอร์$\rightarrow$อุปกรณ์ & อัปเดตการตั้งค่าทั้งระบบ \\ \hline
+        \texttt{WheelSense/\{device\_id\}/control} & เซิร์ฟเวอร์$\rightarrow$อุปกรณ์ & คำสั่งควบคุมอุปกรณ์ \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        scale=0.72, transform shape,
+        node distance=0.9cm,
+        box/.style={draw, rectangle, rounded corners, align=center, font=\footnotesize},
+        arrow/.style={->, >=stealth, thick},
+        label/.style={font=\tiny, align=center}
+    ]
+        \node[box, fill=orange!15, minimum width=2.6cm, minimum height=1.3cm] (m5) {\textbf{M5StickC Plus2}\\ MPU-6886 IMU\\ BLE Scanner};
+        \node[box, fill=blue!10, minimum width=2.0cm, minimum height=1.0cm, right=1.6cm of m5] (wifi) {\textbf{Wi-Fi}\\ 802.11 b/g/n};
+        \node[box, fill=green!10, minimum width=2.4cm, minimum height=1.3cm, right=1.6cm of wifi] (mqtt) {\textbf{MQTT Broker}\\ Eclipse Mosquitto\\ Pub/Sub};
+        \node[box, fill=blue!15, minimum width=2.2cm, minimum height=1.0cm, right=1.6cm of mqtt] (api) {\textbf{Backend API}\\ FastAPI};
+        \node[box, fill=gray!10, minimum width=2.0cm, minimum height=0.8cm, below=0.5cm of mqtt] (db) {\textbf{Database}\\ PostgreSQL};
+
+        \draw[arrow] (m5) -- node[above, label] {JSON telemetry\\ MQTT publish} (wifi);
+        \draw[arrow] (wifi) -- node[above, label] {TCP/IP} (mqtt);
+        \draw[arrow] (mqtt) -- node[above, label] {Subscribe\\ consume} (api);
+        \draw[arrow, dashed] (api) -- node[right, label] {Persist} (db);
+    \end{tikzpicture}
+    \caption{เส้นทางข้อมูลจาก M5StickC Plus2 ผ่าน Wi-Fi และ MQTT Broker สู่ Backend API}
     \label{fig:ch3-wheelchair-network}
 \end{figure}
 
 \subsection{การประมวลผลข้อมูล}
 \label{sec:ch3_sensor_processing}
 
-ข้อมูลดิบที่อ่านได้จากเซ็นเซอร์ IMU จะมีลักษณะเป็นความเร่งและอัตราการหมุนทั้ง 3 แกนที่มีความละเอียดสูงและมีอัตราการสุ่มตัวอย่าง (Sampling Rate) ถึง 100 เฮิรตซ์ ข้อมูลในระดับนี้แม้จะมีความแม่นยำสูงแต่ก็ประกอบด้วยสัญญาณรบกวนจากการสั่นสะเทือนตามธรรมชาติของเก้าอี้รถเข็น กระบวนการประมวลผลจึงเริ่มต้นด้วยการคำนวณหาขนาดความเร่งลัพธ์รวม (Acceleration Magnitude) จากทั้ง 3 แกน 
+ข้อมูลดิบจากเซ็นเซอร์ IMU อ่านผ่านไลบรารี M5.Imu โดยใช้ชิป MPU-6886 ซึ่งให้ค่าความเร่งและอัตราการหมุนแบบ 3 แกน ก่อนการใช้งานจริง ระบบจะคาริเบรตค่าออฟเซตของไจโรสโคป (Gyro Z Offset) โดยเก็บตัวอย่าง 1 วินาทีและหาค่าเฉลี่ย เพื่อลดค่าเบี่ยงเบี้ยนคงที่ (DC bias)
 
-\begin{equation}
-a_{\mathrm{mag}} = \sqrt{a_x^2 + a_y^2 + a_z^2}
-\label{eq:ch3_accel_mag}
-\end{equation}
+ในแต่ละรอบการอ่านค่า ระบบนำค่าไจโรสโคปแกน Z ผ่านตัวกรองแบบเอกซ์โพเนนเชียลมูฟวิงอเวอเรจ (EMA Low-pass Filter) เพื่อลดสัญญาณรบกวน จากนั้นใช้ Deadband ตัดค่าที่ต่ำกว่าเกณฑ์ออก แล้วแปลงค่าเป็นระยะทางและความเร็วโดยอินทิเกรตตามเวลา โดยอ้างอิงรัศมีล้อรถเข็นที่ตั้งค่าไว้ ความเร็วคำนวณผ่านหน้าต่างเลื่อน (sliding window) และมีกลไกลดค่าความเร็วลง (decay) เมื่อไม่พบการเคลื่อนที่เป็นเวลากำหนด เพื่อลด drift
 
-จากนั้นนำค่าที่ได้ผ่านตัวกรองสัญญาณรบกวนแบบความถี่ต่ำ (Low-pass Filter) เพื่อลดทอนการกระชากของสัญญาณที่เกิดจากความขรุขระของพื้นผิว
+นอกจาก IMU อุปกรณ์ยังสแกนสัญญาณ BLE beacon รอบๆ ตัวแบบ active scan โดยแยกชื่ออุปกรณ์ที่ขึ้นต้นด้วย \texttt{WSN\_} แล้วบันทึกค่า RSSI และ MAC address ไว้ในรายการ พร้อมกำจัดรายการที่ไม่พบนานเกินกำหนด
 
-\begin{equation}
-\bar{a}_t = \alpha \cdot a_{\mathrm{mag},t} + (1-\alpha) \cdot \bar{a}_{t-1}
-\label{eq:ch3_lowpass}
-\end{equation}
-
-เมื่อได้สัญญาณการเคลื่อนไหวที่นิ่งพอ ระบบจะใช้เงื่อนไขเกณฑ์ค่าขอบ (Threshold-based) เพื่อตัดสินว่าเก้าอี้รถเข็นอยู่ในสถานะนิ่งหรือกำลังเคลื่อนที่ โดยหากขนาดความเร่งหรืออัตราการเปลี่ยนทิศทางมีค่าสูงกว่าที่ตั้งไว้ ระบบจะระบุว่ามีกิจกรรมเคลื่อนที่เกิดขึ้น สุดท้ายข้อมูลที่ผ่านการสรุปผลนี้ พร้อมด้วยข้อมูลแบตเตอรี่ สัญญาณชีพ และรายการ RSSI ของ Beacon จะถูกจัดรูปแบบให้อยู่ในโครงสร้าง JSON ก่อนส่งไปยังเซิร์ฟเวอร์ในอัตรา 20 เฮิรตซ์
+ข้อมูลทั้งหมดถูกจัดรูปแบบเป็น JSON ประกอบด้วย ข้อมูล IMU (ความเร่ง 6 แกน) ข้อมูล motion (ระยะทาง ความเร็ว ความเร่ง ทิศทาง) รายการ RSSI จาก beacon ที่พบ และสถานะแบตเตอรี่ จากนั้นส่งผ่าน MQTT ด้วยอัตราที่ปรับตามสถานะการทำงาน คือ 50 มิลลิวินาทีขณะบันทึกการเคลื่อนที่ หรือตามช่วงเวลาปกติเมื่ออยู่นิ่ง
 
 \begin{figure}[htbp]
     \centering
     \begin{tikzpicture}[
-        node distance=1.5cm,
-        startstop/.style={draw, rectangle, rounded corners, minimum width=3cm, minimum height=1cm, align=center, fill=red!10},
-        process/.style={draw, rectangle, minimum width=3cm, minimum height=1cm, align=center, fill=orange!10},
-        decision/.style={draw, diamond, aspect=2, minimum width=3cm, minimum height=1cm, align=center, fill=green!10},
+        node distance=1.8cm,
+        startstop/.style={draw, rectangle, rounded corners, minimum width=5cm, minimum height=1cm, align=center, fill=red!10, font=\small},
+        process/.style={draw, rectangle, minimum width=5cm, minimum height=1cm, align=center, fill=orange!10, font=\small},
+        decision/.style={draw, diamond, aspect=2.5, minimum width=5cm, minimum height=1.4cm, align=center, fill=green!10, font=\small, inner sep=2pt},
         arrow/.style={thick,->,>=stealth}
         ]
-        
         \node (start) [startstop] {เริ่มต้น (Power On)};
-        \node (init) [process, below of=start] {ตั้งค่าเซ็นเซอร์ (IMU, BLE)};
-        \node (scan) [process, below of=init] {สแกน BLE Beacons};
-        \node (imu) [process, below of=scan] {อ่านค่า IMU (6-axis)};
-        \node (wifi) [decision, below of=imu, yshift=-0.5cm] {Wi-Fi พร้อม?};
-        \node (send) [process, below of=wifi, yshift=-0.5cm] {ส่งข้อมูลผ่าน MQTT};
-        \node (wait) [process, left of=imu, xshift=-2.5cm] {รอรอบถัดไป};
+        \node (init) [process, below of=start] {เริ่มต้นระบบ (IMU, WiFi, BLE)};
+        \node (imu) [process, below of=init] {อ่าน IMU + คาริเบรต Gyro};
+        \node (ble) [process, below of=imu] {สแกน BLE Beacons};
+        \node (calc) [process, below of=ble] {คำนวณระยะทาง/ความเร็ว};
+        \node (net) [decision, below of=calc, yshift=-0.2cm] {Wi-Fi/MQTT พร้อม?};
+        \node (json) [process, below of=net, yshift=-0.2cm] {สร้าง JSON telemetry};
+        \node (send) [process, below of=json] {ส่งผ่าน MQTT};
+        \node (wait) [process, left of=calc, xshift=-3.5cm] {รอรอบถัดไป};
         
         \draw [arrow] (start) -- (init);
-        \draw [arrow] (init) -- (scan);
-        \draw [arrow] (scan) -- (imu);
-        \draw [arrow] (imu) -- (wifi);
-        \draw [arrow] (wifi) -- node[right] {ใช่} (send);
+        \draw [arrow] (init) -- (imu);
+        \draw [arrow] (imu) -- (ble);
+        \draw [arrow] (ble) -- (calc);
+        \draw [arrow] (calc) -- (net);
+        \draw [arrow] (net) -- node[right] {ใช่} (json);
+        \draw [arrow] (json) -- (send);
         \draw [arrow] (send) -| (wait);
-        \draw [arrow] (wait) |- (scan);
-        \draw [arrow] (wifi.west) -- node[above] {ไม่} ++(-1,0) |- (wait.south);
-        
+        \draw [arrow] (wait) |- (imu);
+        \draw [arrow] (net.west) -- node[above, pos=0.25] {ไม่} ++(-1.5,0) |- (wait.south);
     \end{tikzpicture}
-    \caption{แผนผังแสดงวงรอบการทำงานหลักของเฟิร์มแวร์บนโหนดเซ็นเซอร์}
+    \caption{แผนผังแสดงวงรอบการทำงานหลักของเฟิร์มแวร์ M5StickC Plus2}
     \label{fig:ch3-firmware-loop}
+\end{figure}
+
+\section{อุปกรณ์สวมใส่และสมาร์ทโฟน}
+\label{sec:ch3_wearable}
+
+\subsection{ฮาร์ดแวร์}
+\label{sec:ch3_wearable_hardware}
+
+ระบบตรวจวัดสัญญาณชีพและกิจกรรมทางกายของผู้ใช้เก้าอี้รถเข็นใช้อุปกรณ์สวมใส่ Polar Verity Sense ซึ่งเป็นเซ็นเซอร์วัดอัตราการเต้นของหัวใจแบบโฟโต้พลีทิสมอกราฟี (Photoplethysmography: PPG) พร้อมเซ็นเซอร์ความเร่ง (Accelerometer) และไจโรสโคป ติดตั้งบริเวณข้อมือหรือแขนของผู้ใช้งาน อุปกรณ์นี้ส่งข้อมูลหลายชนิดผ่านโปรโตคอล BLE โดยใช้ Polar SDK ซึ่งช่วยให้สมาร์ทโฟนสามารถรับข้อมูลอัตราการเต้นของหัวใจ คลื่นแสง PPG ดิบ และข้อมูลความเร่งได้พร้อมกัน นอกจากนี้ยังรองรับการเชื่อมต่อแบบ BLE GATT มาตรฐานสำหรับอัตราการเต้นของหัวใจ (HR Service 0x180D) ในกรณีที่ไม่ได้ใช้ SDK
+
+สมาร์ทโฟนทำหน้าที่เป็นสะพานเชื่อมต่อ (Gateway) ระหว่างอุปกรณ์สวมใส่กับเซิร์ฟเวอร์ส่วนกลาง โดยรับข้อมูลสัญญาณชีพผ่าน BLE แล้วส่งต่อไปยังเซิร์ฟเวอร์ผ่านเครือข่าย Wi-Fi หรือเซลลูลาร์ นอกจากนี้สมาร์ทโฟนยังมีเซ็นเซอร์ภายในตัว เช่น จีพีเอส (GPS) และตัวสแกนบลูทูธ (BLE Scanner) ที่ใช้รับสัญญาณ beacon เพื่อช่วยระบุตำแหน่งของผู้ใช้งาน
+
+\begin{table}[htbp]
+    \centering
+    \caption{คุณสมบัติของอุปกรณ์สวมใส่และสมาร์ทโฟน}
+    \label{tab:ch3_wearable_hw}
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|L{2.5cm}|L{5.0cm}|L{5.0cm}|}
+        \hline
+        \textbf{คุณสมบัติ} & \textbf{Polar Verity Sense} & \textbf{สมาร์ทโฟน} \\ \hline
+        หน้าที่หลัก & วัดอัตราการเต้นหัวใจ PPG, ความเร่ง ACC & รับข้อมูล Polar SDK และส่งต่อสู่เซิร์ฟเวอร์ \\ \hline
+        เซ็นเซอร์ & PPG ดิบ, ไจโรสโคป, ความเร่ง & GPS, BLE Scanner, จอแสดงผล \\ \hline
+        การสื่อสาร & BLE GATT (Peripheral) & Wi-Fi / Cellular, BLE Central \\ \hline
+        แบตเตอรี่ & ชาร์จได้ 20 ชั่วโมง & แบตเตอรี่ลิเธียมไอออนในตัว \\ \hline
+        กลุ่มผู้ใช้ & ผู้สูงอายุที่ใช้เก้าอี้รถเข็น & ผู้ดูแล / ผู้ใช้งาน \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{chapter3/ch3-polar-smartphone.png}
+    \caption{การติดตั้ง Polar Verity Sense และตำแหน่งใช้งานสมาร์ทโฟน}
+    \label{fig:ch3-polar-smartphone}
+\end{figure}
+
+\subsection{โครงข่ายข้อมูล}
+\label{sec:ch3_wearable_network}
+
+โครงข่ายข้อมูลของอุปกรณ์สวมใส่แบ่งเป็น 2 ช่วง ช่วงที่ 1 เป็นการเชื่อมต่อระหว่าง Polar Verity Sense กับสมาร์ทโฟนผ่าน BLE GATT โดย Polar ทำหน้าที่อุปกรณ์รอง (Peripheral) และสมาร์ทโฟนทำหน้าที่อุปกรณ์หลัก (Central) ช่วงที่ 2 เป็นการส่งข้อมูลจากสมาร์ทโฟนไปยังเซิร์ฟเวอร์ส่วนกลางผ่านโปรโตคอล MQTT บนเครือข่าย Wi-Fi หรือเซลลูลาร์
+
+สมาร์ทโฟนยังสแกนสัญญาณ BLE beacon จาก Node Tsimcam ที่ติดตั้งประจำที่ในอาคาร เพื่อเก็บค่า RSSI ส่งไปยังเซิร์ฟเวอร์ร่วมกับข้อมูลสัญญาณชีพ ช่วยให้ระบบระบุตำแหน่งของผู้ใช้งานได้แม่นยำยิ่งขึ้นเมื่อนำมาประมวลผลร่วมกับข้อมูล RSSI จาก M5StickC Plus2
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        scale=0.75, transform shape,
+        node distance=0.9cm,
+        box/.style={draw, rectangle, rounded corners, align=center, font=\footnotesize},
+        arrow/.style={->, >=stealth, thick},
+        label/.style={font=\tiny, align=center}
+    ]
+        \node[box, fill=red!10, minimum width=2.4cm, minimum height=1.2cm] (polar) {\textbf{Polar Verity Sense}\\ PPG + ACC\\ BLE Peripheral};
+        \node[box, fill=blue!10, minimum width=2.0cm, minimum height=1.0cm, right=1.4cm of polar] (ble) {\textbf{BLE GATT}\\ Polar SDK};
+        \node[box, fill=orange!10, minimum width=2.4cm, minimum height=1.2cm, right=1.4cm of ble] (phone) {\textbf{สมาร์ทโฟน}\\ BLE Central\\ MQTT Client};
+        \node[box, fill=blue!10, minimum width=2.0cm, minimum height=1.0cm, right=1.4cm of phone] (wifi) {\textbf{Wi-Fi}\\ / Cellular};
+        \node[box, fill=green!10, minimum width=2.4cm, minimum height=1.2cm, right=1.4cm of wifi] (mqtt) {\textbf{MQTT Broker}\\ Eclipse Mosquitto};
+        \node[box, fill=blue!15, minimum width=2.2cm, minimum height=1.0cm, right=1.4cm of mqtt] (api) {\textbf{Backend API}\\ FastAPI};
+
+        \draw[arrow] (polar) -- node[above, label] {HR, PPG, ACC} (ble);
+        \draw[arrow] (ble) -- node[above, label] {Stream} (phone);
+        \draw[arrow] (phone) -- node[above, label] {JSON\\ MQTT pub} (wifi);
+        \draw[arrow] (wifi) -- node[above, label] {TCP/IP} (mqtt);
+        \draw[arrow] (mqtt) -- node[above, label] {Subscribe} (api);
+    \end{tikzpicture}
+    \caption{เส้นทางข้อมูลจาก Polar Verity Sense ผ่านสมาร์ทโฟนสู่ MQTT Broker และ Backend API}
+    \label{fig:ch3-wearable-network}
+\end{figure}
+
+ตารางที่~\ref{tab:ch3_wearable_comm} สรุปโปรโตคอลการสื่อสาร ทิศทางข้อมูล และประเภทข้อมูลที่แลกเปลี่ยนระหว่าง Polar Verity Sense สมาร์ทโฟน และเซิร์ฟเวอร์ส่วนกลาง
+
+\begin{table}[H]
+    \centering
+    \caption{ตารางการสื่อสารระหว่าง Polar Verity Sense สมาร์ทโฟน และเซิร์ฟเวอร์}
+    \label{tab:ch3_wearable_comm}
+    \tiny
+    \setlength{\tabcolsep}{2pt}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{2.8cm}|>{\centering\arraybackslash}p{1.5cm}|>{\centering\arraybackslash}p{2.5cm}|>{\raggedright\arraybackslash}p{5.9cm}|}
+        \hline
+        \textbf{คู่สื่อสาร} & \textbf{โปรโตคอล} & \textbf{ทิศทาง} & \textbf{ข้อมูลที่แลกเปลี่ยน} \\ \hline
+        Polar $\rightarrow$ สมาร์ทโฟน & BLE GATT & อุปกรณ์$\rightarrow$Gateway & HR, PPG raw (3ch), ACC (3-axis), แบตเตอรี่ \\ \hline
+        สมาร์ทโฟน $\rightarrow$ เซิร์ฟเวอร์ & MQTT & Gateway$\rightarrow$เซิร์ฟเวอร์ & Vitals JSON, RSSI beacon list, timestamp, device ID \\ \hline
+        เซิร์ฟเวอร์ $\rightarrow$ สมาร์ทโฟน & MQTT & เซิร์ฟเวอร์$\rightarrow$Gateway & Alert, room prediction, config update \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{การประมวลผลข้อมูล}
+\label{sec:ch3_wearable_processing}
+
+การประมวลผลข้อมูลบนสมาร์ทโฟนเริ่มจากการเชื่อมต่อกับ Polar Verity Sense ผ่าน Polar SDK ซึ่งเปิดช่องข้อมูล (streaming) พร้อมกันหลายชนิด ได้แก่ อัตราการเต้นของหัวใจ (HR) คลื่นแสง PPG ดิบ 3 ช่อง และข้อมูลความเร่ง (ACC) 3 แกน โดย SDK จัดการโครงสร้างแพ็กเก็ตข้อมูลและการประสานเวลาให้อัตโนมัติ จากนั้นสมาร์ทโฟนส่งข้อมูลสัญญาณชีพไปยังเซิร์ฟเวอร์ผ่าน MQTT พร้อมบันทึกเวลา (timestamp) และรหัสอุปกรณ์
+
+สำหรับข้อมูลตำแหน่ง สมาร์ทโฟนสแกนหา BLE beacon รอบตัวแล้วส่งชุดค่า RSSI พร้อมกับรหัสอุปกรณ์ไปยังเซิร์ฟเวอร์ โดยใช้รูปแบบ JSON ที่เข้ากันได้กับข้อมูลจาก M5StickC Plus2
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.8cm,
+        startstop/.style={draw, rectangle, rounded corners, minimum width=4.5cm, minimum height=1cm, align=center, fill=red!10, font=\small},
+        process/.style={draw, rectangle, minimum width=4.5cm, minimum height=1cm, align=center, fill=orange!10, font=\small},
+        arrow/.style={thick,->,>=stealth}
+        ]
+        \node (start) [startstop] {เริ่มต้น};
+        \node (conn) [process, below of=start] {เชื่อมต่อ BLE GATT};
+        \node (read) [process, below of=conn] {รับค่าอัตราการเต้นหัวใจ};
+        \node (scan) [process, below of=read] {สแกน BLE Beacons};
+        \node (send) [process, below of=scan] {ส่งข้อมูลผ่าน MQTT};
+        \node (wait) [process, left of=conn, xshift=-3.2cm, yshift=-1.2cm] {รอรอบถัดไป};
+        
+        \draw [arrow] (start) -- (conn);
+        \draw [arrow] (conn) -- (read);
+        \draw [arrow] (read) -- (scan);
+        \draw [arrow] (scan) -- (send);
+        \draw [arrow] (send) -| (wait);
+        \draw [arrow] (wait) |- (read);
+    \end{tikzpicture}
+    \caption{แผนผังแสดงวงรอบการทำงานของแอปพลิเคชันบนสมาร์ทโฟน}
+    \label{fig:ch3-smartphone-loop}
 \end{figure}
 
 \section{การจำแนกตำแหน่ง}
@@ -203,40 +357,83 @@ a_{\mathrm{mag}} = \sqrt{a_x^2 + a_y^2 + a_z^2}
 \subsection{ฮาร์ดแวร์}
 \label{sec:ch3_localization_hardware}
 
-ระบบจำแนกตำแหน่งภายในอาคารอาศัยอุปกรณ์ส่งสัญญาณบลูทูธที่เรียกว่า Node Tsimcam ทำหน้าที่เป็นจุดอ้างอิงตำแหน่งตามมาตรฐาน iBeacon หรือ Eddystone อุปกรณ์เหล่านี้มีขนาดเล็ก ใช้พลังงานต่ำ และสามารถทำงานได้อย่างต่อเนื่องจากแบตเตอรี่ภายในเป็นระยะเวลาหลายเดือน การติดตั้งจะกระจายตัวอยู่ตามโซนหรือห้องต่างๆ บนเพดานหรือผนังในตำแหน่งที่ไม่มีโครงสร้างเหล็กบดบัง เพื่อให้เก้าอี้รถเข็นและสมาร์ทโฟนสามารถสแกนพบสัญญาณได้อย่างครอบคลุมและมีความเข้มข้นของสัญญาณ (RSSI) ที่เสถียรมากที่สุด
+ระบบจำแนกตำแหน่งภายในอาคารใช้อุปกรณ์ Node Tsimcam ซึ่งเป็นโหนดอเนกประสงค์ที่ทำหน้าที่ทั้งเป็น BLE beacon และกล้องถ่ายภาพในตัวเดียวกัน อุปกรณ์นี้ติดตั้งประจำจุดตามโซนหรือห้องต่างๆ บนเพดาน โดยส่งสัญญาณโฆษณา BLE อย่างต่อเนื่องพร้อมระบุชื่อโหนด (เช่น \texttt{WSN\_001}) เพื่อให้อุปกรณ์ภาคสนามสามารถรับค่าความเข้มสัญญาณ (RSSI) และนำไปใช้อ้างอิงตำแหน่ง
+
+นอกจากการส่งสัญญาณ beacon Node Tsimcam ยังติดตั้งกล้องดิจิตอลที่สามารถถ่ายภาพนิ่งและส่งรูปภาพไปยังเซิร์ฟเวอร์ส่วนกลางผ่านโปรโตคอล MQTT โดยใช้วิธีแบ่งรูปภาพเป็นชิ้นเล็กๆ (chunked base64) หรือส่งแบบไบนารีโดยตรงผ่าน MQTT publish รูปภาพที่ได้ใช้สำหรับการตรวจสอบภาพในพื้นที่และยืนยันสถานะของผู้ใช้งานแบบ offline ร่วมกับข้อมูลตำแหน่งจากสัญญาณ RSSI
 
 \begin{table}[htbp]
     \centering
-    \caption{ข้อกำหนดและแนวทางการติดตั้ง Node Tsimcam (BLE Beacon)}
+    \caption{ข้อกำหนดและแนวทางการติดตั้ง Node Tsimcam}
     \label{tab:ch3_beacon}
     \small
     \renewcommand{\arraystretch}{1.2}
     \begin{tabular}{|L{4.0cm}|L{8.5cm}|}
         \hline
         \textbf{รายการ} & \textbf{ข้อกำหนด} \\ \hline
-        มาตรฐาน & iBeacon (Apple) หรือ Eddystone (Google) \\ \hline
-        Advertising interval & 100--300 ms \\ \hline
-        กำลังส่ง (TX Power) & $-12$ dBm ถึง $+4$ dBm \\ \hline
-        แบตเตอรี่ & CR2032 หรือ built-in; อายุงาน 6--18 เดือน \\ \hline
+        ชิปหลัก & ESP32-S3 (Dual-core 240 MHz) \\ \hline
+        กล้อง & OV2640 ความละเอียดสูงสุด VGA (640x480) \\ \hline
+        การเชื่อมต่อ & Wi-Fi 802.11 b/g/n, BLE 5.0 \\ \hline
+        การส่งสัญญาณ BLE & ชื่อโหนด \texttt{WSN\_NNN}, Advertising แบบ active \\ \hline
+        การส่งภาพ & MQTT publish (chunked base64 หรือ binary) \\ \hline
+        การจ่ายไฟ & USB หรือแบตเตอรี่ภายนอก (3.3--5 V) \\ \hline
         ความสูงติดตั้ง & 2.5--3.0 เมตรจากพื้น (เพดานหรือผนัง) \\ \hline
-        ระยะห่างระหว่าง beacon & 5--8 เมตร ในโซนเดียวกัน \\ \hline
-        จำนวนในการทดลองนี้ & 12 ตัว กระจาย 2 อาคาร \\ \hline
+        ระยะห่างระหว่างโหนด & 5--8 เมตร ในโซนเดียวกัน \\ \hline
     \end{tabular}
 \end{table}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.85\textwidth]{ch3-beacon-layout.png}
-    \caption{แผนผังการจัดวาง BLE beacon ภายในอาคารตัวอย่าง}
+    \begin{tikzpicture}[scale=0.8, transform shape]
+        % Define room dimensions
+        \def\roomwidth{3.5}
+        \def\roomheight{3.0}
+        \def\corridorwidth{2.0}
+        
+        % Draw rooms - Elderly care home layout
+        % Top row
+        \draw[thick] (0, \roomheight) rectangle (\roomwidth, 2*\roomheight) node[midway] {ห้องพัก A};
+        \draw[thick] (\roomwidth + \corridorwidth, \roomheight) rectangle (2*\roomwidth + \corridorwidth, 2*\roomheight) node[midway] {ห้องพัก B};
+        \draw[thick] (2*\roomwidth + 2*\corridorwidth, \roomheight) rectangle (3*\roomwidth + 2*\corridorwidth, 2*\roomheight) node[midway] {ห้องพัก C};
+        
+        % Bottom row
+        \draw[thick] (0, 0) rectangle (\roomwidth, \roomheight) node[midway] {ห้องพัก D};
+        \draw[thick] (\roomwidth + \corridorwidth, 0) rectangle (2*\roomwidth + \corridorwidth, \roomheight) node[midway] {ห้องพัก E};
+        \draw[thick] (2*\roomwidth + 2*\corridorwidth, 0) rectangle (3*\roomwidth + 2*\corridorwidth, \roomheight) node[midway] {ห้องพัก F};
+        
+        % Corridor
+        \draw[thick, dashed] (\roomwidth, 0) rectangle (\roomwidth + \corridorwidth, 2*\roomheight) node[midway, rotate=90] {ทางเดินกลาง};
+        \draw[thick, dashed] (2*\roomwidth + \corridorwidth, 0) rectangle (2*\roomwidth + 2*\corridorwidth, 2*\roomheight) node[midway, rotate=90] {ทางเดินกลาง};
+        
+        % BLE Beacon nodes
+        \node[circle, fill=blue, inner sep=2pt, label=below:\tiny{Node 1}] at (\roomwidth/2, 2*\roomheight - 0.5) {};
+        \node[circle, fill=blue, inner sep=2pt, label=below:\tiny{Node 2}] at (\roomwidth + \corridorwidth + \roomwidth/2, 2*\roomheight - 0.5) {};
+        \node[circle, fill=blue, inner sep=2pt, label=below:\tiny{Node 3}] at (2*\roomwidth + 2*\corridorwidth + \roomwidth/2, 2*\roomheight - 0.5) {};
+        \node[circle, fill=blue, inner sep=2pt, label=above:\tiny{Node 4}] at (\roomwidth/2, 0.5) {};
+        \node[circle, fill=blue, inner sep=2pt, label=above:\tiny{Node 5}] at (\roomwidth + \corridorwidth + \roomwidth/2, 0.5) {};
+        \node[circle, fill=blue, inner sep=2pt, label=above:\tiny{Node 6}] at (2*\roomwidth + 2*\corridorwidth + \roomwidth/2, 0.5) {};
+        
+        % Additional beacons in corridors
+        \node[circle, fill=red, inner sep=2pt, label=right:\tiny{Node 7}] at (\roomwidth + \corridorwidth/2, \roomheight) {};
+        \node[circle, fill=red, inner sep=2pt, label=right:\tiny{Node 8}] at (2*\roomwidth + 1.5*\corridorwidth, \roomheight) {};
+        
+        % Legend
+        \node[draw, rectangle, fill=white] at (4*\roomwidth + 2*\corridorwidth, \roomheight) {
+            \begin{tabular}{c}
+                \tikz\node[circle, fill=blue, inner sep=2pt] {}; \tiny Beacon ในห้องพัก \\
+                \tikz\node[circle, fill=red, inner sep=2pt] {}; \tiny Beacon ในทางเดิน
+            \end{tabular}
+        };
+    \end{tikzpicture}
+    \caption{แผนผังการจัดวาง BLE beacon ภายในอาคารบ้านพักคนชรา}
     \label{fig:ch3-beacon-layout}
 \end{figure}
 
 \subsection{การประมวลผลข้อมูล}
 \label{sec:ch3_localization_processing}
 
-กระบวนการประมวลผลตำแหน่งใช้วิธีการเปรียบเทียบลายนิ้วมือสัญญาณ (Fingerprinting) ซึ่งแบ่งการทำงานเป็น 2 ขั้นตอนหลัก ขั้นตอนแรกคือการสอบเทียบ (Offline Calibration) โดยการรวบรวมค่าความเข้มสัญญาณบลูทูธ (RSSI) จาก Beacon ทุกตัวในแต่ละจุดอ้างอิงบนพื้นที่จริง เพื่อสร้างเป็นแผนที่สัญญาณ (Radio Map) เก็บไว้ในฐานข้อมูล
+กระบวนการประมวลผลตำแหน่งทำงานที่ฝั่งเซิร์ฟเวอร์ โดยรับค่า RSSI จากอุปกรณ์ภาคสนาม 2 ชนิด คือ M5StickC Plus2 ที่ติดตั้งบนเก้าอี้รถเข็น และสมาร์ทโฟนของผู้ใช้งานหรือผู้ดูแล ทั้งสองอุปกรณ์สแกนหา BLE beacon จาก Node Tsimcam ที่กระจายอยู่ทั่วอาคาร และส่งชุดค่า RSSI พร้อมรหัสโหนดและเวลาไปยังเซิร์ฟเวอร์ผ่าน MQTT
 
-ขั้นตอนที่สองคือการทำนายตำแหน่งจริง (Online Inference) เมื่อเซ็นเซอร์บนเก้าอี้รถเข็นส่งชุดข้อมูล RSSI ของ Beacon ที่สแกนพบในขณะนั้น ระบบเซิร์ฟเวอร์จะนำชุดข้อมูลดังกล่าวมาคำนวณระยะห่างทางสถิติ (Euclidean Distance) เทียบกับฐานข้อมูลแผนที่สัญญาณที่มีอยู่
+เซิร์ฟเวอร์จัดเก็บชุดค่า RSSI ดังกล่าวในฐานข้อมูล PostgreSQL รูปแบบ JSONB และใช้อัลกอริทึม K-Nearest Neighbors (K-NN) ในการประมวลผลตำแหน่ง โดยเปรียบเทียบชุดค่า RSSI ที่ได้รับในปัจจุบันกับชุดข้อมูลอ้างอิง (Radio Map) ที่บันทึกไว้ล่วงหน้าจากการสำรวจแต่ละโซน การคำนวณระยะห่างทางสถิติใช้ Euclidean Distance ดังสมการ~\ref{eq:ch3_euclidean} แล้วเลือกจุดอ้างอิงที่ใกล้เคียงที่สุดจำนวน $k$ จุด เพื่อโหวตน้ำหนักหาตำแหน่งหรือโซนที่ผู้ใช้แต่ละคนอยู่ในขณะนั้น ตามสมการ~\ref{eq:ch3_weighted_knn} ข้อมูลจากทั้ง M5StickC และสมาร์ทโฟนช่วยเพิ่มความถูกต้องเนื่องจากเซิร์ฟเวอร์สามารถรวมค่า RSSI จากหลายมุมมองและแก้ไขค่าที่ผิดปกติได้
 
 \begin{equation}
 d_j = \sqrt{\sum_{i=1}^{m} (x_i - r_{ji})^2}
@@ -294,10 +491,16 @@ d_j = \sqrt{\sum_{i=1}^{m} (x_i - r_{ji})^2}
 \section{เซิร์ฟเวอร์}
 \label{sec:ch3_server}
 
-\subsection{สถาปัตยกรรม}
+\subsection{สถาปัตยกรรมโดยรวม}
 \label{sec:ch3_server_architecture}
 
-สถาปัตยกรรมบริการส่วนกลางถูกออกแบบด้วยแนวคิด Microservices ซึ่งทำงานประสานกันผ่าน Container (Docker Compose) บริการหลักทั้ง 4 ส่วนสรุปในตารางที่~\ref{tab:ch3_services}
+สถาปัตยกรรมเซิร์ฟเวอร์ออกแบบบนแนวคิดไมโครเซอร์วิสผ่าน Docker Compose เพื่อให้ระบบสามารถขยายขนาดและดูแลรักษาได้ง่าย โดยประกอบด้วย 4 บริการหลัก ได้แก่ MQTT Broker (Eclipse Mosquitto) สำหรับจัดการการส่งข้อความแบบ Publish/Subscribe, Backend API (FastAPI) สำหรับจัดการตรรกะธุรกิจ, Database (PostgreSQL 16) สำหรับเก็บข้อมูล และ AI Service (Ollama + FastMCP) สำหรับประมวลผลผู้ช่วยอัจฉริยะ
+
+ระบบเซิร์ฟเวอร์ทั้งหมดถูกนำไปใช้งานบน Raspberry Pi 5 ซึ่งเป็นคอมพิวเตอร์บอร์ดขนาดเล็ก (Single Board Computer) ที่มีหน่วยความจำ RAM 8 GB และใช้ชิป ARM Cortex-A76 Quad-core ความถี่ 2.4 GHz การเลือกใช้ Raspberry Pi 5 ช่วยลดต้นทุนด้านฮาร์ดแวร์และพลังงาน ในขณะเดียวกันก็ยังสามารถรันบริการต่างๆ ผ่าน Docker Compose ได้อย่างมีประสิทธิภาพ ทำให้เหมาะสำหรับการทำระบบเซิร์ฟเวอร์ส่วนกลางในโครงการ IoT ที่ต้องการความยืดหยุ่นและความสามารถในการปรับขนาด
+
+การจัดการชีวิตวงจรของแอปพลิเคชัน (Application Lifecycle) ใช้ Lifespan Manager ของ FastAPI ซึ่งเริ่มต้นด้วยการตรวจสอบการตั้งค่าระบบ (Runtime Settings Validation) จากนั้นตรวจสอบการเชื่อมต่อฐานข้อมูล สร้างบัญชีผู้ดูแลระบบเริ่มต้นหากยังไม่มี เริ่มงาน MQTT Listener เป็นพื้นหลัง (Background Task) และเปิดใช้งาน Retention Scheduler ตามเงื่อนไข เมื่อปิดระบบจะยกเลิกงาน MQTT และหยุด Scheduler อย่างเป็นระเบียบ
+
+ชั้นบริการ (Service Layer) แยกตรรกะธุรกิจออกจากชั้นข้อมูล โดยมีคลาส CRUDBase ทั่วไปที่บังคับใช้ขอบเขต Workspace (Workspace Isolation) สำหรับการสร้าง อ่าน แก้ไข และลบข้อมูล ชั้นนี้ประสานงานระหว่างตัวจัดการเส้นทาง (Router) กับชั้นความคงทนข้อมูล (Persistence Layer) เพื่อให้สามารถทดสอบและบำรุงรักษาโค้ดได้ง่ายขึ้น
 
 \begin{table}[H]
     \centering
@@ -336,10 +539,30 @@ d_j = \sqrt{\sum_{i=1}^{m} (x_i - r_{ji})^2}
     \label{fig:ch3-server-architecture}
 \end{figure}
 
-\subsection{ช่องทางสื่อสาร}
+\subsection{แอปพลิเคชันแบ็กเอนด์ FastAPI}
+\label{sec:ch3_fastapi}
+
+แอปพลิเคชันแบ็กเอนด์พัฒนาด้วย FastAPI ซึ่งเป็นเฟรมเวอร์กแบบอะซิงโครนัสรองรับคำขอพร้อมกันได้สูง โดยใช้ Python Async/Await พร้อมกับไลบรารี Pydantic สำหรับตรวจสอบความถูกต้องของข้อมูล (Data Validation) ตั้งแต่ขั้นเข้า ส่วนประกอบหลักประกอบด้วย
+
+\begin{enumerate}
+    \item \textbf{Lifespan Manager:} จัดการชีวิตวงจรการเริ่มต้นและปิดระบบ ตรวจสอบการตั้งค่า เริ่ม MQTT Listener และ Retention Scheduler
+    \item \textbf{Dependency Injection:} ใช้ FastAPI Depends สำหรับฉีดบริการที่ใช้ร่วมกัน เช่น ฐานข้อมูล ตัวตรวจสอบสิทธิ์ และ MQTT Client ทำให้สามารถทดสอบหน่วยย่อย (Unit Testing) ได้โดยง่าย
+    \item \textbf{Router Organization:} แบ่งเส้นทาง API ตามโดเมนข้อมูล เช่น authentication, devices, rooms, users, workspaces, alerts และ AI ช่วยให้โครงสร้างชัดเจนและขยายได้
+    \item \textbf{Error Handling:} ใช้รูปแบบคำตอบข้อผิดพลาดมาตรฐาน (Standardized Error Envelope) รหัส HTTP ที่เหมาะสม และข้อความภาษาไทยสำหรับผู้ใช้
+\end{enumerate}
+
+\subsection{ช่องทางสื่อสารและการรับข้อมูล}
 \label{sec:ch3_server_channels}
 
-ระบบใช้ช่องทางสื่อสาร 3 รูปแบบตามลักษณะการใช้งาน สรุปในตารางที่~\ref{tab:ch3_channels}
+การรับส่งข้อมูลในระบบเซิร์ฟเวอร์อาศัยช่องทางสื่อสาร 3 รูปแบบหลัก ดังนี้
+
+\textbf{MQTT (Message Queuing Telemetry Transport)} ใช้สำหรับการรับส่งข้อมูล telemetry ความถี่สูงจากอุปกรณ์ภาคสนามแบบ Publish/Subscribe เซิร์ฟเวอร์ใช้ไลบรารี aiomqtt ซึ่งรองรับการทำงานแบบอะซิงโครนัส เพื่อรับข้อมูลจากอุปกรณ์หลายเครื่องพร้อมกันโดยไม่บล็อกเธรด หัวข้อหลักที่ใช้ประกอบด้วย \texttt{WheelSense/data} สำหรับข้อมูลเซ็นเซอร์ \texttt{WheelSense/camera/+/registration} สำหรับลงทะเบียนภาพถ่าย และ \texttt{WheelSense/+/ack} สำหรับยืนยันการได้รับคำสั่ง
+
+\textbf{REST API} ใช้สำหรับการเรียกดูข้อมูลผู้ใช้ ประวัติ และคำสั่งจาก Dashboard แบบ Request/Response โดยรองรับการยืนยันตัวตนด้วย OAuth2 และการควบคุมสิทธิ์ตามบทบาท (RBAC)
+
+\textbf{WebSocket} ใช้สำหรับการรับข้อมูลอัปเดตแบบเรียลไทม์ เช่น การแจ้งเตือนเหตุฉุกเฉิน และสตรีมมิงคำตอบจาก AI แบบ Full-duplex
+
+ระบบรับข้อมูล telemetry ทำงานตามลำดับขั้น ได้แก่ รับแพ็กเก็ตจาก MQTT Broker ตรวจสอบรูปแบบ JSON ตรวจสอบความถูกต้องของข้อมูลตามแบบจำลอง (Pydantic Model) ประมวลผลตรรกะธุรกิจ เช่น ตรวจจับการล้ม และบันทึกลงฐานข้อมูล นอกจากนี้ยังมีระบบรวมรูปภาพจากกล้องแบบแยกชิ้น (Camera Photo Chunking) ซึ่งรวบรวมชิ้นส่วนภาพแล้วประกอบเป็นภาพสมบูรณ์ก่อนจัดเก็บ
 
 \begin{table}[H]
     \centering
@@ -375,27 +598,56 @@ d_j = \sqrt{\sum_{i=1}^{m} (x_i - r_{ji})^2}
     \caption{แผนผังแสดงกระบวนการรับรองและประมวลผลข้อมูลฝั่งเซิร์ฟเวอร์}
     \label{fig:ch3-server-ingestion}
 \end{figure}
-\subsection{ฐานข้อมูล}
+
+\subsection{ฐานข้อมูล PostgreSQL}
 \label{sec:ch3_server_database}
 
-ฐานข้อมูลของระบบพัฒนาขึ้นบนระบบจัดการฐานข้อมูล PostgreSQL รุ่น 16 ซึ่งรองรับทั้งการเก็บข้อมูลเชิงธุรกรรมและข้อมูลแบบกึ่งโครงสร้าง (Semi-structured data) โครงสร้างตารางหลักถูกแบ่งแยกออกเป็นกลุ่มการทำงานอย่างชัดเจน ได้แก่ กลุ่มข้อมูลพื้นที่ทำงานและผู้ใช้ (Workspaces, Users) กลุ่มข้อมูลผู้พักอาศัยและอุปกรณ์ (Patients, Devices) กลุ่มข้อมูลเชิงเวลาที่บันทึกค่าที่อ่านได้จากการเคลื่อนไหวและสัญญาณชีพ (Telemetry Records, Location Events) และกลุ่มข้อมูลการแจ้งเตือนพร้อมประวัติการทำงาน (Alerts, Audit Logs)
+ฐานข้อมูลระบบใช้ PostgreSQL 16 ร่วมกับ SQLAlchemy 2.0 แบบอะซิงโครนัส (Async SQLAlchemy) ผ่านไดรเวอร์ asyncpg เพื่อรองรับการทำงานพร้อมกันของคำขอจำนวนมากโดยไม่บล็อกเธรด การเชื่อมต่อใช้ Connection Pooling ที่มีการตั้งค่า pool\_size และ max\_overflow เหมาะสมกับภาระงานของระบบ
 
-เพื่อรองรับความยืดหยุ่นของข้อมูลเซ็นเซอร์ที่มีโครงสร้างเปลี่ยนแปลงได้ ระบบจึงใช้ชนิดข้อมูลแบบ JSONB ในการจัดเก็บ Payload ของ Telemetry รวมถึงข้อมูลบริบทของการแจ้งเตือนและ Audit Log ทำให้สามารถค้นหาและวิเคราะห์ข้อมูลเฉพาะเจาะจงได้สะดวกรวดเร็วมากยิ่งขึ้น
+การจัดการเวอร์ชันของโครงสร้างฐานข้อมูลใช้ Alembic ซึ่งเป็นชั้นการย้ายข้อมูล (Migration Layer) แบบ incremental ทำให้สามารถปรับเปลี่ยนโครงสร้างตารางในเวอร์ชันต่อๆ ไปได้อย่างมีระเบียบ แต่ละเวอร์ชันมีการระบุ dependencies และ revision ID เพื่อป้องกันการทำงานซ้ำซ้อน
 
-\begin{figure}[htbp]
+ชนิดข้อมูล JSONB ถูกใช้เป็นหลักสำหรับเก็บข้อมูลกึ่งโครงสร้าง เช่น payload ของ telemetry ข้อมูลการแจ้งเตือนแบบยืดหยุ่น และประวัติ Audit Log ทำให้สามารถรองรับรูปแบบข้อมูลจากเซ็นเซอร์ที่อาจปรับเปลี่ยนในอนาคตโดยไม่ต้องแก้ไขโครงสร้างตาราง
+
+เอนทิตีหลักในฐานข้อมูลประกอบด้วย Workspace (แยกขอบเขตองค์กร), User (ผู้ใช้และบทบาท), AuthSession (เซสชันการเข้าใช้งาน), Device (อุปกรณ์ IoT), Room (ห้องและสถานที่), และ Alert (เหตุการณ์แจ้งเตือน) ทุกตารางที่อยู่ภายใต้ Workspace มีคอลัมน์ workspace\_id เพื่อบังคับใช้ขอบเขตข้อมูล (Workspace Isolation) ป้องกันไม่ให้ผู้ใช้จากองค์กรหนึ่งเข้าถึงข้อมูลขององค์กรอื่น
+
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{ch3-database-erd.png}
+    \includegraphics[width=0.9\textwidth]{../../assets/figures/chapter3/ER-Diagram.png}
     \caption{แผนภาพความสัมพันธ์ของเอนทิตี (ER Diagram) เบื้องต้นในฐานข้อมูล}
     \label{fig:ch3-database-erd}
 \end{figure}
 
-\section{ระบบผู้ช่วยอัจฉริยะ (AI)}
+\subsection{ระบบควบคุมอุปกรณ์ Home Assistant}
+\label{sec:ch3_homeassistant}
+
+Home Assistant เป็นแพลตฟอร์มโอเพนซอร์สสำหรับการควบคุมอุปกรณ์ IoT และอุปกรณ์อัจฉริยะภายในบ้าน ในระบบ WheelSense Home Assistant ทำหน้าที่เป็นเกตเวย์ควบคุมอุปกรณ์อิเล็กทรอนิกส์ภายในห้อง เช่น หลองไฟ ปลั๊กอัจฉริยะ และอุปกรณ์อื่นๆ ผ่านการเชื่อมต่อผ่าน MQTT หรือ REST API
+
+การเชื่อมต่อระหว่าง WheelSense และ Home Assistant ทำผ่าน MCP Protocol โดย FastAPI ส่งคำสั่งไปยัง Home Assistant เพื่อควบคุมอุปกรณ์ ตัวอย่างเช่น เมื่อผู้ใช้สั่ง "เปิดไฟในห้อง 101" ผ่าน AI Assistant ระบบจะส่งคำสั่งไปยัง Home Assistant เพื่อเปิดหลอดไฟที่กำหนดไว้ในห้องดังกล่าว
+
+Home Assistant รองรับอุปกรณ์หลากหลายประเภทผ่านการเชื่อมต่อที่หลากหลาย เช่น Zigbee, Z-Wave, WiFi และ Bluetooth ทำให้สามารถขยายระบบได้อย่างยืดหยุ่น ในระบบ WheelSense ใช้ Home Assistant เพื่อจัดการอุปกรณ์ที่ไม่ได้เชื่อมต่อโดยตรงกับระบบหลัก หรืออุปกรณ์ที่ต้องการการควบคุมเฉพาะทาง
+
+\subsection{ระบบรับรองความถูกต้องและการควบคุมสิทธิ์}
+\label{sec:ch3_server_security}
+
+ระบบความปลอดภัยออกแบบเป็นเลเยอร์ (Layered Security) ซึ่งครอบคลุมตั้งแต่การยืนยันตัวตนผู้ใช้ไปจนถึงการควบคุมสิทธิ์การเข้าถึงข้อมูล
+
+\textbf{การยืนยันตัวตนด้วย JWT} ระบบใช้ JSON Web Token (JWT) สำหรับยืนยันตัวตนแบบ Stateless โดยผู้ใช้ลงชื่อเข้าใช้งานด้วยชื่อผู้ใช้และรหัสผ่าน รหัสผ่านถูกเก็บด้วยการแฮชแบบ bcrypt พร้อมค่า Salt รอบการทำงานที่ปลอดภัย จากนั้นระบบออกโทเคนเข้าถึง (Access Token) และโทเคนรีเฟรช (Refresh Token) ให้กับผู้ใช้
+
+\textbf{การจัดการเซสชัน} ระบบเก็บเซสชันการเข้าใช้งานในฐานข้อมูล (AuthSession) พร้อมข้อมูลรุ่นเบราว์เซอร์ หมายเลข IP และสถานะ Active/Revoked ผู้ใช้สามารถยกเลิกเซสชันเฉพาะหรือทั้งหมดได้ ทำให้สามารถควบคุมการเข้าถึงของอุปกรณ์ที่เคยลงชื่อเข้าใช้ได้
+
+\textbf{การควบคุมสิทธิ์ตามบทบาท (RBAC)} ระบบกำหนดบทบาทหลัก 3 ระดับ ได้แก่ System Admin (ดูแลระบบ), Workspace Admin (ผู้ดูแลองค์กร), และ User (ผู้ใช้ทั่วไป) สิทธิ์การเข้าถึง API ถูกกำหนดตามบทบาทในรูปแบบของยูนิตความสัมพันธ์ (Tuple) ระหว่างบทบาทกับสิทธิ์ เช่น (Admin, ดูแลผู้ใช้)
+
+\textbf{ขอบเขตข้อมูล (Workspace Scoping)} ทุกคำขอที่ต้องการข้อมูลในส่วนแบ็กเอนด์ต้องระบุ Workspace ID ผ่านค่าคงที่ในเส้นทาง (Path) หรือค่าพารามิเตอร์ (Query Parameter) ระบบ Middleware ตรวจสอบว่าผู้ใช้มีสิทธิ์ในขอบเขตนั้นหรือไม่ก่อนประมวลผลคำขอ
+
+\textbf{การป้องกันการเข้าถึง AI Service} บริการ MCP และ AI ใช้โทเคนแยกต่างหากที่มีขอบเขตเฉพาะ (Scope Narrowing) เพื่อป้องกันไม่ให้ AI Agent มีสิทธิ์เกินความจำเป็น ตัวอย่างเช่น โทเคนที่ใช้สำหรับอ่านข้อมูลอุปกรณ์จะไม่สามารถแก้ไขหรือลบข้อมูลได้
+
+\section{AI}
 \label{sec:ch3_ai}
 
 \subsection{สถาปัตยกรรม}
 \label{sec:ch3_ai_architecture}
 
-ระบบ AI ทำงานผ่าน Pipeline 5 ชั้นที่แยก "การสังเคราะห์ภาษา" ออกจาก "การกระทำต่อระบบ" อย่างชัดเจน ดังตารางที่~\ref{tab:ch3_ai_pipeline}
+สถาปัตยกรรมของ AI ทำงานเป็นระบบผู้ช่วยอัจฉริยะผ่านโครงสร้าง Pipeline 5 ชั้น (EaseAI) เพื่อลดข้อผิดพลาดในการประมวลผลและป้องกันการดำเนินการนอกขอบเขต โดยเชื่อมโยงกับโมเดลภาษาขนาดใหญ่ (LLM) ในเครื่อง (On-premise) เช่น โมเดล Gemma 4 ผ่านแพลตฟอร์ม Ollama นอกจากนี้ยังใช้ Model Context Protocol (MCP) เป็นส่วนเชื่อมต่อเพื่อให้ AI สามารถเข้าถึงข้อมูลในระบบ และกระทำต่อระบบผ่านเครื่องมือ (Tools) ได้อย่างปลอดภัย
 
 \begin{table}[H]
     \centering
@@ -413,34 +665,72 @@ d_j = \sqrt{\sum_{i=1}^{m} (x_i - r_{ji})^2}
     \end{tabular}
 \end{table}
 
+\textbf{ตัวอย่างการทำงานของ Pipeline:} เมื่อผู้ใช้ส่งคำสั่ง ``"เปิดไฟในห้อง 101"`` เข้าสู่ระบบ กระบวนการจะดำเนินการดังนี้:
+\begin{itemize}
+    \item \textbf{Layer 1 (Intent Router):} Sentence-BERT จำแนกว่าเป็นคำสั่งควบคุมอุปกรณ์ (device\_control) พร้อมดึงพารามิเตอร์ ``room\_id=101`` และ ``action=turn\_on``
+    \item \textbf{Layer 2 (Context Engine):} ระบบดึงข้อมูลจากฐานข้อมูลว่าห้อง 101 มี Smart Device ประเภท ``light`` พร้อม ``ha\_entity\_id=light.bedroom\_101`` และตรวจสอบสิทธิ์ของผู้ใช้
+    \item \textbf{Layer 3 (Behavioral State):} ตรวจสอบประวัติการสนทนาและนโยบายความปลอดภัย ยืนยันว่าผู้ใช้มีสิทธิ์ควบคุมอุปกรณ์ในห้องดังกล่าว
+    \item \textbf{Layer 4 (LLM Synthesis):} Gemma 4 สังเคราะห์แผนการดำเนินการ (execution plan) ตาม Schema ที่กำหนด ได้ผลลัพธ์เป็น JSON structure พร้อม tool call: ``control\_room\_smart\_device(room\_id=101, ha\_entity\_id=light.bedroom\_101, state=on)``
+    \item \textbf{Layer 5 (Safety Check \& Execution):} ระบบตรวจสอบว่า tool call ปลอดภัย ไม่ขัดต่อนโยบาย จากนั้นส่งคำสั่งไปยัง Home Assistant ผ่าน MCP Protocol และบันทึกผลลัพธ์กลับใน ``pipeline\_events``
+\end{itemize}
+
 \begin{figure}[htbp]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.5cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=4cm, minimum height=1cm, align=center, fill=purple!5},
-        arrow/.style={thick,->,>=stealth}
-        ]
-        
-        \node (query) [box] {User Query};
-        \node (router) [box, below of=query] {Intent Router};
-        \node (context) [box, below of=router] {Context Retrieval};
-        \node (gen) [box, below of=context] {LLM Generation};
-        \node (exec) [box, below of=gen] {Action Execution};
-        
-        \draw [arrow] (query) -- (router);
-        \draw [arrow] (router) -- (context);
-        \draw [arrow] (context) -- (gen);
-        \draw [arrow] (gen) -- (exec);
-        
-    \end{tikzpicture}
-    \caption{แผนผังแสดงกระบวนการประมวลผลของระบบผู้ช่วยอัจฉริยะ}
+    \includegraphics[width=0.9\textwidth]{../../assets/figures/chapter3/AI-pipeline.png}
+    \caption{แผนผังแสดงกระบวนการประมวลผล 5 ชั้นของ AI Pipeline}
     \label{fig:ch3-ai-flow}
 \end{figure}
 
-\subsection{โครงสร้างคำสั่งและเครื่องมือ}
+\subsection{Prompt}
 \label{sec:ch3_ai_prompt}
 
-ระบบ AI รองรับการทำงาน 3 รูปแบบ ได้แก่ การสรุปข้อมูล การสืบค้น และการกระทำต่อระบบ โดยจำกัดสิทธิ์เครื่องมือตามบทบาทผ่าน Policy Engine ดังตารางที่~\ref{tab:ch3_policy} ทุกการกระทำต้องผ่านกลไก Propose-Confirm-Execute ก่อนดำเนินการจริงเสมอ
+การทำงานของ AI อาศัยโครงสร้าง Prompt ที่ระบุบทบาท ขอบเขตความรับผิดชอบ และนโยบายความปลอดภัยไว้อย่างชัดเจน โดย Prompt เริ่มต้น (System Prompt) จะกำหนดให้ AI สรุปข้อมูลหรืออธิบายเหตุการณ์ตามบริบทที่ดึงมาจากฐานข้อมูลและบริบทของผู้ใช้ (Context Engine) และปฏิบัติตามหลักการ Propose-Confirm-Execute เสมอ หากคำสั่งนั้นส่งผลให้เกิดการเปลี่ยนแปลงต่อระบบ
+
+ระบบมี Prompt หลัก 6 ประเภทตามบทบาทผู้ใช้:
+
+\begin{enumerate}
+    \item \textbf{admin-operations} — Prompt สำหรับการจัดการโครงสร้างพื้นฐานและพื้นที่ทำงาน เช่น จัดการผู้ใช้ อุปกรณ์ และการตั้งค่าระบบ
+    \item \textbf{clinical-triage} — Prompt สำหรับการประเมินสภาพผู้พักอาศัยและการแจ้งเตือน เช่น สรุปสุขภาพล่าสุด และการตรวจสอบเหตุการณ์ผิดปกติ
+    \item \textbf{observer-shift-assistant} — Prompt สำหรับเจ้าหน้าที่ปฏิบัติงานในพื้นที่ เช่น การตรวจสอบตำแหน่งผู้พักและการตอบสนองเหตุการณ์
+    \item \textbf{patient-support} — Prompt สำหรับผู้พักอาศัย เช่น การสอบถามสุขภาพ การติดต่อเจ้าหน้าที่ และการควบคุมอุปกรณ์ในห้อง
+    \item \textbf{device-control} — Prompt สำหรับการควบคุมอุปกรณ์และอุปกรณ์ในห้อง เช่น การสั่งงานกล้องและอุปกรณ์ IoT
+    \item \textbf{facility-ops} — Prompt สำหรับการจัดการสิ่งอำนวยความสะดวกและผังอาคาร เช่น การดูผังชั้นและการจัดการห้อง
+\end{enumerate}
+
+\textbf{ตัวอย่าง Prompt ในระบบ:}
+
+\begin{itemize}
+    \item \textbf{คำถามทั่วไป:} ``ใครอยู่ในห้องโถงขณะนี้'' — AI จะใช้เครื่องมือ \texttt{list\_visible\_patients} และกรองตามตำแหน่งเพื่อตอบรายชื่อผู้พัก
+    \item \textbf{คำถามเชิงสุขภาพ:} ``สุขภาวะของคุณสมชายเป็นอย่างไรบ้าง'' — AI จะใช้เครื่องมือ \texttt{get\_patient\_vitals} และ \texttt{get\_patient\_timeline} เพื่อดึงข้อมูลอัตราการเต้นหัวใจ ออกซิเจนในเลือด และประวัติการเคลื่อนไหว
+    \item \textbf{คำสั่งการควบคุม:} ``เปิดไฟในห้อง 101'' — AI จะเสนอแผนการใช้เครื่องมือ \texttt{control\_room\_smart\_device} และรอการยืนยันจากผู้ใช้ก่อนดำเนินการ
+    \item \textbf{คำสั่งการแจ้งเตือน:} ``ยืนยันการแจ้งเตือนการหกล้มของคุณสมชาย'' — AI จะใช้เครื่องมือ \texttt{acknowledge\_alert} เพื่ออัปเดตสถานะการแจ้งเตือน
+    \item \textbf{คำถามเชิงระบบ:} ``สถานะระบบปกติหรือไม่'' — AI จะใช้เครื่องมือ \texttt{get\_system\_health} เพื่อตรวจสอบสถานะบริการทั้งหมด
+\end{itemize}
+
+\textbf{เครื่องมือ MCP ที่ AI สามารถควบคุมได้:}
+
+\begin{table}[htbp]
+    \centering
+    \caption{เครื่องมือ MCP แบ่งตามหมวดหมู่ในระบบ}
+    \label{tab:ch3_mcp_tools}
+    \small\renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{3.0cm}|p{7.0cm}|}
+        \hline
+        \textbf{หมวดหมู่} & \textbf{เครื่องมือ (Tools)} \\ \hline
+        \textbf{ผู้พักอาศัย} & list\_visible\_patients, get\_patient\_details, get\_patient\_vitals, get\_patient\_timeline, update\_patient\_room, create\_patient\_record \\ \hline
+        \textbf{อุปกรณ์} & list\_devices, send\_device\_command, trigger\_camera\_photo \\ \hline
+        \textbf{การแจ้งเตือน} & list\_active\_alerts, acknowledge\_alert, resolve\_alert \\ \hline
+        \textbf{งาน/ข้อความ} & list\_workflow\_tasks, list\_workflow\_schedules, create\_workflow\_task, update\_workflow\_task\_status, send\_message, get\_message\_recipients \\ \hline
+        \textbf{ห้อง/สิ่งอำนวยความสะดวก} & list\_rooms, list\_facilities, get\_facility\_details, get\_floorplan\_layout, control\_room\_smart\_device \\ \hline
+        \textbf{การวิเคราะห์} & get\_workspace\_analytics \\ \hline
+        \textbf{ระบบ/AI} & get\_system\_health, get\_current\_user\_context, list\_workspaces, get\_ai\_runtime\_summary \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{องค์ประกอบอื่นๆ}
+\label{sec:ch3_ai_other}
+
+องค์ประกอบอื่นที่ทำงานร่วมกับ AI ได้แก่ Intent Router สำหรับจำแนกประเภทคำถามของผู้ใช้ (สืบค้น สรุปข้อมูล หรือสั่งการ) เพื่อเลือกเส้นทางทำงานที่เหมาะสม, Behavioral State Engine สำหรับตรวจสอบสิทธิ์การเข้าถึงข้อมูลของผู้ใช้แต่ละบทบาท และ FastMCP Server ที่ทำหน้าที่แปลงเจตนาของคำสั่งเป็นฟังก์ชันการทำงานจริงในระบบ API
 
 \begin{table}[H]
     \centering
@@ -460,13 +750,29 @@ d_j = \sqrt{\sum_{i=1}^{m} (x_i - r_{ji})^2}
     \end{tabular}
 \end{table}
 
-\section{ส่วนติดต่อผู้ใช้งาน (HMI)}
+\section{HMI}
 \label{sec:ch3_hmi}
 
-\subsection{แดชบอร์ดเว็บ (Web Dashboard)}
+\subsection{ส่วน UI แดชบอร์ดเว็บ}
 \label{sec:ch3_hmi_web}
 
-แดชบอร์ดเว็บพัฒนาด้วย Next.js ออกแบบตามแนวคิด Role-based แสดงเฉพาะข้อมูลที่สอดคล้องกับบทบาทผู้ใช้ ฟีเจอร์หลักสรุปในตารางที่~\ref{tab:ch3_webfeatures}
+ส่วนติดต่อผู้ใช้แดชบอร์ดเว็บพัฒนาด้วย Next.js 16 บนโครงสร้าง App Router ซึ่งแยกการแสดงผลตามบทบาท (Role-based Access Control) ระบบแบ่งเส้นทางหลักเป็น 5 กลุ่ม ได้แก่ \texttt{/admin}, \texttt{/head-nurse}, \texttt{/supervisor}, \texttt{/observer} และ \texttt{/patient} โดยแต่ละเส้นทางมีเลย์เอาต์เฉพาะที่ครอบหน้าเนื้อหาด้วย RoleShell
+
+การตรวจสอบสิทธิ์ใช้ตัวจัดการสิทธิ์แบบความสามารถ (Capability-based Permissions) กรองรายการนำทางแถบข้างตามบทบาทผู้ใช้ หากไม่ได้รับอนุญาต ระบบจะเปลี่ยนเส้นทางไปยังหน้าแรกตามบทบาทโดยอัตโนมัติ การยืนยันตัวตนดำเนินการผ่าน useAuth hook ซึ่งบริหารสถานะผู้ใช้ด้วย Zustand พร้อมฟังก์ชันลงชื่อเข้าใช้ ออกจากระบบ และระบบจำลองบทบาท (Impersonation)
+
+ชั้นผู้ให้บริการ (Provider Stack) รวมผู้ให้บริการหลักใน AppProviders ประกอบด้วย React Query สำหรับแคชและดึงข้อมูลจากเซิร์ฟเวอร์ ThemeProvider สำหรับสลับธีมสว่าง มืด และตามระบบ I18nProvider สำหรับรองรับหลายภาษา AuthProvider สำหรับสถานะการเข้าสู่ระบบ และ SonnerToaster สำหรับแจ้งเตือนแบบ Toast
+
+การจัดการสถานะ (State Management) ใช้ React Query เป็นเลเยอร์แคชหลักสำหรับข้อมูลจากเซิร์ฟเวอร์ โดยมีนโยบายรีเฟรชเมื่อหน้าต่างกลับมาโฟกัสและรีเฟรชเมื่อเชื่อมต่อกลับ ส่วนสถานะการตรวจสอบสิทธิ์เก็บใน Zustand store พร้อมรองรับการเปลี่ยนบทบาทชั่วคราว (Impersonation) เพื่อให้ผู้ดูแลระบบตรวจสอบประสบการณ์ผู้ใช้รายอื่นได้
+
+ไลบรารีองค์ประกอบ (Component Library) สร้างบนพื้นฐาน Radix UI ซึ่งรองรับมาตรฐานการเข้าถึง (ARIA-compliant) รวมกับ Tailwind CSS สำหรับการจัดรูปแบบแบบ Utility-first การจัดสรรรูปแบบใช้ Class Variance Authority (CVA) ช่วยให้สร้างปุ่ม การ์ด กล่องโต้ตอบ และตารางที่มีรูปแบบหลากหลายผ่านคุณสมบัติ \texttt{variant} และ \texttt{size}
+
+การจัดการแบบฟอร์ม (Form Handling) ใช้ React Hook Form ร่วมกับ Zod สำหรับตรวจสอบความถูกต้องแบบ Schema-based แบบจำลอง Zod กำหนดรูปแบบข้อมูลที่คาดหวังสำหรับแต่ละฟอร์ม ส่วน React Hook Form จัดการสถานะการควบคุมอินพุต การตรวจสอบข้อผิดพลาดระดับฟิลด์ และการส่งข้อมูลผ่าน API Client
+
+ระบบการแจ้งเตือนแบบเรียลไทม์ (Real-time Notifications) ใช้การถามซ้ำ (Polling) สำหรับข้อมูลการแจ้งเตือน งาน และข้อความ ตามช่วงเวลาที่กำหนด เมื่อพบเหตุการณ์ใหม่ที่ยังไม่รับทราบ ระบบจะแสดง Toast พร้อมระดับความรุนแรง (Severity) และเสียงแจ้งเตือนสำหรับเหตุฉุกเฉิน ผู้ใช้สามารถคลิกที่ Toast เพื่อไปยังหน้าที่เกี่ยวข้องได้ทันที
+
+ระบบธีมและการตอบสนอง (Theming and Responsive Design) รองรับธีมสว่าง มืด และตามการตั้งค่าระบบ โดยสามารถสลับได้ทันทีโดยไม่มีเอฟเฟกต์การเปลี่ยนผ่าน ขนาดหน้าจอปรับตามอุปกรณ์คอมพิวเตอร์และแท็บเล็ต โดย RoleShell และเลย์เอาต์แต่ละบทบาทกำหนดระยะขอบ ความกว้าง และเงาที่เหมาะสม
+
+การเข้าถึง (Accessibility) องค์ประกอบ Radix UI รองรับมาตรฐาน ARIA และการนำทางด้วยคีย์บอร์ด ระบบจัดการโฟกัส (Focus-visible) แสดงวงแหวนโฟกัสอย่างชัดเจน เมื่อผู้ใช้นำทางด้วยคีย์บอร์ด ส่วนการกำหนดฉลาก (Labeling) ใช้คอมโพเนนต์ Label ที่เชื่อมโยงกับอินพุตอย่างถูกต้องตามมาตรฐาน
 
 \begin{table}[H]
     \centering
@@ -488,45 +794,32 @@ d_j = \sqrt{\sum_{i=1}^{m} (x_i - r_{ji})^2}
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{ch3-hmi-web.png}
+    \includegraphics[width=0.9\textwidth]{chapter3/Head-Nurse-view.png}
     \caption{หน้าจอแดชบอร์ดหลักสำหรับผู้ดูแล (Head Nurse view)}
     \label{fig:ch3-hmi-web}
 \end{figure}
 
-\subsection{แอปพลิเคชันบนอุปกรณ์เคลื่อนที่ (Mobile App)}
+\subsection{การเชื่อมต่อแบ็กเอนด์และประสิทธิภาพ}
+\label{sec:ch3_hmi_api}
+
+การเชื่อมต่อกับเซิร์ฟเวอร์ใช้ API Client แบบพิมพ์เขียม (Strongly Typed) ซึ่งห่อหุ้มคำขอ HTTP ด้วย JWT handling การหมดเวลา (Timeout) และการจัดการข้อผิดพลาดแบบมาตรฐาน คำขอทั้งหมดถูกนำผ่านเส้นทาง \texttt{/api} ของ Next.js เพื่อส่งต่อไปยัง FastAPI Backend โดยอัตโนมัติ
+
+การจัดการข้อผิดพลาดรวมถึงการเปลี่ยนเส้นทางไปยังหน้าเข้าสู่ระบบเมื่อพบรหัส 401 และแสดงข้อความข้อผิดพลาดที่มีโครงสร้างจากเซิร์ฟเวอร์ นอกจากนี้ API Client ยังรองรับการตรวจสอบสิทธิ์แบบจำลองบทบาท (Impersonation) โดยส่งหัวข้อพิเศษพร้อมคำขอเพื่อให้ผู้ดูแลระบบสามารถตรวจสอบมุมมองของผู้ใช้รายอื่นได้
+
+ด้านประสิทธิภาพ ระบบเปิดใช้งาน React Compiler ในการตั้งค่า Next.js เพื่อเพิ่มประสิทธิภาพการเรนเดอร์ React Query จัดการแคชข้อมูลด้วยนโยบายเวลาหมดอายุสั้น (Short Stale Time) และรีเฟรชอัตโนมัติเมื่อมีการเชื่อมต่อกลับ ช่วยลดการเรียกข้อมูลซ้ำจากเซิร์ฟเวอร์ ส่วนคอมโพเนนต์ที่มีขนาดใหญ่จะถูกโหลดแบบ Lazy Load เมื่อจำเป็น และรูปภาพใช้ Next/image เพื่อปรับขนาดและบีบอัดอัตโนมัติ
+
+\subsection{ส่วน UI แอปพลิเคชันบนอุปกรณ์เคลื่อนที่}
 \label{sec:ch3_hmi_mobile}
 
-สำหรับบุคลากรที่ต้องเดินตรวจตราหรือไม่ได้อยู่หน้าจอคอมพิวเตอร์ ระบบได้จัดเตรียมแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ที่พัฒนาแบบ Cross-platform โดยเน้นความสะดวกในการใช้งานขณะเคลื่อนไหว การออกแบบ UI/UX ให้ความสำคัญกับขนาดตัวอักษรที่อ่านง่าย การแยกแยะความสำคัญด้วยสี (Semantic Colors) และรองรับการสั่งงานด้วยมือเดียว แอปพลิเคชันมีฟังก์ชันหลักในการรับการแจ้งเตือนแบบพุช (Push Notification) การแสดงพิกัดผู้พักอาศัยบนหน้าจอโทรศัพท์ รวมถึงมีปุ่มตอบสนองด่วนสำหรับการรับทราบเหตุฉุกเฉินหรือปิดการแจ้งเตือนได้อย่างรวดเร็ว
+แอปพลิเคชันบนอุปกรณ์เคลื่อนที่ถูกออกแบบมาเพื่อบุคลากรที่ต้องเดินตรวจตราในพื้นที่ โดยมีหน้าจอที่เน้นความสะดวกในการอ่านและตอบสนองขณะเคลื่อนไหว (Mobile First) การออกแบบเน้นปุ่มขนาดใหญ่ที่สามารถใช้งานด้วยมือเดียว (One-handed Operation) และสีที่มีความต่างชัดเจนเพื่อให้อ่านได้ในสภาพแสงน้อย
+
+หน้าจอหลักแบ่งเป็น 3 โซนหลัก ได้แก่ แถบสถานะด้านบนแสดงจำนวนการแจ้งเตือนที่ยังไม่รับทราบ บริเวณกลางแสดงรายการเหตุการณ์ล่าสุดพร้อมระดับความรุนแรง และแถบนำทางด้านล่างสำหรับสลับระหว่างมุมมองรายการเหตุการณ์ แผนที่ตำแหน่ง และการตั้งค่า
+
+การแจ้งเตือนฉุกเฉิน (Push Notification) ส่งตรงถึงอุปกรณ์เคลื่อนที่แม้อยู่นอกแอปพลิเคชัน เมื่อผู้ใช้เปิดการแจ้งเตือน ระบบจะแสดงรายละเอียดผู้ป่วย ตำแหน่งที่เกิดเหตุ และเวลา พร้อมปุ่มรับทราบ (Acknowledge) การกดรับทราบจะอัปเดตสถานะในระบบแบ็กเอนด์ทันทีผ่าน REST API
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.45\textwidth]{ch3-hmi-mobile.png}
+    \includegraphics[width=0.45\textwidth]{chapter3/observer-view.png}
     \caption{หน้าจอแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ (Observer view)}
     \label{fig:ch3-hmi-mobile}
 \end{figure}
-
-\section{กลยุทธ์การทดสอบระบบ}
-\label{sec:ch3_testing}
-
-เพื่อให้มั่นใจว่าระบบสามารถทำงานได้อย่างถูกต้องและมีเสถียรภาพ กลยุทธ์การทดสอบจึงถูกแบ่งออกเป็น 3 ระดับอย่างเป็นระบบ ระดับแรกคือการทดสอบส่วนหลังบ้าน (Backend Tests) ด้วยเฟรมเวิร์ก Pytest ภายใต้สภาพแวดล้อมจำลองแบบ Docker Compose ซึ่งครอบคลุมทั้ง Unit Tests สำหรับตรวจสอบตรรกะทางธุรกิจและ API รวมถึง Integration Tests สำหรับทดสอบการรับข้อมูล MQTT และการทำงานของเซิร์ฟเวอร์ MCP
-
-ระดับที่สองคือการทดสอบแบบ End-to-End (E2E Tests) ผ่านเครื่องมือ Playwright เพื่อจำลองพฤติกรรมการใช้งานจริงของบุคลากรบนหน้าจอแดชบอร์ด ตั้งแต่กระบวนการเข้าสู่ระบบ การติดตามผู้พักอาศัย การรับทราบการแจ้งเตือน ไปจนถึงการทดสอบการสนทนากับ AI และกลไก Propose-Confirm-Execute
-
-ระดับสุดท้ายคือการบูรณาการการทดสอบอย่างต่อเนื่อง (CI/CD) ผ่าน GitHub Actions ซึ่งจะบังคับให้มีการรัน Backend Tests ทุกครั้งที่มีการแก้ไขโค้ด และรัน E2E Tests เป็นประจำทุกวัน ควบคู่กับการประเมินประสิทธิภาพในมิติต่างๆ เช่น ความต่อเนื่องของข้อมูลเซ็นเซอร์ ความแม่นยำในการระบุตำแหน่ง เสถียรภาพของเซิร์ฟเวอร์ ความถูกต้องของเครื่องมือ AI และประสบการณ์ผู้ใช้งาน (UX) โดยรวม เพื่อรักษาคุณภาพของซอฟต์แวร์ในทุกขั้นตอนการพัฒนา
-
-\begin{table}[htbp]
-    \centering
-    \caption{สรุปโปรโตคอลการทดสอบและเกณฑ์ประเมิน}
-    \label{tab:ch3_protocol_metrics}
-    \small
-    \renewcommand{\arraystretch}{1.15}
-    \begin{tabular}{|L{3.0cm}|L{2.8cm}|L{6.0cm}|}
-        \hline
-        \textbf{ส่วนที่ประเมิน} & \textbf{ตัวชี้วัด} & \textbf{เกณฑ์เบื้องต้น} \\ \hline
-        เซ็นเซอร์บนรถเข็น & sampling rate, completeness, latency & ความต่อเนื่องของข้อมูล \\ \hline
-        Localization & accuracy, macro-F1 & ผลการทำนายระดับโซนหรือห้อง \\ \hline
-        เซิร์ฟเวอร์ & uptime, throughput, recovery time & เสถียรภาพของบริการ \\ \hline
-        AI & tool-selection accuracy, TTFT & คุณภาพการเลือกเครื่องมือ \\ \hline
-        HMI & SUS, task success & ประสบการณ์ผู้ใช้ \\ \hline
-    \end{tabular}
-\end{table}
