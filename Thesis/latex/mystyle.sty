@@ -19,6 +19,7 @@
 %% Graphics
 \usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
 \usepackage{tikz}
+\usepackage{tikz-3dplot}
 \usetikzlibrary{arrows,arrows.meta,shadows,positioning,shapes,calc,shapes.geometric,fit,backgrounds}
 
 
@@ -232,6 +233,12 @@
 \renewcommand{\appendixname}{ภาคผนวก}
 \renewcommand{\appendixtocname}{ภาคผนวก}
 \renewcommand{\appendixpagename}{ภาคผนวก}
+
+% Redefine Thai alphabet to use modern characters (ก,ข,ค,ง) instead of traditional (ก,ข,ฃ,ฅ)
+\makeatletter
+\def\@thaiAlph#1{%
+  \ifcase#1\or ก\or ข\or ค\or ง\or จ\or ฉ\or ช\or ซ\or ฌ\or ญ\or ฎ\or ฏ\or ฐ\or ฑ\or ฒ\or ณ\or ด\or ต\or ถ\or ท\or ธ\or น\or บ\or ป\or ผ\or ฝ\or พ\or ฟ\or ภ\or ม\or ย\or ร\or ล\or ว\or ศ\or ษ\or ส\or ห\or ฬ\or อ\or ฮ\else\@ctrerr\fi}
+\makeatother
 %%=================================================
 %% END OPTION Appendix
 %%=================================================
@@ -279,10 +286,19 @@
 \newcommand{\ChIIFigPlaceholder}[2]{%
   \begin{figure}[htbp]
     \centering
-    \fbox{\parbox[c][0.20\textheight][c]{0.88\textwidth}{\centering\small\textit{[ภาพประกอบว่าง — #2]}}}
+    \fbox{\parbox[c][0.20\textheight][c]{0.88\textwidth}{\centering\small\textit{[ภาพประกอบว่าง - #2]}}}
     \caption{#2}
     \label{fig:ch2_fig#1}
   \end{figure}%
+}
+
+\newcommand{\ChIIIFigPlaceholder}[2]{%
+  \begin{figure}[H]
+    \centering
+    \fbox{\parbox[c][0.20\textheight][c]{0.88\textwidth}{\centering\small\textit{[ภาพประกอบว่าง - #2]}}}
+    \caption{#2}
+    \label{fig:#1}
+  \end{figure}
 }
 
 %\newlength{\bibitemsep}\setlength{\bibitemsep}{.2\baselineskip plus .05\baselineskip minus .05\baselineskip}

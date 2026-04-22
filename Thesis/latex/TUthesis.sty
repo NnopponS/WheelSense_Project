@@ -189,7 +189,7 @@
             \refstepcounter{chapter}%
             \typeout{\@chapapp\space\thechapter.}%
             \addcontentsline{toc}{section}%
-            {\@chapapp\space\thechapter:\space#1}%
+            {#1}%
         \fi
     \else
         \addcontentsline{toc}{chapter}{#1}%
@@ -215,14 +215,16 @@
             \par\nobreak
             \vskip 10\p@
         \else
-            \LARGE\bfseries \@chapapp\space \thechapter
-            \par\nobreak
-            \vskip 10\p@
+            % Don't show chapter number for appendices (avoid duplicate "ภาคผนวก X")
+            \LARGE \bfseries #1\par\nobreak
+            \vskip 20\p@
         \fi
     \fi
     \interlinepenalty\@M
-    \LARGE \bfseries #1\par\nobreak
-    \vskip 20\p@
+    \if@mainmatter
+        \LARGE \bfseries #1\par\nobreak
+        \vskip 20\p@
+    \fi
     }%
 }
 
@@ -291,7 +293,7 @@
 \addtocontents{lol}{~\hfill\textnormal{หน้า}\par}
 
 
-%% หัว "สารบัญ - ต่อ" ระหว่างหน้า (ปิดการใช้งาน — ไม่เรียกจาก thesis.tex)
+%% หัว "สารบัญ - ต่อ" ระหว่างหน้า (ปิดการใช้งาน - ไม่เรียกจาก thesis.tex)
 \DeclareRobustCommand*{\contheading}{}
 
 %% Add space in table of contents when starting backmatter
