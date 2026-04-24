@@ -1,0 +1,400 @@
+[gd_scene format=3 uid="uid://dawit1234567"]
+
+[ext_resource type="Script" uid="uid://dawit5678901" path="res://scripts/characters/staff_dawit.gd" id="1_dawit"]
+[ext_resource type="Texture2D" uid="uid://bmlywh4j4ew4i" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/east/frame_000.png" id="2_dawit"]
+[ext_resource type="Texture2D" uid="uid://cwdxxp4lec86e" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/east/frame_001.png" id="3_dawit"]
+[ext_resource type="Texture2D" uid="uid://da86tnxrqn2se" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/east/frame_002.png" id="4_dawit"]
+[ext_resource type="Texture2D" uid="uid://b8m7c62ebpy13" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/east/frame_003.png" id="5_dawit"]
+[ext_resource type="Texture2D" uid="uid://crtx83yxc6tkt" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/north/frame_000.png" id="6_dawit"]
+[ext_resource type="Texture2D" uid="uid://bf6ttxh4m0j6g" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/north/frame_001.png" id="7_dawit"]
+[ext_resource type="Texture2D" uid="uid://cxxonhj2rwk1x" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/north/frame_002.png" id="8_dawit"]
+[ext_resource type="Texture2D" uid="uid://cwnk4l4kwnhyl" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/north/frame_003.png" id="9_dawit"]
+[ext_resource type="Texture2D" uid="uid://cfoqkxiwg2urt" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/south/frame_000.png" id="10_dawit"]
+[ext_resource type="Texture2D" uid="uid://7ieuvvd5p1ht" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/south/frame_001.png" id="11_dawit"]
+[ext_resource type="Texture2D" uid="uid://cg0b2vuedoahi" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/south/frame_002.png" id="12_dawit"]
+[ext_resource type="Texture2D" uid="uid://ht8664r48t68" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Breathing_Idle-046c2e3c/south/frame_003.png" id="13_dawit"]
+[ext_resource type="Texture2D" uid="uid://dff83wrcb4d8t" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/east/frame_000.png" id="14_dawit"]
+[ext_resource type="Texture2D" uid="uid://2rd0kfbf7nm6" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/south/frame_000.png" id="15_dawit"]
+[ext_resource type="Texture2D" uid="uid://cxkuf1rjtgg66" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/east/frame_001.png" id="16_dawit"]
+[ext_resource type="Texture2D" uid="uid://cf6ejw58exre6" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/south/frame_001.png" id="17_dawit"]
+[ext_resource type="Texture2D" uid="uid://bb1ldy3ip6wad" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_000.png" id="18_dawit"]
+[ext_resource type="Texture2D" uid="uid://bdktabjg45bfi" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_001.png" id="19_dawit"]
+[ext_resource type="Texture2D" uid="uid://cq0wr67xyj5i3" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/south/frame_002.png" id="20_dawit"]
+[ext_resource type="Texture2D" uid="uid://qbghf2ivk3jk" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/east/frame_002.png" id="21_dawit"]
+[ext_resource type="Texture2D" uid="uid://b7uc4ckqagokp" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/south/frame_003.png" id="22_dawit"]
+[ext_resource type="Texture2D" uid="uid://nbuihwl2rawc" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/east/frame_003.png" id="23_dawit"]
+[ext_resource type="Texture2D" uid="uid://cxxjelb7cggn5" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_002.png" id="24_dawit"]
+[ext_resource type="Texture2D" uid="uid://8j8wguiskcht" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/east/frame_004.png" id="25_dawit"]
+[ext_resource type="Texture2D" uid="uid://nmf2uyru15k3" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_003.png" id="26_dawit"]
+[ext_resource type="Texture2D" uid="uid://bapl1tvlu375b" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/south/frame_004.png" id="27_dawit"]
+[ext_resource type="Texture2D" uid="uid://ho11j1wnfjfk" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/east/frame_005.png" id="28_dawit"]
+[ext_resource type="Texture2D" uid="uid://cvfj1k2b6ktkd" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_004.png" id="29_dawit"]
+[ext_resource type="Texture2D" uid="uid://kboxgpq3a6py" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/south/frame_005.png" id="30_dawit"]
+[ext_resource type="Texture2D" uid="uid://bbno1w0ryv54l" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/north/frame_000.png" id="31_dawit"]
+[ext_resource type="Texture2D" uid="uid://cc8kclhm361ti" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_005.png" id="32_dawit"]
+[ext_resource type="Texture2D" uid="uid://4h4hmgwpbgho" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/north/frame_001.png" id="33_dawit"]
+[ext_resource type="Texture2D" uid="uid://doxxrxr6ps5bk" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_006.png" id="34_dawit"]
+[ext_resource type="Texture2D" uid="uid://ceq5tnsntmox" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_007.png" id="35_dawit"]
+[ext_resource type="Texture2D" uid="uid://7qme58xt4ug4" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/north/frame_002.png" id="36_dawit"]
+[ext_resource type="Texture2D" uid="uid://bwfsnvm1h0lfe" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south/frame_008.png" id="37_dawit"]
+[ext_resource type="Texture2D" uid="uid://5n1mxycf1tvo" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/north/frame_003.png" id="38_dawit"]
+[ext_resource type="Texture2D" uid="uid://rxg202sg84i" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/north/frame_004.png" id="39_dawit"]
+[ext_resource type="Texture2D" uid="uid://bsdv8ax7wxilw" path="res://assets/Modern tiles_Free/Characters_free/a_male_nurse/animations/Walking-5950b10a/north/frame_005.png" id="40_dawit"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d1"]
+atlas = ExtResource("2_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d2"]
+atlas = ExtResource("3_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d3"]
+atlas = ExtResource("4_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d4"]
+atlas = ExtResource("5_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d5"]
+atlas = ExtResource("6_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d6"]
+atlas = ExtResource("7_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d7"]
+atlas = ExtResource("8_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d8"]
+atlas = ExtResource("9_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d9"]
+atlas = ExtResource("10_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d10"]
+atlas = ExtResource("11_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d11"]
+atlas = ExtResource("12_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d12"]
+atlas = ExtResource("13_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d13"]
+atlas = ExtResource("14_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d14"]
+atlas = ExtResource("16_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d15"]
+atlas = ExtResource("21_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d16"]
+atlas = ExtResource("23_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d17"]
+atlas = ExtResource("25_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d18"]
+atlas = ExtResource("28_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d19"]
+atlas = ExtResource("18_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d20"]
+atlas = ExtResource("19_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d21"]
+atlas = ExtResource("24_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d22"]
+atlas = ExtResource("26_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d23"]
+atlas = ExtResource("29_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d24"]
+atlas = ExtResource("32_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d25"]
+atlas = ExtResource("34_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d26"]
+atlas = ExtResource("35_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d27"]
+atlas = ExtResource("37_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d28"]
+atlas = ExtResource("15_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d29"]
+atlas = ExtResource("17_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d30"]
+atlas = ExtResource("20_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d31"]
+atlas = ExtResource("22_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d32"]
+atlas = ExtResource("27_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d33"]
+atlas = ExtResource("30_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d34"]
+atlas = ExtResource("31_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d35"]
+atlas = ExtResource("33_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d36"]
+atlas = ExtResource("36_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d37"]
+atlas = ExtResource("38_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d38"]
+atlas = ExtResource("39_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d39"]
+atlas = ExtResource("40_dawit")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_dawit"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d4")
+}],
+"loop": true,
+"name": &"idle_east",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d8")
+}],
+"loop": true,
+"name": &"idle_north",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d10")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d11")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d12")
+}],
+"loop": true,
+"name": &"idle_south",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d19")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d20")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d21")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d22")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d23")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d24")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d25")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d26")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d27")
+}],
+"loop": false,
+"name": &"playing_phone",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d13")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d14")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d15")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d16")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d17")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d18")
+}],
+"loop": true,
+"name": &"walk_east",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d34")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d35")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d36")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d37")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d38")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d39")
+}],
+"loop": true,
+"name": &"walk_north",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d28")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d29")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d30")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d31")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d32")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d33")
+}],
+"loop": true,
+"name": &"walk_south",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_dawit"]
+radius = 35.686275
+height = 128.4706
+
+[node name="Staff_Dawit" type="CharacterBody2D" unique_id=888888001 groups=["NPC", "caregiver"]]
+script = ExtResource("1_dawit")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=888888002]
+position = Vector2(1, -34)
+sprite_frames = SubResource("SpriteFrames_dawit")
+animation = &"idle_south"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=888888003]
+y_sort_enabled = true
+position = Vector2(-1.1920929e-07, -17.999998)
+scale = Vector2(0.2802198, 0.2802198)
+shape = SubResource("CapsuleShape2D_dawit")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=888888004]
+avoidance_enabled = true
+
+[node name="Timer" type="Timer" parent="." unique_id=888888005]
+
+[node name="NameLabel" type="Label" parent="." unique_id=888888006]
+z_index = 100
+offset_left = -60.0
+offset_top = -110.0
+offset_right = 60.0
+offset_bottom = -90.0
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Dawit"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RoleLabel" type="Label" parent="." unique_id=888888007]
+z_index = 100
+offset_left = -60.0
+offset_top = -95.0
+offset_right = 60.0
+offset_bottom = -80.0
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.4, 0.8, 0.4, 1)
+text = "[Caregiver]"
+horizontal_alignment = 1
+vertical_alignment = 1

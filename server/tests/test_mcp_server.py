@@ -71,13 +71,18 @@ def test_mcp_workspace_tool_registry_keys_unique():
 
 def test_mcp_admin_allowlist_matches_registry():
     from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
-    from app.services.ai_chat import get_role_mcp_tool_allowlist
+    from app.services.ai_chat import get_role_mcp_tool_allowlist, _PATIENT_EXCLUSIVE_TOOLS
 
     admin_tools = get_role_mcp_tool_allowlist()["admin"]
     registry_tools = set(_WORKSPACE_TOOL_REGISTRY.keys())
-    assert "execute_python_code" in registry_tools
+    # Admin gets all tools except execute_python_code and patient-exclusive tools
+    expected_admin_tools = registry_tools - {"execute_python_code"} - _PATIENT_EXCLUSIVE_TOOLS
+    assert admin_tools == expected_admin_tools
+    # Verify execute_python_code is not in admin allowlist
     assert "execute_python_code" not in admin_tools
-    assert admin_tools == registry_tools - {"execute_python_code"}
+    # Verify patient-exclusive tools are not in admin allowlist
+    for tool in _PATIENT_EXCLUSIVE_TOOLS:
+        assert tool not in admin_tools
 
 
 def test_mcp_streamable_http_lifespan_target_is_inner_starlette_not_auth_middleware():

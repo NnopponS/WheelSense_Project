@@ -1,13 +1,14 @@
 FROM python:3.12-slim
 
+ARG REQUIREMENTS_FILE=requirements.txt
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-sim.txt ./
+RUN pip install --no-cache-dir -r ${REQUIREMENTS_FILE}
 
 COPY app/ ./app/
 COPY alembic.ini ./

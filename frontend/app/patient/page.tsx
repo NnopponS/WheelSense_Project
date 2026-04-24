@@ -34,7 +34,6 @@ import { PatientSosHero } from "@/components/patient/PatientSosHero";
 import { HubTabBar, useHubTab, type HubTab } from "@/components/shared/HubTabBar";
 import ReportIssueForm from "@/components/support/ReportIssueForm";
 import UserAvatar from "@/components/shared/UserAvatar";
-import { EaseAIFab } from "@/components/ai/EaseAIFab";
 import { withPatientPreview } from "@/lib/patientPortalPreview";
 
 type MeProfileResponse = {
@@ -195,7 +194,6 @@ export default function PatientDashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-6 animate-fade-in">
-      <EaseAIFab />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">

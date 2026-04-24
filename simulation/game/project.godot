@@ -15,6 +15,10 @@ run/main_scene="uid://np6yckjk2ef"
 config/features=PackedStringArray("4.6")
 config/icon="uid://d2ay0wl7txv21"
 
+[autoload]
+
+Bridge="*res://scripts/autoload/bridge.gd"
+
 [display]
 
 window/size/viewport_width=720

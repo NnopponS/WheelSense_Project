@@ -1,0 +1,392 @@
+[gd_scene format=3 uid="uid://janjira123456"]
+
+[ext_resource type="Script" uid="uid://janjira567890" path="res://scripts/characters/staff_janjira.gd" id="1_janjira"]
+[ext_resource type="Texture2D" uid="uid://dtrvkv7pawmg2" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/south/frame_000.png" id="2_janjira"]
+[ext_resource type="Texture2D" uid="uid://exwu1woflp8g" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/east/frame_000.png" id="3_janjira"]
+[ext_resource type="Texture2D" uid="uid://bwdtif4erni7y" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/south/frame_001.png" id="4_janjira"]
+[ext_resource type="Texture2D" uid="uid://c6rbajjokvbe8" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/east/frame_001.png" id="5_janjira"]
+[ext_resource type="Texture2D" uid="uid://dbao38dwwptbo" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/east/frame_002.png" id="6_janjira"]
+[ext_resource type="Texture2D" uid="uid://dif3yr88f70l" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/south/frame_002.png" id="7_janjira"]
+[ext_resource type="Texture2D" uid="uid://doh5r5qk36xp3" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/east/frame_003.png" id="8_janjira"]
+[ext_resource type="Texture2D" uid="uid://d04cqdsx35b1" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/south/frame_003.png" id="9_janjira"]
+[ext_resource type="Texture2D" uid="uid://w4ymy7vaxajs" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/north/frame_000.png" id="10_janjira"]
+[ext_resource type="Texture2D" uid="uid://cpjmljkjg27vq" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/north/frame_001.png" id="11_janjira"]
+[ext_resource type="Texture2D" uid="uid://ds0khmlcxx07x" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/north/frame_002.png" id="12_janjira"]
+[ext_resource type="Texture2D" uid="uid://bf76nk1ue8tlp" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/breathing-idle/north/frame_003.png" id="13_janjira"]
+[ext_resource type="Texture2D" uid="uid://bqh8pu8nwk0qm" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/east/frame_000.png" id="14_janjira"]
+[ext_resource type="Texture2D" uid="uid://5gb83vs0on70" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/east/frame_001.png" id="15_janjira"]
+[ext_resource type="Texture2D" uid="uid://cut6du5o3assg" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_001.png" id="16_janjira"]
+[ext_resource type="Texture2D" uid="uid://du72xcxoexmqt" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/east/frame_002.png" id="17_janjira"]
+[ext_resource type="Texture2D" uid="uid://bfaa7lcl0uxx5" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_002.png" id="18_janjira"]
+[ext_resource type="Texture2D" uid="uid://dcb2paop76jne" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/east/frame_003.png" id="19_janjira"]
+[ext_resource type="Texture2D" uid="uid://v4jsuumy3twx" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_003.png" id="20_janjira"]
+[ext_resource type="Texture2D" uid="uid://dxmnqf6yxs3vp" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/east/frame_004.png" id="21_janjira"]
+[ext_resource type="Texture2D" uid="uid://0gwuemnycfxi" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_004.png" id="22_janjira"]
+[ext_resource type="Texture2D" uid="uid://c7qd2olth7b4l" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/east/frame_005.png" id="23_janjira"]
+[ext_resource type="Texture2D" uid="uid://cpvnx3fowqy0k" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_005.png" id="24_janjira"]
+[ext_resource type="Texture2D" uid="uid://b571epnj3pvdn" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_006.png" id="25_janjira"]
+[ext_resource type="Texture2D" uid="uid://c702nw5q738ps" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/north/frame_000.png" id="26_janjira"]
+[ext_resource type="Texture2D" uid="uid://bgyptj3cuceia" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_007.png" id="27_janjira"]
+[ext_resource type="Texture2D" uid="uid://wlkq08bycxj" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/north/frame_001.png" id="28_janjira"]
+[ext_resource type="Texture2D" uid="uid://bldldwue727ur" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/north/frame_002.png" id="29_janjira"]
+[ext_resource type="Texture2D" uid="uid://deg6adnxaaugs" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_008.png" id="30_janjira"]
+[ext_resource type="Texture2D" uid="uid://d072yycxf7ul2" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/north/frame_003.png" id="31_janjira"]
+[ext_resource type="Texture2D" uid="uid://bhjo4osfaaf56" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_009.png" id="32_janjira"]
+[ext_resource type="Texture2D" uid="uid://ce342lsmptlyp" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/playing_the_smart_phone-73a2ede8/south/frame_010.png" id="33_janjira"]
+[ext_resource type="Texture2D" uid="uid://blt8fj04ey7ce" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/north/frame_004.png" id="34_janjira"]
+[ext_resource type="Texture2D" uid="uid://dq057mvfvgdjs" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/north/frame_005.png" id="35_janjira"]
+[ext_resource type="Texture2D" uid="uid://d2gui7xfe0dc4" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/south/frame_000.png" id="36_janjira"]
+[ext_resource type="Texture2D" uid="uid://dtwtr7e6d38f0" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/south/frame_001.png" id="37_janjira"]
+[ext_resource type="Texture2D" uid="uid://dsrbgmm0d8k0d" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/south/frame_002.png" id="38_janjira"]
+[ext_resource type="Texture2D" uid="uid://be8pm2ltjuii7" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/south/frame_003.png" id="39_janjira"]
+[ext_resource type="Texture2D" uid="uid://bpjhe1bgg1dsg" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/south/frame_004.png" id="40_janjira"]
+[ext_resource type="Texture2D" uid="uid://bt7k8bhvj4p3p" path="res://assets/Modern tiles_Free/Characters_free/a_nurse/animations/walking-6-frames/south/frame_005.png" id="41_janjira"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j1"]
+atlas = ExtResource("3_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j2"]
+atlas = ExtResource("5_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j3"]
+atlas = ExtResource("6_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j4"]
+atlas = ExtResource("8_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j5"]
+atlas = ExtResource("10_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j6"]
+atlas = ExtResource("11_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j7"]
+atlas = ExtResource("12_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j8"]
+atlas = ExtResource("13_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j9"]
+atlas = ExtResource("14_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j10"]
+atlas = ExtResource("15_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j11"]
+atlas = ExtResource("17_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j12"]
+atlas = ExtResource("19_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j13"]
+atlas = ExtResource("21_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j14"]
+atlas = ExtResource("23_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j15"]
+atlas = ExtResource("16_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j16"]
+atlas = ExtResource("18_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j17"]
+atlas = ExtResource("20_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j18"]
+atlas = ExtResource("22_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j19"]
+atlas = ExtResource("24_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j20"]
+atlas = ExtResource("25_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j21"]
+atlas = ExtResource("27_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j22"]
+atlas = ExtResource("28_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j23"]
+atlas = ExtResource("29_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j24"]
+atlas = ExtResource("31_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j25"]
+atlas = ExtResource("32_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j26"]
+atlas = ExtResource("33_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j27"]
+atlas = ExtResource("34_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j28"]
+atlas = ExtResource("35_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j29"]
+atlas = ExtResource("2_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j30"]
+atlas = ExtResource("4_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j31"]
+atlas = ExtResource("7_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j32"]
+atlas = ExtResource("9_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j33"]
+atlas = ExtResource("36_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j34"]
+atlas = ExtResource("37_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j35"]
+atlas = ExtResource("38_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j36"]
+atlas = ExtResource("39_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j37"]
+atlas = ExtResource("40_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j38"]
+atlas = ExtResource("41_janjira")
+region = Rect2(0, 0, 80, 80)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_janjira"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j4")
+}],
+"loop": true,
+"name": &"idle_east",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j8")
+}],
+"loop": true,
+"name": &"idle_north",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j29")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j30")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j31")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j32")
+}],
+"loop": true,
+"name": &"idle_south",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j15")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j16")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j17")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j18")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j19")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j20")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j21")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j22")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j23")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j25")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j26")
+}],
+"loop": false,
+"name": &"playing_phone",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j10")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j11")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j12")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j13")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j14")
+}],
+"loop": true,
+"name": &"walk_east",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j27")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j28")
+}],
+"loop": true,
+"name": &"walk_north",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j33")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j34")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j35")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j36")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j37")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j38")
+}],
+"loop": true,
+"name": &"walk_south",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_janjira"]
+radius = 28.54902
+height = 114.19608
+
+[node name="Staff_Janjira" type="CharacterBody2D" unique_id=777777001 groups=["NPC", "caregiver"]]
+y_sort_enabled = true
+script = ExtResource("1_janjira")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=777777002]
+position = Vector2(-1, -34)
+sprite_frames = SubResource("SpriteFrames_janjira")
+animation = &"idle_south"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=777777003]
+y_sort_enabled = true
+position = Vector2(1.4210855e-14, -16)
+scale = Vector2(0.2802198, 0.2802198)
+shape = SubResource("CapsuleShape2D_janjira")
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=777777004]
+avoidance_enabled = true
+
+[node name="Timer" type="Timer" parent="." unique_id=777777005]
+
+[node name="NameLabel" type="Label" parent="." unique_id=777777006]
+z_index = 100
+offset_left = -60.0
+offset_top = -110.0
+offset_right = 60.0
+offset_bottom = -90.0
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "Janjira"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RoleLabel" type="Label" parent="." unique_id=777777007]
+z_index = 100
+offset_left = -60.0
+offset_top = -95.0
+offset_right = 60.0
+offset_bottom = -80.0
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.4, 0.8, 0.4, 1)
+text = "[Caregiver]"
+horizontal_alignment = 1
+vertical_alignment = 1

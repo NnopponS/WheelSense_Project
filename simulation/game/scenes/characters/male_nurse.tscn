@@ -374,3 +374,26 @@ shape = SubResource("CapsuleShape2D_p8ime")
 avoidance_enabled = true
 
 [node name="Timer" type="Timer" parent="." unique_id=652093505]
+
+[node name="NameLabel" type="Label" parent="." unique_id=888888001]
+z_index = 100
+offset_left = -60.0
+offset_top = -110.0
+offset_right = 60.0
+offset_bottom = -90.0
+theme_override_font_sizes/font_size = 14
+text = "Saranya"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RoleLabel" type="Label" parent="." unique_id=888888007]
+z_index = 100
+offset_left = -60.0
+offset_top = -90.0
+offset_right = 60.0
+offset_bottom = -75.0
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.2, 0.6, 1, 1)
+text = "[Head Nurse]"
+horizontal_alignment = 1
+vertical_alignment = 1

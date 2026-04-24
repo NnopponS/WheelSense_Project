@@ -1,34 +1,44 @@
 \vspace {-0.5cm}
 ~\hfill \textnormal {หน้า}\par 
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนการดำเนินงานตลอดโครงการวิจัย}}{5}{table.caption.16}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บทบาทหน้าที่และความรับผิดชอบของบุคลากรในสถานดูแลผู้สูงอายุ}}{6}{table.caption.17}%
+\contentsline {table}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนการดำเนินงานตลอดโครงการวิจัย}}{21}{table.caption.16}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปสถาปัตยกรรม 3 ระดับของระบบ WheelSense}}{16}{table.caption.22}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เปรียบเทียบคุณสมบัติของอุปกรณ์ฮาร์ดแวร์ภาคสนาม}}{18}{table.caption.25}%
-\contentsline {table}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อกำหนดและแนวทางการติดตั้ง Node Tsimcam (BLE Beacon)}}{22}{table.caption.29}%
-\contentsline {table}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces มาตรการรองรับกรณีสัญญาณ Beacon ขาดหาย}}{24}{table.caption.31}%
-\contentsline {table}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริการหลักในระบบ WheelSense}}{25}{table.caption.33}%
-\contentsline {table}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เปรียบเทียบช่องทางการสื่อสารในระบบ}}{26}{table.caption.35}%
-\contentsline {table}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces AI Pipeline 5 ชั้นของระบบ WheelSense}}{28}{table.caption.38}%
-\contentsline {table}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สิทธิ์การเข้าถึงเครื่องมือ AI ตามบทบาทผู้ใช้ (Policy Engine)}}{29}{table.caption.40}%
-\contentsline {table}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟีเจอร์หลักของแดชบอร์ดเว็บตามบทบาทผู้ใช้}}{29}{table.caption.41}%
-\contentsline {table}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปโปรโตคอลการทดสอบและเกณฑ์ประเมิน}}{32}{table.caption.44}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บทบาทหน้าที่และความรับผิดชอบของบุคลากรในสถานดูแลผู้สูงอายุ}}{22}{table.caption.17}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเปรียบเทียบลักษณะการใช้งานและคุณลักษณะหลักของฮาร์ดแวร์ที่เกี่ยวข้อง}}{31}{table.caption.25}%
+\contentsline {table}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การทบทวนเทคโนโลยีซอฟต์แวร์และโครงสร้างพื้นฐานพื้นฐานที่สำคัญ}}{35}{table.caption.30}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทำงานของอุปกรณ์บนเก้าอี้รถเข็นและอุปกรณ์สวมใส่}}{34}{table.caption.48}%
-\contentsline {table}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบแบบแจกแจงตามสถานะเครือข่าย}}{35}{table.caption.49}%
-\contentsline {table}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการตรวจจับสถานะการเคลื่อนไหว}}{35}{table.caption.50}%
-\contentsline {table}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการเปรียบเทียบวิธีการจำแนกตำแหน่งภายในอาคาร}}{36}{table.caption.52}%
-\contentsline {table}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เมทริกซ์ความสับสนแบบย่อของผลการจำแนกตำแหน่ง (KNN $k=5$)}}{36}{table.caption.53}%
-\contentsline {table}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลความพร้อมใช้งานของบริการหลักหลัง deployment}}{37}{table.caption.55}%
-\contentsline {table}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เวลาแฝงของเส้นทางข้อมูลหลักในบริการส่วนกลาง}}{38}{table.caption.58}%
-\contentsline {table}{\numberline {4.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบประสิทธิภาพฐานข้อมูล}}{38}{table.caption.59}%
-\contentsline {table}{\numberline {4.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินประสิทธิภาพของไปป์ไลน์ EaseAI แบ่งตามชั้น}}{40}{table.caption.62}%
-\contentsline {table}{\numberline {4.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินความสอดคล้องของการเลือกเครื่องมือ MCP}}{40}{table.caption.63}%
-\contentsline {table}{\numberline {4.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินประสบการณ์ผู้ใช้ของผู้ดูแล}}{41}{table.caption.67}%
-\contentsline {table}{\numberline {4.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบจำแนกตามภารกิจของ HMI}}{42}{table.caption.69}%
-\contentsline {table}{\numberline {4.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบแบบปลายถึงปลายของระบบต้นแบบ}}{43}{table.caption.71}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces คุณสมบัติของไมโครคอนโทรลเลอร์ M5StickC Plus2}}{50}{table.caption.45}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces โครงสร้างหัวข้อ MQTT ในระบบ WheelSense}}{51}{table.caption.47}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces คุณสมบัติของอุปกรณ์สวมใส่และสมาร์ทโฟน}}{53}{table.caption.50}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตารางการสื่อสารระหว่าง Polar Verity Sense สมาร์ทโฟน และเซิร์ฟเวอร์}}{54}{table.caption.53}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อกำหนดและแนวทางการติดตั้ง Node Tsimcam}}{56}{table.caption.55}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces มาตรการรองรับกรณีสัญญาณ Beacon ขาดหาย}}{57}{table.caption.57}%
+\contentsline {table}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริการหลักในระบบ WheelSense}}{59}{table.caption.59}%
+\contentsline {table}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เปรียบเทียบช่องทางการสื่อสารในระบบ}}{61}{table.caption.61}%
+\contentsline {table}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces AI Pipeline 5 ชั้นของระบบ WheelSense}}{64}{table.caption.64}%
+\contentsline {table}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เครื่องมือ MCP แบ่งตามหมวดหมู่ในระบบ}}{68}{table.caption.66}%
+\contentsline {table}{\numberline {3.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สิทธิ์การเข้าถึงเครื่องมือ AI ตามบทบาทผู้ใช้ (Policy Engine)}}{69}{table.caption.67}%
+\contentsline {table}{\numberline {3.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ฟีเจอร์หลักของแดชบอร์ดเว็บตามบทบาทผู้ใช้}}{69}{table.caption.70}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทำงานของอุปกรณ์บนเก้าอี้รถเข็นและอุปกรณ์สวมใส่ (n=100)}}{75}{table.caption.73}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบแบบแจกแจงตามสถานะเครือข่าย (n=50 ต่อสถานการณ์)}}{75}{table.caption.74}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการตรวจจับสถานะการเคลื่อนไหว (n=120 นาที)}}{75}{table.caption.75}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการเปรียบเทียบวิธีการจำแนกตำแหน่งภายในอาคาร (n=100 รอบ)}}{78}{table.caption.77}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เมทริกซ์ความสับสนแบบย่อของผลการจำแนกตำแหน่ง (KNN $k=5$)}}{78}{table.caption.78}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบความแม่นยำของอุปกรณ์ Polar Verity Sense (n=2 คน x 30 นาที)}}{79}{table.caption.80}%
+\contentsline {table}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบการเชื่อมต่อสมาร์ทโฟน Gateway (n=50)}}{79}{table.caption.81}%
+\contentsline {table}{\numberline {4.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประมวลผลข้อมูลสัญญาณชีพจากอุปกรณ์สวมใส่ (n=500 ชุด)}}{79}{table.caption.83}%
+\contentsline {table}{\numberline {4.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลความพร้อมใช้งานของบริการหลักหลัง deployment}}{81}{table.caption.84}%
+\contentsline {table}{\numberline {4.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces latency ของเส้นทางข้อมูลหลักในบริการส่วนกลาง (n=1000 คำขอ)}}{83}{table.caption.87}%
+\contentsline {table}{\numberline {4.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบประสิทธิภาพฐานข้อมูล (n=5000 query)}}{83}{table.caption.88}%
+\contentsline {table}{\numberline {4.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบการควบคุมอุปกรณ์ผ่าน Home Assistant (n=100 คำสั่ง)}}{84}{table.caption.89}%
+\contentsline {table}{\numberline {4.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบความปลอดภัยของระบบ}}{85}{table.caption.91}%
+\contentsline {table}{\numberline {4.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินประสิทธิภาพของไปป์ไลน์ EaseAI แบ่งตามชั้น (n=36 prompt)}}{88}{table.caption.94}%
+\contentsline {table}{\numberline {4.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินความสอดคล้องของการเลือกเครื่องมือ MCP}}{88}{table.caption.95}%
+\contentsline {table}{\numberline {4.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการประเมินประสบการณ์ผู้ใช้แดชบอร์ด (n=5 ผู้ดูแลจริง + 10 จำลอง)}}{91}{table.caption.99}%
+\contentsline {table}{\numberline {4.17}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบจำแนกตามภารกิจของ HMI}}{93}{table.caption.100}%
+\contentsline {table}{\numberline {4.18}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบแบบปลายถึงปลายของระบบ (n=8 สถานการณ์)}}{94}{table.caption.101}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \contentsfinish 

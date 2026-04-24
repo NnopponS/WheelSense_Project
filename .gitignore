@@ -1,86 +1,77 @@
-# .gitignore for WheelSense Platform
-
-# Common
-.DS_Store
-Thumbs.db
-*.log
-.env
-debug-*.log
-firmware/**/build_output*.txt
-
-# Python
+# Dependencies
+node_modules/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.venv/
-venv/
-env/
+.Python
 
-# Testing & Quality Tools
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
+# Build outputs
+frontend/build/
+frontend/.next/
+frontend/out/
+simulation/game/export/
+*.apk
+*.aab
 
-# Reports (regenerable)
-server/reports/
-server/pytest_output.txt
+# Environment files
+.env
+.env.*
+.env.local
+.env.production
+.env.simulator
 
-# Runtime uploads / local storage
-server/storage/
-
-# Home Assistant runtime (keep configuration.yaml tracked separately if needed)
-server/homeassistant/.storage/
-server/homeassistant/deps/
-server/homeassistant/tts/
-server/homeassistant/*.log
-server/homeassistant/*.log.*
-server/homeassistant/*.fault
-server/homeassistant/.ha_run.lock
-
-# Node/Server
-node_modules/
-dist/
-
-# Firmware (PlatformIO)
-.pio/
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Docker
-.docker-data/
-postgres-data/
-mosquitto/data/
-mosquitto/log/
+# OS
+.DS_Store
+Thumbs.db
 
-# Android SDK (local install under mobile-app; do not commit)
-mobile-app/.android-sdk/
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+server/.coverage
+server/import_time.log
+server/probe.log
+server/probe_out.log
 
-# Accidental literal paths (e.g. CMD %VAR% used without expansion in PowerShell)
-/%USERPROFILE%/
-/%USERPROFILE%AndroidSdkcmdline-tools/
-
-# Accidental literal Windows TEMP zip (must never enter Git; exceeds GitHub limit)
-/%TEMP%cmdline-tools.zip
-
-# IDE / local build artifacts (mobile)
-mobile-app/**/.idea/
-mobile-app/**/*.apk
-
-# AI/IDE agent directories
-.agents/
-.claude/
-.cursor/
-.qoder/
-code_review/
-
-# Thesis (local only, not part of platform)
-Thesis/
-Thesis-v2.zip
-
-# Test Results
+# Test results
 test-results/
 e2e/test-results/
 frontend/test-results/
+.pytest_cache/
+.coverage
 
+# Docker
+server/storage/
+server/photos/
+
+# Home Assistant
+server/homeassistant/.storage/
+server/homeassistant/.ha_run.lock
+server/homeassistant/home-assistant.log*
+
+# PlatformIO
+firmware/.pio/
+
+# Android SDK
+mobile-app/.android-sdk/
+
+# LaTeX
+thesis.aux
+thesis.log
+texput.log
+*.toc
+*.out
+
+# Temporary files
+*.tmp
+*.temp
+debug-*.log

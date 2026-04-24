@@ -19,9 +19,10 @@ async def init_admin_user() -> None:
         logger.info("Bootstrap admin creation disabled via config")
         return
 
-    if not settings.bootstrap_admin_password:
+    effective_password = settings.bootstrap_admin_password_effective
+    if not effective_password:
         logger.warning(
-            "Skipping bootstrap admin creation because BOOTSTRAP_ADMIN_PASSWORD is not set"
+            "Skipping bootstrap admin creation because no effective password is set"
         )
         return
 
@@ -33,7 +34,7 @@ async def init_admin_user() -> None:
 
         if user:
             if settings.bootstrap_admin_sync_password:
-                user.hashed_password = get_password_hash(settings.bootstrap_admin_password)
+                user.hashed_password = get_password_hash(effective_password)
                 user.role = "admin"
                 user.is_active = True
                 await session.commit()
@@ -55,7 +56,7 @@ async def init_admin_user() -> None:
 
         admin_user = User(
             username=settings.bootstrap_admin_username,
-            hashed_password=get_password_hash(settings.bootstrap_admin_password),
+            hashed_password=get_password_hash(effective_password),
             role="admin",
             workspace_id=ws.id,
             is_active=True,

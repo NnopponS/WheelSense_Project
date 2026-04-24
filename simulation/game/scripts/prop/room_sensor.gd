@@ -15,6 +15,10 @@ func _on_body_entered(body):
 		if "current_location" in body:
 			body.current_location = room_name
 		print(body.name, " เดินเข้ามาใน: ", room_name)
+		
+		# Send room enter event to WheelSense backend via Bridge
+		if "CHARACTER_NAME" in body:
+			Bridge.send_room_enter(body.CHARACTER_NAME, room_name)
 
 func _on_body_exited(body):
 	if body.is_in_group("NPC"):

@@ -1,16 +1,14 @@
 [0] Config.pm:328> INFO - This is Biber 2.21
-[0] Config.pm:331> INFO - Logfile is 'thesis.blg'
-[156] biber-MSWIN64:342> INFO - === 
-[210] Biber.pm:421> INFO - Reading 'thesis.bcf'
-[357] Biber.pm:1002> INFO - Found 18 citekeys in bib section 0
+[1] Config.pm:331> INFO - Logfile is 'thesis.blg'
+[166] biber-MSWIN64:342> INFO - === 
+[221] Biber.pm:421> INFO - Reading 'thesis.bcf'
+[356] Biber.pm:1002> INFO - Found 55 citekeys in bib section 0
 [374] Biber.pm:4487> INFO - Processing section 0
-[388] Biber.pm:4678> INFO - Looking for bibtex file 'bib/refs.bib' for section 0
-[467] bibtex.pm:1713> INFO - LaTeX decoding ...
-[683] bibtex.pm:1519> INFO - Found BibTeX data source 'bib/refs.bib'
-[832] UCollate.pm:68> INFO - Overriding locale 'th-TH' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[832] UCollate.pm:68> INFO - Overriding locale 'th-TH' defaults 'variable = shifted' with 'variable = non-ignorable'
-[833] Biber.pm:4307> INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'th-TH'
-[865] bbl.pm:676> INFO - Writing 'thesis.bbl' with encoding 'UTF-8'
-[883] bbl.pm:779> INFO - Output to thesis.bbl
-[884] Biber.pm:132> WARN - Duplicate entry key: 'FastMCP2024' in file 'bib/refs.bib', skipping ...
-[884] Biber.pm:134> INFO - WARNINGS: 1
+[389] Biber.pm:4678> INFO - Looking for bibtex file 'bib/refs.bib' for section 0
+[465] bibtex.pm:1713> INFO - LaTeX decoding ...
+[530] bibtex.pm:1519> INFO - Found BibTeX data source 'bib/refs.bib'
+[834] UCollate.pm:68> INFO - Overriding locale 'th-TH' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[834] UCollate.pm:68> INFO - Overriding locale 'th-TH' defaults 'variable = shifted' with 'variable = non-ignorable'
+[835] Biber.pm:4307> INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'th-TH'
+[881] bbl.pm:676> INFO - Writing 'thesis.bbl' with encoding 'UTF-8'
+[906] bbl.pm:779> INFO - Output to thesis.bbl

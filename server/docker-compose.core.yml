@@ -26,8 +26,9 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      SECRET_KEY: ${SECRET_KEY:-wheelsense-local-dev-secret-key}
       MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
@@ -39,17 +40,8 @@ services:
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
       INTENT_SEMANTIC_ENABLED: ${INTENT_SEMANTIC_ENABLED:-false}
       INTENT_LLM_NORMALIZE_ENABLED: ${INTENT_LLM_NORMALIZE_ENABLED:-false}
-      SERVER_BASE_URL: ${SERVER_BASE_URL:-http://wheelsense-platform-server:8000}
       PORTAL_BASE_URL: ${PORTAL_BASE_URL:-}
-      AGENT_RUNTIME_URL: ${AGENT_RUNTIME_URL:-http://wheelsense-agent-runtime:8010}
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-wheelsense-internal-dev-secret}
-      MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-http://localhost:3000}
       GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID:-}
-      BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-true}
-      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
-      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-wheelsense2026}
-      BOOTSTRAP_ADMIN_SYNC_PASSWORD: "true"
-      BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE: "true"
       PROFILE_IMAGE_STORAGE_DIR: /app/storage/profile_images
     volumes:
       - profile_images:/app/storage/profile_images
@@ -67,12 +59,12 @@ services:
     ports:
       - "8010:8010"
     environment:
-      SECRET_KEY: ${SECRET_KEY:-wheelsense-local-dev-secret-key}
+      SECRET_KEY: ${SECRET_KEY}
       SERVER_BASE_URL: ${SERVER_BASE_URL:-http://wheelsense-platform-server:8000}
       AGENT_RUNTIME_MCP_TOOL_TRANSPORT: ${AGENT_RUNTIME_MCP_TOOL_TRANSPORT:-http}
       MCP_STREAMABLE_HTTP_URL: ${MCP_STREAMABLE_HTTP_URL:-http://wheelsense-platform-server:8000/mcp/mcp}
       AGENT_RUNTIME_URL: ${AGENT_RUNTIME_URL:-http://wheelsense-agent-runtime:8010}
-      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-wheelsense-internal-dev-secret}
+      INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET}
       AI_PROVIDER: ${AI_PROVIDER:-ollama}
       AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gemma4:e4b}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}

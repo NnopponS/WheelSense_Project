@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: wheelsense_prod
       POSTGRES_USER: wheelsense
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wheelsense_prod_pass}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
@@ -26,13 +26,13 @@ services:
         condition: service_healthy
     environment:
       ENV_MODE: production
-      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_prod_pass}@wheelsense-db-prod:5432/wheelsense_prod
-      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_prod_pass}@wheelsense-db-prod:5432/wheelsense_prod
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD}@wheelsense-db-prod:5432/wheelsense_prod
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD}@wheelsense-db-prod:5432/wheelsense_prod
 
   wheelsense-agent-runtime:
     environment:
-      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD:-wheelsense_prod_pass}@wheelsense-db-prod:5432/wheelsense_prod
-      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD:-wheelsense_prod_pass}@wheelsense-db-prod:5432/wheelsense_prod
+      DATABASE_URL: postgresql+asyncpg://wheelsense:${POSTGRES_PASSWORD}@wheelsense-db-prod:5432/wheelsense_prod
+      DATABASE_URL_SYNC: postgresql://wheelsense:${POSTGRES_PASSWORD}@wheelsense-db-prod:5432/wheelsense_prod
 
 volumes:
   pgdata_prod:

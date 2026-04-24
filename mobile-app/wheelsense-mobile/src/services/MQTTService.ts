@@ -54,7 +54,7 @@ class MQTTService {
         pass: config.password,
         keepalive: 60,
         clean: true,
-        auth: config.username && config.password,
+        auth: !!(config.username && config.password),
       });
 
       // Set up event handlers
@@ -127,10 +127,13 @@ class MQTTService {
     if (!this.client || !this.isConnected) return;
 
     const deviceId = await this.getDeviceId();
+    const userId = useAppStore.getState().user?.id;
     const topics = [
       `WheelSense/config/${deviceId}`,
       `WheelSense/config/all`,
       `WheelSense/mobile/${deviceId}/control`,
+      // Dispatch requests targeted at this specific observer user
+      ...(userId ? [`WheelSense/dispatch/${userId}`] : []),
     ];
 
     for (const topic of topics) {
@@ -157,6 +160,11 @@ class MQTTService {
       if (msg.topic.includes('/control')) {
         this.handleControlCommand(data);
       }
+
+      // Handle dispatch requests for this observer
+      if (msg.topic.includes('/dispatch/')) {
+        this.handleDispatchRequest(data);
+      }
     } catch (error) {
       console.error('[MQTT] Failed to parse message:', error);
     }
@@ -180,6 +188,13 @@ class MQTTService {
   private handleControlCommand(command: any): void {
     console.log('[MQTT] Control command received:', command);
     // Handle commands like start/stop streaming, reboot, etc.
+  }
+
+  private async handleDispatchRequest(payload: any): Promise<void> {
+    const { alertId, patientName, roomName } = payload;
+    if (!alertId || !patientName || !roomName) return;
+    const { NotificationManager } = await import('./NotificationService');
+    await NotificationManager.scheduleDispatchNotification(alertId, patientName, roomName);
   }
 
   // ==================== PUBLISHING ====================

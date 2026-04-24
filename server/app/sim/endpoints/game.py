@@ -45,6 +45,9 @@ from app.models.users import User
 from app.sim.services.game_bridge import (
     CLIENT_TYPE_DASHBOARD,
     CLIENT_TYPE_GAME,
+    broadcast_dispatch_accepted,
+    broadcast_go_to_room,
+    broadcast_room_device_command,
     handle_dashboard_message,
     handle_game_message,
     hub,
@@ -54,6 +57,44 @@ from app.sim.services.game_bridge import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# ── Public endpoint for auto-connect (no auth required) ─────────────────────
+
+@router.get("/token")
+async def get_game_token(
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    """Return a valid JWT token for the simulator workspace admin user.
+
+    This is intended for simulator-mode auto-connect only (e.g., Godot game).
+    Public endpoint - no auth required for sim mode convenience.
+    """
+    from app.core.security import create_access_token
+    from app.config import settings
+
+    ws_name = settings.bootstrap_demo_workspace_name or "WheelSense Simulation"
+    result = await db.execute(
+        select(Workspace).where(Workspace.name == ws_name)
+    )
+    workspace = result.scalars().first()
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Simulator workspace not found")
+
+    # Find first admin user in the workspace
+    result = await db.execute(
+        select(User).where(
+            User.workspace_id == workspace.id,
+            User.role == "admin",
+            User.is_active == True,
+        )
+    )
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No admin user found in simulator workspace")
+
+    token = create_access_token(user.id, user.role)
+    return {"token": token, "workspace_id": str(workspace.id)}
 
 
 # ── Pydantic IO schemas ──────────────────────────────────────────────────────
@@ -225,6 +266,76 @@ async def set_actor_sensor_mode(
         sensor_mode=actor.sensor_mode,
         real_device_id=actor.real_device_id,
     )
+
+
+class RoomDeviceCommandIn(BaseModel):
+    room: str
+    device: Literal["lamp", "ac"]
+    state: bool
+
+
+@router.post("/room-device")
+async def post_room_device_command(
+    body: RoomDeviceCommandIn = Body(...),
+    workspace: Workspace = Depends(get_current_user_workspace),
+    _user: User = Depends(RequireRole(["admin", "head_nurse", "supervisor", "observer", "patient"])),
+) -> dict[str, Any]:
+    """Flip a sim room appliance (lamp or AC).
+
+    Persists state and pushes a command to the Godot game tab so the prop
+    animates. Shared entrypoint for /patient room controls, EaseAI MCP tools,
+    and admin/demo dashboards.
+    """
+    await broadcast_room_device_command(
+        workspace.id, room_name=body.room, device_kind=body.device, state=body.state
+    )
+    return {"ok": True, "room": body.room, "device": body.device, "state": body.state}
+
+
+class DispatchAcceptIn(BaseModel):
+    alert_id: int | None = None
+    character: str
+    room: str = ""
+
+
+@router.post("/dispatch/accept")
+async def post_dispatch_accept(
+    body: DispatchAcceptIn = Body(...),
+    workspace: Workspace = Depends(get_current_user_workspace),
+    user: User = Depends(RequireRole(["admin", "head_nurse", "supervisor", "observer"])),
+) -> dict[str, Any]:
+    """Observer / staff explicitly accepts a dispatch so the nurse character
+    starts walking in-game. Mobile app calls this from the critical-alert
+    notification Accept button.
+    """
+    await broadcast_dispatch_accepted(
+        workspace.id,
+        alert_id=body.alert_id,
+        character=body.character,
+        room=body.room,
+        by_user_id=user.id,
+        by_role=user.role,
+    )
+    return {"ok": True}
+
+
+class GoToRoomIn(BaseModel):
+    character: str
+    room: str
+    reason: str = ""
+
+
+@router.post("/go-to-room")
+async def post_go_to_room(
+    body: GoToRoomIn = Body(...),
+    workspace: Workspace = Depends(get_current_user_workspace),
+    _user: User = Depends(RequireRole(["admin", "head_nurse", "supervisor"])),
+) -> dict[str, Any]:
+    """Direct-send a move command (used by EaseAI dispatch tool)."""
+    await broadcast_go_to_room(
+        workspace.id, character=body.character, room=body.room, reason=body.reason
+    )
+    return {"ok": True}
 
 
 @router.post("/event")

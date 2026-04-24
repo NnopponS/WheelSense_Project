@@ -9,3 +9,11 @@ include:
   - path: docker-compose.core.yml
   - path: docker-compose.data-prod.yml
   - path: docker-compose.cf-tunnel.yml
+
+services:
+  wheelsense-platform-server:
+    env_file:
+      - .env.production
+  wheelsense-agent-runtime:
+    env_file:
+      - .env.production

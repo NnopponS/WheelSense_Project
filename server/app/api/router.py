@@ -119,6 +119,8 @@ api_router.include_router(
 if settings.is_simulator_mode:
     from app.sim.endpoints import demo_control as _sim_demo_control
     from app.sim.endpoints import game as _sim_game
+    from app.sim.endpoints import sim_clock as _sim_clock
+    from app.sim.services import demo_sensor_hub as _demo_sensor_hub
 
     api_router.include_router(
         _sim_demo_control.router,
@@ -132,6 +134,19 @@ if settings.is_simulator_mode:
         _sim_game.router,
         prefix="/sim/game",
         tags=["sim-game"],
+    )
+    # Demo sensor hub: Mobile/M5 sensor ingest and live feed (display-only, no vitals write)
+    api_router.include_router(
+        _demo_sensor_hub.router,
+        prefix="/demo/sensor",
+        tags=["demo-sensor"],
+    )
+    # Sim clock: advance / rewind time for EaseAI "past hour" + task reminder demos.
+    api_router.include_router(
+        _sim_clock.router,
+        prefix="/sim/clock",
+        tags=["sim-clock"],
+        dependencies=[Depends(get_current_active_user)],
     )
 api_router.include_router(
     admin_database.router,

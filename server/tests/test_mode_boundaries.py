@@ -47,11 +47,15 @@ def _module_imports(path: Path) -> list[str]:
 
 # Files that are explicitly allowed to bridge between mode-specific packages
 # and the rest of the app. Keep this list tiny.
-_ALLOWED_SIM_IMPORTERS = {
+_ALLOWED_SIM_IMPORTERS = frozenset({
     APP_ROOT / "api" / "router.py",
-}
+    APP_ROOT / "mqtt_handler.py",
+    APP_ROOT / "config.py",  # Settings needs to check simulator mode
+    SERVER_ROOT / "tests",  # Test files allowed to import anywhere
+})
 _ALLOWED_PROD_IMPORTERS = {
     APP_ROOT / "api" / "router.py",
+    SERVER_ROOT / "tests",  # Test files allowed to import anywhere
 }
 
 

@@ -1,56 +1,81 @@
 \vspace {-0.5cm}
 ~\hfill \textnormal {หน้า}\par 
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริบทการดูแลผู้สูงอายุและผู้พิการที่ใช้เก้าอี้รถเข็นในสถานดูแลของประเทศไทย}}{1}{figure.caption.13}%
-\contentsline {figure}{\numberline {1.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces อาคารและพื้นที่บริการหลักของบ้านพักคนชราวาสนะเวศม์ที่ใช้เป็นบริบทศึกษา}}{2}{figure.caption.14}%
-\contentsline {figure}{\numberline {1.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การใช้กระดานบันทึกข้อมูลแบบแอนะล็อกที่พบในหน้างานจริง}}{2}{figure.caption.15}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรม 4 ชั้นของระบบ Ambient Assisted Living (AAL)}}{7}{figure.caption.18}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หลักการระบุตำแหน่งแบบ Trilateration จากจุดอ้างอิง 3 จุด}}{8}{figure.caption.19}%
-\contentsline {figure}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ความสัมพันธ์ระหว่างค่า RSSI และระยะทางตามแบบจำลอง Path Loss}}{9}{figure.caption.20}%
-\contentsline {figure}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ขั้นตอนการระบุตำแหน่งด้วยเทคนิค Fingerprinting}}{10}{figure.caption.21}%
+\contentsline {figure}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริบทการดูแลผู้สูงอายุและผู้พิการที่ใช้เก้าอี้รถเข็นในสถานดูแลของประเทศไทย}}{17}{figure.caption.13}%
+\contentsline {figure}{\numberline {1.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces อาคารและพื้นที่บริการหลักของบ้านพักคนชราวาสนะเวศม์ที่ใช้เป็นบริบทศึกษา}}{18}{figure.caption.14}%
+\contentsline {figure}{\numberline {1.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การใช้กระดานบันทึกข้อมูลแบบแอนะล็อกที่พบในหน้างานจริง}}{18}{figure.caption.15}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces โครงสร้างเชิงชั้นของระบบต้นแบบแสดงการไหลของข้อมูลระหว่างชั้นต่างๆ}}{16}{figure.caption.23}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมระบบ WheelSense โดยรวมแสดงการเชื่อมโยงระหว่างทุกชั้น}}{17}{figure.caption.24}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตำแหน่งการติดตั้งอุปกรณ์ M5StickC Plus2, Polar Verity Sense และ Node Tsimcam ในระบบ}}{19}{figure.caption.26}%
-\contentsline {figure}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เส้นทางข้อมูลจากอุปกรณ์บนเก้าอี้รถเข็นสู่บริการส่วนกลาง}}{20}{figure.caption.27}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังแสดงวงรอบการทำงานหลักของเฟิร์มแวร์บนโหนดเซ็นเซอร์}}{21}{figure.caption.28}%
-\contentsline {figure}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังการจัดวาง BLE beacon ภายในอาคารตัวอย่าง}}{23}{figure.caption.30}%
-\contentsline {figure}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Flowchart การประมวลผลข้อมูลสำหรับการจำแนกตำแหน่ง}}{24}{figure.caption.32}%
-\contentsline {figure}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมเชิงหน้าที่ของบริการส่วนกลางแสดงการเชื่อมโยงระหว่างบริการ}}{25}{figure.caption.34}%
-\contentsline {figure}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังแสดงกระบวนการรับรองและประมวลผลข้อมูลฝั่งเซิร์ฟเวอร์}}{26}{figure.caption.36}%
-\contentsline {figure}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนภาพความสัมพันธ์ของเอนทิตี (ER Diagram) เบื้องต้นในฐานข้อมูล}}{27}{figure.caption.37}%
-\contentsline {figure}{\numberline {3.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังแสดงกระบวนการประมวลผลของระบบผู้ช่วยอัจฉริยะ}}{28}{figure.caption.39}%
-\contentsline {figure}{\numberline {3.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแดชบอร์ดหลักสำหรับผู้ดูแล (Head Nurse view)}}{30}{figure.caption.42}%
-\contentsline {figure}{\numberline {3.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ (Observer view)}}{31}{figure.caption.43}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรม 4 ชั้นของระบบ Ambient Assisted Living (AAL)}}{23}{figure.caption.18}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หลักการระบุตำแหน่งแบบ Trilateration จากจุดอ้างอิง 3 จุด}}{24}{figure.caption.19}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ความสัมพันธ์ระหว่างค่า RSSI และระยะทางตามแบบจำลอง Path Loss}}{25}{figure.caption.20}%
+\contentsline {figure}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ขั้นตอนการระบุตำแหน่งด้วยเทคนิค Fingerprinting}}{26}{figure.caption.21}%
+\contentsline {figure}{\numberline {2.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หลักการทำงานของเซ็นเซอร์ PPG แบบสะท้อนแสง (Reflection Mode) และส่วนประกอบของสัญญาณที่วัดได้ ซึ่งประกอบด้วยส่วนคงที่ (DC) จากเนื้อเยื่อและเลือดดำ และส่วนที่แปรผันตามจังหวะการเต้นของหัวใจ (AC) จากเลือดแดงในหลอดเลือดฝอย}}{27}{figure.caption.22}%
+\contentsline {figure}{\numberline {2.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แกนพิกัดและทิศทางการหมุนของ IMU}}{28}{figure.caption.23}%
+\contentsline {figure}{\numberline {2.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หลักการของอัลกอริทึม KNN ในการจำแนกข้อมูลตามระยะห่างในพื้นที่คุณลักษณะ}}{30}{figure.caption.24}%
+\contentsline {figure}{\numberline {2.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลักษณะของอุปกรณ์ M5StickC Plus2 ที่มีจอแสดงผลและเซ็นเซอร์ภายใน}}{32}{figure.caption.26}%
+\contentsline {figure}{\numberline {2.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลักษณะภายนอกของโหนดกล้อง Lilygo T-SimCam ที่รองรับการประมวลผลภาพเบื้องต้น}}{33}{figure.caption.27}%
+\contentsline {figure}{\numberline {2.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลักษณะเชิงแนวคิดของ Polar Verity Sense และสายรัดสำหรับการสวมใส่}}{33}{figure.caption.28}%
+\contentsline {figure}{\numberline {2.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Raspberry Pi 5 ที่ใช้เป็นเซิร์ฟเวอร์ส่วนกลางในระบบ}}{34}{figure.caption.29}%
+\contentsline {figure}{\numberline {2.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิดการจัดวางส่วนติดต่อผู้ใช้แบบแดชบอร์ดสำหรับระบบติดตามสภาวะผู้สูงอายุ}}{36}{figure.caption.31}%
+\contentsline {figure}{\numberline {2.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กระบวนการทำงานของ FastAPI ที่เชื่อมการตรวจสอบข้อมูลเข้ากับเอกสาร API อัตโนมัติ}}{37}{figure.caption.32}%
+\contentsline {figure}{\numberline {2.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิดการทำงานของ React Virtual DOM สำหรับการอัปเดตส่วนติดต่อผู้ใช้แบบมีประสิทธิภาพ}}{38}{figure.caption.33}%
+\contentsline {figure}{\numberline {2.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิดการเรนเดอร์และการนำทางของ Next.js สำหรับเว็บแอปพลิเคชันเชิงปฏิบัติการ}}{39}{figure.caption.34}%
+\contentsline {figure}{\numberline {2.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมการทำงานของ React Native ผ่าน Native Bridge และการเสริมความสามารถด้วย Expo}}{40}{figure.caption.35}%
+\contentsline {figure}{\numberline {2.17}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิดการจัดเก็บข้อมูลแบบผสมผสานระหว่างข้อมูลเชิงโครงสร้างและกึ่งโครงสร้าง}}{41}{figure.caption.36}%
+\contentsline {figure}{\numberline {2.18}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การจัดวางบริการหลักของระบบในสภาพแวดล้อมคอนเทนเนอร์}}{41}{figure.caption.37}%
+\contentsline {figure}{\numberline {2.19}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิดการให้บริการโมเดลภาษาขนาดใหญ่ภายในระบบผ่าน Ollama}}{42}{figure.caption.38}%
+\contentsline {figure}{\numberline {2.20}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บทบาทของ MCP ในการเชื่อมโยง LLM เข้ากับแหล่งข้อมูลและเครื่องมือ}}{43}{figure.caption.39}%
+\contentsline {figure}{\numberline {2.21}{\ignorespaces \xpg@aux {}{thai}\ignorespaces รูปแบบการสื่อสารแบบ Publish/Subscribe ของ MQTT ในระบบ IoT}}{43}{figure.caption.40}%
+\contentsline {figure}{\numberline {2.22}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กระบวนการพัฒนาและติดตั้งเฟิร์มแวร์ผ่าน PlatformIO}}{44}{figure.caption.41}%
+\contentsline {figure}{\numberline {2.23}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอหลักของ Home Assistant แสดงการจัดการอุปกรณ์ IoT และ Automation}}{45}{figure.caption.42}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพรวมระบบ WheelSense ที่แสดงสถานะการทำงานแบบ real-time}}{33}{figure.caption.45}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces อุปกรณ์ M5StickC Plus2 ติดตั้งบนเก้าอี้รถเข็นพร้อมเซ็นเซอร์ IMU}}{34}{figure.caption.46}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเชื่อมต่อ Polar Verity Sense กับ mobile app สำหรับตรวจสอบการทำงาน}}{34}{figure.caption.47}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้ง BLE beacon ตามจุดอ้างอิงในอาคาร}}{36}{figure.caption.51}%
-\contentsline {figure}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแสดงตำแหน่งปัจจุบันของผู้ใช้บนแดชบอร์ด}}{37}{figure.caption.54}%
-\contentsline {figure}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ monitoring ของเซิร์ฟเวอร์แสดงสถานะบริการต่างๆ}}{37}{figure.caption.56}%
-\contentsline {figure}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces รายการ container services ใน Docker Compose}}{38}{figure.caption.57}%
-\contentsline {figure}{\numberline {4.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าต่างสนทนากับผู้ช่วย AI บนแดชบอร์ด}}{39}{figure.caption.60}%
-\contentsline {figure}{\numberline {4.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการเลือกเครื่องมือโดย AI เพื่อตอบคำถาม}}{39}{figure.caption.61}%
-\contentsline {figure}{\numberline {4.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กระบวนการยืนยันก่อนดำเนินการ (propose-confirm-execute)}}{40}{figure.caption.64}%
-\contentsline {figure}{\numberline {4.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอหลักของแดชบอร์ดแสดงตำแหน่งและสถานะผู้พัก}}{41}{figure.caption.65}%
-\contentsline {figure}{\numberline {4.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแสดงการแจ้งเตือนและบริบทประกอบ}}{41}{figure.caption.66}%
-\contentsline {figure}{\numberline {4.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแอปพลิเคชันบนอุปกรณ์เคลื่อนที่}}{42}{figure.caption.68}%
-\contentsline {figure}{\numberline {4.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การสาธิตการทำงานแบบ end-to-end จากเซ็นเซอร์ถึงแดชบอร์ด}}{43}{figure.caption.70}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces โครงสร้างเชิงชั้นของระบบต้นแบบแสดงการไหลของข้อมูลระหว่างชั้นต่างๆ}}{47}{figure.caption.43}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมระบบ WheelSense โดยรวมแสดงการเชื่อมโยงระหว่างทุกชั้น}}{49}{figure.caption.44}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตำแหน่งการติดตั้งไมโครคอนโทรลเลอร์ M5StickC Plus2 บนเก้าอี้รถเข็น}}{50}{figure.caption.46}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เส้นทางข้อมูลจาก M5StickC Plus2 ผ่าน Wi-Fi และ MQTT Broker สู่ Backend API}}{51}{figure.caption.48}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังแสดงวงรอบการทำงานหลักของเฟิร์มแวร์ M5StickC Plus2}}{52}{figure.caption.49}%
+\contentsline {figure}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้ง Polar Verity Sense และตำแหน่งใช้งานสมาร์ทโฟน}}{54}{figure.caption.51}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เส้นทางข้อมูลจาก Polar Verity Sense ผ่านสมาร์ทโฟนสู่ MQTT Broker และ Backend API}}{54}{figure.caption.52}%
+\contentsline {figure}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังแสดงวงรอบการทำงานของแอปพลิเคชันบนสมาร์ทโฟน}}{55}{figure.caption.54}%
+\contentsline {figure}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังการจัดวาง BLE beacon (12 โซน/ห้อง)}}{56}{figure.caption.56}%
+\contentsline {figure}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Flowchart การประมวลผลข้อมูลสำหรับการจำแนกตำแหน่ง}}{58}{figure.caption.58}%
+\contentsline {figure}{\numberline {3.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมเชิงหน้าที่ของบริการส่วนกลางแสดงการเชื่อมโยงระหว่างบริการ}}{59}{figure.caption.60}%
+\contentsline {figure}{\numberline {3.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังแสดงกระบวนการรับรองและประมวลผลข้อมูลฝั่งเซิร์ฟเวอร์}}{61}{figure.caption.62}%
+\contentsline {figure}{\numberline {3.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนภาพความสัมพันธ์ของเอนทิตี (ER Diagram) เบื้องต้นในฐานข้อมูล}}{62}{figure.caption.63}%
+\contentsline {figure}{\numberline {3.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังแสดงกระบวนการประมวลผล 5 ชั้นของ AI Pipeline}}{65}{figure.caption.65}%
+\contentsline {figure}{\numberline {3.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมแดชบอร์ดเว็บ}}{70}{figure.caption.68}%
+\contentsline {figure}{\numberline {3.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ขั้นตอนการตรวจสอบสิทธิ์และโครงสร้าง Component Library}}{71}{figure.caption.69}%
+\contentsline {figure}{\numberline {3.17}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแดชบอร์ดหลักสำหรับผู้ดูแล (Head Nurse view)}}{71}{figure.caption.71}%
+\contentsline {figure}{\numberline {3.18}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ (Observer view)}}{73}{figure.caption.72}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้ง BLE beacon ตามจุดอ้างอิงในอาคาร}}{76}{figure.caption.76}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแสดงตำแหน่งปัจจุบันของผู้ใช้บนแดชบอร์ด}}{77}{figure.caption.79}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การเชื่อมต่อ Polar Verity Sense กับ mobile app สำหรับตรวจสอบการทำงาน}}{80}{figure.caption.82}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ monitoring ของเซิร์ฟเวอร์แสดงสถานะบริการต่างๆ}}{82}{figure.caption.85}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces รายการ container services ใน Docker Compose}}{82}{figure.caption.86}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังการเชื่อมต่อระหว่าง WheelSense MCP และ Home Assistant}}{84}{figure.caption.90}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าต่างสนทนากับผู้ช่วย AI บนแดชบอร์ด}}{86}{figure.caption.92}%
+\contentsline {figure}{\numberline {4.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการเลือกเครื่องมือโดย AI เพื่อตอบคำถาม}}{87}{figure.caption.93}%
+\contentsline {figure}{\numberline {4.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กระบวนการยืนยันก่อนดำเนินการ (propose-confirm-execute)}}{90}{figure.caption.96}%
+\contentsline {figure}{\numberline {4.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การสอนใช้งาน}}{91}{figure.caption.97}%
+\contentsline {figure}{\numberline {4.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ (Observer view)}}{92}{figure.caption.98}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {ข.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ทีมวิจัยมาถึงสถานสงเคราะห์คนชราวาสนะเวศม์}}{54}{figure.caption.77}%
-\contentsline {figure}{\numberline {ข.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผังอาคารพื้นที่ทดสอบ}}{54}{figure.caption.78}%
-\contentsline {figure}{\numberline {ข.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้ง M5StickC บนเก้าอี้รถเข็นผู้ใช้จริง (มุม A)}}{55}{figure.caption.79}%
-\contentsline {figure}{\numberline {ข.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้ง M5StickC บนเก้าอี้รถเข็นผู้ใช้จริง (มุม B)}}{55}{figure.caption.80}%
-\contentsline {figure}{\numberline {ข.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้งโหนด ESP32-S3 บนผนัง}}{55}{figure.caption.81}%
-\contentsline {figure}{\numberline {ข.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Raspberry Pi 5 และอุปกรณ์เครือข่ายในห้องควบคุม}}{56}{figure.caption.82}%
-\contentsline {figure}{\numberline {ข.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ทีมวิจัยทำ fingerprint survey ในแต่ละโซน}}{56}{figure.caption.83}%
-\contentsline {figure}{\numberline {ข.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การอบรมผู้ดูแลใช้แดชบอร์ด}}{56}{figure.caption.84}%
-\contentsline {figure}{\numberline {ข.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผู้ดูแลใช้งานระบบในเวลาจริง}}{57}{figure.caption.85}%
-\contentsline {figure}{\numberline {ข.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผู้ใช้สวม Polar Verity Sense}}{57}{figure.caption.86}%
-\contentsline {figure}{\numberline {ข.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผู้ใช้อยู่บนเก้าอี้รถเข็นที่ติดตั้งอุปกรณ์}}{57}{figure.caption.87}%
-\contentsline {figure}{\numberline {ข.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหมู่ทีมวิจัยกับผู้ดูแลและผู้บริหารศูนย์}}{58}{figure.caption.88}%
+\contentsline {figure}{\numberline {ก.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอคลังซอร์สโค้ด GitHub ของโครงการ WheelSense}}{105}{figure.caption.106}%
+\contentsline {figure}{\numberline {ข.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าแรกและคำชี้แจงของแบบสอบถามประเมินความพึงพอใจ}}{106}{figure.caption.108}%
+\contentsline {figure}{\numberline {ข.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนคำถามประเมินความพึงพอใจ (ต่อ)}}{107}{figure.caption.109}%
+\contentsline {figure}{\numberline {ข.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนคำถามประเมินความพึงพอใจ (ต่อ)}}{108}{figure.caption.110}%
+\contentsline {figure}{\numberline {ข.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนคำถามข้อเสนอแนะและขอบคุณ}}{109}{figure.caption.111}%
+\contentsline {figure}{\numberline {ค.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces อาคารและพื้นที่บริการหลักของบ้านพักคนชราวาสนะเวศม์}}{110}{figure.caption.113}%
+\contentsline {figure}{\numberline {ค.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้งโหนดเซ็นเซอร์ภายในอาคาร}}{110}{figure.caption.114}%
+\contentsline {figure}{\numberline {ค.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้งโหนดเซ็นเซอร์ภายในอาคาร (มุมมองเพิ่มเติม)}}{111}{figure.caption.115}%
+\contentsline {figure}{\numberline {ค.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้งอุปกรณ์ M5StickC บนเก้าอี้รถเข็นผู้ใช้จริง}}{111}{figure.caption.116}%
+\contentsline {figure}{\numberline {ค.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผู้สูงอายุในบ้านพักคนชราวาสนะเวศม์}}{112}{figure.caption.117}%
+\contentsline {figure}{\numberline {ค.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผู้สูงอายุใช้งานอุปกรณ์ในสภาพแวดล้อมจริง}}{112}{figure.caption.118}%
+\contentsline {figure}{\numberline {ค.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บอร์ดการทำงานแบบเขียนด้วยมือ (ค1)}}{113}{figure.caption.119}%
+\contentsline {figure}{\numberline {ค.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บอร์ดการทำงานแบบเขียนด้วยมือ (ค2)}}{113}{figure.caption.120}%
+\contentsline {figure}{\numberline {ค.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การสอนวิธีใช้งานระบบและขอข้อมูลฟีดแบ็คจากผู้ดูแล}}{114}{figure.caption.121}%
+\contentsline {figure}{\numberline {ค.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหมู่ทีมวิจัยกับผู้สูงอายุและผู้ดูแล}}{114}{figure.caption.122}%
 \contentsfinish 
 \contentsfinish 

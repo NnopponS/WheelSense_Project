@@ -1,0 +1,16 @@
+---
+description: Shared low-token WheelSense project loader for Cursor
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# WheelSense Agent Core
+
+- Repo-local only. Apply only in this repository.
+- Read `.agents/core/source-of-truth.md` first.
+- Then read only the smallest relevant canonical doc set for the task.
+- Use `.agents/workflows/wheelsense.md` for cross-domain work.
+- Prefer repo-local skills and workflow docs over global memory packs.
+- Keep the active skill/rule set small.
+- Do not duplicate architecture text that already exists in canonical docs.

@@ -1,0 +1,43 @@
+---
+description: Chapter 5 — conclusions, limitations, recommendations, future work (WheelSense thesis)
+globs:
+  - latex/content/chapters/chapter5.tex
+alwaysApply: false
+---
+
+# Chapter 5 — `chapter5.tex` (สรุปผล อุปสรรค ข้อเสนอแนะ งานต่อ)
+
+Applies when editing `latex/content/chapters/chapter5.tex`. Keep formal Thai academic tone and standard technical English terms where clearer.
+
+## Evidence-based conclusions
+
+- Tie each major conclusion to evidence already shown in prior chapters.
+- Keep objective wording and conclusion scope aligned with Chapter 1.
+- Prefer specific, attributable statements over broad general claims.
+- If citing quantitative outcomes, ensure those values already appear in thesis content.
+
+## Limitation honesty
+
+- Separate technical limits (signals, models, hardware) from operational limits (deployment, calibration, maintenance).
+- Explicitly state what was not tested or not compared.
+- Acknowledge known confounders (e.g. RSSI variability, timestamp alignment) directly.
+- Use precise scope language rather than defensive minimization.
+
+## Practical recommendations
+
+- Recommendations should be actionable and connected to observed issues.
+- Prioritize feasible next steps for prototype-scale work.
+- Distinguish must-have improvements from optional enhancements.
+
+## Future-work realism
+
+- Distinguish near-term engineering improvements from longer-term research.
+- Avoid promising outcomes that require unavailable data, approvals, or infrastructure.
+- Keep AI/IoT future work grounded in concrete gaps and evaluation plans.
+- Align future work with WheelSense goals unless a clear pivot is explicitly justified.
+
+## LaTeX hygiene
+
+- Preserve chapter structure and `\label{chapter5}` unless explicitly restructuring.
+- Keep list spacing consistent with project conventions.
+- Keep Chapter 5 as synthesis; avoid introducing new core methods/results.

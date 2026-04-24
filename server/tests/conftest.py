@@ -187,6 +187,68 @@ async def runtime_test_user(db_session: AsyncSession, runtime_test_workspace: Wo
     return user
 
 
+@pytest_asyncio.fixture()
+async def sim_workspace(db_session: AsyncSession) -> Workspace:
+    """Create a simulator workspace for authentication tests."""
+    ws = Workspace(name="Test Simulation", mode="simulation", is_active=True)
+    db_session.add(ws)
+    await db_session.flush()
+    return ws
+
+
+@pytest_asyncio.fixture()
+async def sim_users(db_session: AsyncSession, sim_workspace: Workspace) -> dict[str, User]:
+    """Create sim mode users with demo1234 password for authentication tests."""
+    users = {}
+    hashed = get_password_hash("demo1234")
+    
+    # Admin
+    admin = User(
+        username="admin",
+        hashed_password=hashed,
+        role="admin",
+        workspace_id=sim_workspace.id,
+        is_active=True,
+    )
+    db_session.add(admin)
+    await db_session.flush()
+    users["admin"] = admin
+    
+    # Staff
+    staff_configs = [
+        ("sarah.j", "head_nurse"),
+        ("michael.s", "supervisor"),
+        ("jennifer.l", "observer"),
+        ("david.k", "observer"),
+    ]
+    
+    for username, role in staff_configs:
+        user = User(
+            username=username,
+            hashed_password=hashed,
+            role=role,
+            workspace_id=sim_workspace.id,
+            is_active=True,
+        )
+        db_session.add(user)
+        await db_session.flush()
+        users[username] = user
+    
+    # Patient
+    patient = User(
+        username="emika.c",
+        hashed_password=hashed,
+        role="patient",
+        workspace_id=sim_workspace.id,
+        is_active=True,
+    )
+    db_session.add(patient)
+    await db_session.flush()
+    users["emika.c"] = patient
+    
+    return users
+
+
 # ── HTTP client fixture — lifespan bypassed, DB overridden ──────────────────
 @pytest_asyncio.fixture()
 async def client(db_session: AsyncSession, admin_token: str):

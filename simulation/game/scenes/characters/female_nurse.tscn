@@ -383,3 +383,26 @@ shape = SubResource("CapsuleShape2D_g5bal")
 avoidance_enabled = true
 
 [node name="Timer" type="Timer" parent="." unique_id=353878137]
+
+[node name="NameLabel" type="Label" parent="." unique_id=888888002]
+z_index = 100
+offset_left = -60.0
+offset_top = -110.0
+offset_right = 60.0
+offset_bottom = -90.0
+theme_override_font_sizes/font_size = 14
+text = "Mongkol"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RoleLabel" type="Label" parent="." unique_id=888888007]
+z_index = 100
+offset_left = -60.0
+offset_top = -90.0
+offset_right = 60.0
+offset_bottom = -75.0
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.8, 0.4, 0.9, 1)
+text = "[Supervisor]"
+horizontal_alignment = 1
+vertical_alignment = 1

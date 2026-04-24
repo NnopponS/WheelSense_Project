@@ -16,6 +16,8 @@
 [ext_resource type="PackedScene" uid="uid://cv4nwfebjf1ob" path="res://scenes/characters/rattana.tscn" id="14_ca42v"]
 [ext_resource type="PackedScene" uid="uid://bfjsopja24efc" path="res://scenes/characters/krit.tscn" id="14_trtic"]
 [ext_resource type="PackedScene" uid="uid://cuptpavunwguq" path="res://scenes/characters/wichai.tscn" id="15_ir15t"]
+[ext_resource type="PackedScene" uid="uid://janjira123456" path="res://scenes/characters/staff_janjira.tscn" id="16_janjira"]
+[ext_resource type="PackedScene" uid="uid://dawit1234567" path="res://scenes/characters/staff_dawit.tscn" id="17_dawit"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_kvuet"]
 
@@ -1091,6 +1093,16 @@ position = Vector2(476, -433)
 
 [node name="Rattana" parent="." unique_id=821580617 instance=ExtResource("14_ca42v")]
 position = Vector2(506, 197)
+
+[node name="Staff_Janjira" parent="." unique_id=999999101 node_paths=PackedStringArray("standby_station") instance=ExtResource("16_janjira")]
+position = Vector2(150, 50)
+scale = Vector2(0.9, 0.9)
+standby_station = NodePath("../Marker/FemaleNurseStationMarker")
+
+[node name="Staff_Dawit" parent="." unique_id=999999102 node_paths=PackedStringArray("standby_station") instance=ExtResource("17_dawit")]
+position = Vector2(400, 50)
+scale = Vector2(0.9, 0.9)
+standby_station = NodePath("../Marker/MaleNurseStationMarker")
 
 [node name="Rooms" type="Node2D" parent="." unique_id=983635114]
 visible = false

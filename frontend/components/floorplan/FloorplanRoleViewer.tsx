@@ -374,6 +374,7 @@ function RoomInspectorContent({
   inspectorDevices,
   captureBusy,
   captureMessage,
+  capturedImagePath,
   requestCapture,
   refetchPresence,
 }: {
@@ -384,6 +385,7 @@ function RoomInspectorContent({
   inspectorDevices: Array<RoomSmartDeviceStateSummary | SmartDevice>;
   captureBusy: boolean;
   captureMessage: string | null;
+  capturedImagePath: string | null;
   requestCapture: () => void;
   refetchPresence: () => void;
 }) {
@@ -512,11 +514,11 @@ function RoomInspectorContent({
           Latest room snapshot
         </div>
 
-        {selectedPresenceRoom?.camera_summary?.latest_photo_url ? (
+        {capturedImagePath || selectedPresenceRoom?.camera_summary?.latest_photo_url ? (
           <div className="relative h-52 overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-low/50">
             <Image
-              src={selectedPresenceRoom.camera_summary.latest_photo_url}
-              alt={`Latest snapshot for ${selectedRoomEntry.room.label}`}
+              src={capturedImagePath ?? selectedPresenceRoom?.camera_summary?.latest_photo_url ?? ""}
+              alt={`Latest snapshot for ${selectedRoomEntry?.room.label ?? "room"}`}
               fill
               unoptimized
               className="object-cover"
@@ -591,6 +593,7 @@ export default function FloorplanRoleViewer({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "floorplan">("floorplan");
   const [captureMessage, setCaptureMessage] = useState<string | null>(null);
+  const [capturedImagePath, setCapturedImagePath] = useState<string | null>(null);
   const [captureBusy, setCaptureBusy] = useState(false);
 
   const { data: facilities, isLoading: loadingFac } = useQuery({
@@ -858,7 +861,7 @@ export default function FloorplanRoleViewer({
   }, [allSmartDevices, selectedPresenceRoom]);
 
   async function requestCapture() {
-    if (!selectedPresenceRoom?.camera_summary?.capture_available) return;
+    if (!selectedPresenceRoom?.camera_summary?.capture_available || !selectedRoomEntry) return;
     setCaptureBusy(true);
     setCaptureMessage(null);
     try {
@@ -866,6 +869,13 @@ export default function FloorplanRoleViewer({
         `/floorplans/rooms/${encodeURIComponent(String(selectedPresenceRoom.room_id))}/capture`,
       );
       setCaptureMessage(response?.message ?? "Capture requested.");
+      
+      // Set captured image path based on room name
+      const roomNameClean = selectedRoomEntry.room.label.replace(/[\s/]/g, "");
+      // Avoid double "Room" prefix if label already starts with "Room"
+      const fileName = roomNameClean.startsWith("Room") ? roomNameClean : `Room${roomNameClean}`;
+      setCapturedImagePath(`/simulation/Node-capture/${fileName}.png`);
+      
       await refetchPresence();
     } catch (error) {
       setCaptureMessage(error instanceof ApiError ? error.message : "Could not trigger capture.");
@@ -1126,6 +1136,7 @@ export default function FloorplanRoleViewer({
                     inspectorDevices={inspectorDevices}
                     captureBusy={captureBusy}
                     captureMessage={captureMessage}
+                    capturedImagePath={capturedImagePath}
                     requestCapture={() => void requestCapture()}
                     refetchPresence={() => void refetchPresence()}
                   />

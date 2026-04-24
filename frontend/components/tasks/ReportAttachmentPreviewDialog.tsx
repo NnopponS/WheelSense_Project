@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -37,6 +38,9 @@ export function ReportAttachmentPreviewDialog({
           <DialogTitle className="text-base font-semibold truncate pr-8">
             {title}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Preview of {title}
+          </DialogDescription>
         </DialogHeader>
         <div className="min-h-[50vh] max-h-[calc(90vh-4rem)] flex-1 bg-muted/20 flex items-center justify-center overflow-auto p-2">
           {isImage && imageSrc ? (

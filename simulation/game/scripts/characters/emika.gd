@@ -9,8 +9,11 @@ var current_state = State.WANDERING
 
 @onready var sprite = $AnimatedSprite2D
 @onready var wait_timer = $Timer
-@onready var http_request = $HTTPRequest
 @onready var action_menu = $Menu
+@onready var nav_agent = $NavigationAgent2D
+
+# Game character name for backend bridge
+const CHARACTER_NAME = "emika"
 
 var is_moving: bool = false
 var target_position: Vector2 = Vector2.ZERO
@@ -20,8 +23,10 @@ var current_location: String = "Room401"
 func _ready():
 	input_pickable = true
 	
-	# Connect the HTTP request signal
-	http_request.request_completed.connect(_on_request_completed)
+	# Connect bridge signals for backend communication
+	Bridge.connected.connect(_on_bridge_connected)
+	Bridge.disconnected.connect(_on_bridge_disconnected)
+	Bridge.go_to_room_received.connect(_on_go_to_room)
 	
 	# 1. ส่งชื่อไปเปลี่ยนที่หัวเมนู (ถ้าเป็นคนอื่นก็เปลี่ยนชื่อตรงนี้)
 	action_menu.set_patient_name("Emika")
@@ -67,67 +72,76 @@ func _input_event(_viewport, event, _shape_idx):
 func _on_menu_force_fall():
 	if current_state == State.WANDERING:
 		current_state = State.FALL
-		call_closest_doctor() # เรียกหมอ
+		# Signal distress via Bridge - backend handles dispatch flow
+		Bridge.send_distress_signal(CHARACTER_NAME, current_location, "fall")
 		
 		is_moving = false
 		wait_timer.stop()
 		position = target_position 
 		
 		sprite.play("falling_south")
-		send_patient_data()
 		await sprite.animation_finished
 
-# --- HTTP REQUEST LOGIC ---
+# --- BRIDGE / BACKEND COMMUNICATION ---
+
+func _on_bridge_connected():
+	print("Emika: Connected to WheelSense backend")
+
+func _on_bridge_disconnected():
+	print("Emika: Disconnected from WheelSense backend")
+
+# --- Backend-Driven Movement ---
+func _on_go_to_room(character_name: String, room_name: String):
+	if character_name != CHARACTER_NAME:
+		return
+	
+	print("Emika: Received command to go to ", room_name)
+	
+	# Get room center position from room sensors
+	var room_position = _get_room_position(room_name)
+	if room_position != Vector2.ZERO:
+		# Stop wandering
+		is_moving = false
+		wait_timer.stop()
+		
+		# Set navigation target
+		nav_agent.target_position = room_position
+		current_state = State.WANDERING
+		is_moving = true
+		
+		print("Emika: Navigating to ", room_name, " at ", room_position)
+	else:
+		print("Emika: Could not find room ", room_name)
+
+func _get_room_position(room_name: String) -> Vector2:
+	# Room center positions based on game.tscn room sensor locations
+	match room_name:
+		"Room 401", "Room401":
+			return Vector2(77.5, -398)
+		"Room 402", "Room402":
+			return Vector2(453, -384.5)
+		"Room 403", "Room403":
+			return Vector2(69, 154)
+		"Room 404", "Room404":
+			return Vector2(454, 146.75)
+		_:
+			return Vector2.ZERO
 
 func send_patient_data():
-	var url = "http://127.0.0.1:5000/api/update_status"
-	
-	# Structuring the payload with dashboard monitoring data
-	var data = {
-		"patient_name": "Mrs.Emika Charoenpho",
-		"mobility": "wheelchair",
-		"status": "An accident occurred",
-		"location": current_location
-	}
-	
-	var json_string = JSON.stringify(data)
-	var headers = ["Content-Type: application/json"]
-	
-	print("Sending patient data to Web Portal API...")
-	http_request.request(url, headers, HTTPClient.METHOD_POST, json_string)
-
-func _on_request_completed(_result, response_code, _headers, _body):
-	if response_code == 200 or response_code == 201:
-		print("API Success: Data securely pushed to server.")
-	else:
-		print("API Error: ", response_code)
+	# Send via WheelSense Bridge (WebSocket) instead of legacy HTTP
+	print("Sending patient data to WheelSense backend via Bridge...")
+	Bridge.send_patient_data(
+		"Mrs.Emika Charoenpho",
+		"wheelchair",
+		"An accident occurred",
+		current_location
+	)
 		
-# --- Call Caregiver ---
-func call_closest_doctor():
-	# 1. ดึงรายชื่อทุกคนที่อยู่ในกลุ่ม "doctors" มา
-	var all_doctors = get_tree().get_nodes_in_group("caregiver")
-	
-	if all_doctors.size() == 0:
-		return # ถ้าไม่มีหมออยู่เลยให้ข้ามไป
-		
-	var closest_doctor = null
-	var min_distance = INF # ตั้งค่าเริ่มต้นให้ระยะทางไกลที่สุดเท่าที่เป็นไปได้
-	
-	# 2. เอาตลับเมตรวัดระยะทางไปหาหมอทีละคน
-	for doc in all_doctors:
-		# global_position.distance_to คือคำสั่งวัดระยะทางของ Godot
-		var distance = global_position.distance_to(doc.global_position)
-		
-		# ถ้าเจอคนที่ใกล้กว่าสถิติเดิม ให้จดชื่อคนนั้นไว้
-		if distance < min_distance:
-			min_distance = distance
-			closest_doctor = doc
-			
-	# 3. สั่งให้ผู้ดูแลคนที่ใกล้ที่สุด เดินมาหา (ส่งตัวเองไปให้หมอรู้จัก)
-	if closest_doctor != null:
-		# เปลี่ยนจาก global_position เป็น self
-		closest_doctor.go_help_patient(self) 
-		print("Elena ตะโกนเรียก: ", closest_doctor.name, " มาช่วยแล้ว!")
+# --- Backend-Driven Dispatch ---
+# Observers Accept/Decline via mobile app; backend routes to caregiver.
+func _on_dispatch_accepted(character_name: String, room_name: String, accepted_by: String):
+	if room_name == current_location:
+		print("Emika: Dispatch accepted by ", accepted_by, ", nurse will arrive soon")
 		
 # --- ระบบรับการปฐมพยาบาล ---
 
@@ -178,9 +192,24 @@ func choose_random_direction():
 		start_waiting()
 
 func move_npc(delta):
-	position = position.move_toward(target_position, walk_speed * TILE_SIZE * delta)
+	# Use navigation if we have a navigation target
+	if nav_agent.is_navigation_finished():
+		is_moving = false
+		start_waiting()
+		return
 	
-	if position == target_position:
+	var next_path_pos = nav_agent.get_next_path_position()
+	var direction = global_position.direction_to(next_path_pos)
+	
+	velocity = direction * walk_speed * TILE_SIZE
+	move_and_slide()
+	
+	# Update animation based on movement direction
+	if velocity.length() > 0.1:
+		update_animation(direction)
+	
+	# Check if arrived (close enough to target)
+	if global_position.distance_to(nav_agent.target_position) < 5.0:
 		is_moving = false
 		start_waiting()
 
@@ -211,6 +240,14 @@ func _on_menu_toggle_ac(is_on: bool):
 			is_moving = true
 			wait_timer.start()
 			print("สั่งแอร์ห้อง ", current_location, " ให้: ", "เปิด" if is_on else "ปิด")
+			
+	# Send device toggle event via Bridge
+	Bridge.send_event("device_toggle", {
+		"character": CHARACTER_NAME,
+		"device_type": "ac",
+		"room": current_location,
+		"state": is_on
+	})
 
 # เมื่อรับคำสั่งเปิด/ปิดโคมไฟจากเมนู
 func _on_menu_toggle_lamp(is_on: bool):
@@ -225,6 +262,14 @@ func _on_menu_toggle_lamp(is_on: bool):
 			wait_timer.start()
 			
 			print("สั่งโคมไฟห้อง ", current_location, " ให้: ", "เปิด" if is_on else "ปิด")
+	
+	# Send device toggle event via Bridge
+	Bridge.send_event("device_toggle", {
+		"character": CHARACTER_NAME,
+		"device_type": "lamp",
+		"room": current_location,
+		"state": is_on
+	})
 
 func is_colliding(relative_vec: Vector2) -> bool:
 	return test_move(transform, relative_vec)

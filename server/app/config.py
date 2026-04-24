@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     bootstrap_admin_enabled: bool = True
     bootstrap_admin_username: str = "admin"
     bootstrap_admin_password: str = ""
+    bootstrap_admin_password_sim: str = "demo1234"  # Simulator mode default password
     # When true and BOOTSTRAP_ADMIN_PASSWORD is set, re-hash password on startup if admin user exists.
     # Docker Compose enables this so login matches compose env after DB volume reuse.
     bootstrap_admin_sync_password: bool = False
@@ -164,6 +165,13 @@ class Settings(BaseSettings):
     @property
     def is_simulator_mode(self) -> bool:
         return self.env_mode.lower() == "simulator"
+
+    @property
+    def bootstrap_admin_password_effective(self) -> str:
+        """Return mode-appropriate bootstrap admin password."""
+        if self.is_simulator_mode:
+            return self.bootstrap_admin_password_sim or "demo1234"
+        return self.bootstrap_admin_password or "wheelsense2026"
 
     @property
     def resolved_database_url(self) -> str:

@@ -18,16 +18,20 @@ from app.sim.schemas.demo_control import (
     DemoResetRequest,
     DemoResetResponse,
     DemoRoomCaptureResponse,
+    DemoScenarioMetadata,
     DemoScenarioResponse,
     DemoScenarioStartRequest,
     DemoScenarioStopRequest,
     DemoWorkflowAdvanceRequest,
     DemoWorkflowAdvanceResponse,
+    DeviceSimulationRequest,
     SimulatorCommandIn,
     SimulatorCommandOut,
     SimulatorResetResponse,
     SimulatorStatusResponse,
 )
+from app.core.security import create_access_token
+from app.models import User
 from app.sim.services.demo_control import (
     demo_control_service,
     start_demo_scenario,
@@ -53,26 +57,80 @@ async def get_demo_control_state(
     return await demo_control_service.list_actor_state(db, ws.id)
 
 
+@router.get("/scenarios", response_model=list[DemoScenarioMetadata])
+async def list_scenarios(
+    _: User = Depends(RequireRole(["admin"])),
+):
+    """Return available demo scenarios with metadata."""
+    return [
+        DemoScenarioMetadata(
+            scenario_id="show-demo",
+            name="Show Demo",
+            description="General demonstration scenario with mixed events",
+            category="general",
+            default_interval_ms=2000,
+        ),
+        DemoScenarioMetadata(
+            scenario_id="ops-walkthrough",
+            name="Operations Walkthrough",
+            description="Step-by-step operations demonstration",
+            category="operations",
+            default_interval_ms=3000,
+        ),
+        DemoScenarioMetadata(
+            scenario_id="morning-rounds",
+            name="Morning Rounds",
+            description="Simulate morning care routine with vitals and tasks",
+            category="routine",
+            default_interval_ms=5000,
+        ),
+        DemoScenarioMetadata(
+            scenario_id="handoff-pressure",
+            name="Handoff Pressure",
+            description="Generate multiple pending handoffs to test workflow",
+            category="workflow",
+            default_interval_ms=2000,
+        ),
+        DemoScenarioMetadata(
+            scenario_id="photo-sweep",
+            name="Photo Sweep",
+            description="Trigger room captures across all rooms",
+            category="hardware",
+            default_interval_ms=3000,
+        ),
+        DemoScenarioMetadata(
+            scenario_id="emergency-drill",
+            name="Emergency Drill",
+            description="Fall event with supervisor dispatch and directive advancement",
+            category="emergency",
+            default_interval_ms=2000,
+        ),
+    ]
+
+
 @router.post("/reset", response_model=DemoResetResponse)
 async def reset_demo_workspace(
     payload: DemoResetRequest,
     ws: Workspace = Depends(get_current_user_workspace),
     _: User = Depends(RequireRole(["admin"])),
 ):
-    # Frontend historically sent "clean-slate"; both names run the same seed path.
+    # Both "show-demo" and "clean-slate" converge on the game-aligned seeder.
+    # The legacy Thai-name cohort from ``scripts/seed_demo.py`` is intentionally
+    # not reachable from the Clean Slate button anymore — it mixed two cohorts
+    # into the same workspace and broke staff/patient counts.
     if payload.profile not in ("show-demo", "clean-slate"):
         raise HTTPException(
             status_code=400,
             detail="Unsupported profile; use 'show-demo' or 'clean-slate'.",
         )
 
-    from scripts.seed_demo import run_seed
+    from app.sim.services.simulator_reset import reset_simulator_workspace
 
-    await run_seed(ws.name, True)
+    result = await reset_simulator_workspace(ws.name)
     return DemoResetResponse(
         profile=payload.profile,
         status="ok",
-        message="Show-demo workspace reset complete",
+        message=result.get("message", "Demo workspace reset complete"),
     )
 
 
@@ -342,3 +400,93 @@ async def publish_simulator_mqtt_command(
         status="ok",
         message=f"Published {payload.command} to {SIMULATOR_MQTT_CONTROL_TOPIC}",
     )
+
+
+@router.post("/devices/simulate", response_model=SimulatorCommandOut)
+async def simulate_device(
+    payload: DeviceSimulationRequest,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(["admin"])),
+):
+    """
+    Simulate device state changes (offline, battery level, etc.) for demo purposes.
+    This updates device config field to store simulation state.
+    """
+    from app.models import Device
+    from sqlalchemy import select
+
+    device = (
+        await db.execute(
+            select(Device).where(Device.id == payload.device_id, Device.workspace_id == ws.id)
+        )
+    ).scalar_one_or_none()
+
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    # Store simulation state in config field
+    sim_config = device.config.copy() if device.config else {}
+    sim_config["_simulation"] = sim_config.get("_simulation", {})
+    
+    if payload.action == "set_offline":
+        sim_config["_simulation"]["is_active"] = False
+    elif payload.action == "set_online":
+        sim_config["_simulation"]["is_active"] = True
+    elif payload.action == "set_battery":
+        if payload.battery_level is None:
+            raise HTTPException(status_code=400, detail="battery_level is required for set_battery action")
+        sim_config["_simulation"]["battery_level"] = payload.battery_level
+    elif payload.action == "disconnect":
+        sim_config["_simulation"]["is_active"] = False
+        sim_config["_simulation"]["battery_level"] = 0
+    elif payload.action == "reconnect":
+        sim_config["_simulation"]["is_active"] = True
+        sim_config["_simulation"]["battery_level"] = 100
+
+    device.config = sim_config
+    await db.commit()
+    await db.refresh(device)
+
+    return SimulatorCommandOut(
+        status="ok",
+        message=f"Device {payload.action} completed for device #{device.id}",
+    )
+
+
+@router.get("/token")
+async def get_demo_token(
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    """Return a valid JWT token for the simulator workspace admin user.
+
+    This is intended for simulator-mode auto-connect only (e.g., Godot game).
+    The endpoint is only available when ENV_MODE=simulator.
+    Public endpoint - no auth required for sim mode convenience.
+    """
+    from sqlalchemy import select
+    from app.models.core import Workspace
+    from app.config import settings
+
+    ws_name = settings.bootstrap_demo_workspace_name or "WheelSense Simulation"
+    result = await db.execute(
+        select(Workspace).where(Workspace.name == ws_name)
+    )
+    workspace = result.scalars().first()
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Simulator workspace not found")
+
+    # Find first admin user in the workspace
+    result = await db.execute(
+        select(User).where(
+            User.workspace_id == workspace.id,
+            User.role == "admin",
+            User.is_active == True,
+        )
+    )
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No admin user found in simulator workspace")
+
+    token = create_access_token(user.id)
+    return {"token": token, "workspace_id": str(workspace.id)}

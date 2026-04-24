@@ -7,6 +7,10 @@ import { api, ApiError } from "@/lib/api";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import { useTranslation } from "@/lib/i18n";
 import DemoPanel from "@/components/admin/demo-control/DemoPanel";
+import ScenarioPanel from "@/components/admin/demo-control/ScenarioPanel";
+import QuickActionsPanel from "@/components/admin/demo-control/QuickActions";
+import DeviceSimulationPanel from "@/components/admin/demo-control/DeviceSimulation";
+import GameBridgePanel from "@/components/admin/demo-control/GameBridgePanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,8 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Send, Shield, Users, AlertTriangle, Route, Trash2 } from "lucide-react";
-import type { Patient, Room, User } from "@/lib/types";
+import { Camera, Send, Shield, Users, AlertTriangle, Route, Trash2, Check, Gamepad2 } from "lucide-react";
+import type { Patient, Room, User, Device } from "@/lib/types";
 import type {
   CareDirectiveOut,
   CareScheduleOut,
@@ -42,7 +46,15 @@ type SimulatorStatusResp = {
   workspace_id?: number | null;
 };
 
-type DemoAlertType = "manual_test" | "abnormal_hr" | "fall" | "low_battery" | "device_offline";
+type DemoAlertType = "manual_test" | "abnormal_hr" | "fall" | "low_battery" | "device_offline" | "sos";
+
+type ScenarioMetadata = {
+  scenario_id: string;
+  name: string;
+  description: string;
+  category: string;
+  default_interval_ms: number;
+};
 
 const SIM_PATIENT_ANY = "__any__";
 
@@ -119,6 +131,22 @@ export default function AdminDemoControlPage() {
     enabled: user?.role === "admin",
   });
 
+  const devices = useQuery<Device[]>({
+    queryKey: ["demo-control", "devices", user?.workspace_id],
+    queryFn: () => api.get(withWorkspaceScope("/devices", user?.workspace_id) as string),
+    enabled: user?.role === "admin",
+  });
+
+  const scenarios = useQuery<ScenarioMetadata[]>({
+    queryKey: ["demo-control", "scenarios"],
+    queryFn: () => api.get("/demo/scenarios"),
+    enabled: user?.role === "admin",
+  });
+
+  const [runningScenarios, setRunningScenarios] = useState<Set<string>>(new Set());
+  const [executingAction, setExecutingAction] = useState<string | null>(null);
+  const [simulatingDevice, setSimulatingDevice] = useState<number | null>(null);
+
   const [actorType, setActorType] = useState<ActorType>("patient");
   const [actorId, setActorId] = useState("");
   const [roomId, setRoomId] = useState("");
@@ -138,11 +166,14 @@ export default function AdminDemoControlPage() {
   const [alertTitle, setAlertTitle] = useState("Manual Test Alert");
   const [alertDescription, setAlertDescription] = useState("Triggered from Manual Testing Panel");
   const [alertHrBpm, setAlertHrBpm] = useState("120");
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
 
   const [simVitalInterval, setSimVitalInterval] = useState("30");
   const [simAlertProbability, setSimAlertProbability] = useState("0.05");
   const [simHrHigh, setSimHrHigh] = useState("110");
-  const [simEnableAlerts, setSimEnableAlerts] = useState(true);
+  const [simEnableAlerts, setSimEnableAlerts] = useState(false);
   const [simInjectPatientId, setSimInjectPatientId] = useState(SIM_PATIENT_ANY);
 
   const [logs, setLogs] = useState<Array<{ id: string; title: string; detail: string; tone: Tone; at: string }>>([
@@ -179,36 +210,164 @@ export default function AdminDemoControlPage() {
     }
   }
 
-  const handleCreateAlert = () => {
-    if (!alertPatientId) return;
-    const care = selectedAlertPatient?.care_level ?? "normal";
-    const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
-    let title = alertTitle.trim() || "Alert";
-    let description = alertDescription.trim() || "Triggered from Manual Testing Panel";
-    let severity = alertSeverity as "low" | "warning" | "critical";
-    if (alertType === "abnormal_hr") {
-      title = alertTitle.trim() || `High Heart Rate: ${bpm} BPM`;
-      description =
-        alertDescription.trim() ||
-        `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`;
-      if (severity === "low") severity = "warning";
+  const handleCreateAlert = async () => {
+    if (batchMode) {
+      if (selectedPatientIds.size === 0) return;
+      const patientIdsArray = Array.from(selectedPatientIds).map(Number);
+      setBatchProgress({ current: 0, total: patientIdsArray.length });
+
+      for (let i = 0; i < patientIdsArray.length; i++) {
+        const patientId = patientIdsArray[i];
+        const patient = activePatients.find((p) => p.id === patientId);
+        const care = patient?.care_level ?? "normal";
+        const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
+        let title = alertTitle.trim() || "Alert";
+        let description = alertDescription.trim() || "Triggered from Manual Testing Panel";
+        let severity = alertSeverity as "low" | "warning" | "critical";
+        
+        if (alertType === "abnormal_hr") {
+          title = alertTitle.trim() || `High Heart Rate: ${bpm} BPM`;
+          description =
+            alertDescription.trim() ||
+            `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`;
+          if (severity === "low") severity = "warning";
+        }
+
+        const payload: CreateAlertRequest = {
+          patient_id: patientId,
+          alert_type: alertType,
+          severity,
+          title,
+          description,
+          data:
+            alertType === "abnormal_hr"
+              ? { source: "demo_control", heart_rate_bpm: bpm, care_level: care }
+              : { source: "demo_control" },
+        };
+
+        try {
+          await api.createAlert(payload);
+          setBatchProgress({ current: i + 1, total: patientIdsArray.length });
+        } catch (error) {
+          pushLog("Batch Alert Error", `Failed for patient #${patientId}: ${errText(error)}`, "error");
+        }
+      }
+
+      pushLog(
+        "Batch Create Alert",
+        `Created alerts for ${patientIdsArray.length} patients`,
+        "success",
+      );
+      queryClient.invalidateQueries();
+      setSelectedPatientIds(new Set());
+      setBatchProgress({ current: 0, total: 0 });
+    } else {
+      if (!alertPatientId) return;
+      const care = selectedAlertPatient?.care_level ?? "normal";
+      const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
+      let title = alertTitle.trim() || "Alert";
+      let description = alertDescription.trim() || "Triggered from Manual Testing Panel";
+      let severity = alertSeverity as "low" | "warning" | "critical";
+      if (alertType === "abnormal_hr") {
+        title = alertTitle.trim() || `High Heart Rate: ${bpm} BPM`;
+        description =
+          alertDescription.trim() ||
+          `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`;
+        if (severity === "low") severity = "warning";
+      }
+      const payload: CreateAlertRequest = {
+        patient_id: Number(alertPatientId),
+        alert_type: alertType,
+        severity,
+        title,
+        description,
+        data:
+          alertType === "abnormal_hr"
+            ? { source: "demo_control", heart_rate_bpm: bpm, care_level: care }
+            : { source: "demo_control" },
+      };
+      run(
+        "Create Alert",
+        `Created ${severity} ${alertType} for Patient #${alertPatientId}`,
+        () => api.createAlert(payload),
+      );
     }
-    const payload: CreateAlertRequest = {
-      patient_id: Number(alertPatientId),
-      alert_type: alertType,
-      severity,
-      title,
-      description,
-      data:
-        alertType === "abnormal_hr"
-          ? { source: "demo_control", heart_rate_bpm: bpm, care_level: care }
-          : { source: "demo_control" },
-    };
+  };
+
+  const handleStartScenario = (scenarioId: string, intervalMs: number) => {
     run(
-      "Create Alert",
-      `Created ${severity} ${alertType} for Patient #${alertPatientId}`,
-      () => api.createAlert(payload),
-    );
+      `Start Scenario: ${scenarioId}`,
+      `Started ${scenarioId} with ${intervalMs}ms interval`,
+      () =>
+        api.post(`/demo/scenarios/${scenarioId}/start`, {
+          interval_ms: intervalMs,
+        }),
+    ).then(() => {
+      setRunningScenarios((prev) => new Set(prev).add(scenarioId));
+    });
+  };
+
+  const handleStopScenario = (scenarioId: string) => {
+    run(
+      `Stop Scenario: ${scenarioId}`,
+      `Stopped ${scenarioId}`,
+      () => api.post(`/demo/scenarios/${scenarioId}/stop`, {}),
+    ).then(() => {
+      setRunningScenarios((prev) => {
+        const next = new Set(prev);
+        next.delete(scenarioId);
+        return next;
+      });
+    });
+  };
+
+  const handleQuickAction = (actionId: string) => {
+    setExecutingAction(actionId);
+    
+    const actionMap: Record<string, string> = {
+      "emergency-drill": "emergency-drill",
+      "morning-rounds": "morning-rounds",
+      "handoff-pressure": "handoff-pressure",
+      "photo-sweep": "photo-sweep",
+    };
+
+    const scenarioId = actionMap[actionId];
+    if (!scenarioId) return;
+
+    run(
+      `Quick Action: ${actionId}`,
+      `Executed quick action ${actionId}`,
+      () =>
+        api.post(`/demo/scenarios/${scenarioId}/start`, {
+          interval_ms: 2000,
+        }),
+    ).finally(() => {
+      setExecutingAction(null);
+      // Add to running scenarios
+      setRunningScenarios((prev) => new Set(prev).add(scenarioId));
+    });
+  };
+
+  const handleSimulateDevice = (deviceId: number, action: string, batteryLevel?: number) => {
+    setSimulatingDevice(deviceId);
+    
+    const payload: any = {
+      device_id: deviceId,
+      action,
+    };
+    
+    if (action === "set_battery" && batteryLevel !== undefined) {
+      payload.battery_level = batteryLevel;
+    }
+
+    run(
+      `Device Simulation: ${action}`,
+      `Simulated ${action} for device #${deviceId}`,
+      () => api.post("/demo/devices/simulate", payload),
+    ).finally(() => {
+      setSimulatingDevice(null);
+      queryClient.invalidateQueries({ queryKey: ["demo-control", "devices"] });
+    });
   };
 
   const isSimulatorUi = Boolean(simStatus.data?.is_simulator);
@@ -226,15 +385,14 @@ export default function AdminDemoControlPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">
               <Shield className="h-3.5 w-3.5" />
-              Manual Testing Suite
+              {t("demoControl.manualTestingSuite")}
             </div>
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-                Comprehensive Admin Control Panel
+                {t("demoControl.comprehensiveAdminControl")}
               </h1>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                Trigger arbitrary system events, inject alerts, move actors, and advance workflow items 
-                to comprehensively test all features of the WheelSense platform without predefined constraints.
+                {t("demoControl.comprehensiveAdminControlDesc")}
               </p>
             </div>
           </div>
@@ -253,19 +411,25 @@ export default function AdminDemoControlPage() {
             variant="outline"
             className="border-2 border-foreground"
             onClick={() =>
-              void run("Reset Workspace", "Re-seeded the show-demo workspace baseline.", () =>
-                api.post("/demo/reset", { profile: "show-demo" }),
+              void run(t("demoControl.cleanSlate"), "Cleared old demo data and re-seeded with game-aligned simulation data.", () =>
+                api.post("/demo/simulator/reset"),
               )
             }
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Clean Slate (Reset)
+            {t("demoControl.cleanSlate")}
           </Button>
         </div>
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <div className="space-y-4">
+          <ScenarioPanel
+            scenarios={scenarios.data ?? []}
+            runningScenarios={runningScenarios}
+            onStartScenario={handleStartScenario}
+            onStopScenario={handleStopScenario}
+          />
           
           <DemoPanel
             badge={t("demoControl.alertPanelBadge")}
@@ -273,6 +437,34 @@ export default function AdminDemoControlPage() {
             description={t("demoControl.alertPanelDesc")}
             action={<AlertTriangle className="h-4 w-4 text-muted-foreground" />}
           >
+            <div className="flex items-center gap-2 mb-4">
+              <input
+                id="batch-mode"
+                type="checkbox"
+                className="h-4 w-4 rounded border-input"
+                checked={batchMode}
+                onChange={(e) => setBatchMode(e.target.checked)}
+              />
+              <Label htmlFor="batch-mode" className="cursor-pointer font-normal">
+                {t("demoControl.batchMode")}
+              </Label>
+            </div>
+            
+            {batchProgress.total > 0 && (
+              <div className="mb-4 rounded-lg bg-muted p-3">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">{t("demoControl.creatingAlerts")}</span>
+                  <span className="font-medium">{batchProgress.current} / {batchProgress.total}</span>
+                </div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
                 <Label>{t("demoControl.alertType")}</Label>
@@ -296,6 +488,10 @@ export default function AdminDemoControlPage() {
                       setAlertTitle("Fall detected");
                       setAlertDescription("Triggered from Manual Testing Panel");
                       setAlertSeverity("critical");
+                    } else if (next === "sos") {
+                      setAlertTitle("SOS - ขอความช่วยเหลือ");
+                      setAlertDescription("Patient pressed SOS button requesting immediate assistance");
+                      setAlertSeverity("critical");
                     } else {
                       setAlertTitle(`${next.replace(/_/g, " ")} alert`);
                       setAlertDescription("Triggered from Manual Testing Panel");
@@ -309,49 +505,95 @@ export default function AdminDemoControlPage() {
                     <SelectItem value="manual_test">{t("demoControl.alertTypeManualTest")}</SelectItem>
                     <SelectItem value="abnormal_hr">{t("demoControl.alertTypeAbnormalHr")}</SelectItem>
                     <SelectItem value="fall">{t("demoControl.alertTypeFall")}</SelectItem>
+                    <SelectItem value="sos">SOS (ขอความช่วยเหลือ)</SelectItem>
                     <SelectItem value="low_battery">{t("demoControl.alertTypeLowBattery")}</SelectItem>
                     <SelectItem value="device_offline">{t("demoControl.alertTypeDeviceOffline")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Patient</Label>
-                <Select
-                  value={alertPatientId}
-                  onValueChange={(v) => {
-                    setAlertPatientId(v);
-                    if (alertType === "abnormal_hr") {
-                      const p = activePatients.find((x) => String(x.id) === v);
-                      const care = p?.care_level ?? "normal";
-                      const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
-                      setAlertDescription(
-                        `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`,
-                      );
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select patient" />
-                  </SelectTrigger>
-                  <SelectContent>
+                <Label>{batchMode ? t("demoControl.patients") : t("demoControl.patient")}</Label>
+                {batchMode ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto rounded-lg border border-border/70 bg-muted/30 p-3">
+                    <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                      <input
+                        id="select-all-patients"
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-input"
+                        checked={selectedPatientIds.size === activePatients.length && activePatients.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPatientIds(new Set(activePatients.map((p) => String(p.id))));
+                          } else {
+                            setSelectedPatientIds(new Set());
+                          }
+                        }}
+                      />
+                      <Label htmlFor="select-all-patients" className="cursor-pointer font-medium">
+                        {t("demoControl.selectAll")} ({selectedPatientIds.size} / {activePatients.length})
+                      </Label>
+                    </div>
                     {activePatients.map((item) => (
-                      <SelectItem key={item.id} value={String(item.id)}>
-                        {item.first_name} {item.last_name}
-                      </SelectItem>
+                      <div key={item.id} className="flex items-center gap-2">
+                        <input
+                          id={`patient-${item.id}`}
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-input"
+                          checked={selectedPatientIds.has(String(item.id))}
+                          onChange={(e) => {
+                            const next = new Set(selectedPatientIds);
+                            if (e.target.checked) {
+                              next.add(String(item.id));
+                            } else {
+                              next.delete(String(item.id));
+                            }
+                            setSelectedPatientIds(next);
+                          }}
+                        />
+                        <Label htmlFor={`patient-${item.id}`} className="cursor-pointer text-sm">
+                          {item.first_name} {item.last_name}
+                        </Label>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                ) : (
+                  <Select
+                    value={alertPatientId}
+                    onValueChange={(v) => {
+                      setAlertPatientId(v);
+                      if (alertType === "abnormal_hr") {
+                        const p = activePatients.find((x) => String(x.id) === v);
+                        const care = p?.care_level ?? "normal";
+                        const bpm = Math.max(40, Math.min(220, Number(alertHrBpm) || 120));
+                        setAlertDescription(
+                          `Patient showing elevated heart rate (${bpm} BPM). Care level: ${care}.`,
+                        );
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select patient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activePatients.map((item) => (
+                        <SelectItem key={item.id} value={String(item.id)}>
+                          {item.first_name} {item.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div className="space-y-2">
-                <Label>Severity</Label>
+                <Label>{t("demoControl.severity")}</Label>
                 <Select value={alertSeverity} onValueChange={setAlertSeverity}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="warning">Warning</SelectItem>
-                    <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="low">{t("demoControl.severityLow")}</SelectItem>
+                    <SelectItem value="warning">{t("demoControl.severityWarning")}</SelectItem>
+                    <SelectItem value="critical">{t("demoControl.severityCritical")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -366,7 +608,7 @@ export default function AdminDemoControlPage() {
                 </div>
               ) : null}
               <div className="space-y-2 sm:col-span-2 lg:col-span-2">
-                <Label>Title</Label>
+                <Label>{t("demoControl.title")}</Label>
                 <Input value={alertTitle} onChange={(e) => setAlertTitle(e.target.value)} />
               </div>
               <div className="space-y-2 sm:col-span-2 lg:col-span-3">
@@ -374,9 +616,13 @@ export default function AdminDemoControlPage() {
                 <Textarea rows={3} value={alertDescription} onChange={(e) => setAlertDescription(e.target.value)} />
               </div>
             </div>
-            <Button className="mt-2 w-full" disabled={!alertPatientId} onClick={handleCreateAlert}>
+            <Button 
+              className="mt-2 w-full" 
+              disabled={batchMode ? selectedPatientIds.size === 0 : !alertPatientId} 
+              onClick={handleCreateAlert}
+            >
               <AlertTriangle className="mr-2 h-4 w-4" />
-              {t("demoControl.injectAlert")}
+              {batchMode ? `Create Alerts (${selectedPatientIds.size})` : t("demoControl.injectAlert")}
             </Button>
           </DemoPanel>
 
@@ -531,22 +777,22 @@ export default function AdminDemoControlPage() {
           ) : null}
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <DemoPanel badge="Movement" title="Move an actor" description="Place a patient or staff member in a room." action={<Route className="h-4 w-4 text-muted-foreground" />}>
+            <DemoPanel badge={t("demoControl.movement")} title={t("demoControl.moveActor")} description={t("demoControl.moveActorDesc")} action={<Route className="h-4 w-4 text-muted-foreground" />}>
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label>Actor type</Label>
+                  <Label>{t("demoControl.actorType")}</Label>
                   <Select value={actorType} onValueChange={(value) => setActorType(value as ActorType)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="patient">Patient</SelectItem>
-                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="patient">{t("demoControl.patientRole")}</SelectItem>
+                      <SelectItem value="staff">{t("demoControl.staffRole")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Actor</Label>
+                  <Label>{t("demoControl.actor")}</Label>
                   <Select value={actorId} onValueChange={setActorId}>
-                    <SelectTrigger><SelectValue placeholder="Select actor" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("demoControl.selectActor")} /></SelectTrigger>
                     <SelectContent>
                       {actorType === "patient"
                         ? activePatients.map((item) => (
@@ -563,9 +809,9 @@ export default function AdminDemoControlPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Room</Label>
+                  <Label>{t("demoControl.room")}</Label>
                   <Select value={roomId} onValueChange={setRoomId}>
-                    <SelectTrigger><SelectValue placeholder="Select room" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("demoControl.selectRoom")} /></SelectTrigger>
                     <SelectContent>
                       {rooms.map((room) => (
                         <SelectItem key={room.id} value={String(room.id)}>
@@ -580,7 +826,7 @@ export default function AdminDemoControlPage() {
                   disabled={!actorId || !roomId}
                   onClick={() =>
                     void run(
-                      `Move ${actorType} #${actorId}`,
+                      `${t("demoControl.moveActorBtn")} ${actorType} #${actorId}`,
                       "Actor movement command sent.",
                       () =>
                         api.post(`/demo/actors/${actorType}/${encodeURIComponent(actorId)}/move`, {
@@ -591,17 +837,22 @@ export default function AdminDemoControlPage() {
                   }
                 >
                   <Send className="mr-2 h-4 w-4" />
-                  Move actor
+                  {t("demoControl.moveActorBtn")}
                 </Button>
               </div>
             </DemoPanel>
 
-            <DemoPanel badge="Hardware" title="Capture Snapshot" description="Trigger a room snapshot from connected hardware." action={<Camera className="h-4 w-4 text-muted-foreground" />}>
+            <DemoPanel
+              badge={t("demoControl.hardware")}
+              title={t("demoControl.captureSnapshot")}
+              description={t("demoControl.captureSnapshotDesc")}
+              action={<Camera className="h-4 w-4 text-muted-foreground" />}
+            >
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label>Room</Label>
+                  <Label>{t("demoControl.room")}</Label>
                   <Select value={snapshotRoomId} onValueChange={setSnapshotRoomId}>
-                    <SelectTrigger><SelectValue placeholder="Select room" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t("demoControl.selectRoom")} /></SelectTrigger>
                     <SelectContent>
                       {rooms.map((room) => (
                         <SelectItem key={room.id} value={String(room.id)}>
@@ -623,16 +874,16 @@ export default function AdminDemoControlPage() {
                   }
                 >
                   <Camera className="mr-2 h-4 w-4" />
-                  Trigger Capture
+                  {t("demoControl.triggerCapture")}
                 </Button>
               </div>
             </DemoPanel>
           </div>
 
           <DemoPanel
-            badge="Workflow"
-            title="Advance Workflows"
-            description="Force workflow progression to test role-based handoffs and task queues."
+            badge={t("demoControl.workflow")}
+            title={t("demoControl.advanceWorkflows")}
+            description={t("demoControl.advanceWorkflowsDesc")}
             action={
               <div className="flex flex-wrap gap-2">
                 <Select value={itemType} onValueChange={(value) => setItemType(value as ItemType)}>
@@ -646,8 +897,8 @@ export default function AdminDemoControlPage() {
                 <Select value={targetMode} onValueChange={(value) => setTargetMode(value as TargetMode)}>
                   <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="role">Role</SelectItem>
-                    <SelectItem value="user">Person</SelectItem>
+                    <SelectItem value="role">{t("demoControl.targetRole")}</SelectItem>
+                    <SelectItem value="user">{t("demoControl.targetPerson")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -656,7 +907,7 @@ export default function AdminDemoControlPage() {
             <div className="grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label>Workflow item</Label>
+                  <Label>{t("demoControl.workflowItem")}</Label>
                   <Select value={itemId} onValueChange={setItemId}>
                     <SelectTrigger><SelectValue placeholder={`Select ${itemType}`} /></SelectTrigger>
                     <SelectContent>
@@ -674,10 +925,10 @@ export default function AdminDemoControlPage() {
                     <Select value={targetValue} onValueChange={setTargetValue}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">admin</SelectItem>
-                        <SelectItem value="head_nurse">head_nurse</SelectItem>
-                        <SelectItem value="supervisor">supervisor</SelectItem>
-                        <SelectItem value="observer">observer</SelectItem>
+                        <SelectItem value="admin">{t("demoControl.roleAdmin")}</SelectItem>
+                        <SelectItem value="head_nurse">{t("demoControl.roleHeadNurse")}</SelectItem>
+                        <SelectItem value="supervisor">{t("demoControl.roleSupervisor")}</SelectItem>
+                        <SelectItem value="observer">{t("demoControl.roleObserver")}</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
@@ -694,7 +945,7 @@ export default function AdminDemoControlPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Note</Label>
+                  <Label>{t("demoControl.note")}</Label>
                   <Textarea rows={4} value={workflowNote} onChange={(event) => setWorkflowNote(event.target.value)} />
                 </div>
               </div>
@@ -720,45 +971,66 @@ export default function AdminDemoControlPage() {
                   >
                     <p className="font-medium text-foreground capitalize">{action}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {action === "claim" ? "Take ownership." : action === "handoff" ? "Transfer work." : "Push next status."}
+                      {action === "claim" ? t("demoControl.claimDesc") : action === "handoff" ? t("demoControl.handoffDesc") : t("demoControl.advanceDesc")}
                     </p>
                   </button>
                 ))}
               </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-2">Target preview: {targetPreview}</p>
+            <p className="text-sm text-muted-foreground mt-2">{t("demoControl.targetPreview")} {targetPreview}</p>
             {itemPreview ? (
               <p className="text-sm text-muted-foreground">
-                Selected item: #{itemPreview.id} {valueFromItem(itemPreview)}
+                {t("demoControl.selectedItem")} #{itemPreview.id} {valueFromItem(itemPreview)}
               </p>
             ) : null}
           </DemoPanel>
         </div>
 
         <div className="space-y-4">
+          <QuickActionsPanel
+            onExecuteAction={handleQuickAction}
+            executingAction={executingAction}
+          />
+          <DeviceSimulationPanel
+            devices={devices.data ?? []}
+            onSimulateDevice={handleSimulateDevice}
+            simulatingDevice={simulatingDevice}
+          />
+          
+          {isSimulatorUi ? (
+            <Card className="border-border/70 bg-card/90">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Gamepad2 className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold">{t("demoControl.godotGameBridge")}</h2>
+                </div>
+                <GameBridgePanel />
+              </CardContent>
+            </Card>
+          ) : null}
           <Card className="border-border/70 bg-card/90">
             <CardContent className="space-y-4 p-5">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.22em] text-muted-foreground">Current State</p>
-                  <h2 className="text-lg font-semibold text-foreground">Workspace Resources</h2>
+                  <p className="text-sm uppercase tracking-[0.22em] text-muted-foreground">{t("demoControl.currentState")}</p>
+                  <h2 className="text-lg font-semibold text-foreground">{t("demoControl.workspaceResources")}</h2>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-                  <p className="text-sm text-muted-foreground">Patients</p>
+                  <p className="text-sm text-muted-foreground">{t("demoControl.patients")}</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{activePatients.length}</p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-                  <p className="text-sm text-muted-foreground">Staff</p>
+                  <p className="text-sm text-muted-foreground">{t("demoControl.staff")}</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{staffUsers.length}</p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-                  <p className="text-sm text-muted-foreground">Rooms</p>
+                  <p className="text-sm text-muted-foreground">{t("demoControl.rooms")}</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{rooms.length}</p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3">
-                  <p className="text-sm text-muted-foreground">Alerts</p>
+                  <p className="text-sm text-muted-foreground">{t("demoControl.alerts")}</p>
                   <p className="mt-1 text-2xl font-semibold text-foreground">{alerts.length}</p>
                 </div>
               </div>
@@ -769,8 +1041,8 @@ export default function AdminDemoControlPage() {
             <CardContent className="space-y-3 p-5">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.22em] text-muted-foreground">Command log</p>
-                  <h3 className="text-base font-semibold text-foreground">Latest actions</h3>
+                  <p className="text-sm uppercase tracking-[0.22em] text-muted-foreground">{t("demoControl.commandLog")}</p>
+                  <h3 className="text-base font-semibold text-foreground">{t("demoControl.latestActions")}</h3>
                 </div>
                 <Badge variant="outline">{logs.length}</Badge>
               </div>

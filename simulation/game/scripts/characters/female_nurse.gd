@@ -21,6 +21,9 @@ func _ready():
 	wander_timer.wait_time = randf_range(1.0, 5.0)
 	wander_timer.timeout.connect(_on_wander_timer_timeout)
 	wander_timer.start()
+	
+	# Connect bridge signals for backend commands
+	Bridge.go_to_room_received.connect(_on_go_to_room)
 
 func _physics_process(_delta):
 	# === 1. ดักสถานะหยุดนิ่ง (ป้องกันการไถล) ===
@@ -141,6 +144,36 @@ func _on_wander_timer_timeout():
 		nav_agent.target_position = random_target
 
 # --- ระบบหันหน้า (เหมือนเดิม) ---
+# --- Backend-Driven Movement ---
+func _on_go_to_room(character_name: String, room_name: String):
+	if character_name != "Female_nurse":
+		return
+	
+	print("Female_nurse: Received command to go to ", room_name)
+	
+	var room_position = _get_room_position(room_name)
+	if room_position != Vector2.ZERO:
+		current_state = State.WANDERING
+		current_speed = walk_speed
+		wander_timer.stop()
+		nav_agent.target_position = room_position
+		print("Female_nurse: Navigating to ", room_name, " at ", room_position)
+	else:
+		print("Female_nurse: Could not find room ", room_name)
+
+func _get_room_position(room_name: String) -> Vector2:
+	match room_name:
+		"Room 401", "Room401":
+			return Vector2(77.5, -398)
+		"Room 402", "Room402":
+			return Vector2(453, -384.5)
+		"Room 403", "Room403":
+			return Vector2(69, 154)
+		"Room 404", "Room404":
+			return Vector2(454, 146.75)
+		_:
+			return Vector2.ZERO
+
 func update_animation(vel: Vector2):
 	var abs_x = abs(vel.x)
 	var abs_y = abs(vel.y)

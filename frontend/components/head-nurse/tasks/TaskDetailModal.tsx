@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -429,6 +430,9 @@ export function TaskDetailModal({
                 <DialogTitle className="text-xl font-semibold leading-tight">
                   {task.title}
                 </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Task details for {task.title}
+                </DialogDescription>
               </div>
             </div>
           </DialogHeader>

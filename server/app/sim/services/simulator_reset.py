@@ -32,6 +32,7 @@ from app.models import (
     FloorplanLayout,
     HandoverNote,
     Patient,
+    PatientContact,
     PatientDeviceAssignment,
     PharmacyOrder,
     PhotoRecord,
@@ -39,6 +40,8 @@ from app.models import (
     RoleMessage,
     Room,
     ShiftChecklistState,
+    SimGameActorMap,
+    SimGameRoomMap,
     SmartDevice,
     Specialist,
     User,
@@ -90,6 +93,62 @@ async def clear_workspace_dynamic_data(session: AsyncSession, workspace_id: int)
     return cleared_counts
 
 
+async def clear_workspace_full(session: AsyncSession, workspace_id: int) -> dict[str, int]:
+    """Delete every workspace-scoped row so the seeder can start from zero.
+
+    This extends ``clear_workspace_dynamic_data`` with structural tables
+    (patients, caregivers, devices, rooms, floors, facility, sim-game maps)
+    plus patient emergency contacts. The bootstrap admin user is preserved by
+    username so the operator can still log in immediately after reset.
+
+    Delete order respects FK dependencies (child rows before parents) because
+    SQLite in tests does not enforce ``ON DELETE CASCADE`` and we want the
+    same behaviour in Postgres and SQLite.
+    """
+    cleared = await clear_workspace_dynamic_data(session, workspace_id)
+
+    # Patient contacts are scoped by patient_id, not workspace_id.
+    contact_result = await session.execute(
+        delete(PatientContact).where(
+            PatientContact.patient_id.in_(
+                select(Patient.id).where(Patient.workspace_id == workspace_id)
+            )
+        )
+    )
+    cleared["patient_contacts"] = contact_result.rowcount or 0
+
+    structural_tables: list[tuple[str, Any]] = [
+        ("sim_game_actor_map", SimGameActorMap),
+        ("sim_game_room_map", SimGameRoomMap),
+        ("floorplan_layouts", FloorplanLayout),
+        ("patients", Patient),
+        ("caregivers", CareGiver),
+        ("devices", Device),
+        ("rooms", Room),
+        ("floors", Floor),
+        ("facilities", Facility),
+    ]
+    for table_name, model in structural_tables:
+        result = await session.execute(
+            delete(model).where(model.workspace_id == workspace_id)
+        )
+        cleared[table_name] = result.rowcount or 0
+
+    # Drop every workspace-scoped user except the bootstrap admin so the
+    # operator's current session still resolves after reset. The seeder then
+    # re-upserts all dashboard/patient accounts.
+    user_result = await session.execute(
+        delete(User).where(
+            User.workspace_id == workspace_id,
+            User.username != settings.bootstrap_admin_username,
+        )
+    )
+    cleared["users"] = user_result.rowcount or 0
+
+    await session.commit()
+    return cleared
+
+
 async def reset_simulator_workspace(workspace_name: str | None = None) -> dict[str, Any]:
     """Reset the simulator workspace to baseline state.
     
@@ -129,10 +188,11 @@ async def reset_simulator_workspace(workspace_name: str | None = None) -> dict[s
                 "message": "Created new simulator workspace with game-aligned baseline",
             }
 
-        # Clear dynamic event streams; structural rows are kept and upserted
-        # by the seeder to preserve FK references (patient_id, room_id, etc.).
-        cleared = await clear_workspace_dynamic_data(session, workspace.id)
-        await session.commit()
+        # Clean-slate: wipe every workspace-scoped row (events AND structural
+        # rows such as patients/caregivers/rooms) so prior seeds (e.g. legacy
+        # seed_demo.py Thai cohort) cannot leak into the fresh game-aligned
+        # baseline. The bootstrap admin row is preserved by username.
+        cleared = await clear_workspace_full(session, workspace.id)
 
     workspace_id = await seed_sim_game_workspace(target_workspace, reset=False)
 

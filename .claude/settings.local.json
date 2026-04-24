@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls scripts/)",
+      "Bash(ls *.sh *.bat)",
+      "Bash(which xelatex *)",
+      "Bash(xelatex -interaction=nonstopmode -halt-on-error thesis.tex)",
+      "Bash(grep -n \"^\\\\\\\\\\\\\\\\section\\\\|^\\\\\\\\\\\\\\\\end{document}\" Thesis/latex/content/chapters/chapter2.tex)"
+    ]
+  }
+}

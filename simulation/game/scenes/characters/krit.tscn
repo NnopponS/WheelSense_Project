@@ -585,3 +585,32 @@ offset_left = 40.0
 offset_top = -131.0
 offset_right = 229.0
 offset_bottom = 58.0
+
+[node name="NavigationAgent2D" type="NavigationAgent2D" parent="." unique_id=999999002]
+path_desired_distance = 4.0
+target_desired_distance = 10.0
+path_max_distance = 100.0
+avoidance_enabled = true
+
+[node name="NameLabel" type="Label" parent="." unique_id=888888004]
+z_index = 100
+offset_left = -60.0
+offset_top = -110.0
+offset_right = 60.0
+offset_bottom = -90.0
+theme_override_font_sizes/font_size = 14
+text = "Krit"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="." unique_id=888888007]
+z_index = 100
+offset_left = -60.0
+offset_top = -90.0
+offset_right = 60.0
+offset_bottom = -75.0
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.2, 0.8, 0.2, 1)
+text = "[Normal]"
+horizontal_alignment = 1
+vertical_alignment = 1

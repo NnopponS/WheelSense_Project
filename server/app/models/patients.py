@@ -67,6 +67,11 @@ class Patient(Base):
     )  # wheelchair | walking (active mode)
     notes = Column(Text, default="")
 
+    # Extended health profile for AI prediction + daily plan UI (stroke risk, etc.)
+    profile = Column(
+        JSON().with_variant(JSONB, "postgresql"), default=dict
+    )  # {stroke_risk_score, next_30_day_projection, last_vitals_summary, daily_plan_items}
+
     # Admin
     admitted_at = Column(DateTime(timezone=True), default=utcnow)
     discharged_at = Column(DateTime(timezone=True), nullable=True)

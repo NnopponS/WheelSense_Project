@@ -28,7 +28,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShiftChecklistMePanel } from "@/components/shift-checklist/ShiftChecklistMePanel";
 import { ObserverNextActionHero } from "@/components/observer/ObserverNextActionHero";
-import { EaseAIFab } from "@/components/ai/EaseAIFab";
 import type {
   CareTaskOut,
   ListAlertsResponse,
@@ -328,7 +327,6 @@ export default function ObserverDashboardPage() {
 
   return (
     <div className="space-y-6 pb-6 animate-fade-in">
-      <EaseAIFab />
       {/* Header */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">

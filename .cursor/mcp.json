@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "pdf-reader": {
+      "command": "npx",
+      "args": ["-y", "@sylphx/pdf-reader-mcp"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

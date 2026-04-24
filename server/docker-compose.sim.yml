@@ -6,3 +6,34 @@ name: wheelsense-platform
 include:
   - path: docker-compose.core.yml
   - path: docker-compose.data-sim.yml
+
+services:
+  wheelsense-platform-server:
+    build:
+      context: .
+      args:
+        REQUIREMENTS_FILE: requirements-sim.txt
+    env_file:
+      - .env.simulator
+    environment:
+      - SIM_ENABLE_ALERTS=false
+      - SIM_ENABLE_ALERTS=${SIM_ENABLE_ALERTS:-false}
+  wheelsense-agent-runtime:
+    env_file:
+      - .env.simulator
+    environment:
+      INTERNAL_SERVICE_SECRET: sim_internal_secret_random
+
+  # Godot Simulation Game - HTML5 export served via nginx
+  wheelsense-game:
+    image: nginx:alpine
+    container_name: wheelsense-game
+    ports:
+      - "8080:80"
+    volumes:
+      - ../simulation/game/export:/usr/share/nginx/html:ro
+      - ../simulation/game/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /dev/null:/etc/nginx/conf.d/default.conf:ro
+    # The game connects to backend WebSocket at ws://localhost:8000/api/sim/game/ws
+    # When accessed via browser at http://localhost:8080
+    restart: unless-stopped

@@ -1,4 +1,4 @@
-# WheelSense thesis — rubric-style checklist (front matter + Chapters 1–3)
+# WheelSense thesis - rubric-style checklist (front matter + Chapters 1–3)
 
 Use this as a **self-audit** after edits. Target: **9/10** on clarity, correctness, rigor, completeness, and low duplication.
 

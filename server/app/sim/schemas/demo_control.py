@@ -72,6 +72,14 @@ class DemoRoomCaptureResponse(BaseModel):
     command_id: Optional[str] = None
 
 
+class DemoScenarioMetadata(BaseModel):
+    scenario_id: str
+    name: str
+    description: str
+    category: str
+    default_interval_ms: int = 2000
+
+
 class DemoScenarioResponse(BaseModel):
     scenario_id: str
     status: str
@@ -155,3 +163,10 @@ class SimulatorCommandIn(BaseModel):
 class SimulatorCommandOut(BaseModel):
     status: str = "ok"
     message: str
+
+
+class DeviceSimulationRequest(BaseModel):
+    """Request for device simulation operations."""
+    device_id: int = Field(ge=1)
+    action: Literal["set_offline", "set_online", "set_battery", "disconnect", "reconnect"]
+    battery_level: int | None = Field(default=None, ge=0, le=100)

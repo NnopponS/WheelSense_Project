@@ -1,0 +1,62 @@
+---
+description: WheelSense thesis LaTeX master rule (structure, TU format, style, compile flow)
+alwaysApply: true
+---
+
+# WheelSense thesis (LaTeX)
+
+- **Canonical faculty template (structure/style reference):** [`Thesis/Example/reporttemplate-0.0.1/`](Thesis/Example/reporttemplate-0.0.1/) (TU ECE `reporttemplate` v0.0.1). Prefer matching layout, front-matter patterns, and `TUthesis`/`mystyle` conventions to that tree unless a documented exception is required.
+- **Submission PDF source:** build from [`Thesis/latex/thesis.tex`](Thesis/latex/thesis.tex) only.
+- **Body chapters:** keep thesis body in [`Thesis/latex/content/chapters/`](Thesis/latex/content/chapters/) (`chapter1.tex` … `chapter5.tex`).
+- **Do not reintroduce template chapter:** never add `\include{example}` or merge old sample chapter content into `thesis.tex`.
+- **Cookbook separation:** [`Thesis/latex/doc/latex-writing-guide-chapter.tex`](Thesis/latex/doc/latex-writing-guide-chapter.tex) is reference/demo material, not thesis body.
+- **Cookbook standalone build:** compile [`Thesis/latex/latex-writing-guide.tex`](Thesis/latex/latex-writing-guide.tex) separately from [`Thesis/latex/`](Thesis/latex/).
+- **Metadata + bibliography:** project metadata in [`Thesis/latex/meta/info.tex`](Thesis/latex/meta/info.tex), references in [`Thesis/latex/bib/refs.bib`](Thesis/latex/bib/refs.bib).
+
+## TU thesis formatting baseline
+
+- **Paper size:** A4.
+- **Margins:** top 1.5", left 1.5", right 1", bottom 1".
+- **Default body font:** TH Sarabun New 16pt (or Times New Roman 12pt for English-thesis flow).
+- **Line spacing:** 1.0 for TH Sarabun New content; 1.5 when using Times New Roman flow.
+- **Paragraph indent:** 0.8".
+- **Body alignment:** justified; avoid manual hard line breaks.
+- **Numbers:** use Arabic numerals consistently.
+
+## Page numbering policy
+
+- Preliminary section pages (e.g. abstract, acknowledgements, table of contents) use Arabic numbers in parentheses, e.g. `(1)`.
+- Main body pages use Arabic numbers without parentheses.
+- Page numbers stay top-right with consistent offsets.
+- Divider pages (e.g. part/appendix title pages) are not counted and do not show page numbers.
+
+## Chapter and heading discipline
+
+- Start each chapter on a new page.
+- Keep heading hierarchy consistent: `\section` -> `\subsection` -> deeper levels only when needed.
+- Do not hard-code figure/table/equation numbers in prose; use labels and `\ref`.
+- Keep figure and table numbering chapter-scoped through LaTeX auto-numbering.
+
+## Figures, tables, citations
+
+- Keep figure/table captions formal and precise; explain what is shown, not result discussion text.
+- Place chapter-specific figure files in chapter folders under `latex/assets/figures/`.
+- For Chapter 1, keep files under `latex/assets/figures/chapter1/` to match existing `\IfFileExists` patterns.
+- Use one citation style consistently across the thesis once chosen by program/faculty.
+- Add all cited sources to [`latex/bib/refs.bib`](latex/bib/refs.bib); avoid manual fake numbering.
+
+## Writing style (Thai thesis)
+
+- Use formal academic Thai; keep technical English terms where they are clearer than Thai coinages (e.g. RSSI fingerprinting, KNN, MCP, BLE beacon).
+- Keep claims evidence-based and avoid overclaiming beyond presented data.
+- In `enumerate`, avoid extra vertical space between items while preserving normal paragraph spacing around lists.
+- In Chapter 1, retain local list-spacing control via `\begingroup...\setlist[enumerate]{itemsep=0pt, parsep=0pt,...}\endgroup`.
+
+## Compile and validation workflow
+
+- Build from `latex/` using the project sequence (XeLaTeX + biber + XeLaTeX passes).
+- After significant edits, verify:
+  - no undefined references,
+  - no missing citations,
+  - no missing figure files,
+  - chapter include order remains 1-5 in `thesis.tex`.

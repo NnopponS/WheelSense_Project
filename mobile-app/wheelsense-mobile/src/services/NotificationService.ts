@@ -5,10 +5,13 @@
 
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { Platform } from 'react-native';
+import { Platform, Vibration } from 'react-native';
 import { useAppStore } from '../store/useAppStore';
 import { Alert, WorkflowTask, UserRole } from '../types';
 import { alertsInboxUrl } from '../utils/alertsInboxUrl';
+
+// Emergency vibration pattern: 3 short bursts
+const EMERGENCY_VIBRATION_PATTERN = [0, 400, 200, 400, 200, 400];
 
 // ==================== NOTIFICATION CONFIG ====================
 
@@ -104,6 +107,28 @@ class NotificationService {
       },
     ]);
 
+    // Dispatch request category: observer can Accept or Decline from notification
+    await Notifications.setNotificationCategoryAsync('dispatch_request', [
+      {
+        identifier: 'dispatch_accept',
+        buttonTitle: 'Accept',
+        options: {
+          isDestructive: false,
+          isAuthenticationRequired: false,
+          opensAppToForeground: false,
+        },
+      },
+      {
+        identifier: 'dispatch_decline',
+        buttonTitle: 'Decline',
+        options: {
+          isDestructive: true,
+          isAuthenticationRequired: false,
+          opensAppToForeground: false,
+        },
+      },
+    ]);
+
     await Notifications.setNotificationCategoryAsync('task', [
       {
         identifier: 'complete',
@@ -160,6 +185,16 @@ class NotificationService {
     const data = notification.request.content.data;
 
     switch (actionIdentifier) {
+      case 'dispatch_accept':
+        if (data?.alertId) {
+          this.handleDispatchAccept(data.alertId);
+        }
+        break;
+      case 'dispatch_decline':
+        if (data?.alertId) {
+          this.handleDispatchDecline(data.alertId);
+        }
+        break;
       case 'acknowledge':
         if (data?.alertId) {
           this.handleAcknowledgeAlert(data.alertId);
@@ -178,6 +213,28 @@ class NotificationService {
       case 'dismiss':
         // Just dismiss the notification
         break;
+    }
+  }
+
+  private async handleDispatchAccept(alertId: number): Promise<void> {
+    try {
+      const { API } = await import('./APIService');
+      await API.post(`/sim/game/dispatch/accept`, {
+        alert_id: alertId,
+        observer_user_id: useAppStore.getState().user?.id,
+      });
+      console.log('[Notifications] Dispatch accepted for alert:', alertId);
+    } catch (error) {
+      console.error('[Notifications] Failed to accept dispatch:', error);
+    }
+  }
+
+  private async handleDispatchDecline(alertId: number): Promise<void> {
+    try {
+      console.log('[Notifications] Dispatch declined for alert:', alertId);
+      // No backend call needed for decline — backend timeout handles re-routing
+    } catch (error) {
+      console.error('[Notifications] Failed to decline dispatch:', error);
     }
   }
 
@@ -214,6 +271,34 @@ class NotificationService {
   }
 
   // ==================== SCHEDULE NOTIFICATIONS ====================
+
+  async scheduleDispatchNotification(
+    alertId: number,
+    patientName: string,
+    roomName: string
+  ): Promise<void> {
+    // Trigger emergency vibration immediately
+    Vibration.vibrate(EMERGENCY_VIBRATION_PATTERN, false);
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `🚨 DISPATCH REQUEST`,
+        body: `${patientName} needs help in ${roomName}. Accept to dispatch nurse.`,
+        data: {
+          type: 'dispatch_request',
+          alertId,
+          patientName,
+          roomName,
+        },
+        categoryIdentifier: 'dispatch_request',
+        priority: Notifications.AndroidNotificationPriority.MAX,
+        sound: Platform.OS === 'android' ? 'default' : 'default',
+        vibrationPattern:
+          Platform.OS === 'android' ? EMERGENCY_VIBRATION_PATTERN : undefined,
+      },
+      trigger: null,
+    });
+  }
 
   async scheduleAlertNotification(alert: Alert): Promise<void> {
     const title = `🚨 ${alert.severity.toUpperCase()}: ${alert.title}`;
@@ -351,6 +436,8 @@ export function useNotifications() {
     isEnabled: store.notificationsEnabled,
     initialize: () => NotificationManager.initialize(),
     scheduleAlert: (alert: Alert) => NotificationManager.scheduleAlertNotification(alert),
+    scheduleDispatch: (alertId: number, patientName: string, roomName: string) =>
+      NotificationManager.scheduleDispatchNotification(alertId, patientName, roomName),
     scheduleTask: (task: WorkflowTask) => NotificationManager.scheduleTaskNotification(task),
     cancelAll: () => NotificationManager.cancelAllNotifications(),
     clearBadge: () => NotificationManager.clearBadge(),

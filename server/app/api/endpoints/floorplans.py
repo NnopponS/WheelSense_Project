@@ -190,6 +190,38 @@ async def capture_room_snapshot(
     if not room.node_device_id:
         raise HTTPException(status_code=400, detail="Room has no mapped node device")
     result = await dm.camera_check_snapshot(db, ws.id, room.node_device_id)
+    
+    # Save captured image to simulation/Node-capture directory
+    import asyncio
+    import shutil
+    from app.services.camera import camera_service
+    from sqlalchemy import select
+    
+    # Wait a moment for the capture to complete
+    await asyncio.sleep(2)
+    
+    # Get the latest photo for this device
+    query = select(camera_service.model).where(
+        camera_service.model.workspace_id == ws.id,
+        camera_service.model.device_id == room.node_device_id
+    ).order_by(camera_service.model.timestamp.desc()).limit(1)
+    
+    photo_result = await db.execute(query)
+    photo = photo_result.scalars().first()
+    
+    if photo and photo.filepath and Path(photo.filepath).exists():
+        # Create simulation/Node-capture directory if it doesn't exist
+        sim_dir = Path(__file__).parent.parent.parent.parent.parent / "simulation" / "Node-capture"
+        sim_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate filename based on room name (e.g., Room-401.png, Room402.png)
+        room_name_clean = room.name.replace(" ", "").replace("/", "-")
+        filename = f"Room{room_name_clean}.png"
+        dest_path = sim_dir / filename
+        
+        # Copy the captured image to simulation directory
+        shutil.copy2(photo.filepath, dest_path)
+    
     return RoomCaptureOut(
         room_id=room.id,
         node_device_id=room.node_device_id,

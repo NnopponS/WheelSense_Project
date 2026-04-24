@@ -2,7 +2,7 @@
 """Seed WheelSense with the 2026-04-20 redesign test cohort.
 
 Staff (5 users total, one password for all): admin, head_nurse, supervisor, observer, observer2.
-Patients (5): Emika, Somchai, Rattana, Krit, Wichai (user-provided profiles).
+Patients (4): Emika, Rattana, Krit, Wichai (user-provided profiles).
 
 Idempotent: safe to re-run. Pass --reset to wipe the workspace first.
 
@@ -45,6 +45,7 @@ from app.models import (
     PatientContact,
     PatientDeviceAssignment,
     Room,
+    ShiftChecklistUserTemplate,
     User,
     Workspace,
 )
@@ -69,8 +70,8 @@ STAFF: list[dict] = [
     {
         "role": "head_nurse",
         "username": "headnurse",
-        "first_name": "ศิริพร",
-        "last_name": "หัวหน้าวอร์ด",
+        "first_name": "Saranya",
+        "last_name": "Jaidee",
         "employee_code": "HN-001",
         "department": "Nursing",
         "phone": "081-100-0002",
@@ -79,8 +80,8 @@ STAFF: list[dict] = [
     {
         "role": "supervisor",
         "username": "supervisor",
-        "first_name": "มานะ",
-        "last_name": "เวชกิจ",
+        "first_name": "Mongkol",
+        "last_name": "Srisuwan",
         "employee_code": "SV-001",
         "department": "Clinical Specialist",
         "phone": "081-100-0003",
@@ -89,8 +90,8 @@ STAFF: list[dict] = [
     {
         "role": "observer",
         "username": "observer1",
-        "first_name": "สุดา",
-        "last_name": "ใจดี",
+        "first_name": "Janjira",
+        "last_name": "Phongsuwan",
         "employee_code": "OB-001",
         "department": "Nursing",
         "phone": "081-100-0004",
@@ -99,8 +100,8 @@ STAFF: list[dict] = [
     {
         "role": "observer",
         "username": "observer2",
-        "first_name": "วิมล",
-        "last_name": "รักษ์ไทย",
+        "first_name": "Dawit",
+        "last_name": "Rattanapong",
         "employee_code": "OB-002",
         "department": "Nursing",
         "phone": "081-100-0005",
@@ -114,8 +115,8 @@ STAFF: list[dict] = [
 PATIENTS: list[dict] = [
     {
         # #55902 — Wheelchair user, Spinal Cord Injury
-        "first_name": "เอมิกา",
-        "last_name": "เจริญผล",
+        "first_name": "Emika",
+        "last_name": "Charoenpho",
         "nickname": "Emika",
         "gender": "female",
         "date_of_birth": date(1978, 8, 12),
@@ -144,42 +145,9 @@ PATIENTS: list[dict] = [
         },
     },
     {
-        # #77314 — Wheelchair user, Amputee
-        "first_name": "สมชาย",
-        "last_name": "รักษาดี",
-        "nickname": "Somchai",
-        "gender": "male",
-        "date_of_birth": date(1961, 11, 3),
-        "height_cm": 180,
-        "weight_kg": 88,
-        "blood_type": "B-",
-        "medical_conditions": [
-            {"condition": "Type 2 Diabetes", "severity": "medium"},
-            {"condition": "Peripheral Artery Disease", "severity": "medium"},
-        ],
-        "allergies": [],
-        "medications": [
-            {"name": "Metformin", "dosage": "1000mg", "frequency": "2x daily"},
-            {"name": "Gabapentin", "dosage": "300mg", "frequency": "3x daily"},
-        ],
-        "past_surgeries": [
-            {"procedure": "Right Below-Knee Amputation", "year": 2023}
-        ],
-        "care_level": "special",
-        "mobility_type": "wheelchair",
-        "current_mode": "wheelchair",
-        "notes": "Patient ID 77314. Elevated BP 135/85. Gait training with prosthetic. Room 305.",
-        "room_name": "Room 305",
-        "emergency_contact": {
-            "name": "Alicia Johnson",
-            "relationship": "Daughter",
-            "phone": "+1 555 987 6543",
-        },
-    },
-    {
         # #44291 — Wheelchair user, Memory Care, high wandering risk
-        "first_name": "รัตนา",
-        "last_name": "ศรีสุวรรณ",
+        "first_name": "Rattana",
+        "last_name": "Srisuwan",
         "nickname": "Rattana",
         "gender": "female",
         "date_of_birth": date(1948, 2, 25),
@@ -211,8 +179,8 @@ PATIENTS: list[dict] = [
     },
     {
         # #99105 — Ambulatory, normal mobility
-        "first_name": "กฤษณ์",
-        "last_name": "วงศ์วัฒนา",
+        "first_name": "Krit",
+        "last_name": "Wongwattana",
         "nickname": "Krit",
         "gender": "male",
         "date_of_birth": date(1968, 7, 8),
@@ -242,8 +210,8 @@ PATIENTS: list[dict] = [
     },
     {
         # #33048 — Bedridden, ICU/High dependency
-        "first_name": "วิชัย",
-        "last_name": "ภัทรพงศ์",
+        "first_name": "Wichai",
+        "last_name": "Phattharaphong",
         "nickname": "Wichai",
         "gender": "male",
         "date_of_birth": date(1939, 12, 12),
@@ -275,7 +243,7 @@ PATIENTS: list[dict] = [
 ]
 
 # Rooms to ensure exist
-ROOM_NAMES = ["Room 112", "Room 210", "Room 305", "Room 415", "Room 501"]
+ROOM_NAMES = ["Room 112", "Room 210", "Room 415", "Room 501"]
 
 
 @dataclass
@@ -598,6 +566,74 @@ async def seed_patients(
     return out
 
 
+# ────────────────────────────────────────────────────────────────────────────
+# Shift checklist templates
+# ────────────────────────────────────────────────────────────────────────────
+_CHECKLIST_BY_ROLE: dict[str, list[dict]] = {
+    "head_nurse": [
+        {"id": "1", "label_key": "ลงเวลาเข้ากะ", "category": "shift"},
+        {"id": "2", "label_key": "ตรวจอุปกรณ์ฉุกเฉินทั้งหมด", "category": "shift"},
+        {"id": "3", "label_key": "ทบทวนรายชื่อผู้ป่วยที่รับผิดชอบ", "category": "patient"},
+        {"id": "4", "label_key": "ห้อง 210 – ตรวจวัดสัญญาณชีพ Emika", "category": "room"},
+        {"id": "5", "label_key": "ห้อง 112 – ช่วยมื้ออาหาร Rattana", "category": "room"},
+        {"id": "6", "label_key": "ห้อง 415 – แจกยา Krit", "category": "room"},
+        {"id": "7", "label_key": "ห้อง 501 – ตรวจสภาพผู้ป่วย Wichai", "category": "room"},
+        {"id": "8", "label_key": "บันทึกการสังเกตอาการประจำวัน", "category": "patient"},
+        {"id": "9", "label_key": "ส่งมอบงานกะต่อไป", "category": "shift"},
+    ],
+    "supervisor": [
+        {"id": "1", "label_key": "ลงเวลาเข้ากะ", "category": "shift"},
+        {"id": "2", "label_key": "ตรวจสอบรายงานสรุปกะก่อนหน้า", "category": "shift"},
+        {"id": "3", "label_key": "ประชุมทีมประจำวัน", "category": "shift"},
+        {"id": "4", "label_key": "ตรวจสอบสต็อกยาและวัสดุสิ้นเปลือง", "category": "room"},
+        {"id": "5", "label_key": "อนุมัติแผนการดูแลผู้ป่วย", "category": "patient"},
+        {"id": "6", "label_key": "สรุปรายงานประจำวัน", "category": "shift"},
+        {"id": "7", "label_key": "ส่งมอบงานกะต่อไป", "category": "shift"},
+    ],
+    "observer": [
+        {"id": "1", "label_key": "ลงเวลาเข้ากะ", "category": "shift"},
+        {"id": "2", "label_key": "ตรวจสอบอุปกรณ์รถเข็น Emika", "category": "room"},
+        {"id": "3", "label_key": "ตรวจสอบอุปกรณ์รถเข็น Rattana", "category": "room"},
+        {"id": "4", "label_key": "สังเกตอาการและบันทึกอาการผู้ป่วย Krit", "category": "patient"},
+        {"id": "5", "label_key": "สังเกตอาการและบันทึกอาการผู้ป่วย Wichai", "category": "patient"},
+        {"id": "6", "label_key": "ทำความสะอาดห้องพักผู้ป่วย", "category": "room"},
+        {"id": "7", "label_key": "อัปเดตบันทึกการดูแลรายบุคคล", "category": "patient"},
+        {"id": "8", "label_key": "ส่งมอบงานกะต่อไป", "category": "shift"},
+    ],
+}
+
+
+async def seed_shift_checklists(
+    session: AsyncSession,
+    ws_id: int,
+    staff: dict[str, tuple[User, CareGiver | None]],
+) -> None:
+    """Upsert ShiftChecklistUserTemplate for every non-admin staff member."""
+    for username, (user, caregiver) in staff.items():
+        if caregiver is None:
+            continue
+        items = _CHECKLIST_BY_ROLE.get(caregiver.role)
+        if not items:
+            continue
+        payload = [{**item, "checked": False} for item in items]
+        q = await session.execute(
+            select(ShiftChecklistUserTemplate).where(
+                ShiftChecklistUserTemplate.workspace_id == ws_id,
+                ShiftChecklistUserTemplate.user_id == user.id,
+            )
+        )
+        row = q.scalar_one_or_none()
+        if row is None:
+            session.add(ShiftChecklistUserTemplate(
+                workspace_id=ws_id,
+                user_id=user.id,
+                items=payload,
+            ))
+        else:
+            row.items = payload
+    await session.commit()
+
+
 async def assign_caregivers_to_patients(
     session: AsyncSession,
     ws_id: int,
@@ -646,6 +682,7 @@ async def run(workspace_name: str, reset: bool) -> None:
         staff = await seed_staff(session, ws.id)
         patients = await seed_patients(session, ws.id, rooms)
         await assign_caregivers_to_patients(session, ws.id, staff, patients)
+        await seed_shift_checklists(session, ws.id, staff)
 
     print("───────────────────────────────────────────────────────────")
     print(f"Workspace   : {workspace_name}")

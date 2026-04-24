@@ -723,6 +723,89 @@ async def control_room_smart_device(
 
 
 @mcp.tool(
+    name="dispatch_caregiver_to_room",
+    description="Send a game character (caregiver/nurse) to a specific room. Used for sim dispatch flow.",
+    annotations=mcp_types.ToolAnnotations(
+        title="Dispatch Caregiver to Room",
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+    ),
+    structured_output=True,
+)
+async def dispatch_caregiver_to_room(
+    character_name: str,
+    room_name: str,
+) -> dict[str, Any]:
+    """
+    Send a caregiver character to a room in the simulator.
+    character_name: e.g., "female_nurse", "male_nurse", "observer_a", "observer_b"
+    room_name: e.g., "Room401", "Room403"
+    """
+    actor = require_actor_context()
+    _require_scope("sim.command")
+    from app.sim.services.game_bridge import broadcast_go_to_room
+    await broadcast_go_to_room(
+        actor.workspace_id,
+        character=character_name,
+        room=room_name,
+    )
+    return {"dispatched": True, "character": character_name, "room": room_name}
+
+
+@mcp.tool(
+    name="get_simulated_time",
+    description="Get the current simulated clock time (for sim mode). Returns ISO8601 string.",
+    annotations=mcp_types.ToolAnnotations(
+        title="Get Simulated Time",
+        readOnlyHint=True,
+        destructiveHint=False,
+        idempotentHint=True,
+    ),
+    structured_output=True,
+)
+async def get_simulated_time() -> dict[str, Any]:
+    actor = require_actor_context()
+    _require_scope("sim.read")
+    from app.sim.services.sim_clock import sim_clock
+    now = sim_clock.now()
+    return {
+        "simulated_time": now.isoformat(),
+        "offset_minutes": sim_clock.offset_minutes,
+        "speed": sim_clock.speed,
+    }
+
+
+@mcp.tool(
+    name="set_simulated_time",
+    description="Set the simulated clock offset or speed. Use for time-shift scenarios.",
+    annotations=mcp_types.ToolAnnotations(
+        title="Set Simulated Time",
+        readOnlyHint=False,
+        destructiveHint=False,
+        idempotentHint=False,
+    ),
+    structured_output=True,
+)
+async def set_simulated_time(
+    offset_minutes: int | None = None,
+    speed: float | None = None,
+) -> dict[str, Any]:
+    actor = require_actor_context()
+    _require_scope("sim.command")
+    from app.sim.services.sim_clock import sim_clock
+    if offset_minutes is not None:
+        sim_clock.set_offset(offset_minutes)
+    if speed is not None:
+        sim_clock.set_speed(speed)
+    return {
+        "simulated_time": sim_clock.now().isoformat(),
+        "offset_minutes": sim_clock.offset_minutes,
+        "speed": sim_clock.speed,
+    }
+
+
+@mcp.tool(
     name="list_workflow_tasks",
     description="List visible workflow tasks for the acting user.",
     annotations=mcp_types.ToolAnnotations(
