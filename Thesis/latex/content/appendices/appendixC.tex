@@ -1,45 +1,98 @@
 %%================================================
-%% Appendix C — MCP tool registry
+%% Appendix C - field deployment photos (was Appendix B)
 %%================================================
-\chapter{ภาคผนวก ค: ทะเบียนเครื่องมือ MCP และการจัดหมวดความสามารถของระบบ}
-\label{app:mcp_tool_registry}
+\chapter[ภาพประกอบการทดลองและการเข้าพื้นที่บ้านพักคนชรา]{\texorpdfstring{ภาคผนวก ค\\ภาพประกอบการทดลองและการเข้าพื้นที่บ้านพักคนชรา}{Appendix C: Field Deployment Photos}}
+\label{app:field_photos_c}
 
-ภาคผนวกนี้สรุปทะเบียนเครื่องมือ MCP ของระบบ WheelSense ตาม implementation จริงในฝั่งเซิร์ฟเวอร์ เพื่อรองรับการตีความผลด้าน AI assistant และ MCP ในบทที่~\ref{chapter4} และข้อเสนอแนะในบทที่~\ref{chapter5}
+ภาคผนวกนี้รวบรวมภาพถ่ายการดำเนินการทดลองในสภาพแวดล้อมจริงที่บ้านพักคนชราวาสนะเวศม์ เพื่อยืนยันว่าการติดตั้งอุปกรณ์ การสำรวจสัญญาณ และการใช้งานแดชบอร์ดโดยผู้ดูแลเกิดขึ้นจริง ไม่ใช่การจำลองเชิงบรรยายเท่านั้น
 
-\section*{ที่มาของทะเบียนเครื่องมือ}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/อาคารและพื้นที่บริการหลักของบ้านพักคนชราวาสนะเวศม์.jpg}
+    \caption{อาคารและพื้นที่บริการหลักของบ้านพักคนชราวาสนะเวศม์}
+    \label{fig:appC_building}
+\end{figure}
 
-ทะเบียนเครื่องมือหลักของระบบประกาศไว้ในตัวแปร \texttt{\_WORKSPACE\_TOOL\_REGISTRY} ของฝั่ง MCP server ซึ่งทำหน้าที่เป็นแหล่งอ้างอิงเดียวของเครื่องมือที่ agent runtime สามารถเรียกใช้ได้จริง การมี registry กลางเช่นนี้ช่วยให้ระบบควบคุมทั้งการเปิดเผยความสามารถ การกำหนด role allowlist และการตรวจสอบการเรียกใช้เครื่องมือได้จากจุดเดียว
+\vspace{0.5cm}
 
-\section*{การจัดหมวดเครื่องมือระดับโดเมน}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/การติดตั้งNodeในอาคาร.jpg}
+    \caption{การติดตั้งโหนดเซ็นเซอร์ภายในอาคาร}
+    \label{fig:appC_node_install1}
+\end{figure}
 
-จากเอกสารสถาปัตยกรรมของเซิร์ฟเวอร์ เครื่องมือ MCP สามารถจัดกลุ่มตามโดเมนการใช้งานได้ดังนี้
+\vspace{0.5cm}
 
-\begin{itemize}
-    \item System เช่น \texttt{get\_system\_health} และ \texttt{get\_current\_user\_context}
-    \item Workspace เช่น \texttt{list\_workspaces}, \texttt{list\_facilities}, และ \texttt{get\_workspace\_analytics}
-    \item Patients เช่น \texttt{list\_visible\_patients}, \texttt{get\_patient\_details}, \texttt{update\_patient\_room}, และ \texttt{create\_patient\_record}
-    \item Devices เช่น \texttt{list\_devices}, \texttt{send\_device\_command}, และ \texttt{trigger\_camera\_photo}
-    \item Alerts เช่น \texttt{list\_active\_alerts}, \texttt{acknowledge\_alert}, และ \texttt{resolve\_alert}
-    \item Rooms เช่น \texttt{list\_rooms}, \texttt{get\_floorplan\_layout}, และ \texttt{control\_room\_smart\_device}
-    \item Workflow เช่น \texttt{list\_workflow\_tasks}, \texttt{list\_workflow\_schedules}, \texttt{create\_workflow\_task}, และ \texttt{update\_workflow\_task\_status}
-    \item Messaging เช่น \texttt{send\_message} และ \texttt{get\_message\_recipients}
-    \item AI Settings เช่น \texttt{get\_ai\_runtime\_summary}, \texttt{get\_ai\_settings}, และ \texttt{update\_ai\_settings}
-\end{itemize}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/การติดตั้งNodeในอาคาร2.jpg}
+    \caption{การติดตั้งโหนดเซ็นเซอร์ภายในอาคาร (มุมมองเพิ่มเติม)}
+    \label{fig:appC_node_install2}
+\end{figure}
 
-นอกเหนือจากกลุ่มหลักข้างต้น registry ยังขยายไปครอบคลุมโดเมนย่อยด้าน caregiver, medications, support tickets, service requests, shift checklist, calendar, user management, vitals, alerts เชิงสุขภาพ, และ audit trail ทำให้ฝั่ง AI สามารถเข้าถึงความสามารถของแพลตฟอร์มในระดับที่ลึกกว่าการอ่านข้อมูลสถานะอย่างเดียว
+\vspace{0.5cm}
 
-\section*{เครื่องมืออ่านอย่างเดียวและเครื่องมือที่มีผลข้างเคียง}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/การติดตั้งอุปกรณ์ที่เก้าอี้รถเข็น.jpg}
+    \caption{การติดตั้งอุปกรณ์ M5StickC บนเก้าอี้รถเข็นผู้ใช้จริง}
+    \label{fig:appC_wheelchair_install}
+\end{figure}
 
-ฝั่ง agent runtime แยกเครื่องมือที่มีผลข้างเคียงออกจากเครื่องมืออ่านอย่างเดียวเพื่อใช้ประกอบการตัดสินใจในขั้น propose ตัวอย่างเครื่องมือที่ถือเป็น write หรือ side-effect ได้แก่ \texttt{update\_patient\_room}, \texttt{create\_patient\_record}, \texttt{acknowledge\_alert}, \texttt{resolve\_alert}, \texttt{trigger\_camera\_photo}, \texttt{control\_room\_smart\_device}, \texttt{create\_workflow\_task}, \texttt{update\_workflow\_task\_status}, \texttt{send\_message}, และ \texttt{send\_device\_command}
+\vspace{0.5cm}
 
-การแยกประเภทดังกล่าวมีความสำคัญต่อความปลอดภัยของระบบ เพราะช่วยบังคับให้เส้นทาง AI assistant ใช้รูปแบบ propose--confirm--execute อย่างมีเหตุผล โดยเฉพาะกับเครื่องมือที่เปลี่ยนสถานะผู้ป่วย สถานะ alert หรือสถานะอุปกรณ์จริง
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/ผู้สูงอายุในบ้านพักคนชรา.jpg}
+    \caption{ผู้สูงอายุในบ้านพักคนชราวาสนะเวศม์}
+    \label{fig:appC_elderly_home}
+\end{figure}
 
-\section*{ความสัมพันธ์กับ prompt, resource และ scope}
+\vspace{0.5cm}
 
-เครื่องมือ MCP ไม่ได้ทำงานโดดเดี่ยว แต่ถูกควบคุมด้วย prompt ตามบทบาท resource ของระบบ และ scope ที่ได้จากบริบทผู้ใช้ เอกสารสถาปัตยกรรมของเซิร์ฟเวอร์ระบุ prompt หลัก 6 กลุ่ม เช่น \texttt{admin-operations}, \texttt{clinical-triage}, \texttt{observer-shift-assistant}, \texttt{patient-support}, \texttt{device-control}, และ \texttt{facility-ops} พร้อม resource หลัก 4 รายการ ได้แก่ current-user, visible-patients, active-alerts, และ rooms
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/ผู้สูงอายุใช้งานอุปกรณ์.jpg}
+    \caption{ผู้สูงอายุใช้งานอุปกรณ์ในสภาพแวดล้อมจริง}
+    \label{fig:appC_elderly_usage}
+\end{figure}
 
-เมื่อประกอบกับ MCP scope ระดับบทบาท เช่น \texttt{patients.read}, \texttt{alerts.manage}, \texttt{devices.command}, \texttt{room\_controls.use}, และ \texttt{workflow.write} จะทำให้เครื่องมือเดียวกันมีพฤติกรรมเชิงอนุญาตต่างกันไปตาม actor context ที่ backend มอบให้ในขณะเรียกใช้จริง
+\vspace{0.5cm}
 
-\section*{ความสำคัญต่อการประเมินในเล่ม}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/บอร์ดการทำงานแบบเขียนด้วยมือ1.jpg}
+    \caption{บอร์ดการทำงานแบบเขียนด้วยมือ (ค1)}
+    \label{fig:appC_whiteboard1}
+\end{figure}
 
-ผลการประเมิน AI assistant ในบทที่~\ref{chapter4} จะตีความได้ถูกต้องก็ต่อเมื่อผู้อ่านเข้าใจว่า ``การเลือกเครื่องมือถูกต้อง'' หมายถึงการเลือกจาก registry ที่ถูกจำกัดไว้ตามบทบาทและ scope ไม่ใช่จากรายการเครื่องมือที่เปิดกว้างแบบไม่มีเงื่อนไข ภาคผนวกนี้จึงทำหน้าที่เป็นคำอธิบายโครงสร้างความสามารถที่ AI assistant มองเห็นจริง และช่วยให้การวิเคราะห์ proxy agreement, text similarity, และ latency มีกรอบอ้างอิงทางเทคนิคที่ชัดเจน
+\vspace{0.5cm}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/บอร์ดการทำงานแบบเขียนด้วยมือ2.jpg}
+    \caption{บอร์ดการทำงานแบบเขียนด้วยมือ (ค2)}
+    \label{fig:appC_whiteboard2}
+\end{figure}
+
+\vspace{0.5cm}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/การสอนวิธีใช้รานระบบและขอข้อมูลฟีดแบ็คจากผู้ดูแล.jpg}
+    \caption{การสอนวิธีใช้งานระบบและขอข้อมูลฟีดแบ็คจากผู้ดูแล}
+    \label{fig:appC_training_feedback}
+\end{figure}
+
+\vspace{0.5cm}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{image_ref/ถ่ายรวมกับบ้านผู้สูงอายุและผู้ดูแล.jpg}
+    \caption{ภาพหมู่ทีมวิจัยกับผู้สูงอายุและผู้ดูแล}
+    \label{fig:appC_group_photo}
+\end{figure}
+
+\vspace{0.5cm}
+

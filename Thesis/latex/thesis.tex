@@ -93,14 +93,17 @@
 \include{front/6_abstract_en}
 \include{front/7_ack_th}
 \include{front/8_toc_lof_lot_lol}
-\IfAddAcronyms{
-	% ใช้ \input เพื่อไม่ให้ซ้อน \clearpage ของ \include กับหน้า \chapter* จนเกิดหน้าว่างก่อนรายการสัญลักษณ์
-	\input{front/9_acronyms}
-}
 %%=================================================
 %% Chapters
 %%=================================================
 \mainmatter
+
+%% สัญลักษณ์และคำย่อ (moved to page 16)
+\IfAddAcronyms{
+	\cleardoublepage
+	\setcounter{page}{16}
+	\input{front/9_acronyms}
+}
 
 %% Edit the files content/chapters/chapter1.tex, content/chapters/chapter2.tex, ...
 
@@ -112,16 +115,16 @@
 %% Literature Review
 \include{content/chapters/chapter2}
 
-%% การดำเนินงาน / วิธีวิจัย
+%% วิธีการศึกษา
 %% Methodology
 \include{content/chapters/chapter3}
 
-%% ผลการดำเนินงาน
-%% Finding and Results
+%% ผลการวิจัย
+%% Results
 \include{content/chapters/chapter4}
 
-%% สรุปโครงงาน
-%% Conclusions and Recommendations
+%% สรุปผลการวิจัย และข้อเสนอแนะ
+%% Conclusions and recommendations
 \include{content/chapters/chapter5}
 
 %% LaTeX writing examples (lists, figures, cites): compile separately via latex-writing-guide.tex
@@ -142,9 +145,6 @@
 	\include{content/appendices/appendixA}
 	\include{content/appendices/appendixB}
 	\include{content/appendices/appendixC}
-	\include{content/appendices/appendixD}
-	\include{content/appendices/appendixE}
-	\include{content/appendices/appendixF}
 }
 
 \end{document}

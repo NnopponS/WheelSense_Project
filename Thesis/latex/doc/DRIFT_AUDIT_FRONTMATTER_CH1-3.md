@@ -1,4 +1,4 @@
-# Drift audit — front matter + Chapters 1–3 (rubric push)
+# Drift audit - front matter + Chapters 1–3 (rubric push)
 
 **Purpose:** Map planned rubric phases to repository artifacts and record **remaining debt** so future edits do not silently diverge from `server/AGENTS.md`, bibliography hygiene, or deferred scope.
 
