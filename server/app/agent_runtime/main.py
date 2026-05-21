@@ -39,6 +39,7 @@ async def internal_agent_propose(
         messages=body.messages,
         conversation_id=body.conversation_id,
         page_patient_id=body.page_patient_id,
+        page_context=body.page_context,
     )
 
 

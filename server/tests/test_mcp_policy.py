@@ -11,7 +11,7 @@ Tests for MCP authorization policies including:
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -33,7 +33,10 @@ from app.mcp.server import (
     _current_actor_summary,
     _require_scope,
     acknowledge_alert,
+    get_device_details,
+    get_patient_health_analysis,
     get_patient_details,
+    list_devices,
     list_visible_patients,
     resolve_alert,
     update_patient_room,
@@ -41,7 +44,8 @@ from app.mcp.server import (
 from app.models.activity import Alert
 from app.models.caregivers import CareGiver, CareGiverPatientAccess
 from app.models.core import Device, Room, Workspace
-from app.models.patients import Patient
+from app.models.patients import Patient, PatientContact
+from app.models.telemetry import IMUTelemetry
 from app.models.users import User
 from app.services.activity import alert_service
 
@@ -422,6 +426,158 @@ async def test_mcp_write_rejects_caller_supplied_workspace_id(
 
 
 @pytest.mark.asyncio
+async def test_mcp_patient_details_exposes_complete_profile_contract(
+    db_session: AsyncSession,
+    policy_test_workspace: Workspace,
+    policy_admin_user: User,
+):
+    """Patient detail MCP payload should be rich enough for response cards and follow-ups."""
+    room = Room(
+        workspace_id=policy_test_workspace.id,
+        name="MCP Room",
+        room_type="bedroom",
+    )
+    db_session.add(room)
+    await db_session.flush()
+    patient = Patient(
+        workspace_id=policy_test_workspace.id,
+        first_name="Mcp",
+        last_name="Profile",
+        date_of_birth=date(1945, 5, 6),
+        height_cm=160,
+        weight_kg=64,
+        blood_type="A+",
+        medical_conditions=["diabetes"],
+        allergies=["latex"],
+        medications=[{"name": "Metformin"}],
+        past_surgeries=[{"procedure": "Appendectomy"}],
+        care_level="special",
+        mobility_type="walker",
+        current_mode="wheelchair",
+        notes="MCP clinical note",
+        room_id=room.id,
+    )
+    staff = CareGiver(
+        workspace_id=policy_test_workspace.id,
+        first_name="MCP",
+        last_name="Nurse",
+        role="head_nurse",
+        is_active=True,
+    )
+    db_session.add_all([patient, staff])
+    await db_session.flush()
+    db_session.add_all(
+        [
+            PatientContact(
+                patient_id=patient.id,
+                contact_type="emergency",
+                name="MCP Emergency",
+                phone="555-2222",
+                is_primary=True,
+            ),
+            CareGiverPatientAccess(
+                workspace_id=policy_test_workspace.id,
+                caregiver_id=staff.id,
+                patient_id=patient.id,
+                assigned_by_user_id=policy_admin_user.id,
+                is_active=True,
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    context = McpActorContext(
+        user_id=policy_admin_user.id,
+        workspace_id=policy_test_workspace.id,
+        role=policy_admin_user.role,
+        patient_id=None,
+        caregiver_id=None,
+        scopes={"patients.read"},
+    )
+    with actor_scope(context), _patch_mcp_uses_db_session(db_session):
+        payload = await get_patient_details(patient.id)
+
+    assert payload["date_of_birth"] == "1945-05-06"
+    assert payload["height_cm"] == 160
+    assert payload["weight_kg"] == 64
+    assert payload["bmi"] == 25.0
+    assert payload["blood_type"] == "A+"
+    assert payload["clinical_notes"] == "MCP clinical note"
+    assert payload["medical_conditions"] == ["diabetes"]
+    assert payload["allergies"] == ["latex"]
+    assert payload["medications"][0]["name"] == "Metformin"
+    assert payload["past_surgeries"][0]["procedure"] == "Appendectomy"
+    assert payload["care_level"] == "special"
+    assert payload["mobility_type"] == "walker"
+    assert payload["current_mode"] == "wheelchair"
+    assert payload["room"]["id"] == room.id
+    assert payload["emergency_contacts"][0]["name"] == "MCP Emergency"
+    assert payload["assigned_staff"][0]["id"] == staff.id
+
+
+@pytest.mark.asyncio
+async def test_mcp_devices_expose_freshness_contract(
+    db_session: AsyncSession,
+    policy_test_workspace: Workspace,
+    policy_admin_user: User,
+):
+    now = datetime.now(timezone.utc)
+    db_session.add(
+        Device(
+            workspace_id=policy_test_workspace.id,
+            device_id="MCP_FRESH",
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+            display_name="MCP fresh chair",
+            last_seen=now,
+        )
+    )
+    db_session.add(
+        Device(
+            workspace_id=policy_test_workspace.id,
+            device_id="12345",
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+            display_name="Numeric natural id",
+            last_seen=now,
+        )
+    )
+    await db_session.flush()
+    db_session.add(
+        IMUTelemetry(
+            workspace_id=policy_test_workspace.id,
+            device_id="MCP_FRESH",
+            timestamp=now,
+            ax=0.1,
+        )
+    )
+    await db_session.commit()
+
+    context = McpActorContext(
+        user_id=policy_admin_user.id,
+        workspace_id=policy_test_workspace.id,
+        role=policy_admin_user.role,
+        patient_id=None,
+        caregiver_id=None,
+        scopes={"devices.read"},
+    )
+    with actor_scope(context), _patch_mcp_uses_db_session(db_session):
+        rows = await list_devices()
+        detail = await get_device_details("MCP_FRESH")
+        numeric_detail = await get_device_details("12345")
+
+    listed = next(row for row in rows if row["device_id"] == "MCP_FRESH")
+    assert listed["online"] is True
+    assert listed["status"] == "online"
+    assert listed["latest_reading_type"] == "imu"
+    assert listed["stale_after_seconds"] == 300
+    assert detail["online"] is True
+    assert detail["latest_reading_type"] == "imu"
+    assert numeric_detail["device_id"] == "12345"
+    assert numeric_detail["display_name"] == "Numeric natural id"
+
+
+@pytest.mark.asyncio
 async def test_mcp_write_rejects_caller_supplied_caregiver_id(
     db_session: AsyncSession,
     policy_test_workspace: Workspace,
@@ -518,6 +674,31 @@ async def test_patient_can_only_access_own_records(
                     other_patient.id,
                 )
             assert exc.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_mcp_health_analysis_enforces_patient_visibility(
+    db_session: AsyncSession,
+    policy_test_workspace: Workspace,
+    policy_patient_user: tuple[User, Patient],
+    policy_patients: list[Patient],
+):
+    patient_user, patient = policy_patient_user
+    context = McpActorContext(
+        user_id=patient_user.id,
+        workspace_id=policy_test_workspace.id,
+        role=patient_user.role,
+        patient_id=patient.id,
+        caregiver_id=None,
+        scopes={"patients.read"},
+    )
+
+    with actor_scope(context), _patch_mcp_uses_db_session(db_session):
+        result = await get_patient_health_analysis(patient.id)
+        assert result["patient_id"] == patient.id
+        with pytest.raises(HTTPException) as exc:
+            await get_patient_health_analysis(policy_patients[0].id)
+        assert exc.value.status_code == 403
 
 
 @pytest.mark.asyncio

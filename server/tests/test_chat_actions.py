@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import HTTPException
@@ -160,3 +161,38 @@ async def test_chat_action_force_execute_from_proposed_state(
     assert executed.status == "executed"
     assert isinstance(executed.executed_at, datetime)
     assert executed.executed_at.tzinfo == timezone.utc
+
+
+@pytest.mark.asyncio
+async def test_chat_action_force_execute_denies_mutating_tool(
+    db_session: AsyncSession,
+    admin_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    execute_plan = AsyncMock()
+    monkeypatch.setattr("app.services.agent_runtime_client.execute_plan", execute_plan)
+
+    proposed = await ai_chat.propose_chat_action(
+        db_session,
+        ws_id=admin_user.workspace_id,
+        actor=admin_user,
+        payload=ChatActionProposeIn(
+            title="Acknowledge alert now",
+            action_type="mcp_tool",
+            tool_name="acknowledge_alert",
+            tool_arguments={"alert_id": 7},
+        ),
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        await ai_chat.execute_chat_action(
+            db_session,
+            ws_id=admin_user.workspace_id,
+            action_id=proposed.id,
+            actor=admin_user,
+            force=True,
+        )
+
+    assert exc.value.status_code == 409
+    assert "must be confirmed" in exc.value.detail
+    execute_plan.assert_not_called()

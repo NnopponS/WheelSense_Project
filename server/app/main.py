@@ -74,14 +74,23 @@ async def lifespan(app: FastAPI):
             start_retention_scheduler,
             stop_retention_scheduler,
         )
+        from app.workers.health_analysis_worker import (
+            start_health_analysis_snapshot_scheduler,
+            stop_health_analysis_snapshot_scheduler,
+        )
         if settings.retention_enabled:
             start_retention_scheduler()
         else:
             logger.info("Retention scheduler disabled via config")
+        if settings.health_analysis_snapshot_scheduler_enabled:
+            start_health_analysis_snapshot_scheduler()
+        else:
+            logger.info("Health analysis snapshot scheduler disabled via config")
 
         yield
 
         # Shutdown
+        stop_health_analysis_snapshot_scheduler()
         stop_retention_scheduler()
         mqtt_task.cancel()
         try:

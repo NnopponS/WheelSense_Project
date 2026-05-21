@@ -515,32 +515,10 @@ Raspberry Pi 5 เป็นคอมพิวเตอร์บอร์ดข�
         การจัดเก็บข้อมูล & PostgreSQL & การจัดเก็บข้อมูลเชิงสัมพันธ์และข้อมูลกึ่งโครงสร้าง (JSONB) อย่างมีประสิทธิภาพ \\ \hline
         การสื่อสารอุปกรณ์ & MQTT & โปรโตคอลน้ำหนักเบาสำหรับการรับส่งข้อมูลระหว่างอุปกรณ์ IoT และเซิร์ฟเวอร์ \\ \hline
         สภาพแวดล้อมรันไทม์ & Docker & การสร้างสภาพแวดล้อมจำลอง (Containerization) เพื่อความสม่ำเสมอของระบบ \\ \hline
-        ปัญญาประดิษฐ์ & Ollama, Gemma 4 E2B, MCP & การประมวลผลโมเดลภาษาขนาดใหญ่ (LLM) ในระดับขอบเครือข่ายหรือเซิร์ฟเวอร์ท้องถิ่น \\ \hline
+        ปัญญาประดิษฐ์ & Ollama, gemma4:e2b, MCP & การประมวลผลโมเดลภาษาขนาดใหญ่ (LLM) ในระดับขอบเครือข่ายหรือเซิร์ฟเวอร์ท้องถิ่น \\ \hline
         การพัฒนาเฟิร์มแวร์ & PlatformIO & เครื่องมือสำหรับการจัดการวงจรการพัฒนาเฟิร์มแวร์ของไมโครคอนโทรลเลอร์ \\ \hline
     \end{tabular}
 \end{table}
-
-\clearpage
-\subsection{แนวคิดการออกแบบ UX/UI สำหรับระบบติดตามสภาวะ}
-แนวคิด UX/UI สำหรับระบบที่ต้องการการเฝ้าระวังหรือติดตามสภาวะมีจุดมุ่งหมายหลักเพื่อให้ผู้ใช้สามารถรับรู้สถานะสำคัญและตอบสนองต่อเหตุการณ์ฉุกเฉินได้อย่างรวดเร็ว แนวคิด \textbf{User Experience (UX)} ในกลุ่มนี้มักเน้นการลดภาระทางความคิด (Cognitive Load) ของผู้ใช้ \cite{Sweller1988CognitiveLoad} โดยการจัดลำดับข้อมูลจากสิ่งที่เร่งด่วนที่สุดไว้ในตำแหน่งที่สังเกตง่าย \cite{Few2013Dashboard,Ware2012InformationVisualization} ขณะที่ \textbf{User Interface (UI)} ต้องสื่อความหมายได้ทันทีผ่านสัญลักษณ์หรือรหัสสี \cite{Gates2018AlertFatigue} และรองรับการแสดงผลบนอุปกรณ์ที่หลากหลาย (Responsive Design)
-
-การพัฒนาแอปพลิเคชันในรูปแบบเว็บ (Web Application) เป็นทางเลือกที่มีความยืดหยุ่นสูง \cite{Nielsen1994Heuristics} เนื่องจากผู้ใช้สามารถเข้าถึงระบบผ่านเบราว์เซอร์ได้ทันทีโดยไม่ต้องติดตั้งโปรแกรมเฉพาะเครื่อง ทำให้การกระจายระบบในองค์กรทำได้ง่าย นอกจากนี้ยังรองรับการทำงานข้ามแพลตฟอร์ม ทั้งบนคอมพิวเตอร์ตั้งโต๊ะ แท็บเล็ต และสมาร์ทโฟน ซึ่งช่วยเพิ่มความต่อเนื่องในการทำงานเมื่อผู้ใช้ต้องเปลี่ยนอุปกรณ์ในระหว่างปฏิบัติงาน
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[
-        node distance=0.3cm,
-        zone/.style={draw, rectangle, rounded corners, align=center, font=\small},
-        arrow/.style={-Latex, thick}
-    ]
-        \node[zone, fill=red!18, minimum width=9cm, minimum height=1.0cm] (alert) {\textbf{Priority Alert Zone} \footnotesize Emergency / Fall Detection / Critical Vitals};
-        \node[zone, fill=yellow!12, minimum width=4.3cm, minimum height=1.6cm, below=0.3cm of alert, xshift=-2.35cm] (status) {\textbf{Real-time Status}\\\footnotesize Location / Activity / Heart Rate};
-        \node[zone, fill=blue!10, minimum width=4.3cm, minimum height=1.6cm, below=0.3cm of alert, xshift=2.35cm] (trend) {\textbf{Trend Analytics}\\\footnotesize Historical / Predictive Insights};
-        \node[zone, fill=gray!12, minimum width=2.0cm, minimum height=3.5cm, left=0.4cm of alert, anchor=north east, yshift=-0.3cm] (nav) {\footnotesize \textbf{Navigation}\\[2mm]Dashboard\\Patients\\Alerts\\Settings};
-    \end{tikzpicture}
-    \caption{แนวคิดการจัดวางส่วนติดต่อผู้ใช้แบบแดชบอร์ดสำหรับระบบติดตามสภาวะผู้สูงอายุ}
-    \label{fig:ch2_uxui_dashboard}
-\end{figure}
 
 \clearpage
 \subsection{FastAPI (Backend Framework)}
@@ -624,32 +602,32 @@ Next.js เป็นเฟรมเวิร์กบน React ที่เห�
     \label{fig:ch2_nextjs_arch}
 \end{figure}
 
-\subsection{React Native และ Expo (Mobile Development Framework)}
-การพัฒนาแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ (Mobile Application) เป็นส่วนสำคัญของระบบที่ต้องการการแจ้งเตือนแบบเรียลไทม์และการเข้าถึงข้อมูลระหว่างเดิน โดยเฉพาะในบริบทของสถานดูแลผู้สูงอายุที่บุคลากรต้องเคลื่อนที่ตลอดเวลา \textbf{React Native} เป็นกรอบงานที่ช่วยให้สามารถพัฒนาแอปพลิเคชันสำหรับ iOS และ Android โดยใช้โค้ดจาวาสคริปต์ร่วมกัน ลดความซับซ้อนในการดูแลโค้ดแยกตามแพลตฟอร์ม \cite{ReactNativeDocs}
 
-\textbf{Expo} เป็นเครื่องมือและแพลตฟอร์มที่ช่วยให้การพัฒนาแอปพลิเคชันด้วย React Native ทำได้รวดเร็วขึ้น โดยไม่ต้องตั้งค่า Native Toolchain ซับซ้อน รองรับการ Build แบบ Over-the-Air (OTA) Updates และมี API สำหรับเข้าถึงฟีเจอร์ของอุปกรณ์ เช่น กล้อง ตำแหน่งพิกัด และการแจ้งเตือน Push Notification \cite{ExpoDocs} การใช้ React Native ร่วมกับ Expo จึงเหมาะสมกับระบบที่ต้องการ prototype และ deploy แอปพลิเคชันในเวลาอันสั้น พร้อมรองรับการเชื่อมต่อกับ API ของระบบหลักผ่าน JWT-based authentication ดังแสดงในรูปที่~\ref{fig:ch2_reactnative_expo}
+\subsection{Flutter และ Dart (Mobile Development Framework)}
+แอปพลิเคชันบนอุปกรณ์เคลื่อนที่ในระบบนี้ใช้ Flutter และภาษา Dart เป็นฐานหลัก เนื่องจากต้องทำงานเป็น mobile gateway สำหรับอ่านสถานะ BLE ของ M5StickC Plus2, Polar Verity Sense และ BLE beacons ก่อนส่งข้อมูลขึ้น server ผ่าน MQTT หรือ API Flutter ช่วยให้พัฒนา UI และ logic สำหรับ Android ได้ค่อนข้างเร็ว ใช้ codebase เดียว และควบคุมหน้าจอ /WheelSensor ให้เหมาะกับงานภาคสนาม เช่น ตรวจสถานะการ pair อุปกรณ์ ดูค่า sensor ล่าสุด และตรวจว่าข้อมูลถูกส่งขึ้น server แล้วหรือยัง
+
+ในเชิงทฤษฎี Flutter ทำงานผ่าน widget tree และ rendering engine ของตนเอง ทำให้ UI แสดงผลค่อนข้างสม่ำเสมอระหว่างอุปกรณ์ ส่วน Dart เหมาะกับงาน asynchronous เช่น BLE scan, MQTT publish, offline queue และ reconnect state เพราะสามารถจัดการ event stream ได้ชัดเจน แนวทางนี้สอดคล้องกับบทบาทของโทรศัพท์ในระบบที่ไม่ได้เป็นเพียงหน้าจอแสดงผล แต่เป็น gateway หลักที่รวมข้อมูลจากอุปกรณ์ใกล้ตัวก่อนส่งให้ backend ตรวจสอบและบันทึกต่อไป
 
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        node distance=0.7cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=2.6cm, minimum height=0.7cm, align=center, fill=white, font=\small},
+        node distance=0.8cm,
+        box/.style={draw, rectangle, rounded corners, minimum width=2.9cm, minimum height=0.78cm, align=center, fill=white, font=\small},
         arrow/.style={-Latex, thick}
     ]
-        \node (js) [box, fill=cyan!10] {JavaScript\\React Native Code};
-        \node (bridge) [box, fill=cyan!18, below=of js] {Native Bridge};
-        \node (ios) [box, fill=gray!12, below left=0.6cm and 0.4cm of bridge] {iOS Native};
-        \node (android) [box, fill=gray!12, below right=0.6cm and 0.4cm of bridge] {Android Native};
-        \node (expo) [box, fill=green!12, right=1.8cm of js] {Expo SDK\\OTA / Push};
+        \node (ble) [box, fill=yellow!12] {BLE devices\\M5 / Polar / Beacon};
+        \node (flutter) [box, fill=cyan!12, right=1.2cm of ble] {Flutter app\\/WheelSensor};
+        \node (queue) [box, fill=green!10, right=1.2cm of flutter] {Normalize\\offline queue};
+        \node (server) [box, fill=blue!10, right=1.2cm of queue] {MQTT / API\\Server};
 
-        \draw[arrow] (js) -- (bridge);
-        \draw[arrow] (bridge) -- (ios);
-        \draw[arrow] (bridge) -- (android);
-        \draw[arrow, dashed] (js) -- (expo);
+        \draw[arrow] (ble) -- (flutter);
+        \draw[arrow] (flutter) -- (queue);
+        \draw[arrow] (queue) -- (server);
     \end{tikzpicture}
-    \caption{สถาปัตยกรรมการทำงานของ React Native ผ่าน Native Bridge และการเสริมความสามารถด้วย Expo}
-    \label{fig:ch2_reactnative_expo}
+    \caption{แนวคิดการใช้ Flutter เป็น mobile gateway สำหรับรวมข้อมูล BLE และส่งข้อมูลขึ้น server}
+    \label{fig:ch2_flutter_gateway}
 \end{figure}
+
 
 \subsection{PostgreSQL (Database Management System)}
 PostgreSQL เป็นระบบจัดการฐานข้อมูลเชิงสัมพันธ์ (Relational Database) ที่มีจุดเด่นในการรองรับธุรกรรมแบบ ACID และการจัดเก็บข้อมูลที่มีโครงสร้างซับซ้อนร่วมกับข้อมูลกึ่งโครงสร้างในรูปแบบ JSONB \cite{PostgreSQL2024,Obe2017_PostgreSQL_in_Action} ความสามารถนี้มีความสำคัญอย่างยิ่งต่อระบบ IoT ที่ต้องจัดการทั้งข้อมูลหลักที่มีความสัมพันธ์ชัดเจน (เช่น ข้อมูลผู้ใช้และอุปกรณ์) และข้อมูลจากเซิร์ฟเวอร์ที่มีโครงสร้างยืดหยุ่นหรือเปลี่ยนแปลงได้ตามรุ่นของฮาร์ดแวร์
@@ -704,7 +682,7 @@ Docker มีบทบาทสำคัญในการสร้างคว�
 \subsection{Ollama และ Large Language Models (LLM)}
 การนำโมเดลภาษาขนาดใหญ่ (LLM) มาใช้ในระบบติดตามพฤติกรรมมีวัตถุประสงค์เพื่อช่วยสรุปเหตุการณ์และสนับสนุนการโต้ตอบเชิงภาษาธรรมชาติ อย่างไรก็ตาม ระบบลักษณะนี้มีข้อกำหนดด้านความเป็นส่วนตัวสูง จึงมีความจำเป็นต้องใช้ Local Inference มากกว่าบริการภายนอก \textbf{Ollama} เป็นแพลตฟอร์มที่ช่วยให้การรันโมเดล LLM ภายในโครงสร้างพื้นฐานขององค์กรทำได้สะดวก พร้อมเปิด API ที่แอปพลิเคชันอื่นเรียกใช้ได้โดยตรง \cite{Ollama2024,OllamaAPI2026}
 
-ในเชิงวิชาการ โมเดลที่เหมาะสมสำหรับการรันบนอุปกรณ์ที่มีทรัพยากรจำกัดคือกลุ่มโมเดลขนาดเล็ก (Small Language Models) เช่น \textbf{Gemma 4 E2B} ซึ่งถูกออกแบบให้มีพารามิเตอร์ที่มีประสิทธิภาพสำหรับการใช้งานระดับ Edge \cite{OllamaGemma4E2B2026} โดยมีความสามารถครอบคลุมทั้งงานด้าน Reasoning, Coding และการทำความเข้าใจสื่อหลายรูปแบบ (Multimodal Understanding) การใช้ LLM ในระบบเฝ้าระวังจึงควรเน้นบทบาทในการเป็นตัวสนับสนุนการตัดสินใจ (Decision Support) ภายใต้กฎเกณฑ์เชิงระบบที่ตรวจสอบได้
+ในเชิงวิชาการ โมเดลที่เหมาะสมสำหรับการรันบนอุปกรณ์ที่มีทรัพยากรจำกัดคือกลุ่มโมเดลขนาดเล็ก (Small Language Models) เช่น \textbf{gemma4:e2b} ซึ่งถูกออกแบบให้มีพารามิเตอร์ที่มีประสิทธิภาพสำหรับการใช้งานระดับ Edge \cite{OllamaGemma4E2B2026} โดยมีความสามารถครอบคลุมทั้งงานด้าน Reasoning, Coding และการทำความเข้าใจสื่อหลายรูปแบบ (Multimodal Understanding) การใช้ LLM ในระบบเฝ้าระวังจึงควรเน้นบทบาทในการเป็นตัวสนับสนุนการตัดสินใจ (Decision Support) ภายใต้กฎเกณฑ์เชิงระบบที่ตรวจสอบได้
 
 \begin{figure}[H]
     \centering
@@ -715,7 +693,7 @@ Docker มีบทบาทสำคัญในการสร้างคว�
     ]
         \node (prompt) [box, fill=purple!8] {User / System\\Prompt};
         \node (ollama) [box, fill=purple!18, right=of prompt] {Ollama Runtime\\Local Inference};
-        \node (model) [box, fill=yellow!12, above=0.95cm of ollama] {SLM / LLM\\(e.g., Gemma 4)};
+        \node (model) [box, fill=yellow!12, above=0.95cm of ollama] {SLM / LLM\\(e.g., gemma4:e2b)};
         \node (tool) [box, fill=cyan!10, below=0.95cm of ollama] {Context / Tools\\Rules, Data, MCP};
         \node (resp) [box, fill=green!10, right=of ollama] {Generated Response /\\Action Summary};
 
@@ -814,20 +792,9 @@ Home Assistant มีความสามารถในการเชื่�
     \label{fig:ch2_homeassistant}
 \end{figure}
 
-\section{ทฤษฎีด้านความปลอดภัยและการควบคุมสิทธิ์การเข้าถึง}
-\label{sec:ch2_security_rbac}
-
-ในการพัฒนาระบบเทคโนโลยีสารสนเทศสำหรับสถานดูแลผู้สูงอายุที่มีการจัดการข้อมูลสุขภาพ (Health Information) ข้อมูลส่วนบุคคล (Personally Identifiable Information: PII) และข้อมูลพฤติกรรมที่มีความละเอียดอ่อน การรักษาความปลอดภัยและการจำกัดสิทธิ์การเข้าถึงเป็นเรื่องสำคัญอย่างยิ่ง
-
-\subsection{การควบคุมการเข้าถึงตามบทบาท (Role-Based Access Control: RBAC)}
-Role-Based Access Control (RBAC) เป็นโมเดลการควบคุมการเข้าถึงข้อมูลที่กำหนดสิทธิ์ของผู้ใช้ตามบทบาทหน้าที่ในองค์กร แทนที่จะกำหนดสิทธิ์ให้แต่ละบุคคลโดยตรง \cite{Sandhu1996RBAC,NIST2010RBACGuide} โมเดล RBAC ถูกมาตรฐานไอเอสโอรับรองใน ISO/IEC 27002 สำหรับการจัดการความปลอดภัยของสารสนเทศด้านสาธารณสุข \cite{ISO27799_2016} การนำ RBAC มาใช้ในระบบของสถานดูแลผู้สูงอายุ (เช่น ผู้ดูแล, พยาบาลวิชาชีพ, ผู้บริหาร) ช่วยลดความซับซ้อนในการจัดการสิทธิ์ เมื่อบุคลากรมีการเปลี่ยนหน้าที่ ระบบเพียงแค่เปลี่ยนบทบาทของผู้ใช้นั้น ๆ สิทธิ์การเข้าถึงและแก้ไขข้อมูลก็จะปรับตามโดยอัตโนมัติ
-
-\subsection{การรักษาความปลอดภัยของสถาปัตยกรรมระบบ}
-นอกจาก RBAC แล้ว การรักษาความลับ (Confidentiality) และความสมบูรณ์ (Integrity) ของข้อมูลระหว่างการส่งผ่านเครือข่ายเป็นสิ่งสำคัญ โดยเฉพาะข้อมูลสุขภาพ (Health Information) ที่ต้องปฏิบัติตามมาตรฐาน HIPAA Security Rule \cite{HHS2013HIPAASecurityRule} การใช้ JSON Web Token (JWT) ตามมาตรฐาน RFC 7519 \cite{RFC7519JWT} ช่วยให้การตรวจสอบสิทธิ์แบบไม่มีสถานะ (Stateless Authentication) เป็นไปอย่างรวดเร็วและปลอดภัย โดยร่วมกับ OAuth 2.0 Authorization Framework \cite{RFC6749OAuth2} สำหรับการมอบสิทธิ์แบบมีขอบเขตจำกัด (Scope Narrowing) นอกจากนี้ การจัดการ Token ให้อยู่ในคุกกี้ที่ทำงานเฉพาะทาง HTTP (HTTP-only Cookie) ช่วยป้องกันการโจมตีแบบ Cross-Site Scripting (XSS) อย่างมีประสิทธิภาพ และลดความเสี่ยงจากการเข้าถึง Token โดยสคริปต์ฝั่งไคลเอ็นต์ที่ไม่ได้รับอนุญาติ
-
 \section{งานวิจัยที่เกี่ยวข้อง}
 \label{sec:ch2_related_work}
 
 การทบทวนวรรณกรรมที่ผ่านมาแสดงให้เห็นถึงความพยายามนำเทคโนโลยีมาประยุกต์ใช้เพื่อการดูแลผู้สูงอายุอย่างหลากหลาย งานวิจัยในอดีตมักมุ่งเน้นไปที่การใช้เซ็นเซอร์เพื่อตรวจจับการล้มแบบแยกส่วน โดยขาดการบูรณาการข้อมูลเพื่อสร้างบริบทที่ครอบคลุม (Comprehensive Context) เช่น การนำข้อมูลการเคลื่อนไหว (IMU) มาร่วมกับสัญญาณชีพ (PPG) และพิกัดตำแหน่งภายในอาคาร (IPS) เพื่อวิเคราะห์พฤติกรรมเชิงลึก
 
-นอกจากนี้ งานวิจัยหลายชิ้นที่มีการนำ AI มาใช้ มักประสบปัญหาด้านความเป็นส่วนตัวเนื่องจากการพึ่งพาบริการ Cloud ภายนอก และปัญหาความโปร่งใสของการตัดสินใจ (Black-box AI) ในทางตรงกันข้าม ปริญญานิพนธ์ฉบับนี้ได้นำเสนอสถาปัตยกรรมแบบขอบเครือข่าย (Edge AI) ผ่านการใช้โมเดลภาษาขนาดเล็ก (Gemma 4) ที่ทำงานร่วมกับ Model Context Protocol (MCP) เพื่อจำกัดขอบเขตข้อมูลและเพิ่มความโปร่งใส (Explainability) ของปัญญาประดิษฐ์ในการดูแลผู้ป่วย ส่งผลให้เกิดระบบการดูแลผู้สูงอายุที่ตอบสนองแบบเรียลไทม์ ปลอดภัย และมีประสิทธิภาพสูง
+นอกจากนี้ งานวิจัยหลายชิ้นที่มีการนำ AI มาใช้ มักประสบปัญหาด้านความเป็นส่วนตัวเนื่องจากการพึ่งพาบริการ Cloud ภายนอก และปัญหาความโปร่งใสของการตัดสินใจ (Black-box AI) ในทางตรงกันข้าม ปริญญานิพนธ์ฉบับนี้ได้นำเสนอสถาปัตยกรรมแบบขอบเครือข่าย (Edge AI) ผ่านการใช้โมเดลภาษาขนาดเล็ก (gemma4:e2b) ที่ทำงานร่วมกับ Model Context Protocol (MCP) เพื่อจำกัดขอบเขตข้อมูลและเพิ่มความโปร่งใส (Explainability) ของปัญญาประดิษฐ์ในการดูแลผู้ป่วย ส่งผลให้เกิดระบบการดูแลผู้สูงอายุที่ตอบสนองแบบเรียลไทม์ ปลอดภัย และมีประสิทธิภาพสูง

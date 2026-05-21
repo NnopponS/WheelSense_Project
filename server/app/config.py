@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     mqtt_auto_register_ble_nodes: bool = True
     # When true, camera /registration JSON with ble_mac matching a BLE_* stub renames that row to the camera device_id (CAM_*).
     mqtt_merge_ble_camera_by_mac: bool = True
+    # REST-side fire-and-forget publishes, such as retained mobile assignment config.
+    mqtt_rest_publish_enabled: bool = True
     # Consecutive identical room predictions required before logging room_enter/room_exit (reduces RSSI/KNN flicker).
     room_timeline_stability_samples: int = 3
 
@@ -78,6 +80,7 @@ class Settings(BaseSettings):
     ai_provider: str = "ollama"  # ollama | copilot
     ai_default_model: str = "gemma4:e4b"
     ollama_base_url: str = "http://127.0.0.1:11434/v1"
+    ollama_fallback_model: str = "gemma4:e4b"
     copilot_cli_url: str = ""  # e.g. copilot-cli:4321 or http://localhost:4321
     server_base_url: str = "http://127.0.0.1:8000"
     # Public web URL for mobile WebView (e.g. Cloudflare quick tunnel). Published to MQTT config when set.
@@ -92,6 +95,8 @@ class Settings(BaseSettings):
     )
     # Full URL to Streamable HTTP MCP endpoint (e.g. http://127.0.0.1:8000/mcp/mcp). Empty uses server_base_url.
     mcp_streamable_http_url: str = ""
+    # Optional Host header override for internal Docker MCP calls when the MCP library rejects service DNS names.
+    mcp_streamable_http_host_header: str = ""
     # Dangerous: runs arbitrary Python with server env (incl. DB URL). Off by default; EaseAI never exposes this tool.
     mcp_allow_execute_python: bool = False
 
@@ -143,6 +148,8 @@ class Settings(BaseSettings):
     retention_rssi_days: int = 7
     retention_predictions_days: int = 30
     retention_interval_hours: int = 6
+    health_analysis_snapshot_scheduler_enabled: bool = True
+    health_analysis_snapshot_interval_hours: int = 6
 
     @field_validator("debug", mode="before")
     @classmethod

@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Game Studio"
+  short_description: "WheelSense game-studio workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $game-studio for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

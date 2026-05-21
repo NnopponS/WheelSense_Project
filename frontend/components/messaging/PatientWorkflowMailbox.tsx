@@ -54,6 +54,7 @@ type MessageRow = {
   subject: string;
   body: string;
   isRead: boolean;
+  senderLabel: string;
   recipientLabel: string;
   createdAt: string;
   senderUserId: number;
@@ -160,17 +161,24 @@ export function PatientWorkflowMailbox() {
   const rows = useMemo<MessageRow[]>(() => {
     return messages
       .map((message) => {
-        const person = message.recipient_person;
+        const senderPerson = message.sender_person;
+        const recipientPerson = message.recipient_person;
+        const senderLabel =
+          senderPerson?.display_name?.trim() ||
+          (message.sender_user_id === user?.id
+            ? t("patient.messages.you")
+            : t("patient.messages.careTeam"));
         const recipientLabel =
-          person?.display_name?.trim() ||
-          (message.recipient_user_id != null ? `User #${message.recipient_user_id}` : null) ||
+          recipientPerson?.display_name?.trim() ||
+          (message.recipient_user_id === user?.id ? t("patient.messages.you") : null) ||
           message.recipient_role ||
-          "-";
+          t("patient.messages.careTeam");
         return {
           id: message.id,
           subject: message.subject || t("patient.messages.defaultSubject"),
           body: message.body,
           isRead: message.is_read,
+          senderLabel,
           recipientLabel,
           createdAt: message.created_at,
           senderUserId: message.sender_user_id,
@@ -180,7 +188,7 @@ export function PatientWorkflowMailbox() {
         };
       })
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  }, [messages, t]);
+  }, [messages, t, user?.id]);
 
   const inboxRows = useMemo(
     () => rows.filter((r) => r.senderUserId !== user?.id),
@@ -201,6 +209,7 @@ export function PatientWorkflowMailbox() {
       (row) =>
         row.subject.toLowerCase().includes(q) ||
         row.body.toLowerCase().includes(q) ||
+        row.senderLabel.toLowerCase().includes(q) ||
         row.recipientLabel.toLowerCase().includes(q),
     );
   }, [tabRows, search]);
@@ -226,20 +235,17 @@ export function PatientWorkflowMailbox() {
   const patientMessageMeta = selected ? (
     <div className="space-y-2 text-xs text-muted-foreground">
       <p>
-        {t("headNurse.messages.fromUserPrefix")}
-        {selected.senderUserId}
+        {t("messaging.mailbox.senderLabel")}
+        {selected.senderLabel}
       </p>
-      <p>{selected.recipientLabel}</p>
+      <p>
+        {t("messaging.mailbox.recipientLabel")}
+        {selected.recipientLabel}
+      </p>
       {selected.recipientRole ? (
         <p>
           {t("headNurse.messages.recipientRolePrefix")}
           {selected.recipientRole}
-        </p>
-      ) : null}
-      {selected.recipientUserId != null ? (
-        <p>
-          {t("headNurse.messages.toUserPrefix")}
-          {selected.recipientUserId}
         </p>
       ) : null}
     </div>
@@ -332,7 +338,7 @@ export function PatientWorkflowMailbox() {
                           {row.subject}
                         </span>
                         <span className="line-clamp-1 text-xs text-muted-foreground">
-                          {row.recipientLabel} · {formatRelativeTime(row.createdAt)}
+                          {activeTab === "inbox" ? row.senderLabel : row.recipientLabel} · {formatRelativeTime(row.createdAt)}
                         </span>
                       </button>
                     </li>
@@ -446,7 +452,7 @@ export function PatientWorkflowMailbox() {
                     </SelectItem>
                     {recipients.map((r) => (
                       <SelectItem key={r.id} value={String(r.id)}>
-                        {r.display_name} (@{r.username}) · {r.role}
+                        {r.display_name} · {r.role.replace(/_/g, " ")}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -885,6 +885,24 @@ async def test_simulator_command_publishes_mqtt_in_simulator_mode(client: AsyncC
 
 
 @pytest.mark.asyncio
+async def test_simulator_command_accepts_move_actor_payload(client: AsyncClient, monkeypatch):
+    monkeypatch.setattr(settings, "env_mode", "simulator")
+    with patch("app.api.endpoints.demo_control.publish_mqtt", new_callable=AsyncMock) as pub:
+        res = await client.post(
+            "/api/demo/simulator/command",
+            json={"command": "move_actor", "patient_id": 9, "room_id": 12},
+        )
+    assert res.status_code == 200, res.text
+    args = pub.await_args[0]
+    assert args[0] == "WheelSense/sim/control"
+    assert args[1]["command"] == "move_actor"
+    assert args[1]["actor_type"] == "patient"
+    assert args[1]["actor_id"] == 9
+    assert args[1]["patient_id"] == 9
+    assert args[1]["room_id"] == 12
+
+
+@pytest.mark.asyncio
 async def test_simulator_command_set_config_requires_payload(client: AsyncClient, monkeypatch):
     monkeypatch.setattr(settings, "env_mode", "simulator")
     res = await client.post("/api/demo/simulator/command", json={"command": "set_config"})

@@ -13,6 +13,13 @@ interface UnifiedTaskCalendarProps {
   onTaskClick?: (task: TaskOut) => void;
 }
 
+function toCalendarPriority(priority: string): CalendarEvent["priority"] {
+  if (priority === "critical") return "urgent";
+  if (priority === "high") return "high";
+  if (priority === "low") return "low";
+  return "medium";
+}
+
 /**
  * Unified Task Calendar
  * 
@@ -45,7 +52,7 @@ export function UnifiedTaskCalendar({ tasks, isLoading, onTaskClick }: UnifiedTa
         startTime,
         endTime,
         status: calendarStatus,
-        priority: task.priority as any,
+        priority: toCalendarPriority(task.priority),
         patientName: task.patient_name,
         assigneeName: task.assigned_user_name,
         workspaceTaskId: task.id, // Store target ID for interaction

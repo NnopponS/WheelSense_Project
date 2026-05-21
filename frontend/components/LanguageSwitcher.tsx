@@ -1,27 +1,50 @@
 "use client";
 
-import { useTranslation, type Locale } from "@/lib/i18n";
 import { Globe } from "lucide-react";
+import { useTranslation, type Locale } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 
-export default function LanguageSwitcher() {
-  const { locale, setLocale } = useTranslation();
+export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
+  const { locale, setLocale, t } = useTranslation();
 
-  function toggle() {
-    const next: Locale = locale === "en" ? "th" : "en";
-    setLocale(next);
+  function select(next: Locale) {
+    if (next !== locale) setLocale(next);
   }
 
+  const options: Array<{ value: Locale; label: string }> = [
+    { value: "en", label: "EN" },
+    { value: "th", label: "TH" },
+  ];
+
   return (
-    <button
-      onClick={toggle}
-      className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground-variant hover:bg-surface-container-high transition-smooth cursor-pointer"
-      aria-label="Switch language"
-      title={locale === "en" ? "เปลี่ยนเป็นภาษาไทย" : "Switch to English"}
+    <div
+      className={cn(
+        "inline-flex items-center gap-1 rounded-lg border border-border/70 bg-muted/35 p-1 text-xs font-semibold text-muted-foreground",
+        compact && "gap-0.5",
+      )}
+      role="group"
+      aria-label={t("shell.language")}
+      title={t("shell.language")}
     >
-      <Globe className="w-5 h-5" />
-      <span className="uppercase tracking-wide font-semibold" style={{ fontSize: '14px' }}>
-        {locale === "en" ? "EN" : "TH"}
-      </span>
-    </button>
+      <Globe className={cn("ml-1 h-4 w-4 shrink-0", compact && "sr-only")} aria-hidden="true" />
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => select(option.value)}
+          aria-pressed={locale === option.value}
+          aria-label={option.value === "en" ? t("shell.languageEnglish") : t("shell.languageThai")}
+          className={cn(
+            "min-h-8 min-w-9 rounded-md px-2.5 text-xs leading-none transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+            compact && "min-w-8 px-2",
+            locale === option.value
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:bg-background/60 hover:text-foreground",
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
   );
 }

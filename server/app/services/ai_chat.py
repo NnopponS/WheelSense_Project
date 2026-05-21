@@ -27,7 +27,9 @@ from app.schemas.agent_runtime import ExecutionPlan, ExecutionPlanStep
 from app.schemas.chat import ChatMessagePart
 from app.schemas.chat_actions import ChatActionProposeIn
 from app.services import agent_runtime_client
+from app.services.ai_provider_attempts import ProviderAttempt, start_provider_attempt
 from app.services.workflow import audit_trail_service
+from app.mcp.tool_catalog import easeai_forbidden_tools, patient_exclusive_tools
 
 logger = logging.getLogger("wheelsense.ai_chat")
 
@@ -73,6 +75,7 @@ ROLE_SYSTEM_PROMPTS: dict[str, str] = {
 
 GENERAL_ASSISTANT_SUFFIX = (
     " You can answer general questions, small talk, and broad knowledge queries as a normal assistant. "
+    "Answer in the language of the user's latest message: English for English, Thai for Thai, and mixed only when the user mixes languages. "
     "When a request needs WheelSense live data or actions, use only grounded system data and do not invent facts. "
     "Do not attempt to run shell commands, modify application source code, or touch the host filesystem outside "
     "the published WheelSense MCP tools."
@@ -88,16 +91,6 @@ def _all_mcp_workspace_tool_names() -> frozenset[str]:
 
     return frozenset(_WORKSPACE_TOOL_REGISTRY.keys())
 
-
-# ---------------------------------------------------------------------------
-# MCP tools that must never be driven by EaseAI / chat (arbitrary code, platform escape hatches).
-# Still registered for optional human-operated MCP when explicitly enabled in settings.
-# ---------------------------------------------------------------------------
-_EASEAI_FORBIDDEN_TOOLS: frozenset[str] = frozenset(
-    {
-        "execute_python_code",
-    }
-)
 
 # ---------------------------------------------------------------------------
 # Admin-only tools that other roles must never call.
@@ -120,12 +113,6 @@ _ADMIN_ONLY_TOOLS: frozenset[str] = frozenset(
 )
 
 # Tools head_nurse has that supervisor does not (management writes)
-_PATIENT_EXCLUSIVE_TOOLS: frozenset[str] = frozenset(
-    {
-        "sos_create_alert",
-    }
-)
-
 _HEAD_NURSE_EXTRA_TOOLS: frozenset[str] = frozenset(
     {
         "create_patient_record",
@@ -164,6 +151,7 @@ _HEAD_NURSE_EXTRA_TOOLS: frozenset[str] = frozenset(
         "update_care_directive",
         "claim_workflow_item",
         "handoff_workflow_item",
+        "create_task_management_task",
     }
 )
 
@@ -228,7 +216,10 @@ _OBSERVER_READ: frozenset[str] = frozenset(
         "list_support_tickets",
         "list_service_requests",
         "list_caregivers",
+        "list_staff",
         "get_caregiver_details",
+        "get_staff_details",
+        "get_staff_timeline",
         "list_caregiver_patients",
         "list_calendar_events",
         "get_my_shift_checklist",
@@ -239,22 +230,25 @@ _OBSERVER_READ: frozenset[str] = frozenset(
 @lru_cache(maxsize=1)
 def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
     all_tools = _all_mcp_workspace_tool_names()
-    head_nurse = all_tools - _ADMIN_ONLY_TOOLS - _PATIENT_EXCLUSIVE_TOOLS
+    forbidden = easeai_forbidden_tools(all_tools)
+    patient_exclusive = patient_exclusive_tools(all_tools)
+    head_nurse = all_tools - _ADMIN_ONLY_TOOLS - patient_exclusive
     # Supervisor matches head_nurse minus operational/registry writes in _HEAD_NURSE_EXTRA_TOOLS
     # and vitals/timeline note tools (supervisor is not in ROLE_CARE_NOTE_WRITERS).
     supervisor = head_nurse - _HEAD_NURSE_EXTRA_TOOLS - _CARE_NOTE_WRITER_TOOLS
-    observer = (_OBSERVER_READ | _OBSERVER_ONLY_WRITE) - _PATIENT_EXCLUSIVE_TOOLS
+    observer = _OBSERVER_READ | _OBSERVER_ONLY_WRITE
     return {
-        "admin": set(all_tools - _EASEAI_FORBIDDEN_TOOLS - _PATIENT_EXCLUSIVE_TOOLS),
+        "admin": set(all_tools - forbidden - patient_exclusive),
         "head_nurse": set(head_nurse),
         "supervisor": set(supervisor),
-        "observer": set(observer),
+        "observer": set(observer - patient_exclusive),
         "patient": {
             # Own data read
             "get_current_user_context",
             "get_system_health",
             "get_patient_details",
             "get_patient_vitals",
+            "get_patient_health_analysis",
             "get_patient_timeline",
             "list_patient_devices",
             "list_patient_contacts",
@@ -268,6 +262,7 @@ def get_role_mcp_tool_allowlist() -> dict[str, set[str]]:
             "control_room_smart_device",
             # Own schedule & tasks
             "list_workflow_tasks",
+            "list_task_management_tasks",
             "list_workflow_schedules",
             "list_calendar_events",
             # Own medications
@@ -381,6 +376,18 @@ async def resolve_effective_ai(
     return provider, model
 
 
+def resolve_ollama_fallback_model(*, workspace_model: str | None = None) -> str:
+    """Return an Ollama model id, never a Copilot workspace model id by accident."""
+    explicit = (settings.agent_llm_router_model or "").strip()
+    if explicit:
+        return explicit
+    fallback = (settings.ollama_fallback_model or "").strip()
+    if fallback:
+        return fallback
+    candidate = (workspace_model or settings.ai_default_model or "").strip()
+    return candidate or "gemma4:e4b"
+
+
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -434,6 +441,28 @@ def _extract_execution_plan(action: ChatAction) -> ExecutionPlan | None:
     except Exception:
         return None
 
+
+def _is_read_only_mcp_tool(tool_name: str | None) -> bool:
+    if not tool_name:
+        return False
+    from app.agent_runtime.layers.layer4_constrained_synthesis import is_mcp_tool_read_only
+
+    return is_mcp_tool_read_only(tool_name)
+
+
+def _action_requires_confirmation_before_force(action: ChatAction) -> bool:
+    if action.action_type == "note":
+        return False
+    if action.action_type == "mcp_tool":
+        return not _is_read_only_mcp_tool(action.tool_name)
+    if action.action_type == "mcp_plan":
+        plan = _extract_execution_plan(action)
+        if plan is None:
+            return True
+        return any(not _is_read_only_mcp_tool(step.tool_name) for step in plan.steps)
+    return True
+
+
 def _messages_to_openai(
     messages: list[ChatMessagePart], system_text: str
 ) -> list[dict[str, str]]:
@@ -485,6 +514,14 @@ def fallback_copilot_models() -> list[object]:
         for model_id, metadata in COPILOT_ALLOWED_MODELS.items()
     ]
 
+
+def has_copilot_connection(github_token: str | None) -> bool:
+    external_cli_configured = bool(
+        settings.copilot_cli_url.strip()
+        and "copilot-cli" not in settings.copilot_cli_url.strip()
+    )
+    return bool(github_token or external_cli_configured)
+
 async def list_copilot_models(
     *,
     github_token: str | None = None,
@@ -499,6 +536,26 @@ async def list_copilot_models(
 
     async with CopilotClient(config) as client:
         return await client.list_models()
+
+
+def _log_provider_attempts(attempts: list[ProviderAttempt]) -> None:
+    if not attempts:
+        return
+    logger.info(
+        "ai_provider_attempts",
+        extra={"provider_attempts": [attempt.as_dict() for attempt in attempts]},
+    )
+
+
+def _publish_provider_attempts(
+    attempts: list[ProviderAttempt],
+    out: list[dict[str, object]] | None,
+) -> None:
+    if not attempts:
+        return
+    _log_provider_attempts(attempts)
+    if out is not None:
+        out.extend(attempt.as_dict() for attempt in attempts)
 
 async def stream_ollama(
     *,
@@ -870,6 +927,7 @@ async def collect_chat_reply_best_effort(
     user: User,
     workspace: Workspace,
     messages: list[ChatMessagePart],
+    provider_attempts_out: list[dict[str, object]] | None = None,
 ) -> str:
     """Collect a full assistant reply and fail over providers when needed."""
     primary_provider, primary_model = await get_workspace_ai_defaults(db, workspace.id)
@@ -884,32 +942,65 @@ async def collect_chat_reply_best_effort(
     if primary_provider == "ollama":
         attempts.append(("copilot", "gpt-4.1"))
     else:
-        attempts.append(("ollama", settings.ai_default_model))
+        attempts.append(("ollama", resolve_ollama_fallback_model()))
 
     seen: set[tuple[str, str]] = set()
-    last_reply = ""
+    unique_attempts: list[tuple[str, str]] = []
     for provider, model in attempts:
         key = (provider, model)
         if key in seen:
             continue
         seen.add(key)
+        unique_attempts.append(key)
 
+    provider_attempts: list[ProviderAttempt] = []
+    last_reply = ""
+    for index, (provider, model) in enumerate(unique_attempts, start=1):
+        timer = start_provider_attempt(
+            provider=provider,
+            model=model,
+            phase="best_effort_reply",
+            attempt=index,
+        )
+        has_next_attempt = index < len(unique_attempts)
         parts: list[str] = []
-        async for chunk in stream_chat_response(
-            db=db,
-            user=user,
-            workspace=workspace,
-            messages=messages,
-            provider_override=provider,
-            model_override=model,
-        ):
-            parts.append(chunk)
+        try:
+            async for chunk in stream_chat_response(
+                db=db,
+                user=user,
+                workspace=workspace,
+                messages=messages,
+                provider_override=provider,
+                model_override=model,
+            ):
+                parts.append(chunk)
+        except Exception as exc:
+            provider_attempts.append(
+                timer.finish(
+                    status="fallback" if has_next_attempt else "error",
+                    fallback_reason="provider_exception" if has_next_attempt else None,
+                    error=str(exc),
+                )
+            )
+            logger.exception("AI provider attempt failed: provider=%s model=%s", provider, model)
+            continue
+
         reply = "".join(parts).strip()
         if reply and not _is_unavailable_reply(reply):
+            provider_attempts.append(timer.finish(status="success"))
+            _publish_provider_attempts(provider_attempts, provider_attempts_out)
             return reply
         if reply:
             last_reply = reply
+        provider_attempts.append(
+            timer.finish(
+                status="fallback" if has_next_attempt else "error",
+                fallback_reason="provider_unavailable_reply" if has_next_attempt else None,
+                error=reply or "empty reply",
+            )
+        )
 
+    _publish_provider_attempts(provider_attempts, provider_attempts_out)
     if last_reply:
         return last_reply
     return "AI service is unavailable right now. Please try again shortly."
@@ -923,6 +1014,7 @@ async def collect_grounded_tool_answer(
     user_message: str,
     tool_name: str,
     tool_result: Any,
+    provider_attempts_out: list[dict[str, object]] | None = None,
 ) -> str:
     tool_json = _safe_json(tool_result)
     grounded_messages = [
@@ -932,7 +1024,8 @@ async def collect_grounded_tool_answer(
                 f"User request:\n{user_message}\n\n"
                 f"Ground truth WheelSense tool used: {tool_name}\n"
                 f"Ground truth tool result JSON:\n{tool_json}\n\n"
-                "Answer the user naturally in the user's language. "
+                "Answer in the language of the user's latest message. "
+                "If the latest user message is English, answer in English; if Thai, answer in Thai. "
                 "Use only the grounded tool result for WheelSense facts. "
                 "Do not dump raw JSON unless the user explicitly asked for raw data. "
                 "If the result does not contain enough information, say that clearly."
@@ -944,6 +1037,7 @@ async def collect_grounded_tool_answer(
         user=user,
         workspace=workspace,
         messages=grounded_messages,
+        provider_attempts_out=provider_attempts_out,
     )
 
 
@@ -954,6 +1048,7 @@ async def collect_grounded_multi_tool_answer(
     workspace: Workspace,
     user_message: str,
     tool_results: list[tuple[str, Any]],
+    provider_attempts_out: list[dict[str, object]] | None = None,
 ) -> str:
     """Summarize multiple MCP read results in one assistant reply."""
     blocks: list[str] = []
@@ -966,7 +1061,8 @@ async def collect_grounded_multi_tool_answer(
                 f"User request:\n{user_message}\n\n"
                 "Ground truth WheelSense tool results (in order):\n\n"
                 + "\n\n".join(blocks)
-                + "\n\nAnswer the user naturally in the user's language. "
+                + "\n\nAnswer in the language of the user's latest message. "
+                "If the latest user message is English, answer in English; if Thai, answer in Thai. "
                 "Use only the grounded tool results for WheelSense facts. "
                 "Synthesize across tools when needed. "
                 "Do not dump raw JSON unless the user explicitly asked for raw data."
@@ -978,6 +1074,7 @@ async def collect_grounded_multi_tool_answer(
         user=user,
         workspace=workspace,
         messages=grounded_messages,
+        provider_attempts_out=provider_attempts_out,
     )
 
 
@@ -988,6 +1085,7 @@ async def collect_plan_confirmation_reply(
     workspace: Workspace,
     user_message: str,
     execution_plan: ExecutionPlan,
+    provider_attempts_out: list[dict[str, object]] | None = None,
 ) -> str:
     plan_json = _safe_json(execution_plan.model_dump(mode="json"))
     plan_messages = [
@@ -1007,6 +1105,7 @@ async def collect_plan_confirmation_reply(
         user=user,
         workspace=workspace,
         messages=plan_messages,
+        provider_attempts_out=provider_attempts_out,
     )
 
 
@@ -1038,8 +1137,11 @@ async def list_chat_actions(
     ws_id: int,
     user: User,
     limit: int = 100,
+    conversation_id: int | None = None,
 ) -> list[ChatAction]:
     stmt = select(ChatAction).where(ChatAction.workspace_id == ws_id)
+    if conversation_id is not None:
+        stmt = stmt.where(ChatAction.conversation_id == conversation_id)
     if user.role not in WORKSPACE_ACTION_MANAGER_ROLES:
         stmt = stmt.where(ChatAction.proposed_by_user_id == user.id)
     result = await db.execute(stmt.order_by(ChatAction.created_at.desc()).limit(limit))
@@ -1156,6 +1258,11 @@ async def execute_chat_action(
     if action.status != "confirmed":
         if not (force and action.status == "proposed"):
             raise HTTPException(status_code=409, detail="Chat action must be confirmed first")
+        if _action_requires_confirmation_before_force(action):
+            raise HTTPException(
+                status_code=409,
+                detail="Mutating chat action must be confirmed before execution",
+            )
 
     result_payload: dict[str, Any]
     if action.action_type == "note":
@@ -1223,6 +1330,8 @@ async def execute_chat_action(
                 execution_plan=execution_plan,
             )
             result_payload = runtime_result.execution_result
+            if runtime_result.message and isinstance(result_payload, dict):
+                result_payload.setdefault("message", runtime_result.message)
         except Exception as exc:
             action.status = "failed"
             action.executed_by_user_id = actor.id
@@ -1266,4 +1375,3 @@ async def execute_chat_action(
     await db.commit()
     await db.refresh(action)
     return _normalize_action_timestamps(action), result_payload
-

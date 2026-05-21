@@ -111,21 +111,24 @@ export function WorkflowJobCreateDialog({
 
   useEffect(() => {
     if (!open) {
-      setTitle("");
       const s = defaultDateParts();
-      setStartParts(s);
       const d = new Date(`${s.date}T${s.time}`);
       d.setMinutes(d.getMinutes() + 60);
-      setEndParts({
-        date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
-        time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
-      });
-      setPatientIds([]);
-      setAssigneeIds([]);
-      setStaffRole("all");
-      setStaffSearch("");
-      setPatientSearch("");
-      setStepRows([newRow()]);
+      const timeoutId = window.setTimeout(() => {
+        setTitle("");
+        setStartParts(s);
+        setEndParts({
+          date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+          time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+        });
+        setPatientIds([]);
+        setAssigneeIds([]);
+        setStaffRole("all");
+        setStaffSearch("");
+        setPatientSearch("");
+        setStepRows([newRow()]);
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
     }
   }, [open]);
 

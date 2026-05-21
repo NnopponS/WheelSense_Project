@@ -1,0 +1,31 @@
+{
+  "name": "wheelsense-workflows",
+  "version": "0.1.0",
+  "description": "WheelSense workflow slash commands copied from repo-local Windsurf workflows.",
+  "author": {
+    "name": "WheelSense"
+  },
+  "homepage": "https://local/wheelsense-workflows",
+  "license": "UNLICENSED",
+  "keywords": [
+    "wheelsense",
+    "workflow",
+    "commands",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "WheelSense Workflows",
+    "shortDescription": "WheelSense workflow commands",
+    "longDescription": "Adds WheelSense workflow command prompts copied from .windsurf/workflows, including /which-agent and /whichagent.",
+    "developerName": "WheelSense",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Use /whichagent to choose the right WheelSense workflow"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

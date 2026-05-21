@@ -1,14 +1,20 @@
 """Integration tests for Phase 3 REST API endpoints."""
 
+from datetime import date, datetime, timezone
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_password_hash
-from app.models.caregivers import CareGiver
-from app.models.core import Workspace
-from app.models.patients import Patient
+from app.models.activity import ActivityTimeline
+from app.models.caregivers import CareGiver, CareGiverPatientAccess
+from app.models.core import Room, Workspace
+from app.models.patients import Patient, PatientContact, PatientDeviceAssignment
+from app.models.telemetry import IMUTelemetry
 from app.models.users import User
+from app.models.vitals import HealthObservation
+from app.services.health_analysis import patient_health_analysis_service
 
 
 # ── Patient Endpoints ────────────────────────────────────────────────────────
@@ -165,6 +171,100 @@ async def test_patient_contacts(client: AsyncClient):
     assert patch.status_code == 200
     assert patch.json()["name"] == "John C."
     assert patch.json()["phone"] == "555-9999"
+
+
+@pytest.mark.asyncio
+async def test_patient_detail_exposes_complete_profile_contract(
+    client: AsyncClient,
+    admin_user: User,
+    db_session: AsyncSession,
+):
+    ws = admin_user.workspace_id
+    room = Room(
+        workspace_id=ws,
+        name="Room 204",
+        room_type="bedroom",
+        node_device_id="CAM_204",
+    )
+    db_session.add(room)
+    await db_session.flush()
+
+    patient = Patient(
+        workspace_id=ws,
+        first_name="Profile",
+        last_name="Complete",
+        nickname="PC",
+        date_of_birth=date(1940, 1, 2),
+        gender="female",
+        height_cm=170,
+        weight_kg=72.25,
+        blood_type="O+",
+        medical_conditions=[{"condition": "hypertension", "severity": "moderate"}],
+        allergies=["penicillin"],
+        medications=[{"name": "Amlodipine", "dosage": "5 mg"}],
+        past_surgeries=[{"procedure": "Hip replacement", "year": 2018}],
+        care_level="critical",
+        mobility_type="wheelchair",
+        current_mode="walking",
+        notes="Needs fall-risk checks.",
+        room_id=room.id,
+    )
+    staff = CareGiver(
+        workspace_id=ws,
+        first_name="Assigned",
+        last_name="Nurse",
+        role="observer",
+        phone="555-0101",
+        email="assigned@example.com",
+    )
+    db_session.add_all([patient, staff])
+    await db_session.flush()
+    db_session.add_all(
+        [
+            PatientContact(
+                patient_id=patient.id,
+                contact_type="emergency",
+                name="Emergency Contact",
+                relationship="daughter",
+                phone="555-1111",
+                email="family@example.com",
+                is_primary=True,
+                notes="Call first",
+            ),
+            CareGiverPatientAccess(
+                workspace_id=ws,
+                caregiver_id=staff.id,
+                patient_id=patient.id,
+                assigned_by_user_id=admin_user.id,
+                is_active=True,
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    resp = await client.get(f"/api/patients/{patient.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["date_of_birth"] == "1940-01-02"
+    assert data["height_cm"] == 170
+    assert data["weight_kg"] == 72.25
+    assert data["bmi"] == 25.0
+    assert data["blood_type"] == "O+"
+    assert data["clinical_notes"] == "Needs fall-risk checks."
+    assert data["medical_conditions"][0]["condition"] == "hypertension"
+    assert data["allergies"] == ["penicillin"]
+    assert data["medications"][0]["name"] == "Amlodipine"
+    assert data["current_medications"][0]["name"] == "Amlodipine"
+    assert data["past_surgeries"][0]["procedure"] == "Hip replacement"
+    assert data["care_level"] == "critical"
+    assert data["mobility_type"] == "wheelchair"
+    assert data["current_mode"] == "walking"
+    assert data["room"]["id"] == room.id
+    assert data["room"]["name"] == "Room 204"
+    assert data["emergency_contacts"][0]["name"] == "Emergency Contact"
+    assert data["emergency_contact"]["name"] == "Emergency Contact"
+    assert data["assigned_staff"][0]["id"] == staff.id
+    assert data["assigned_staff"][0]["role"] == "observer"
 
 
 @pytest.mark.asyncio
@@ -632,6 +732,203 @@ async def test_health_observations(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_patient_health_analysis_scores_abnormal_data(client: AsyncClient):
+    ws_resp = await client.post("/api/workspaces", json={"name": "test-ws"})
+    ws_id = ws_resp.json()["id"]
+    await client.post(f"/api/workspaces/{ws_id}/activate")
+
+    p_resp = await client.post(
+        "/api/patients",
+        json={
+            "first_name": "Risk",
+            "last_name": "Review",
+            "care_level": "critical",
+            "height_cm": 165,
+            "weight_kg": 90,
+        },
+    )
+    patient_id = p_resp.json()["id"]
+    await client.post(
+        "/api/vitals/readings",
+        json={
+            "patient_id": patient_id,
+            "device_id": "POLAR-RISK",
+            "heart_rate_bpm": 124,
+            "spo2": 89,
+            "source": "polar_sdk",
+        },
+    )
+    await client.post(
+        "/api/vitals/observations",
+        json={
+            "patient_id": patient_id,
+            "observation_type": "daily_check",
+            "temperature_c": 38.7,
+            "blood_pressure_sys": 162,
+            "blood_pressure_dia": 94,
+            "description": "Needs review",
+        },
+    )
+
+    resp = await client.get(f"/api/patients/{patient_id}/health-analysis")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["patient_id"] == patient_id
+    assert data["risk_level"] == "critical"
+    assert data["overall_score"] < 80
+    assert data["latest_vitals"]["heart_rate_bpm"]["value"] == 124
+    assert data["risk_factors"]
+    assert data["recommendations"]
+
+
+@pytest.mark.asyncio
+async def test_patient_health_analysis_patient_self_scope(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    make_token_headers,
+):
+    ws_resp = await client.post("/api/workspaces", json={"name": "test-ws"})
+    ws_id = ws_resp.json()["id"]
+    await client.post(f"/api/workspaces/{ws_id}/activate")
+
+    own = (await client.post("/api/patients", json={"first_name": "Own", "last_name": "Record"})).json()
+    other = (await client.post("/api/patients", json={"first_name": "Other", "last_name": "Record"})).json()
+    patient_user = User(
+        username="patient_health_scope",
+        hashed_password=get_password_hash("patientpass"),
+        role="patient",
+        workspace_id=ws_id,
+        patient_id=own["id"],
+        is_active=True,
+    )
+    db_session.add(patient_user)
+    await db_session.commit()
+    headers = make_token_headers(patient_user)
+
+    own_resp = await client.get(f"/api/patients/{own['id']}/health-analysis", headers=headers)
+    assert own_resp.status_code == 200
+    blocked = await client.get(f"/api/patients/{other['id']}/health-analysis", headers=headers)
+    assert blocked.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_patient_health_analysis_scopes_imu_distance_to_active_assignment(
+    db_session: AsyncSession,
+):
+    ws = Workspace(name="health-analysis-scope", is_active=True)
+    db_session.add(ws)
+    await db_session.flush()
+    patient = Patient(workspace_id=ws.id, first_name="Scoped", last_name="Patient")
+    other_patient = Patient(workspace_id=ws.id, first_name="Other", last_name="Patient")
+    db_session.add_all([patient, other_patient])
+    await db_session.flush()
+
+    now = datetime.now(timezone.utc)
+    db_session.add_all(
+        [
+            PatientDeviceAssignment(
+                workspace_id=ws.id,
+                patient_id=patient.id,
+                device_id="WS-ACTIVE",
+                device_role="wheelchair_sensor",
+                is_active=True,
+            ),
+            PatientDeviceAssignment(
+                workspace_id=ws.id,
+                patient_id=other_patient.id,
+                device_id="WS-OTHER",
+                device_role="wheelchair_sensor",
+                is_active=True,
+            ),
+            PatientDeviceAssignment(
+                workspace_id=ws.id,
+                patient_id=patient.id,
+                device_id="WS-INACTIVE",
+                device_role="wheelchair_sensor",
+                is_active=False,
+            ),
+            IMUTelemetry(
+                workspace_id=ws.id,
+                device_id="WS-ACTIVE",
+                timestamp=now,
+                distance_m=2.5,
+            ),
+            IMUTelemetry(
+                workspace_id=ws.id,
+                device_id="WS-OTHER",
+                timestamp=now,
+                distance_m=80.0,
+            ),
+            IMUTelemetry(
+                workspace_id=ws.id,
+                device_id="WS-INACTIVE",
+                timestamp=now,
+                distance_m=40.0,
+            ),
+        ]
+    )
+    await db_session.flush()
+
+    analysis = await patient_health_analysis_service.build(db_session, ws.id, patient)
+
+    assert analysis.activity.source == "imu"
+    assert analysis.activity.distance_m == 2.5
+    labels = {factor.label for factor in analysis.risk_factors}
+    assert "Low movement activity" in labels
+    assert "2.5 m" in analysis.trend_summary
+
+
+@pytest.mark.asyncio
+async def test_patient_health_analysis_uses_observations_for_risk_and_recommendation(
+    db_session: AsyncSession,
+):
+    ws = Workspace(name="health-analysis-observations", is_active=True)
+    db_session.add(ws)
+    await db_session.flush()
+    patient = Patient(workspace_id=ws.id, first_name="Observed", last_name="Patient")
+    db_session.add(patient)
+    await db_session.flush()
+    db_session.add_all(
+        [
+            HealthObservation(
+                workspace_id=ws.id,
+                patient_id=patient.id,
+                observation_type="daily_check",
+                temperature_c=39.1,
+                blood_pressure_sys=166,
+                blood_pressure_dia=94,
+                pain_level=8,
+                meal_portion="refused",
+                water_ml=200,
+                description="Fever, elevated pain, refused breakfast",
+            ),
+            ActivityTimeline(
+                workspace_id=ws.id,
+                patient_id=patient.id,
+                event_type="fall_detected",
+                description="Auto fall signal from wheelchair sensor",
+                source="auto",
+            ),
+        ]
+    )
+    await db_session.flush()
+
+    analysis = await patient_health_analysis_service.build(db_session, ws.id, patient)
+    labels = {factor.label for factor in analysis.risk_factors}
+    recommendation_titles = {rec.title for rec in analysis.recommendations}
+
+    assert "High body temperature" in labels
+    assert "High blood pressure" in labels
+    assert "Elevated pain report" in labels
+    assert "Recent fall event" in labels
+    assert "Review high body temperature" in recommendation_titles
+    assert analysis.latest_vitals["temperature_c"].value == 39.1
+    assert analysis.latest_vitals["blood_pressure_sys"].value == 166
+    assert "manual observations" in analysis.trend_summary
+    assert "timeline events" in analysis.trend_summary
+
+
+@pytest.mark.asyncio
 async def test_timeline_events(client: AsyncClient):
     ws_resp = await client.post("/api/workspaces", json={"name": "test-ws"})
     ws_id = ws_resp.json()["id"]
@@ -650,6 +947,7 @@ async def test_timeline_events(client: AsyncClient):
     resp = await client.get(f"/api/timeline?patient_id={patient_id}")
     assert resp.status_code == 200
     assert len(resp.json()) >= 1
+    assert resp.json()[0]["provenance"] == "telemetry"
 
 
 # ── Alert Endpoints ──────────────────────────────────────────────────────────

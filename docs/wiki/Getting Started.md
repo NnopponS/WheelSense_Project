@@ -15,7 +15,7 @@
 - [frontend/package.json](file://frontend/package.json)
 - [frontend/Dockerfile](file://frontend/Dockerfile)
 - [frontend/README.md](file://frontend/README.md)
-- [firmware/M5StickCPlus2/platformio.ini](file://firmware/M5StickCPlus2/platformio.ini)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
 </cite>
 
 ## Table of Contents
@@ -57,7 +57,7 @@ FDocker["frontend/Dockerfile"]
 FPackage["frontend/package.json"]
 end
 subgraph "Firmware"
-FWPIO["firmware/M5StickCPlus2/platformio.ini"]
+FWPIO["firmware/M5StickCPlus2_BLEGateway/platformio.ini"]
 end
 SMain --> SDI
 SCompose --> SAlembic
@@ -83,7 +83,7 @@ FWPIO --> |"PlatformIO build"| Firmware["Firmware Artifacts"]
 - [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
 - [frontend/Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
 - [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 **Section sources**
 - [README.md:1-74](file://README.md#L1-L74)
@@ -105,7 +105,7 @@ FWPIO --> |"PlatformIO build"| Firmware["Firmware Artifacts"]
 - [server/alembic/env.py:1-89](file://server/alembic/env.py#L1-L89)
 - [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
 - [frontend/Dockerfile:1-31](file://frontend/Dockerfile#L1-L31)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Architecture Overview
 High-level runtime architecture:
@@ -138,7 +138,7 @@ FE --> |"/api/* proxy"| BE
 **Section sources**
 - [server/pyproject.toml:4-6](file://server/pyproject.toml#L4-L6)
 - [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
-- [firmware/M5StickCPlus2/platformio.ini:5-8](file://firmware/M5StickCPlus2/platformio.ini#L5-L8)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:5-8](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L5-L8)
 
 ### Local Development Setup
 
@@ -202,10 +202,10 @@ WUpload --> WEnd(["Ready"])
 ```
 
 **Diagram sources**
-- [firmware/M5StickCPlus2/platformio.ini:4-22](file://firmware/M5StickCPlus2/platformio.ini#L4-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L22)
 
 **Section sources**
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ### Database Initialization and Seeding
 - Alembic migrations are applied automatically by the backend Docker image and via the command-line workflow.

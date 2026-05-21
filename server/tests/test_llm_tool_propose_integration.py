@@ -65,10 +65,11 @@ async def test_propose_turn_llm_tools_multiple_reads_grounded(
     )
 
     token = create_access_token(subject=str(runtime_test_user.id), role=runtime_test_user.role)
+    user_message = "combine live platform reads"
     result = await propose_turn(
         actor_access_token=token,
-        message="สถานะระบบและ workspace",
-        messages=[ChatMessagePart(role="user", content="สถานะระบบและ workspace")],
+        message=user_message,
+        messages=[ChatMessagePart(role="user", content=user_message)],
         conversation_id=None,
     )
 
@@ -173,10 +174,11 @@ async def test_propose_turn_llm_tools_copilot_workspace_uses_json_router_first(
     )
 
     token = create_access_token(subject=str(runtime_test_user.id), role=runtime_test_user.role)
+    user_message = "route this read through tools"
     result = await propose_turn(
         actor_access_token=token,
-        message="system health",
-        messages=[ChatMessagePart(role="user", content="system health")],
+        message=user_message,
+        messages=[ChatMessagePart(role="user", content=user_message)],
         conversation_id=None,
     )
 

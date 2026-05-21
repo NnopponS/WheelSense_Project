@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Skill Ops"
+  short_description: "WheelSense skill-ops workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $skill-ops for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

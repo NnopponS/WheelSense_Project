@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import httpx
 
 from app.config import settings
@@ -27,6 +29,7 @@ async def propose_turn(
     messages: list[ChatMessagePart],
     conversation_id: int | None,
     page_patient_id: int | None = None,
+    page_context: dict[str, Any] | None = None,
 ) -> AgentRuntimeProposeResponse:
     payload = AgentRuntimeProposeRequest(
         actor_access_token=actor_access_token,
@@ -34,6 +37,7 @@ async def propose_turn(
         messages=messages,
         conversation_id=conversation_id,
         page_patient_id=page_patient_id,
+        page_context=dict(page_context or {}),
     )
     async with httpx.AsyncClient(timeout=90.0) as client:
         response = await client.post(

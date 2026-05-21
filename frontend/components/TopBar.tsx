@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, Search, Beaker, Volume2, VolumeX } from "lucide-react";
@@ -46,7 +46,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [alertSoundOn, setAlertSoundOn] = useState(false);
+  const [alertSoundOn, setAlertSoundOn] = useState(() => getAlertSoundEnabled());
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, hasNewNotifications } = useNotifications();
   const { data: simulatorStatus } = useQuery({
     queryKey: ["shell", "topbar", "demo-simulator-status"],
@@ -56,10 +56,6 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
     refetchInterval: getQueryPollingMs("/demo/simulator/status"),
     retry: 3,
   });
-
-  useEffect(() => {
-    setAlertSoundOn(getAlertSoundEnabled());
-  }, []);
 
   const notificationInboxHint = useMemo(() => {
     if (!user || user.role === "patient") return undefined;
@@ -93,7 +89,7 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
           </Button>
         </div>
       ) : null}
-      <div className="flex min-h-[var(--topbar-height)] shrink-0 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 px-3 py-2 sm:min-h-[var(--topbar-height)] sm:px-6 sm:py-3">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         {onMenuClick ? (
           <Button
@@ -124,8 +120,10 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-          <RoleSwitcher />
+        <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2">
+          <div className="hidden sm:block">
+            <RoleSwitcher />
+          </div>
           {/* Environment Badge - Only shown for admins in simulator mode */}
           {simulatorStatus?.is_simulator && user?.role === "admin" ? (
             <Badge 
@@ -136,15 +134,19 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
               SIM
             </Badge>
           ) : null}
-          <LanguageSwitcher />
-          <ThemeToggle />
+          <div className="block">
+            <LanguageSwitcher compact />
+          </div>
+          <div className="hidden sm:block">
+            <ThemeToggle />
+          </div>
 
           {user && user.role !== "patient" ? (
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className={alertSoundOn ? "text-primary" : "text-muted-foreground"}
+              className={alertSoundOn ? "hidden text-primary sm:inline-flex" : "hidden text-muted-foreground sm:inline-flex"}
               aria-label={alertSoundOn ? t("shell.alertSoundOn") : t("shell.alertSoundOff")}
               aria-pressed={alertSoundOn}
               title={t("shell.alertSound")}

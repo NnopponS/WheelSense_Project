@@ -19,13 +19,16 @@ from app.db.session import AsyncSessionLocal
 from app.services.device_management import (
     ensure_ble_node_devices_from_wheelchair_rssi,
     ensure_camera_device_from_mqtt_registration,
+    ensure_m5_companion_for_mobile_registration,
     ensure_polar_companion_for_mobile_registration,
     ensure_wheelchair_device_from_telemetry,
     get_registered_device_for_ingest,
+    mirror_mobile_assignments_to_m5_companion,
     mirror_mobile_assignments_to_polar_companion,
     remove_ble_stubs_superseded_by_camera_payload,
     resolve_mqtt_auto_register_workspace_id,
     try_merge_ble_row_for_camera_registration,
+    _m5_companion_id_for_mobile,
     _polar_companion_id_for_mobile,
 )
 from app.models.activity import ActivityTimeline, Alert
@@ -399,6 +402,100 @@ async def _handle_telemetry(payload: bytes, client: aiomqtt.Client):
         )
 
 
+def _first_present(*values):
+    for value in values:
+        if value is not None and str(value).strip() != "":
+            return value
+    return None
+
+
+def _to_float(value):
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_int(value):
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        return int(round(float(value)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _to_bool(value, default=False):
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes", "y"}:
+        return True
+    if normalized in {"0", "false", "no", "n"}:
+        return False
+    return default
+
+
+def _direction_value(value):
+    parsed = _to_int(value)
+    if parsed is not None:
+        return parsed
+    normalized = str(value or "").strip().lower()
+    if normalized in {"forward", "fwd"}:
+        return 1
+    if normalized in {"reverse", "backward", "back"}:
+        return -1
+    if normalized in {"stopped", "stop", "idle"}:
+        return 0
+    return None
+
+
+def _first_rr_interval(value):
+    if isinstance(value, list) and value:
+        return _to_float(value[0])
+    return _to_float(value)
+
+
+def _as_dict(value):
+    return value if isinstance(value, dict) else {}
+
+
+def _normalize_m5_companion_payload(data: dict) -> dict:
+    imu = _as_dict(data.get("imu"))
+    motion = _as_dict(data.get("motion"))
+    battery = _as_dict(data.get("battery"))
+    normalized = dict(data)
+    normalized["imu"] = {
+        "ax": _to_float(_first_present(imu.get("ax"), data.get("ax"), data.get("accel_x"))),
+        "ay": _to_float(_first_present(imu.get("ay"), data.get("ay"), data.get("accel_y"))),
+        "az": _to_float(_first_present(imu.get("az"), data.get("az"), data.get("accel_z"))),
+        "gx": _to_float(_first_present(imu.get("gx"), data.get("gx"), data.get("gyro_x"))),
+        "gy": _to_float(_first_present(imu.get("gy"), data.get("gy"), data.get("gyro_y"))),
+        "gz": _to_float(_first_present(imu.get("gz"), data.get("gz"), data.get("gyro_z"))),
+        "valid": _to_bool(_first_present(imu.get("valid"), data.get("imu_valid")), True),
+    }
+    normalized["motion"] = {
+        "distance_m": _to_float(_first_present(motion.get("distance_m"), data.get("distance_m"))),
+        "velocity_ms": _to_float(_first_present(motion.get("velocity_ms"), data.get("velocity_ms"))),
+        "accel_ms2": _to_float(_first_present(motion.get("accel_ms2"), data.get("accel_ms2"))),
+        "direction": _direction_value(_first_present(motion.get("direction"), data.get("direction"))),
+    }
+    normalized["battery"] = {
+        "percentage": _to_int(
+            _first_present(battery.get("percentage"), data.get("battery_pct"))
+        ),
+        "voltage_v": _to_float(_first_present(battery.get("voltage_v"), data.get("battery_v"))),
+        "charging": _to_bool(_first_present(battery.get("charging"), data.get("charging"))),
+    }
+    normalized.setdefault("hardware_type", "companion_m5")
+    normalized.setdefault("device_type", "wheelchair")
+    return normalized
+
+
 async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
     """Handle telemetry published by the WheelSense mobile app.
 
@@ -413,8 +510,21 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
     device_id = data.get("device_id", "unknown")
     battery = data.get("battery", {})
     rssi_list = data.get("rssi", [])
+    m5_data = data.get("m5") or data.get("companion_m5_telemetry")
+    if not isinstance(m5_data, dict):
+        m5_data = None
+    else:
+        m5_data = _normalize_m5_companion_payload(m5_data)
 
     hr_data = data.get("hr")
+    if not hr_data and isinstance(data.get("polar_hr"), dict):
+        polar_hr_data = data["polar_hr"]
+        hr_data = {
+            "bpm": polar_hr_data.get("heart_rate_bpm"),
+            "rr_interval_ms": polar_hr_data.get("rr_interval_ms"),
+            "spo2": polar_hr_data.get("spo2"),
+            "sensor_battery": polar_hr_data.get("sensor_battery"),
+        }
     ppg_data = data.get("ppg")
 
     ts_str = data.get("timestamp", "")
@@ -445,6 +555,95 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
         device.firmware = data.get("firmware", device.firmware)
         session.add(device)
 
+        if m5_data:
+            m5_device_id = (
+                str(m5_data.get("device_id") or "").strip()
+                or await _m5_companion_id_for_mobile(session, ws_id, device_id)
+            )
+            if m5_device_id:
+                m5_device = await get_registered_device_for_ingest(session, m5_device_id)
+                if m5_device is None:
+                    companion_payload = {
+                        "device_id": m5_device_id,
+                        "name": m5_data.get("device_name") or m5_data.get("name"),
+                        "firmware": m5_data.get("firmware"),
+                        "firmware_version": m5_data.get("firmware_version"),
+                        "model": m5_data.get("model"),
+                        "mac": m5_data.get("mac"),
+                    }
+                    registered_m5_id = await ensure_m5_companion_for_mobile_registration(
+                        session, ws_id, device, companion_payload
+                    )
+                    if registered_m5_id:
+                        m5_device_id = registered_m5_id
+                        m5_device = await get_registered_device_for_ingest(session, m5_device_id)
+                if m5_device is not None and m5_device.workspace_id == ws_id:
+                    m5_device.last_seen = utcnow()  # type: ignore[assignment]
+                    m5_device.firmware = str(
+                        m5_data.get("firmware")
+                        or m5_data.get("firmware_version")
+                        or m5_device.firmware
+                        or ""
+                    )[:16]
+                    session.add(m5_device)
+                    m5_imu = m5_data.get("imu") or {}
+                    m5_motion = m5_data.get("motion") or {}
+                    m5_battery = m5_data.get("battery") or {}
+                    session.add(
+                        IMUTelemetry(
+                            workspace_id=ws_id,
+                            device_id=m5_device.device_id,
+                            timestamp=ts,
+                            seq=m5_data.get("seq", data.get("seq", 0)),
+                            ax=m5_imu.get("ax"),
+                            ay=m5_imu.get("ay"),
+                            az=m5_imu.get("az"),
+                            gx=m5_imu.get("gx"),
+                            gy=m5_imu.get("gy"),
+                            gz=m5_imu.get("gz"),
+                            distance_m=m5_motion.get("distance_m"),
+                            velocity_ms=m5_motion.get("velocity_ms"),
+                            accel_ms2=m5_motion.get("accel_ms2"),
+                            direction=m5_motion.get("direction"),
+                            battery_pct=m5_battery.get("percentage"),
+                            battery_v=m5_battery.get("voltage_v"),
+                            charging=m5_battery.get("charging", False),
+                        )
+                    )
+                    if m5_data.get("is_recording", data.get("is_recording", False)):
+                        session.add(
+                            MotionTrainingData(
+                                workspace_id=ws_id,
+                                device_id=m5_device.device_id,
+                                session_id=str(
+                                    m5_data.get("session_id", data.get("session_id", ""))
+                                ),
+                                timestamp=ts,
+                                action_label=str(
+                                    m5_data.get(
+                                        "action_label",
+                                        data.get("action_label", "unknown"),
+                                    )
+                                ),
+                                ax=m5_imu.get("ax"),
+                                ay=m5_imu.get("ay"),
+                                az=m5_imu.get("az"),
+                                gx=m5_imu.get("gx"),
+                                gy=m5_imu.get("gy"),
+                                gz=m5_imu.get("gz"),
+                                distance_m=m5_motion.get("distance_m"),
+                                velocity_ms=m5_motion.get("velocity_ms"),
+                                accel_ms2=m5_motion.get("accel_ms2"),
+                            )
+                        )
+                else:
+                    logger.warning(
+                        "M5 companion telemetry ignored for %s: companion %s not in workspace %d",
+                        device_id,
+                        m5_device_id,
+                        ws_id,
+                    )
+
         # Persist RSSI readings for localization
         for r in rssi_list:
             session.add(
@@ -465,6 +664,14 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
         # Persist HR vital if present (Polar Verity / SDK streams use polar_sdk)
         if hr_data and patient_id is not None:
             hr_source = "polar_sdk" if (ppg_data or data.get("hr_source") == "polar_sdk") else "mobile_ble"
+            rr_intervals = hr_data.get("rr_intervals") or hr_data.get("rr_intervals_ms")
+            rr_interval_ms = _first_rr_interval(rr_intervals or hr_data.get("rr_interval_ms"))
+            polar_spo2 = hr_data.get("spo2") or data.get("polar_spo2")
+            polar_sensor_battery = (
+                hr_data.get("sensor_battery")
+                or data.get("polar_sensor_battery")
+                or battery.get("percentage")
+            )
             session.add(
                 VitalReading(
                     workspace_id=ws_id,
@@ -472,13 +679,9 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
                     device_id=device_id,
                     timestamp=ts,
                     heart_rate_bpm=hr_data.get("bpm"),
-                    rr_interval_ms=(
-                        hr_data["rr_intervals"][0]
-                        if hr_data.get("rr_intervals")
-                        else None
-                    ),
-                    spo2=None,
-                    sensor_battery=battery.get("percentage"),
+                    rr_interval_ms=rr_interval_ms,
+                    spo2=polar_spo2,
+                    sensor_battery=polar_sensor_battery,
                     source=hr_source,
                 )
             )
@@ -494,13 +697,9 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
                             device_id=pid_polar,
                             timestamp=ts,
                             heart_rate_bpm=hr_data.get("bpm"),
-                            rr_interval_ms=(
-                                hr_data["rr_intervals"][0]
-                                if hr_data.get("rr_intervals")
-                                else None
-                            ),
-                            spo2=None,
-                            sensor_battery=battery.get("percentage"),
+                            rr_interval_ms=rr_interval_ms,
+                            spo2=polar_spo2,
+                            sensor_battery=polar_sensor_battery,
                             source=hr_source,
                         )
                     )
@@ -574,9 +773,8 @@ async def _handle_mobile_telemetry(payload: bytes, client: aiomqtt.Client):
                     "patient_id": patient_id,
                     "device_id": device_id,
                     "heart_rate_bpm": hr_data.get("bpm"),
-                    "rr_interval_ms": (
-                        hr_data["rr_intervals"][0] if hr_data.get("rr_intervals") else None
-                    ),
+                    "rr_interval_ms": rr_interval_ms,
+                    "spo2": polar_spo2,
                     "timestamp": ts.isoformat() if ts else None,
                     "source": (
                         "polar_sdk"
@@ -1083,6 +1281,7 @@ async def _handle_mobile_registration(payload: bytes):
     app_version = str(data.get("app_version", "") or "")[:16]
     display = str(device_name).strip()[:128] or device_id.strip()[:128]
     polar_registry_id: str | None = None
+    m5_registry_id: str | None = None
     ws_mirror: int | None = None
 
     async with AsyncSessionLocal() as session:
@@ -1133,6 +1332,7 @@ async def _handle_mobile_registration(payload: bytes):
 
         await session.flush()
         companion = data.get("companion_polar")
+        m5_companion = data.get("companion_m5")
         ws_mirror = device.workspace_id
         await ensure_polar_companion_for_mobile_registration(
             session,
@@ -1140,13 +1340,26 @@ async def _handle_mobile_registration(payload: bytes):
             device,
             companion if isinstance(companion, dict) else None,
         )
+        await ensure_m5_companion_for_mobile_registration(
+            session,
+            ws_mirror,
+            device,
+            m5_companion if isinstance(m5_companion, dict) else None,
+        )
         polar_registry_id = await _polar_companion_id_for_mobile(session, ws_mirror, device_id)
+        m5_registry_id = await _m5_companion_id_for_mobile(session, ws_mirror, device_id)
         await session.commit()
 
     if polar_registry_id and ws_mirror is not None:
         async with AsyncSessionLocal() as sync_session:
             await mirror_mobile_assignments_to_polar_companion(
                 sync_session, ws_mirror, device_id, polar_registry_id
+            )
+            await sync_session.commit()
+    if m5_registry_id and ws_mirror is not None:
+        async with AsyncSessionLocal() as sync_session:
+            await mirror_mobile_assignments_to_m5_companion(
+                sync_session, ws_mirror, device_id, m5_registry_id
             )
             await sync_session.commit()
 

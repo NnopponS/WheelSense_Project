@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 # JSON column may store legacy list[str] or structured {condition, severity, ...} dicts.
 MedicalConditionEntry = str | dict[str, Any]
@@ -76,6 +76,24 @@ class PatientOut(BaseModel):
     room_id: int | None
     created_at: datetime
 
+
+class PatientRoomOut(BaseModel):
+    id: int
+    name: str
+    floor_id: int | None = None
+    room_type: str
+    node_device_id: str | None = None
+
+
+class PatientAssignedStaffOut(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    role: str
+    phone: str = ""
+    email: str = ""
+    photo_url: str = ""
+
 class ModeSwitchRequest(BaseModel):
     mode: str  # "wheelchair" | "walking"
 
@@ -132,3 +150,24 @@ class PatientContactOut(BaseModel):
     email: str
     is_primary: bool
     notes: str = ""
+
+
+class PatientDetailOut(PatientOut):
+    bmi: float | None = None
+    clinical_notes: str
+    emergency_contacts: list[PatientContactOut] = Field(default_factory=list)
+    assigned_staff: list[PatientAssignedStaffOut] = Field(default_factory=list)
+    room: PatientRoomOut | None = None
+
+    @computed_field
+    @property
+    def current_medications(self) -> list[dict[str, Any]]:
+        return list(self.medications or [])
+
+    @computed_field
+    @property
+    def emergency_contact(self) -> PatientContactOut | None:
+        if not self.emergency_contacts:
+            return None
+        primary = next((contact for contact in self.emergency_contacts if contact.is_primary), None)
+        return primary or self.emergency_contacts[0]

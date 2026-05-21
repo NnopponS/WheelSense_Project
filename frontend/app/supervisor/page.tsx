@@ -1,44 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ClipboardList,
-  Eye,
-  ShieldAlert,
-  Siren,
-  Stethoscope,
-  CheckIcon,
-  ArrowRight,
-  UserCheck,
-  Users,
-  Bell,
-} from "lucide-react";
-import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Bot, ClipboardList, Eye, MapPin, MessageSquare, ShieldAlert, Siren, Users } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { api } from "@/lib/api";
-import { formatRelativeTime } from "@/lib/datetime";
 import { useAuth } from "@/hooks/useAuth";
-import { useFixedNowMs } from "@/hooks/useFixedNowMs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SupervisorHealthQueue } from "@/components/supervisor/SupervisorHealthQueue";
+import DashboardMapLauncher from "@/components/dashboard/DashboardMapLauncher";
+import { RoleQuickActions } from "@/components/dashboard/RoleQuickActions";
+import { SupervisorQueue } from "@/components/supervisor/SupervisorQueue";
 import type {
   CareDirectiveOut,
   CareTaskOut,
   ListAlertsResponse,
   ListPatientsResponse,
-  ListVitalReadingsResponse,
 } from "@/lib/api/task-scope-types";
 
 export default function SupervisorDashboardPage() {
   const { t } = useTranslation();
   const { user: me } = useAuth();
-  const queryClient = useQueryClient();
-  const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
-  const [pendingDirectiveId, setPendingDirectiveId] = useState<number | null>(null);
 
   // Data queries
   const patientsQuery = useQuery({
@@ -50,12 +32,6 @@ export default function SupervisorDashboardPage() {
     queryKey: ["supervisor", "dashboard", "alerts"],
     queryFn: () => api.listAlerts({ status: "active", limit: 100 }),
     refetchInterval: 15_000,
-  });
-
-  const vitalsQuery = useQuery({
-    queryKey: ["supervisor", "dashboard", "vitals"],
-    queryFn: () => api.listVitalReadings({ limit: 300 }),
-    refetchInterval: 30_000,
   });
 
   const tasksQuery = useQuery({
@@ -74,93 +50,81 @@ export default function SupervisorDashboardPage() {
     [patientsQuery.data],
   );
   const alerts = useMemo(() => (alertsQuery.data ?? []) as ListAlertsResponse, [alertsQuery.data]);
-  const vitals = useMemo(
-    () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
-    [vitalsQuery.data],
-  );
   const tasks = useMemo(() => (tasksQuery.data ?? []) as CareTaskOut[], [tasksQuery.data]);
   const directives = useMemo(
     () => (directivesQuery.data ?? []) as CareDirectiveOut[],
     [directivesQuery.data],
   );
-
-  const patientById = useMemo(
-    () => new Map(patients.map((patient) => [patient.id, patient])),
-    [patients],
-  );
-
+  const currentUserId = me?.id ?? null;
   const activeAlerts = useMemo(
     () => alerts.filter((alert) => alert.status === "active"),
     [alerts],
   );
-
   const criticalAlerts = useMemo(
     () => activeAlerts.filter((alert) => alert.severity === "critical"),
     [activeAlerts],
   );
-
   const openTasks = useMemo(
-    () =>
-      tasks
-        .filter((task) => task.status === "pending" || task.status === "in_progress")
-        .sort((left, right) => {
-          const order = { critical: 0, high: 1, normal: 2, low: 3 };
-          const leftRank = order[left.priority as keyof typeof order] ?? 4;
-          const rightRank = order[right.priority as keyof typeof order] ?? 4;
-          if (leftRank !== rightRank) return leftRank - rightRank;
-          if (!left.due_at) return 1;
-          if (!right.due_at) return -1;
-          return left.due_at.localeCompare(right.due_at);
-        }),
+    () => tasks.filter((task) => task.status === "pending" || task.status === "in_progress"),
     [tasks],
   );
-
-  const activeDirectives = useMemo(
-    () => directives.filter((directive) => directive.status === "active"),
-    [directives],
+  const assignedToMeTasks = useMemo(
+    () =>
+      openTasks.filter(
+        (task) =>
+          task.status === "in_progress" &&
+          currentUserId != null &&
+          task.assigned_user_id === currentUserId,
+      ),
+    [currentUserId, openTasks],
   );
-
-  // Mutations
-  const completeTaskMutation = useMutation({
-    mutationFn: async (taskId: number) => {
-      await api.updateWorkflowTask(taskId, { status: "completed" });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "tasks"] });
-    },
-    onSettled: () => setPendingTaskId(null),
-  });
-
-  const acceptTaskMutation = useMutation({
-    mutationFn: async (taskId: number) => {
-      await api.updateWorkflowTask(taskId, { status: "in_progress" });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "tasks"] });
-    },
-    onSettled: () => setPendingTaskId(null),
-  });
-
-  const handleAcceptTask = (taskId: number) => {
-    setPendingTaskId(taskId);
-    acceptTaskMutation.mutate(taskId);
-  };
-  const handleCompleteHealthTask = (taskId: number) => {
-    setPendingTaskId(taskId);
-    completeTaskMutation.mutate(taskId);
-  };
-
-  const acknowledgeDirectiveMutation = useMutation({
-    mutationFn: async (directiveId: number) => {
-      await api.acknowledgeWorkflowDirective(directiveId, {
-        note: t("supervisor.page.ackNote"),
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["supervisor", "dashboard", "directives"] });
-    },
-    onSettled: () => setPendingDirectiveId(null),
-  });
+  const quickActions = useMemo(
+    () => [
+      {
+        label: t("nav.supervisor.emergency"),
+        description: `${criticalAlerts.length}/${activeAlerts.length}`,
+        href: "/supervisor/emergency",
+        icon: Siren,
+        tone: criticalAlerts.length > 0 ? ("danger" as const) : ("neutral" as const),
+      },
+      {
+        label: t("nav.supervisor.tasks"),
+        description: `${assignedToMeTasks.length}/${openTasks.length}`,
+        href: "/supervisor/tasks",
+        icon: ClipboardList,
+        tone: "warning" as const,
+      },
+      {
+        label: t("nav.supervisor.patients"),
+        description: `${patients.length}`,
+        href: "/supervisor/personnel",
+        icon: Users,
+        tone: "primary" as const,
+      },
+      {
+        label: t("nav.supervisor.messages"),
+        description: t("supervisor.page.handoverSupport"),
+        href: "/supervisor/messages",
+        icon: MessageSquare,
+        tone: "neutral" as const,
+      },
+      {
+        label: t("supervisor.page.zoneMap"),
+        description: t("dashboard.map.metricMode"),
+        href: "/supervisor/floorplans",
+        icon: MapPin,
+        tone: "success" as const,
+      },
+      {
+        label: t("supervisor.page.askAi"),
+        description: t("supervisor.page.askAiDesc"),
+        icon: Bot,
+        tone: "neutral" as const,
+        aiPrompt: t("supervisor.page.askAiPrompt"),
+      },
+    ],
+    [activeAlerts.length, assignedToMeTasks.length, criticalAlerts.length, openTasks.length, patients.length, t],
+  );
 
   return (
     <div className="space-y-6 pb-6 animate-fade-in">
@@ -173,7 +137,7 @@ export default function SupervisorDashboardPage() {
           </div>
           <div>
             <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
-              {t("supervisor.page.dashboardTitle")}
+              {t("nav.supervisor.queue")}
             </h2>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
               {t("supervisor.page.dashboardSubtitle")}
@@ -188,7 +152,7 @@ export default function SupervisorDashboardPage() {
             <Link href="/supervisor/tasks">{t("supervisor.page.workflowLink")}</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/supervisor/monitoring">
+            <Link href="/supervisor/floorplans">
               <Eye className="mr-1.5 h-4 w-4" />
               {t("supervisor.page.zoneMap")}
             </Link>
@@ -196,230 +160,27 @@ export default function SupervisorDashboardPage() {
         </div>
       </div>
 
-      {/* Supervisor health queue — tasks assigned to me */}
-      <SupervisorHealthQueue
-        currentUserId={me?.id ?? null}
-        tasks={tasks}
-        patients={patients}
-        onAccept={handleAcceptTask}
-        onComplete={handleCompleteHealthTask}
-        pendingTaskId={pendingTaskId}
+      {/* Unified Queue — alerts, tasks, and directives in priority order */}
+      <RoleQuickActions title={t("supervisor.page.roleDuties")} actions={quickActions} />
+
+      <DashboardMapLauncher
+        href="/supervisor/floorplans"
+        title={t("supervisor.page.mapTitle")}
+        description={t("supervisor.page.mapDesc")}
+        primaryLabel={criticalAlerts.length ? t("supervisor.page.openEmergencyMap") : t("supervisor.page.zoneMap")}
+        emergencyCount={criticalAlerts.length}
+        peopleCount={patients.length}
+        roomLabel={t("supervisor.page.findRoom")}
+        compact
       />
 
-      {/* Stats Overview */}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/12 text-red-600">
-                <Siren className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("supervisor.page.criticalAlerts")}
-                </p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                  {criticalAlerts.length}
-                </p>
-                <p className="mt-1 text-xs text-red-600">
-                  {activeAlerts.length} {t("supervisor.page.totalActiveAlerts")}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/12 text-amber-600">
-                <ClipboardList className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("supervisor.page.openTasks")}
-                </p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                  {openTasks.length}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{t("supervisor.page.pendingCompletion")}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/12 text-emerald-600">
-                <Users className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("supervisor.page.patientsInZone")}
-                </p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                  {patients.length}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{t("supervisor.page.inYourZone")}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/12 text-sky-600">
-                <Eye className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                  {t("supervisor.page.directivesTitle")}
-                </p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                  {activeDirectives.length}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{t("supervisor.page.awaitingAck")}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Zone Map & Directives Grid */}
-      <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
-        <DashboardFloorplanPanel className="min-w-0" />
-
-        {/* Directives */}
-        <Card className="border-border/70">
-          <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
-            <div>
-              <CardTitle className="text-base">{t("supervisor.page.directivesCardTitle")}</CardTitle>
-              <CardDescription>{t("supervisor.page.directivesCardDesc")}</CardDescription>
-            </div>
-            <Button asChild size="sm" variant="outline">
-              <Link href="/supervisor/directives">
-                {t("supervisor.page.viewAll")}
-                <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {activeDirectives.length ? (
-              activeDirectives.map((directive) => {
-                const patient = directive.patient_id ? patientById.get(directive.patient_id) : null;
-                return (
-                  <div
-                    key={directive.id}
-                    className="rounded-xl border border-border/70 px-3 py-3 space-y-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground">{directive.title}</p>
-                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                        {directive.directive_text}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">
-                          {patient ? `${patient.first_name} ${patient.last_name}` : t("supervisor.page.unitWide")}
-                        </Badge>
-                        {directive.target_role && (
-                          <Badge variant="secondary">{directive.target_role}</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      disabled={acknowledgeDirectiveMutation.isPending && pendingDirectiveId === directive.id}
-                      onClick={() => {
-                        setPendingDirectiveId(directive.id);
-                        acknowledgeDirectiveMutation.mutate(directive.id);
-                      }}
-                    >
-                      <UserCheck className="mr-1.5 h-4 w-4" />
-                      {t("supervisor.page.acknowledge")}
-                    </Button>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
-                <CheckIcon className="mx-auto h-8 w-8 text-emerald-500/50" />
-                <p className="mt-2 text-sm text-muted-foreground">{t("supervisor.page.allAcknowledged")}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Task Queue */}
-      <Card className="border-border/70">
-        <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-3">
-          <div>
-            <CardTitle className="text-base">{t("supervisor.page.taskQueueTitle")}</CardTitle>
-            <CardDescription>{t("supervisor.page.taskQueueDesc")}</CardDescription>
-          </div>
-          <Button asChild size="sm" variant="ghost">
-            <Link href="/supervisor/tasks">
-              {t("supervisor.page.viewAll")}
-              <ArrowRight className="ml-1.5 h-4 w-4" />
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {openTasks.length ? (
-            openTasks.slice(0, 6).map((task) => {
-              const patient = task.patient_id ? patientById.get(task.patient_id) : null;
-              return (
-                <div
-                  key={task.id}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-border/70 px-3 py-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-medium text-foreground">{task.title}</p>
-                      <Badge
-                        variant={
-                          task.priority === "critical"
-                            ? "destructive"
-                            : task.priority === "high"
-                              ? "warning"
-                              : "secondary"
-                        }
-                        className="shrink-0"
-                      >
-                        {task.priority}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {patient ? `${patient.first_name} ${patient.last_name}` : t("supervisor.page.unitWide")}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={completeTaskMutation.isPending && pendingTaskId === task.id}
-                    onClick={() => {
-                      setPendingTaskId(task.id);
-                      completeTaskMutation.mutate(task.id);
-                    }}
-                  >
-                    <CheckIcon className="mr-1.5 h-4 w-4" />
-                    {t("tasks.completeTask")}
-                  </Button>
-                </div>
-              );
-            })
-          ) : (
-            <div className="rounded-xl border border-dashed border-border/70 px-3 py-6 text-center">
-              <CheckIcon className="mx-auto h-8 w-8 text-emerald-500/50" />
-              <p className="mt-2 text-sm text-muted-foreground">{t("supervisor.page.noPendingTasks")}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <SupervisorQueue
+        alerts={alerts}
+        tasks={tasks}
+        directives={directives}
+        patients={patients}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 }

@@ -9,7 +9,7 @@
 - [server/mypy.ini](file://server/mypy.ini)
 - [frontend/package.json](file://frontend/package.json)
 - [frontend/eslint.config.mjs](file://frontend/eslint.config.mjs)
-- [firmware/M5StickCPlus2/platformio.ini](file://firmware/M5StickCPlus2/platformio.ini)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
 - [server/AGENTS.md](file://server/AGENTS.md)
 - [docs/adr/README.md](file://docs/adr/README.md)
 - [docs/adr/template.md](file://docs/adr/template.md)
@@ -93,7 +93,7 @@ CR -. "Audit" .-> FE
 - [server/mypy.ini:1-3](file://server/mypy.ini#L1-L3)
 - [frontend/package.json:1-58](file://frontend/package.json#L1-L58)
 - [frontend/eslint.config.mjs:1-19](file://frontend/eslint.config.mjs#L1-L19)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Architecture Overview
 The platform integrates three runtime layers:
@@ -103,7 +103,7 @@ The platform integrates three runtime layers:
 
 ```mermaid
 graph TB
-FW["firmware/M5StickCPlus2<br/>Telemetry + BLE RSSI"]
+FW["firmware/M5StickCPlus2_BLEGateway<br/>Telemetry + BLE RSSI"]
 CAM["firmware/Node_Tsimcam<br/>Camera + BLE Beacon"]
 MQ["MQTT Broker"]
 SV["server/app/main.py<br/>FastAPI + Services"]
@@ -172,7 +172,7 @@ Best practices
   - Build flags include debug level and USB mode settings
 
 **Section sources**
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ### Pull Request Process and Code Review Guidelines
 - PR checklist
@@ -263,7 +263,7 @@ Best practices
 - [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
 - [server/AGENTS.md:322-351](file://server/AGENTS.md#L322-L351)
 - [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ### Contribution Guidelines, Community Standards, and Collaboration Practices
 - Backend conventions
@@ -355,7 +355,7 @@ PKG --> |"TanStack Query, OpenAPI"| PKG
 - [server/AGENTS.md:72-111](file://server/AGENTS.md#L72-L111)
 - [server/AGENTS.md:322-351](file://server/AGENTS.md#L322-L351)
 - [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Conclusion
 These guidelines consolidate WheelSense Platform development practices across Python, TypeScript/Next.js, and C++. By adhering to service-layer architecture, strict testing, documented ADRs, and disciplined deployment procedures, contributors can maintain a secure, scalable, and user-centric system.
@@ -375,4 +375,4 @@ These guidelines consolidate WheelSense Platform development practices across Py
 **Section sources**
 - [server/AGENTS.md:524-559](file://server/AGENTS.md#L524-L559)
 - [ARCHITECTURE.md:140-183](file://ARCHITECTURE.md#L140-L183)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)

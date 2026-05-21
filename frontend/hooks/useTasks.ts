@@ -12,16 +12,18 @@ import type { TaskCreate, TaskUpdate, TaskReportCreate } from "@/types/tasks";
 export const taskKeys = {
   all: ["tasks"] as const,
   lists: () => [...taskKeys.all, "list"] as const,
-  list: (params: Record<string, any>) => [...taskKeys.lists(), params] as const,
+  list: (params: TaskListParams) => [...taskKeys.lists(), params] as const,
   board: (shiftDate?: string) => [...taskKeys.all, "board", shiftDate] as const,
   details: () => [...taskKeys.all, "detail"] as const,
   detail: (id: number) => [...taskKeys.details(), id] as const,
   reports: (taskId: number) => [...taskKeys.all, taskId, "reports"] as const,
 };
 
+type TaskListParams = NonNullable<Parameters<typeof tasksApi.fetchTasks>[0]>;
+
 // ── Query Hooks ───────────────────────────────────────────────────────────────
 
-export function useTasks(params?: Record<string, any>) {
+export function useTasks(params?: TaskListParams) {
   return useQuery({
     queryKey: taskKeys.list(params ?? {}),
     queryFn: () => tasksApi.fetchTasks(params),

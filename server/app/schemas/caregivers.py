@@ -3,8 +3,9 @@ from __future__ import annotations
 """Pydantic schemas for CareGiver, CareGiverZone, CareGiverShift."""
 
 from datetime import date, time, datetime
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 # ── CareGiver ─────────────────────────────────────────────────────────────────
 
@@ -93,6 +94,35 @@ class CaregiverPatientAccessOut(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+
+class CaregiverTimelineEventOut(BaseModel):
+    id: str
+    timestamp: datetime
+    category: str
+    event_type: str
+    title: str
+    description: str = ""
+    source: str = "system"
+    caregiver_id: int | None = None
+    user_id: int | None = None
+    patient_id: int | None = None
+    room_id: int | None = None
+    room_name: str | None = None
+    device_id: str | None = None
+    task_id: int | None = None
+    report_id: int | None = None
+    workflow_job_id: int | None = None
+    workflow_step_id: int | None = None
+    status: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class CaregiverTimelineOut(BaseModel):
+    caregiver_id: int
+    user_ids: list[int] = Field(default_factory=list)
+    device_ids: list[str] = Field(default_factory=list)
+    events: list[CaregiverTimelineEventOut] = Field(default_factory=list)
 
 # ── Shift ─────────────────────────────────────────────────────────────────────
 

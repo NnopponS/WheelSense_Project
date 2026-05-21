@@ -318,6 +318,21 @@ export default function SupervisorPrescriptionsPage() {
         isLoading={prescriptionsQuery.isLoading || patientsQuery.isLoading || specialistsQuery.isLoading}
         emptyText={t("supervisor.prescriptions.listEmpty")}
         rightSlot={<Pill className="h-4 w-4 text-muted-foreground" />}
+        mobileMode="cards"
+        csvExport={{
+          fileNameBase: "wheelsense-supervisor-prescriptions",
+          headers: ["Prescription ID", "Medication", "Dosage", "Frequency", "Patient", "Specialist ID", "Status", "Created"],
+          getRowValues: (row) => [
+            row.id,
+            row.medicationName,
+            row.dosage,
+            row.frequency,
+            row.patientName,
+            row.specialistId,
+            row.status,
+            row.createdAt,
+          ],
+        }}
       />
     </div>
   );

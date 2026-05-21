@@ -26,6 +26,7 @@ from app.schemas.caregivers import CareGiverOut
 from app.schemas.patients import (
     PatientCreate,
     PatientUpdate,
+    PatientDetailOut,
     PatientOut,
     PatientCaregiverAccessReplace,
     DeviceAssignmentCreate,
@@ -35,7 +36,12 @@ from app.schemas.patients import (
     PatientContactUpdate,
     ModeSwitchRequest,
 )
+from app.schemas.health_analysis import (
+    PatientHealthAnalysisOut,
+    PatientHealthAnalysisSnapshotOut,
+)
 from app.services import device_activity as device_activity_service
+from app.services.health_analysis import patient_health_analysis_service
 from app.services.patient import patient_service, patient_assignment_service, contact_service
 from app.services.profile_image_storage import remove_hosted_profile_file_if_any, store_hosted_profile_jpeg_bytes
 
@@ -132,7 +138,7 @@ async def create_patient(
 ):
     return await patient_service.create(db, ws_id=ws.id, obj_in=data)
 
-@router.get("/{patient_id}", response_model=PatientOut)
+@router.get("/{patient_id}", response_model=PatientDetailOut)
 async def get_patient(
     patient_id: int,
     db: AsyncSession = Depends(get_db),
@@ -143,7 +149,55 @@ async def get_patient(
     patient = await patient_service.get(db, ws_id=ws.id, id=patient_id)
     if not patient:
         raise HTTPException(404, "Patient not found")
-    return patient
+    return await patient_service.build_detail_payload(db, ws.id, patient)
+
+
+@router.get("/{patient_id}/health-analysis", response_model=PatientHealthAnalysisOut)
+async def get_patient_health_analysis(
+    patient_id: int,
+    window_hours: int = 24,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
+):
+    await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
+    patient = await patient_service.get(db, ws_id=ws.id, id=patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient not found")
+    bounded_window = max(1, min(window_hours, 168))
+    return await patient_health_analysis_service.build_with_latest_snapshot(
+        db,
+        ws.id,
+        patient,
+        bounded_window,
+    )
+
+
+@router.post(
+    "/{patient_id}/health-analysis/refresh",
+    response_model=PatientHealthAnalysisSnapshotOut,
+    status_code=201,
+)
+async def refresh_patient_health_analysis(
+    patient_id: int,
+    window_hours: int = 24,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
+):
+    await assert_patient_record_access_db(db, ws.id, current_user, patient_id)
+    patient = await patient_service.get(db, ws_id=ws.id, id=patient_id)
+    if not patient:
+        raise HTTPException(404, "Patient not found")
+    bounded_window = max(1, min(window_hours, 168))
+    return await patient_health_analysis_service.refresh_snapshot(
+        db,
+        workspace=ws,
+        patient=patient,
+        actor=current_user,
+        window_hours=bounded_window,
+        triggered_by="manual",
+    )
 
 
 @router.get("/{patient_id}/caregivers", response_model=list[CareGiverOut])

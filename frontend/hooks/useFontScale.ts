@@ -57,12 +57,7 @@ function setStoredScale(value: FontScale): void {
  * Persists preference to localStorage and applies CSS variable --ws-font-scale.
  */
 export function useFontScale(): UseFontScaleReturn {
-  const [scale, setScaleState] = useState<FontScale>(DEFAULT_SCALE);
-
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    setScaleState(getStoredScale());
-  }, []);
+  const [scale, setScaleState] = useState<FontScale>(() => getStoredScale());
 
   // Apply CSS variable whenever scale changes
   useEffect(() => {
@@ -77,12 +72,20 @@ export function useFontScale(): UseFontScaleReturn {
   }, []);
 
   const increase = useCallback(() => {
-    setScale(scale + STEP);
-  }, [scale, setScale]);
+    setScaleState((current) => {
+      const clamped = clampScale(current + STEP);
+      setStoredScale(clamped);
+      return clamped;
+    });
+  }, []);
 
   const decrease = useCallback(() => {
-    setScale(scale - STEP);
-  }, [scale, setScale]);
+    setScaleState((current) => {
+      const clamped = clampScale(current - STEP);
+      setStoredScale(clamped);
+      return clamped;
+    });
+  }, []);
 
   const reset = useCallback(() => {
     setScale(DEFAULT_SCALE);

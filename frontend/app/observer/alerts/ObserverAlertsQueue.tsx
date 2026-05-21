@@ -275,6 +275,19 @@ export default function ObserverAlertsQueue() {
             ? "bg-primary/10 ring-2 ring-primary/30 transition-colors"
             : undefined
         }
+        mobileMode="cards"
+        csvExport={{
+          fileNameBase: "wheelsense-observer-alerts",
+          headers: ["Alert ID", "Title", "Severity", "Patient", "Room", "Timestamp"],
+          getRowValues: (row) => [
+            row.id,
+            row.title,
+            row.severity,
+            row.patientName,
+            row.patientRoomLine,
+            row.timestamp,
+          ],
+        }}
       />
     </div>
   );

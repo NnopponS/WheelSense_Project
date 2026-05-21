@@ -3,7 +3,7 @@
 <cite>
 **Referenced Files in This Document**
 - [mqtt_handler.py](file://server/app/mqtt_handler.py)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp)
+- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
 - [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
 - [server.py](file://server/app/mcp/server.py)
 - [mcp_server.py](file://server/app/mcp_server.py)
@@ -69,7 +69,7 @@ MCP --> PROXY
 
 **Diagram sources**
 - [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L81-L113)
+- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L81-L113)
 - [main.cpp:500-552](file://firmware/Node_Tsimcam/src/main.cpp#L500-L552)
 - [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
 - [auth.py:57-105](file://server/app/api/endpoints/auth.py#L57-L105)
@@ -80,7 +80,7 @@ MCP --> PROXY
 
 **Section sources**
 - [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L81-L113)
+- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L81-L113)
 - [main.cpp:500-552](file://firmware/Node_Tsimcam/src/main.cpp#L500-L552)
 - [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
 - [auth.py:57-105](file://server/app/api/endpoints/auth.py#L57-L105)
@@ -98,7 +98,7 @@ MCP --> PROXY
 
 **Section sources**
 - [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [NetworkManager.cpp:216-238](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L216-L238)
+- [NetworkManager.cpp:216-238](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L216-L238)
 - [main.cpp:500-552](file://firmware/Node_Tsimcam/src/main.cpp#L500-L552)
 - [server.py:283-706](file://server/app/mcp/server.py#L283-L706)
 - [auth.py:57-105](file://server/app/api/endpoints/auth.py#L57-L105)
@@ -159,13 +159,13 @@ BE->>DB : Save PhotoRecord
 **Diagram sources**
 - [mqtt_handler.py:108-136](file://server/app/mqtt_handler.py#L108-L136)
 - [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [NetworkManager.cpp:216-238](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L216-L238)
+- [NetworkManager.cpp:216-238](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L216-L238)
 - [main.cpp:500-552](file://firmware/Node_Tsimcam/src/main.cpp#L500-L552)
 
 **Section sources**
 - [mqtt_handler.py:108-136](file://server/app/mqtt_handler.py#L108-L136)
 - [mqtt_handler.py:139-325](file://server/app/mqtt_handler.py#L139-L325)
-- [NetworkManager.cpp:216-238](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L216-L238)
+- [NetworkManager.cpp:216-238](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L216-L238)
 - [main.cpp:500-552](file://firmware/Node_Tsimcam/src/main.cpp#L500-L552)
 
 ### MCP (Model Context Protocol) for AI Tool Execution
@@ -276,13 +276,13 @@ MCP["MCP Server"] --> FE
 ```
 
 **Diagram sources**
-- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L81-L113)
+- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L81-L113)
 - [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
 - [route.ts:127-258](file://frontend/app/api/[[...path]]/route.ts#L127-L258)
 - [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
 
 **Section sources**
-- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L81-L113)
+- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L81-L113)
 - [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
 - [route.ts:127-258](file://frontend/app/api/[[...path]]/route.ts#L127-L258)
 - [server.py:110-111](file://server/app/mcp/server.py#L110-L111)
@@ -305,7 +305,7 @@ Common issues and resolutions:
 
 **Section sources**
 - [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L81-L113)
+- [NetworkManager.cpp:81-113](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L81-L113)
 - [test_mqtt_handler.py:99-136](file://server/tests/test_mqtt_handler.py#L99-L136)
 - [test_mqtt_handler.py:523-545](file://server/tests/test_mqtt_handler.py#L523-L545)
 - [main.cpp:500-552](file://firmware/Node_Tsimcam/src/main.cpp#L500-L552)

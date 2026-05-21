@@ -43,6 +43,34 @@ logger = logging.getLogger("wheelsense.ai_settings")
 router = APIRouter()
 
 
+def _copilot_capability_bool(model: object, name: str, fallback: bool) -> bool:
+    capabilities = getattr(model, "capabilities", None)
+    if isinstance(capabilities, dict):
+        value = capabilities.get(name)
+    else:
+        value = getattr(capabilities, name, None) if capabilities is not None else None
+    return fallback if value is None else bool(value)
+
+
+def _copilot_model_info(model: object) -> CopilotModelInfo:
+    model_id = getattr(model, "id")
+    fallback = ai_chat.COPILOT_ALLOWED_MODELS[model_id]
+    return CopilotModelInfo(
+        id=model_id,
+        name=getattr(model, "name", None) or fallback["name"],
+        supports_reasoning_effort=_copilot_capability_bool(
+            model,
+            "reasoning_effort",
+            fallback["supports_reasoning_effort"],
+        ),
+        supports_vision=_copilot_capability_bool(
+            model,
+            "vision",
+            fallback["supports_vision"],
+        ),
+    )
+
+
 async def _build_ai_settings_out(db: AsyncSession, workspace_id: int) -> AISettingsOut:
     ws_p, ws_m = await ai_chat.get_workspace_ai_defaults(db, workspace_id)
     eff_p, eff_m = await ai_chat.resolve_effective_ai(
@@ -57,6 +85,62 @@ async def _build_ai_settings_out(db: AsyncSession, workspace_id: int) -> AISetti
         workspace_default_provider=ws_p,  # type: ignore[arg-type]
         workspace_default_model=ws_m,
     )
+
+
+async def _discover_copilot_models(
+    db: AsyncSession,
+    workspace_id: int,
+) -> tuple[list[object], bool, str | None, str]:
+    github_token = await ai_chat.get_workspace_copilot_token(db, workspace_id)
+    connected = ai_chat.has_copilot_connection(github_token)
+    if not connected:
+        return [], False, "GitHub Copilot is not connected for this workspace", "fallback"
+
+    try:
+        return (
+            ai_chat.allowed_copilot_models_from(
+                await ai_chat.list_copilot_models(github_token=github_token)
+            ),
+            True,
+            None,
+            "sdk",
+        )
+    except Exception as exc:
+        logger.warning("Copilot SDK model discovery failed: %s", exc)
+        return (
+            ai_chat.fallback_copilot_models(),
+            True,
+            f"Copilot SDK model discovery failed; using fallback models: {exc}",
+            "fallback",
+        )
+
+
+async def _ensure_model_can_be_saved(
+    db: AsyncSession,
+    *,
+    workspace_id: int,
+    provider: str,
+    model: str,
+    manual_override: bool,
+) -> None:
+    if manual_override or provider != "copilot":
+        return
+    models, connected, message, source = await _discover_copilot_models(db, workspace_id)
+    if not connected:
+        raise HTTPException(
+            status_code=409,
+            detail=message or "GitHub Copilot is not connected for this workspace",
+        )
+    available_ids = {getattr(item, "id", "") for item in models}
+    if model not in available_ids:
+        available = ", ".join(sorted(available_ids)) or "none"
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Copilot model `{model}` is not available from {source} discovery. "
+                f"Available models: {available}. Set manual_override=true to save it anyway."
+            ),
+        )
 
 
 @router.get("", response_model=AISettingsOut)
@@ -74,6 +158,13 @@ async def update_workspace_ai_settings(
     _: User = Depends(RequireRole(["admin"])),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
+    await _ensure_model_can_be_saved(
+        db,
+        workspace_id=workspace.id,
+        provider=body.provider,
+        model=body.model,
+        manual_override=body.manual_override,
+    )
     row = await _get_or_create_ws_ai_row(db, workspace.id)
     row.default_provider = body.provider
     row.default_model = body.model
@@ -88,6 +179,13 @@ async def update_global_ai_settings(
     _: User = Depends(RequireRole(["admin"])),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
+    await _ensure_model_can_be_saved(
+        db,
+        workspace_id=workspace.id,
+        provider=body.default_provider,
+        model=body.default_model,
+        manual_override=body.manual_override,
+    )
     row = await _get_or_create_ws_ai_row(db, workspace.id)
     row.default_provider = body.default_provider
     row.default_model = body.default_model
@@ -128,11 +226,7 @@ async def copilot_connection_status(
         )
     )
     ws = row.scalar_one_or_none()
-    external_cli_configured = bool(
-        settings.copilot_cli_url.strip()
-        and "copilot-cli" not in settings.copilot_cli_url.strip()
-    )
-    connected = bool((ws and ws.copilot_token_encrypted) or external_cli_configured)
+    connected = bool(ws and ws.copilot_token_encrypted) or ai_chat.has_copilot_connection(None)
     return CopilotStatusOut(connected=connected)
 
 @router.get("/copilot/models", response_model=CopilotModelsOut)
@@ -141,32 +235,20 @@ async def copilot_list_models(
     workspace: Workspace = Depends(get_current_user_workspace),
     _: User = Depends(get_current_active_user),
 ):
-    github_token = await ai_chat.get_workspace_copilot_token(db, workspace.id)
-    external_cli_configured = bool(
-        settings.copilot_cli_url.strip()
-        and "copilot-cli" not in settings.copilot_cli_url.strip()
-    )
-    connected = bool(github_token or external_cli_configured)
+    models, connected, message, source = await _discover_copilot_models(db, workspace.id)
     if not connected:
         return CopilotModelsOut(
             models=[],
             connected=False,
-            message="GitHub Copilot is not connected for this workspace",
+            message=message,
+            source=source,  # type: ignore[arg-type]
         )
-    models = ai_chat.fallback_copilot_models()
 
     return CopilotModelsOut(
-        models=[
-            CopilotModelInfo(
-                id=m.id,
-                name=m.name,
-                supports_reasoning_effort=m.capabilities.reasoning_effort,
-                supports_vision=m.capabilities.vision,
-            )
-            for m in models
-        ],
+        models=[_copilot_model_info(m) for m in models],
         connected=True,
-        message=None,
+        message=message,
+        source=source,  # type: ignore[arg-type]
     )
 
 @router.post("/copilot/device-code", response_model=CopilotDeviceCodeOut)

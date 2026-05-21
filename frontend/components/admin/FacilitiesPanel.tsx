@@ -86,23 +86,23 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
       onChanged?.();
       setForm(EMPTY_FORM);
       setEditingId(null);
-      setMessage("Saved");
+      setMessage(t("facilityMgmt.saved"));
     } catch (error) {
-      setMessage(error instanceof ApiError ? error.message : "Could not save facility");
+      setMessage(error instanceof ApiError ? error.message : t("facilityMgmt.saveFacilityFailed"));
     } finally {
       setSubmitting(false);
     }
   }
 
   async function removeFacility(id: number) {
-    if (!window.confirm("Delete this facility?")) return;
+    if (!window.confirm(t("facilityMgmt.deleteFacilityOnlyConfirm"))) return;
     setMessage(null);
     try {
       await api.delete<void>(`/facilities/${id}`);
       await refetch();
       onChanged?.();
     } catch (error) {
-      setMessage(error instanceof ApiError ? error.message : "Could not delete facility");
+      setMessage(error instanceof ApiError ? error.message : t("facilityMgmt.deleteFacilityFailed"));
     }
   }
 
@@ -123,7 +123,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
         <div className="surface-card p-4 space-y-3 w-full xl:order-2 xl:w-[min(100%,340px)] xl:shrink-0">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">
-              {editingId === null ? t("facilities.addNew") : "Edit facility"}
+              {editingId === null ? t("facilities.addNew") : t("facilityMgmt.editFacility")}
             </p>
             {editingId !== null && (
               <button
@@ -131,7 +131,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
                 className="text-xs text-primary hover:underline"
                 onClick={startCreate}
               >
-                New
+                {t("common.new")}
               </button>
             )}
           </div>
@@ -149,7 +149,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
           />
           <input
             className="input-field text-sm w-full"
-            placeholder="Description (optional)"
+            placeholder={t("facilityMgmt.descriptionPlaceholder")}
             value={form.description}
             onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
           />
@@ -160,7 +160,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
             disabled={submitting || !form.name.trim()}
           >
             <Plus className="w-4 h-4" />
-            {submitting ? "…" : editingId === null ? t("facilities.addNew") : "Update"}
+            {submitting ? "..." : editingId === null ? t("facilities.addNew") : t("common.update")}
           </button>
         </div>
 
@@ -199,7 +199,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
                     type="button"
                     className="p-2 rounded-lg hover:bg-surface-container-low"
                     onClick={() => startEdit(facility)}
-                    aria-label="Edit facility"
+                    aria-label={t("facilityMgmt.editFacility")}
                   >
                     <Pencil className="w-4 h-4 text-foreground-variant" />
                   </button>
@@ -207,7 +207,7 @@ export default function FacilitiesPanel({ onChanged }: { onChanged?: () => void 
                     type="button"
                     className="p-2 rounded-lg hover:bg-error-container/60"
                     onClick={() => void removeFacility(facility.id)}
-                    aria-label="Delete facility"
+                    aria-label={t("facilityMgmt.deleteFacility")}
                   >
                     <Trash2 className="w-4 h-4 text-error" />
                   </button>

@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { components } from "@/lib/api/generated/schema";
 
@@ -84,12 +85,14 @@ function StepCard({
   status,
   result,
   isLast,
+  t,
 }: {
   step: ExecutionPlanStep;
   index: number;
   status: "pending" | "executing" | "completed" | "failed";
   result?: StepResult;
   isLast: boolean;
+  t: (key: string) => string;
 }) {
   const showResult = status === "completed" || status === "failed";
 
@@ -124,7 +127,9 @@ function StepCard({
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Step {index + 1}</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                {t("aiChat.execution.step")} {index + 1}
+              </span>
               <ChevronRight className="h-3 w-3 text-muted-foreground" />
               <span className="text-sm font-medium text-foreground">{step.title}</span>
             </div>
@@ -144,7 +149,7 @@ function StepCard({
           {/* Permission Basis */}
           {step.permission_basis && step.permission_basis.length > 0 && (
             <div className="flex flex-wrap items-center gap-1 pt-1">
-              <span className="text-[10px] text-muted-foreground">Permissions:</span>
+              <span className="text-[10px] text-muted-foreground">{t("aiChat.execution.permissions")}:</span>
               {step.permission_basis.map((perm, idx) => (
                 <Badge key={idx} variant="outline" className="text-[9px] px-1 py-0">
                   {perm}
@@ -158,7 +163,7 @@ function StepCard({
             <div className="flex flex-wrap items-center gap-1 pt-1">
               {step.affected_entities.map((entity, idx) => {
                 const e = entity as Record<string, unknown>;
-                const name = e.name || e.patient_name || e.room_name || `Entity ${idx + 1}`;
+                const name = e.name || e.patient_name || e.room_name || `${t("aiChat.execution.entity")} ${idx + 1}`;
                 const type = String(e.type || (e.patient_id ? "patient" : e.room_id ? "room" : "entity"));
                 return (
                   <Badge key={idx} variant="secondary" className="text-[10px] gap-1">
@@ -183,12 +188,12 @@ function StepCard({
               {result.success ? (
                 <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  <span>{result.message || "Completed successfully"}</span>
+                  <span>{result.message || t("aiChat.execution.success")}</span>
                 </div>
               ) : (
                 <div className="flex items-start gap-1.5 text-red-700 dark:text-red-300">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                  <span className="break-words">{result.error || "Step failed"}</span>
+                  <span className="break-words">{result.error || t("aiChat.execution.stepFailed")}</span>
                 </div>
               )}
               {result.executedAt && (
@@ -203,7 +208,7 @@ function StepCard({
           {/* Arguments Preview (collapsed, shown on executing) */}
           {status === "executing" && step.arguments && Object.keys(step.arguments).length > 0 && (
             <div className="mt-2 rounded bg-muted/50 p-2">
-              <p className="text-[10px] font-medium text-muted-foreground mb-1">Arguments:</p>
+              <p className="text-[10px] font-medium text-muted-foreground mb-1">{t("aiChat.execution.arguments")}:</p>
               <pre className="text-[10px] text-muted-foreground overflow-x-auto">
                 {JSON.stringify(step.arguments, null, 2)}
               </pre>
@@ -223,6 +228,7 @@ export function ExecutionStepList({
   stepResults = [],
   failedSteps = [],
 }: ExecutionStepListProps) {
+  const { t } = useTranslation();
   const progress = useMemo(() => {
     if (steps.length === 0) return 0;
     const completed = completedSteps.length;
@@ -246,16 +252,18 @@ export function ExecutionStepList({
               <Play className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base font-semibold">Execution Steps</CardTitle>
+              <CardTitle className="text-base font-semibold">{t("aiChat.execution.title")}</CardTitle>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{completedCount}</span>
                 <span>/</span>
                 <span>{stepCount}</span>
-                <span>completed</span>
+                <span>{t("aiChat.execution.completed")}</span>
                 {failedCount > 0 && (
                   <>
                     <span>·</span>
-                    <span className="text-red-600 dark:text-red-400">{failedCount} failed</span>
+                    <span className="text-red-600 dark:text-red-400">
+                      {failedCount} {t("aiChat.execution.failed").toLowerCase()}
+                    </span>
                   </>
                 )}
               </div>
@@ -264,7 +272,7 @@ export function ExecutionStepList({
 
           {/* Progress Badge */}
           <Badge variant={executing ? "default" : completedCount === stepCount ? "success" : "outline"}>
-            {executing ? "Executing..." : completedCount === stepCount ? "Complete" : "Pending"}
+            {executing ? t("aiChat.execution.executing") : completedCount === stepCount ? t("aiChat.execution.complete") : t("aiChat.execution.pending")}
           </Badge>
         </div>
 
@@ -285,6 +293,7 @@ export function ExecutionStepList({
               status={status}
               result={result}
               isLast={index === steps.length - 1}
+              t={t}
             />
           );
         })}

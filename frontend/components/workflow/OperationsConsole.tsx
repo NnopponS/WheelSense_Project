@@ -206,7 +206,7 @@ const defaultScheduleForm: ScheduleFormState = {
   scheduleType: "round",
   startsAt: "",
   recurrencePreset: "daily",
-  recurrenceRule: "RRULE:FREQ=DAILY",
+  recurrenceRule: "",
   notes: "",
   assignmentMode: "role",
   assignedRole: "observer",
@@ -1313,7 +1313,7 @@ export function OperationsConsole({
         ),
       },
     ],
-    [],
+    [setSelectedRow],
   );
 
   const transferColumns = useMemo<ColumnDef<WorkflowListRow>[]>(
@@ -1371,7 +1371,14 @@ export function OperationsConsole({
         ),
       },
     ],
-    [],
+    [
+      setCoordinationError,
+      setTransferDialog,
+      setTransferNote,
+      setTransferTargetMode,
+      setTransferTargetRole,
+      setTransferTargetUserId,
+    ],
   );
 
   const messageColumns = useMemo<ColumnDef<ListWorkflowMessagesResponse[number]>[]>(
@@ -1564,7 +1571,7 @@ export function OperationsConsole({
       {activeTab === "queue" ? (
         <div className="space-y-4">
           <Card className="border-border/70">
-            <CardContent className="grid gap-4 p-4 md:grid-cols-[1.4fr_0.9fr_0.9fr]">
+            <CardContent className="grid auto-rows-fr gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="workflow-search">Search queue</Label>
                 <Input
@@ -1880,10 +1887,7 @@ export function OperationsConsole({
                               return {
                                 ...current,
                                 recurrencePreset: preset,
-                                recurrenceRule:
-                                  preset === "advanced"
-                                    ? current.recurrenceRule || "RRULE:FREQ=DAILY"
-                                    : recurrenceRuleForPreset(preset),
+                                recurrenceRule: recurrenceRuleForPreset(preset),
                               };
                             })
                           }
@@ -1897,26 +1901,10 @@ export function OperationsConsole({
                             <SelectItem value="daily">daily</SelectItem>
                             <SelectItem value="weekdays">weekdays</SelectItem>
                             <SelectItem value="weekly">weekly</SelectItem>
-                            <SelectItem value="advanced">Advanced recurrence</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
-                    {scheduleForm.recurrencePreset === "advanced" ? (
-                      <div className="space-y-2">
-                        <Label>Advanced recurrence</Label>
-                        <Input
-                          value={scheduleForm.recurrenceRule}
-                          onChange={(event) =>
-                            setScheduleForm((current) => ({
-                              ...current,
-                              recurrenceRule: event.target.value,
-                            }))
-                          }
-                          placeholder="RRULE:FREQ=DAILY"
-                        />
-                      </div>
-                    ) : null}
                     <div className="space-y-2">
                       <Label>Notes</Label>
                       <Textarea
@@ -2450,7 +2438,7 @@ export function OperationsConsole({
       {activeTab === "reports" ? (
         <div className="space-y-4">
           <Card className="border-border/70">
-            <CardContent className="grid gap-4 p-4 lg:grid-cols-[1.1fr_0.8fr_0.8fr_auto]">
+            <CardContent className="grid auto-rows-fr gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="space-y-2">
                 <Label>{t("workflow.console.reports.reportTemplate")}</Label>
                 <Select
@@ -2503,7 +2491,7 @@ export function OperationsConsole({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex flex-wrap items-end gap-2">
+              <div className="flex flex-wrap items-end gap-2 self-end">
                 <Button
                   type="button"
                   variant="outline"

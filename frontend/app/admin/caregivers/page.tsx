@@ -10,6 +10,7 @@ import { z } from "zod";
 import { CalendarClock, ClipboardList, Plus, Search, UserCog, Users, Briefcase } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,7 @@ import type {
 const EMPTY_SELECT = "__empty__";
 const TASK_PRIORITY_OPTIONS = ["normal", "high", "critical"] as const;
 const SCHEDULE_TYPE_OPTIONS = ["round", "check_in", "medication", "handoff"] as const;
+const SCHEDULE_RECURRENCE_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
 
 const taskFormSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
@@ -52,7 +54,7 @@ const scheduleFormSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
   scheduleType: z.enum(SCHEDULE_TYPE_OPTIONS),
   startsAt: z.string().min(1, "Start time is required"),
-  recurrenceRule: z.string().trim(),
+  recurrenceRule: z.enum(SCHEDULE_RECURRENCE_OPTIONS),
   notes: z.string().trim(),
   assignedUserId: z.string(),
 });
@@ -63,6 +65,7 @@ type ScheduleFormValues = z.infer<typeof scheduleFormSchema>;
 type CaregiverRow = {
   id: number;
   fullName: string;
+  photoUrl: string | null;
   role: string;
   department: string;
   phone: string;
@@ -99,6 +102,17 @@ function parseRequestError(error: unknown): string {
 
 function toIsoDateTime(value: string): string {
   return new Date(value).toISOString();
+}
+
+function recurrenceToApiRule(value: ScheduleFormValues["recurrenceRule"]): string {
+  return value === "none" ? "" : value;
+}
+
+function recurrenceLabel(value: ScheduleFormValues["recurrenceRule"]): string {
+  if (value === "none") return "Does not repeat";
+  if (value === "daily") return "Every day";
+  if (value === "weekly") return "Every week";
+  return "Every month";
 }
 
 function getRoleBadgeVariant(role: string): "default" | "secondary" | "destructive" | "outline" {
@@ -171,7 +185,7 @@ export default function AdminCaregiversPage() {
       title: "",
       scheduleType: "round",
       startsAt: "",
-      recurrenceRule: "RRULE:FREQ=DAILY",
+      recurrenceRule: "daily",
       notes: "",
       assignedUserId: EMPTY_SELECT,
     },
@@ -216,7 +230,7 @@ export default function AdminCaregiversPage() {
         schedule_type: values.scheduleType,
         starts_at: toIsoDateTime(values.startsAt),
         ends_at: null,
-        recurrence_rule: values.recurrenceRule.trim() || "RRULE:FREQ=DAILY",
+        recurrence_rule: recurrenceToApiRule(values.recurrenceRule),
         assigned_role: null,
         assigned_user_id: values.assignedUserId === EMPTY_SELECT ? null : Number(values.assignedUserId),
         notes: values.notes.trim(),
@@ -230,7 +244,7 @@ export default function AdminCaregiversPage() {
         title: "",
         scheduleType: "round",
         startsAt: "",
-        recurrenceRule: "RRULE:FREQ=DAILY",
+        recurrenceRule: "daily",
         notes: "",
         assignedUserId: EMPTY_SELECT,
       });
@@ -279,6 +293,7 @@ export default function AdminCaregiversPage() {
       .map((item) => ({
         id: item.id,
         fullName: `${item.first_name} ${item.last_name}`.trim() || `Caregiver #${item.id}`,
+        photoUrl: item.photo_url?.trim() || null,
         role: item.role,
         department: item.department || "-",
         phone: item.phone || "-",
@@ -327,9 +342,17 @@ export default function AdminCaregiversPage() {
         accessorKey: "fullName",
         header: "Caregiver",
         cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-sm text-muted-foreground">{row.original.email}</p>
+          <div className="flex items-center gap-3">
+            <UserAvatar
+              username={row.original.fullName}
+              profileImageUrl={row.original.photoUrl}
+              sizePx={38}
+              fallbackClassName="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200"
+            />
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">{row.original.fullName}</p>
+              <p className="text-sm text-muted-foreground">{row.original.email}</p>
+            </div>
           </div>
         ),
       },
@@ -788,12 +811,26 @@ export default function AdminCaregiversPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="schedule-recurrence">Recurrence rule</Label>
-                  <Input
-                    id="schedule-recurrence"
-                    {...scheduleForm.register("recurrenceRule")}
-                    placeholder="RRULE:FREQ=DAILY"
+                  <Label>Repeat</Label>
+                  <Controller
+                    name="recurrenceRule"
+                    control={scheduleForm.control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCHEDULE_RECURRENCE_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {recurrenceLabel(option)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
+                  <p className="text-xs text-muted-foreground">No RRULE typing required.</p>
                 </div>
 
                 <div className="space-y-2">

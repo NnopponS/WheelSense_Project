@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 "use no memo";
 
 import Link from "next/link";
@@ -9,6 +9,9 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { Activity, Bell, HeartPulse, Tablet } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import { MovementTimelineCard } from "@/components/timeline/MovementTimelineCard";
+import { PersonSensorStatusPanel } from "@/components/shared/PersonSensorStatusPanel";
+import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -111,6 +114,19 @@ export default function HeadNursePatientDetailPage() {
     () => (patientQuery.data ?? null) as GetPatientResponse | null,
     [patientQuery.data],
   );
+  const patientDisplayName = useMemo(() => {
+    if (!patient) return null;
+    return `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`;
+  }, [patient]);
+  const patientMeta = useMemo(() => {
+    if (!patient) return null;
+    return [
+      patient.room_id != null ? `Room #${patient.room_id}` : null,
+      patient.care_level || null,
+    ]
+      .filter(Boolean)
+      .join(" - ");
+  }, [patient]);
 
   const patientRoomQuery = useQuery({
     queryKey: ["head-nurse", "patient-detail", patientId, "room", patient?.room_id],
@@ -400,8 +416,15 @@ export default function HeadNursePatientDetailPage() {
       <Card>
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">
+            <div className="flex min-w-0 items-center gap-4">
+              <UserAvatar
+                username={patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
+                profileImageUrl={patient?.photo_url}
+                sizePx={64}
+                fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+              />
+              <div className="min-w-0">
+              <h2 className="truncate text-2xl font-bold text-foreground">
                 {patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -409,6 +432,7 @@ export default function HeadNursePatientDetailPage() {
                   .filter(Boolean)
                   .join(" · ") || t("headNurse.patientDetail.pageSubtitle")}
               </p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">{patient?.care_level || "normal"}</Badge>
@@ -463,6 +487,8 @@ export default function HeadNursePatientDetailPage() {
         emptyText={t("clinical.patientDetail.vitalsEmpty")}
       />
 
+      <PersonSensorStatusPanel personType="patient" personId={patientId} compact />
+
       <DataTableCard
         title={t("clinical.patientDetail.alertsTitle")}
         description={t("clinical.patientDetail.alertsDesc")}
@@ -470,6 +496,13 @@ export default function HeadNursePatientDetailPage() {
         columns={alertsColumns}
         isLoading={isLoadingAny}
         emptyText={t("clinical.patientDetail.alertsEmpty")}
+      />
+
+      <MovementTimelineCard
+        events={timeline}
+        patientName={patientDisplayName}
+        patientMeta={patientMeta}
+        roomLabel={patient?.room_id != null ? `Room #${patient.room_id}` : null}
       />
 
       <DataTableCard

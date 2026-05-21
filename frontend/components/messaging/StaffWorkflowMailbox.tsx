@@ -71,8 +71,10 @@ type MessageRow = {
   id: number;
   subject: string;
   body: string;
+  senderLabel: string;
   senderUserId: number;
   recipientRole: string | null;
+  recipientLabel: string;
   recipientUserId: number | null;
   patientId: number | null;
   patientName: string;
@@ -194,6 +196,7 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
   });
 
   const filterRole = useWatch({ control: form.control, name: "filterRole" });
+  const composeBody = useWatch({ control: form.control, name: "body" });
 
   const workspaceRecipients = useMemo(
     () => (recipientsQuery.data ?? []) as MessagingRecipientRow[],
@@ -298,12 +301,22 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
     return messages
       .map((item) => {
         const patient = item.patient_id ? patientMap.get(item.patient_id) : null;
+        const senderLabel =
+          item.sender_person?.display_name?.trim() ||
+          (item.sender_user_id === user?.id ? t("patient.messages.you") : t("patient.messages.careTeam"));
+        const recipientLabel =
+          item.recipient_person?.display_name?.trim() ||
+          (item.recipient_user_id === user?.id ? t("patient.messages.you") : null) ||
+          item.recipient_role?.replace(/_/g, " ") ||
+          t("patient.messages.careTeam");
         return {
           id: item.id,
           subject: item.subject || t("messaging.mailbox.noSubject"),
           body: item.body,
+          senderLabel,
           senderUserId: item.sender_user_id,
           recipientRole: item.recipient_role,
+          recipientLabel,
           recipientUserId: item.recipient_user_id,
           patientId: item.patient_id,
           patientName: patient ? `${patient.first_name} ${patient.last_name}`.trim() : "-",
@@ -313,7 +326,7 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
         };
       })
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
-  }, [messages, patientMap, t]);
+  }, [messages, patientMap, t, user?.id]);
 
   const inboxRows = useMemo(
     () => rows.filter((item) => item.senderUserId !== user?.id),
@@ -334,6 +347,8 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
       (row) =>
         row.subject.toLowerCase().includes(q) ||
         row.body.toLowerCase().includes(q) ||
+        row.senderLabel.toLowerCase().includes(q) ||
+        row.recipientLabel.toLowerCase().includes(q) ||
         row.patientName.toLowerCase().includes(q),
     );
   }, [tabRows, search]);
@@ -382,7 +397,7 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
         </Button>
       </div>
 
-      <div className="flex min-h-[min(70vh,780px)] flex-col overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm lg:flex-row">
+      <div className="flex flex-col overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm lg:min-h-[min(70vh,780px)] lg:flex-row">
         <div className="flex w-full min-w-0 flex-col border-border/80 lg:w-[min(100%,400px)] lg:border-r">
           <div className="flex items-center gap-2 border-b border-border/70 p-2">
             <Button
@@ -522,18 +537,18 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
               <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
                 <div className="space-y-2 text-xs text-muted-foreground">
                   <p>
-                    {t("headNurse.messages.fromUserPrefix")}
-                    {selected.senderUserId}
+                    {t("messaging.mailbox.senderLabel")}
+                    {selected.senderLabel}
                   </p>
                   <p>
                     {selected.recipientRole
-                      ? `${t("headNurse.messages.recipientRolePrefix")}${selected.recipientRole}`
+                      ? `${t("headNurse.messages.recipientRolePrefix")}${selected.recipientRole.replace(/_/g, " ")}`
                       : t("headNurse.messages.directMessage")}
                   </p>
                   {selected.recipientUserId ? (
                     <p>
-                      {t("headNurse.messages.toUserPrefix")}
-                      {selected.recipientUserId}
+                      {t("messaging.mailbox.recipientLabel")}
+                      {selected.recipientLabel}
                     </p>
                   ) : null}
                   <p className="text-sm text-foreground">
@@ -707,7 +722,7 @@ export function StaffWorkflowMailbox({ variant }: { variant: StaffMailboxVariant
               disabled={
                 sendMessageMutation.isPending ||
                 recipientsQuery.isLoading ||
-                (!form.watch("body")?.trim() && pendingAttachments.length === 0)
+                (!composeBody?.trim() && pendingAttachments.length === 0)
               }
               className="w-full gap-2 sm:w-auto"
             >

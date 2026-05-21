@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import and_, delete, desc, or_, select, update
@@ -47,6 +48,7 @@ from app.services.node_device_alias import resolve_registry_node_device
 
 logger = logging.getLogger("wheelsense.devices")
 settings = config.settings
+DEVICE_STALE_AFTER_SECONDS = 300
 
 # Never expose or allow PATCH merge for per-device WiFi/MQTT provisioning (use firmware/ops tooling).
 NON_PUBLIC_DEVICE_CONFIG_KEYS = frozenset(
@@ -829,6 +831,15 @@ def polar_companion_registry_device_id(peripheral_id: str) -> str:
     return f"POLAR_{digest}"
 
 
+def m5_companion_registry_device_id(raw_device_id: str) -> str:
+    """Stable registry id (<=32 chars) for an M5 companion reported by a mobile gateway."""
+    s = (raw_device_id or "").strip()
+    if _is_valid_mqtt_device_id(s):
+        return s[:32]
+    digest = hashlib.sha1(s.encode("utf-8", errors="ignore")).hexdigest()[:10].upper()
+    return f"M5_{digest}"
+
+
 async def mirror_mobile_assignments_to_polar_companion(
     session: AsyncSession, ws_id: int, mobile_device_id: str, polar_registry_id: str
 ) -> None:
@@ -851,9 +862,39 @@ async def mirror_mobile_assignments_to_polar_companion(
         )
 
 
+async def mirror_mobile_assignments_to_m5_companion(
+    session: AsyncSession, ws_id: int, mobile_device_id: str, m5_registry_id: str
+) -> None:
+    """Copy active patient or caregiver assignment from phone to companion_m5 row."""
+    pa, patient = await _active_patient_assignment(session, ws_id, mobile_device_id)
+    ca, caregiver = await _active_caregiver_assignment(session, ws_id, mobile_device_id)
+    if pa and patient:
+        from app.schemas.patients import DeviceAssignmentCreate
+        from app.services.patient import patient_service
+
+        await patient_service.assign_device(
+            session,
+            ws_id,
+            patient.id,
+            DeviceAssignmentCreate(device_id=m5_registry_id, device_role="m5_companion"),
+        )
+    if ca and caregiver:
+        await assign_caregiver_device(
+            session, ws_id, caregiver.id, m5_registry_id, "m5_companion"
+        )
+
+
 async def _polar_companion_id_for_mobile(session: AsyncSession, ws_id: int, mobile_device_id: str) -> str | None:
     dev = await get_device(session, ws_id, mobile_device_id)
     raw = (dev.config or {}).get("polar_companion_device_id")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    return None
+
+
+async def _m5_companion_id_for_mobile(session: AsyncSession, ws_id: int, mobile_device_id: str) -> str | None:
+    dev = await get_device(session, ws_id, mobile_device_id)
+    raw = (dev.config or {}).get("m5_companion_device_id")
     if isinstance(raw, str) and raw.strip():
         return raw.strip()
     return None
@@ -913,6 +954,75 @@ async def ensure_polar_companion_for_mobile_registration(
     return companion_id
 
 
+async def ensure_m5_companion_for_mobile_registration(
+    session: AsyncSession,
+    workspace_id: int,
+    mobile_device: Device,
+    companion: dict[str, Any] | None,
+) -> str | None:
+    """Upsert companion_m5 registry row linked to a mobile_phone gateway."""
+    if not companion or not isinstance(companion, dict):
+        return None
+    raw_id = str(
+        companion.get("device_id")
+        or companion.get("m5_device_id")
+        or companion.get("serial")
+        or ""
+    ).strip()
+    if not raw_id:
+        return None
+    companion_id = m5_companion_registry_device_id(raw_id)
+    display = str(companion.get("name") or "M5 Companion").strip()[:128] or companion_id
+    q = select(Device).where(
+        Device.workspace_id == workspace_id,
+        Device.device_id == companion_id,
+    )
+    m5_dev = (await session.execute(q)).scalar_one_or_none()
+    cfg_update = {
+        "parent_mobile_device_id": mobile_device.device_id,
+        "reported_device_id": raw_id[:128],
+    }
+    if companion.get("model"):
+        cfg_update["model"] = str(companion.get("model"))[:64]
+    if companion.get("mac"):
+        cfg_update["mac"] = str(companion.get("mac"))[:17]
+    if m5_dev:
+        m5_dev.last_seen = utcnow()  # type: ignore[assignment]
+        cfg = dict(m5_dev.config or {})
+        cfg.update(cfg_update)
+        m5_dev.config = cfg  # type: ignore[assignment]
+        if m5_dev.hardware_type != "companion_m5":
+            m5_dev.hardware_type = "companion_m5"
+            m5_dev.device_type = "companion_m5"
+        if display:
+            m5_dev.display_name = display
+        if companion.get("firmware_version") or companion.get("firmware"):
+            m5_dev.firmware = str(
+                companion.get("firmware_version") or companion.get("firmware") or ""
+            )[:16]
+        session.add(m5_dev)
+    else:
+        m5_dev = Device(
+            workspace_id=workspace_id,
+            device_id=companion_id,
+            device_type="companion_m5",
+            hardware_type="companion_m5",
+            display_name=display[:128],
+            last_seen=utcnow(),
+            firmware=str(
+                companion.get("firmware_version") or companion.get("firmware") or ""
+            )[:16],
+            config=cfg_update,
+        )
+        session.add(m5_dev)
+    mcfg = dict(mobile_device.config or {})
+    mcfg["m5_companion_device_id"] = companion_id
+    mobile_device.config = mcfg  # type: ignore[assignment]
+    session.add(mobile_device)
+    await session.flush()
+    return companion_id
+
+
 async def assign_patient_from_device(
     session: AsyncSession,
     ws_id: int,
@@ -946,6 +1056,17 @@ async def assign_patient_from_device(
                 row.is_active = False
                 row.unassigned_at = utcnow()
                 session.add(row)
+        m5_c = (dev.config or {}).get("m5_companion_device_id")
+        if isinstance(m5_c, str) and m5_c.strip():
+            mq = select(PatientDeviceAssignment).where(
+                PatientDeviceAssignment.workspace_id == ws_id,
+                PatientDeviceAssignment.device_id == m5_c.strip(),
+                PatientDeviceAssignment.is_active.is_(True),
+            )
+            for row in list((await session.execute(mq)).scalars().all()):
+                row.is_active = False
+                row.unassigned_at = utcnow()
+                session.add(row)
         await session.commit()
         return None
 
@@ -964,6 +1085,9 @@ async def assign_patient_from_device(
     polar_id = await _polar_companion_id_for_mobile(session, ws_id, device_id)
     if polar_id:
         await mirror_mobile_assignments_to_polar_companion(session, ws_id, device_id, polar_id)
+    m5_id = await _m5_companion_id_for_mobile(session, ws_id, device_id)
+    if m5_id:
+        await mirror_mobile_assignments_to_m5_companion(session, ws_id, device_id, m5_id)
     return row
 
 
@@ -982,6 +1106,9 @@ async def assign_caregiver_from_device(
         polar_c = (dev.config or {}).get("polar_companion_device_id")
         if isinstance(polar_c, str) and polar_c.strip():
             await _deactivate_caregiver_assignments_for_device(session, ws_id, polar_c.strip())
+        m5_c = (dev.config or {}).get("m5_companion_device_id")
+        if isinstance(m5_c, str) and m5_c.strip():
+            await _deactivate_caregiver_assignments_for_device(session, ws_id, m5_c.strip())
         await session.commit()
         return None
 
@@ -990,6 +1117,9 @@ async def assign_caregiver_from_device(
     polar_id = await _polar_companion_id_for_mobile(session, ws_id, device_id)
     if polar_id:
         await mirror_mobile_assignments_to_polar_companion(session, ws_id, device_id, polar_id)
+    m5_id = await _m5_companion_id_for_mobile(session, ws_id, device_id)
+    if m5_id:
+        await mirror_mobile_assignments_to_m5_companion(session, ws_id, device_id, m5_id)
     return row
 
 async def _latest_imu(session: AsyncSession, ws_id: int, device_id: str) -> IMUTelemetry | None:
@@ -1062,6 +1192,21 @@ async def _latest_mobile_telemetry(
             MobileDeviceTelemetry.device_id == device_id,
         )
         .order_by(desc(MobileDeviceTelemetry.timestamp))
+        .limit(1)
+    )
+    return (await session.execute(q)).scalar_one_or_none()
+
+
+async def _latest_vital_reading(
+    session: AsyncSession, ws_id: int, device_id: str
+) -> VitalReading | None:
+    q = (
+        select(VitalReading)
+        .where(
+            VitalReading.workspace_id == ws_id,
+            VitalReading.device_id == device_id,
+        )
+        .order_by(desc(VitalReading.timestamp))
         .limit(1)
     )
     return (await session.execute(q)).scalar_one_or_none()
@@ -1157,7 +1302,70 @@ async def _active_caregiver_assignment(
     cg = await session.get(CareGiver, assign.caregiver_id)
     return assign, cg
 
-def device_summary_dict(dev: Device) -> dict[str, Any]:
+def _as_utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _iso_datetime(value: datetime | None) -> str | None:
+    normalized = _as_utc(value)
+    return normalized.isoformat() if normalized else None
+
+
+def device_freshness_dict(
+    dev: Device,
+    streams: list[tuple[str, datetime | None]] | None = None,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    reference_now = _as_utc(now) or utcnow()
+    candidates: list[tuple[str, datetime]] = []
+    for reading_type, timestamp in streams or []:
+        normalized = _as_utc(timestamp)
+        if normalized is not None:
+            candidates.append((reading_type, normalized))
+    last_seen = _as_utc(dev.last_seen)
+    if last_seen is not None:
+        candidates.append(("last_seen", last_seen))
+
+    latest_type: str | None = None
+    latest_at: datetime | None = None
+    for reading_type, timestamp in candidates:
+        if latest_at is None or timestamp > latest_at:
+            latest_type = reading_type
+            latest_at = timestamp
+
+    if latest_at is None:
+        return {
+            "online": False,
+            "status": "offline",
+            "latest_reading_at": None,
+            "latest_reading_type": None,
+            "stale_after_seconds": DEVICE_STALE_AFTER_SECONDS,
+            "stale_reason": "no_readings",
+        }
+
+    age_seconds = max(0.0, (reference_now - latest_at).total_seconds())
+    online = age_seconds <= DEVICE_STALE_AFTER_SECONDS
+    return {
+        "online": online,
+        "status": "online" if online else "stale",
+        "latest_reading_at": latest_at.isoformat(),
+        "latest_reading_type": latest_type,
+        "stale_after_seconds": DEVICE_STALE_AFTER_SECONDS,
+        "stale_reason": None
+        if online
+        else f"{latest_type}_older_than_{DEVICE_STALE_AFTER_SECONDS}s",
+    }
+
+
+def device_summary_dict(
+    dev: Device,
+    freshness: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     cfg = dev.config or {}
     public_cfg = _public_config(cfg)
     return {
@@ -1168,9 +1376,33 @@ def device_summary_dict(dev: Device) -> dict[str, Any]:
         "display_name": dev.display_name,
         "ip_address": dev.ip_address,
         "firmware": dev.firmware,
-        "last_seen": dev.last_seen.isoformat() if dev.last_seen else None,
+        "last_seen": _iso_datetime(dev.last_seen),
         "config": public_cfg,
+        **(freshness if freshness is not None else device_freshness_dict(dev)),
     }
+
+
+async def build_device_summary(
+    session: AsyncSession,
+    ws_id: int,
+    dev: Device,
+) -> dict[str, Any]:
+    imu = await _latest_imu(session, ws_id, dev.device_id)
+    pred = await _latest_prediction(session, ws_id, dev.device_id)
+    node_status = await _latest_node_status(session, ws_id, dev.device_id)
+    mobile_status = await _latest_mobile_telemetry(session, ws_id, dev.device_id)
+    vr = await _latest_vital_reading(session, ws_id, dev.device_id)
+    freshness = device_freshness_dict(
+        dev,
+        [
+            ("imu", imu.timestamp if imu else None),
+            ("room_prediction", pred.timestamp if pred else None),
+            ("node_status", node_status.timestamp if node_status else None),
+            ("mobile_telemetry", mobile_status.timestamp if mobile_status else None),
+            ("vital_reading", vr.timestamp if vr else None),
+        ],
+    )
+    return device_summary_dict(dev, freshness)
 
 async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str) -> dict[str, Any]:
     dev = await get_device(session, ws_id, device_id)
@@ -1182,22 +1414,23 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
     room = await _room_for_node(session, ws_id, device_id)
     pa, patient = await _active_patient_assignment(session, ws_id, device_id)
     ca, caregiver = await _active_caregiver_assignment(session, ws_id, device_id)
-    vr = (
-        await session.execute(
-            select(VitalReading)
-            .where(
-                VitalReading.workspace_id == ws_id,
-                VitalReading.device_id == device_id,
-            )
-            .order_by(desc(VitalReading.timestamp))
-            .limit(1)
-        )
-    ).scalar_one_or_none()
+    vr = await _latest_vital_reading(session, ws_id, device_id)
+    freshness = device_freshness_dict(
+        dev,
+        [
+            ("imu", imu.timestamp if imu else None),
+            ("room_prediction", pred.timestamp if pred else None),
+            ("photo", photo.timestamp if photo else None),
+            ("node_status", node_status.timestamp if node_status else None),
+            ("mobile_telemetry", mobile_status.timestamp if mobile_status else None),
+            ("vital_reading", vr.timestamp if vr else None),
+        ],
+    )
 
     wheelchair_metrics = None
     if imu is not None:
         wheelchair_metrics = {
-            "timestamp": imu.timestamp.isoformat() if imu.timestamp else None,
+            "timestamp": _iso_datetime(imu.timestamp),
             "battery_pct": imu.battery_pct,
             "battery_v": imu.battery_v,
             "charging": imu.charging,
@@ -1223,7 +1456,7 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
     if dev.hardware_type == "node" or node_status or node_payload or photo:
         node_metrics = {
             "timestamp": (
-                node_status.timestamp.isoformat()
+                _iso_datetime(node_status.timestamp)
                 if node_status and node_status.timestamp
                 else camera_meta.get("updated_at")
             ),
@@ -1250,12 +1483,12 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
         }
         if photo:
             node_metrics["latest_photo_id"] = photo.id
-            node_metrics["latest_photo_at"] = photo.timestamp.isoformat() if photo.timestamp else None
+            node_metrics["latest_photo_at"] = _iso_datetime(photo.timestamp)
 
     mobile_metrics = None
     if mobile_status is not None:
         mobile_metrics = {
-            "timestamp": mobile_status.timestamp.isoformat() if mobile_status.timestamp else None,
+            "timestamp": _iso_datetime(mobile_status.timestamp),
             "battery_pct": mobile_status.battery_pct,
             "battery_v": mobile_status.battery_v,
             "charging": mobile_status.charging,
@@ -1268,7 +1501,7 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
 
     polar_metrics = (
         {
-            "timestamp": vr.timestamp.isoformat() if vr and vr.timestamp else None,
+            "timestamp": _iso_datetime(vr.timestamp) if vr else None,
             "heart_rate_bpm": vr.heart_rate_bpm if vr else None,
             "rr_interval_ms": vr.rr_interval_ms if vr else None,
             "spo2": vr.spo2 if vr else None,
@@ -1295,7 +1528,7 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
         location["predicted_room_id"] = pred.predicted_room_id
         location["predicted_room_name"] = pred.predicted_room_name
         location["prediction_confidence"] = pred.confidence
-        location["prediction_at"] = pred.timestamp.isoformat() if pred.timestamp else None
+        location["prediction_at"] = _iso_datetime(pred.timestamp)
 
     patient_link = None
     if pa and patient:
@@ -1303,7 +1536,7 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
             "patient_id": patient.id,
             "patient_name": f"{patient.first_name} {patient.last_name}".strip(),
             "device_role": pa.device_role,
-            "assigned_at": pa.assigned_at.isoformat() if pa.assigned_at else None,
+            "assigned_at": _iso_datetime(pa.assigned_at),
         }
 
     caregiver_link = None
@@ -1312,7 +1545,7 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
             "caregiver_id": caregiver.id,
             "caregiver_name": f"{caregiver.first_name} {caregiver.last_name}".strip(),
             "device_role": ca.device_role,
-            "assigned_at": ca.assigned_at.isoformat() if ca.assigned_at else None,
+            "assigned_at": _iso_datetime(ca.assigned_at),
         }
 
     latest_photo = None
@@ -1320,7 +1553,7 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
         latest_photo = {
             "id": photo.id,
             "photo_id": photo.photo_id,
-            "timestamp": photo.timestamp.isoformat() if photo.timestamp else None,
+            "timestamp": _iso_datetime(photo.timestamp),
             "url": f"/api/cameras/photos/{photo.id}/content",
         }
 
@@ -1333,7 +1566,7 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
     )
 
     out = {
-        **device_summary_dict(dev),
+        **device_summary_dict(dev, freshness),
         "realtime": realtime,
         "wheelchair_metrics": wheelchair_metrics,
         "node_metrics": node_metrics,
@@ -1349,12 +1582,240 @@ async def build_device_detail(session: AsyncSession, ws_id: int, device_id: str)
     return out
 
 
+def _ordered_history(rows: list[Any]) -> list[Any]:
+    return list(reversed(rows))
+
+
+async def build_device_history(
+    session: AsyncSession,
+    ws_id: int,
+    device_id: str,
+    *,
+    hours: int = 24,
+    limit: int = 240,
+) -> dict[str, Any]:
+    """Return real telemetry series for a device detail chart.
+
+    The drawer uses this endpoint for live/demo evidence, so every point comes from
+    persisted ingest tables rather than frontend constants.
+    """
+    await get_device(session, ws_id, device_id)
+    bounded_hours = max(1, min(int(hours or 24), 24 * 30))
+    bounded_limit = max(1, min(int(limit or 240), 1000))
+    since = utcnow() - timedelta(hours=bounded_hours)
+
+    imu_rows = _ordered_history(
+        list(
+            (
+                await session.execute(
+                    select(IMUTelemetry)
+                    .where(
+                        IMUTelemetry.workspace_id == ws_id,
+                        IMUTelemetry.device_id == device_id,
+                        IMUTelemetry.timestamp >= since,
+                    )
+                    .order_by(desc(IMUTelemetry.timestamp))
+                    .limit(bounded_limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    )
+    mobile_rows = _ordered_history(
+        list(
+            (
+                await session.execute(
+                    select(MobileDeviceTelemetry)
+                    .where(
+                        MobileDeviceTelemetry.workspace_id == ws_id,
+                        MobileDeviceTelemetry.device_id == device_id,
+                        MobileDeviceTelemetry.timestamp >= since,
+                    )
+                    .order_by(desc(MobileDeviceTelemetry.timestamp))
+                    .limit(bounded_limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    )
+    vital_rows = _ordered_history(
+        list(
+            (
+                await session.execute(
+                    select(VitalReading)
+                    .where(
+                        VitalReading.workspace_id == ws_id,
+                        VitalReading.device_id == device_id,
+                        VitalReading.timestamp >= since,
+                    )
+                    .order_by(desc(VitalReading.timestamp))
+                    .limit(bounded_limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    )
+    node_rows = _ordered_history(
+        list(
+            (
+                await session.execute(
+                    select(NodeStatusTelemetry)
+                    .where(
+                        NodeStatusTelemetry.workspace_id == ws_id,
+                        NodeStatusTelemetry.device_id == device_id,
+                        NodeStatusTelemetry.timestamp >= since,
+                    )
+                    .order_by(desc(NodeStatusTelemetry.timestamp))
+                    .limit(bounded_limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    )
+    location_rows = _ordered_history(
+        list(
+            (
+                await session.execute(
+                    select(RoomPrediction)
+                    .where(
+                        RoomPrediction.workspace_id == ws_id,
+                        RoomPrediction.device_id == device_id,
+                        RoomPrediction.timestamp >= since,
+                    )
+                    .order_by(desc(RoomPrediction.timestamp))
+                    .limit(bounded_limit)
+                )
+            )
+            .scalars()
+            .all()
+        )
+    )
+
+    return {
+        "device_id": device_id,
+        "generated_at": utcnow().isoformat(),
+        "window_hours": bounded_hours,
+        "limit": bounded_limit,
+        "wheelchair": [
+            {
+                "timestamp": _iso_datetime(row.timestamp),
+                "seq": row.seq,
+                "battery_pct": row.battery_pct,
+                "battery_v": row.battery_v,
+                "charging": row.charging,
+                "velocity_ms": row.velocity_ms,
+                "distance_m": row.distance_m,
+                "accel_ms2": row.accel_ms2,
+                "ax": row.ax,
+                "ay": row.ay,
+                "az": row.az,
+                "gx": row.gx,
+                "gy": row.gy,
+                "gz": row.gz,
+                "direction": row.direction,
+            }
+            for row in imu_rows
+        ],
+        "mobile": [
+            {
+                "timestamp": _iso_datetime(row.timestamp),
+                "battery_pct": row.battery_pct,
+                "battery_v": row.battery_v,
+                "charging": row.charging,
+                "steps": row.steps,
+                "polar_connected": row.polar_connected,
+                "linked_person_type": row.linked_person_type,
+                "linked_person_id": row.linked_person_id,
+                "rssi_vector": row.rssi_vector or {},
+                "source": row.source,
+                "extra": row.extra or {},
+            }
+            for row in mobile_rows
+        ],
+        "polar": [
+            {
+                "timestamp": _iso_datetime(row.timestamp),
+                "patient_id": row.patient_id,
+                "heart_rate_bpm": row.heart_rate_bpm,
+                "rr_interval_ms": row.rr_interval_ms,
+                "spo2": row.spo2,
+                "sensor_battery": row.sensor_battery,
+                "source": row.source,
+            }
+            for row in vital_rows
+        ],
+        "node": [
+            {
+                "timestamp": _iso_datetime(row.timestamp),
+                "status": row.status,
+                "battery_pct": row.battery_pct,
+                "battery_v": row.battery_v,
+                "charging": row.charging,
+                "stream_enabled": row.stream_enabled,
+                "frames_captured": row.frames_captured,
+                "snapshots_captured": row.snapshots_captured,
+                "last_snapshot_id": row.last_snapshot_id,
+                "heap": row.heap,
+                "ip_address": row.ip_address,
+                "payload": row.payload or {},
+            }
+            for row in node_rows
+        ],
+        "location": [
+            {
+                "timestamp": _iso_datetime(row.timestamp),
+                "predicted_room_id": row.predicted_room_id,
+                "predicted_room_name": row.predicted_room_name,
+                "confidence": row.confidence,
+                "model_type": row.model_type,
+                "rssi_vector": row.rssi_vector or {},
+            }
+            for row in location_rows
+        ],
+    }
+
+
+async def _get_or_register_mobile_device_for_rest_ingest(
+    session: AsyncSession,
+    ws_id: int,
+    body: MobileTelemetryIngest,
+) -> Device:
+    try:
+        return await get_device(session, ws_id, body.device_id)
+    except HTTPException as exc:
+        if exc.status_code != 404:
+            raise
+
+    now = body.timestamp or utcnow()
+    dev = Device(
+        workspace_id=ws_id,
+        device_id=body.device_id.strip(),
+        device_type="mobile_phone",
+        hardware_type="mobile_phone",
+        display_name=body.device_id.strip(),
+        firmware="",
+        last_seen=now,
+        config={"registered_from": "mobile_rest"},
+    )
+    try:
+        async with session.begin_nested():
+            session.add(dev)
+            await session.flush()
+    except IntegrityError:
+        logger.debug("REST mobile auto-register race for device_id=%s, reloading", body.device_id)
+    return await get_device(session, ws_id, body.device_id)
+
+
 async def ingest_mobile_telemetry(
     session: AsyncSession,
     ws_id: int,
     body: MobileTelemetryIngest,
 ) -> dict[str, Any]:
-    dev = await get_device(session, ws_id, body.device_id)
+    dev = await _get_or_register_mobile_device_for_rest_ingest(session, ws_id, body)
     if dev.hardware_type != "mobile_phone":
         raise HTTPException(400, "Mobile ingest is only supported for mobile_phone hardware_type")
 

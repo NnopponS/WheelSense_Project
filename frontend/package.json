@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev --webpack",
     "dev:turbo": "next dev",
+    "diagnose:spawn": "node scripts/check-node-spawn.mjs",
     "build": "next build --webpack",
     "start": "next start",
+    "test": "jest",
     "lint": "eslint",
     "openapi:types": "python ../server/scripts/export_openapi.py .openapi.json && openapi-typescript .openapi.json -o lib/api/generated/schema.ts"
   },

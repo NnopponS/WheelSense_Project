@@ -4,6 +4,8 @@
 import { Suspense } from "react";
 import { useTranslation } from "@/lib/i18n";
 import ObserverAlertsQueue from "./ObserverAlertsQueue";
+import FeatureDetailActions from "@/components/dashboard/FeatureDetailActions";
+import { ConciergeBell, LayoutDashboard, ListTodo, Users } from "lucide-react";
 
 function AlertsQueueFallback() {
   const { t } = useTranslation();
@@ -26,6 +28,16 @@ export default function ObserverAlertsPage() {
         <h2 className="text-2xl font-bold text-foreground">{t("observer.alerts.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("observer.alerts.subtitle")}</p>
       </div>
+
+      <FeatureDetailActions
+        title="Related views"
+        actions={[
+          { label: t("nav.dashboard"), description: "Next action", href: "/observer", icon: LayoutDashboard, tone: "primary" },
+          { label: t("nav.tasks"), description: "My work", href: "/observer/tasks", icon: ListTodo, tone: "warning" },
+          { label: t("nav.observer.myPatients"), description: "Find patient", href: "/observer/personnel", icon: Users, tone: "neutral" },
+          { label: t("nav.support"), description: "Help requests", href: "/observer/support", icon: ConciergeBell, tone: "neutral" },
+        ]}
+      />
 
       <Suspense fallback={<AlertsQueueFallback />}>
         <ObserverAlertsQueue />

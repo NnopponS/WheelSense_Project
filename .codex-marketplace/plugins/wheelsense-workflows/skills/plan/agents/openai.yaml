@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Plan"
+  short_description: "WheelSense plan workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $plan for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

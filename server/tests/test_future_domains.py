@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import io
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.security import create_access_token, get_password_hash
 from app.models.caregivers import CareGiver
 from app.models.core import Device, Room, SmartDevice
@@ -457,6 +459,115 @@ async def test_demo_control_moves_staff_actor(
         )
     ).scalar_one()
     assert position.room_id == room.id
+
+
+@pytest.mark.asyncio
+async def test_demo_control_state_exposes_simplified_visible_actions(client: AsyncClient):
+    response = await client.get("/api/demo/state")
+    assert response.status_code == 200, response.text
+    action_labels = [action["label"] for action in response.json()["actions"]]
+    assert action_labels == ["Clean State", "Inject Events", "Move Actor"]
+
+
+@pytest.mark.asyncio
+async def test_demo_control_patient_move_publishes_simulator_mqtt(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(settings, "env_mode", "simulator")
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Demo Move Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    room = Room(
+        workspace_id=admin_user.workspace_id,
+        floor_id=fl.id,
+        name="Room 401",
+        room_type="bedroom",
+        node_device_id="SIM_NODE_01",
+    )
+    patient = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Move",
+        last_name="Patient",
+        care_level="normal",
+        is_active=True,
+    )
+    db_session.add_all([room, patient])
+    await db_session.commit()
+    await db_session.refresh(room)
+    await db_session.refresh(patient)
+
+    with patch("app.api.endpoints.demo_control.publish_mqtt", new_callable=AsyncMock) as pub:
+        response = await client.post(
+            f"/api/demo/actors/patient/{patient.id}/move",
+            json={"room_id": room.id, "note": "Move for simulator"},
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["room_id"] == room.id
+    pub.assert_awaited_once()
+    topic, payload = pub.await_args[0]
+    assert topic == "WheelSense/sim/control"
+    assert payload["command"] == "move_actor"
+    assert payload["actor_type"] == "patient"
+    assert payload["patient_id"] == patient.id
+    assert payload["room_id"] == room.id
+
+
+@pytest.mark.asyncio
+async def test_demo_control_patient_move_survives_simulator_mqtt_failure(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(settings, "env_mode", "simulator")
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Demo Move Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    room = Room(
+        workspace_id=admin_user.workspace_id,
+        floor_id=fl.id,
+        name="Room 401",
+        room_type="bedroom",
+        node_device_id="SIM_NODE_01",
+    )
+    patient = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Move",
+        last_name="Patient",
+        care_level="normal",
+        is_active=True,
+    )
+    db_session.add_all([room, patient])
+    await db_session.commit()
+    await db_session.refresh(room)
+    await db_session.refresh(patient)
+
+    with patch(
+        "app.api.endpoints.demo_control.publish_mqtt",
+        new_callable=AsyncMock,
+        side_effect=RuntimeError("broker timeout"),
+    ):
+        response = await client.post(
+            f"/api/demo/actors/patient/{patient.id}/move",
+            json={"room_id": room.id, "note": "Move for simulator"},
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["room_id"] == room.id
+    await db_session.refresh(patient)
+    assert patient.room_id == room.id
 
 
 @pytest.mark.asyncio

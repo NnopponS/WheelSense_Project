@@ -431,64 +431,66 @@ export default function AccountPage() {
     }
   }
 
-  async function handleSaveProfile() {
+  async function handleSaveProfile(scope: "account" | "patient") {
     if (!user || !profile) return;
     setProfileSaving(true);
     setProfileError(null);
     setProfileMessage(null);
     try {
       const payload: Record<string, unknown> = {};
-      const userPatch: Record<string, unknown> = {};
-      if (profileForm.username.trim() !== (profile.user.username ?? "")) {
-        userPatch.username = profileForm.username.trim();
-      }
-      if (profileForm.email.trim() !== (profile.user.email ?? "")) {
-        userPatch.email = profileForm.email.trim() || null;
-      }
-      if (profileForm.phone.trim() !== (profile.user.phone ?? "")) {
-        userPatch.phone = profileForm.phone.trim() || null;
-      }
-      if (Object.keys(userPatch).length > 0) payload.user = userPatch;
+      if (scope === "account") {
+        const userPatch: Record<string, unknown> = {};
+        if (profileForm.username.trim() !== (profile.user.username ?? "")) {
+          userPatch.username = profileForm.username.trim();
+        }
+        if (profileForm.email.trim() !== (profile.user.email ?? "")) {
+          userPatch.email = profileForm.email.trim() || null;
+        }
+        if (profileForm.phone.trim() !== (profile.user.phone ?? "")) {
+          userPatch.phone = profileForm.phone.trim() || null;
+        }
+        if (Object.keys(userPatch).length > 0) payload.user = userPatch;
 
-      if (caregiverEditable) {
-        const current = profile.linked_caregiver ?? {};
-        const caregiverPatch: Record<string, unknown> = {};
-        if (profileForm.caregiver_first_name.trim() !== (current.first_name ?? "")) {
-          caregiverPatch.first_name = profileForm.caregiver_first_name.trim();
+        if (caregiverEditable) {
+          const current = profile.linked_caregiver ?? {};
+          const caregiverPatch: Record<string, unknown> = {};
+          if (profileForm.caregiver_first_name.trim() !== (current.first_name ?? "")) {
+            caregiverPatch.first_name = profileForm.caregiver_first_name.trim();
+          }
+          if (profileForm.caregiver_last_name.trim() !== (current.last_name ?? "")) {
+            caregiverPatch.last_name = profileForm.caregiver_last_name.trim();
+          }
+          if (profileForm.caregiver_department.trim() !== (current.department ?? "")) {
+            caregiverPatch.department = profileForm.caregiver_department.trim() || null;
+          }
+          if (profileForm.caregiver_employee_code.trim() !== (current.employee_code ?? "")) {
+            caregiverPatch.employee_code = profileForm.caregiver_employee_code.trim() || null;
+          }
+          if (profileForm.caregiver_specialty.trim() !== (current.specialty ?? "")) {
+            caregiverPatch.specialty = profileForm.caregiver_specialty.trim() || null;
+          }
+          if (profileForm.caregiver_license_number.trim() !== (current.license_number ?? "")) {
+            caregiverPatch.license_number = profileForm.caregiver_license_number.trim() || null;
+          }
+          if (
+            profileForm.caregiver_emergency_contact_name.trim() !==
+            (current.emergency_contact_name ?? "")
+          ) {
+            caregiverPatch.emergency_contact_name =
+              profileForm.caregiver_emergency_contact_name.trim() || null;
+          }
+          if (
+            profileForm.caregiver_emergency_contact_phone.trim() !==
+            (current.emergency_contact_phone ?? "")
+          ) {
+            caregiverPatch.emergency_contact_phone =
+              profileForm.caregiver_emergency_contact_phone.trim() || null;
+          }
+          if (Object.keys(caregiverPatch).length > 0) payload.linked_caregiver = caregiverPatch;
         }
-        if (profileForm.caregiver_last_name.trim() !== (current.last_name ?? "")) {
-          caregiverPatch.last_name = profileForm.caregiver_last_name.trim();
-        }
-        if (profileForm.caregiver_department.trim() !== (current.department ?? "")) {
-          caregiverPatch.department = profileForm.caregiver_department.trim() || null;
-        }
-        if (profileForm.caregiver_employee_code.trim() !== (current.employee_code ?? "")) {
-          caregiverPatch.employee_code = profileForm.caregiver_employee_code.trim() || null;
-        }
-        if (profileForm.caregiver_specialty.trim() !== (current.specialty ?? "")) {
-          caregiverPatch.specialty = profileForm.caregiver_specialty.trim() || null;
-        }
-        if (profileForm.caregiver_license_number.trim() !== (current.license_number ?? "")) {
-          caregiverPatch.license_number = profileForm.caregiver_license_number.trim() || null;
-        }
-        if (
-          profileForm.caregiver_emergency_contact_name.trim() !==
-          (current.emergency_contact_name ?? "")
-        ) {
-          caregiverPatch.emergency_contact_name =
-            profileForm.caregiver_emergency_contact_name.trim() || null;
-        }
-        if (
-          profileForm.caregiver_emergency_contact_phone.trim() !==
-          (current.emergency_contact_phone ?? "")
-        ) {
-          caregiverPatch.emergency_contact_phone =
-            profileForm.caregiver_emergency_contact_phone.trim() || null;
-        }
-        if (Object.keys(caregiverPatch).length > 0) payload.linked_caregiver = caregiverPatch;
       }
 
-      if (profile.linked_patient && patientRecordForm) {
+      if (scope === "patient" && profile.linked_patient && patientRecordForm) {
         const lp = profile.linked_patient;
         const f = patientRecordForm;
         const patientPatch: Record<string, unknown> = {};
@@ -545,7 +547,7 @@ export default function AccountPage() {
       }
 
       if (Object.keys(payload).length === 0) {
-        setProfileMessage("No changes to save.");
+        setProfileMessage(t("account.noChangesToSave"));
         return;
       }
 
@@ -554,7 +556,9 @@ export default function AccountPage() {
       await loadProfile();
       await queryClient.invalidateQueries({ queryKey: ["account", "patient-detail"] });
       await queryClient.invalidateQueries({ queryKey: ["account", "room"] });
-      setProfileMessage("Profile updated.");
+      setProfileMessage(
+        scope === "patient" ? t("account.patientRecordUpdated") : t("account.profileUpdated"),
+      );
     } catch (err) {
       setProfileError(err instanceof ApiError ? err.message : "Could not save profile.");
     } finally {
@@ -944,6 +948,16 @@ export default function AccountPage() {
                       : t("common.requestFailed")}
                   </p>
                 ) : null}
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    type="button"
+                    disabled={profileSaving}
+                    onClick={() => void handleSaveProfile("patient")}
+                  >
+                    <Save className="h-4 w-4" />
+                    {profileSaving ? t("common.loading") : t("account.savePatientRecord")}
+                  </Button>
+                </div>
               </div>
             ) : null}
 
@@ -1060,9 +1074,13 @@ export default function AccountPage() {
               ) : null}
 
               <div className="mt-4 flex justify-end">
-                <Button type="button" disabled={profileSaving} onClick={() => void handleSaveProfile()}>
+                <Button
+                  type="button"
+                  disabled={profileSaving}
+                  onClick={() => void handleSaveProfile("account")}
+                >
                   <Save className="h-4 w-4" />
-                  {profileSaving ? "Saving..." : "Save profile"}
+                  {profileSaving ? t("common.loading") : t("account.saveAccountContact")}
                 </Button>
               </div>
             </div>

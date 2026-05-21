@@ -15,6 +15,7 @@ COPY pytest.ini ./
 COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
 COPY tests/ ./tests/
+COPY assets/ ./assets/
 COPY seed_device_extras.py ./
 COPY sim_controller.py ./
 

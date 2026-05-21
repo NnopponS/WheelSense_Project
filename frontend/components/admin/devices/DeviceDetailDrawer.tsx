@@ -5,6 +5,15 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Clock3, Link2, Link2Off, Loader2, MapPin, RefreshCw, Trash2, UserRound, Users } from "lucide-react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { z } from "zod";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -89,6 +98,10 @@ const deviceDetailSchema = z
     config: z.record(z.string(), z.unknown()).optional(),
     firmware: z.string().nullish(),
     last_seen: z.string().nullable().optional(),
+    online: z.boolean().optional(),
+    status: z.string().nullish(),
+    latest_reading_at: z.string().nullable().optional(),
+    latest_reading_type: z.string().nullable().optional(),
     patient: z
       .object({
         patient_id: z.number(),
@@ -192,6 +205,25 @@ const deviceDetailSchema = z
       })
       .nullable()
       .optional(),
+  })
+  .passthrough();
+
+const deviceHistoryPointSchema = z.record(z.string(), z.unknown()).and(
+  z.object({
+    timestamp: z.string().nullable().optional(),
+  }),
+);
+
+const deviceHistorySchema = z
+  .object({
+    device_id: z.string(),
+    generated_at: z.string().nullish(),
+    window_hours: z.number().optional(),
+    wheelchair: z.array(deviceHistoryPointSchema).default([]),
+    mobile: z.array(deviceHistoryPointSchema).default([]),
+    polar: z.array(deviceHistoryPointSchema).default([]),
+    node: z.array(deviceHistoryPointSchema).default([]),
+    location: z.array(deviceHistoryPointSchema).default([]),
   })
   .passthrough();
 
@@ -312,6 +344,172 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
+type DeviceHistory = z.infer<typeof deviceHistorySchema>;
+type DeviceHistoryPoint = z.infer<typeof deviceHistoryPointSchema>;
+
+const HISTORY_METRICS: Record<
+  HardwareType,
+  Array<{ key: string; label: string; color: string; unit?: string }>
+> = {
+  wheelchair: [
+    { key: "battery_pct", label: "Battery", color: "#2563eb", unit: "%" },
+    { key: "velocity_ms", label: "Velocity", color: "#0891b2", unit: " m/s" },
+    { key: "distance_m", label: "Distance", color: "#16a34a", unit: " m" },
+    { key: "accel_ms2", label: "Acceleration", color: "#dc2626", unit: " m/s2" },
+  ],
+  mobile_phone: [
+    { key: "battery_pct", label: "Battery", color: "#2563eb", unit: "%" },
+    { key: "steps", label: "Steps", color: "#16a34a" },
+  ],
+  polar_sense: [
+    { key: "heart_rate_bpm", label: "Heart rate", color: "#dc2626", unit: " bpm" },
+    { key: "spo2", label: "SpO2", color: "#2563eb", unit: "%" },
+    { key: "sensor_battery", label: "Sensor battery", color: "#16a34a", unit: "%" },
+    { key: "rr_interval_ms", label: "R-R interval", color: "#7c3aed", unit: " ms" },
+  ],
+  node: [
+    { key: "battery_pct", label: "Battery", color: "#2563eb", unit: "%" },
+    { key: "heap", label: "Heap", color: "#7c3aed" },
+    { key: "frames_captured", label: "Frames", color: "#0891b2" },
+    { key: "snapshots_captured", label: "Snapshots", color: "#16a34a" },
+  ],
+};
+
+function historyRowsForHardware(history: DeviceHistory | null | undefined, hardwareType: HardwareType) {
+  if (!history) return [] as DeviceHistoryPoint[];
+  if (hardwareType === "wheelchair") return history.wheelchair;
+  if (hardwareType === "mobile_phone") return history.mobile;
+  if (hardwareType === "polar_sense") return history.polar;
+  return history.node;
+}
+
+function numericHistoryValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  return null;
+}
+
+function formatHistoryValue(value: unknown): string {
+  if (value == null) return "-";
+  if (typeof value === "number") return Number.isInteger(value) ? String(value) : value.toFixed(2);
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  if (typeof value === "string") return value || "-";
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function DeviceHistoryPanel({
+  hardwareType,
+  history,
+  loading,
+}: {
+  hardwareType: HardwareType;
+  history: DeviceHistory | null | undefined;
+  loading: boolean;
+}) {
+  const rows = historyRowsForHardware(history, hardwareType);
+  const metrics = HISTORY_METRICS[hardwareType];
+  const chartData = rows.map((row) => {
+    const timestamp = typeof row.timestamp === "string" ? row.timestamp : null;
+    const point: Record<string, string | number | null> = {
+      timestamp,
+      time: timestamp ? formatRelativeTime(timestamp) : "-",
+    };
+    for (const metric of metrics) {
+      point[metric.key] = numericHistoryValue(row[metric.key]);
+    }
+    return point;
+  });
+  const hasChartData = chartData.some((row) =>
+    metrics.some((metric) => typeof row[metric.key] === "number"),
+  );
+  const latestRows = [...rows].slice(-8).reverse();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Realtime History</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : null}
+        {!loading && rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No telemetry history for this device yet. Live mobile devices will appear here after ingest.
+          </p>
+        ) : null}
+        {hasChartData ? (
+          <div className="h-56 rounded-xl border border-border bg-muted/10 p-3">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.35)" />
+                <XAxis dataKey="time" tick={{ fontSize: 11 }} minTickGap={20} />
+                <YAxis tick={{ fontSize: 11 }} width={42} />
+                <Tooltip
+                  labelFormatter={(_, payload) => {
+                    const ts = payload?.[0]?.payload?.timestamp;
+                    return typeof ts === "string" ? formatDateTime(ts) : "Telemetry";
+                  }}
+                  formatter={(value, name) => {
+                    const metric = metrics.find((item) => item.key === name || item.label === name);
+                    const numberValue = typeof value === "number" ? value : null;
+                    return [
+                      numberValue != null
+                        ? `${Number.isInteger(numberValue) ? numberValue : numberValue.toFixed(2)}${metric?.unit ?? ""}`
+                        : "-",
+                      metric?.label ?? String(name),
+                    ];
+                  }}
+                />
+                {metrics.map((metric) => (
+                  <Line
+                    key={metric.key}
+                    type="monotone"
+                    dataKey={metric.key}
+                    name={metric.label}
+                    stroke={metric.color}
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : null}
+        {latestRows.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Latest values</p>
+            {latestRows.map((row, index) => {
+              const entries = Object.entries(row).filter(([key]) => key !== "timestamp");
+              return (
+                <div key={`${row.timestamp ?? "row"}-${index}`} className="rounded-xl border border-border bg-muted/20 p-3">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {typeof row.timestamp === "string" ? formatDateTime(row.timestamp) : "No timestamp"}
+                  </p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {entries.map(([key, value]) => (
+                      <div key={key} className="min-w-0">
+                        <p className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{key}</p>
+                        <p className="break-words text-xs font-medium text-foreground">{formatHistoryValue(value)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: DeviceDetailDrawerProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -342,7 +540,20 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     },
   });
 
+  const historyQuery = useQuery({
+    queryKey: ["device-detail-drawer", "history", deviceId],
+    enabled: Boolean(deviceId),
+    staleTime: 2_000,
+    refetchInterval: () => (Date.now() < fastPollUntilMs ? 2_000 : 5_000),
+    refetchIntervalInBackground: true,
+    queryFn: async () => {
+      const raw = await api.getDeviceHistoryRaw(deviceId as string, { hours: 24, limit: 240 });
+      return deviceHistorySchema.parse(raw);
+    },
+  });
+
   const detail = deviceQuery.data ?? null;
+  const history = historyQuery.data ?? null;
   const hardwareType = resolveHardwareType(detail?.hardware_type);
   const isNodeDevice = hardwareType === "node";
   const isPatientAssignable =
@@ -509,15 +720,20 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   const linkedPatientId = detail?.patient?.patient_id ?? null;
   const linkedCaregiverId = detail?.caregiver?.caregiver_id ?? null;
   const currentRoomId = currentRoom?.id ?? null;
+  const detailDeviceId = detail?.device_id ?? null;
+  const detailDisplayName = detail?.display_name ?? "";
+  const latestPhotoUrl = detail?.latest_photo?.url ?? null;
 
   useEffect(() => {
-    if (!detail || detail.device_id !== deviceId) return;
-    setDisplayNameDraft(detail.display_name ?? "");
-  }, [deviceId, detail?.device_id, detail?.display_name]);
+    if (detailDeviceId !== deviceId) return;
+    const timeoutId = window.setTimeout(() => setDisplayNameDraft(detailDisplayName), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [deviceId, detailDeviceId, detailDisplayName]);
 
   useEffect(() => {
-    setLatestPhotoImageBroken(false);
-  }, [detail?.latest_photo?.url, detail?.device_id]);
+    const timeoutId = window.setTimeout(() => setLatestPhotoImageBroken(false), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [latestPhotoUrl, detailDeviceId]);
 
   // Keep assignment pickers in sync with the server, but do not re-run on every device-detail
   // poll (new `detail` object) — that wiped in-progress dropdown selections and forced the
@@ -540,33 +756,43 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
   // does not re-run this and snap back to the patient tab while the user is on staff (both unlinked).
   useEffect(() => {
     if (!deviceId) return;
-    if (linkedPatientId != null) {
+    const timeoutId = window.setTimeout(() => {
+      if (linkedPatientId != null) {
+        setIdentityTab("patient");
+        return;
+      }
+      if (linkedCaregiverId != null) {
+        setIdentityTab("staff");
+        return;
+      }
       setIdentityTab("patient");
-      return;
-    }
-    if (linkedCaregiverId != null) {
-      setIdentityTab("staff");
-      return;
-    }
-    setIdentityTab("patient");
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
   }, [deviceId, linkedPatientId, linkedCaregiverId]);
 
   useEffect(() => {
     if (!deviceId) return;
 
+    const timeoutId = window.setTimeout(() => {
+      if (currentRoom) {
+        setScopeBuilding(facilityKey(currentRoom));
+        setScopeFloor(floorKey(currentRoom));
+      } else {
+        setScopeBuilding(EMPTY_SELECT_VALUE);
+        setScopeFloor(EMPTY_SELECT_VALUE);
+      }
+    }, 0);
+
     if (currentRoom) {
-      setScopeBuilding(facilityKey(currentRoom));
-      setScopeFloor(floorKey(currentRoom));
       roomForm.reset({
         roomId: String(currentRoom.id),
       });
     } else {
-      setScopeBuilding(EMPTY_SELECT_VALUE);
-      setScopeFloor(EMPTY_SELECT_VALUE);
       roomForm.reset({
         roomId: EMPTY_SELECT_VALUE,
       });
     }
+    return () => window.clearTimeout(timeoutId);
   }, [deviceId, currentRoomId, currentRoom, roomForm]);
 
   const refreshAfterMutation = async () => {
@@ -753,7 +979,13 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
     deleteRegistryMutation.isPending ||
     patchDisplayNameMutation.isPending;
 
-  const online = detail ? isDeviceOnline(detail.last_seen ?? null, nowMs) : false;
+  const online = detail
+    ? typeof detail.online === "boolean"
+      ? detail.online
+      : isDeviceOnline(detail.last_seen ?? null, nowMs)
+    : false;
+  const latestReadingAt = detail?.latest_reading_at ?? detail?.last_seen ?? null;
+  const latestReadingType = detail?.latest_reading_type ?? "last_seen";
   const batteryPct =
     detail?.realtime?.battery_pct ??
     detail?.wheelchair_metrics?.battery_pct ??
@@ -874,8 +1106,8 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                       value={batteryPct != null ? `${batteryPct}%` : "-"}
                     />
                     <Metric
-                      label={t("devices.lastSeen")}
-                      value={detail.last_seen ? formatRelativeTime(detail.last_seen) : "-"}
+                      label="Latest reading"
+                      value={latestReadingAt ? `${formatRelativeTime(latestReadingAt)} (${latestReadingType})` : "-"}
                     />
                   </CardContent>
                 </Card>
@@ -1171,6 +1403,12 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
                   </Card>
                 ) : null}
 
+                <DeviceHistoryPanel
+                  hardwareType={hardwareType}
+                  history={history}
+                  loading={historyQuery.isLoading}
+                />
+
                 {isPatientAssignable && supportsStaffDeviceLink ? (
                   <Card>
                     <CardHeader>
@@ -1463,9 +1701,10 @@ export default function DeviceDetailDrawer({ deviceId, onClose, t, onMutate }: D
             <Button
               type="button"
               variant="outline"
-              disabled={deviceQuery.isFetching || activityQuery.isFetching || busy}
+              disabled={deviceQuery.isFetching || historyQuery.isFetching || activityQuery.isFetching || busy}
               onClick={() => {
                 void deviceQuery.refetch();
+                void historyQuery.refetch();
                 void activityQuery.refetch();
               }}
             >

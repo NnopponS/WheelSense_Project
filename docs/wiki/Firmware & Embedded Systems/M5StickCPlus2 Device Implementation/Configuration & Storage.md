@@ -2,16 +2,16 @@
 
 <cite>
 **Referenced Files in This Document**
-- [ConfigManager.h](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h)
-- [ConfigManager.cpp](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp)
-- [Config.h](file://firmware/M5StickCPlus2/src/Config.h)
-- [main.cpp](file://firmware/M5StickCPlus2/src/main.cpp)
-- [SceneManager.h](file://firmware/M5StickCPlus2/src/ui/SceneManager.h)
-- [SceneManager.cpp](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp)
-- [InputManager.h](file://firmware/M5StickCPlus2/src/managers/InputManager.h)
-- [InputManager.cpp](file://firmware/M5StickCPlus2/src/managers/InputManager.cpp)
-- [DisplayManager.h](file://firmware/M5StickCPlus2/src/ui/DisplayManager.h)
-- [secrets.h.example](file://firmware/M5StickCPlus2/src/secrets.h.example)
+- [ConfigManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
+- [ConfigManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp)
+- [Config.h](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [main.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [SceneManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h)
+- [SceneManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp)
+- [InputManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h)
+- [InputManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp)
+- [DisplayManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
+- [secrets.h.example](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
 </cite>
 
 ## Table of Contents
@@ -60,28 +60,28 @@ SECRET -. "Build-time override" .-> MAIN
 ```
 
 **Diagram sources**
-- [Config.h:1-78](file://firmware/M5StickCPlus2/src/Config.h#L1-L78)
-- [ConfigManager.h:1-36](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L1-L36)
-- [ConfigManager.cpp:1-57](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L1-L57)
-- [SceneManager.h:1-127](file://firmware/M5StickCPlus2/src/ui/SceneManager.h#L1-L127)
-- [SceneManager.cpp:1-800](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L1-L800)
-- [InputManager.h:1-37](file://firmware/M5StickCPlus2/src/managers/InputManager.h#L1-L37)
-- [InputManager.cpp:1-82](file://firmware/M5StickCPlus2/src/managers/InputManager.cpp#L1-L82)
-- [DisplayManager.h:1-39](file://firmware/M5StickCPlus2/src/ui/DisplayManager.h#L1-L39)
-- [main.cpp:123-151](file://firmware/M5StickCPlus2/src/main.cpp#L123-L151)
-- [secrets.h.example:1-21](file://firmware/M5StickCPlus2/src/secrets.h.example#L1-L21)
+- [Config.h:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L1-L78)
+- [ConfigManager.h:1-36](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L1-L36)
+- [ConfigManager.cpp:1-57](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L1-L57)
+- [SceneManager.h:1-127](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L1-L127)
+- [SceneManager.cpp:1-800](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L1-L800)
+- [InputManager.h:1-37](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L1-L37)
+- [InputManager.cpp:1-82](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L1-L82)
+- [DisplayManager.h:1-39](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h#L1-L39)
+- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [secrets.h.example:1-21](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example#L1-L21)
 
 **Section sources**
-- [Config.h:1-78](file://firmware/M5StickCPlus2/src/Config.h#L1-L78)
-- [ConfigManager.h:1-36](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L1-L36)
-- [ConfigManager.cpp:1-57](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L1-L57)
-- [SceneManager.h:1-127](file://firmware/M5StickCPlus2/src/ui/SceneManager.h#L1-L127)
-- [SceneManager.cpp:1-800](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L1-L800)
-- [InputManager.h:1-37](file://firmware/M5StickCPlus2/src/managers/InputManager.h#L1-L37)
-- [InputManager.cpp:1-82](file://firmware/M5StickCPlus2/src/managers/InputManager.cpp#L1-L82)
-- [DisplayManager.h:1-39](file://firmware/M5StickCPlus2/src/ui/DisplayManager.h#L1-L39)
-- [main.cpp:123-151](file://firmware/M5StickCPlus2/src/main.cpp#L123-L151)
-- [secrets.h.example:1-21](file://firmware/M5StickCPlus2/src/secrets.h.example#L1-L21)
+- [Config.h:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L1-L78)
+- [ConfigManager.h:1-36](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L1-L36)
+- [ConfigManager.cpp:1-57](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L1-L57)
+- [SceneManager.h:1-127](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L1-L127)
+- [SceneManager.cpp:1-800](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L1-L800)
+- [InputManager.h:1-37](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L1-L37)
+- [InputManager.cpp:1-82](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L1-L82)
+- [DisplayManager.h:1-39](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h#L1-L39)
+- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [secrets.h.example:1-21](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example#L1-L21)
 
 ## Core Components
 - AppConfig data model: device identity, network credentials, MQTT settings, operational parameters, and display preferences.
@@ -91,11 +91,11 @@ SECRET -. "Build-time override" .-> MAIN
 - Runtime parameter updates: applied immediately and persisted when appropriate.
 
 **Section sources**
-- [ConfigManager.h:7-31](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L7-L31)
-- [ConfigManager.cpp:11-56](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L56)
-- [Config.h:9-76](file://firmware/M5StickCPlus2/src/Config.h#L9-L76)
-- [SceneManager.cpp:486-619](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L486-L619)
-- [main.cpp:82-121](file://firmware/M5StickCPlus2/src/main.cpp#L82-L121)
+- [ConfigManager.h:7-31](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L7-L31)
+- [ConfigManager.cpp:11-56](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L56)
+- [Config.h:9-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L9-L76)
+- [SceneManager.cpp:486-619](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L486-L619)
+- [main.cpp:82-121](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L82-L121)
 
 ## Architecture Overview
 The configuration lifecycle integrates hardware initialization, persistent storage, and UI-driven updates.
@@ -122,9 +122,9 @@ CM-->>UI : "saved"
 ```
 
 **Diagram sources**
-- [main.cpp:123-151](file://firmware/M5StickCPlus2/src/main.cpp#L123-L151)
-- [ConfigManager.cpp:11-44](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L44)
-- [SceneManager.cpp:509-530](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L509-L530)
+- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [ConfigManager.cpp:11-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L44)
+- [SceneManager.cpp:509-530](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L509-L530)
 
 ## Detailed Component Analysis
 
@@ -139,7 +139,7 @@ AppConfig encapsulates all device configuration fields:
 These fields are persisted and restored using Preferences keys.
 
 **Section sources**
-- [ConfigManager.h:7-17](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L7-L17)
+- [ConfigManager.h:7-17](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L7-L17)
 
 ### ConfigManager Class
 Responsibilities:
@@ -178,12 +178,12 @@ ConfigManager --> AppConfig : "holds"
 ```
 
 **Diagram sources**
-- [ConfigManager.h:19-31](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L19-L31)
-- [ConfigManager.cpp:5,11-56](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L5,L11-L56)
+- [ConfigManager.h:19-31](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L19-L31)
+- [ConfigManager.cpp:5,11-56](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L5,L11-L56)
 
 **Section sources**
-- [ConfigManager.cpp:11-56](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L56)
-- [ConfigManager.h:19-31](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L19-L31)
+- [ConfigManager.cpp:11-56](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L56)
+- [ConfigManager.h:19-31](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L19-L31)
 
 ### Persistent Storage and Defaults
 - Storage backend: Preferences (non-volatile flash).
@@ -202,12 +202,12 @@ Log --> End(["Done"])
 ```
 
 **Diagram sources**
-- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L29)
-- [Config.h:9-76](file://firmware/M5StickCPlus2/src/Config.h#L9-L76)
+- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L29)
+- [Config.h:9-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L9-L76)
 
 **Section sources**
-- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L29)
-- [Config.h:9-76](file://firmware/M5StickCPlus2/src/Config.h#L9-L76)
+- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L29)
+- [Config.h:9-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L9-L76)
 
 ### Secrets Management
 - Build-time secrets: define WiFi and MQTT credentials in a local header file copied from the example.
@@ -219,7 +219,7 @@ Practical guidance:
 - Rebuild and flash the firmware to include credentials.
 
 **Section sources**
-- [secrets.h.example:10-20](file://firmware/M5StickCPlus2/src/secrets.h.example#L10-L20)
+- [secrets.h.example:10-20](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example#L10-L20)
 
 ### UI-Driven Configuration Updates
 The UI enables interactive editing of configuration fields:
@@ -246,15 +246,15 @@ NET-->>UI : "reconfigured"
 ```
 
 **Diagram sources**
-- [SceneManager.cpp:486-619](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L486-L619)
-- [SceneManager.cpp:509-530](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L509-L530)
-- [ConfigManager.cpp:31-44](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L31-L44)
+- [SceneManager.cpp:486-619](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L486-L619)
+- [SceneManager.cpp:509-530](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L509-L530)
+- [ConfigManager.cpp:31-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L31-L44)
 
 **Section sources**
-- [SceneManager.cpp:294-391](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L294-L391)
-- [SceneManager.cpp:486-619](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L486-L619)
-- [SceneManager.cpp:621-655](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L621-L655)
-- [SceneManager.cpp:657-724](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L657-L724)
+- [SceneManager.cpp:294-391](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L294-L391)
+- [SceneManager.cpp:486-619](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L486-L619)
+- [SceneManager.cpp:621-655](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L621-L655)
+- [SceneManager.cpp:657-724](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L657-L724)
 
 ### Runtime Parameter Modification
 - Display power policy: updated continuously based on displayMode and recording state.
@@ -262,8 +262,8 @@ NET-->>UI : "reconfigured"
 - Persistence: toggling display mode and editing fields are saved immediately.
 
 **Section sources**
-- [main.cpp:82-121](file://firmware/M5StickCPlus2/src/main.cpp#L82-L121)
-- [SceneManager.cpp:345-356](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L345-L356)
+- [main.cpp:82-121](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L82-L121)
+- [SceneManager.cpp:345-356](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L345-L356)
 
 ### Configuration Validation Rules
 - MQTT port: edited as integer; conversion occurs before saving.
@@ -276,8 +276,8 @@ Validation behavior:
 - No explicit range checks are performed in the UI; defaults and constants provide safe bounds.
 
 **Section sources**
-- [SceneManager.cpp:519-530](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L519-L530)
-- [Config.h:74-75](file://firmware/M5StickCPlus2/src/Config.h#L74-L75)
+- [SceneManager.cpp:519-530](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L519-L530)
+- [Config.h:74-75](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L74-L75)
 
 ### Error Recovery Procedures
 - Factory reset: clears all stored keys and reloads defaults.
@@ -285,9 +285,9 @@ Validation behavior:
 - UI feedback: messages confirm successful changes and guide user actions.
 
 **Section sources**
-- [ConfigManager.cpp:50-56](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L50-L56)
-- [SceneManager.cpp:375-383](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L375-L383)
-- [SceneManager.cpp:726-795](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L726-L795)
+- [ConfigManager.cpp:50-56](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L50-L56)
+- [SceneManager.cpp:375-383](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L375-L383)
+- [SceneManager.cpp:726-795](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L726-L795)
 
 ### Backup and Restore Functionality
 - Backup: copy the Preferences namespace contents to another device or external storage for migration.
@@ -298,9 +298,9 @@ Validation behavior:
 Note: There is no dedicated backup/restore API in the code; use the built-in Preferences namespace and UI workflows.
 
 **Section sources**
-- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L29)
-- [ConfigManager.cpp:50-56](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L50-L56)
-- [SceneManager.cpp:726-795](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L726-L795)
+- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L29)
+- [ConfigManager.cpp:50-56](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L50-L56)
+- [SceneManager.cpp:726-795](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L726-L795)
 
 ## Dependency Analysis
 - ConfigManager depends on Preferences for persistence and on Config.h for defaults.
@@ -321,21 +321,21 @@ CMC --> PREFS["Preferences (Flash)"]
 ```
 
 **Diagram sources**
-- [Config.h:1-78](file://firmware/M5StickCPlus2/src/Config.h#L1-L78)
-- [ConfigManager.h:1-36](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L1-L36)
-- [ConfigManager.cpp:1-57](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L1-L57)
-- [main.cpp:123-151](file://firmware/M5StickCPlus2/src/main.cpp#L123-L151)
-- [SceneManager.h:1-127](file://firmware/M5StickCPlus2/src/ui/SceneManager.h#L1-L127)
-- [SceneManager.cpp:1-800](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L1-L800)
-- [InputManager.h:1-37](file://firmware/M5StickCPlus2/src/managers/InputManager.h#L1-L37)
-- [InputManager.cpp:1-82](file://firmware/M5StickCPlus2/src/managers/InputManager.cpp#L1-L82)
-- [DisplayManager.h:1-39](file://firmware/M5StickCPlus2/src/ui/DisplayManager.h#L1-L39)
+- [Config.h:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L1-L78)
+- [ConfigManager.h:1-36](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L1-L36)
+- [ConfigManager.cpp:1-57](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L1-L57)
+- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [SceneManager.h:1-127](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L1-L127)
+- [SceneManager.cpp:1-800](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L1-L800)
+- [InputManager.h:1-37](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.h#L1-L37)
+- [InputManager.cpp:1-82](file://firmware/M5StickCPlus2_BLEGateway/src/managers/InputManager.cpp#L1-L82)
+- [DisplayManager.h:1-39](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h#L1-L39)
 
 **Section sources**
-- [ConfigManager.h:1-36](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L1-L36)
-- [ConfigManager.cpp:1-57](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L1-L57)
-- [main.cpp:123-151](file://firmware/M5StickCPlus2/src/main.cpp#L123-L151)
-- [SceneManager.cpp:1-800](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L1-L800)
+- [ConfigManager.h:1-36](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L1-L36)
+- [ConfigManager.cpp:1-57](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L1-L57)
+- [main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [SceneManager.cpp:1-800](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L1-L800)
 
 ## Performance Considerations
 - Flash writes: minimize frequency by batching UI changes and saving only on OK.
@@ -360,10 +360,10 @@ Common issues and resolutions:
   - Check power management thresholds and activity detection.
 
 **Section sources**
-- [ConfigManager.cpp:50-56](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L50-L56)
-- [SceneManager.cpp:375-383](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L375-L383)
-- [SceneManager.cpp:726-795](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L726-L795)
-- [main.cpp:82-121](file://firmware/M5StickCPlus2/src/main.cpp#L82-L121)
+- [ConfigManager.cpp:50-56](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L50-L56)
+- [SceneManager.cpp:375-383](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L375-L383)
+- [SceneManager.cpp:726-795](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L726-L795)
+- [main.cpp:82-121](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L82-L121)
 
 ## Conclusion
 The configuration system provides a robust, user-friendly mechanism for managing device identity, connectivity, and operational parameters. It leverages flash-backed persistence, centralized defaults, and an intuitive UI for editing. Factory reset and AP portal modes enable reliable recovery and reconfiguration. By following the guidelines in this document, you can safely customize settings, add new parameters, migrate configurations, and troubleshoot issues.
@@ -393,8 +393,8 @@ The configuration system provides a robust, user-friendly mechanism for managing
   - Confirm display behavior aligns with selected mode and recording state.
 
 **Section sources**
-- [Config.h:9-76](file://firmware/M5StickCPlus2/src/Config.h#L9-L76)
-- [ConfigManager.h:7-17](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L7-L17)
-- [ConfigManager.cpp:11-44](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L44)
-- [SceneManager.cpp:486-619](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L486-L619)
-- [ConfigManager.cpp:50-56](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L50-L56)
+- [Config.h:9-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L9-L76)
+- [ConfigManager.h:7-17](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L7-L17)
+- [ConfigManager.cpp:11-44](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L44)
+- [SceneManager.cpp:486-619](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L486-L619)
+- [ConfigManager.cpp:50-56](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L50-L56)

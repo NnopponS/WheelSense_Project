@@ -109,29 +109,27 @@ export default function LoginPage() {
 
           <div className="space-y-4">
             <h2 className="text-4xl font-bold leading-tight">
-              Smart Wheelchair
+              {t("auth.heroTitleLine1")}
               <br />
-              Care Platform
+              {t("auth.heroTitleLine2")}
             </h2>
             <p className="text-white/80 text-base max-w-md leading-relaxed">
-              Real-time health monitoring, fall detection, and location tracking
-              for wheelchair patients. Designed for caregivers and healthcare
-              professionals.
+              {t("auth.heroDescription")}
             </p>
           </div>
 
           <div className="flex gap-8 text-sm text-white/60">
             <div>
               <p className="text-2xl font-bold text-white">24/7</p>
-              <p>Monitoring</p>
+              <p>{t("auth.heroMetricMonitoring")}</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-white">{"<"}3s</p>
-              <p>Alert Response</p>
+              <p>{t("auth.heroMetricAlertResponse")}</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-white">99.9%</p>
-              <p>Uptime</p>
+              <p>{t("auth.heroMetricUptime")}</p>
             </div>
           </div>
         </div>
@@ -207,7 +205,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-foreground cursor-pointer"
-                  aria-label="Toggle password visibility"
+                  aria-label={t("auth.togglePasswordVisibility")}
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -238,7 +236,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-8 text-center text-xs text-outline">
-            WheelSense Smart Care Platform v1.0
+            {t("auth.platformVersion")}
           </p>
         </div>
       </div>

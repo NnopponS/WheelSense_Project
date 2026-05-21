@@ -4,10 +4,11 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, KeyRound, Pencil, Settings2, Trash2, UserPlus, Users } from "lucide-react";
+import { ArrowRight, Pencil, Settings2, Trash2, UserPlus, Users } from "lucide-react";
 import SearchableListboxPicker, {
   type SearchableListboxOption,
 } from "@/components/shared/SearchableListboxPicker";
+import UserAvatar from "@/components/shared/UserAvatar";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
@@ -614,9 +615,26 @@ export default function AccountManagementPage() {
                   return (
                     <tr key={u.id} className="border-b border-border last:border-0">
                       <td className="px-4 py-3 font-medium text-foreground">
-                        <div className="flex items-center gap-2">
-                          <KeyRound className="h-4 w-4 text-muted-foreground" aria-hidden />
-                          {u.username}
+                        <div className="flex items-center gap-3">
+                          <UserAvatar
+                            username={cg ? formatCaregiver(cg) : pt ? formatPatient(pt) : u.username}
+                            profileImageUrl={
+                              u.profile_image_url?.trim() ||
+                              cg?.photo_url?.trim() ||
+                              pt?.photo_url?.trim() ||
+                              null
+                            }
+                            sizePx={38}
+                            fallbackClassName="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200"
+                          />
+                          <div className="min-w-0">
+                            <p className="truncate">{u.username}</p>
+                            {(cg || pt) ? (
+                              <p className="truncate text-xs font-normal text-muted-foreground">
+                                {cg ? formatCaregiver(cg) : pt ? formatPatient(pt) : ""}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-3 capitalize text-muted-foreground">{roleLabel(u.role)}</td>
@@ -624,10 +642,30 @@ export default function AccountManagementPage() {
                         {u.is_active ? t("accountMgmt.yes") : t("accountMgmt.no")}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {cg ? `${formatCaregiver(cg)} (#${cg.id})` : t("accountMgmt.none")}
+                        {cg ? (
+                          <div className="flex items-center gap-2">
+                            <UserAvatar
+                              username={formatCaregiver(cg)}
+                              profileImageUrl={cg.photo_url || u.profile_image_url || null}
+                              sizePx={30}
+                              fallbackClassName="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200"
+                            />
+                            <span>{formatCaregiver(cg)} (#{cg.id})</span>
+                          </div>
+                        ) : t("accountMgmt.none")}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {pt ? `${formatPatient(pt)} (#${pt.id})` : t("accountMgmt.none")}
+                        {pt ? (
+                          <div className="flex items-center gap-2">
+                            <UserAvatar
+                              username={formatPatient(pt)}
+                              profileImageUrl={pt.photo_url || u.profile_image_url || null}
+                              sizePx={30}
+                              fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+                            />
+                            <span>{formatPatient(pt)} (#{pt.id})</span>
+                          </div>
+                        ) : t("accountMgmt.none")}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-2">

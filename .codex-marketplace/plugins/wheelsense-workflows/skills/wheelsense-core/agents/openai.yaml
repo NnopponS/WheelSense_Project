@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Wheelsense Core"
+  short_description: "WheelSense wheelsense-core workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $wheelsense-core for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

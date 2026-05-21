@@ -33,6 +33,7 @@ from app.agent_runtime.layers.contracts import (
     ValidatedContextPackage,
 )
 from app.agent_runtime.layers.observability import PipelineEventEmitter
+from app.mcp.tool_catalog import is_tool_read_only
 
 # Tools that unconditionally require a non-None patient_id in ActorFacts.
 # When the intent's matched_tool is in this set and actor.patient_id is None,
@@ -48,43 +49,7 @@ _PATIENT_SCOPED_TOOLS: frozenset[str] = frozenset(
     }
 )
 
-# Tools that are read-only; this drives the "read_only" policy tag.
 # Derived from TOOL_INTENT_METADATA in intent.py — duplicated here to keep
-# Layer 2 free of cyclic imports.  When the set drifts, a unit test will
-# catch it early.
-_READ_ONLY_TOOLS: frozenset[str] = frozenset(
-    {
-        "get_current_user_context",
-        "get_system_health",
-        "list_workspaces",
-        "list_visible_patients",
-        "get_patient_details",
-        "list_devices",
-        "list_active_alerts",
-        "list_rooms",
-        "list_workflow_tasks",
-        "list_workflow_schedules",
-        "list_facilities",
-        "get_ai_runtime_summary",
-        "get_patient_vitals",
-        "get_patient_timeline",
-        "list_patient_caregivers",
-        "get_message_recipients",
-        "get_workspace_analytics",
-        "get_facility_details",
-        "get_floorplan_layout",
-        "list_prescriptions",
-        "list_pharmacy_orders",
-        "list_service_requests",
-        "list_support_tickets",
-        "list_messages",
-        "list_calendar_events",
-        "list_patient_devices",
-        "list_patient_contacts",
-    }
-)
-
-
 def _emit(emitter: PipelineEventEmitter | None, event: PipelineEvent) -> None:
     if emitter is not None:
         emitter.emit(event)
@@ -165,7 +130,7 @@ def assemble(
 
     # ── Policy tags ───────────────────────────────────────────────────────────
     policy_tags: list[str] = []
-    if matched_tool in _READ_ONLY_TOOLS:
+    if matched_tool and is_tool_read_only(matched_tool):
         policy_tags.append("read_only")
     if actor.patient_id is not None:
         policy_tags.append("patient_scoped")

@@ -8,6 +8,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type Cell,
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
@@ -32,6 +33,20 @@ export type DataTableCsvExport<TData> = {
   getRowValues: (row: TData) => (string | number | null | undefined)[];
 };
 
+function getMobileCellLabel<TData>(cell: Cell<TData, unknown>): string | null {
+  const header = cell.column.columnDef.header;
+  if (typeof header === "string") {
+    const trimmed = header.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  return cell.column.id;
+}
+
+function isMobileActionCell<TData>(cell: Cell<TData, unknown>): boolean {
+  const label = getMobileCellLabel(cell);
+  return label == null || /action/i.test(cell.column.id);
+}
+
 type Props<TData> = {
   title: string;
   data: TData[];
@@ -45,6 +60,9 @@ type Props<TData> = {
   /** When set, each body row gets this `id` (e.g. deep-link targets `ws-alert-12`). */
   getRowDomId?: (row: TData) => string | undefined;
   getRowClassName?: (row: TData) => string | undefined;
+  /** Mobile-first roles can render each row as a compact card instead of forcing a wide table. */
+  mobileMode?: "table" | "cards";
+  renderMobileCard?: (row: TData) => React.ReactNode;
 };
 
 export function DataTableCard<TData>({
@@ -59,6 +77,8 @@ export function DataTableCard<TData>({
   csvExport,
   getRowDomId,
   getRowClassName,
+  mobileMode = "table",
+  renderMobileCard,
 }: Props<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { t } = useTranslation();
@@ -80,13 +100,13 @@ export function DataTableCard<TData>({
   });
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <CardTitle>{title}</CardTitle>
           {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           {rightSlot}
           {csvExport ? (
             <Button
@@ -118,8 +138,66 @@ export function DataTableCard<TData>({
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-2xl border border-border/70">
-              <Table className="min-w-[720px]">
+            {mobileMode === "cards" ? (
+              <div className="space-y-2 md:hidden">
+                {table.getRowModel().rows.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <div
+                      key={row.id}
+                      id={getRowDomId?.(row.original)}
+                      className={getRowClassName?.(row.original)}
+                    >
+                      {renderMobileCard
+                        ? renderMobileCard(row.original)
+                        : (() => {
+                            const visibleCells = row.getVisibleCells();
+                            const detailCells = visibleCells.filter((cell) => !isMobileActionCell(cell));
+                            const actionCells = visibleCells.filter(isMobileActionCell);
+
+                            return (
+                              <div className="rounded-lg border border-border/70 bg-background p-3">
+                                <div className="space-y-2">
+                                  {detailCells.map((cell) => (
+                                    <div key={cell.id} className="grid gap-0.5">
+                                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                        {getMobileCellLabel(cell)}
+                                      </p>
+                                      <div className="min-w-0 text-sm text-foreground">
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                {actionCells.length ? (
+                                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/70 pt-3">
+                                    {actionCells.map((cell) => (
+                                      <div key={cell.id} className="min-w-0">
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })()}
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border/70 px-3 py-8 text-center text-sm text-muted-foreground">
+                    {emptyText ?? t("table.noRows")}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            <div
+              className={
+                mobileMode === "cards"
+                  ? "hidden overflow-x-auto rounded-lg border border-border/70 md:block"
+                  : "overflow-x-auto rounded-lg border border-border/70"
+              }
+            >
+              <Table className={mobileMode === "cards" ? "min-w-full" : "min-w-[640px]"}>
                 <TableHeader className="bg-muted/55">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
@@ -164,7 +242,8 @@ export function DataTableCard<TData>({
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
-                Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                {t("table.page")} {table.getState().pagination.pageIndex + 1} {t("table.of")}{" "}
+                {table.getPageCount() || 1}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <Button

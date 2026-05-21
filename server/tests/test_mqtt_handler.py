@@ -6,7 +6,9 @@ from datetime import datetime, UTC
 
 from app.models.core import Device, Workspace
 from app.models.core import DeviceCommandDispatch
+from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.telemetry import IMUTelemetry, MotionTrainingData, RSSIReading, RoomPrediction
+from app.models.vitals import VitalReading
 from tests.conftest import _get_session_factory
 
 _SessionFactory = _get_session_factory()
@@ -14,6 +16,8 @@ _SessionFactory = _get_session_factory()
 # Import handlers
 from app.mqtt_handler import (
     _handle_telemetry,
+    _handle_mobile_registration,
+    _handle_mobile_telemetry,
     _handle_device_ack,
     _handle_camera_registration,
     _handle_camera_status,
@@ -184,6 +188,139 @@ async def test_handle_telemetry_auto_registers_ble_node_from_rssi(mock_predict, 
         assert ble.hardware_type == "node"
         assert ble.config.get("ble_node_id") == "WSN_001"
         assert ble.config.get("discovered_via") == "wheelchair_rssi"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.services.mqtt_publish.publish_mobile_device_config_resolved_background")
+async def test_mobile_registration_creates_m5_companion(mock_publish, active_workspace):
+    payload = {
+        "device_id": "MOB_GATE_1",
+        "device_name": "Gateway phone",
+        "platform": "android",
+        "app_version": "1.2.3",
+        "companion_m5": {
+            "device_id": "M5_CHILD_1",
+            "name": "Wheelchair M5",
+            "firmware": "4.0.0",
+            "model": "M5StickCPlus2",
+            "mac": "AA:BB:CC:DD:EE:FF",
+        },
+    }
+
+    await _handle_mobile_registration(json.dumps(payload).encode())
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        mobile = (
+            await session.execute(select(Device).where(Device.device_id == "MOB_GATE_1"))
+        ).scalar_one()
+        m5 = (
+            await session.execute(select(Device).where(Device.device_id == "M5_CHILD_1"))
+        ).scalar_one()
+
+        assert mobile.hardware_type == "mobile_phone"
+        assert (mobile.config or {}).get("m5_companion_device_id") == "M5_CHILD_1"
+        assert m5.hardware_type == "companion_m5"
+        assert m5.display_name == "Wheelchair M5"
+        assert (m5.config or {}).get("parent_mobile_device_id") == "MOB_GATE_1"
+        assert (m5.config or {}).get("model") == "M5StickCPlus2"
+
+    mock_publish.assert_called_once_with("MOB_GATE_1")
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+@patch("app.mqtt_handler.predict_room_with_strategy")
+@patch("app.services.mqtt_publish.publish_mobile_device_config_resolved_background")
+async def test_mobile_telemetry_persists_m5_child_imu_without_breaking_rssi_or_polar(
+    mock_publish,
+    mock_predict,
+    active_workspace,
+):
+    mock_predict.return_value = None
+    mock_client = AsyncMock()
+
+    async with _SessionFactory() as session:
+        patient = Patient(
+            workspace_id=active_workspace.id,
+            first_name="M5",
+            last_name="Owner",
+        )
+        mobile = Device(
+            device_id="MOB_GATE_2",
+            workspace_id=active_workspace.id,
+            device_type="mobile_phone",
+            hardware_type="mobile_phone",
+            config={"m5_companion_device_id": "M5_CHILD_2"},
+        )
+        m5 = Device(
+            device_id="M5_CHILD_2",
+            workspace_id=active_workspace.id,
+            device_type="companion_m5",
+            hardware_type="companion_m5",
+            config={"parent_mobile_device_id": "MOB_GATE_2"},
+        )
+        session.add_all([patient, mobile, m5])
+        await session.flush()
+        session.add(
+            PatientDeviceAssignment(
+                workspace_id=active_workspace.id,
+                patient_id=patient.id,
+                device_id="MOB_GATE_2",
+                device_role="mobile",
+                is_active=True,
+            )
+        )
+        await session.commit()
+
+    payload = {
+        "device_id": "MOB_GATE_2",
+        "battery": {"percentage": 74},
+        "rssi": [{"node": "WSN_001", "rssi": -55, "mac": "34:85:18:8B:D7:7D"}],
+        "hr": {"bpm": 82, "rr_intervals": [812.5]},
+        "hr_source": "polar_sdk",
+        "m5": {
+            "imu": {"ax": 0.11, "ay": 0.22, "az": 1.03, "gx": 2.0},
+            "motion": {"distance_m": 3.5, "velocity_ms": 0.4, "accel_ms2": 0.8},
+            "battery": {"percentage": 88, "voltage_v": 4.08, "charging": False},
+            "seq": 7,
+        },
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+
+    await _handle_mobile_telemetry(json.dumps(payload).encode(), mock_client)
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        imu = (
+            await session.execute(
+                select(IMUTelemetry).where(IMUTelemetry.device_id == "M5_CHILD_2")
+            )
+        ).scalar_one()
+        assert imu.ax == 0.11
+        assert imu.distance_m == 3.5
+        assert imu.battery_pct == 88
+
+        rssi = (
+            await session.execute(
+                select(RSSIReading).where(RSSIReading.device_id == "MOB_GATE_2")
+            )
+        ).scalar_one()
+        assert rssi.node_id == "WSN_001"
+        assert rssi.rssi == -55
+
+        vital = (
+            await session.execute(
+                select(VitalReading).where(VitalReading.device_id == "MOB_GATE_2")
+            )
+        ).scalar_one()
+        assert vital.heart_rate_bpm == 82
+        assert vital.source == "polar_sdk"
+
+    mock_publish.assert_called_once_with("MOB_GATE_2")
 
 
 @pytest.mark.asyncio

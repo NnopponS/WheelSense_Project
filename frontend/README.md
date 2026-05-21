@@ -230,7 +230,7 @@ User Message
     ↓
 POST /api/chat/actions/propose
     ↓
-Agent Runtime (routing: `intent` classifier or `llm_tools` — see `docs/ARCHITECTURE.md` / `server/docs/ENV.md`)
+Agent Runtime (EaseAI v2 with `llm_tools` or deterministic intent fallback — see `server/docs/ENV.md`)
     ↓
 MCP workspace tools (first-party `execute_workspace_tool` path from agent runtime)
     ↓
@@ -255,14 +255,14 @@ ExecutionStepList Component (progress visualization)
 
 ### What EaseAI can do (tools behind the popup)
 
-The popup calls the same **propose → confirm → execute** API as other clients. The backend may route with **regex/intent** (`AGENT_ROUTING_MODE=intent`, default) or **LLM + tool schema** (`AGENT_ROUTING_MODE=llm_tools`). In both cases, only **workspace MCP tools** are executed, with JWT scope checks.
+The popup calls the same **propose → confirm → execute** API as other clients. Core compose routes through **EaseAI v2 + LLM tool schema** (`EASEAI_PIPELINE_V2=true`, `AGENT_ROUTING_MODE=llm_tools`) and falls back through deterministic intent and safe AI-answer paths. Outside compose, the code defaults remain `EASEAI_PIPELINE_V2=false` and `AGENT_ROUTING_MODE=intent`. In every mode, only cataloged **workspace MCP tools** are executed, with JWT scope checks.
 
-- **Canonical tool list (28 names):** `server/app/mcp/server.py` → `_WORKSPACE_TOOL_REGISTRY`.
-- **Which tools appear for which role in the LLM catalog / chat policy:** `server/app/services/ai_chat.py` → `ROLE_MCP_TOOL_ALLOWLIST` (admin: all 28; other roles are subsets aligned with `ROLE_TOKEN_SCOPES` in `server/app/api/dependencies.py`).
+- **Canonical tool policy catalog:** `server/app/mcp/tool_catalog.py` (effect, risk, required scope, playbook, patient-only flags, confirmation policy) plus `server/app/mcp/server.py` → `_WORKSPACE_TOOL_REGISTRY`.
+- **Which tools appear for which role in the LLM catalog / chat policy:** `server/app/services/ai_chat.py` → `get_role_mcp_tool_allowlist()`; each role is aligned with `ROLE_TOKEN_SCOPES` in `server/app/api/dependencies.py`.
 - **Reads** (e.g. `get_system_health`, `list_visible_patients`, `get_patient_vitals`): may run during **propose** when the router returns only read tools (`llm_tools`) or when the intent classifier picks a high-confidence immediate read (`intent`); the assistant reply is grounded on tool JSON.
-- **Writes** (e.g. `acknowledge_alert`, `update_patient_room`, `send_message`): always produce **`mode: "plan"`** until the user **Confirm & Execute** (or **Reject**) in `ActionPlanPreview`.
+- **Writes** (e.g. `acknowledge_alert`, `update_patient_room`, `send_message`): always produce **`mode: "plan"`** until the user **Confirm & Execute** (or **Reject**) in `ActionPlanPreview`. `force=true` cannot execute a mutating proposed action.
 
-**Staging / production:** set `AGENT_ROUTING_MODE=llm_tools` on the **`wheelsense-agent-runtime`** service (see `server/docker-compose.core.yml`) and ensure `OLLAMA_BASE_URL` is reachable from that container (defaults to `http://host.docker.internal:11434/v1` in compose). Validate on staging before enabling in production.
+**Staging / production:** core compose already defaults to Copilot `gpt-4.1`, EaseAI v2, and `llm_tools` on the **`wheelsense-agent-runtime`** service (see `server/docker-compose.core.yml`). Ensure Copilot is connected for the workspace and `OLLAMA_BASE_URL` is reachable if you rely on Ollama fallback.
 
 ### 3-Stage Flow
 

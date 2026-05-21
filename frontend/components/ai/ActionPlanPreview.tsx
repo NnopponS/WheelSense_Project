@@ -19,7 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/lib/api";
 import type { components } from "@/lib/api/generated/schema";
 import { useTranslation } from "@/lib/i18n";
-import { AITraceChips, type AITraceChip } from "./AITraceChips";
+import { AITraceChips, type AITraceChip, type ProviderAttemptTrace } from "./AITraceChips";
 
 type ExecutionPlan = components["schemas"]["ExecutionPlan"];
 type EntityReference = { type: string; id: string | number; name?: string };
@@ -31,6 +31,7 @@ interface ActionPlanPreviewProps {
   onCancel: () => void;
   isConfirming?: boolean;
   trace?: AITraceChip[];
+  providerAttempts?: ProviderAttemptTrace[];
 }
 
 interface ResolvedEntity {
@@ -122,6 +123,7 @@ export function ActionPlanPreview({
   onCancel,
   isConfirming = false,
   trace = [],
+  providerAttempts = [],
 }: ActionPlanPreviewProps) {
   const { t } = useTranslation();
   const [resolvedEntities, setResolvedEntities] = useState<ResolvedEntity[]>([]);
@@ -196,7 +198,7 @@ export function ActionPlanPreview({
       );
 
       setResolvedEntities(resolved.filter((e): e is ResolvedEntity => e !== null));
-    } catch (e) {
+    } catch {
       setError(t("aiChat.actionPlan.entityResolveError"));
     } finally {
       setLoading(false);
@@ -320,7 +322,9 @@ export function ActionPlanPreview({
           )}
         </div>
 
-        {trace.length > 0 && <AITraceChips trace={trace} />}
+        {(trace.length > 0 || providerAttempts.length > 0) && (
+          <AITraceChips trace={trace} providerAttempts={providerAttempts} />
+        )}
 
         {/* Error State */}
         {error && (

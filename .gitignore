@@ -69,7 +69,15 @@ mobile-app/**/.idea/
 mobile-app/**/*.apk
 
 # AI/IDE agent directories
-.agents/
+.agents/*
+!.agents/core/
+!.agents/core/**
+!.agents/workflows/
+!.agents/workflows/**
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/wheelsense-thesis-writing/
+!.agents/skills/wheelsense-thesis-writing/**
 .claude/
 .cursor/
 .qoder/
@@ -84,3 +92,6 @@ test-results/
 e2e/test-results/
 frontend/test-results/
 
+
+# Local Netlify folder
+.netlify

@@ -56,9 +56,9 @@ from sqlalchemy.orm import joinedload
 from app.config import settings
 from app.db.session import AsyncSessionLocal
 from app.models import (
-    Workspace, Room, Patient, Device, PatientDeviceAssignment,
-    CareGiver, CareSchedule, CareTask, HandoverNote, RoleMessage,
-    CareDirective, ActivityTimeline, Alert
+    Workspace, Room, Patient, PatientDeviceAssignment,
+    CareGiver, CareSchedule, CareTask, HandoverNote,
+    ActivityTimeline, Alert
 )
 
 # =============================================================================
@@ -72,14 +72,14 @@ MQTT_PASSWORD = (os.environ.get("MQTT_PASSWORD") or "").strip() or None
 
 SIMULATION_CONFIG = {
     "vital_update_interval": 30,      # seconds between vital updates
-    "alert_probability": 0.05,        # 5% chance per patient per cycle
+    "alert_probability": 0.0,         # random alerts are opt-in for demo control
     "movement_probability": 0.15,   # 15% chance to move rooms per cycle
     "caregiver_task_completion": 0.8, # 80% tasks completed on time
     "routine_check_interval": 300,  # 5 minutes between routine checks
     "handover_generation_interval": 3600,  # 1 hour between handovers
     "enable_vitals": True,
     "enable_movement": True,
-    "enable_alerts": True,
+    "enable_alerts": False,
     "enable_routine_simulation": True,
     "enable_handover_generation": True,
     "log_level": "INFO",
@@ -369,7 +369,7 @@ class AlertSimulator:
             })
         
         # Care-level specific alert probability for random alerts
-        alert_prob = self.config.get("alert_probability", 0.05)
+        alert_prob = self.config.get("alert_probability", 0.0)
         if care_level == "critical":
             alert_prob *= 2.5
         elif care_level == "special":
@@ -531,6 +531,7 @@ class SimulationEngine:
         self._control_lock = threading.Lock()
         self._mqtt_paused = False
         self._pending_inject_events: deque[tuple[str, int | None]] = deque()
+        self._pending_actor_moves: deque[dict[str, Any]] = deque()
 
         # Logging
         self._setup_logging()
@@ -623,6 +624,23 @@ class SimulationEngine:
             with self._control_lock:
                 self._pending_inject_events.append(("fall", pid_i))
             self.logger.info("[SIM-CONTROL] Queued inject_fall patient_id=%s", pid_i)
+        elif cmd == "move_actor":
+            move_payload = {
+                "actor_type": str(payload.get("actor_type") or "").strip().lower(),
+                "actor_id": payload.get("actor_id"),
+                "patient_id": payload.get("patient_id"),
+                "room_id": payload.get("room_id"),
+                "node_device_id": payload.get("node_device_id"),
+            }
+            with self._control_lock:
+                self._pending_actor_moves.append(move_payload)
+            self.logger.info(
+                "[SIM-CONTROL] Queued move_actor actor_type=%s actor_id=%s patient_id=%s room_id=%s",
+                move_payload["actor_type"],
+                move_payload["actor_id"],
+                move_payload["patient_id"],
+                move_payload["room_id"],
+            )
 
     def _handle_control_mqtt_message(self, msg: Any) -> None:
         try:
@@ -652,6 +670,17 @@ class SimulationEngine:
                 await self.trigger_event(ev_type, pid)
             except Exception as exc:
                 self.logger.warning("[SIM-CONTROL] inject %s failed: %s", ev_type, exc)
+
+    async def _drain_pending_actor_moves(self) -> None:
+        pending: list[dict[str, Any]] = []
+        with self._control_lock:
+            while self._pending_actor_moves:
+                pending.append(self._pending_actor_moves.popleft())
+        for payload in pending:
+            try:
+                await self.move_actor_to_room(payload)
+            except Exception as exc:
+                self.logger.warning("[SIM-CONTROL] move_actor failed: %s", exc)
 
     async def initialize_data(self, workspace_id: int | None = None):
         """Load workspace data from database."""
@@ -715,7 +744,7 @@ class SimulationEngine:
             # Get patients
             result = await session.execute(
                 select(Patient)
-                .where(Patient.workspace_id == ws.id, Patient.is_active == True)
+                .where(Patient.workspace_id == ws.id, Patient.is_active.is_(True))
             )
             self.patients = result.scalars().all()
             self.logger.info(f"Loaded {len(self.patients)} patients")
@@ -723,7 +752,7 @@ class SimulationEngine:
             # Get caregivers
             result = await session.execute(
                 select(CareGiver)
-                .where(CareGiver.workspace_id == ws.id, CareGiver.is_active == True)
+                .where(CareGiver.workspace_id == ws.id, CareGiver.is_active.is_(True))
             )
             self.caregivers = result.scalars().all()
             self.logger.info(f"Loaded {len(self.caregivers)} caregivers")
@@ -734,7 +763,7 @@ class SimulationEngine:
                 .options(joinedload(PatientDeviceAssignment.patient))
                 .where(
                     PatientDeviceAssignment.workspace_id == ws.id,
-                    PatientDeviceAssignment.is_active == True
+                    PatientDeviceAssignment.is_active.is_(True)
                 )
             )
             self.assignments = result.scalars().all()
@@ -788,11 +817,19 @@ class SimulationEngine:
             self.mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
             if MQTT_USER:
                 self.mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD or "")
+            def _on_connect(client, _userdata, _flags, reason_code, _properties):
+                code_value = getattr(reason_code, "value", reason_code)
+                failed = bool(getattr(reason_code, "is_failure", False))
+                if failed or (isinstance(code_value, int) and code_value != 0):
+                    self.logger.warning("MQTT connected with non-zero reason code: %s", reason_code)
+                    return
+                client.subscribe(SIM_CONTROL_TOPIC, qos=0)
+                self.logger.info("MQTT connected; subscribed to %s", SIM_CONTROL_TOPIC)
+
             self.mqtt_client.on_message = lambda _c, _u, m: self._handle_control_mqtt_message(m)
+            self.mqtt_client.on_connect = _on_connect
             self.mqtt_client.connect(BROKER, PORT, 60)
-            self.mqtt_client.subscribe(SIM_CONTROL_TOPIC, qos=0)
             self.mqtt_client.loop_start()
-            self.logger.info("MQTT connected; subscribed to %s", SIM_CONTROL_TOPIC)
         except Exception as e:
             self.logger.error(f"Failed to connect to MQTT: {e}")
             sys.exit(1)
@@ -802,7 +839,7 @@ class SimulationEngine:
                          motion_state: str = "idle", is_fall: bool = False) -> dict:
         """Generate telemetry payload."""
         room = self.rooms[room_idx]
-        node_id = f"NODE_ROOM_{room_idx}"
+        node_id = str(room.node_device_id or f"SIM_NODE_{room_idx + 1:02d}")
         
         # IMU data based on motion state
         if is_fall:
@@ -817,6 +854,11 @@ class SimulationEngine:
         else:
             ax, ay, az = 0.0, 0.0, 1.0
             velocity = 0.0
+
+        distance_m = 0.0
+        if motion_state == "moving" and velocity > 0:
+            interval_seconds = max(1, min(int(self.config.get("vital_update_interval", 30)), 60))
+            distance_m = round(velocity * interval_seconds, 1)
         
         return {
             "device_id": device_id,
@@ -835,7 +877,7 @@ class SimulationEngine:
                 "gz": 0.0
             },
             "motion": {
-                "distance_m": 0.0,
+                "distance_m": distance_m,
                 "velocity_ms": round(velocity, 2),
                 "accel_ms2": round(abs(az - 1.0) * 9.81, 2),
                 "state": "fall" if is_fall else motion_state
@@ -843,7 +885,7 @@ class SimulationEngine:
             "rssi": [
                 {
                     "node": node_id,
-                    "rssi": -45 + random.randint(-10, 5),
+                    "rssi": -38 + random.randint(-3, 3),
                     "mac": f"00:11:22:33:44:{room_idx:02d}"
                 }
             ],
@@ -895,7 +937,7 @@ class SimulationEngine:
     async def _check_and_generate_alerts(self, session, patient_state: PatientState, 
                                           vitals: dict, room_idx: int):
         """Check vitals and generate alerts if needed."""
-        if not self.config.get("enable_alerts", True):
+        if not self.config.get("enable_alerts", False):
             return []
         
         alerts = self.alert_sim.check_vitals_for_alerts(patient_state, vitals)
@@ -1058,6 +1100,7 @@ class SimulationEngine:
 
         try:
             while self.status == SimulationStatus.RUNNING:
+                await self._drain_pending_actor_moves()
                 await self._drain_pending_inject_events()
                 now = datetime.now(timezone.utc)
                 vital_interval = int(self.config.get("vital_update_interval", 30))
@@ -1205,6 +1248,75 @@ class SimulationEngine:
         self.logger.info(f"\n{'=' * 40}")
         self.logger.info("Event injection complete")
         self.logger.info(f"{'=' * 40}\n")
+
+    async def move_actor_to_room(self, payload: dict[str, Any]) -> None:
+        """Move a simulator patient and publish normal telemetry for MQTT ingest."""
+        actor_type = str(payload.get("actor_type") or "").strip().lower()
+        if actor_type not in {"patient", ""}:
+            self.logger.info("[SIM-CONTROL] Ignoring non-patient move_actor: %s", actor_type)
+            return
+
+        raw_patient_id = payload.get("patient_id") or payload.get("actor_id")
+        try:
+            patient_id = int(raw_patient_id)
+        except (TypeError, ValueError):
+            self.logger.warning("[SIM-CONTROL] move_actor missing patient_id/actor_id")
+            return
+
+        patient_state = self.patient_states.get(patient_id)
+        if patient_state is None:
+            self.logger.warning("[SIM-CONTROL] move_actor patient_id=%s not loaded", patient_id)
+            return
+
+        room_idx: int | None = None
+        raw_room_id = payload.get("room_id")
+        if raw_room_id is not None:
+            try:
+                room_id = int(raw_room_id)
+            except (TypeError, ValueError):
+                room_id = None
+            if room_id is not None:
+                for idx, room in enumerate(self.rooms):
+                    if int(room.id) == room_id:
+                        room_idx = idx
+                        break
+
+        node_device_id = str(payload.get("node_device_id") or "").strip()
+        if room_idx is None and node_device_id:
+            for idx, room in enumerate(self.rooms):
+                if str(room.node_device_id or "").strip() == node_device_id:
+                    room_idx = idx
+                    break
+
+        if room_idx is None:
+            self.logger.warning("[SIM-CONTROL] move_actor target room not found: %s", payload)
+            return
+
+        old_room_idx = patient_state.current_room_idx
+        patient_state.current_room_idx = room_idx
+        patient_state.time_in_current_room = 0
+        if old_room_idx != room_idx:
+            patient_state.total_moves_today += 1
+            patient_state.last_movement_time = datetime.now(timezone.utc)
+
+        vitals = self.vital_sim.generate_for_patient(patient_state) if self.vital_sim else {}
+        motion_state = "moving" if old_room_idx != room_idx else "idle"
+        mqtt_payload = self.generate_payload(
+            patient_state.device_id,
+            patient_state,
+            vitals,
+            room_idx,
+            motion_state=motion_state,
+        )
+        if self.mqtt_client is not None:
+            self.mqtt_client.publish("WheelSense/data", json.dumps(mqtt_payload))
+        room = self.rooms[room_idx]
+        self.logger.info(
+            "[SIM-CONTROL] Published move telemetry patient_id=%s room=%s node=%s",
+            patient_id,
+            room.name,
+            room.node_device_id or f"SIM_NODE_{room_idx + 1:02d}",
+        )
     
     def cleanup(self):
         """Clean up resources."""
@@ -1336,7 +1448,7 @@ def merge_env_sim_overrides(config: dict) -> None:
     ap = os.environ.get("SIM_ALERT_PROBABILITY", "").strip()
     if ap:
         config["alert_probability"] = _parse_float(
-            ap, float(config.get("alert_probability", 0.05)), 0.0, 1.0
+            ap, float(config.get("alert_probability", 0.0)), 0.0, 1.0
         )
     ea = os.environ.get("SIM_ENABLE_ALERTS", "").strip().lower()
     if ea in ("0", "false", "no", "off"):

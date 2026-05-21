@@ -4,6 +4,7 @@ import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
 
 type DashboardFloorplanPanelProps = {
   className?: string;
+  compact?: boolean;
   showPresence?: boolean;
   initialFacilityId?: number | null;
   initialFloorId?: number | null;
@@ -12,6 +13,7 @@ type DashboardFloorplanPanelProps = {
 
 export default function DashboardFloorplanPanel({
   className = "",
+  compact = false,
   showPresence = true,
   initialFacilityId = null,
   initialFloorId = null,
@@ -20,6 +22,7 @@ export default function DashboardFloorplanPanel({
   return (
     <FloorplanRoleViewer
       className={className}
+      compact={compact}
       showPresence={showPresence}
       initialFacilityId={initialFacilityId}
       initialFloorId={initialFloorId}

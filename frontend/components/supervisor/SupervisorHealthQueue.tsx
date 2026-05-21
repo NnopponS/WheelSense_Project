@@ -104,7 +104,7 @@ export function SupervisorHealthQueue({
               <div
                 key={task.id}
                 className={cn(
-                  "rounded-2xl border p-4 transition-shadow hover:shadow-sm",
+                  "rounded-lg border p-4 transition-shadow hover:shadow-sm",
                   severityClass,
                 )}
               >

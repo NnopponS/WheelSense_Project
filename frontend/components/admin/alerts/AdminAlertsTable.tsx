@@ -18,6 +18,7 @@ import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CsvExportButton } from "@/components/shared/CsvExportButton";
 import {
   Table,
   TableBody,
@@ -232,9 +233,24 @@ export function AdminAlertsTable({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>{t("alerts.title")}</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            {filteredAlerts.length} {filteredAlerts.length === 1 ? "match" : "matches"}
-          </p>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <CsvExportButton
+              fileNameBase="wheelsense-admin-alerts"
+              headers={["Alert ID", "Title", "Type", "Severity", "Status", "Patient ID", "Timestamp"]}
+              rows={filteredAlerts.map((alert) => [
+                alert.id,
+                alert.title,
+                alert.alert_type,
+                alert.severity,
+                alert.status,
+                alert.patient_id,
+                alert.timestamp,
+              ])}
+            />
+            <p className="text-sm text-muted-foreground">
+              {filteredAlerts.length} {filteredAlerts.length === 1 ? "match" : "matches"}
+            </p>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (

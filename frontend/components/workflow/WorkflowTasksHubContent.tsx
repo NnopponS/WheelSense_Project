@@ -349,17 +349,17 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
         </Alert>
       ) : null}
 
-      <section className="grid grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="p-4">
+      <section className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card className="h-full">
+          <CardContent className="flex h-full flex-col justify-between p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {t("headNurse.tasksHub.statOpen")}
             </p>
             <p className="mt-1 text-2xl font-semibold tabular-nums">{stats.open}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="h-full">
+          <CardContent className="flex h-full flex-col justify-between p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {t("headNurse.tasksHub.statInProgress")}
             </p>
@@ -368,8 +368,8 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
+        <Card className="h-full">
+          <CardContent className="flex h-full flex-col justify-between p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {t("headNurse.tasksHub.statCompletedToday")}
             </p>
@@ -541,16 +541,18 @@ export function WorkflowTasksHubContent({ variant }: WorkflowTasksHubContentProp
               </CardContent>
             </Card>
 
-            <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {t("headNurse.tasksHub.legend")}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant="secondary">{t("headNurse.tasksHub.statusPending")}</Badge>
-                <Badge variant="warning">{t("headNurse.tasksHub.statusInProgress")}</Badge>
-                <Badge variant="outline">{t("headNurse.tasksHub.statusCompleted")}</Badge>
-              </div>
-            </div>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {t("headNurse.tasksHub.legend")}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Badge variant="secondary">{t("headNurse.tasksHub.statusPending")}</Badge>
+                  <Badge variant="warning">{t("headNurse.tasksHub.statusInProgress")}</Badge>
+                  <Badge variant="outline">{t("headNurse.tasksHub.statusCompleted")}</Badge>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       ) : null}

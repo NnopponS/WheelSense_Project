@@ -15,6 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Calendar, ListChecks, ListTodo, Plus, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { buildCsvFromRows, downloadCsvFile } from "@/lib/csv";
+import FeatureDetailActions, {
+  type FeatureDetailAction,
+} from "@/components/dashboard/FeatureDetailActions";
 
 export interface TasksPageLayoutProps {
   /** Page title */
@@ -34,9 +38,12 @@ export interface TasksPageLayoutProps {
   /** Filter function for tasks */
   filterTasks?: (tasks: TaskOut[]) => TaskOut[];
   /** Additional query params for fetching tasks */
-  taskParams?: Record<string, any>;
+  taskParams?: Record<string, unknown>;
   /** Current user ID for filtering */
   currentUserId?: number;
+  /** Cross-links that keep task views connected to dashboard/map/alerts on mobile. */
+  contextActions?: FeatureDetailAction[];
+  contextTitle?: string;
 }
 
 /**
@@ -55,7 +62,8 @@ export function TasksPageLayout({
   showDailyRoutineOverview = false,
   filterTasks,
   taskParams = {},
-  currentUserId,
+  contextActions = [],
+  contextTitle = "View more",
 }: TasksPageLayoutProps) {
   const { t } = useTranslation();
   const [selectedTask, setSelectedTask] = useState<TaskOut | null>(null);
@@ -99,29 +107,20 @@ export function TasksPageLayout({
     }
 
     try {
-      // Simple CSV data generation
       const headers = ["ID", "Title", "Type", "Status", "Priority", "Patient", "Assignee", "Due Date"];
-      const rows = visibleTasks.map(task => [
+      const rows = visibleTasks.map((task) => [
         task.id,
-        `"${task.title}"`,
+        task.title,
         task.task_type,
         task.status,
         task.priority,
-        `"${task.patient_name || ''}"`,
-        `"${task.assigned_user_name || ''}"`,
-        task.due_at || ""
+        task.patient_name || "",
+        task.assigned_user_name || "",
+        task.due_at || "",
       ]);
 
-      const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `tasks-export-${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const csvContent = buildCsvFromRows(headers, rows);
+      downloadCsvFile(csvContent, `wheelsense-${role}-tasks-${new Date().toISOString().split("T")[0]}.csv`);
       
       toast.success(t("tasks.export") + ": " + t("tasks.createSuccess").replace("Task", "Export"));
     } catch (error) {
@@ -144,7 +143,7 @@ export function TasksPageLayout({
             {/* View Toggle */}
             <Tabs 
               value={viewMode} 
-              onValueChange={(v) => setViewMode(v as any)}
+              onValueChange={(v) => setViewMode(v as "kanban" | "calendar" | "stats")}
               className="hidden sm:block"
             >
               <TabsList className="grid w-[300px] grid-cols-3">
@@ -224,6 +223,12 @@ export function TasksPageLayout({
           </div>
         </div>
       </div>
+
+      {contextActions.length > 0 ? (
+        <div className="border-b bg-background px-4 py-3 sm:px-6">
+          <FeatureDetailActions title={contextTitle} actions={contextActions} />
+        </div>
+      ) : null}
 
       {/* Stats Bar */}
       <div className="border-b bg-background px-4 py-4 sm:px-6">

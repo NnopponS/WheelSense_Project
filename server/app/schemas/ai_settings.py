@@ -19,6 +19,7 @@ class AIWorkspaceSettingsUpdate(BaseModel):
 
     provider: Literal["ollama", "copilot"]
     model: str = Field(..., max_length=128)
+    manual_override: bool = False
 
 
 class GlobalAISettingsUpdate(BaseModel):
@@ -26,6 +27,7 @@ class GlobalAISettingsUpdate(BaseModel):
 
     default_provider: Literal["ollama", "copilot"]
     default_model: str = Field(..., max_length=128)
+    manual_override: bool = False
 
 class CopilotDeviceCodeOut(BaseModel):
     device_code: str
@@ -56,6 +58,7 @@ class CopilotModelsOut(BaseModel):
     models: list[CopilotModelInfo]
     connected: bool = False
     message: str | None = None
+    source: Literal["sdk", "fallback"] = "fallback"
 
 class OllamaModelInfo(BaseModel):
     name: str

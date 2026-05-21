@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ClipboardList, MessageSquare, NotebookPen, Pill, Search, Users } from "lucide-react";
+import { Activity, ClipboardList, MessageSquare, NotebookPen, Pill, Search, Users } from "lucide-react";
 import ObserverPrescriptionsPage from "@/app/observer/prescriptions/page";
 import { useHubTab, HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
@@ -23,16 +23,21 @@ import type {
   ListWorkflowMessagesResponse,
 } from "@/lib/api/task-scope-types";
 
-const TABS: HubTab[] = [
-  { key: "patients", label: "Patients", icon: Users },
-  { key: "prescriptions", label: "Prescriptions", icon: Pill },
+const TAB_CONFIG: Array<Omit<HubTab, "label"> & { labelKey: TranslationKey }> = [
+  { key: "patients", labelKey: "nav.patients", icon: Users },
+  { key: "prescriptions", labelKey: "nav.prescriptions", icon: Pill },
 ];
 
 export default function ObserverPatientsPage() {
-  const tab = useHubTab(TABS);
+  const { t } = useTranslation();
+  const tabs = useMemo<HubTab[]>(
+    () => TAB_CONFIG.map(({ labelKey, ...item }) => ({ ...item, label: t(labelKey) })),
+    [t],
+  );
+  const tab = useHubTab(tabs);
   return (
     <div>
-      <Suspense><HubTabBar tabs={TABS} /></Suspense>
+      <Suspense><HubTabBar tabs={tabs} /></Suspense>
       {tab === "patients" && <PatientsContent />}
       {tab === "prescriptions" && <ObserverPrescriptionsPage />}
     </div>
@@ -200,9 +205,17 @@ function PatientsContent() {
         id: "actions",
         header: "",
         cell: ({ row }) => (
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/observer/personnel/${row.original.id}`}>{t("observer.patients.openDetail")}</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/observer/personnel/${row.original.id}`}>{t("observer.patients.openDetail")}</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/observer/personnel/${row.original.id}#timeline`}>
+                <Activity className="h-4 w-4" />
+                Timeline
+              </Link>
+            </Button>
+          </div>
         ),
       },
     ],
@@ -251,6 +264,30 @@ function PatientsContent() {
         columns={columns}
         isLoading={isLoadingAny}
         emptyText={t("observer.patients.noMatch")}
+        mobileMode="cards"
+        csvExport={{
+          fileNameBase: "wheelsense-observer-personnel",
+          headers: [
+            t("patients.recordId"),
+            t("clinical.table.patient"),
+            t("patients.nickname"),
+            t("clinical.table.careLevel"),
+            t("clinical.table.room"),
+            t("observer.patients.openTasks"),
+            t("observer.patients.unreadMessages"),
+            t("observer.patients.handovers"),
+          ],
+          getRowValues: (row) => [
+            row.id,
+            row.fullName,
+            row.nickname,
+            row.careLevel,
+            row.roomId,
+            row.openTaskCount,
+            row.unreadMessageCount,
+            row.handoverCount,
+          ],
+        }}
       />
     </div>
   );

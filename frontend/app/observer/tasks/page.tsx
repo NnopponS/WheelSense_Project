@@ -1,33 +1,29 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
+import { OperationsConsole } from "@/components/workflow/OperationsConsole";
+import { WorkflowTasksHubContent } from "@/components/workflow/WorkflowTasksHubContent";
 import { useTranslation } from "@/lib/i18n";
-import { TasksPageLayout } from "@/components/tasks/TasksPageLayout";
 
-/**
- * Observer Tasks Page
- *
- * Observers can:
- * - View assigned tasks only (read-only)
- * - Execute tasks by updating status and submitting reports
- * - View task details and existing reports
- * - Cannot create, delete, reassign, or modify task properties
- */
 export default function ObserverTasksPage() {
-  const { user } = useAuth();
-  const currentUserId = user?.id;
   const { t } = useTranslation();
 
   return (
-    <TasksPageLayout
-      title={t("observer.page.statMyTasks")}
-      description={t("observer.page.tasksDescription")}
-      role="observer"
-      canCreate={false}
-      canManage={false}
-      canExecute={true}
-      taskParams={{ assignee_user_id: currentUserId }}
-      currentUserId={currentUserId}
-    />
+    <div className="space-y-6 pb-6 animate-fade-in">
+      <div className="space-y-1">
+        <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
+          {t("observer.page.statMyTasks")}
+        </h2>
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          {t("observer.page.tasksDescription")}
+        </p>
+      </div>
+
+      <WorkflowTasksHubContent variant="observer" />
+      <OperationsConsole
+        role="observer"
+        title={t("observer.tasks.operationsQueue")}
+        subtitle={t("workflowTasks.hubBoardSubtitle")}
+      />
+    </div>
   );
 }

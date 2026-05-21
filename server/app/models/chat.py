@@ -1,5 +1,6 @@
 from __future__ import annotations
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 
 """AI chat persistence — conversations and messages per workspace user."""
 
@@ -41,6 +42,12 @@ class ChatMessage(Base):
     )
     role = Column(String(32), nullable=False)  # user | assistant | system
     content = Column(Text, nullable=False)
+    ui_metadata = Column(
+        "metadata",
+        JSON().with_variant(JSONB, "postgresql"),
+        default=dict,
+        nullable=True,
+    )
     created_at = Column(DateTime(timezone=True), default=utcnow)
 
 class WorkspaceAISettings(Base):
@@ -57,4 +64,3 @@ class WorkspaceAISettings(Base):
     default_model = Column(String(128), nullable=False, default="gemma4:e4b")
     copilot_token_encrypted = Column(Text, nullable=True)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-

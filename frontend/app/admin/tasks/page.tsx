@@ -2,6 +2,7 @@
 
 import { useTranslation } from "@/lib/i18n";
 import { TasksPageLayout } from "@/components/tasks/TasksPageLayout";
+import { LayoutDashboard, Settings, Tablet, Users } from "lucide-react";
 
 /**
  * Admin Tasks Page
@@ -24,6 +25,13 @@ export default function AdminTasksPage() {
       canManage={true}
       canExecute={true}
       showDailyRoutineOverview={true}
+      contextTitle="Related views"
+      contextActions={[
+        { label: t("nav.dashboard"), description: "System summary", href: "/admin", icon: LayoutDashboard, tone: "primary" },
+        { label: t("nav.devices"), description: "Fleet health", href: "/admin/devices", icon: Tablet, tone: "warning" },
+        { label: t("nav.personnel"), description: "Users and roles", href: "/admin/personnel", icon: Users, tone: "neutral" },
+        { label: t("nav.settings"), description: "Platform controls", href: "/admin/settings", icon: Settings, tone: "neutral" },
+      ]}
     />
   );
 }

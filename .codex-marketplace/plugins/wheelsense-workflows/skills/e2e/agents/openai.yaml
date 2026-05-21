@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "E2e"
+  short_description: "WheelSense e2e workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $e2e for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

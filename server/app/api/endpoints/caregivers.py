@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 """CareGiver CRUD, zone assignment, and shift endpoints."""
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
 from app.api.dependencies import (
     RequireRole,
@@ -29,6 +29,8 @@ from app.schemas.caregivers import (
     CareGiverOut,
     CaregiverPatientAccessOut,
     CaregiverPatientAccessReplace,
+    CaregiverTimelineEventOut,
+    CaregiverTimelineOut,
     ZoneAssignCreate,
     ZoneAssignPatch,
     ZoneAssignOut,
@@ -40,6 +42,7 @@ from app.schemas.devices import CaregiverDeviceAssignmentCreate, CaregiverDevice
 from app.services import device_management as caregiver_device_service
 from app.services.base import CRUDBase
 from app.services.profile_image_storage import remove_hosted_profile_file_if_any, store_hosted_profile_jpeg_bytes
+from app.services.staff_timeline import staff_timeline_service
 
 caregiver_service = CRUDBase[CareGiver, CareGiverCreate, CareGiverPatch](CareGiver)
 
@@ -201,6 +204,53 @@ async def get_caregiver(
     if not cg:
         raise HTTPException(404, "Caregiver not found")
     return cg
+
+
+@router.get("/{caregiver_id}/timeline", response_model=CaregiverTimelineOut)
+async def get_caregiver_timeline(
+    caregiver_id: int,
+    limit: int = Query(default=100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(ROLE_SUPERVISOR_READ)),
+):
+    projection = await staff_timeline_service.build(
+        db,
+        ws.id,
+        caregiver_id,
+        limit=limit,
+    )
+    if projection is None:
+        raise HTTPException(404, "Caregiver not found")
+    return CaregiverTimelineOut(
+        caregiver_id=projection.caregiver.id,
+        user_ids=projection.user_ids,
+        device_ids=projection.device_ids,
+        events=[
+            CaregiverTimelineEventOut(
+                id=event.id,
+                timestamp=event.timestamp,
+                category=event.category,
+                event_type=event.event_type,
+                title=event.title,
+                description=event.description,
+                source=event.source,
+                caregiver_id=event.caregiver_id,
+                user_id=event.user_id,
+                patient_id=event.patient_id,
+                room_id=event.room_id,
+                room_name=event.room_name,
+                device_id=event.device_id,
+                task_id=event.task_id,
+                report_id=event.report_id,
+                workflow_job_id=event.workflow_job_id,
+                workflow_step_id=event.workflow_step_id,
+                status=event.status,
+                metadata=event.metadata,
+            )
+            for event in projection.events
+        ],
+    )
 
 @router.patch("/{caregiver_id}", response_model=CareGiverOut)
 async def update_caregiver(

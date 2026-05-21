@@ -9,7 +9,7 @@
 - [server/pyproject.toml](file://server/pyproject.toml)
 - [frontend/README.md](file://frontend/README.md)
 - [frontend/package.json](file://frontend/package.json)
-- [firmware/M5StickCPlus2/platformio.ini](file://firmware/M5StickCPlus2/platformio.ini)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
 - [docs/adr/README.md](file://docs/adr/README.md)
 - [docs/adr/0001-fastmcp-sse-for-ai-integration.md](file://docs/adr/0001-fastmcp-sse-for-ai-integration.md)
 - [docs/adr/0003-facility-hierarchy-for-spatial-model.md](file://docs/adr/0003-facility-hierarchy-for-spatial-model.md)
@@ -107,7 +107,7 @@ PROXY --> API
 **Section sources**
 - [server/AGENTS.md:9-21](file://server/AGENTS.md#L9-L21)
 - [frontend/README.md:1-374](file://frontend/README.md#L1-L374)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ## Architecture Overview
 The system architecture couples hardware telemetry, backend services, AI/MCP orchestration, and role-based dashboards. Data flows from devices to MQTT, processed by the backend, and surfaced to the frontend and AI runtime.
@@ -230,11 +230,11 @@ Srv-->>MQTT : "Publish room updates/alerts"
 
 **Diagram sources**
 - [server/AGENTS.md:322-341](file://server/AGENTS.md#L322-L341)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 **Section sources**
 - [server/AGENTS.md:322-357](file://server/AGENTS.md#L322-L357)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 ### AI/MCP Integration and Security
 - MCP server mounted at /mcp with Streamable HTTP primary and SSE compatibility

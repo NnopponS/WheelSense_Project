@@ -3,9 +3,9 @@ from __future__ import annotations
 """Pydantic schemas for AI chat."""
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 class ChatMessagePart(BaseModel):
     role: Literal["user", "assistant"]
@@ -31,9 +31,14 @@ class ChatMessageOut(BaseModel):
     id: int
     role: str
     content: str
+    metadata: dict[str, Any] | None = Field(
+        default=None,
+        validation_alias="ui_metadata",
+        serialization_alias="metadata",
+    )
     created_at: datetime
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 class ChatConversationCreate(BaseModel):
     title: str | None = None

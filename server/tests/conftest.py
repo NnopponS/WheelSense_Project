@@ -19,6 +19,7 @@ os.environ["SECRET_KEY"] = "test-secret-key"
 os.environ["BOOTSTRAP_ADMIN_ENABLED"] = "false"
 os.environ["PROFILE_IMAGE_STORAGE_DIR"] = tempfile.mkdtemp(prefix="ws_profile_img_")
 os.environ["WHEELSENSE_ENABLE_MCP"] = "0"
+os.environ["MQTT_REST_PUBLISH_ENABLED"] = "false"
 # Keep pytest fast: skip sentence-transformers download/load unless a test enables it.
 os.environ["INTENT_SEMANTIC_ENABLED"] = "false"
 os.environ["INTENT_LLM_NORMALIZE_ENABLED"] = "false"

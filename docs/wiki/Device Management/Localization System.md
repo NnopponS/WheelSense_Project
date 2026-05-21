@@ -10,8 +10,8 @@
 - [0004-configurable-localization-strategy.md](file://docs/adr/0004-configurable-localization-strategy.md)
 - [q1r2s3t4u5v6_add_device_localization_runtime_tables.py](file://server/alembic/versions/q1r2s3t4u5v6_add_device_localization_runtime_tables.py)
 - [test_localization.py](file://server/tests/test_localization.py)
-- [BLEManager.cpp](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp)
-- [BLEManager.h](file://firmware/M5StickCPlus2/src/managers/BLEManager.h)
+- [BLEManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
+- [BLEManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
 - [FloorplansPanel.tsx](file://frontend/components/admin/FloorplansPanel.tsx)
 - [floorplanLayout.ts](file://frontend/lib/floorplanLayout.ts)
 - [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
@@ -79,16 +79,16 @@ FP --> SVC
 - [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
 - [localization_setup.py:1-678](file://server/app/services/localization_setup.py#L1-L678)
 - [telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L1-L78)
-- [BLEManager.h:1-54](file://firmware/M5StickCPlus2/src/managers/BLEManager.h#L1-L54)
+- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.h:1-54](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
 
 **Section sources**
 - [localization.py:1-321](file://server/app/localization.py#L1-L321)
 - [localization.py:1-396](file://server/app/api/endpoints/localization.py#L1-L396)
 - [localization_setup.py:1-678](file://server/app/services/localization_setup.py#L1-L678)
 - [telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L1-L78)
-- [BLEManager.h:1-54](file://firmware/M5StickCPlus2/src/managers/BLEManager.h#L1-L54)
+- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.h:1-54](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
 
 ## Core Components
 - Localization Engine: KNN fingerprinting and Max RSSI prediction with a configurable strategy per workspace.
@@ -108,7 +108,7 @@ Key capabilities:
 - [localization.py:52-396](file://server/app/api/endpoints/localization.py#L52-L396)
 - [localization_setup.py:124-678](file://server/app/services/localization_setup.py#L124-L678)
 - [telemetry.py:42-222](file://server/app/models/telemetry.py#L42-L222)
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L33-L62)
+- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
 
 ## Architecture Overview
 The system integrates real-time RSSI telemetry from mobile/wheelchair devices and BLE/Wi-Fi nodes to infer room presence. The backend exposes endpoints to configure strategy, train, predict, and manage calibration sessions. The frontend provides an ML calibration UI and floorplan visualization.
@@ -192,13 +192,13 @@ Note over FW,DB : RSSI vector aggregated per device
 ```
 
 **Diagram sources**
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L33-L62)
+- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
 - [telemetry.py:42-51](file://server/app/models/telemetry.py#L42-L51)
 - [telemetry.py:132-153](file://server/app/models/telemetry.py#L132-L153)
 
 **Section sources**
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L1-L78)
-- [BLEManager.h:1-54](file://firmware/M5StickCPlus2/src/managers/BLEManager.h#L1-L54)
+- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.h:1-54](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
 - [telemetry.py:42-153](file://server/app/models/telemetry.py#L42-L153)
 
 ### Room Prediction Model, Confidence Scoring, and Accuracy Validation
@@ -344,12 +344,12 @@ note for BLEManager "Discovers WSN_* nodes and aggregates RSSI"
 ```
 
 **Diagram sources**
-- [BLEManager.h:12-43](file://firmware/M5StickCPlus2/src/managers/BLEManager.h#L12-L43)
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L33-L62)
+- [BLEManager.h:12-43](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L12-L43)
+- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
 
 **Section sources**
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L1-L78)
-- [BLEManager.h:1-54](file://firmware/M5StickCPlus2/src/managers/BLEManager.h#L1-L54)
+- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.h:1-54](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L1-L54)
 - [localization_setup.py:198-213](file://server/app/services/localization_setup.py#L198-L213)
 
 ### Localization Configuration, Threshold Settings, and Environmental Factors Impact
@@ -437,7 +437,7 @@ FP["Floorplan Panel"] --> Setup
 - [localization.py:1-321](file://server/app/localization.py#L1-L321)
 - [localization_setup.py:1-678](file://server/app/services/localization_setup.py#L1-L678)
 - [telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
 - [FloorplansPanel.tsx:44-239](file://frontend/components/admin/FloorplansPanel.tsx#L44-L239)
 
 **Section sources**
@@ -445,7 +445,7 @@ FP["Floorplan Panel"] --> Setup
 - [localization.py:1-321](file://server/app/localization.py#L1-L321)
 - [localization_setup.py:1-678](file://server/app/services/localization_setup.py#L1-L678)
 - [telemetry.py:1-222](file://server/app/models/telemetry.py#L1-L222)
-- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L1-L78)
+- [BLEManager.cpp:1-78](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L1-L78)
 - [FloorplansPanel.tsx:44-239](file://frontend/components/admin/FloorplansPanel.tsx#L44-L239)
 
 ## Performance Considerations

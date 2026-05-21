@@ -23,6 +23,27 @@ from app.services.workflow import (
 
 STAFF_ROLES = {"admin", "head_nurse", "supervisor", "observer"}
 
+DEMO_CONTROL_VISIBLE_ACTIONS: list[dict[str, str]] = [
+    {
+        "id": "clean_state",
+        "label": "Clean State",
+        "description": "Reset the demo workspace to the deterministic English baseline.",
+        "endpoint": "/api/demo/reset",
+    },
+    {
+        "id": "inject_events",
+        "label": "Inject Events",
+        "description": "Inject simulator events such as abnormal heart rate or fall telemetry.",
+        "endpoint": "/api/demo/simulator/command",
+    },
+    {
+        "id": "move_actor",
+        "label": "Move Actor",
+        "description": "Move a patient or staff actor; patient moves also drive simulator RSSI telemetry.",
+        "endpoint": "/api/demo/actors/{actor_type}/{actor_id}/move",
+    },
+]
+
 
 def _display_name(user: User, caregiver: CareGiver | None) -> str:
     if caregiver is not None:
@@ -150,7 +171,7 @@ class DemoControlService:
             )
 
         actors.sort(key=lambda actor: (actor["actor_type"], actor["display_name"]))
-        return {"workspace_id": ws_id, "actors": actors}
+        return {"workspace_id": ws_id, "actors": actors, "actions": DEMO_CONTROL_VISIBLE_ACTIONS}
 
     async def move_actor(
         self,

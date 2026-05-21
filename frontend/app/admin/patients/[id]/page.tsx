@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useId, useMemo, type ChangeEvent } from "react";
+import React, { useEffect, useState, useCallback, useId, useMemo, type ChangeEvent } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
@@ -10,18 +10,20 @@ import type {
   Caregiver,
   Room,
   User as PortalUser,
-  DeviceAssignment,
   PatientContact,
   MedicalConditionEntry,
 } from "@/lib/types";
 import {
   ArrowLeft,
-  Tablet,
   AlertCircle,
   Phone,
   User,
   CalendarDays,
   Plus,
+  MapPin,
+  Ruler,
+  Droplets,
+  Weight,
 } from "lucide-react";
 import Link from "next/link";
 import SearchableListboxPicker, {
@@ -47,10 +49,20 @@ import { imageFileToResizedSquareJpegBlob, looksLikeImageFile } from "@/lib/prof
 import {
   getPatientsPath,
   getCaregiverDetailPath,
-  getFacilityManagementPath,
 } from "@/lib/routes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import DashboardFloorplanPanel from "@/components/dashboard/DashboardFloorplanPanel";
 import { PatientCareCoordinationPanel } from "@/components/patients/PatientCareCoordinationPanel";
+import { PatientHealthAnalysisPanel } from "@/components/patients/PatientHealthAnalysisPanel";
+import { PersonSensorStatusPanel } from "@/components/shared/PersonSensorStatusPanel";
+import UserAvatar from "@/components/shared/UserAvatar";
 
 function caregiverSearchText(c: Caregiver): string {
   return [
@@ -162,7 +174,6 @@ export default function PatientDetailPage() {
   const [staffSearch, setStaffSearch] = useState("");
   const [staffSaving, setStaffSaving] = useState(false);
   const [staffError, setStaffError] = useState<string | null>(null);
-  const [assignments, setAssignments] = useState<DeviceAssignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingCard, setEditingCard] = useState<EditableCard | null>(null);
@@ -209,6 +220,7 @@ export default function PatientDetailPage() {
   const [schedulePickerDate, setSchedulePickerDate] = useState<Date | undefined>();
   const [patientPhotoBusy, setPatientPhotoBusy] = useState(false);
   const [patientPhotoErr, setPatientPhotoErr] = useState<string | null>(null);
+  const [patientMapOpen, setPatientMapOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -216,19 +228,31 @@ export default function PatientDetailPage() {
       const p = await api.get<Patient>(`/patients/${id}`);
       setPatient(p);
 
-      const [c, d, users, pool, assigned] = await Promise.all([
+      const [c, users, pool, assigned] = await Promise.all([
         api.get<PatientContact[]>(`/patients/${id}/contacts`).catch(() => []),
-        api.get<DeviceAssignment[]>(`/patients/${id}/devices`).catch(() => []),
         api.get<PortalUser[]>("/users").catch(() => []),
         api.get<Caregiver[]>("/caregivers?limit=1000").catch(() => []),
         api.get<Caregiver[]>(`/patients/${id}/caregivers`).catch(() => []),
       ]);
       setContacts(c);
-      setAssignments(d);
+      const userByCaregiverId = new Map<number, PortalUser>();
+      if (Array.isArray(users)) {
+        for (const user of users) {
+          if (typeof user.caregiver_id === "number") {
+            userByCaregiverId.set(user.caregiver_id, user);
+          }
+        }
+      }
+      const withAccountPhotoFallback = (caregiver: Caregiver): Caregiver => {
+        const ownPhoto = caregiver.photo_url?.trim();
+        if (ownPhoto) return caregiver;
+        const accountPhoto = userByCaregiverId.get(caregiver.id)?.profile_image_url?.trim();
+        return accountPhoto ? { ...caregiver, photo_url: accountPhoto } : caregiver;
+      };
       const poolMerged = new Map<number, Caregiver>();
-      (pool ?? []).forEach((c) => poolMerged.set(c.id, c));
+      (pool ?? []).forEach((c) => poolMerged.set(c.id, withAccountPhotoFallback(c)));
       (assigned ?? []).forEach((c) => {
-        if (!poolMerged.has(c.id)) poolMerged.set(c.id, c);
+        if (!poolMerged.has(c.id)) poolMerged.set(c.id, withAccountPhotoFallback(c));
       });
       setCaregiverPool([...poolMerged.values()]);
       setCaregiverDraftIds(assigned.map((cg) => cg.id));
@@ -648,7 +672,6 @@ export default function PatientDetailPage() {
     contacts[0] ||
     null;
 
-  const activeAssignments = assignments.filter((a) => a.is_active);
   const surgeries = patient.past_surgeries ?? [];
   const medCount = patient.medications?.filter((m) => (m.name || "").trim()).length ?? 0;
 
@@ -690,625 +713,387 @@ export default function PatientDetailPage() {
             {t("patients.detailTabCare")}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="profile" className="mt-0 space-y-0">
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 space-y-6">
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-foreground-variant">
-                {t("patients.detailAbout")}
-              </p>
-              {canEditPatient && isEditingAbout ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high"
-                    onClick={cancelEditingCard}
-                    disabled={isSavingAbout}
-                  >
-                    {t("common.cancel")}
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90"
-                    onClick={() => void saveCard("about")}
-                    disabled={isSavingAbout || !cardDrafts.first_name.trim() || !cardDrafts.last_name.trim()}
-                  >
-                    {isSavingAbout ? t("common.saving") : t("common.save")}
-                  </button>
-                </div>
-              ) : canEditPatient ? (
-                <button
-                  type="button"
-                  className="rounded-lg border border-outline-variant/30 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high"
-                  onClick={() => startEditingCard("about")}
-                >
-                  {t("common.edit")}
-                </button>
-              ) : null}
-            </div>
-            {isEditingAbout ? (
-              <div className="mb-5 grid gap-3 sm:grid-cols-2">
-                <label className="space-y-1">
-                  <span className="text-xs text-foreground-variant">{t("patients.firstName")}</span>
-                  <input className="input-field w-full text-sm" value={cardDrafts.first_name} onChange={(event) => setCardDrafts((prev) => ({ ...prev, first_name: event.target.value }))} />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-xs text-foreground-variant">{t("patients.lastName")}</span>
-                  <input className="input-field w-full text-sm" value={cardDrafts.last_name} onChange={(event) => setCardDrafts((prev) => ({ ...prev, last_name: event.target.value }))} />
-                </label>
-                <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.dateOfBirth")}</span><input type="date" className="input-field w-full text-sm" value={cardDrafts.date_of_birth} onChange={(event) => setCardDrafts((prev) => ({ ...prev, date_of_birth: event.target.value }))} /></label>
-                <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.gender")}</span><select className="input-field w-full text-sm" value={cardDrafts.gender} onChange={(event) => setCardDrafts((prev) => ({ ...prev, gender: event.target.value }))}><option value="">{t("patients.genderUnset")}</option><option value="male">{t("patients.genderMale")}</option><option value="female">{t("patients.genderFemale")}</option><option value="other">{t("patients.genderOther")}</option></select></label>
-                <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.careLevel")}</span><select className="input-field w-full text-sm" value={cardDrafts.care_level} onChange={(event) => setCardDrafts((prev) => ({ ...prev, care_level: event.target.value }))}><option value="normal">{t("patients.careLevelNormal")}</option><option value="special">{t("patients.careLevelSpecial")}</option><option value="critical">{t("patients.careLevelCritical")}</option></select></label>
-                <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.mobilityType")}</span><select className="input-field w-full text-sm" value={cardDrafts.mobility_type} onChange={(event) => setCardDrafts((prev) => ({ ...prev, mobility_type: event.target.value }))}><option value="wheelchair">{t("patients.mobilityWheelchair")}</option><option value="walker">{t("patients.mobilityWalker")}</option><option value="independent">{t("patients.mobilityIndependent")}</option></select></label>
-                <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.bloodType")}</span><input className="input-field w-full text-sm" value={cardDrafts.blood_type} onChange={(event) => setCardDrafts((prev) => ({ ...prev, blood_type: event.target.value }))} /></label>
-                <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.heightCm")}</span><input className="input-field w-full text-sm" value={cardDrafts.height_cm} onChange={(event) => setCardDrafts((prev) => ({ ...prev, height_cm: event.target.value }))} /></label>
-                <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.weightKg")}</span><input className="input-field w-full text-sm" value={cardDrafts.weight_kg} onChange={(event) => setCardDrafts((prev) => ({ ...prev, weight_kg: event.target.value }))} /></label>
-                <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.room")}</span><input className="input-field w-full text-sm" value={cardDrafts.room_id} onChange={(event) => setCardDrafts((prev) => ({ ...prev, room_id: event.target.value }))} placeholder={t("patients.noRoom")} /></label>
-                <label className="flex items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={cardDrafts.is_active} onChange={(event) => setCardDrafts((prev) => ({ ...prev, is_active: event.target.checked }))} />{t("patients.statusActive")}</label>
+        <TabsContent value="profile" className="mt-0 space-y-5">
+
+          {/* ── HERO HEADER ───────────────────────────────────────────────── */}
+          <section className="relative overflow-hidden rounded-2xl border border-outline-variant/20 bg-gradient-to-br from-surface-container to-surface shadow-sm">
+            {/* edit-about toolbar */}
+            {canEditPatient && (
+              <div className="absolute right-4 top-4 z-10">
+                {isEditingAbout ? (
+                  <div className="flex items-center gap-2">
+                    <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high bg-surface border border-outline-variant/30" onClick={cancelEditingCard} disabled={isSavingAbout}>{t("common.cancel")}</button>
+                    <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveCard("about")} disabled={isSavingAbout || !cardDrafts.first_name.trim() || !cardDrafts.last_name.trim()}>{isSavingAbout ? t("common.saving") : t("common.save")}</button>
+                  </div>
+                ) : (
+                  <button type="button" className="rounded-lg border border-outline-variant/30 bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high" onClick={() => startEditingCard("about")}>{t("common.edit")}</button>
+                )}
               </div>
-            ) : null}
-            {cardErrors.about ? <p className="mb-3 text-sm text-error">{cardErrors.about}</p> : null}
-            <div className="flex flex-col sm:flex-row gap-5">
-              <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
-                <div className="relative w-full sm:w-40 aspect-[4/5] rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-end justify-start overflow-hidden border border-outline-variant/20">
-                  {canEditPatient ? (
-                    <label
-                      htmlFor={patientPhotoInputId}
-                      className={`absolute inset-0 z-[5] cursor-pointer ${patientPhotoBusy ? "pointer-events-none" : ""}`}
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                  <span className="absolute bottom-2 left-2 z-10 text-[10px] font-mono font-semibold text-foreground/90 bg-black/35 px-2 py-0.5 rounded">
-                    {t("patients.detailPatientId")} #{patient.id}
-                  </span>
-                  {canEditPatient && patientPhotoUrl ? (
-                    <div className="absolute top-2 right-2 z-10">
-                      <button
-                        type="button"
-                        className="rounded-lg bg-black/45 px-2 py-1 text-[10px] font-semibold text-white hover:bg-black/60 disabled:opacity-50"
-                        disabled={patientPhotoBusy}
-                        onClick={() => void onRemovePatientPhoto()}
-                      >
-                        {t("profile.avatar.removePhoto")}
-                      </button>
-                    </div>
-                  ) : null}
+            )}
+
+            <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:p-6">
+              {/* Avatar column */}
+              <div className="flex shrink-0 flex-col items-center gap-2">
+                <div className="relative h-28 w-28 overflow-hidden rounded-2xl border-2 border-outline-variant/25 bg-gradient-to-br from-primary/20 to-primary/5 shadow-md sm:h-32 sm:w-32">
+                  {canEditPatient && (
+                    <label htmlFor={patientPhotoInputId} className={`absolute inset-0 z-[5] cursor-pointer ${patientPhotoBusy ? "pointer-events-none" : ""}`} aria-hidden="true" />
+                  )}
                   {patientPhotoUrl ? (
-                    <Image
-                      src={patientPhotoUrl}
-                      alt={`${patient.first_name} ${patient.last_name}`}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
+                    <Image src={patientPhotoUrl} alt={`${patient.first_name} ${patient.last_name}`} fill unoptimized className="object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-primary/40">
-                      {patient.first_name?.[0]}
-                      {patient.last_name?.[0]}
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-primary/50">
+                      {patient.first_name?.[0]}{patient.last_name?.[0]}
                     </div>
                   )}
+                  {canEditPatient && patientPhotoUrl && (
+                    <button type="button" className="absolute right-1 top-1 z-10 rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-semibold text-white hover:bg-black/70 disabled:opacity-50" disabled={patientPhotoBusy} onClick={() => void onRemovePatientPhoto()}>{t("profile.avatar.removePhoto")}</button>
+                  )}
                 </div>
-                {canEditPatient ? (
-                  <div className="w-full sm:w-40">
-                    <label
-                      htmlFor={patientPhotoInputId}
-                      className="mb-1 block text-xs text-foreground-variant"
-                    >
-                      {t("profile.avatar.localFileLabel")}
-                    </label>
-                    <input
-                      id={patientPhotoInputId}
-                      type="file"
-                      accept="image/*"
-                      disabled={patientPhotoBusy}
-                      onChange={(e) => void onPickPatientPhoto(e)}
-                      className="block w-full min-w-0 cursor-pointer text-xs text-foreground file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  </div>
-                ) : null}
-                {patientPhotoErr ? (
-                  <p className="max-w-[min(100%,20rem)] text-xs text-destructive" role="alert">
-                    {patientPhotoErr}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-foreground">
-                  {patient.first_name} {patient.last_name}
-                </h1>
-                <p className="text-sm text-foreground-variant mt-1">
-                  {age != null ? `${age} ${t("patients.years")}` : "—"}
-                  {" · "}
-                  {genderLabel}
-                </p>
-                <div className="text-sm text-foreground-variant mt-2 space-y-1">
-                  <p>
-                    <span className="font-medium text-foreground-variant">{t("patients.room")}: </span>
-                    {patient.room_id == null ? (
-                      <span className="font-medium text-foreground">{t("patients.noRoom")}</span>
-                    ) : roomDetail ? (
-                      <span className="font-medium text-foreground">
-                        {roomDetail.name?.trim() || `Room #${roomDetail.id}`}
-                        {roomDetail.facility_name || roomDetail.floor_name
-                          ? ` · ${[roomDetail.facility_name, roomDetail.floor_name].filter(Boolean).join(" · ")}`
-                          : ""}
-                      </span>
-                    ) : (
-                      <span className="font-medium text-foreground">
-                        #{patient.room_id}
-                        <span className="text-foreground-variant font-normal"> — {t("patients.roomDetailsUnavailable")}</span>
-                      </span>
-                    )}
-                  </p>
-                  <p>
-                    <Link
-                      href={getFacilityManagementPath(authUser?.role || "admin")}
-                      className="text-primary text-sm font-semibold hover:underline"
-                    >
-                      {t("patients.roomOpenFacility")}
-                    </Link>
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium care-${patient.care_level}`}>
-                    {patient.care_level}
-                  </span>
-                  <span className="text-xs px-3 py-1 rounded-full bg-surface-container-high text-foreground-variant">
-                    {patient.mobility_type}
-                  </span>
-                  <span
-                    className={`text-xs px-3 py-1 rounded-full font-medium ${
-                      patient.is_active ? "bg-primary/15 text-primary" : "bg-surface-container-high"
-                    }`}
-                  >
-                    {patient.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-outline-variant/15">
-              <InfoItem
-                label={t("patients.detailDob")}
-                value={
-                  patient.date_of_birth
-                    ? new Date(patient.date_of_birth + "T12:00:00").toLocaleDateString(localeTag, {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : "—"
-                }
-              />
-              <InfoItem label={t("patients.heightCm")} value={patient.height_cm != null ? `${patient.height_cm} cm` : "—"} />
-              <InfoItem label={t("patients.weightKg")} value={patient.weight_kg != null ? `${patient.weight_kg} kg` : "—"} />
-              <InfoItem label={t("patients.bloodType")} value={patient.blood_type || "—"} />
-              <InfoItem
-                label={t("patients.detailBmi")}
-                value={bmi != null ? `${bmi} (${bmiLabel})` : "—"}
-              />
-            </div>
-          </section>
-
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="font-semibold text-foreground mb-4">{t("patients.sectionLinkedAccounts")}</h2>
-            {linkedPortalUsers.length === 0 ? (
-              <p className="text-sm text-foreground-variant">{t("patients.linkedAccountsEmpty")}</p>
-            ) : (
-              <ul className="space-y-3">
-                {linkedPortalUsers.map((u) => (
-                  <li
-                    key={u.id}
-                    className="rounded-xl border border-outline-variant/15 bg-surface-container-low/50 px-4 py-3 text-sm"
-                  >
-                    {editingAccountId === u.id && canManageAccounts ? (
-                      <div className="space-y-3">
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <label className="space-y-1">
-                            <span className="text-xs text-foreground-variant">{t("admin.users.username")}</span>
-                            <input className="input-field w-full text-sm" value={accountDraft.username} onChange={(event) => setAccountDraft((prev) => ({ ...prev, username: event.target.value }))} />
-                          </label>
-                          <label className="space-y-1">
-                            <span className="text-xs text-foreground-variant">{t("admin.users.role")}</span>
-                            <select className="input-field w-full text-sm" value={accountDraft.role} onChange={(event) => setAccountDraft((prev) => ({ ...prev, role: event.target.value }))}>
-                              <option value="admin">{t("shell.roleAdmin")}</option>
-                              <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
-                              <option value="supervisor">{t("shell.roleSupervisor")}</option>
-                              <option value="observer">{t("shell.roleObserver")}</option>
-                              <option value="patient">{t("shell.rolePatient")}</option>
-                            </select>
-                          </label>
-                          <label className="space-y-1">
-                            <span className="text-xs text-foreground-variant">{t("accountMgmt.pickStaff")}</span>
-                            <input className="input-field w-full text-sm" value={accountDraft.caregiver_id} onChange={(event) => setAccountDraft((prev) => ({ ...prev, caregiver_id: event.target.value }))} />
-                          </label>
-                          <label className="space-y-1">
-                            <span className="text-xs text-foreground-variant">{t("accountMgmt.pickPatient")}</span>
-                            <input className="input-field w-full text-sm" value={accountDraft.patient_id} onChange={(event) => setAccountDraft((prev) => ({ ...prev, patient_id: event.target.value }))} />
-                          </label>
-                          <label className="space-y-1 sm:col-span-2">
-                            <span className="text-xs text-foreground-variant">{t("admin.users.resetPassword")}</span>
-                            <input type="password" className="input-field w-full text-sm" placeholder={t("patients.editorPasswordOptionalHint")} value={accountDraft.password} onChange={(event) => setAccountDraft((prev) => ({ ...prev, password: event.target.value }))} />
-                          </label>
-                          <label className="flex items-center gap-2 text-sm text-foreground sm:col-span-2">
-                            <input type="checkbox" checked={accountDraft.is_active} onChange={(event) => setAccountDraft((prev) => ({ ...prev, is_active: event.target.checked }))} />
-                            {t("patients.statusActive")}
-                          </label>
-                        </div>
-                        {accountError ? <p className="text-xs text-error">{accountError}</p> : null}
-                        <div className="flex items-center justify-end gap-2">
-                          <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={() => setEditingAccountId(null)} disabled={accountBusy}>
-                            {t("common.cancel")}
-                          </button>
-                          <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveAccountEditor(u.id)} disabled={accountBusy}>
-                            {accountBusy ? t("common.saving") : t("common.save")}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <p className="font-semibold text-foreground">{u.username}</p>
-                          <p className="text-xs text-foreground-variant capitalize">{u.role}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${
-                              u.is_active ? "care-normal" : "bg-surface-container text-outline"
-                            }`}
-                          >
-                            {u.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
-                          </span>
-                          {canManageAccounts ? (
-                            <button
-                              type="button"
-                              className="text-xs font-semibold text-primary hover:underline"
-                              onClick={() => openAccountEditor(u)}
-                            >
-                              {t("common.edit")}
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="font-semibold text-foreground">{t("patients.sectionChronic")}</h2>
-              {canEditPatient ? (
-                editingCard === "chronic" ? (
-                  <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={cancelEditingCard} disabled={savingCard === "chronic"}>{t("common.cancel")}</button>
-                    <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveCard("chronic")} disabled={savingCard === "chronic"}>{savingCard === "chronic" ? t("common.saving") : t("common.save")}</button>
-                  </div>
-                ) : (
-                  <button type="button" className="rounded-lg border border-outline-variant/30 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high" onClick={() => startEditingCard("chronic")}>{t("common.edit")}</button>
-                )
-              ) : null}
-            </div>
-            {editingCard === "chronic" ? (
-              <textarea className="input-field min-h-[110px] w-full text-sm" value={cardDrafts.medical_conditions_raw} onChange={(event) => setCardDrafts((prev) => ({ ...prev, medical_conditions_raw: event.target.value }))} placeholder={t("patients.chronicPlaceholder")} />
-            ) : patient.medical_conditions.length === 0 ? (
-              <p className="text-sm text-foreground-variant">—</p>
-            ) : (
-              <ul className="flex flex-wrap gap-2">
-                {patient.medical_conditions.map((c, i) => (
-                  <li
-                    key={i}
-                    className="text-sm px-3 py-1.5 rounded-lg bg-surface-container-high text-foreground"
-                  >
-                    {formatCondition(c)}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {cardErrors.chronic ? <p className="mt-3 text-sm text-error">{cardErrors.chronic}</p> : null}
-          </section>
-
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="font-semibold text-foreground">{t("patients.sectionAllergies")}</h2>
-              {canEditPatient ? (
-                editingCard === "allergies" ? (
-                  <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={cancelEditingCard} disabled={savingCard === "allergies"}>{t("common.cancel")}</button>
-                    <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveCard("allergies")} disabled={savingCard === "allergies"}>{savingCard === "allergies" ? t("common.saving") : t("common.save")}</button>
-                  </div>
-                ) : (
-                  <button type="button" className="rounded-lg border border-outline-variant/30 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high" onClick={() => startEditingCard("allergies")}>{t("common.edit")}</button>
-                )
-              ) : null}
-            </div>
-            {editingCard === "allergies" ? (
-              <textarea className="input-field min-h-[110px] w-full text-sm" value={cardDrafts.allergies_raw} onChange={(event) => setCardDrafts((prev) => ({ ...prev, allergies_raw: event.target.value }))} placeholder={t("patients.allergiesPlaceholder")} />
-            ) : patient.allergies.length === 0 ? (
-              <p className="text-sm text-foreground-variant">—</p>
-            ) : (
-              <ul className="space-y-2">
-                {patient.allergies.map((a, i) => (
-                  <li
-                    key={i}
-                    className="text-sm px-4 py-3 rounded-lg bg-error/10 border border-error/20 text-foreground"
-                  >
-                    {a}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {cardErrors.allergies ? <p className="mt-3 text-sm text-error">{cardErrors.allergies}</p> : null}
-          </section>
-
-          {surgeries.length > 0 && (
-            <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-              <h2 className="font-semibold text-foreground mb-4">{t("patients.sectionSurgeries")}</h2>
-              <ul className="space-y-3">
-                {surgeries.map((s, i) => (
-                  <li
-                    key={i}
-                    className="text-sm border border-outline-variant/15 rounded-lg p-4 bg-surface-container-low/50"
-                  >
-                    <p className="font-medium text-foreground">{s.procedure || "—"}</p>
-                    <p className="text-foreground-variant text-xs mt-1">
-                      {[s.facility, s.year != null && s.year !== "" ? String(s.year) : null]
-                        .filter(Boolean)
-                        .join(" · ") || "—"}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <div className="flex items-center justify-between gap-2 mb-4">
-              <h2 className="font-semibold text-foreground">{t("patients.sectionMeds")}</h2>
-              <div className="flex items-center gap-2">
-                {medCount > 0 && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/15 text-primary">
-                    {medCount} {t("patients.activeMedsBadge")}
-                  </span>
+                {canEditPatient && (
+                  <label htmlFor={patientPhotoInputId} className="cursor-pointer text-center text-[10px] text-primary hover:underline">{t("profile.avatar.localFileLabel")}</label>
                 )}
-                {canEditPatient ? (
-                  editingCard === "medications" ? (
-                    <>
-                      <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={cancelEditingCard} disabled={savingCard === "medications"}>{t("common.cancel")}</button>
-                      <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveCard("medications")} disabled={savingCard === "medications"}>{savingCard === "medications" ? t("common.saving") : t("common.save")}</button>
-                    </>
-                  ) : (
-                    <button type="button" className="rounded-lg border border-outline-variant/30 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high" onClick={() => startEditingCard("medications")}>{t("common.edit")}</button>
-                  )
-                ) : null}
+                <input id={patientPhotoInputId} type="file" accept="image/*" disabled={patientPhotoBusy} onChange={(e) => void onPickPatientPhoto(e)} className="sr-only" />
+                {patientPhotoErr && <p className="text-center text-[10px] text-destructive">{patientPhotoErr}</p>}
+                <span className="rounded-md bg-surface-container-high px-2 py-0.5 font-mono text-[9px] text-foreground-variant">#{patient.id}</span>
               </div>
-            </div>
-            {editingCard === "medications" ? (
-              <textarea className="input-field min-h-[110px] w-full text-sm" value={cardDrafts.medications_raw} onChange={(event) => setCardDrafts((prev) => ({ ...prev, medications_raw: event.target.value }))} placeholder={t("patients.medName")} />
-            ) : medCount === 0 ? (
-              <p className="text-sm text-foreground-variant">—</p>
-            ) : (
-              <ul className="space-y-3">
-                {patient.medications
-                  .filter((m) => (m.name || "").trim())
-                  .map((m, i) => (
-                    <li
-                      key={i}
-                      className="text-sm border border-outline-variant/15 rounded-lg p-4"
-                    >
-                      <p className="font-semibold text-foreground">{m.name}</p>
-                      <p className="text-foreground-variant mt-1">
-                        {[m.dosage, m.frequency].filter(Boolean).join(" · ") || "—"}
-                      </p>
-                      {m.instructions && (
-                        <p className="text-xs text-foreground-variant mt-2 uppercase tracking-wide">
-                          {m.instructions}
+
+              {/* Info column */}
+              <div className="min-w-0 flex-1">
+                {isEditingAbout ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.firstName")}</span><input className="input-field w-full text-sm" value={cardDrafts.first_name} onChange={(e) => setCardDrafts((p) => ({ ...p, first_name: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.lastName")}</span><input className="input-field w-full text-sm" value={cardDrafts.last_name} onChange={(e) => setCardDrafts((p) => ({ ...p, last_name: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.dateOfBirth")}</span><input type="date" className="input-field w-full text-sm" value={cardDrafts.date_of_birth} onChange={(e) => setCardDrafts((p) => ({ ...p, date_of_birth: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.gender")}</span><select className="input-field w-full text-sm" value={cardDrafts.gender} onChange={(e) => setCardDrafts((p) => ({ ...p, gender: e.target.value }))}><option value="">{t("patients.genderUnset")}</option><option value="male">{t("patients.genderMale")}</option><option value="female">{t("patients.genderFemale")}</option><option value="other">{t("patients.genderOther")}</option></select></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.careLevel")}</span><select className="input-field w-full text-sm" value={cardDrafts.care_level} onChange={(e) => setCardDrafts((p) => ({ ...p, care_level: e.target.value }))}><option value="normal">{t("patients.careLevelNormal")}</option><option value="special">{t("patients.careLevelSpecial")}</option><option value="critical">{t("patients.careLevelCritical")}</option></select></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.mobilityType")}</span><select className="input-field w-full text-sm" value={cardDrafts.mobility_type} onChange={(e) => setCardDrafts((p) => ({ ...p, mobility_type: e.target.value }))}><option value="wheelchair">{t("patients.mobilityWheelchair")}</option><option value="walker">{t("patients.mobilityWalker")}</option><option value="independent">{t("patients.mobilityIndependent")}</option></select></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.bloodType")}</span><input className="input-field w-full text-sm" value={cardDrafts.blood_type} onChange={(e) => setCardDrafts((p) => ({ ...p, blood_type: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.heightCm")}</span><input className="input-field w-full text-sm" value={cardDrafts.height_cm} onChange={(e) => setCardDrafts((p) => ({ ...p, height_cm: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.weightKg")}</span><input className="input-field w-full text-sm" value={cardDrafts.weight_kg} onChange={(e) => setCardDrafts((p) => ({ ...p, weight_kg: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("patients.room")}</span><input className="input-field w-full text-sm" value={cardDrafts.room_id} onChange={(e) => setCardDrafts((p) => ({ ...p, room_id: e.target.value }))} placeholder={t("patients.noRoom")} /></label>
+                    <label className="flex items-center gap-2 text-sm text-foreground sm:col-span-2"><input type="checkbox" checked={cardDrafts.is_active} onChange={(e) => setCardDrafts((p) => ({ ...p, is_active: e.target.checked }))} />{t("patients.statusActive")}</label>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">{patient.first_name} {patient.last_name}</h1>
+                        <p className="mt-0.5 text-sm text-foreground-variant">
+                          {age != null ? `${age} ${t("patients.years")}` : "—"} · {genderLabel}
                         </p>
-                      )}
-                    </li>
-                  ))}
-              </ul>
-            )}
-            {cardErrors.medications ? <p className="mt-3 text-sm text-error">{cardErrors.medications}</p> : null}
-          </section>
-
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h2 className="font-semibold text-foreground">{t("patients.formSectionNotes")}</h2>
-              {canEditPatient ? (
-                editingCard === "notes" ? (
-                  <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={cancelEditingCard} disabled={savingCard === "notes"}>{t("common.cancel")}</button>
-                    <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveCard("notes")} disabled={savingCard === "notes"}>{savingCard === "notes" ? t("common.saving") : t("common.save")}</button>
-                  </div>
-                ) : (
-                  <button type="button" className="rounded-lg border border-outline-variant/30 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high" onClick={() => startEditingCard("notes")}>{t("common.edit")}</button>
-                )
-              ) : null}
-            </div>
-            {editingCard === "notes" ? (
-              <textarea className="input-field min-h-[110px] w-full text-sm" value={cardDrafts.notes} onChange={(event) => setCardDrafts((prev) => ({ ...prev, notes: event.target.value }))} />
-            ) : patient.notes?.trim() ? (
-              <p className="text-sm text-foreground-variant whitespace-pre-wrap">{patient.notes}</p>
-            ) : (
-              <p className="text-sm text-foreground-variant">—</p>
-            )}
-            {cardErrors.notes ? <p className="mt-3 text-sm text-error">{cardErrors.notes}</p> : null}
-          </section>
-
-          <SectionCard icon={Tablet} title={t("patients.devicesSection")} iconColor="text-primary">
-              {activeAssignments.length === 0 ? (
-                <p className="text-sm text-foreground-variant py-4">—</p>
-              ) : (
-                <div className="space-y-2">
-                  {activeAssignments.map((d) => (
-                    <div
-                      key={d.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-surface-container-low text-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Tablet className="w-4 h-4 text-foreground-variant" />
-                        <span className="text-foreground font-medium">{d.device_id}</span>
                       </div>
-                      <span className="text-xs px-2 py-1 rounded-full bg-surface-container-high text-foreground-variant">
-                        {d.device_role}
+                    </div>
+                    {/* Status badges */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold care-${patient.care_level}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${patient.care_level === "critical" ? "bg-red-500" : patient.care_level === "special" ? "bg-amber-500" : "bg-emerald-500"}`} />
+                        {patient.care_level}
                       </span>
+                      <span className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-medium text-foreground-variant">{patient.mobility_type}</span>
+                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${patient.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-surface-container text-outline"}`}>{patient.is_active ? t("patients.statusActive") : t("patients.statusInactive")}</span>
+                      {patient.blood_type && <span className="rounded-full border border-outline-variant/30 px-3 py-1 text-xs font-mono font-medium text-foreground">{patient.blood_type}</span>}
                     </div>
-                  ))}
-                </div>
-              )}
-            </SectionCard>
-        </div>
-
-        <aside className="space-y-4">
-          <section
-            className="surface-card rounded-xl border border-outline-variant/20 p-5 text-[var(--color-on-primary)]"
-            style={{ background: "var(--color-primary)" }}
-          >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <User className="w-5 h-5 opacity-90" />
-                <h2 className="font-semibold">{t("patients.formSectionEmergency")}</h2>
-              </div>
-              {canEditPatient ? (
-                editingCard === "emergency" ? (
-                  <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-lg px-2 py-1 text-xs font-medium text-white/85 hover:bg-white/15" onClick={cancelEditingCard} disabled={savingCard === "emergency"}>{t("common.cancel")}</button>
-                    <button type="button" className="rounded-lg bg-white/20 px-2 py-1 text-xs font-semibold text-white hover:bg-white/30" onClick={() => void saveCard("emergency")} disabled={savingCard === "emergency"}>{savingCard === "emergency" ? t("common.saving") : t("common.save")}</button>
-                  </div>
-                ) : (
-                  <button type="button" className="rounded-lg border border-white/30 px-2.5 py-1 text-xs font-semibold text-white hover:bg-white/15" onClick={() => startEditingCard("emergency")}>{t("common.edit")}</button>
-                )
-              ) : null}
-            </div>
-            {editingCard === "emergency" ? (
-              <div className="space-y-2">
-                <input className="input-field w-full text-sm" placeholder={t("patients.ecName")} value={cardDrafts.emergency_contact_name} onChange={(event) => setCardDrafts((prev) => ({ ...prev, emergency_contact_name: event.target.value }))} />
-                <input className="input-field w-full text-sm" placeholder={t("patients.ecRelationship")} value={cardDrafts.emergency_contact_relationship} onChange={(event) => setCardDrafts((prev) => ({ ...prev, emergency_contact_relationship: event.target.value }))} />
-                <input className="input-field w-full text-sm" placeholder={t("patients.ecPhone")} value={cardDrafts.emergency_contact_phone} onChange={(event) => setCardDrafts((prev) => ({ ...prev, emergency_contact_phone: event.target.value }))} />
-                <input className="input-field w-full text-sm" placeholder={t("patients.ecEmail")} value={cardDrafts.emergency_contact_email} onChange={(event) => setCardDrafts((prev) => ({ ...prev, emergency_contact_email: event.target.value }))} />
-                <textarea className="input-field min-h-[88px] w-full text-sm" placeholder={t("patients.ecContactNotes")} value={cardDrafts.emergency_contact_notes} onChange={(event) => setCardDrafts((prev) => ({ ...prev, emergency_contact_notes: event.target.value }))} />
-              </div>
-            ) : primaryContact ? (
-              <div className="space-y-3">
-                <div>
-                  <p className="font-semibold text-lg">{primaryContact.name}</p>
-                  {primaryContact.relationship && (
-                    <p className="text-sm opacity-90">{primaryContact.relationship}</p>
-                  )}
-                </div>
-                {primaryContact.phone && (
-                  <a
-                    href={`tel:${primaryContact.phone.replace(/\s/g, "")}`}
-                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-sm font-semibold transition-smooth"
-                  >
-                    <Phone className="w-4 h-4" />
-                    {primaryContact.phone}
-                  </a>
+                    {/* Room row */}
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-foreground-variant">
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
+                        {patient.room_id == null ? (
+                          <span>{t("patients.noRoom")}</span>
+                        ) : roomDetail ? (
+                          <span className="font-medium text-foreground">{roomDetail.name?.trim() || `Room #${roomDetail.id}`}{roomDetail.floor_name ? ` · ${roomDetail.floor_name}` : ""}</span>
+                        ) : (
+                          <span>#{patient.room_id}</span>
+                        )}
+                      </span>
+                      {patient.room_id != null && (
+                        <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => setPatientMapOpen(true)}>{t("patients.roomOpenFacility")}</button>
+                      )}
+                    </div>
+                  </>
                 )}
+                {cardErrors.about && <p className="mt-2 text-sm text-error">{cardErrors.about}</p>}
               </div>
-            ) : (
-              <p className="text-sm opacity-90">{t("patients.noEmergencyContact")}</p>
-            )}
-            {cardErrors.emergency ? <p className="mt-3 text-sm text-white">{cardErrors.emergency}</p> : null}
+            </div>
+
+            {/* ── Vital Stats Bar ─────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 gap-px border-t border-outline-variant/15 bg-outline-variant/10 sm:grid-cols-5">
+              {[
+                { icon: CalendarDays, label: t("patients.detailDob"), value: patient.date_of_birth ? new Date(patient.date_of_birth + "T12:00:00").toLocaleDateString(localeTag, { year: "numeric", month: "short", day: "numeric" }) : "—" },
+                { icon: Ruler, label: t("patients.heightCm"), value: patient.height_cm != null ? `${patient.height_cm} cm` : "—" },
+                { icon: Weight, label: t("patients.weightKg"), value: patient.weight_kg != null ? `${patient.weight_kg} kg` : "—" },
+                { icon: User, label: t("patients.detailBmi"), value: bmi != null ? `${bmi}` : "—", sub: bmi != null ? bmiLabel : undefined },
+                { icon: Droplets, label: t("patients.bloodType"), value: patient.blood_type || "—" },
+              ].map(({ icon: Icon, label, value, sub }) => (
+                <div key={label} className="flex flex-col items-center gap-0.5 bg-surface/80 px-3 py-3 text-center">
+                  <Icon className="mb-0.5 h-3.5 w-3.5 text-primary/70" />
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-foreground-variant">{label}</span>
+                  <span className="text-sm font-semibold text-foreground tabular-nums">{value}</span>
+                  {sub && <span className="text-[10px] text-foreground-variant">{sub}</span>}
+                </div>
+              ))}
+            </div>
           </section>
 
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-5">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <h2 className="font-semibold text-foreground flex items-center justify-between gap-2">
-                <span>{t("patients.sectionResponsibleStaff")}</span>
-                <span className="text-xs font-normal text-foreground-variant">{caregiverDraftIds.length}</span>
-              </h2>
-              {canManageResponsibleStaff ? (
-                <button
-                  type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50 shrink-0"
-                  onClick={() => void handleSaveResponsibleStaff()}
-                  disabled={staffSaving}
-                >
-                  {staffSaving ? t("patients.responsibleStaffSaving") : t("patients.responsibleStaffSave")}
-                </button>
-              ) : null}
+          {/* ── AI HEALTH ANALYSIS (blank when AI offline) ────────────────── */}
+          <PatientHealthAnalysisPanel patientId={Number(id)} />
+
+          {/* ── MAIN + SIDEBAR GRID ───────────────────────────────────────── */}
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <div className="space-y-5 xl:col-span-2">
+
+              {/* Medical Conditions */}
+              <ProfileCard
+                title={t("patients.sectionChronic")}
+                editSlot={canEditPatient ? (editingCard === "chronic" ? <EditActions onCancel={cancelEditingCard} onSave={() => void saveCard("chronic")} saving={savingCard === "chronic"} t={t} /> : <EditBtn onClick={() => startEditingCard("chronic")} t={t} />) : null}
+              >
+                {editingCard === "chronic" ? (
+                  <textarea className="input-field min-h-[110px] w-full text-sm" value={cardDrafts.medical_conditions_raw} onChange={(e) => setCardDrafts((p) => ({ ...p, medical_conditions_raw: e.target.value }))} placeholder={t("patients.chronicPlaceholder")} />
+                ) : patient.medical_conditions.length === 0 ? (
+                  <p className="text-sm text-foreground-variant">—</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {patient.medical_conditions.map((c, i) => {
+                      const raw = c as Record<string, unknown>;
+                      const sev = String(raw.severity ?? "").toLowerCase();
+                      const sevClass = sev === "high" || sev === "สูง" ? "border-red-300 bg-red-50 text-foreground dark:border-red-800/40 dark:bg-red-950/30 dark:text-foreground"
+                        : sev === "medium" || sev === "ปานกลาง" ? "border-amber-300 bg-amber-50 text-foreground dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-foreground"
+                        : "border-outline-variant/30 bg-surface-container-high text-foreground";
+                      return (
+                        <li key={i} className={`flex items-start justify-between gap-2 rounded-lg border px-4 py-3 text-sm ${sevClass}`}>
+                          <span className="font-medium">{formatCondition(c)}</span>
+                          {sev && <span className="shrink-0 rounded-full bg-current/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide opacity-80">{sev}</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                {cardErrors.chronic && <p className="mt-3 text-sm text-error">{cardErrors.chronic}</p>}
+              </ProfileCard>
+
+              {/* Allergies */}
+              <ProfileCard
+                title={t("patients.sectionAllergies")}
+                editSlot={canEditPatient ? (editingCard === "allergies" ? <EditActions onCancel={cancelEditingCard} onSave={() => void saveCard("allergies")} saving={savingCard === "allergies"} t={t} /> : <EditBtn onClick={() => startEditingCard("allergies")} t={t} />) : null}
+              >
+                {editingCard === "allergies" ? (
+                  <textarea className="input-field min-h-[110px] w-full text-sm" value={cardDrafts.allergies_raw} onChange={(e) => setCardDrafts((p) => ({ ...p, allergies_raw: e.target.value }))} placeholder={t("patients.allergiesPlaceholder")} />
+                ) : patient.allergies.length === 0 ? (
+                  <p className="text-sm text-foreground-variant">—</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {patient.allergies.map((a, i) => (
+                      <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-red-300 bg-red-50 px-3 py-1 text-xs font-semibold text-foreground dark:border-red-800/40 dark:bg-red-950/30 dark:text-foreground">
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                        {a}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {cardErrors.allergies && <p className="mt-3 text-sm text-error">{cardErrors.allergies}</p>}
+              </ProfileCard>
+
+              {/* Medications */}
+              <ProfileCard
+                title={t("patients.sectionMeds")}
+                badge={medCount > 0 ? `${medCount} ${t("patients.activeMedsBadge")}` : undefined}
+                editSlot={canEditPatient ? (editingCard === "medications" ? <EditActions onCancel={cancelEditingCard} onSave={() => void saveCard("medications")} saving={savingCard === "medications"} t={t} /> : <EditBtn onClick={() => startEditingCard("medications")} t={t} />) : null}
+              >
+                {editingCard === "medications" ? (
+                  <textarea className="input-field min-h-[110px] w-full text-sm" value={cardDrafts.medications_raw} onChange={(e) => setCardDrafts((p) => ({ ...p, medications_raw: e.target.value }))} placeholder={t("patients.medName")} />
+                ) : medCount === 0 ? (
+                  <p className="text-sm text-foreground-variant">—</p>
+                ) : (
+                  <ul className="divide-y divide-outline-variant/10">
+                    {patient.medications.filter((m) => (m.name || "").trim()).map((m, i) => (
+                      <li key={i} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">{i + 1}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-foreground text-sm">{m.name}</p>
+                          {(m.dosage || m.frequency) && <p className="mt-0.5 text-xs text-foreground-variant">{[m.dosage, m.frequency].filter(Boolean).join(" · ")}</p>}
+                          {m.instructions && <p className="mt-1 text-[10px] uppercase tracking-wide text-foreground-variant">{m.instructions}</p>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {cardErrors.medications && <p className="mt-3 text-sm text-error">{cardErrors.medications}</p>}
+              </ProfileCard>
+
+              {/* Surgical History */}
+              {surgeries.length > 0 && (
+                <ProfileCard title={t("patients.sectionSurgeries")}>
+                  <ul className="divide-y divide-outline-variant/10">
+                    {surgeries.map((s, i) => (
+                      <li key={i} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground text-sm">{s.procedure || "—"}</p>
+                          <p className="mt-0.5 text-xs text-foreground-variant">{[s.facility, s.year != null && s.year !== "" ? String(s.year) : null].filter(Boolean).join(" · ") || "—"}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </ProfileCard>
+              )}
+
+              {/* Clinical Notes */}
+              <ProfileCard
+                title={t("patients.formSectionNotes")}
+                editSlot={canEditPatient ? (editingCard === "notes" ? <EditActions onCancel={cancelEditingCard} onSave={() => void saveCard("notes")} saving={savingCard === "notes"} t={t} /> : <EditBtn onClick={() => startEditingCard("notes")} t={t} />) : null}
+              >
+                {editingCard === "notes" ? (
+                  <textarea className="input-field min-h-[110px] w-full text-sm" value={cardDrafts.notes} onChange={(e) => setCardDrafts((p) => ({ ...p, notes: e.target.value }))} />
+                ) : patient.notes?.trim() ? (
+                  <p className="text-sm text-foreground-variant whitespace-pre-wrap leading-relaxed">{patient.notes}</p>
+                ) : (
+                  <p className="text-sm text-foreground-variant">—</p>
+                )}
+                {cardErrors.notes && <p className="mt-3 text-sm text-error">{cardErrors.notes}</p>}
+              </ProfileCard>
+
+              <PersonSensorStatusPanel personType="patient" personId={patient.id} compact />
+
+              {/* Linked Portal Accounts */}
+              <ProfileCard title={t("patients.sectionLinkedAccounts")}>
+                {linkedPortalUsers.length === 0 ? (
+                  <p className="text-sm text-foreground-variant">{t("patients.linkedAccountsEmpty")}</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {linkedPortalUsers.map((u) => (
+                      <li key={u.id} className="rounded-xl border border-outline-variant/15 bg-surface-container-low/50 px-4 py-3 text-sm">
+                        {editingAccountId === u.id && canManageAccounts ? (
+                          <div className="space-y-3">
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.username")}</span><input className="input-field w-full text-sm" value={accountDraft.username} onChange={(e) => setAccountDraft((p) => ({ ...p, username: e.target.value }))} /></label>
+                              <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.role")}</span><select className="input-field w-full text-sm" value={accountDraft.role} onChange={(e) => setAccountDraft((p) => ({ ...p, role: e.target.value }))}><option value="admin">{t("shell.roleAdmin")}</option><option value="head_nurse">{t("shell.roleHeadNurse")}</option><option value="supervisor">{t("shell.roleSupervisor")}</option><option value="observer">{t("shell.roleObserver")}</option><option value="patient">{t("shell.rolePatient")}</option></select></label>
+                              <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("accountMgmt.pickStaff")}</span><input className="input-field w-full text-sm" value={accountDraft.caregiver_id} onChange={(e) => setAccountDraft((p) => ({ ...p, caregiver_id: e.target.value }))} /></label>
+                              <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("accountMgmt.pickPatient")}</span><input className="input-field w-full text-sm" value={accountDraft.patient_id} onChange={(e) => setAccountDraft((p) => ({ ...p, patient_id: e.target.value }))} /></label>
+                              <label className="space-y-1 sm:col-span-2"><span className="text-xs text-foreground-variant">{t("admin.users.resetPassword")}</span><input type="password" className="input-field w-full text-sm" placeholder={t("patients.editorPasswordOptionalHint")} value={accountDraft.password} onChange={(e) => setAccountDraft((p) => ({ ...p, password: e.target.value }))} /></label>
+                              <label className="flex items-center gap-2 text-sm text-foreground sm:col-span-2"><input type="checkbox" checked={accountDraft.is_active} onChange={(e) => setAccountDraft((p) => ({ ...p, is_active: e.target.checked }))} />{t("patients.statusActive")}</label>
+                            </div>
+                            {accountError && <p className="text-xs text-error">{accountError}</p>}
+                            <div className="flex items-center justify-end gap-2">
+                              <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={() => setEditingAccountId(null)} disabled={accountBusy}>{t("common.cancel")}</button>
+                              <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={() => void saveAccountEditor(u.id)} disabled={accountBusy}>{accountBusy ? t("common.saving") : t("common.save")}</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div><p className="font-semibold text-foreground">{u.username}</p><p className="text-xs text-foreground-variant capitalize">{u.role}</p></div>
+                            <div className="flex items-center gap-2">
+                              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${u.is_active ? "care-normal" : "bg-surface-container text-outline"}`}>{u.is_active ? t("patients.statusActive") : t("patients.statusInactive")}</span>
+                              {canManageAccounts && <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => openAccountEditor(u)}>{t("common.edit")}</button>}
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </ProfileCard>
             </div>
-            {!canManageResponsibleStaff ? (
-              <p className="text-xs text-foreground-variant mb-3">{t("patients.responsibleStaffReadOnlyHint")}</p>
-            ) : null}
-            {staffError ? <p className="text-sm text-critical mb-3">{staffError}</p> : null}
-            {canManageResponsibleStaff ? (
-              <div className="mb-4">
-                <SearchableListboxPicker
-                  inputId={staffSearchInputId}
-                  listboxId={staffSearchListboxId}
-                  options={staffPickerOptions}
-                  search={staffSearch}
-                  onSearchChange={setStaffSearch}
-                  searchPlaceholder={t("patients.searchStaffPlaceholder")}
-                  selectedOptionId={null}
-                  onSelectOption={(optId) => {
-                    const n = Number(optId);
-                    if (!Number.isFinite(n)) return;
-                    setCaregiverDraftIds((prev) => (prev.includes(n) ? prev : [...prev, n]));
-                    setStaffSearch("");
-                  }}
-                  disabled={staffSaving}
-                  listboxAriaLabel={t("patients.responsibleStaffListbox")}
-                  noMatchMessage={t("patients.responsibleStaffNoMatch")}
-                  emptyStateMessage={
-                    staffPickerOptions.length === 0 ? t("caregivers.empty") : null
-                  }
-                  emptyNoMatch={staffSearch.trim().length > 0}
-                />
-              </div>
-            ) : null}
-            {draftCaregiversOrdered.length === 0 ? (
-              <p className="text-sm text-foreground-variant">{t("patients.responsibleStaffEmpty")}</p>
-            ) : (
-              <ul className="space-y-2">
-                {draftCaregiversOrdered.map((person) => (
-                  <li
-                    key={person.id}
-                    className="rounded-lg border border-outline-variant/20 p-3 bg-surface-container-low text-sm hover:border-primary/30 transition-smooth"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <Link href={getCaregiverDetailPath(authUser?.role || "admin", person.id)} className="min-w-0 flex-1">
-                        <span className="font-medium text-foreground block">
-                          {person.first_name} {person.last_name}
-                        </span>
-                        <span className="text-xs text-foreground-variant">
-                          {formatStaffRoleLabel(person.role, t)}
-                          {person.employee_code?.trim() ? ` · ${person.employee_code.trim()}` : ""}
-                        </span>
-                      </Link>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <Link
-                          href={getCaregiverDetailPath(authUser?.role || "admin", person.id)}
-                          className="text-xs text-primary font-semibold hover:underline"
-                        >
-                          {t("caregivers.openFullDetail")}
-                        </Link>
-                        {canManageResponsibleStaff ? (
-                          <button
-                            type="button"
-                            className="text-xs font-semibold text-critical hover:underline"
-                            onClick={() =>
-                              setCaregiverDraftIds((prev) => prev.filter((x) => x !== person.id))
-                            }
-                          >
-                            {t("patients.responsibleStaffRemove")}
-                          </button>
-                        ) : null}
-                      </div>
+
+            {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
+            <aside className="space-y-5">
+
+              {/* Emergency Contact */}
+              <div className="overflow-hidden rounded-2xl border border-outline-variant/20 shadow-sm"
+                style={{ background: "var(--color-primary)" }}>
+                <div className="p-5 text-[var(--color-on-primary)]">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 opacity-80" />
+                      <h2 className="font-semibold text-sm uppercase tracking-wide opacity-90">{t("patients.formSectionEmergency")}</h2>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </aside>
-      </div>
+                    {canEditPatient && (
+                      editingCard === "emergency"
+                        ? <div className="flex gap-2"><button type="button" className="rounded-lg px-2 py-1 text-xs font-medium text-white/85 hover:bg-white/15" onClick={cancelEditingCard} disabled={savingCard === "emergency"}>{t("common.cancel")}</button><button type="button" className="rounded-lg bg-white/20 px-2 py-1 text-xs font-semibold text-white hover:bg-white/30" onClick={() => void saveCard("emergency")} disabled={savingCard === "emergency"}>{savingCard === "emergency" ? t("common.saving") : t("common.save")}</button></div>
+                        : <button type="button" className="rounded-lg border border-white/30 px-2.5 py-1 text-xs font-semibold text-white hover:bg-white/15" onClick={() => startEditingCard("emergency")}>{t("common.edit")}</button>
+                    )}
+                  </div>
+                  {editingCard === "emergency" ? (
+                    <div className="space-y-2">
+                      <input className="input-field w-full text-sm" placeholder={t("patients.ecName")} value={cardDrafts.emergency_contact_name} onChange={(e) => setCardDrafts((p) => ({ ...p, emergency_contact_name: e.target.value }))} />
+                      <input className="input-field w-full text-sm" placeholder={t("patients.ecRelationship")} value={cardDrafts.emergency_contact_relationship} onChange={(e) => setCardDrafts((p) => ({ ...p, emergency_contact_relationship: e.target.value }))} />
+                      <input className="input-field w-full text-sm" placeholder={t("patients.ecPhone")} value={cardDrafts.emergency_contact_phone} onChange={(e) => setCardDrafts((p) => ({ ...p, emergency_contact_phone: e.target.value }))} />
+                      <input className="input-field w-full text-sm" placeholder={t("patients.ecEmail")} value={cardDrafts.emergency_contact_email} onChange={(e) => setCardDrafts((p) => ({ ...p, emergency_contact_email: e.target.value }))} />
+                      <textarea className="input-field min-h-[72px] w-full text-sm" placeholder={t("patients.ecContactNotes")} value={cardDrafts.emergency_contact_notes} onChange={(e) => setCardDrafts((p) => ({ ...p, emergency_contact_notes: e.target.value }))} />
+                    </div>
+                  ) : primaryContact ? (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-bold text-lg leading-tight">{primaryContact.name}</p>
+                        {primaryContact.relationship && <p className="text-sm opacity-80 mt-0.5">{primaryContact.relationship}</p>}
+                      </div>
+                      {primaryContact.phone && (
+                        <a href={`tel:${primaryContact.phone.replace(/\s/g, "")}`} className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/15 py-2.5 text-sm font-semibold hover:bg-white/25 transition-smooth">
+                          <Phone className="h-4 w-4" />{primaryContact.phone}
+                        </a>
+                      )}
+                      {primaryContact.notes && <p className="text-xs opacity-75 leading-relaxed">{primaryContact.notes}</p>}
+                    </div>
+                  ) : (
+                    <p className="text-sm opacity-75">{t("patients.noEmergencyContact")}</p>
+                  )}
+                  {cardErrors.emergency && <p className="mt-3 text-sm text-white/90">{cardErrors.emergency}</p>}
+                </div>
+              </div>
+
+              {/* Responsible Staff */}
+              <ProfileCard title={t("patients.sectionResponsibleStaff")} badge={caregiverDraftIds.length > 0 ? String(caregiverDraftIds.length) : undefined}>
+                {canManageResponsibleStaff && (
+                  <div className="mb-3">
+                    <SearchableListboxPicker
+                      inputId={staffSearchInputId}
+                      listboxId={staffSearchListboxId}
+                      options={staffPickerOptions}
+                      search={staffSearch}
+                      onSearchChange={setStaffSearch}
+                      searchPlaceholder={t("patients.searchStaffPlaceholder")}
+                      selectedOptionId={null}
+                      onSelectOption={(optId) => { const n = Number(optId); if (!Number.isFinite(n)) return; setCaregiverDraftIds((prev) => (prev.includes(n) ? prev : [...prev, n])); setStaffSearch(""); }}
+                      disabled={staffSaving}
+                      listboxAriaLabel={t("patients.responsibleStaffListbox")}
+                      noMatchMessage={t("patients.responsibleStaffNoMatch")}
+                      emptyStateMessage={staffPickerOptions.length === 0 ? t("caregivers.empty") : null}
+                      emptyNoMatch={staffSearch.trim().length > 0}
+                    />
+                  </div>
+                )}
+                {!canManageResponsibleStaff && <p className="mb-3 text-xs text-foreground-variant">{t("patients.responsibleStaffReadOnlyHint")}</p>}
+                {staffError && <p className="mb-3 text-sm text-critical">{staffError}</p>}
+                {draftCaregiversOrdered.length === 0 ? (
+                  <p className="text-sm text-foreground-variant">{t("patients.responsibleStaffEmpty")}</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {draftCaregiversOrdered.map((person) => (
+                      <li key={person.id} className="rounded-xl border border-outline-variant/20 bg-surface-container-low px-3 py-2.5 text-sm hover:border-primary/30 transition-smooth">
+                        <div className="flex items-center gap-3">
+                          <UserAvatar
+                            username={`${person.first_name} ${person.last_name}`.trim() || `Staff #${person.id}`}
+                            profileImageUrl={person.photo_url}
+                            sizePx={32}
+                            fallbackClassName="bg-primary/10 text-primary"
+                          />
+                          <Link href={getCaregiverDetailPath(authUser?.role || "admin", person.id)} className="min-w-0 flex-1">
+                            <span className="block font-medium text-foreground">{person.first_name} {person.last_name}</span>
+                            <span className="text-xs text-foreground-variant">{formatStaffRoleLabel(person.role, t)}{person.employee_code?.trim() ? ` · ${person.employee_code.trim()}` : ""}</span>
+                          </Link>
+                          {canManageResponsibleStaff && (
+                            <button type="button" className="shrink-0 text-xs font-semibold text-critical hover:underline" onClick={() => setCaregiverDraftIds((prev) => prev.filter((x) => x !== person.id))}>{t("patients.responsibleStaffRemove")}</button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {canManageResponsibleStaff && (
+                  <button type="button" className="mt-4 w-full rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50" onClick={() => void handleSaveResponsibleStaff()} disabled={staffSaving}>
+                    {staffSaving ? t("patients.responsibleStaffSaving") : t("patients.responsibleStaffSave")}
+                  </button>
+                )}
+              </ProfileCard>
+            </aside>
+          </div>
         </TabsContent>
         <TabsContent value="care" className="mt-0 space-y-6">
           <PatientCareCoordinationPanel
@@ -1382,6 +1167,30 @@ export default function PatientDetailPage() {
           </section>
         </TabsContent>
       </Tabs>
+      <Dialog open={patientMapOpen} onOpenChange={setPatientMapOpen}>
+        <DialogContent className="w-[calc(100vw-0.75rem)] max-w-[76rem] max-h-[94vh] rounded-2xl sm:w-[calc(100vw-2rem)]">
+          <DialogHeader className="px-4 py-4 pr-14 sm:px-5">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <MapPin className="h-5 w-5 text-primary" />
+              {roomDetail?.name?.trim() || (patient.room_id != null ? `Room #${patient.room_id}` : t("patients.room"))}
+            </DialogTitle>
+            <DialogDescription className="line-clamp-2 pr-2">
+              {[roomDetail?.facility_name, roomDetail?.floor_name].filter(Boolean).join(" | ") ||
+                t("patients.roomOpenFacility")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[calc(94vh-7rem)] overflow-y-auto px-3 pb-3 sm:px-4 sm:pb-4">
+            <DashboardFloorplanPanel
+              compact={false}
+              showPresence
+              initialFacilityId={roomDetail?.facility_id ?? null}
+              initialFloorId={roomDetail?.floor_id ?? null}
+              initialRoomName={roomDetail?.name ?? null}
+              className="border-0 shadow-none"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
       <ScheduleForm
         open={scheduleFormOpen}
         onClose={() => {
@@ -1400,33 +1209,62 @@ export default function PatientDetailPage() {
   );
 }
 
-function InfoItem({ label, value }: { label: string; value: string }) {
+function ProfileCard({
+  title,
+  badge,
+  editSlot,
+  children,
+}: {
+  title: string;
+  badge?: string;
+  editSlot?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <p className="text-xs text-foreground-variant">{label}</p>
-      <p className="text-sm font-medium text-foreground mt-0.5">{value}</p>
+    <div className="surface-card rounded-2xl border border-outline-variant/20 p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h2 className="font-semibold text-foreground text-sm">{title}</h2>
+          {badge && (
+            <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
+              {badge}
+            </span>
+          )}
+        </div>
+        {editSlot}
+      </div>
+      {children}
     </div>
   );
 }
 
-function SectionCard({
-  icon: Icon,
-  title,
-  iconColor,
-  children,
+function EditBtn({ onClick, t }: { onClick: () => void; t: (k: string) => string }) {
+  return (
+    <button
+      type="button"
+      className="rounded-lg border border-outline-variant/30 px-3 py-1 text-xs font-semibold text-foreground hover:bg-surface-container-high"
+      onClick={onClick}
+    >
+      {t("common.edit")}
+    </button>
+  );
+}
+
+function EditActions({
+  onCancel,
+  onSave,
+  saving,
+  t,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  iconColor: string;
-  children: React.ReactNode;
+  onCancel: () => void;
+  onSave: () => void;
+  saving: boolean;
+  t: (k: string) => string;
 }) {
   return (
-    <div className="surface-card rounded-xl border border-outline-variant/20 p-6">
-      <h2 className="font-semibold text-foreground flex items-center gap-2 mb-4">
-        <Icon className={`w-5 h-5 ${iconColor}`} />
-        {title}
-      </h2>
-      {children}
+    <div className="flex items-center gap-2">
+      <button type="button" className="rounded-lg px-3 py-1 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={onCancel} disabled={saving}>{t("common.cancel")}</button>
+      <button type="button" className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50" onClick={onSave} disabled={saving}>{saving ? t("common.saving") : t("common.save")}</button>
     </div>
   );
 }

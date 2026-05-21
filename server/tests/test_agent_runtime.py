@@ -14,6 +14,7 @@ from app.agent_runtime.intent import (
     MEDIUM_CONFIDENCE_THRESHOLD,
     HIGH_CONFIDENCE_THRESHOLD,
     INTENT_EXAMPLES,
+    pick_patient_id_for_followup,
 )
 from app.agent_runtime.conversation_fastpath import is_general_conversation_only
 from app.agent_runtime.service import _plan_for_message, _get_or_create_context
@@ -83,6 +84,14 @@ class TestIntentClassifierRegex:
         assert match is not None
         assert match.intent == "patients.read"
         assert immediate == ("list_visible_patients", {})
+
+    def test_timeline_explicit_patient_id_uses_timeline_tool(self, classifier):
+        """Timeline requests with an explicit patient id should not fall through to generic AI."""
+        match, immediate = classifier.classify("timeline patient 42 latest")
+        assert match is not None
+        assert match.intent == "patients.read.timeline"
+        assert match.tool_name == "get_patient_timeline"
+        assert immediate == ("get_patient_timeline", {"patient_id": 42})
 
     def test_thai_patient_list_intent(self, classifier):
         """Thai ward phrasing should map to list_visible_patients (no English-only fallback)."""
@@ -163,6 +172,39 @@ class TestIntentClassifierRegex:
         assert match is not None
         assert match.tool_name == "get_patient_vitals"
         assert immediate == ("get_patient_vitals", {"patient_id": 5})
+
+    def test_patient_followup_matches_multilingual_robert_variants(self):
+        ctx = ConversationContext()
+        ctx.last_patient_cards = [
+            {"id": 11, "first_name": "Robert", "last_name": "Chen", "nickname": ""},
+        ]
+
+        assert pick_patient_id_for_followup("Robert", ctx) == 11
+        assert pick_patient_id_for_followup("โรเบิร์ต", ctx) == 11
+        assert pick_patient_id_for_followup("โรเบิด", ctx) == 11
+
+    def test_patient_followup_does_not_collapse_multi_name_query(self):
+        ctx = ConversationContext()
+        ctx.last_patient_cards = [
+            {"id": 21, "first_name": "Grace", "last_name": "Wilson", "nickname": ""},
+            {"id": 22, "first_name": "Samuel", "last_name": "Ortiz", "nickname": ""},
+            {"id": 23, "first_name": "Daniel", "last_name": "Carter", "nickname": ""},
+        ]
+
+        assert pick_patient_id_for_followup("Grace", ctx) == 21
+        assert pick_patient_id_for_followup("Samuel and Daniel", ctx) is None
+
+    def test_english_timeline_resolves_name_from_cards(self, classifier):
+        ctx = ConversationContext()
+        ctx.last_patient_cards = [
+            {"id": 21, "first_name": "Grace", "last_name": "Wilson", "nickname": ""},
+        ]
+
+        match, immediate = classifier.classify("give me timeline of Grace", ctx)
+
+        assert match is not None
+        assert match.tool_name == "get_patient_timeline"
+        assert immediate == ("get_patient_timeline", {"patient_id": 21})
 
     def test_thai_detail_request_of_khon_name_uses_roster(self, classifier):
         ctx = ConversationContext()
@@ -274,6 +316,78 @@ class TestIntentClassifierRegex:
         assert match is not None
         assert match.intent == "tasks.read"
         assert immediate == ("list_workflow_tasks", {})
+
+    def test_create_task_management_task(self, classifier):
+        """Task creation must target unified Task Management, not patient creation."""
+        match, immediate = classifier.classify("สร้าง task สำหรับตรวจตาวิชัยให้หน่อย")
+        assert match is not None
+        assert immediate is None
+        assert match.intent == "tasks.write"
+        assert match.tool_name == "create_task_management_task"
+        assert match.arguments["title"] == "ตรวจตาวิชัย"
+        assert match.permission_basis == ["workflow.write"]
+
+    def test_create_task_management_task_extracts_ready_fields(self, classifier):
+        """Complete task prompts should preserve assignee, deadline, priority, and checklist."""
+        message = (
+            "Create task titled 'Blood test room 401' for room 401 blood test. "
+            "Assign to nurse team. Deadline 2026-05-15 17:00. Priority high. "
+            "Checklist steps: collect blood sample, label tube, send to lab, record result. "
+            "Result/report required: attach lab result note."
+        )
+        match, immediate = classifier.classify(message)
+        assert match is not None
+        assert immediate is None
+        assert match.tool_name == "create_task_management_task"
+        assert match.arguments["title"] == "Blood test room 401"
+        assert match.arguments["priority"] == "high"
+        assert match.arguments["assigned_role"] == "head_nurse"
+        assert match.arguments["due_at"] == "2026-05-15T17:00:00+00:00"
+        assert match.arguments["checklist"] == [
+            "collect blood sample",
+            "label tube",
+            "send to lab",
+            "record result",
+        ]
+
+    def test_create_task_management_task_normalizes_clarification_draft(self, classifier):
+        """Clarification-state replies must become real task fields, not the task title."""
+        message = (
+            "create blood test task; "
+            "target patient, room, bed, or ward: general ward task, not linked to a patient yet; "
+            "assignee, either yourself or a specific role/user: me; "
+            "deadline date/time: 2026-05-20 16:00; "
+            "priority: normal; "
+            "exact checklist / steps to perform: verify patient or ward request, collect blood sample, "
+            "label specimen, send to lab, record collection time and follow up result; "
+            "what result/report staff must record: record specimen ID, collection time, lab result summary, "
+            "abnormal result flag, and escalation note if needed"
+        )
+        match, immediate = classifier.classify(message)
+        assert match is not None
+        assert immediate is None
+        args = match.arguments
+        assert args["title"] == "blood test"
+        assert args["assign_to_self"] is True
+        assert args["due_at"] == "2026-05-20T16:00:00+00:00"
+        assert args["priority"] == "normal"
+        assert args.get("patient_id") is None
+        assert args["checklist"] == [
+            "verify patient or ward request",
+            "collect blood sample",
+            "label specimen",
+            "send to lab",
+            "record collection time and follow up result",
+        ]
+        assert args["description"].startswith("Target: general ward task")
+        assert "create blood test task; target patient" not in args["title"]
+        assert args["report_template"]["fields"][0]["key"] == "sample_collected"
+
+    def test_create_patient_requires_patient_keyword_thai(self, classifier):
+        """Thai create-task wording must not be parsed as a patient record."""
+        match, _ = classifier.classify("สร้าง task สำหรับตรวจตาวิชัยให้หน่อย")
+        assert match is not None
+        assert match.tool_name != "create_patient_record"
 
     def test_list_schedules(self, classifier):
         """Test list workflow schedules query."""

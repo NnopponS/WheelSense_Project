@@ -10,6 +10,7 @@ import type {
   WorkflowClaimRequest,
   WorkflowHandoffRequest,
 } from "./types";
+import type { PatientHealthAnalysis } from "./patientHealthAnalysis";
 import type {
   AcknowledgeAlertRequest,
   AcknowledgeAlertResponse,
@@ -388,6 +389,11 @@ export const api = {
   getPatient: (patientId: number | string) =>
     request<GetPatientResponse>(`/patients/${encodeURIComponent(String(patientId))}`),
 
+  getPatientHealthAnalysis: (patientId: number | string, windowHours = 24) =>
+    request<PatientHealthAnalysis>(
+      `/patients/${encodeURIComponent(String(patientId))}/health-analysis?window_hours=${windowHours}`,
+    ),
+
   patchPatient: (patientId: number | string, payload: UpdatePatientRequest) =>
     request<GetPatientResponse>(`/patients/${encodeURIComponent(String(patientId))}`, {
       method: "PATCH",
@@ -625,6 +631,16 @@ export const api = {
 
   getDeviceDetailRaw: (deviceId: string) =>
     request<unknown>(`/devices/${encodeURIComponent(deviceId)}`),
+
+  getDeviceHistoryRaw: (deviceId: string, params?: { hours?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (typeof params?.hours === "number") query.set("hours", String(params.hours));
+    if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+    const suffix = query.toString();
+    return request<unknown>(
+      `/devices/${encodeURIComponent(deviceId)}/history${suffix ? `?${suffix}` : ""}`,
+    );
+  },
 
   patchRegistryDevice: (
     deviceId: string,

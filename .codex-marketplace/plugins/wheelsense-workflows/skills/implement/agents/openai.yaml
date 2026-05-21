@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Implement"
+  short_description: "WheelSense implement workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $implement for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

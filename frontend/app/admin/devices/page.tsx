@@ -30,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
+import { cn } from "@/lib/utils";
 
 function registryDeviceLabelSortKey(device: Device): string {
   return (device.display_name?.trim() || device.device_id).toLocaleLowerCase();
@@ -164,22 +165,22 @@ function DevicesPageContent() {
       </div>
 
       {tab === "smart_ha" ? (
-        <div className="grid gap-4 md:grid-cols-3">
-          <SummaryCard label={t("devices.summarySmartDevices")} value={smartStats.total} icon={Tablet} />
-          <SummaryCard label={t("devices.summaryReachable")} value={smartStats.reachable} icon={Wifi} />
-          <SummaryCard label={t("devices.summaryInactive")} value={smartStats.inactive} icon={WifiOff} />
+        <div className="grid items-stretch gap-3 md:grid-cols-3">
+          <SummaryCard label={t("devices.summarySmartDevices")} value={smartStats.total} icon={Tablet} tone="info" />
+          <SummaryCard label={t("devices.summaryReachable")} value={smartStats.reachable} icon={Wifi} tone="success" />
+          <SummaryCard label={t("devices.summaryInactive")} value={smartStats.inactive} icon={WifiOff} tone="warning" />
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-3">
-          <SummaryCard label={t("devices.summaryRegistryDevices")} value={registryStats.total} icon={Tablet} />
-          <SummaryCard label={t("devices.summaryOnlineRegistry")} value={registryStats.online} icon={Wifi} />
-          <SummaryCard label={t("devices.summaryOfflineRegistry")} value={registryStats.offline} icon={WifiOff} />
+        <div className="grid items-stretch gap-3 md:grid-cols-3">
+          <SummaryCard label={t("devices.summaryRegistryDevices")} value={registryStats.total} icon={Tablet} tone="info" />
+          <SummaryCard label={t("devices.summaryOnlineRegistry")} value={registryStats.online} icon={Wifi} tone="success" />
+          <SummaryCard label={t("devices.summaryOfflineRegistry")} value={registryStats.offline} icon={WifiOff} tone="warning" />
         </div>
       )}
 
-      <Card>
-        <CardContent className="space-y-4 pt-6">
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label={t("devices.title")}>
+      <Card className="overflow-hidden">
+        <CardContent className="flex flex-col gap-3 p-3 sm:p-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 flex-wrap gap-2" role="tablist" aria-label={t("devices.title")}>
             {DEVICE_FLEET_TABS.map(({ key, labelKey }) => {
               const selected = tab === key;
               return (
@@ -198,7 +199,7 @@ function DevicesPageContent() {
             })}
           </div>
 
-          <div className="relative max-w-md">
+          <div className="relative w-full xl:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
@@ -223,16 +224,16 @@ function DevicesPageContent() {
         filteredSmart.length === 0 ? (
           <EmptyState icon={SMART_DEVICE_CARD_VISUAL.Icon} message={t("smartDevices.empty")} />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredSmart.map((device) => {
               const ok = isSmartDeviceOnline(device);
               const SmartIcon = SMART_DEVICE_CARD_VISUAL.Icon;
               return (
-                <Card key={device.id} className="overflow-hidden">
+                <Card key={device.id} className="flex h-full flex-col overflow-hidden">
                   <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
                     <div className="flex min-w-0 items-center gap-3">
                       <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${SMART_DEVICE_CARD_VISUAL.wrapClass}`}
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${SMART_DEVICE_CARD_VISUAL.wrapClass}`}
                       >
                         <SmartIcon className={`h-5 w-5 ${SMART_DEVICE_CARD_VISUAL.iconClass}`} />
                       </div>
@@ -247,7 +248,7 @@ function DevicesPageContent() {
                       {ok ? t("dash.smartDevicesReachable") : t("dash.smartDevicesNotReachable")}
                     </Badge>
                   </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
+                  <CardContent className="flex flex-1 flex-col gap-2 text-sm">
                     <p className="text-muted-foreground">{device.device_type}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">State</span>
@@ -270,7 +271,7 @@ function DevicesPageContent() {
       ) : filteredRegistry.length === 0 ? (
         <EmptyState icon={Tablet} message={t("devices.empty")} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid auto-rows-fr gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredRegistry.map((device) => {
             const online = isDeviceOnline(device.last_seen, nowMs);
             const title = device.display_name?.trim() || device.device_id;
@@ -279,13 +280,13 @@ function DevicesPageContent() {
             return (
               <Card
                 key={device.id}
-                className="cursor-pointer transition-colors hover:border-primary/45"
+                className="flex h-full cursor-pointer flex-col transition-colors hover:border-primary/45"
                 onClick={() => setSelectedId(device.device_id)}
               >
                 <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
                   <div className="flex min-w-0 items-center gap-3">
                     <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${visual.wrapClass}`}
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${visual.wrapClass}`}
                     >
                       <DeviceIcon className={`h-5 w-5 ${visual.iconClass}`} />
                     </div>
@@ -308,7 +309,7 @@ function DevicesPageContent() {
                     )}
                   </Badge>
                 </CardHeader>
-                <CardContent className="space-y-2 text-sm">
+                <CardContent className="flex flex-1 flex-col gap-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Hardware</span>
                     <span className="font-medium text-foreground">{device.hardware_type}</span>
@@ -363,19 +364,29 @@ function SummaryCard({
   label,
   value,
   icon: Icon,
+  tone,
 }: {
   label: string;
   value: number;
   icon: ComponentType<{ className?: string }>;
+  tone: "info" | "success" | "warning";
 }) {
+  const toneClassMap: Record<"info" | "success" | "warning", string> = {
+    info: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
+    success: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+    warning: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  };
+
   return (
-    <Card className="bg-card">
-      <CardContent className="flex items-center justify-between pt-6">
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-1 text-3xl font-semibold text-foreground">{value}</p>
+    <Card className="h-full overflow-hidden bg-card">
+      <CardContent className="flex min-h-24 items-center justify-between gap-4 p-4 sm:p-5">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="mt-1 text-3xl font-semibold leading-none text-foreground">{value}</p>
         </div>
-        <Icon className="h-8 w-8 text-muted-foreground" />
+        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg", toneClassMap[tone])}>
+          <Icon className="h-5 w-5" />
+        </div>
       </CardContent>
     </Card>
   );

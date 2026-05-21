@@ -10,23 +10,30 @@ import { Pill, Search, Users } from "lucide-react";
 import SupervisorPrescriptionsPage from "@/app/supervisor/prescriptions/page";
 import { useHubTab, HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import type { ListPatientsResponse } from "@/lib/api/task-scope-types";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, type TranslationKey } from "@/lib/i18n";
 
-const TABS: HubTab[] = [
-  { key: "patients", label: "Patients", icon: Users },
-  { key: "prescriptions", label: "Prescriptions", icon: Pill },
+const TAB_CONFIG: Array<Omit<HubTab, "label"> & { labelKey: TranslationKey }> = [
+  { key: "patients", labelKey: "nav.patients", icon: Users },
+  { key: "prescriptions", labelKey: "nav.prescriptions", icon: Pill },
 ];
 
 export default function SupervisorPatientsPage() {
-  const tab = useHubTab(TABS);
+  const { t } = useTranslation();
+  const tabs = useMemo<HubTab[]>(
+    () => TAB_CONFIG.map(({ labelKey, ...item }) => ({ ...item, label: t(labelKey) })),
+    [t],
+  );
+  const tab = useHubTab(tabs);
   return (
     <div>
-      <Suspense><HubTabBar tabs={TABS} /></Suspense>
+      <Suspense><HubTabBar tabs={tabs} /></Suspense>
       {tab === "patients" && <PatientsContent />}
       {tab === "prescriptions" && <SupervisorPrescriptionsPage />}
     </div>
@@ -36,6 +43,7 @@ export default function SupervisorPatientsPage() {
 type PatientRow = {
   id: number;
   fullName: string;
+  photoUrl: string | null;
   careLevel: string;
   roomId: number | null;
   status: "active" | "inactive";
@@ -62,12 +70,13 @@ function PatientsContent() {
       })
       .map((patient) => ({
         id: patient.id,
-        fullName: `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`,
+        fullName: `${patient.first_name} ${patient.last_name}`.trim() || `${t("admin.support.patientNumber").replace("{id}", String(patient.id))}`,
+        photoUrl: patient.photo_url?.trim() || null,
         careLevel: patient.care_level,
         roomId: patient.room_id,
         status: patient.is_active ? "active" : "inactive",
       }));
-  }, [patientsQuery.data, search]);
+  }, [patientsQuery.data, search, t]);
 
   const columns = useMemo<ColumnDef<PatientRow>[]>(
     () => [
@@ -75,9 +84,19 @@ function PatientsContent() {
         accessorKey: "fullName",
         header: t("clinical.table.patient"),
         cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-sm text-muted-foreground">ID #{row.original.id}</p>
+          <div className="flex items-center gap-3">
+            <UserAvatar
+              username={row.original.fullName}
+              profileImageUrl={row.original.photoUrl}
+              sizePx={38}
+              fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+            />
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">{row.original.fullName}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("patients.recordId")} #{row.original.id}
+              </p>
+            </div>
           </div>
         ),
       },
@@ -94,7 +113,11 @@ function PatientsContent() {
                   : "success"
             }
           >
-            {row.original.careLevel}
+            {row.original.careLevel === "critical"
+              ? t("patients.careLevelCritical")
+              : row.original.careLevel === "special"
+                ? t("patients.careLevelSpecial")
+                : t("patients.careLevelStandard")}
           </Badge>
         ),
       },
@@ -137,15 +160,19 @@ function PatientsContent() {
         <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.patientsList.subtitle")}</p>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t("clinical.patientsRoster.searchPlaceholder")}
-          className="pl-9"
-        />
-      </div>
+      <Card className="border-border/70">
+        <CardContent className="p-4">
+          <div className="relative w-full md:max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t("clinical.patientsRoster.searchPlaceholder")}
+              className="pl-9"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <DataTableCard
         title={t("clinical.patientsRoster.title")}
@@ -155,6 +182,24 @@ function PatientsContent() {
         isLoading={patientsQuery.isLoading}
         emptyText={t("clinical.patientsRoster.empty")}
         rightSlot={<Users className="h-4 w-4 text-muted-foreground" />}
+        mobileMode="cards"
+        csvExport={{
+          fileNameBase: "wheelsense-supervisor-personnel",
+          headers: [
+            t("patients.recordId"),
+            t("clinical.table.patient"),
+            t("clinical.table.careLevel"),
+            t("clinical.table.room"),
+            t("clinical.table.status"),
+          ],
+          getRowValues: (row) => [
+            row.id,
+            row.fullName,
+            row.careLevel,
+            row.roomId,
+            row.status,
+          ],
+        }}
       />
     </div>
   );

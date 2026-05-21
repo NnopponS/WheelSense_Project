@@ -5,16 +5,20 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
-  LayoutDashboard,
-  HeartPulse,
-  Settings,
-  Users,
-  MapPin,
-  Tablet,
-  MessageSquare,
+  Bell,
   Bug,
-  Inbox,
   ClipboardEdit,
+  HeartPulse,
+  Inbox,
+  LayoutDashboard,
+  MapPin,
+  MessageSquare,
+  Monitor,
+  Pill,
+  ShieldAlert,
+  Settings,
+  Tablet,
+  Users,
 } from "lucide-react";
 import type { Capability } from "./permissions";
 import type { TranslationKey } from "./i18n";
@@ -48,6 +52,8 @@ export interface NavItem {
    * rarely-used surfaces without deleting them.
    */
   group?: "primary" | "more";
+  /** Explicit role-specific ordering for the mobile bottom task bar. */
+  mobilePriority?: number;
 }
 
 export interface NavGroup {
@@ -64,82 +70,89 @@ export type RoleNavConfig = NavGroup[];
  * Each role has its own set of navigation groups and items
  */
 export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
-  /** Admin role — 6 items (down from 13) */
+  /** Admin role — Blueprint: System Overview, People, Facilities, Devices, Operations, System */
   admin: [
     {
       items: [
         {
-          key: "nav.dashboard",
+          key: "nav.admin.overview",
           href: "/admin",
           icon: LayoutDashboard,
         },
         {
-          key: "nav.personnel",
+          key: "nav.admin.people",
           href: "/admin/personnel",
           icon: Users,
           requiredCapability: "patients.read",
-          activeForPaths: ["/admin/caregivers", "/admin/patients", "/admin/account-management"],
+          activeForPaths: ["/admin/caregivers", "/admin/patients", "/admin/account-management", "/admin/users"],
         },
         {
-          key: "nav.devices",
-          href: "/admin/devices",
-          icon: Tablet,
-          requiredCapability: "devices.read",
-        },
-        {
-          key: "nav.facilityManagement",
+          key: "nav.admin.facilities",
           href: "/admin/facility-management",
           icon: MapPin,
           requiredCapability: "facilities.read",
+          activeForPaths: ["/admin/floorplans", "/admin/facilities"],
         },
         {
-          key: "nav.settings",
-          href: "/admin/settings",
-          icon: Settings,
-          activeForPaths: ["/admin/audit", "/admin/ml-calibration"],
+          key: "nav.admin.devices",
+          href: "/admin/devices",
+          icon: Tablet,
+          requiredCapability: "devices.read",
+          activeForPaths: ["/admin/smart-devices", "/admin/device-health"],
         },
         {
-          key: "nav.tasks",
+          key: "nav.admin.operations",
           href: "/admin/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
-          activeForPaths: [
-            "/admin/workflow",
-            "/admin/shift-checklists",
-            "/admin/timeline",
-          ],
+          activeForPaths: ["/admin/workflow", "/admin/shift-checklists", "/admin/timeline", "/admin/messages", "/admin/demo-control", "/admin/support", "/admin/alerts"],
         },
         {
-          key: "nav.messages",
-          href: "/admin/messages",
-          icon: Inbox,
-          requiredCapability: "messages.manage",
-          activeForPaths: ["/admin/support", "/admin/demo-control"],
+          key: "nav.admin.system",
+          href: "/admin/settings",
+          icon: Settings,
+          activeForPaths: ["/admin/audit", "/admin/audit-log", "/admin/ml-calibration", "/admin/profile"],
+          group: "more",
         },
       ],
     },
   ],
 
-  /** Head Nurse role — 6 items (down from 16) */
+  /** Head Nurse role — Blueprint: Command Center, Alerts, Patients, Staff, Work, Messages, More */
   head_nurse: [
     {
       items: [
         {
-          key: "nav.dashboard",
+          key: "nav.headNurse.commandCenter",
           href: "/head-nurse",
           icon: LayoutDashboard,
           badge: "alerts",
-          activeForPaths: ["/head-nurse/floorplans", "/head-nurse/alerts", "/head-nurse/reports"],
+          mobilePriority: 1,
         },
         {
-          key: "nav.personnel",
+          key: "nav.headNurse.alerts",
+          href: "/head-nurse/alerts",
+          icon: Bell,
+          badge: "alerts",
+          mobilePriority: 2,
+        },
+        {
+          key: "nav.headNurse.patients",
           href: "/head-nurse/personnel",
           icon: Users,
           requiredCapability: "patients.read",
-          activeForPaths: ["/head-nurse/personnel", "/head-nurse/specialists", "/head-nurse/calendar"],
+          activeForPaths: ["/head-nurse/patients"],
+          mobilePriority: 3,
         },
         {
-          key: "nav.tasks",
+          key: "nav.headNurse.staff",
+          href: "/head-nurse/staff",
+          icon: Users,
+          activeForPaths: ["/head-nurse/specialists", "/head-nurse/calendar"],
+          mobilePriority: 4,
+        },
+        {
+          key: "nav.headNurse.work",
           href: "/head-nurse/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
@@ -147,39 +160,52 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
             "/head-nurse/workflow",
             "/head-nurse/shift-checklists",
             "/head-nurse/timeline",
+            "/head-nurse/reports"
           ],
+          mobilePriority: 5,
         },
         {
-          key: "nav.messages",
+          key: "nav.headNurse.messages",
           href: "/head-nurse/messages",
           icon: Inbox,
           requiredCapability: "messages.manage",
+          group: "more",
         },
-        { key: "nav.support", href: "/head-nurse/support", icon: Bug, group: "more" },
-        { key: "nav.settings", href: "/head-nurse/settings", icon: Settings, group: "more" },
+        { key: "nav.headNurse.map", href: "/head-nurse/floorplans", icon: MapPin, group: "more", activeForPaths: ["/head-nurse/monitoring"] },
+        { key: "nav.headNurse.support", href: "/head-nurse/support", icon: Bug, group: "more" },
+        { key: "nav.headNurse.account", href: "/head-nurse/settings", icon: Settings, group: "more" },
       ],
     },
   ],
 
-  /** Supervisor role — 6 primary nav items */
+  /** Supervisor role — Blueprint: Queue, Patients, Tasks, Messages, More */
   supervisor: [
     {
       items: [
         {
-          key: "nav.dashboard",
+          key: "nav.supervisor.queue",
           href: "/supervisor",
           icon: LayoutDashboard,
-          activeForPaths: ["/supervisor/emergency", "/supervisor/floorplans"],
+          badge: "alerts",
+          mobilePriority: 1,
         },
         {
-          key: "nav.patients",
+          key: "nav.supervisor.emergency",
+          href: "/supervisor/emergency",
+          icon: ShieldAlert,
+          badge: "alerts",
+          mobilePriority: 5,
+        },
+        {
+          key: "nav.supervisor.patients",
           href: "/supervisor/personnel",
           icon: Users,
           requiredCapability: "patients.read",
-          activeForPaths: ["/supervisor/personnel", "/supervisor/prescriptions"],
+          activeForPaths: ["/supervisor/patients", "/supervisor/prescriptions"],
+          mobilePriority: 3,
         },
         {
-          key: "nav.tasks",
+          key: "nav.supervisor.tasks",
           href: "/supervisor/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
@@ -188,93 +214,113 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
             "/supervisor/calendar",
             "/supervisor/directives",
           ],
+          mobilePriority: 2,
         },
         {
-          key: "nav.messages",
+          key: "nav.supervisor.messages",
           href: "/supervisor/messages",
           icon: Inbox,
           requiredCapability: "messages.manage",
+          mobilePriority: 4,
         },
-        { key: "nav.support", href: "/supervisor/support", icon: Bug, group: "more" },
-        { key: "nav.settings", href: "/supervisor/settings", icon: Settings, group: "more" },
+        { key: "nav.supervisor.map", href: "/supervisor/floorplans", icon: MapPin, group: "more", activeForPaths: ["/supervisor/monitoring"] },
+        { key: "nav.supervisor.support", href: "/supervisor/support", icon: Bug, group: "more" },
+        { key: "nav.supervisor.account", href: "/supervisor/settings", icon: Settings, group: "more" },
       ],
     },
   ],
 
-  /** Observer role — 5 items (down from 12) */
+  /** Observer role — Blueprint: Today, Patients, Alerts, Handover, More */
   observer: [
     {
       items: [
         {
-          key: "nav.dashboard",
+          key: "nav.observer.today",
           href: "/observer",
           icon: LayoutDashboard,
-          activeForPaths: ["/observer/devices", "/observer/floorplans"],
+          mobilePriority: 1,
         },
         {
-          key: "nav.observer.myPatients",
-          href: "/observer/personnel",
-          icon: Users,
-          requiredCapability: "patients.read",
-          activeForPaths: ["/observer/personnel", "/observer/prescriptions"],
-        },
-        {
-          key: "nav.tasks",
+          key: "nav.observer.tasks",
           href: "/observer/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
-          activeForPaths: [
-            "/observer/workflow",
-            "/observer/alerts",
-            "/observer/calendar",
-          ],
-          badge: "alerts",
+          mobilePriority: 2,
         },
         {
-          key: "nav.messages",
+          key: "nav.observer.patients",
+          href: "/observer/personnel",
+          icon: Users,
+          requiredCapability: "patients.read",
+          activeForPaths: ["/observer/patients", "/observer/prescriptions"],
+          mobilePriority: 4,
+        },
+        {
+          key: "nav.observer.alerts",
+          href: "/observer/alerts",
+          icon: Bell,
+          badge: "alerts",
+          mobilePriority: 3,
+        },
+        {
+          key: "nav.observer.handover",
           href: "/observer/messages",
           icon: Inbox,
           requiredCapability: "messages.manage",
-          group: "more",
+          mobilePriority: 5,
         },
-        { key: "nav.support", href: "/observer/support", icon: Bug, group: "more" },
-        { key: "nav.settings", href: "/observer/settings", icon: Settings, group: "more" },
+        { key: "nav.observer.support", href: "/observer/support", icon: Bug, group: "more" },
+        { key: "nav.observer.map", href: "/observer/floorplans", icon: MapPin, group: "more", activeForPaths: ["/observer/monitoring"] },
+        { key: "nav.observer.account", href: "/observer/settings", icon: Settings, group: "more" },
       ],
     },
   ],
 
-  /** Patient role — hub dashboard + care + messages + support + settings */
+  /** Patient role — Blueprint: Home, Schedule, Medicine, Messages, Room */
   patient: [
     {
       items: [
         {
-          key: "nav.dashboard",
+          key: "nav.patient.home",
           href: "/patient",
           icon: LayoutDashboard,
           inactiveWhenQueryMatch: { param: "tab", value: "support" },
+          mobilePriority: 1,
         },
         {
-          key: "nav.myCare",
+          key: "nav.patient.schedule",
           href: "/patient/schedule",
           icon: HeartPulse,
-          activeForPaths: ["/patient/services", "/patient/pharmacy"],
-          group: "more",
+          activeForPaths: ["/patient/services"],
+          mobilePriority: 2,
         },
         {
-          key: "nav.messages",
+          key: "nav.patient.medicine",
+          href: "/patient/pharmacy",
+          icon: Pill,
+          mobilePriority: 3,
+        },
+        {
+          key: "nav.patient.messages",
           href: "/patient/messages",
           icon: MessageSquare,
-          group: "more",
+          mobilePriority: 4,
         },
         {
-          key: "nav.support",
+          key: "nav.patient.room",
+          href: "/patient/room-controls",
+          icon: Monitor,
+          mobilePriority: 5,
+        },
+        {
+          key: "nav.patient.support",
           href: "/patient?tab=support",
           icon: Bug,
           activeWhenQueryMatch: { param: "tab", value: "support" },
           group: "more",
         },
         {
-          key: "nav.settings",
+          key: "nav.patient.account",
           href: "/patient/settings",
           icon: Settings,
           activeForPaths: ["/account"],

@@ -2,20 +2,20 @@
 
 <cite>
 **Referenced Files in This Document**
-- [firmware/M5StickCPlus2/src/main.cpp](file://firmware/M5StickCPlus2/src/main.cpp)
-- [firmware/M5StickCPlus2/platformio.ini](file://firmware/M5StickCPlus2/platformio.ini)
-- [firmware/M5StickCPlus2/src/Config.h](file://firmware/M5StickCPlus2/src/Config.h)
-- [firmware/M5StickCPlus2/src/secrets.h.example](file://firmware/M5StickCPlus2/src/secrets.h.example)
-- [firmware/M5StickCPlus2/src/managers/SensorManager.h](file://firmware/M5StickCPlus2/src/managers/SensorManager.h)
-- [firmware/M5StickCPlus2/src/managers/SensorManager.cpp](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.h](file://firmware/M5StickCPlus2/src/managers/NetworkManager.h)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.h](file://firmware/M5StickCPlus2/src/managers/BLEManager.h)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.h](file://firmware/M5StickCPlus2/src/ui/DisplayManager.h)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.cpp](file://firmware/M5StickCPlus2/src/ui/DisplayManager.cpp)
-- [firmware/M5StickCPlus2/src/ui/SceneManager.h](file://firmware/M5StickCPlus2/src/ui/SceneManager.h)
-- [firmware/M5StickCPlus2/src/ui/SceneManager.cpp](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
+- [firmware/M5StickCPlus2_BLEGateway/src/Config.h](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example](file://firmware/M5StickCPlus2_BLEGateway/src/secrets.h.example)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp)
 - [firmware/Node_Tsimcam/platformio.ini](file://firmware/Node_Tsimcam/platformio.ini)
 - [firmware/TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
 </cite>
@@ -39,7 +39,7 @@ This document consolidates hardware specifications and component details for the
 It also documents pin configurations, GPIO mappings, power characteristics, wireless capabilities, telemetry contract, and practical assembly and sourcing considerations derived from the firmware configuration and runtime behavior.
 
 ## Project Structure
-The hardware-related implementation is primarily located under firmware/M5StickCPlus2 and firmware/Node_Tsimcam, with telemetry contract definitions under firmware/TELEMETRY_CONTRACT.md.
+The hardware-related implementation is primarily located under firmware/M5StickCPlus2_BLEGateway and firmware/Node_Tsimcam, with telemetry contract definitions under firmware/TELEMETRY_CONTRACT.md.
 
 ```mermaid
 graph TB
@@ -70,20 +70,20 @@ A_mgr_ble --> C_telem
 ```
 
 **Diagram sources**
-- [firmware/M5StickCPlus2/src/main.cpp:123-151](file://firmware/M5StickCPlus2/src/main.cpp#L123-L151)
-- [firmware/M5StickCPlus2/src/Config.h:23-42](file://firmware/M5StickCPlus2/src/Config.h#L23-L42)
-- [firmware/M5StickCPlus2/src/managers/SensorManager.cpp:12-48](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L12-L48)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L32)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp:66-94](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L66-L94)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2/src/ui/DisplayManager.cpp#L7-L36)
-- [firmware/M5StickCPlus2/src/ui/SceneManager.cpp:12-25](file://firmware/M5StickCPlus2/src/ui/SceneManager.cpp#L12-L25)
-- [firmware/M5StickCPlus2/platformio.ini:4-22](file://firmware/M5StickCPlus2/platformio.ini#L4-L22)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [firmware/M5StickCPlus2_BLEGateway/src/Config.h:23-42](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L23-L42)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp:12-48](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L12-L48)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp:66-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L7-L36)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp:12-25](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.cpp#L12-L25)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L22)
 - [firmware/Node_Tsimcam/platformio.ini:9-27](file://firmware/Node_Tsimcam/platformio.ini#L9-L27)
 - [firmware/TELEMETRY_CONTRACT.md:1-68](file://firmware/TELEMETRY_CONTRACT.md#L1-L68)
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/main.cpp:123-151](file://firmware/M5StickCPlus2/src/main.cpp#L123-L151)
-- [firmware/M5StickCPlus2/platformio.ini:4-22](file://firmware/M5StickCPlus2/platformio.ini#L4-L22)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L22)
 - [firmware/Node_Tsimcam/platformio.ini:9-27](file://firmware/Node_Tsimcam/platformio.ini#L9-L27)
 - [firmware/TELEMETRY_CONTRACT.md:1-68](file://firmware/TELEMETRY_CONTRACT.md#L1-L68)
 
@@ -96,11 +96,11 @@ A_mgr_ble --> C_telem
 - Node_Tsimcam: ESP32-S3 with PSRAM, camera model selection, WebSocket and PubSubClient dependencies, partition scheme for larger flash.
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/Config.h:23-76](file://firmware/M5StickCPlus2/src/Config.h#L23-L76)
-- [firmware/M5StickCPlus2/src/managers/SensorManager.cpp:185-229](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L185-L229)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L32)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp:66-94](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L66-L94)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2/src/ui/DisplayManager.cpp#L7-L36)
+- [firmware/M5StickCPlus2_BLEGateway/src/Config.h:23-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L23-L76)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp:185-229](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L185-L229)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp:66-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L7-L36)
 - [firmware/Node_Tsimcam/platformio.ini:9-27](file://firmware/Node_Tsimcam/platformio.ini#L9-L27)
 
 ## Architecture Overview
@@ -130,9 +130,9 @@ T --> TOPIC
 ```
 
 **Diagram sources**
-- [firmware/M5StickCPlus2/src/main.cpp:265-336](file://firmware/M5StickCPlus2/src/main.cpp#L265-L336)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:115-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L115-L133)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp:109-121](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L109-L121)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:265-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:115-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L115-L133)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp:109-121](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L109-L121)
 - [firmware/TELEMETRY_CONTRACT.md:7-22](file://firmware/TELEMETRY_CONTRACT.md#L7-L22)
 
 ## Detailed Component Analysis
@@ -164,19 +164,19 @@ FW->>NET : publish("WheelSense/data", payload)
 ```
 
 **Diagram sources**
-- [firmware/M5StickCPlus2/src/main.cpp:153-340](file://firmware/M5StickCPlus2/src/main.cpp#L153-L340)
-- [firmware/M5StickCPlus2/src/managers/SensorManager.cpp:50-53](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L50-L53)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L58-L94)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp:96-108](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L96-L108)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.cpp:38-46](file://firmware/M5StickCPlus2/src/ui/DisplayManager.cpp#L38-L46)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:153-340](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L153-L340)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp:50-53](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L53)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp:96-108](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L108)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp:38-46](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L38-L46)
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/Config.h:23-76](file://firmware/M5StickCPlus2/src/Config.h#L23-L76)
-- [firmware/M5StickCPlus2/src/main.cpp:123-151](file://firmware/M5StickCPlus2/src/main.cpp#L123-L151)
-- [firmware/M5StickCPlus2/src/managers/SensorManager.cpp:185-229](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L185-L229)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L32)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp:66-94](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L66-L94)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2/src/ui/DisplayManager.cpp#L7-L36)
+- [firmware/M5StickCPlus2_BLEGateway/src/Config.h:23-76](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L23-L76)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:123-151](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L123-L151)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp:185-229](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L185-L229)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp:66-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L66-L94)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L7-L36)
 
 ### Pin Configurations and GPIO Mappings
 - Button A: GPIO 37 (front)
@@ -186,8 +186,8 @@ FW->>NET : publish("WheelSense/data", payload)
 Note: These mappings are declared in the configuration header and used throughout the UI and power management logic.
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/Config.h:24-25](file://firmware/M5StickCPlus2/src/Config.h#L24-L25)
-- [firmware/M5StickCPlus2/src/main.cpp:164-175](file://firmware/M5StickCPlus2/src/main.cpp#L164-L175)
+- [firmware/M5StickCPlus2_BLEGateway/src/Config.h:24-25](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L24-L25)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:164-175](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L164-L175)
 
 ### Power Consumption and Battery Life Estimation
 - Sampling and filtering:
@@ -204,10 +204,10 @@ Note: These mappings are declared in the configuration header and used throughou
 These behaviors collectively minimize power draw during idle periods and optimize telemetry cadence.
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/Config.h:44-71](file://firmware/M5StickCPlus2/src/Config.h#L44-L71)
-- [firmware/M5StickCPlus2/src/managers/SensorManager.cpp:156-183](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L156-L183)
-- [firmware/M5StickCPlus2/src/main.cpp:148-149](file://firmware/M5StickCPlus2/src/main.cpp#L148-L149)
-- [firmware/M5StickCPlus2/src/main.cpp:218-219](file://firmware/M5StickCPlus2/src/main.cpp#L218-L219)
+- [firmware/M5StickCPlus2_BLEGateway/src/Config.h:44-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L44-L71)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp:156-183](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L156-L183)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:148-149](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L148-L149)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:218-219](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L218-L219)
 
 ### Wireless Communication Specifications
 - WiFi:
@@ -234,14 +234,14 @@ GW-->>NET : publish ack to "WheelSense/{device_id}/ack"
 ```
 
 **Diagram sources**
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:135-239](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L135-L239)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:115-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L115-L133)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:135-239](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L135-L239)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:115-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L115-L133)
 - [firmware/TELEMETRY_CONTRACT.md:7-13](file://firmware/TELEMETRY_CONTRACT.md#L7-L13)
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L32)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L58-L94)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp:33-62](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L33-L62)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:12-32](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L32)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
 - [firmware/TELEMETRY_CONTRACT.md:7-22](file://firmware/TELEMETRY_CONTRACT.md#L7-L22)
 
 ### Telemetry Contract and Data Formats
@@ -298,11 +298,11 @@ TELEMETRY ||--o{ RSSI_ENTRY : "includes"
 ```
 
 **Diagram sources**
-- [firmware/M5StickCPlus2/src/main.cpp:275-321](file://firmware/M5StickCPlus2/src/main.cpp#L275-L321)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:275-321](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L275-L321)
 - [firmware/TELEMETRY_CONTRACT.md:15-31](file://firmware/TELEMETRY_CONTRACT.md#L15-L31)
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/main.cpp:275-336](file://firmware/M5StickCPlus2/src/main.cpp#L275-L336)
+- [firmware/M5StickCPlus2_BLEGateway/src/main.cpp:275-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L275-L336)
 - [firmware/TELEMETRY_CONTRACT.md:15-31](file://firmware/TELEMETRY_CONTRACT.md#L15-L31)
 
 ### Node_Tsimcam Hardware and Camera Module
@@ -357,14 +357,14 @@ SC --> BM
 ```
 
 **Diagram sources**
-- [firmware/M5StickCPlus2/src/managers/SensorManager.cpp:35-40](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L35-L40)
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:4-6](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L4-L6)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp:4-7](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L4-L7)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.h:4-5](file://firmware/M5StickCPlus2/src/ui/DisplayManager.h#L4-L5)
-- [firmware/M5StickCPlus2/src/ui/SceneManager.h:4-10](file://firmware/M5StickCPlus2/src/ui/SceneManager.h#L4-L10)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp:35-40](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L35-L40)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:4-6](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L4-L6)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp:4-7](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L4-L7)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h:4-5](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.h#L4-L5)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h:4-10](file://firmware/M5StickCPlus2_BLEGateway/src/ui/SceneManager.h#L4-L10)
 
 **Section sources**
-- [firmware/M5StickCPlus2/platformio.ini:15-21](file://firmware/M5StickCPlus2/platformio.ini#L15-L21)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:15-21](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L21)
 - [firmware/Node_Tsimcam/platformio.ini:21-24](file://firmware/Node_Tsimcam/platformio.ini#L21-L24)
 
 ## Performance Considerations
@@ -392,9 +392,9 @@ SC --> BM
   - Frame presentation is throttled to a minimum refresh interval; sprite rendering avoids frequent full-screen redraws.
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/managers/NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L58-L94)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.cpp:38-46](file://firmware/M5StickCPlus2/src/ui/DisplayManager.cpp#L38-L46)
-- [firmware/M5StickCPlus2/src/managers/BLEManager.cpp:96-121](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L96-L121)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp:38-46](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L38-L46)
+- [firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp:96-121](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L96-L121)
 
 ## Conclusion
 The M5StickC Plus2 gateway integrates IMU-based motion sensing, battery monitoring, a display, and robust wireless connectivity to deliver a compact, power-efficient telemetry solution. Node_Tsimcam complements it with camera capture and transport. The firmware’s adaptive sampling, dynamic power management, and structured telemetry contract enable reliable operation in real-world environments.
@@ -408,8 +408,8 @@ The M5StickC Plus2 gateway integrates IMU-based motion sensing, battery monitori
 - No explicit enclosure dimensions are defined in the referenced files; mechanical constraints should align with the M5StickC form factor.
 
 **Section sources**
-- [firmware/M5StickCPlus2/src/Config.h:28-30](file://firmware/M5StickCPlus2/src/Config.h#L28-L30)
-- [firmware/M5StickCPlus2/src/ui/DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2/src/ui/DisplayManager.cpp#L7-L36)
+- [firmware/M5StickCPlus2_BLEGateway/src/Config.h:28-30](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L28-L30)
+- [firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp:7-36](file://firmware/M5StickCPlus2_BLEGateway/src/ui/DisplayManager.cpp#L7-L36)
 
 ### Environmental Ratings
 - No explicit temperature/humidity ratings are defined in the referenced files; deployment should consider typical indoor healthcare environments.
@@ -425,5 +425,5 @@ The M5StickC Plus2 gateway integrates IMU-based motion sensing, battery monitori
   - Account for antenna placement and PCB routing to optimize WiFi and BLE performance.
 
 **Section sources**
-- [firmware/M5StickCPlus2/platformio.ini:15-21](file://firmware/M5StickCPlus2/platformio.ini#L15-L21)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:15-21](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L21)
 - [firmware/Node_Tsimcam/platformio.ini:9-27](file://firmware/Node_Tsimcam/platformio.ini#L9-L27)

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.caregivers import CareGiver, CareGiverPatientAccess
 from app.models.patients import Patient, PatientDeviceAssignment, PatientContact
 from app.models.base import utcnow
-from app.models.core import Device
+from app.models.core import Device, Room
 from app.schemas.patients import (
     DeviceAssignmentCreate,
     PatientContactCreate,
@@ -90,6 +91,133 @@ class PatientServiceCls(CRUDBase[Patient, PatientCreate, PatientUpdate]):
             )
         )
         return result.scalars().first()
+
+    @staticmethod
+    def calculate_bmi(height_cm: float | None, weight_kg: float | None) -> float | None:
+        if height_cm is None or weight_kg is None or height_cm <= 0 or weight_kg <= 0:
+            return None
+        height_m = height_cm / 100
+        return round(weight_kg / (height_m * height_m), 1)
+
+    async def build_detail_payload(
+        self,
+        session: AsyncSession,
+        ws_id: int,
+        patient: Patient,
+    ) -> dict[str, Any]:
+        contacts = list(
+            (
+                await session.execute(
+                    select(PatientContact)
+                    .where(PatientContact.patient_id == patient.id)
+                    .order_by(PatientContact.is_primary.desc(), PatientContact.id.asc())
+                )
+            )
+            .scalars()
+            .all()
+        )
+        staff = list(
+            (
+                await session.execute(
+                    select(CareGiver)
+                    .join(
+                        CareGiverPatientAccess,
+                        (CareGiverPatientAccess.caregiver_id == CareGiver.id)
+                        & (CareGiverPatientAccess.workspace_id == CareGiver.workspace_id),
+                    )
+                    .where(
+                        CareGiver.workspace_id == ws_id,
+                        CareGiverPatientAccess.patient_id == patient.id,
+                        CareGiverPatientAccess.is_active.is_(True),
+                        CareGiver.is_active.is_(True),
+                    )
+                    .order_by(CareGiver.id.asc())
+                )
+            )
+            .scalars()
+            .all()
+        )
+        room = None
+        if patient.room_id is not None:
+            room = (
+                await session.execute(
+                    select(Room).where(
+                        Room.id == patient.room_id,
+                        Room.workspace_id == ws_id,
+                    )
+                )
+            ).scalar_one_or_none()
+
+        emergency_contacts = [
+            contact
+            for contact in contacts
+            if contact.is_primary or str(contact.contact_type or "").lower() == "emergency"
+        ]
+
+        return {
+            "id": patient.id,
+            "workspace_id": patient.workspace_id,
+            "first_name": patient.first_name,
+            "last_name": patient.last_name,
+            "nickname": patient.nickname,
+            "date_of_birth": patient.date_of_birth.isoformat() if patient.date_of_birth else None,
+            "gender": patient.gender,
+            "height_cm": patient.height_cm,
+            "weight_kg": patient.weight_kg,
+            "bmi": self.calculate_bmi(patient.height_cm, patient.weight_kg),
+            "blood_type": patient.blood_type,
+            "photo_url": patient.photo_url,
+            "medical_conditions": list(patient.medical_conditions or []),
+            "allergies": list(patient.allergies or []),
+            "medications": list(patient.medications or []),
+            "past_surgeries": list(patient.past_surgeries or []),
+            "care_level": patient.care_level,
+            "mobility_type": patient.mobility_type,
+            "current_mode": patient.current_mode,
+            "notes": patient.notes,
+            "clinical_notes": patient.notes,
+            "admitted_at": patient.admitted_at.isoformat() if patient.admitted_at else None,
+            "is_active": patient.is_active,
+            "room_id": patient.room_id,
+            "room": (
+                {
+                    "id": room.id,
+                    "name": room.name,
+                    "floor_id": room.floor_id,
+                    "room_type": room.room_type,
+                    "node_device_id": room.node_device_id,
+                }
+                if room
+                else None
+            ),
+            "created_at": patient.created_at.isoformat() if patient.created_at else None,
+            "emergency_contacts": [
+                {
+                    "id": contact.id,
+                    "patient_id": contact.patient_id,
+                    "contact_type": contact.contact_type,
+                    "name": contact.name,
+                    "relationship": contact.relationship,
+                    "phone": contact.phone,
+                    "email": contact.email,
+                    "is_primary": contact.is_primary,
+                    "notes": contact.notes,
+                }
+                for contact in emergency_contacts
+            ],
+            "assigned_staff": [
+                {
+                    "id": caregiver.id,
+                    "first_name": caregiver.first_name,
+                    "last_name": caregiver.last_name,
+                    "role": caregiver.role,
+                    "phone": caregiver.phone,
+                    "email": caregiver.email,
+                    "photo_url": caregiver.photo_url,
+                }
+                for caregiver in staff
+            ],
+        }
 
     async def assign_device(
         self, session: AsyncSession, ws_id: int, patient_id: int, obj_in: DeviceAssignmentCreate

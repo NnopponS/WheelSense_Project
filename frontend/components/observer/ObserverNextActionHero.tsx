@@ -47,7 +47,7 @@ export function ObserverNextActionHero(props: ObserverNextActionHeroProps) {
   } = props;
 
   const frameClass = cn(
-    "rounded-3xl border p-5 md:p-6 shadow-sm",
+    "rounded-xl border p-4 shadow-sm md:p-5",
     severity === "critical"
       ? "border-red-500/40 bg-gradient-to-br from-red-500/12 via-red-500/5 to-transparent"
       : severity === "warning"
@@ -59,7 +59,7 @@ export function ObserverNextActionHero(props: ObserverNextActionHeroProps) {
   );
 
   const iconWrap = cn(
-    "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl",
+    "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl md:h-14 md:w-14",
     severity === "critical" && "bg-red-500/15 text-red-600",
     severity === "warning" && "bg-amber-500/15 text-amber-700",
     severity === "idle" && "bg-emerald-500/15 text-emerald-700",
@@ -90,16 +90,16 @@ export function ObserverNextActionHero(props: ObserverNextActionHeroProps) {
     >
       <div className="flex items-start gap-3 md:gap-4">
         <div className={iconWrap} aria-hidden>
-          <Icon className="h-7 w-7" />
+          <Icon className="h-6 w-6 md:h-7 md:w-7" />
         </div>
         <div className="min-w-0 flex-1">
           <p
             id="observer-hero-title"
-            className="truncate text-lg font-semibold leading-tight text-foreground md:text-xl"
+            className="truncate text-base font-semibold leading-tight text-foreground md:text-xl"
           >
             {heading}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground md:text-base">{sub}</p>
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground md:text-base">{sub}</p>
           {severityLabel ? (
             <span className="mt-2 inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
               {severityLabel}
@@ -109,7 +109,7 @@ export function ObserverNextActionHero(props: ObserverNextActionHeroProps) {
       </div>
 
       {mode !== "idle" && onPrimaryAction ? (
-        <div className="mt-4">
+        <div className="mt-3 md:mt-4">
           <Button
             type="button"
             size="lg"
@@ -120,7 +120,7 @@ export function ObserverNextActionHero(props: ObserverNextActionHeroProps) {
               event.stopPropagation();
               onPrimaryAction();
             }}
-            className="h-14 w-full text-base font-semibold md:h-16 md:text-lg"
+            className="h-12 w-full text-base font-semibold md:h-16 md:text-lg"
           >
             {mode === "alert"
               ? t("observer.hero.acknowledge")

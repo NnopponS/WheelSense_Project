@@ -109,6 +109,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/devices/{device_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Device History */
+        get: operations["get_device_history_api_devices__device_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/devices/{device_id}": {
         parameters: {
             query?: never;
@@ -156,6 +173,23 @@ export interface paths {
         put?: never;
         /** Assign Patient From Device */
         post: operations["assign_patient_from_device_api_devices__device_id__patient_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/devices/{device_id}/caregiver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign Caregiver From Device Route */
+        post: operations["assign_caregiver_from_device_route_api_devices__device_id__caregiver_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -634,6 +668,40 @@ export interface paths {
         patch: operations["update_patient_api_patients__patient_id__patch"];
         trace?: never;
     };
+    "/api/patients/{patient_id}/health-analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Patient Health Analysis */
+        get: operations["get_patient_health_analysis_api_patients__patient_id__health_analysis_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/patients/{patient_id}/health-analysis/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Patient Health Analysis */
+        post: operations["refresh_patient_health_analysis_api_patients__patient_id__health_analysis_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/patients/{patient_id}/caregivers": {
         parameters: {
             query?: never;
@@ -813,6 +881,23 @@ export interface paths {
         head?: never;
         /** Update Caregiver */
         patch: operations["update_caregiver_api_caregivers__caregiver_id__patch"];
+        trace?: never;
+    };
+    "/api/caregivers/{caregiver_id}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Caregiver Timeline */
+        get: operations["get_caregiver_timeline_api_caregivers__caregiver_id__timeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/caregivers/{caregiver_id}/profile-image": {
@@ -3670,6 +3755,30 @@ export interface components {
             provider: "ollama" | "copilot";
             /** Model */
             model: string;
+            /**
+             * Manual Override
+             * @default false
+             */
+            manual_override: boolean;
+        };
+        /** ActivitySummary */
+        ActivitySummary: {
+            /** Steps */
+            steps?: number | null;
+            /** Distance M */
+            distance_m?: number | null;
+            /** Calories Kcal */
+            calories_kcal?: number | null;
+            /**
+             * Polar Connected
+             * @default false
+             */
+            polar_connected: boolean;
+            /**
+             * Source
+             * @default none
+             */
+            source: string;
         };
         /**
          * AlertAcknowledge
@@ -4642,6 +4751,69 @@ export interface components {
             /** Patient Ids */
             patient_ids: number[];
         };
+        /** CaregiverTimelineEventOut */
+        CaregiverTimelineEventOut: {
+            /** Id */
+            id: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Category */
+            category: string;
+            /** Event Type */
+            event_type: string;
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Source
+             * @default system
+             */
+            source: string;
+            /** Caregiver Id */
+            caregiver_id?: number | null;
+            /** User Id */
+            user_id?: number | null;
+            /** Patient Id */
+            patient_id?: number | null;
+            /** Room Id */
+            room_id?: number | null;
+            /** Room Name */
+            room_name?: string | null;
+            /** Device Id */
+            device_id?: string | null;
+            /** Task Id */
+            task_id?: number | null;
+            /** Report Id */
+            report_id?: number | null;
+            /** Workflow Job Id */
+            workflow_job_id?: number | null;
+            /** Workflow Step Id */
+            workflow_step_id?: number | null;
+            /** Status */
+            status?: string | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        /** CaregiverTimelineOut */
+        CaregiverTimelineOut: {
+            /** Caregiver Id */
+            caregiver_id: number;
+            /** User Ids */
+            user_ids?: number[];
+            /** Device Ids */
+            device_ids?: string[];
+            /** Events */
+            events?: components["schemas"]["CaregiverTimelineEventOut"][];
+        };
         /** ChangePasswordIn */
         ChangePasswordIn: {
             /** Current Password */
@@ -4687,6 +4859,14 @@ export interface components {
              * @default
              */
             reply: string;
+            /** Response Cards */
+            response_cards?: {
+                [key: string]: unknown;
+            }[];
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** ChatActionOut */
         ChatActionOut: {
@@ -4786,6 +4966,13 @@ export interface components {
              * @description Optional patient id from the current UI page (e.g. admin patient detail) to seed agent-runtime context.
              */
             page_patient_id?: number | null;
+            /**
+             * Page Context
+             * @description Optional current UI page context for page-aware EaseAI answers and role-safe navigation hints.
+             */
+            page_context?: {
+                [key: string]: unknown;
+            };
         };
         /** ChatActionProposalResponse */
         ChatActionProposalResponse: {
@@ -4815,6 +5002,22 @@ export interface components {
             /** Actions */
             actions?: components["schemas"]["ChatActionProposalItem"][];
             execution_plan?: components["schemas"]["ExecutionPlan"] | null;
+            /** Grounding */
+            grounding?: {
+                [key: string]: unknown;
+            } | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+            /** Ai Trace */
+            ai_trace?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Provider Attempts */
+            provider_attempts?: {
+                [key: string]: unknown;
+            }[] | null;
         };
         /** ChatActionProposeIn */
         ChatActionProposeIn: {
@@ -4874,6 +5077,10 @@ export interface components {
             role: string;
             /** Content */
             content: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Created At
              * Format: date-time
@@ -4964,6 +5171,12 @@ export interface components {
             connected: boolean;
             /** Message */
             message?: string | null;
+            /**
+             * Source
+             * @default fallback
+             * @enum {string}
+             */
+            source: "sdk" | "fallback";
         };
         /** CopilotPollIn */
         CopilotPollIn: {
@@ -5054,12 +5267,28 @@ export interface components {
             /** Updated At */
             updated_at?: string | null;
         };
+        /** DemoControlActionOut */
+        DemoControlActionOut: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "clean_state" | "inject_events" | "move_actor";
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
+            /** Endpoint */
+            endpoint: string;
+        };
         /** DemoControlStateOut */
         DemoControlStateOut: {
             /** Workspace Id */
             workspace_id: number;
             /** Actors */
             actors?: components["schemas"]["DemoActorOut"][];
+            /** Actions */
+            actions?: components["schemas"]["DemoControlActionOut"][];
         };
         /** DemoResetRequest */
         DemoResetRequest: {
@@ -5198,6 +5427,16 @@ export interface components {
             assigned_at: string;
             /** Is Active */
             is_active: boolean;
+        };
+        /** DeviceCaregiverAssign */
+        DeviceCaregiverAssign: {
+            /** Caregiver Id */
+            caregiver_id?: number | null;
+            /**
+             * Device Role
+             * @default mobile_phone
+             */
+            device_role: string;
         };
         /** DeviceCommandOut */
         DeviceCommandOut: {
@@ -5636,6 +5875,11 @@ export interface components {
             default_provider: "ollama" | "copilot";
             /** Default Model */
             default_model: string;
+            /**
+             * Manual Override
+             * @default false
+             */
+            manual_override: boolean;
         };
         /**
          * HADeviceControl
@@ -5718,6 +5962,70 @@ export interface components {
              */
             created_at: string;
         };
+        /** HealthAnalysisSnapshotMetadata */
+        HealthAnalysisSnapshotMetadata: {
+            /** Id */
+            id: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Deterministic Generated At
+             * Format: date-time
+             */
+            deterministic_generated_at: string;
+            /** Window Hours */
+            window_hours: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "ai" | "deterministic";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "deterministic_fallback" | "error";
+            /** Provider */
+            provider?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /**
+             * Triggered By
+             * @default manual
+             */
+            triggered_by: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Provider Attempts */
+            provider_attempts?: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** HealthMetricSummary */
+        HealthMetricSummary: {
+            /** Value */
+            value?: number | null;
+            /** Unit */
+            unit: string;
+            /**
+             * Status
+             * @default info
+             * @enum {string}
+             */
+            status: "info" | "watch" | "warning" | "critical";
+            /**
+             * Trend
+             * @default unknown
+             * @enum {string}
+             */
+            trend: "up" | "down" | "stable" | "unknown";
+        };
         /** HealthObservationCreate */
         HealthObservationCreate: {
             /** Patient Id */
@@ -5790,6 +6098,34 @@ export interface components {
             meal_portion: string | null;
             /** Water Ml */
             water_ml: number | null;
+        };
+        /** HealthRecommendation */
+        HealthRecommendation: {
+            /** Title */
+            title: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "info" | "watch" | "warning" | "critical";
+            /** Rationale */
+            rationale: string;
+            /** Suggested Action */
+            suggested_action: string;
+        };
+        /** HealthRiskFactor */
+        HealthRiskFactor: {
+            /** Label */
+            label: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "info" | "watch" | "warning" | "critical";
+            /** Evidence */
+            evidence: string;
+            /** Source */
+            source: string;
         };
         /**
          * ImpersonationStart
@@ -6294,6 +6630,32 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** PatientAssignedStaffOut */
+        PatientAssignedStaffOut: {
+            /** Id */
+            id: number;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Role */
+            role: string;
+            /**
+             * Phone
+             * @default
+             */
+            phone: string;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+            /**
+             * Photo Url
+             * @default
+             */
+            photo_url: string;
+        };
         /**
          * PatientCaregiverAccessReplace
          * @description Replace active CareGiverPatientAccess rows for one patient (workspace-scoped).
@@ -6446,6 +6808,81 @@ export interface components {
             /** Room Id */
             room_id?: number | null;
         };
+        /** PatientDetailOut */
+        PatientDetailOut: {
+            /** Id */
+            id: number;
+            /** Workspace Id */
+            workspace_id: number;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Nickname */
+            nickname: string;
+            /** Date Of Birth */
+            date_of_birth: string | null;
+            /** Gender */
+            gender: string;
+            /** Height Cm */
+            height_cm: number | null;
+            /** Weight Kg */
+            weight_kg: number | null;
+            /** Blood Type */
+            blood_type: string;
+            /** Photo Url */
+            photo_url?: string | null;
+            /** Medical Conditions */
+            medical_conditions: (string | {
+                [key: string]: unknown;
+            })[];
+            /** Allergies */
+            allergies: string[];
+            /** Medications */
+            medications: {
+                [key: string]: unknown;
+            }[];
+            /** Past Surgeries */
+            past_surgeries: {
+                [key: string]: unknown;
+            }[];
+            /** Care Level */
+            care_level: string;
+            /** Mobility Type */
+            mobility_type: string;
+            /** Current Mode */
+            current_mode: string;
+            /** Notes */
+            notes: string;
+            /**
+             * Admitted At
+             * Format: date-time
+             */
+            admitted_at: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Room Id */
+            room_id: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Bmi */
+            bmi?: number | null;
+            /** Clinical Notes */
+            clinical_notes: string;
+            /** Emergency Contacts */
+            emergency_contacts?: components["schemas"]["PatientContactOut"][];
+            /** Assigned Staff */
+            assigned_staff?: components["schemas"]["PatientAssignedStaffOut"][];
+            room?: components["schemas"]["PatientRoomOut"] | null;
+            /** Current Medications */
+            readonly current_medications: {
+                [key: string]: unknown;
+            }[];
+            readonly emergency_contact: components["schemas"]["PatientContactOut"] | null;
+        };
         /** PatientFixRoutineCreate */
         PatientFixRoutineCreate: {
             /** Title */
@@ -6533,6 +6970,99 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** PatientHealthAnalysisOut */
+        PatientHealthAnalysisOut: {
+            /** Patient Id */
+            patient_id: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Window Hours */
+            window_hours: number;
+            /** Overall Score */
+            overall_score: number;
+            /**
+             * Risk Level
+             * @enum {string}
+             */
+            risk_level: "normal" | "watch" | "warning" | "critical";
+            /**
+             * Data Quality
+             * @enum {string}
+             */
+            data_quality: "complete" | "partial" | "insufficient";
+            /** Latest Vitals */
+            latest_vitals: {
+                [key: string]: components["schemas"]["HealthMetricSummary"];
+            };
+            /** Baseline */
+            baseline: {
+                [key: string]: components["schemas"]["HealthMetricSummary"];
+            };
+            /** Trend Summary */
+            trend_summary: string;
+            /** Risk Factors */
+            risk_factors: components["schemas"]["HealthRiskFactor"][];
+            /** Recommendations */
+            recommendations: components["schemas"]["HealthRecommendation"][];
+            activity?: components["schemas"]["ActivitySummary"];
+            latest_snapshot?: components["schemas"]["HealthAnalysisSnapshotMetadata"] | null;
+        };
+        /** PatientHealthAnalysisSnapshotOut */
+        PatientHealthAnalysisSnapshotOut: {
+            /** Id */
+            id: number;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /**
+             * Deterministic Generated At
+             * Format: date-time
+             */
+            deterministic_generated_at: string;
+            /** Window Hours */
+            window_hours: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "ai" | "deterministic";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "success" | "deterministic_fallback" | "error";
+            /** Provider */
+            provider?: string | null;
+            /** Model Name */
+            model_name?: string | null;
+            /**
+             * Triggered By
+             * @default manual
+             */
+            triggered_by: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Provider Attempts */
+            provider_attempts?: {
+                [key: string]: unknown;
+            }[];
+            /** Snapshot Payload */
+            snapshot_payload?: {
+                [key: string]: unknown;
+            };
+            /** Evidence Baseline */
+            evidence_baseline?: {
+                [key: string]: unknown;
+            };
+        };
         /** PatientOut */
         PatientOut: {
             /** Id */
@@ -6593,6 +7123,19 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** PatientRoomOut */
+        PatientRoomOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Floor Id */
+            floor_id?: number | null;
+            /** Room Type */
+            room_type: string;
+            /** Node Device Id */
+            node_device_id?: string | null;
         };
         /** PatientSummary */
         PatientSummary: {
@@ -7666,9 +8209,17 @@ export interface components {
              * Command
              * @enum {string}
              */
-            command: "pause" | "resume" | "set_config" | "inject_abnormal_hr" | "inject_fall";
+            command: "pause" | "resume" | "set_config" | "inject_abnormal_hr" | "inject_fall" | "move_actor";
             /** Patient Id */
             patient_id?: number | null;
+            /** Actor Type */
+            actor_type?: ("patient" | "staff") | null;
+            /** Actor Id */
+            actor_id?: number | null;
+            /** Room Id */
+            room_id?: number | null;
+            /** Node Device Id */
+            node_device_id?: string | null;
             config?: components["schemas"]["SimulatorRuntimeConfigPatch"] | null;
         };
         /** SimulatorCommandOut */
@@ -8358,6 +8909,8 @@ export interface components {
             source: string;
             /** Caregiver Id */
             caregiver_id: number | null;
+            /** Provenance */
+            readonly provenance: string;
         };
         /**
          * Token
@@ -9027,6 +9580,40 @@ export interface operations {
             };
         };
     };
+    get_device_history_api_devices__device_id__history_get: {
+        parameters: {
+            query?: {
+                hours?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_device_detail_api_devices__device_id__get: {
         parameters: {
             query?: never;
@@ -9167,6 +9754,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DevicePatientAssign"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_caregiver_from_device_route_api_devices__device_id__caregiver_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceCaregiverAssign"];
             };
         };
         responses: {
@@ -10114,7 +10736,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatientOut"];
+                    "application/json": components["schemas"]["PatientDetailOut"];
                 };
             };
             /** @description Validation Error */
@@ -10179,6 +10801,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatientOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_patient_health_analysis_api_patients__patient_id__health_analysis_get: {
+        parameters: {
+            query?: {
+                window_hours?: number;
+            };
+            header?: never;
+            path: {
+                patient_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientHealthAnalysisOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_patient_health_analysis_api_patients__patient_id__health_analysis_refresh_post: {
+        parameters: {
+            query?: {
+                window_hours?: number;
+            };
+            header?: never;
+            path: {
+                patient_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientHealthAnalysisSnapshotOut"];
                 };
             };
             /** @description Validation Error */
@@ -10769,6 +11457,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CareGiverOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_caregiver_timeline_api_caregivers__caregiver_id__timeline_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                caregiver_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaregiverTimelineOut"];
                 };
             };
             /** @description Validation Error */
@@ -15190,6 +15911,7 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                conversation_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -15250,7 +15972,9 @@ export interface operations {
     };
     propose_action_api_chat_actions_propose_post: {
         parameters: {
-            query?: never;
+            query?: {
+                ai_trace?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;

@@ -9,7 +9,7 @@
 - [test_mqtt_handler.py](file://server/tests/test_mqtt_handler.py)
 - [seed_device_extras.py](file://server/seed_device_extras.py)
 - [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp)
+- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
 - [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
 - [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
 - [phase2-device-management.md](file://.agents/changes/phase2-device-management.md)
@@ -67,7 +67,7 @@ ROOM --> DM
 - [devices.py](file://server/app/api/endpoints/devices.py)
 - [devices.py](file://server/app/schemas/devices.py)
 - [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp)
+- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
 - [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
 - [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
 
@@ -76,7 +76,7 @@ ROOM --> DM
 - [devices.py](file://server/app/api/endpoints/devices.py)
 - [devices.py](file://server/app/schemas/devices.py)
 - [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp)
+- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
 - [DeviceDetailDrawer.tsx](file://frontend/components/admin/devices/DeviceDetailDrawer.tsx)
 - [nodeDeviceRoomKey.ts](file://frontend/lib/nodeDeviceRoomKey.ts)
 

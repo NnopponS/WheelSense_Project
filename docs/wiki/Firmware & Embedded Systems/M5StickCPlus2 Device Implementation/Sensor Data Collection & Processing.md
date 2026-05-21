@@ -2,12 +2,12 @@
 
 <cite>
 **Referenced Files in This Document**
-- [SensorManager.h](file://firmware/M5StickCPlus2/src/managers/SensorManager.h)
-- [SensorManager.cpp](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp)
-- [Config.h](file://firmware/M5StickCPlus2/src/Config.h)
-- [ConfigManager.h](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h)
-- [ConfigManager.cpp](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp)
-- [main.cpp](file://firmware/M5StickCPlus2/src/main.cpp)
+- [SensorManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h)
+- [SensorManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp)
+- [Config.h](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h)
+- [ConfigManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h)
+- [ConfigManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp)
+- [main.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp)
 - [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
 - [mqtt_handler.py](file://server/app/mqtt_handler.py)
 </cite>
@@ -43,16 +43,16 @@ SVR --> DB["PostgreSQL<br/>IMUTelemetry"]
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L50-L53)
-- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L29)
-- [main.cpp:265-336](file://firmware/M5StickCPlus2/src/main.cpp#L265-L336)
+- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L53)
+- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L29)
+- [main.cpp:265-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
 - [mqtt_handler.py:174-194](file://server/app/mqtt_handler.py#L174-L194)
 
 **Section sources**
-- [SensorManager.h:7-26](file://firmware/M5StickCPlus2/src/managers/SensorManager.h#L7-L26)
-- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L50-L53)
-- [Config.h:43-51](file://firmware/M5StickCPlus2/src/Config.h#L43-L51)
-- [main.cpp:199-205](file://firmware/M5StickCPlus2/src/main.cpp#L199-L205)
+- [SensorManager.h:7-26](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L7-L26)
+- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L53)
+- [Config.h:43-51](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L43-L51)
+- [main.cpp:199-205](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L199-L205)
 - [TELEMETRY_CONTRACT.md:15-22](file://firmware/TELEMETRY_CONTRACT.md#L15-L22)
 
 ## Core Components
@@ -68,12 +68,12 @@ Key responsibilities:
 - Adaptive sampling based on recording state and display power mode.
 
 **Section sources**
-- [SensorManager.h:7-26](file://firmware/M5StickCPlus2/src/managers/SensorManager.h#L7-L26)
-- [SensorManager.cpp:55-132](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L55-L132)
-- [SensorManager.cpp:185-229](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L185-L229)
-- [ConfigManager.h:7-17](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L7-L17)
-- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L11-L29)
-- [main.cpp:221-263](file://firmware/M5StickCPlus2/src/main.cpp#L221-L263)
+- [SensorManager.h:7-26](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L7-L26)
+- [SensorManager.cpp:55-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L55-L132)
+- [SensorManager.cpp:185-229](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L185-L229)
+- [ConfigManager.h:7-17](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L7-L17)
+- [ConfigManager.cpp:11-29](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L11-L29)
+- [main.cpp:221-263](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L221-L263)
 
 ## Architecture Overview
 The system integrates hardware sensors, on-device processing, and network publishing with adaptive rates.
@@ -97,10 +97,10 @@ SVR-->>SVR : "store IMUTelemetry"
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L50-L53)
-- [SensorManager.cpp:94-95](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L94-L95)
-- [ConfigManager.cpp:20-21](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L20-L21)
-- [main.cpp:265-336](file://firmware/M5StickCPlus2/src/main.cpp#L265-L336)
+- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L53)
+- [SensorManager.cpp:94-95](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L94-L95)
+- [ConfigManager.cpp:20-21](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L20-L21)
+- [main.cpp:265-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
 - [mqtt_handler.py:174-194](file://server/app/mqtt_handler.py#L174-L194)
 
 ## Detailed Component Analysis
@@ -114,7 +114,7 @@ SensorData aggregates raw and computed sensor values. Fields include:
 These fields are populated by SensorManager and published in the telemetry payload.
 
 **Section sources**
-- [SensorManager.h:7-26](file://firmware/M5StickCPlus2/src/managers/SensorManager.h#L7-L26)
+- [SensorManager.h:7-26](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L7-L26)
 - [TELEMETRY_CONTRACT.md:19-21](file://firmware/TELEMETRY_CONTRACT.md#L19-L21)
 - [mqtt_handler.py:180-192](file://server/app/mqtt_handler.py#L180-L192)
 
@@ -139,13 +139,13 @@ Direction --> End(["Ready for window velocity"])
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:55-108](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L55-L108)
-- [SensorManager.cpp:94-95](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L94-L95)
+- [SensorManager.cpp:55-108](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L55-L108)
+- [SensorManager.cpp:94-95](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L94-L95)
 
 **Section sources**
-- [SensorManager.cpp:74-77](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L74-L77)
-- [SensorManager.cpp:80-108](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L80-L108)
-- [ConfigManager.cpp:20-21](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L20-L21)
+- [SensorManager.cpp:74-77](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L74-L77)
+- [SensorManager.cpp:80-108](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L80-L108)
+- [ConfigManager.cpp:20-21](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L20-L21)
 
 ### Motion Calculation Algorithms
 - Sliding window: Every WINDOW_MS, velocity is computed as winDistanceM divided by window duration. A decay factor reduces velocity when no motion is detected for VELOCITY_DECAY_MS. Sub-perceptual drift is eliminated via zero-snap threshold. Velocity is clamped to a maximum value. Acceleration is derived as the change in velocity over the window.
@@ -168,10 +168,10 @@ Accel --> Output["Store velocityMs, accelMs2, direction"]
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:110-131](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L110-L131)
+- [SensorManager.cpp:110-131](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L110-L131)
 
 **Section sources**
-- [SensorManager.cpp:110-131](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L110-L131)
+- [SensorManager.cpp:110-131](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L110-L131)
 
 ### Battery Monitoring System
 - Voltage measurement: Raw millivolt values are sampled periodically with a minimum interval.
@@ -190,13 +190,13 @@ Hysteresis --> Publish["Set batVoltage, batPercentage, isCharging"]
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:185-229](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L185-L229)
+- [SensorManager.cpp:185-229](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L185-L229)
 
 **Section sources**
-- [SensorManager.cpp:136-154](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L136-L154)
-- [SensorManager.cpp:156-183](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L156-L183)
-- [SensorManager.cpp:185-229](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L185-L229)
-- [Config.h:52-55](file://firmware/M5StickCPlus2/src/Config.h#L52-L55)
+- [SensorManager.cpp:136-154](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L136-L154)
+- [SensorManager.cpp:156-183](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L156-L183)
+- [SensorManager.cpp:185-229](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L185-L229)
+- [Config.h:52-55](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L52-L55)
 
 ### Adaptive Sampling Rate System
 - Sensor read interval adjusts based on recording state and display power mode:
@@ -217,13 +217,13 @@ Normal --> Read
 ```
 
 **Diagram sources**
-- [main.cpp:199-205](file://firmware/M5StickCPlus2/src/main.cpp#L199-L205)
-- [Config.h:68-71](file://firmware/M5StickCPlus2/src/Config.h#L68-L71)
+- [main.cpp:199-205](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L199-L205)
+- [Config.h:68-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L71)
 
 **Section sources**
-- [main.cpp:199-205](file://firmware/M5StickCPlus2/src/main.cpp#L199-L205)
-- [Config.h:44-51](file://firmware/M5StickCPlus2/src/Config.h#L44-L51)
-- [Config.h:68-71](file://firmware/M5StickCPlus2/src/Config.h#L68-L71)
+- [main.cpp:199-205](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L199-L205)
+- [Config.h:44-51](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L44-L51)
+- [Config.h:68-71](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L68-L71)
 
 ### Sensor Data Structure (SensorData)
 - Raw IMU: accelX/Y/Z (g), gyroX/Y/Z (dps), pitch/roll (degrees), imuValid.
@@ -233,7 +233,7 @@ Normal --> Read
 Fields are populated by SensorManager and serialized into the telemetry payload.
 
 **Section sources**
-- [SensorManager.h:7-26](file://firmware/M5StickCPlus2/src/managers/SensorManager.h#L7-L26)
+- [SensorManager.h:7-26](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L7-L26)
 - [TELEMETRY_CONTRACT.md:19-21](file://firmware/TELEMETRY_CONTRACT.md#L19-L21)
 
 ### Motion Recording State Machine
@@ -253,10 +253,10 @@ Stopping --> Idle : "return to dashboard"
 ```
 
 **Diagram sources**
-- [main.cpp:221-263](file://firmware/M5StickCPlus2/src/main.cpp#L221-L263)
+- [main.cpp:221-263](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L221-L263)
 
 **Section sources**
-- [main.cpp:221-263](file://firmware/M5StickCPlus2/src/main.cpp#L221-L263)
+- [main.cpp:221-263](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L221-L263)
 
 ## Dependency Analysis
 - SensorManager depends on M5 hardware APIs for IMU and power, and on ConfigManager for wheel radius.
@@ -274,15 +274,15 @@ SVR --> DB["IMUTelemetry"]
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L50-L53)
-- [ConfigManager.cpp:20-21](file://firmware/M5StickCPlus2/src/managers/ConfigManager.cpp#L20-L21)
-- [main.cpp:265-336](file://firmware/M5StickCPlus2/src/main.cpp#L265-L336)
+- [SensorManager.cpp:50-53](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L53)
+- [ConfigManager.cpp:20-21](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.cpp#L20-L21)
+- [main.cpp:265-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
 - [mqtt_handler.py:174-194](file://server/app/mqtt_handler.py#L174-L194)
 
 **Section sources**
-- [SensorManager.h:28-71](file://firmware/M5StickCPlus2/src/managers/SensorManager.h#L28-L71)
-- [ConfigManager.h:19-31](file://firmware/M5StickCPlus2/src/managers/ConfigManager.h#L19-L31)
-- [main.cpp:265-336](file://firmware/M5StickCPlus2/src/main.cpp#L265-L336)
+- [SensorManager.h:28-71](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L28-L71)
+- [ConfigManager.h:19-31](file://firmware/M5StickCPlus2_BLEGateway/src/managers/ConfigManager.h#L19-L31)
+- [main.cpp:265-336](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L265-L336)
 - [mqtt_handler.py:174-194](file://server/app/mqtt_handler.py#L174-L194)
 
 ## Performance Considerations
@@ -310,10 +310,10 @@ Common issues and remedies:
   - Confirm MQTT connectivity and that the device is registered in the backend.
 
 **Section sources**
-- [SensorManager.cpp:94-95](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L94-L95)
-- [SensorManager.cpp:231-259](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L231-L259)
-- [Config.h:52-55](file://firmware/M5StickCPlus2/src/Config.h#L52-L55)
-- [main.cpp:245-263](file://firmware/M5StickCPlus2/src/main.cpp#L245-L263)
+- [SensorManager.cpp:94-95](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L94-L95)
+- [SensorManager.cpp:231-259](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L231-L259)
+- [Config.h:52-55](file://firmware/M5StickCPlus2_BLEGateway/src/Config.h#L52-L55)
+- [main.cpp:245-263](file://firmware/M5StickCPlus2_BLEGateway/src/main.cpp#L245-L263)
 - [TELEMETRY_CONTRACT.md:32-33](file://firmware/TELEMETRY_CONTRACT.md#L32-L33)
 
 ## Conclusion
@@ -327,20 +327,20 @@ The firmware implements a robust, on-device sensor pipeline that integrates IMU 
 
 - Sensor calibration
   - Perform a 1-second gyro calibration at rest to compute Z-axis DC bias. Recalibration resets motion state and updates the offset.
-  - Reference: [SensorManager.cpp:28-48](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L28-L48), [SensorManager.cpp:231-259](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L231-L259)
+  - Reference: [SensorManager.cpp:28-48](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L28-L48), [SensorManager.cpp:231-259](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L231-L259)
 
 - Data interpretation
   - Use direction to infer travel orientation; distanceM is cumulative; velocityMs and accelMs2 reflect filtered motion over a short window.
-  - Reference: [SensorManager.h:14-18](file://firmware/M5StickCPlus2/src/managers/SensorManager.h#L14-L18), [SensorManager.cpp:110-131](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L110-L131)
+  - Reference: [SensorManager.h:14-18](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L14-L18), [SensorManager.cpp:110-131](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L110-L131)
 
 - Troubleshooting sensor issues
   - If readings are noisy, increase EMA alpha or deadband threshold.
   - If velocity decays too quickly, raise decay threshold or alpha.
-  - Reference: [SensorManager.cpp:80-89](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L80-L89), [SensorManager.cpp:116-119](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L116-L119)
+  - Reference: [SensorManager.cpp:80-89](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L80-L89), [SensorManager.cpp:116-119](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L116-L119)
 
 - Customizing motion detection thresholds
   - Adjust deadband, window size, decay parameters, and zero-snap threshold to suit user mobility patterns.
-  - Reference: [SensorManager.h:43-48](file://firmware/M5StickCPlus2/src/managers/SensorManager.h#L43-L48), [SensorManager.cpp:110-122](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L110-L122)
+  - Reference: [SensorManager.h:43-48](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.h#L43-L48), [SensorManager.cpp:110-122](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L110-L122)
 
 - Telemetry contract mapping
   - IMU fields: ax/ay/az/gx/gy/gz.

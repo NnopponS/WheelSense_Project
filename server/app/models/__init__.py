@@ -12,7 +12,12 @@ from .core import (
 from .facility import Facility, Floor
 from .users import AuthSession, User
 from .mcp_tokens import MCPToken
-from .patients import Patient, PatientDeviceAssignment, PatientContact
+from .patients import (
+    Patient,
+    PatientDeviceAssignment,
+    PatientContact,
+    PatientHealthAnalysisSnapshot,
+)
 from .caregivers import (
     CareGiver,
     CareGiverZone,
@@ -80,6 +85,7 @@ __all__ = [
     "Patient",
     "PatientDeviceAssignment",
     "PatientContact",
+    "PatientHealthAnalysisSnapshot",
     "CareGiver",
     "CareGiverZone",
     "CareGiverShift",

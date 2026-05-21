@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Which Agent"
+  short_description: "WheelSense which-agent workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $which-agent for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

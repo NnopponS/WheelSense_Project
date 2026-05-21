@@ -9,6 +9,17 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from app.config import settings
+from app.agent_runtime.entity_resolution import resolve_patient_mentions
+from app.agent_runtime.task_request import (
+    extract_task_assignee as parse_task_assignee,
+    extract_task_checklist as parse_task_checklist,
+    extract_task_due_at as parse_task_due_at,
+    extract_task_priority as parse_task_priority,
+    normalize_task_arguments,
+    normalize_task_create_title,
+    parse_task_form_fields,
+)
+from app.mcp.tool_catalog import tool_intent_metadata
 from app.schemas.agent_runtime import ExecutionPlan, ExecutionPlanStep
 
 logger = logging.getLogger("wheelsense.agent_runtime.intent")
@@ -22,6 +33,7 @@ TOOL_INTENT_METADATA: dict[str, dict[str, Any]] = {
     "update_patient_room": {"playbook": "facility-ops", "permission_basis": ["patients.write"], "risk_level": "high", "read_only": False},
     "create_patient_record": {"playbook": "patient-management", "permission_basis": ["patients.write"], "risk_level": "high", "read_only": False},
     "list_devices": {"playbook": "device-control", "permission_basis": ["devices.read"], "risk_level": "low", "read_only": True},
+    "get_device_details": {"playbook": "device-control", "permission_basis": ["devices.read"], "risk_level": "low", "read_only": True},
     "list_active_alerts": {"playbook": "clinical-triage", "permission_basis": ["alerts.read"], "risk_level": "low", "read_only": True},
     "acknowledge_alert": {"playbook": "clinical-triage", "permission_basis": ["alerts.manage"], "risk_level": "medium", "read_only": False},
     "resolve_alert": {"playbook": "clinical-triage", "permission_basis": ["alerts.manage"], "risk_level": "medium", "read_only": False},
@@ -35,6 +47,9 @@ TOOL_INTENT_METADATA: dict[str, dict[str, Any]] = {
     "get_patient_vitals": {"playbook": "clinical-triage", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
     "get_patient_timeline": {"playbook": "clinical-triage", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
     "list_patient_caregivers": {"playbook": "patient-management", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
+    "list_staff": {"playbook": "patient-management", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
+    "get_staff_details": {"playbook": "patient-management", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
+    "get_staff_timeline": {"playbook": "workflow", "permission_basis": ["patients.read"], "risk_level": "low", "read_only": True},
     "create_workflow_task": {"playbook": "workflow", "permission_basis": ["workflow.write"], "risk_level": "medium", "read_only": False},
     "update_workflow_task_status": {"playbook": "workflow", "permission_basis": ["workflow.write"], "risk_level": "medium", "read_only": False},
     "send_message": {"playbook": "workflow", "permission_basis": ["workflow.write"], "risk_level": "medium", "read_only": False},
@@ -53,6 +68,7 @@ SEMANTIC_READ_IMMEDIATE: dict[str, tuple[str, dict[str, Any]]] = {
     "rooms.read": ("list_rooms", {}),
     "tasks.read": ("list_workflow_tasks", {}),
     "schedules.read": ("list_workflow_schedules", {}),
+    "staff.read": ("list_staff", {}),
     "system.health": ("get_system_health", {}),
 }
 
@@ -84,6 +100,8 @@ class ConversationContext:
     last_patient_cards: list[dict[str, Any]] = field(default_factory=list)
     # Last patient the user narrowed in on (single-row list or details / vitals / timeline).
     last_focused_patient_id: int | None = None
+    # Current UI route context passed by the frontend for page-aware answers.
+    last_page_context: dict[str, Any] = field(default_factory=dict)
     last_intent: str | None = None
     last_playbook: str | None = None
 
@@ -152,6 +170,12 @@ INTENT_EXAMPLES: list[IntentExample] = [
     IntentExample("my schedule", "schedules.read", "workflow"),
     IntentExample("upcoming schedule", "schedules.read", "workflow"),
     IntentExample("workflow schedules", "schedules.read", "workflow"),
+    # Staff
+    IntentExample("list staff", "staff.read", "patient-management"),
+    IntentExample("show caregiver directory", "staff.read", "patient-management"),
+    IntentExample("staff details", "staff.read", "patient-management"),
+    IntentExample("caregiver timeline", "staff.read", "workflow"),
+    IntentExample("staff movement history", "staff.read", "workflow"),
     # System
     IntentExample("system health", "system.health", "system"),
     IntentExample("system status", "system.health", "system"),
@@ -271,14 +295,17 @@ def _unique_patient_id_from_name_substrings(text: str, cards: list[dict[str, Any
 
 def pick_patient_id_for_followup(message: str, context: ConversationContext | None) -> int | None:
     """Resolve patient_id for short follow-ups (Thai/EN) using roster context."""
-    if context is None:
-        return None
     m = (message or "").strip()
     if not m:
         return None
     num = re.fullmatch(r"(\d+)", m)
     if num:
         return int(num.group(1))
+    explicit_patient_id = re.search(r"(?:patient|pt|ผู้ป่วย)\s*#?\s*(\d+)\b", m, flags=re.IGNORECASE)
+    if explicit_patient_id:
+        return int(explicit_patient_id.group(1))
+    if context is None:
+        return None
     # First-person self-service (room / identity / care team) when a single focused patient is seeded.
     if context.last_focused_patient_id is not None and re.search(
         r"(?:ฉัน|ผม|ดิฉัน).{0,24}(?:อยู่)?(?:ห้องไหน|ที่ไหน|ห้องอะไร)"
@@ -301,6 +328,7 @@ def pick_patient_id_for_followup(message: str, context: ConversationContext | No
         t = p.strip("()[]（）【〕〔").strip()
         if len(t) >= 2:
             pieces.append(t)
+    direct_piece_matches: list[int] = []
     for card in context.last_patient_cards or []:
         pid = card.get("id")
         if pid is None:
@@ -311,9 +339,21 @@ def pick_patient_id_for_followup(message: str, context: ConversationContext | No
         blob = f"{fn}{ln}{nn}"
         for p in pieces:
             if len(p) >= 2 and (p in fn or p in ln or p in nn or p in blob):
-                return int(pid)
+                direct_piece_matches.append(int(pid))
+                break
+    direct_unique: list[int] = []
+    for pid in direct_piece_matches:
+        if pid not in direct_unique:
+            direct_unique.append(pid)
+    if len(direct_unique) == 1:
+        return direct_unique[0]
+    if len(direct_unique) > 1:
+        return None
     cards = context.last_patient_cards or []
     if cards:
+        fuzzy_hits = resolve_patient_mentions(m, cards, min_score=0.78, max_results=2)
+        if len(fuzzy_hits) == 1 and fuzzy_hits[0].get("id") is not None:
+            return int(fuzzy_hits[0]["id"])
         hit = _unique_patient_id_from_name_substrings(m, cards)
         if hit is not None:
             return hit
@@ -347,6 +387,8 @@ def _human_plan_summary(intent: IntentMatch, original_message: str) -> str:
         return f"Move patient {args['patient_id']} to room {args['room_id']}"
     if tn == "create_patient_record" and args.get("first_name") and args.get("last_name"):
         return f"Create patient record for {args['first_name']} {args['last_name']}"
+    if tn == "create_task_management_task" and args.get("title"):
+        return f"Create task: {args['title']}"
     if tn == "trigger_camera_photo" and args.get("device_pk") is not None:
         return f"Trigger camera on device {args['device_pk']}"
     om = (original_message or "").strip()
@@ -401,6 +443,12 @@ class IntentClassifier:
                 "patients.read.vitals",
                 "clinical-triage",
                 {"immediate_read_context_tool": "get_patient_vitals"},
+            ),
+            (
+                r"(?:health\s*(?:analysis|baseline|risk|recommendation|assessment)|predictive\s*anomaly|personalized\s*health|risk\s*factors?|ค่าพื้นฐาน|วิเคราะห์สุขภาพ|ความเสี่ยง|ปัจจัยเสี่ยง|คำแนะนำสุขภาพ)",
+                "patients.read.health_analysis",
+                "clinical-triage",
+                {"immediate_read_context_tool": "get_patient_health_analysis"},
             ),
             (
                 r"(?:ไทม์ไลน์|timeline)(?:\s*(?:ล่าสุด|ย้อนหลัง|ช่วงนี้))?|(?:เหตุการณ์|กิจกรรม)(?:\s*(?:ล่าสุด|ย้อนหลัง))?|(?:ประวัติ(?:การรักษา|การดูแล))(?:\s*(?:ล่าสุด|ย้อนหลัง|ช่วงนี้))?",
@@ -463,6 +511,35 @@ class IntentClassifier:
                 "alerts.read",
                 "clinical-triage",
                 {"immediate_tool": ("list_active_alerts", {})},
+            ),
+            # Staff directory/details/timeline - immediate read tools
+            (
+                r"(?:list|show|all).*?(?:staff|caregivers?|nurses?)|(?:staff|caregiver)\s+directory",
+                "staff.read",
+                "patient-management",
+                {"immediate_tool": ("list_staff", {})},
+            ),
+            (
+                r"(?:staff|caregiver|nurse)\s*(?:timeline|activity|movement|history)\s*#?(\d+)",
+                "staff.read.timeline",
+                "workflow",
+                {
+                    "extract_id": "caregiver_id",
+                    "tool_name": "get_staff_timeline",
+                    "permission_basis": ["patients.read"],
+                    "risk_level": "low",
+                },
+            ),
+            (
+                r"(?:staff|caregiver|nurse)\s*(?:details?|profile|info(?:rmation)?)\s*#?(\d+)",
+                "staff.read.details",
+                "patient-management",
+                {
+                    "extract_id": "caregiver_id",
+                    "tool_name": "get_staff_details",
+                    "permission_basis": ["patients.read"],
+                    "risk_level": "low",
+                },
             ),
             # Tasks - immediate tool
             (
@@ -593,6 +670,7 @@ class IntentClassifier:
                     "immediate_tool_name": "list_visible_patients",
                     "extract_text": "query",
                     "name_line_min_chars": 6,
+                    "deterministic_precheck": False,
                 },
             ),
         ]
@@ -681,9 +759,114 @@ class IntentClassifier:
         value = re.sub(r"^(?:ตอนนี้|ขณะนี้|ตอนนี้ผู้ป่วย)\s*", "", value, flags=re.IGNORECASE)
         return value or None
 
+    def _extract_task_title(self, text: str, fallback_title: str) -> str:
+        quoted = re.search(
+            r"\b(?:title|titled|called|named)\s*[:=]?\s*['\"]([^'\"]{2,256})['\"]",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if quoted:
+            return quoted.group(1).strip()
+
+        labeled = re.search(
+            r"\b(?:title|titled|called|named)\s*[:=]?\s*([^.;\n]+?)(?=\s+(?:for|assign|assigned|deadline|due|priority|checklist|steps|result|report)\b|[.;]|$)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if labeled:
+            return labeled.group(1).strip(" :.-'\"")[:256]
+
+        normalized = normalize_task_create_title(fallback_title or text)
+        return (normalized or fallback_title or text)[:256]
+
+    def _extract_task_priority(self, text: str) -> str:
+        return parse_task_priority(text)
+
+    def _extract_task_assignee(self, text: str) -> dict[str, Any]:
+        return parse_task_assignee(text)
+
+    def _extract_task_due_at(self, text: str) -> str | None:
+        return parse_task_due_at(text)
+
+    def _extract_task_checklist(self, text: str) -> list[str]:
+        match = re.search(
+            r"\b(?:checklist(?:\s+steps?)?|steps?|subtasks?)\s*[:=-]\s*(.+?)(?=(?:[.;]\s*|\n)\b(?:result|report)\b|$)",
+            text,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        if not match:
+            return []
+        return parse_task_checklist(match.group(1))
+
+    def _parse_create_task_management_command(
+        self,
+        message: str,
+        context: ConversationContext | None = None,
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]] | None:
+        text = (message or "").strip()
+        if not text:
+            return None
+        lowered = text.lower()
+        has_create_cue = bool(
+            re.search(r"\b(create|add|make|new)\b", lowered)
+            or re.search(r"(?:สร้าง|เพิ่ม|ทำ)", text)
+        )
+        has_task_cue = bool(
+            re.search(r"\b(tasks?|todo|work item|checkup|check)\b", lowered)
+            or re.search(r"(?:งาน|ทาสก์|ตรวจ)", text)
+        )
+        if not (has_create_cue and has_task_cue):
+            return None
+
+        title = re.sub(
+            r"^\s*(?:please\s+)?(?:create|add|make)\s+(?:a\s+|new\s+)?(?:task|todo|work item)\s*(?:for|to)?\s*",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        )
+        title = re.sub(
+            r"^\s*(?:สร้าง|เพิ่ม|ทำ)\s*(?:task|ทาสก์|งาน)?\s*(?:สำหรับ|ให้)?\s*",
+            "",
+            title,
+            flags=re.IGNORECASE,
+        )
+        title = re.sub(r"(?:ให้หน่อย|หน่อย|please)\s*$", "", title, flags=re.IGNORECASE).strip(" :：-")
+        title = normalize_task_create_title(text) or title
+        if not title:
+            title = text
+
+        entities: list[dict[str, Any]] = []
+        due_at = self._extract_task_due_at(text)
+        checklist = self._extract_task_checklist(text)
+        args: dict[str, Any] = {
+            "title": self._extract_task_title(text, title),
+            "description": text,
+            "priority": self._extract_task_priority(text),
+        }
+        args.update(self._extract_task_assignee(text))
+        if due_at:
+            args["due_at"] = due_at
+        if checklist:
+            args["checklist"] = checklist
+        patient_id = pick_patient_id_for_followup(text, context)
+        if patient_id is not None:
+            args["patient_id"] = patient_id
+            entities.append({"type": "patient", "id": patient_id})
+        args = normalize_task_arguments(
+            text,
+            args,
+            patient_resolver=lambda value: pick_patient_id_for_followup(value, context),
+        )
+        entities = (
+            [{"type": "patient", "id": int(args["patient_id"])}]
+            if args.get("patient_id") is not None
+            else []
+        )
+        return args, entities
+
     def _parse_create_patient_command(self, message: str) -> dict[str, Any] | None:
         patterns = [
-            r"(?:เพิ่ม|สร้าง)(?:ผู้ป่วย(?:ใหม่)?)?(?:ชื่อ)?\s*([ก-๙A-Za-z]+)\s+([ก-๙A-Za-z]+)(.*)",
+            r"(?:เพิ่ม|สร้าง)\s*ผู้ป่วย(?:ใหม่)?(?:ชื่อ)?\s*([ก-๙A-Za-z]+)\s+([ก-๙A-Za-z]+)(.*)",
             r"(?:add|create)\s+(?:a\s+)?(?:new\s+)?patient(?:\s+(?:named|name))?\s+([A-Za-z]+)\s+([A-Za-z]+)(.*)",
         ]
         for pattern in patterns:
@@ -754,6 +937,8 @@ class IntentClassifier:
         self,
         message: str,
         context: ConversationContext | None = None,
+        *,
+        allow_semantic: bool = True,
     ) -> tuple[IntentMatch | None, tuple[str, dict[str, Any]] | None]:
         """Classify message intent with confidence scoring.
 
@@ -763,6 +948,24 @@ class IntentClassifier:
         explicit_tool_match, explicit_immediate = self._parse_explicit_tool_call(message)
         if explicit_tool_match is not None:
             return (explicit_tool_match, explicit_immediate)
+
+        create_task_result = self._parse_create_task_management_command(message, context)
+        if create_task_result is not None:
+            task_arguments, task_entities = create_task_result
+            return (
+                IntentMatch(
+                    intent="tasks.write",
+                    playbook="workflow",
+                    confidence=0.95,
+                    tool_name="create_task_management_task",
+                    arguments=task_arguments,
+                    entities=task_entities,
+                    permission_basis=["workflow.write"],
+                    risk_level="medium",
+                    reasoning_target="medium",
+                ),
+                None,
+            )
 
         create_patient_arguments = self._parse_create_patient_command(message)
         if create_patient_arguments is not None:
@@ -782,6 +985,8 @@ class IntentClassifier:
 
         # Try regex patterns first (high precision). Use original `message` so Thai + English both match.
         for pattern, intent, playbook, metadata in self._intent_patterns:
+            if not allow_semantic and metadata.get("deterministic_precheck") is False:
+                continue
             if not re.search(pattern, message, flags=re.IGNORECASE):
                 continue
             confidence = 0.95  # High confidence for exact regex match
@@ -884,6 +1089,9 @@ class IntentClassifier:
                 None,
             )
 
+        if not allow_semantic:
+            return (None, None)
+
         # Fallback: semantic similarity matching (multilingual when enabled)
         semantic_result = self._compute_semantic_similarity(message)
         if semantic_result:
@@ -920,6 +1128,13 @@ class IntentClassifier:
 
         Returns list of intent matches for compound processing.
         """
+        # Task clarification drafts use semicolon-delimited structured fields.
+        # Do not split their checklist/report values on commas or "and".
+        _, task_fields = parse_task_form_fields(message)
+        if task_fields:
+            single_intent, _ = self.classify(message, context)
+            return [single_intent] if single_intent else []
+
         # Check for conjunction patterns that indicate compound intent
         compound_patterns = [
             r"(.+?)\s+(?:and|then|also|plus)\s+(.+)",
@@ -964,7 +1179,7 @@ class IntentClassifier:
             intent = intents[0]
             step = ExecutionPlanStep(
                 id=f"step-{intent.intent}",
-                title=f"Execute {intent.intent}",
+                title=_human_plan_summary(intent, original_message),
                 tool_name=intent.tool_name,
                 arguments=intent.arguments,
                 risk_level=intent.risk_level,
@@ -1049,15 +1264,8 @@ def _register_workspace_tools_intent_metadata() -> None:
     """Ensure `/tool <name>` and intent routing have metadata for every workspace MCP tool."""
     from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
 
-    default_meta = {
-        "playbook": "system",
-        "permission_basis": [],
-        "risk_level": "medium",
-        "read_only": False,
-    }
     for name in _WORKSPACE_TOOL_REGISTRY:
-        if name not in TOOL_INTENT_METADATA:
-            TOOL_INTENT_METADATA[name] = dict(default_meta)
+        TOOL_INTENT_METADATA[name] = tool_intent_metadata(name)
 
 
 _register_workspace_tools_intent_metadata()

@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Docs Sync"
+  short_description: "WheelSense docs-sync workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $docs-sync for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

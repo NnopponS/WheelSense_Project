@@ -11,6 +11,7 @@ import {
   Plus,
   Calendar,
   Clock,
+  Activity,
   Heart,
   UserCheck,
   AlertCircle,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +52,7 @@ type CaregiverPatientAccessOut = {
 type PatientRow = {
   id: number;
   fullName: string;
+  photoUrl: string | null;
   careLevel: "critical" | "special" | "standard";
   roomId: number | null;
   status: "active" | "inactive";
@@ -236,6 +239,7 @@ export default function AdminPatientsPage() {
         return {
           id: patient.id,
           fullName: `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`,
+          photoUrl: patient.photo_url?.trim() || null,
           careLevel: (patient.care_level as PatientRow["careLevel"]) || "standard",
           roomId: patient.room_id,
           status: patient.is_active ? "active" : "inactive",
@@ -313,11 +317,19 @@ export default function AdminPatientsPage() {
         accessorKey: "fullName",
         header: t("patients.colPatient"),
         cell: ({ row }) => (
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">{row.original.fullName}</p>
-            <p className="text-sm text-muted-foreground">
-              {t("patients.recordId")} #{row.original.id}
-            </p>
+          <div className="flex items-center gap-3">
+            <UserAvatar
+              username={row.original.fullName}
+              profileImageUrl={row.original.photoUrl}
+              sizePx={38}
+              fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+            />
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">{row.original.fullName}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("patients.recordId")} #{row.original.id}
+              </p>
+            </div>
           </div>
         ),
       },
@@ -411,6 +423,12 @@ export default function AdminPatientsPage() {
             <Button asChild size="sm" variant="outline">
               <Link href={getPatientDetailPath(user?.role || "admin", row.original.id)}>{t("patients.viewProfile")}</Link>
             </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`${getPatientDetailPath(user?.role || "admin", row.original.id)}?tab=care#timeline`}>
+                <Activity className="h-4 w-4" />
+                Timeline
+              </Link>
+            </Button>
             {canDeletePatient ? (
               <Button
                 type="button"
@@ -431,7 +449,7 @@ export default function AdminPatientsPage() {
         ),
       },
     ],
-    [t, canDeletePatient, deletePatientMutation.isPending],
+    [t, canDeletePatient, deletePatientMutation, user?.role],
   );
 
   const isLoading =
@@ -551,6 +569,27 @@ export default function AdminPatientsPage() {
             isLoading={isLoading}
             emptyText={t("adminPatients.emptyRoster")}
             rightSlot={<Users className="h-4 w-4 text-muted-foreground" />}
+            csvExport={{
+              fileNameBase: "wheelsense-patients",
+              headers: [
+                "Patient ID",
+                "Name",
+                "Care level",
+                "Room ID",
+                "Status",
+                "Admission date",
+                "Assigned caregivers",
+              ],
+              getRowValues: (row) => [
+                row.id,
+                row.fullName,
+                row.careLevel,
+                row.roomId ?? "",
+                row.status,
+                row.admissionDate ?? "",
+                row.assignedCaregivers.join("; "),
+              ],
+            }}
           />
         </TabsContent>
 
@@ -571,7 +610,7 @@ export default function AdminPatientsPage() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {upcomingRoutines.map((routine) => (
-                    <Card key={routine.id} className="border-l-4" style={{ borderLeftColor: "var(--border)" }}>
+                    <Card key={routine.id} className="border-border/70">
                       <CardContent className="p-4 space-y-3">
                         <div className="flex items-start justify-between">
                           <div>

@@ -4,8 +4,8 @@
 **Referenced Files in This Document**
 - [mqtt_handler.py](file://server/app/mqtt_handler.py)
 - [config.py](file://server/app/config.py)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp)
-- [NetworkManager.h](file://firmware/M5StickCPlus2/src/managers/NetworkManager.h)
+- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [NetworkManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h)
 - [TELEMETRY_CONTRACT.md](file://firmware/TELEMETRY_CONTRACT.md)
 - [mosquitto.conf](file://server/mosquitto.conf)
 - [device_management.py](file://server/app/services/device_management.py)
@@ -58,13 +58,13 @@ SRV --> MH
 ```
 
 **Diagram sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 - [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
 - [mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
 - [device_management.py:127-200](file://server/app/services/device_management.py#L127-L200)
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 - [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
 - [mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
 
@@ -83,8 +83,8 @@ SRV --> MH
   - IMU telemetry, RSSI readings, room predictions, motion training data, photo records, and node status telemetry.
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2/src/managers/NetworkManager.h#L8-L63)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
 - [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
 - [device_management.py:127-200](file://server/app/services/device_management.py#L127-L200)
 - [telemetry.py:20-130](file://server/app/models/telemetry.py#L20-L130)
@@ -167,12 +167,12 @@ class NetworkManager {
 ```
 
 **Diagram sources**
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2/src/managers/NetworkManager.h#L8-L63)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2/src/managers/NetworkManager.h#L8-L63)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
 
 ### Server MQTT Listener and Message Pipeline
 Responsibilities:
@@ -320,7 +320,7 @@ Wait --> Done
 **Section sources**
 - [mqtt_handler.py:100-125](file://server/app/mqtt_handler.py#L100-L125)
 - [TELEMETRY_CONTRACT.md:5-68](file://firmware/TELEMETRY_CONTRACT.md#L5-L68)
-- [NetworkManager.cpp:115-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L115-L133)
+- [NetworkManager.cpp:115-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L115-L133)
 
 ### MQTT Broker Configuration, Security, and Authentication
 - Broker configuration:
@@ -335,7 +335,7 @@ Wait --> Done
 **Section sources**
 - [mosquitto.conf:1-7](file://server/mosquitto.conf#L1-L7)
 - [config.py:23-37](file://server/app/config.py#L23-L37)
-- [NetworkManager.cpp:108-113](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L108-L113)
+- [NetworkManager.cpp:108-113](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L108-L113)
 
 ### Message Persistence, Retry Logic, and Error Recovery
 - Server:
@@ -349,8 +349,8 @@ Wait --> Done
 
 **Section sources**
 - [mqtt_handler.py:73-137](file://server/app/mqtt_handler.py#L73-L137)
-- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L58-L94)
-- [NetworkManager.cpp:276-282](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L276-L282)
+- [NetworkManager.cpp:58-94](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L58-L94)
+- [NetworkManager.cpp:276-282](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L276-L282)
 
 ### Integration with Device Firmware, Message Queuing, and Event-Driven Patterns
 - Firmware integrates Wi-Fi and MQTT clients, exposing a simple publish/subscribe interface.
@@ -358,7 +358,7 @@ Wait --> Done
 - Device management services encapsulate workspace-aware device operations, ensuring isolation and auditability.
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 - [device_management.py:127-200](file://server/app/services/device_management.py#L127-L200)
 
 ### Practical Examples
@@ -405,12 +405,12 @@ BRK --> MH
 ```
 
 **Diagram sources**
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2/src/managers/NetworkManager.h#L8-L63)
+- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
 - [mqtt_handler.py:12-40](file://server/app/mqtt_handler.py#L12-L40)
 - [device_management.py:1-60](file://server/app/services/device_management.py#L1-L60)
 
 **Section sources**
-- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2/src/managers/NetworkManager.h#L8-L63)
+- [NetworkManager.h:8-63](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.h#L8-L63)
 - [mqtt_handler.py:12-40](file://server/app/mqtt_handler.py#L12-L40)
 - [device_management.py:1-60](file://server/app/services/device_management.py#L1-L60)
 

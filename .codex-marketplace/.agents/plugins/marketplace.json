@@ -1,0 +1,21 @@
+{
+  "name": "wheelsense-local",
+  "interface": {
+    "displayName": "WheelSense Local"
+  },
+  "plugins": [
+    {
+      "name": "wheelsense-workflows",
+      "version": "0.1.0",
+      "source": {
+        "source": "local",
+        "path": "./plugins/wheelsense-workflows"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

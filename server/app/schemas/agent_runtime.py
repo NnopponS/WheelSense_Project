@@ -36,6 +36,8 @@ class AgentRuntimeProposeRequest(BaseModel):
     actor_access_token: str
     # When the user opens EaseAI from a patient record page, seed intent context for this patient.
     page_patient_id: int | None = None
+    # Current UI page context from the web client. Used only for grounding and role-safe navigation hints.
+    page_context: dict[str, Any] = Field(default_factory=dict)
 
 
 class AgentRuntimeProposeResponse(BaseModel):

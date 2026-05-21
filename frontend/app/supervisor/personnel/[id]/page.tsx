@@ -9,6 +9,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { Activity, ClipboardList, HeartPulse, Siren } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import UserAvatar from "@/components/shared/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -466,8 +467,15 @@ export default function SupervisorPatientDetailPage() {
       <Card>
         <CardContent className="space-y-4 pt-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">
+            <div className="flex min-w-0 items-center gap-4">
+              <UserAvatar
+                username={patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
+                profileImageUrl={patient?.photo_url}
+                sizePx={64}
+                fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+              />
+              <div className="min-w-0">
+              <h2 className="truncate text-2xl font-bold text-foreground">
                 {patient ? `${patient.first_name} ${patient.last_name}` : t("clinical.patient.fallbackTitle")}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -475,6 +483,7 @@ export default function SupervisorPatientDetailPage() {
                   .filter(Boolean)
                   .join(" · ") || t("supervisor.patientDetail.pageSubtitle")}
               </p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">{patient?.care_level || "normal"}</Badge>

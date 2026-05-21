@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, Plus } from "lucide-react";
 import { api } from "@/lib/api";
@@ -43,12 +43,6 @@ export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
   );
 
   const linkedUserIds = useMemo(() => new Set(linkedUsers.map((u) => u.id)), [linkedUsers]);
-
-  useEffect(() => {
-    if (!linkedUsers.length) return;
-    const valid = (id: number | null) => id != null && linkedUsers.some((u) => u.id === id);
-    if (!valid(primaryAssigneeUserId)) setPrimaryAssigneeUserId(linkedUsers[0].id);
-  }, [linkedUsers, primaryAssigneeUserId]);
 
   const schedulesQuery = useQuery({
     queryKey: ["admin", "staff-detail", "schedules"],
@@ -123,7 +117,7 @@ export function StaffRoutineAndCalendarPanel({ linkedUsers }: Props) {
               <div className="flex min-w-[12rem] flex-col gap-1">
                 <Label className="text-xs">{t("caregivers.workPanel.defaultAssignee")}</Label>
                 <Select
-                  value={primaryAssigneeUserId != null ? String(primaryAssigneeUserId) : String(linkedUsers[0].id)}
+                  value={defaultAssignee != null ? String(defaultAssignee) : String(linkedUsers[0].id)}
                   onValueChange={(v) => setPrimaryAssigneeUserId(Number(v))}
                 >
                   <SelectTrigger>

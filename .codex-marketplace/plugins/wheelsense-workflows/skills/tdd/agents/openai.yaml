@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Tdd"
+  short_description: "WheelSense tdd workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $tdd for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

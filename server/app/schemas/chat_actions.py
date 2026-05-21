@@ -47,6 +47,10 @@ class ChatActionProposalRequest(BaseModel):
         default=None,
         description="Optional patient id from the current UI page (e.g. admin patient detail) to seed agent-runtime context.",
     )
+    page_context: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Optional current UI page context for page-aware EaseAI answers and role-safe navigation hints.",
+    )
 
 
 class ChatActionProposalItem(BaseModel):
@@ -89,6 +93,8 @@ class ChatActionExecuteOut(BaseModel):
     execution_result: dict[str, Any]
     message: str = ""
     reply: str = ""
+    response_cards: list[dict[str, Any]] = Field(default_factory=list)
+    metadata: dict[str, Any] | None = None
 
 
 class ChatActionProposalResponse(BaseModel):
@@ -99,4 +105,7 @@ class ChatActionProposalResponse(BaseModel):
     summary: str = ""
     actions: list[ChatActionProposalItem] = Field(default_factory=list)
     execution_plan: ExecutionPlan | None = None
+    grounding: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
     ai_trace: list[dict[str, Any]] | None = None
+    provider_attempts: list[dict[str, Any]] | None = None

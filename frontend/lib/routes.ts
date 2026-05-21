@@ -25,6 +25,9 @@ export function getPersonnelPath(role: string): string {
 export function getPatientsPath(role: string): string {
   if (role === "patient") return "/patient?tab=profile";
   if (role === "admin") return "/admin/patients";
+  if (role === "head_nurse" || role === "supervisor" || role === "observer") {
+    return `/${role.replaceAll("_", "-")}/personnel`;
+  }
   return `/${role.replaceAll("_", "-")}/patients`;
 }
 
@@ -51,6 +54,9 @@ export function getFacilityManagementPath(role: string): string {
 export function getPatientDetailPath(role: string, patientId: number | string): string {
   if (role === "patient") return "/patient?tab=profile";
   if (role === "admin") return `/admin/patients/${patientId}`;
+  if (role === "head_nurse" || role === "supervisor" || role === "observer") {
+    return `/${role.replaceAll("_", "-")}/personnel/${patientId}`;
+  }
   return `/${role.replaceAll("_", "-")}/patients/${patientId}`;
 }
 
@@ -74,7 +80,9 @@ export function getMlCalibrationPath(role: string): string {
 
 /** Get monitoring page path based on role. */
 export function getMonitoringPath(role: string, roomId?: number | string): string {
-  const base = `/${role.replaceAll("_", "-")}/monitoring`;
+  const base = role === "admin"
+    ? "/admin/facility-management"
+    : `/${role.replaceAll("_", "-")}/floorplans`;
   return roomId !== undefined ? `${base}?room=${roomId}` : base;
 }
 

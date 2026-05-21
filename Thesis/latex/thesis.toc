@@ -35,89 +35,91 @@
 \contentsline {subsection}{\numberline {2.6.3}Polar Verity Sense}{33}{subsection.2.6.3}%
 \contentsline {subsection}{\numberline {2.6.4}Raspberry Pi 5}{34}{subsection.2.6.4}%
 \contentsline {section}{\numberline {2.7}เทคโนโลยีซอฟต์แวร์และโครงสร้างพื้นฐานที่เกี่ยวข้อง}{35}{section.2.7}%
-\contentsline {subsection}{\numberline {2.7.1}แนวคิดการออกแบบ UX/UI สำหรับระบบติดตามสภาวะ}{36}{subsection.2.7.1}%
-\contentsline {subsection}{\numberline {2.7.2}FastAPI (Backend Framework)}{37}{subsection.2.7.2}%
-\contentsline {subsection}{\numberline {2.7.3}React (UI Library)}{38}{subsection.2.7.3}%
-\contentsline {subsection}{\numberline {2.7.4}Next.js (Frontend Framework)}{39}{subsection.2.7.4}%
-\contentsline {subsection}{\numberline {2.7.5}React Native และ Expo (Mobile Development Framework)}{39}{subsection.2.7.5}%
-\contentsline {subsection}{\numberline {2.7.6}PostgreSQL (Database Management System)}{40}{subsection.2.7.6}%
-\contentsline {subsection}{\numberline {2.7.7}Docker (Containerization)}{41}{subsection.2.7.7}%
-\contentsline {subsection}{\numberline {2.7.8}Ollama และ Large Language Models (LLM)}{42}{subsection.2.7.8}%
-\contentsline {subsection}{\numberline {2.7.9}Model Context Protocol (MCP)}{42}{subsection.2.7.9}%
-\contentsline {subsection}{\numberline {2.7.10}MQTT (Message Queuing Telemetry Transport)}{43}{subsection.2.7.10}%
-\contentsline {subsection}{\numberline {2.7.11}PlatformIO และการพัฒนา Firmware}{44}{subsection.2.7.11}%
-\contentsline {subsection}{\numberline {2.7.12}Home Assistant และการควบคุมอุปกรณ์ IoT}{44}{subsection.2.7.12}%
-\contentsline {section}{\numberline {2.8}ทฤษฎีด้านความปลอดภัยและการควบคุมสิทธิ์การเข้าถึง}{45}{section.2.8}%
-\contentsline {subsection}{\numberline {2.8.1}การควบคุมการเข้าถึงตามบทบาท (Role-Based Access Control: RBAC)}{45}{subsection.2.8.1}%
-\contentsline {subsection}{\numberline {2.8.2}การรักษาความปลอดภัยของสถาปัตยกรรมระบบ}{46}{subsection.2.8.2}%
-\contentsline {section}{\numberline {2.9}งานวิจัยที่เกี่ยวข้อง}{46}{section.2.9}%
-\contentsline {chapter}{\numberline {บทที่ 3}วิธีการศึกษา}{47}{chapter.3}%
-\contentsline {section}{\numberline {3.1}การออกแบบระบบ}{47}{section.3.1}%
-\contentsline {section}{\numberline {3.2}การออกแบบเซ็นเซอร์บนเก้าอี้รถเข็น}{49}{section.3.2}%
-\contentsline {subsection}{\numberline {3.2.1}ฮาร์ดแวร์}{49}{subsection.3.2.1}%
-\contentsline {subsection}{\numberline {3.2.2}โครงข่ายข้อมูล}{50}{subsection.3.2.2}%
-\contentsline {subsection}{\numberline {3.2.3}การประมวลผลข้อมูล}{51}{subsection.3.2.3}%
-\contentsline {section}{\numberline {3.3}อุปกรณ์สวมใส่และสมาร์ทโฟน}{53}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}ฮาร์ดแวร์}{53}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}โครงข่ายข้อมูล}{53}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}การประมวลผลข้อมูล}{54}{subsection.3.3.3}%
-\contentsline {section}{\numberline {3.4}การจำแนกตำแหน่ง}{55}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}ฮาร์ดแวร์}{55}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}การประมวลผลข้อมูล}{57}{subsection.3.4.2}%
-\contentsline {section}{\numberline {3.5}เซิร์ฟเวอร์}{58}{section.3.5}%
-\contentsline {subsection}{\numberline {3.5.1}สถาปัตยกรรมโดยรวม}{58}{subsection.3.5.1}%
-\contentsline {subsection}{\numberline {3.5.2}แอปพลิเคชันแบ็กเอนด์ FastAPI}{59}{subsection.3.5.2}%
-\contentsline {subsection}{\numberline {3.5.3}ช่องทางสื่อสารและการรับข้อมูล}{60}{subsection.3.5.3}%
-\contentsline {subsection}{\numberline {3.5.4}ฐานข้อมูล PostgreSQL}{61}{subsection.3.5.4}%
-\contentsline {subsection}{\numberline {3.5.5}ระบบควบคุมอุปกรณ์ Home Assistant}{62}{subsection.3.5.5}%
-\contentsline {subsection}{\numberline {3.5.6}ระบบรับรองความถูกต้องและการควบคุมสิทธิ์}{63}{subsection.3.5.6}%
-\contentsline {section}{\numberline {3.6}ระบบปัญญาประดิษฐ์ (AI)}{64}{section.3.6}%
-\contentsline {subsection}{\numberline {3.6.1}สถาปัตยกรรม}{64}{subsection.3.6.1}%
-\contentsline {subsection}{\numberline {3.6.2}Prompt}{66}{subsection.3.6.2}%
-\contentsline {subsection}{\numberline {3.6.3}องค์ประกอบอื่นๆ}{68}{subsection.3.6.3}%
-\contentsline {section}{\numberline {3.7}HMI}{69}{section.3.7}%
-\contentsline {subsection}{\numberline {3.7.1}ส่วน UI แดชบอร์ดเว็บ}{69}{subsection.3.7.1}%
-\contentsline {subsection}{\numberline {3.7.2}การเชื่อมต่อแบ็กเอนด์และประสิทธิภาพ}{70}{subsection.3.7.2}%
-\contentsline {subsection}{\numberline {3.7.3}ส่วน UI แอปพลิเคชันบนอุปกรณ์เคลื่อนที่}{72}{subsection.3.7.3}%
-\contentsline {chapter}{\numberline {บทที่ 4}ผลการวิจัย}{74}{chapter.4}%
-\contentsline {section}{\numberline {4.1}บทนำและภาพรวมการประเมินผล}{74}{section.4.1}%
-\contentsline {section}{\numberline {4.2}ผลการประเมินระบบเซ็นเซอร์บนรถเข็น}{74}{section.4.2}%
-\contentsline {subsection}{\numberline {4.2.1}การทดสอบฮาร์ดแวร์และการอ่านค่า}{74}{subsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.2.2}การทดสอบโครงข่ายและการเชื่อมโยงข้อมูล}{75}{subsection.4.2.2}%
-\contentsline {subsection}{\numberline {4.2.3}ผลการประมวลผลข้อมูล}{75}{subsection.4.2.3}%
-\contentsline {section}{\numberline {4.3}ผลการประเมินระบบจำแนกตำแหน่ง}{76}{section.4.3}%
-\contentsline {subsection}{\numberline {4.3.1}การทดสอบฮาร์ดแวร์และ Beacon}{76}{subsection.4.3.1}%
-\contentsline {subsection}{\numberline {4.3.2}ผลการทดสอบอัลกอริทึม}{76}{subsection.4.3.2}%
-\contentsline {section}{\numberline {4.4}ผลการประเมินอุปกรณ์สวมใส่และสมาร์ทโฟน}{78}{section.4.4}%
-\contentsline {subsection}{\numberline {4.4.1}การทดสอบฮาร์ดแวร์ Polar Verity Sense}{78}{subsection.4.4.1}%
-\contentsline {subsection}{\numberline {4.4.2}การทดสอบการเชื่อมต่อสมาร์ทโฟนและ Gateway}{79}{subsection.4.4.2}%
-\contentsline {subsection}{\numberline {4.4.3}ผลการประมวลผลข้อมูลสัญญาณชีพ}{79}{subsection.4.4.3}%
-\contentsline {section}{\numberline {4.5}ผลการประเมินเซิร์ฟเวอร์ส่วนกลาง}{81}{section.4.5}%
-\contentsline {subsection}{\numberline {4.5.1}ผลการทดสอบสถาปัตยกรรมและการ Deploy}{81}{subsection.4.5.1}%
-\contentsline {subsection}{\numberline {4.5.2}ผลการทดสอบช่องทางสื่อสาร}{83}{subsection.4.5.2}%
-\contentsline {subsection}{\numberline {4.5.3}ผลการทดสอบฐานข้อมูล}{83}{subsection.4.5.3}%
-\contentsline {subsection}{\numberline {4.5.4}ผลการทดสอบ Home Assistant Integration}{83}{subsection.4.5.4}%
-\contentsline {subsection}{\numberline {4.5.5}ผลการทดสอบความปลอดภัย}{85}{subsection.4.5.5}%
-\contentsline {section}{\numberline {4.6}ผลการประเมินระบบผู้ช่วยอัจฉริยะ}{85}{section.4.6}%
-\contentsline {subsection}{\numberline {4.6.1}ผลการทดสอบสถาปัตยกรรม AI}{85}{subsection.4.6.1}%
-\contentsline {subsection}{\numberline {4.6.2}ผลการทดสอบ Prompt และ Intent Classification}{85}{subsection.4.6.2}%
-\contentsline {subsection}{\numberline {4.6.3}ผลการทดสอบ Propose-Confirm-Execute Flow}{89}{subsection.4.6.3}%
-\contentsline {section}{\numberline {4.7}ผลการประเมินส่วนติดต่อผู้ใช้งาน}{91}{section.4.7}%
-\contentsline {subsection}{\numberline {4.7.1}ผลการทดสอบแดชบอร์ดเว็บ}{91}{subsection.4.7.1}%
-\contentsline {subsection}{\numberline {4.7.2}ผลการทดสอบแอปพลิเคชันบนอุปกรณ์เคลื่อนที่}{93}{subsection.4.7.2}%
-\contentsline {section}{\numberline {4.8}การทดสอบระบบแบบปลายถึงปลายและกรณีศึกษา}{94}{section.4.8}%
-\contentsline {subsection}{\numberline {4.8.1}สถานการณ์ทดสอบแบบปลายถึงปลาย}{94}{subsection.4.8.1}%
-\contentsline {subsection}{\numberline {4.8.2}กรณีศึกษาการใช้งานจริง}{95}{subsection.4.8.2}%
-\contentsline {chapter}{\numberline {บทที่ 5}สรุปผลการวิจัย และข้อเสนอแนะ}{96}{chapter.5}%
-\contentsline {section}{\numberline {5.1}อภิปรายผลงานวิจัย}{96}{section.5.1}%
-\contentsline {section}{\numberline {5.2}สรุปผลงานวิจัย}{98}{section.5.2}%
-\contentsline {section}{\numberline {5.3}ข้อจำกัดของงานวิจัย}{99}{section.5.3}%
-\contentsline {section}{\numberline {5.4}ข้อเสนอแนะในการวิจัย}{99}{section.5.4}%
+\contentsline {subsection}{\numberline {2.7.1}FastAPI (Backend Framework)}{36}{subsection.2.7.1}%
+\contentsline {subsection}{\numberline {2.7.2}React (UI Library)}{37}{subsection.2.7.2}%
+\contentsline {subsection}{\numberline {2.7.3}Next.js (Frontend Framework)}{38}{subsection.2.7.3}%
+\contentsline {subsection}{\numberline {2.7.4}Flutter และ Dart (Mobile Development Framework)}{38}{subsection.2.7.4}%
+\contentsline {subsection}{\numberline {2.7.5}PostgreSQL (Database Management System)}{39}{subsection.2.7.5}%
+\contentsline {subsection}{\numberline {2.7.6}Docker (Containerization)}{40}{subsection.2.7.6}%
+\contentsline {subsection}{\numberline {2.7.7}Ollama และ Large Language Models (LLM)}{41}{subsection.2.7.7}%
+\contentsline {subsection}{\numberline {2.7.8}Model Context Protocol (MCP)}{41}{subsection.2.7.8}%
+\contentsline {subsection}{\numberline {2.7.9}MQTT (Message Queuing Telemetry Transport)}{42}{subsection.2.7.9}%
+\contentsline {subsection}{\numberline {2.7.10}PlatformIO และการพัฒนา Firmware}{43}{subsection.2.7.10}%
+\contentsline {subsection}{\numberline {2.7.11}Home Assistant และการควบคุมอุปกรณ์ IoT}{43}{subsection.2.7.11}%
+\contentsline {section}{\numberline {2.8}งานวิจัยที่เกี่ยวข้อง}{44}{section.2.8}%
+\contentsline {chapter}{\numberline {บทที่ 3}วิธีการศึกษา}{45}{chapter.3}%
+\contentsline {section}{\numberline {3.1}การออกแบบระบบ}{45}{section.3.1}%
+\contentsline {section}{\numberline {3.2}การออกแบบเซ็นเซอร์บนเก้าอี้รถเข็น}{47}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}ฮาร์ดแวร์}{47}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}โครงข่ายข้อมูล}{48}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}การประมวลผลข้อมูล}{49}{subsection.3.2.3}%
+\contentsline {section}{\numberline {3.3}อุปกรณ์สวมใส่และสมาร์ทโฟน}{51}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}ฮาร์ดแวร์}{51}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}โครงข่ายข้อมูล}{51}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}การประมวลผลข้อมูล}{52}{subsection.3.3.3}%
+\contentsline {section}{\numberline {3.4}การจำแนกตำแหน่ง}{53}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}ฮาร์ดแวร์}{53}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}การประมวลผลข้อมูล}{55}{subsection.3.4.2}%
+\contentsline {section}{\numberline {3.5}เซิร์ฟเวอร์}{56}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}สถาปัตยกรรมโดยรวม}{56}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}แอปพลิเคชันแบ็กเอนด์ FastAPI}{57}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}ช่องทางสื่อสารและการรับข้อมูล}{58}{subsection.3.5.3}%
+\contentsline {subsection}{\numberline {3.5.4}ฐานข้อมูล PostgreSQL}{59}{subsection.3.5.4}%
+\contentsline {subsection}{\numberline {3.5.5}ระบบควบคุมอุปกรณ์ Home Assistant}{60}{subsection.3.5.5}%
+\contentsline {subsection}{\numberline {3.5.6}ระบบรับรองความถูกต้องและการควบคุมสิทธิ์}{61}{subsection.3.5.6}%
+\contentsline {section}{\numberline {3.6}ระบบปัญญาประดิษฐ์ (AI)}{62}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}สถาปัตยกรรม}{62}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}Prompt}{64}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}องค์ประกอบอื่นๆ}{66}{subsection.3.6.3}%
+\contentsline {section}{\numberline {3.7}ส่วนติดต่อผู้ใช้งานและ HMI}{67}{section.3.7}%
+\contentsline {chapter}{\numberline {บทที่ 4}ผลการวิจัย}{72}{chapter.4}%
+\contentsline {section}{\numberline {4.1}บทนำและภาพรวมการประเมินผล}{72}{section.4.1}%
+\contentsline {section}{\numberline {4.2}ผลการประเมินระบบเซ็นเซอร์บนรถเข็น}{72}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}การทดสอบฮาร์ดแวร์และการอ่านค่า}{72}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}การทดสอบโครงข่ายและการเชื่อมโยงข้อมูล}{73}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}ผลการประมวลผลข้อมูล}{73}{subsection.4.2.3}%
+\contentsline {section}{\numberline {4.3}ผลการประเมินระบบจำแนกตำแหน่ง}{74}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}การทดสอบฮาร์ดแวร์และ Beacon}{74}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}ผลการทดสอบอัลกอริทึม}{74}{subsection.4.3.2}%
+\contentsline {section}{\numberline {4.4}ผลการประเมินอุปกรณ์สวมใส่และสมาร์ทโฟน}{76}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}การทดสอบฮาร์ดแวร์ Polar Verity Sense}{76}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}การทดสอบการเชื่อมต่อสมาร์ทโฟนและ Gateway}{77}{subsection.4.4.2}%
+\contentsline {subsection}{\numberline {4.4.3}ผลการประมวลผลข้อมูลสัญญาณชีพ}{77}{subsection.4.4.3}%
+\contentsline {section}{\numberline {4.5}ผลการประเมินเซิร์ฟเวอร์ส่วนกลาง}{79}{section.4.5}%
+\contentsline {subsection}{\numberline {4.5.1}ผลการทดสอบสถาปัตยกรรมและการ Deploy}{79}{subsection.4.5.1}%
+\contentsline {subsection}{\numberline {4.5.2}ผลการทดสอบช่องทางสื่อสาร}{81}{subsection.4.5.2}%
+\contentsline {subsection}{\numberline {4.5.3}ผลการทดสอบฐานข้อมูล}{81}{subsection.4.5.3}%
+\contentsline {subsection}{\numberline {4.5.4}ผลการทดสอบ Home Assistant Integration}{81}{subsection.4.5.4}%
+\contentsline {subsection}{\numberline {4.5.5}ผลการทดสอบความปลอดภัย}{83}{subsection.4.5.5}%
+\contentsline {section}{\numberline {4.6}ผลการประเมินระบบผู้ช่วยอัจฉริยะ}{83}{section.4.6}%
+\contentsline {subsection}{\numberline {4.6.1}ผลการทดสอบสถาปัตยกรรม AI}{83}{subsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.6.2}ผลการทดสอบ Prompt และ Intent Classification}{83}{subsection.4.6.2}%
+\contentsline {subsection}{\numberline {4.6.3}ผลการทดสอบ Propose-Confirm-Execute Flow}{87}{subsection.4.6.3}%
+\contentsline {section}{\numberline {4.7}ผลการประเมินส่วนติดต่อผู้ใช้งาน}{89}{section.4.7}%
+\contentsline {subsection}{\numberline {4.7.1}ผลการทดสอบแดชบอร์ดเว็บ}{89}{subsection.4.7.1}%
+\contentsline {subsection}{\numberline {4.7.2}ผลการทดสอบแอปพลิเคชันบนอุปกรณ์เคลื่อนที่}{91}{subsection.4.7.2}%
+\contentsline {section}{\numberline {4.8}การทดสอบระบบแบบปลายถึงปลายและกรณีศึกษา}{92}{section.4.8}%
+\contentsline {subsection}{\numberline {4.8.1}สถานการณ์ทดสอบแบบปลายถึงปลาย}{92}{subsection.4.8.1}%
+\contentsline {subsection}{\numberline {4.8.2}กรณีศึกษาการใช้งานจริง}{93}{subsection.4.8.2}%
+\contentsline {chapter}{\numberline {บทที่ 5}สรุปผลการวิจัย และข้อเสนอแนะ}{94}{chapter.5}%
+\contentsline {section}{\numberline {5.1}อภิปรายผลงานวิจัย}{94}{section.5.1}%
+\contentsline {section}{\numberline {5.2}สรุปผลงานวิจัย}{96}{section.5.2}%
+\contentsline {section}{\numberline {5.3}ข้อจำกัดของงานวิจัย}{97}{section.5.3}%
+\contentsline {section}{\numberline {5.4}ข้อเสนอแนะในการวิจัย}{97}{section.5.4}%
 \vspace {\baselineskip }
-\contentsline {chapter}{รายการอ้างอิง}{100}{section*.102}%
+\contentsline {chapter}{รายการอ้างอิง}{98}{section*.102}%
 \vspace {\baselineskip }
-\contentsline {chapter}{ภาคผนวก}{104}{section*.104}%
-\contentsline {section}{คลังซอร์สโค้ด}{105}{appendix.A}%
-\contentsline {section}{แบบสอบถามประเมินความพึงพอใจ Google Form}{106}{appendix.B}%
-\contentsline {section}{ภาพประกอบการทดลองและการเข้าพื้นที่บ้านพักคนชรา}{110}{appendix.C}%
+\contentsline {chapter}{ภาคผนวก}{102}{section*.104}%
+\contentsline {section}{รายละเอียดบริบทโครงงาน}{103}{appendix.A}%
+\contentsline {section}{\numberline {ก.1}ปัญหาทางวิศวกรรมที่ซับซ้อน}{104}{section.A.1}%
+\contentsline {section}{\numberline {ก.2}องค์ความรู้และเครื่องมืออุปกรณ์ที่ใช้}{104}{section.A.2}%
+\contentsline {section}{\numberline {ก.3}มาตรฐาน กฎหมาย และข้อบังคับที่เกี่ยวข้อง}{105}{section.A.3}%
+\contentsline {section}{\numberline {ก.4}ผู้มีส่วนได้ส่วนเสีย ผลกระทบ และความยั่งยืน}{105}{section.A.4}%
+\contentsline {section}{\numberline {ก.5}การบริหารงานวิศวกรรมและโครงการ}{105}{section.A.5}%
+\contentsline {section}{คลังซอร์สโค้ด}{107}{appendix.B}%
+\contentsline {section}{แบบประเมินและข้อมูลประกอบการใช้งาน}{108}{appendix.C}%
+\contentsline {section}{ภาพประกอบการทดลองและการติดตั้ง}{109}{appendix.D}%
+\contentsline {section}{ข้อมูลประกอบการทดลองระบบ}{110}{appendix.E}%
+\contentsline {section}{หลักฐานการประเมิน AI และ MCP}{111}{appendix.F}%
+\contentsline {section}{ข้อมูลประกอบเพิ่มเติมจากชุดทดลอง Paper IEEE}{112}{appendix.G}%
 \contentsfinish 

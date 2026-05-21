@@ -9,7 +9,7 @@
 - Implement 5-layer AI pipeline (image in 2026-04-20 request): Intent Router → Context Requirement → Behavioral State (async) → Constrained LLM Synthesis → Safety Check & Tool Execution + Observability.
 - EaseAI fully usable across every role with scope parity.
 - Wipe live DB, simulate hardware, seed 1 admin + 1 head_nurse + 1 supervisor + 2 observers + the **5 specific patients** from user's spec.
-- Mobile app (`mobile-app/wheelsense-mobile`) gains feature parity + native SOS + offline queue + push deep-link.
+- Mobile app (`mobile-app/wheelsense-gateway-flutter`) gains feature parity + native SOS + offline queue + push deep-link.
 
 ## Invariant (do not violate)
 - Keep `proxy.ts` role guards and FastAPI workspace scoping intact.
@@ -154,8 +154,8 @@ Tests (TDD RED→GREEN via Docker):
 Frontend: `npm run build` GREEN
 
 ### PHASE 10 — Mobile app feature parity — DONE (turn 10)
-- `mobile-app/wheelsense-mobile/src/components/GlobalSosButton.tsx`
-- `mobile-app/wheelsense-mobile/src/services/OfflineQueue.ts`
+- `mobile-app/wheelsense-gateway-flutter/src/components/GlobalSosButton.tsx`
+- `mobile-app/wheelsense-gateway-flutter/src/services/OfflineQueue.ts`
 - `NotificationService` deep-link → WebView at `alertsInboxUrl(role, id)`
 - Role-aware landing in `HomeScreen`
 - Font-scale inject to WebView via `injectedJavaScript`.

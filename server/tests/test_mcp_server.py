@@ -69,15 +69,61 @@ def test_mcp_workspace_tool_registry_keys_unique():
     assert len(keys) == len(set(keys))
 
 
+def test_mcp_tool_catalog_covers_workspace_registry():
+    from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
+    from app.mcp.tool_catalog import (
+        EASEAI_FORBIDDEN_TOOLS,
+        MUTATION_TOOL_NAMES,
+        PATIENT_EXCLUSIVE_TOOLS,
+        get_tool_policy,
+        is_tool_read_only,
+        validate_catalog_coverage,
+    )
+
+    validate_catalog_coverage(_WORKSPACE_TOOL_REGISTRY)
+
+    assert get_tool_policy("execute_python_code").easeai_forbidden is True
+    assert get_tool_policy("execute_python_code").risk == "critical"
+    assert "execute_python_code" in EASEAI_FORBIDDEN_TOOLS
+
+    sos_policy = get_tool_policy("sos_create_alert")
+    assert sos_policy.patient_exclusive is True
+    assert sos_policy.required_scope == "alerts.read"
+    assert "sos_create_alert" in PATIENT_EXCLUSIVE_TOOLS
+
+    health_policy = get_tool_policy("get_patient_health_analysis")
+    assert health_policy.required_scope == "patients.read"
+    assert health_policy.effect == "read"
+    assert health_policy.requires_confirmation is False
+    assert is_tool_read_only("get_patient_health_analysis")
+
+    device_policy = get_tool_policy("get_device_details")
+    assert device_policy.required_scope == "devices.read"
+    assert device_policy.effect == "read"
+    assert device_policy.requires_confirmation is False
+    assert is_tool_read_only("get_device_details")
+
+    assert "create_alert" in MUTATION_TOOL_NAMES
+    assert "execute_python_code" in MUTATION_TOOL_NAMES
+    assert "sos_create_alert" in MUTATION_TOOL_NAMES
+    for tool_name in MUTATION_TOOL_NAMES:
+        assert not is_tool_read_only(tool_name)
+
+
 def test_mcp_admin_allowlist_matches_registry():
     from app.mcp.server import _WORKSPACE_TOOL_REGISTRY
+    from app.mcp.tool_catalog import EASEAI_FORBIDDEN_TOOLS, PATIENT_EXCLUSIVE_TOOLS
     from app.services.ai_chat import get_role_mcp_tool_allowlist
 
     admin_tools = get_role_mcp_tool_allowlist()["admin"]
     registry_tools = set(_WORKSPACE_TOOL_REGISTRY.keys())
     assert "execute_python_code" in registry_tools
+    assert "sos_create_alert" in registry_tools
+    assert "get_device_details" in registry_tools
+    assert "get_device_details" in admin_tools
     assert "execute_python_code" not in admin_tools
-    assert admin_tools == registry_tools - {"execute_python_code"}
+    assert "sos_create_alert" not in admin_tools
+    assert admin_tools == registry_tools - EASEAI_FORBIDDEN_TOOLS - PATIENT_EXCLUSIVE_TOOLS
 
 
 def test_mcp_streamable_http_lifespan_target_is_inner_starlette_not_auth_middleware():

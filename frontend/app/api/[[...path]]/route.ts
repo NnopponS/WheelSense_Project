@@ -24,6 +24,7 @@ const HOP_BY_HOP = new Set([
   "trailers",
   "transfer-encoding",
   "upgrade",
+  "expect",
 ]);
 
 function fallbackResponseForApiPath(pathname: string) {
@@ -33,6 +34,7 @@ function fallbackResponseForApiPath(pathname: string) {
         models: [],
         connected: false,
         message: "Copilot models are currently unavailable because the backend could not be reached.",
+        source: "fallback",
       },
       { status: 200 },
     );
@@ -183,6 +185,7 @@ async function proxyToBackend(req: NextRequest, pathSegments: string[] | undefin
         "API proxy failed",
         targetUrl.toString(),
         errorFirst instanceof Error ? errorFirst.message : errorFirst,
+        errorSecond instanceof Error ? errorSecond.cause ?? errorSecond : errorSecond,
       );
       const fallback = fallbackResponseForApiPath(sub);
       if (fallback) {

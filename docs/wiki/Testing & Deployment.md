@@ -58,7 +58,7 @@ F_DOCKER["Frontend Dockerfile<br/>frontend/Dockerfile"]
 end
 subgraph "Device Simulation"
 SIM["Simulation Controller<br/>server/sim_controller.py"]
-FW["Firmware (M5StickCPlus2)<br/>firmware/M5StickCPlus2/src/*"]
+FW["Firmware (M5StickCPlus2)<br/>firmware/M5StickCPlus2_BLEGateway/src/*"]
 end
 S_API --> S_TESTS
 S_API --> S_COMPOSE

@@ -9,8 +9,8 @@
 - [mqtt_handler.py](file://server/app/mqtt_handler.py)
 - [telemetry.py](file://server/app/api/endpoints/telemetry.py)
 - [telemetry.py](file://server/app/models/telemetry.py)
-- [NetworkManager.cpp](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp)
-- [SensorManager.cpp](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp)
+- [NetworkManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp)
+- [SensorManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp)
 - [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
 - [layout.tsx](file://frontend/app/layout.tsx)
 - [login/page.tsx](file://frontend/app/login/page.tsx)
@@ -68,7 +68,7 @@ S_MCP --> |"MCP tools"| S_API
 **Diagram sources**
 - [main.py:68-87](file://server/app/main.py#L68-L87)
 - [mqtt_handler.py:73-136](file://server/app/mqtt_handler.py#L73-L136)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 - [main.cpp:532-552](file://firmware/Node_Tsimcam/src/main.cpp#L532-L552)
 - [layout.tsx:11-23](file://frontend/app/layout.tsx#L11-L23)
 - [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
@@ -154,14 +154,14 @@ Srv-->>MQTT : Publish downstream topics (vitals/alerts/room)
 
 **Diagram sources**
 - [TELEMETRY_CONTRACT.md:7-68](file://firmware/TELEMETRY_CONTRACT.md#L7-L68)
-- [NetworkManager.cpp:117-127](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L117-L127)
+- [NetworkManager.cpp:117-127](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L117-L127)
 - [main.cpp:532-552](file://firmware/Node_Tsimcam/src/main.cpp#L532-L552)
 - [mqtt_handler.py:108-136](file://server/app/mqtt_handler.py#L108-L136)
 
 **Section sources**
 - [TELEMETRY_CONTRACT.md:5-68](file://firmware/TELEMETRY_CONTRACT.md#L5-L68)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
-- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L50-L132)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
+- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
 - [main.cpp:532-552](file://firmware/Node_Tsimcam/src/main.cpp#L532-L552)
 
 ### Server: MQTT Ingestion, Enrichment, and Distribution
@@ -258,12 +258,12 @@ SensorManager --> NetworkManager : "uses for telemetry loop"
 ```
 
 **Diagram sources**
-- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L50-L132)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
+- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 
 **Section sources**
-- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2/src/managers/SensorManager.cpp#L50-L132)
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
+- [SensorManager.cpp:50-132](file://firmware/M5StickCPlus2_BLEGateway/src/managers/SensorManager.cpp#L50-L132)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 - [TELEMETRY_CONTRACT.md:7-34](file://firmware/TELEMETRY_CONTRACT.md#L7-L34)
 
 ### MQTT Communication Patterns
@@ -371,7 +371,7 @@ FE --> |"Proxy"| SRV
   - Validate proxy configuration and Authorization header injection.
 
 **Section sources**
-- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2/src/managers/NetworkManager.cpp#L12-L133)
+- [NetworkManager.cpp:12-133](file://firmware/M5StickCPlus2_BLEGateway/src/managers/NetworkManager.cpp#L12-L133)
 - [mqtt_handler.py:126-136](file://server/app/mqtt_handler.py#L126-L136)
 - [proxy.ts:1-40](file://frontend/proxy.ts#L1-L40)
 

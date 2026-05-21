@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +12,7 @@ from app.api.dependencies import (
     get_current_user_workspace,
     get_db,
 )
+from app.config import settings
 from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.demo_control import (
@@ -36,12 +40,46 @@ from app.services.demo_control import (
 from app.services.device_management import publish_mqtt
 
 router = APIRouter()
+logger = logging.getLogger("wheelsense.demo_control")
 
 SIMULATOR_MQTT_CONTROL_TOPIC = "WheelSense/sim/control"
 
 
 def _bad_request(exc: ValueError) -> HTTPException:
     return HTTPException(status_code=400, detail=str(exc))
+
+
+async def _publish_simulator_move_actor(ws: Workspace, actor: dict) -> None:
+    if not settings.is_simulator_mode:
+        return
+    room_id = actor.get("room_id")
+    if room_id is None:
+        return
+    body: dict = {
+        "workspace_id": ws.id,
+        "command": "move_actor",
+        "actor_type": actor.get("actor_type"),
+        "actor_id": actor.get("actor_id"),
+        "room_id": room_id,
+        "room_name": actor.get("room_name"),
+    }
+    if actor.get("actor_type") == "patient":
+        body["patient_id"] = actor.get("actor_id")
+    last_exc: Exception | None = None
+    for attempt in range(1, 4):
+        try:
+            await publish_mqtt(SIMULATOR_MQTT_CONTROL_TOPIC, body)
+            return
+        except Exception as exc:
+            last_exc = exc
+            logger.warning(
+                "Simulator move_actor MQTT publish failed on attempt %s: %s",
+                attempt,
+                exc,
+            )
+            await asyncio.sleep(0.2 * attempt)
+    if last_exc is not None:
+        raise last_exc
 
 
 @router.get("/state", response_model=DemoControlStateOut)
@@ -60,10 +98,10 @@ async def reset_demo_workspace(
     _: User = Depends(RequireRole(["admin"])),
 ):
     # Frontend historically sent "clean-slate"; both names run the same seed path.
-    if payload.profile not in ("show-demo", "clean-slate"):
+    if payload.profile not in ("show-demo", "clean-slate", "clean-state"):
         raise HTTPException(
             status_code=400,
-            detail="Unsupported profile; use 'show-demo' or 'clean-slate'.",
+            detail="Unsupported profile; use 'show-demo', 'clean-state', or 'clean-slate'.",
         )
 
     from scripts.seed_demo import run_seed
@@ -86,7 +124,7 @@ async def move_demo_actor(
     current_user: User = Depends(RequireRole(["admin"])),
 ):
     try:
-        return await demo_control_service.move_actor(
+        actor = await demo_control_service.move_actor(
             db,
             ws.id,
             actor_type=actor_type,
@@ -95,6 +133,15 @@ async def move_demo_actor(
             updated_by_user_id=current_user.id,
             note=payload.note,
         )
+        try:
+            await _publish_simulator_move_actor(ws, actor)
+        except Exception as exc:
+            logger.warning(
+                "Moved demo actor but failed to publish simulator move command: %s",
+                exc,
+                exc_info=True,
+            )
+        return actor
     except ValueError as exc:
         raise _bad_request(exc) from exc
 
@@ -327,6 +374,14 @@ async def publish_simulator_mqtt_command(
     body: dict = {"workspace_id": ws.id, "command": payload.command}
     if payload.patient_id is not None:
         body["patient_id"] = payload.patient_id
+    if payload.actor_type is not None:
+        body["actor_type"] = payload.actor_type
+    if payload.actor_id is not None:
+        body["actor_id"] = payload.actor_id
+    if payload.room_id is not None:
+        body["room_id"] = payload.room_id
+    if payload.node_device_id is not None:
+        body["node_device_id"] = payload.node_device_id
     if payload.config is not None:
         body["config"] = payload.config.model_dump(exclude_none=True)
 

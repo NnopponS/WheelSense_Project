@@ -15,7 +15,7 @@
 - [frontend/next.config.ts](file://frontend/next.config.ts)
 - [frontend/components/providers/AppProviders.tsx](file://frontend/components/providers/AppProviders.tsx)
 - [frontend/lib/api.ts](file://frontend/lib/api.ts)
-- [firmware/M5StickCPlus2/platformio.ini](file://firmware/M5StickCPlus2/platformio.ini)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini)
 </cite>
 
 ## Table of Contents
@@ -53,7 +53,7 @@ F_Query["TanStack Query<br/>frontend/components/providers/AppProviders.tsx"]
 F_API["API client<br/>frontend/lib/api.ts"]
 end
 subgraph "Firmware"
-FW_PIO["PlatformIO<br/>firmware/M5StickCPlus2/platformio.ini"]
+FW_PIO["PlatformIO<br/>firmware/M5StickCPlus2_BLEGateway/platformio.ini"]
 end
 F_Next --> F_API
 F_API --> A_Main
@@ -73,7 +73,7 @@ FW_PIO --> A_MQTT
 - [frontend/next.config.ts:1-30](file://frontend/next.config.ts#L1-L30)
 - [frontend/components/providers/AppProviders.tsx:10-23](file://frontend/components/providers/AppProviders.tsx#L10-L23)
 - [frontend/lib/api.ts:209-297](file://frontend/lib/api.ts#L209-L297)
-- [firmware/M5StickCPlus2/platformio.ini:1-22](file://firmware/M5StickCPlus2/platformio.ini#L1-L22)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:1-22](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L1-L22)
 
 **Section sources**
 - [README.md:5-23](file://README.md#L5-L23)
@@ -122,7 +122,7 @@ FW_PIO --> A_MQTT
 - [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
 - [server/app/config.py:19-94](file://server/app/config.py#L19-L94)
 - [frontend/package.json:13-56](file://frontend/package.json#L13-L56)
-- [firmware/M5StickCPlus2/platformio.ini:4-21](file://firmware/M5StickCPlus2/platformio.ini#L4-L21)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-21](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L21)
 
 ## Architecture Overview
 The backend exposes REST APIs consumed by the Next.js frontend. Devices publish telemetry and camera frames over MQTT; the backend subscribes, validates, persists, and publishes derived events. PostgreSQL stores structured data with Alembic-managed migrations. The frontend integrates TanStack Query for caching and optimistic updates, and proxies API calls through Next.js routes.
@@ -295,7 +295,7 @@ Q-->>UI : render with cache
 - Build flags configure debug level and USB mode.
 
 **Section sources**
-- [firmware/M5StickCPlus2/platformio.ini:4-21](file://firmware/M5StickCPlus2/platformio.ini#L4-L21)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:4-21](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L4-L21)
 
 ## Dependency Analysis
 - Backend dependencies are declared in requirements.txt with pinned versions for stability and reproducibility.
@@ -306,7 +306,7 @@ Q-->>UI : render with cache
 graph LR
 R["server/requirements.txt"] --> B["Backend runtime"]
 P["frontend/package.json"] --> F["Frontend runtime"]
-PIO["firmware/M5StickCPlus2/platformio.ini"] --> FW["Firmware runtime"]
+PIO["firmware/M5StickCPlus2_BLEGateway/platformio.ini"] --> FW["Firmware runtime"]
 B --> |"SQLAlchemy, Alembic, aiomqtt"| MQ["MQTT Integration"]
 B --> |"PostgreSQL"| DB["Database"]
 F --> |"TanStack Query"| B
@@ -316,12 +316,12 @@ FW --> |"PubSubClient, ArduinoJson"| MQ
 **Diagram sources**
 - [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
 - [frontend/package.json:13-56](file://frontend/package.json#L13-L56)
-- [firmware/M5StickCPlus2/platformio.ini:15-18](file://firmware/M5StickCPlus2/platformio.ini#L15-L18)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:15-18](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L18)
 
 **Section sources**
 - [server/requirements.txt:1-30](file://server/requirements.txt#L1-L30)
 - [frontend/package.json:13-56](file://frontend/package.json#L13-L56)
-- [firmware/M5StickCPlus2/platformio.ini:15-18](file://firmware/M5StickCPlus2/platformio.ini#L15-L18)
+- [firmware/M5StickCPlus2_BLEGateway/platformio.ini:15-18](file://firmware/M5StickCPlus2_BLEGateway/platformio.ini#L15-L18)
 
 ## Performance Considerations
 - Backend

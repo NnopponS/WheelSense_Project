@@ -32,9 +32,10 @@ services:
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASSWORD: ${MQTT_PASSWORD:-}
-      AI_PROVIDER: ${AI_PROVIDER:-ollama}
-      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gemma4:e4b}
+      AI_PROVIDER: ${AI_PROVIDER:-copilot}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gpt-4.1}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      OLLAMA_FALLBACK_MODEL: ${OLLAMA_FALLBACK_MODEL:-gemma4:e4b}
       COPILOT_CLI_URL: ${COPILOT_CLI_URL:-copilot-cli:4321}
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
       INTENT_SEMANTIC_ENABLED: ${INTENT_SEMANTIC_ENABLED:-false}
@@ -76,17 +77,20 @@ services:
       # Call back into the platform MCP Streamable HTTP endpoint (see FastMCP streamable_http_path).
       AGENT_RUNTIME_MCP_TOOL_TRANSPORT: ${AGENT_RUNTIME_MCP_TOOL_TRANSPORT:-http}
       MCP_STREAMABLE_HTTP_URL: ${MCP_STREAMABLE_HTTP_URL:-http://wheelsense-platform-server:8000/mcp/mcp}
+      MCP_STREAMABLE_HTTP_HOST_HEADER: ${MCP_STREAMABLE_HTTP_HOST_HEADER:-localhost:8000}
       AGENT_RUNTIME_URL: ${AGENT_RUNTIME_URL:-http://wheelsense-agent-runtime:8010}
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-wheelsense-internal-dev-secret}
-      AI_PROVIDER: ${AI_PROVIDER:-ollama}
-      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gemma4:e4b}
+      AI_PROVIDER: ${AI_PROVIDER:-copilot}
+      AI_DEFAULT_MODEL: ${AI_DEFAULT_MODEL:-gpt-4.1}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      OLLAMA_FALLBACK_MODEL: ${OLLAMA_FALLBACK_MODEL:-gemma4:e4b}
       COPILOT_CLI_URL: ${COPILOT_CLI_URL:-copilot-cli:4321}
       COPILOT_GITHUB_TOKEN: ${COPILOT_GITHUB_TOKEN:-}
       INTENT_SEMANTIC_ENABLED: ${INTENT_SEMANTIC_ENABLED:-false}
       INTENT_LLM_NORMALIZE_ENABLED: ${INTENT_LLM_NORMALIZE_ENABLED:-false}
-      # Agent routing: `intent` (classifier) or `llm_tools` (Ollama tool-calling router; needs OLLAMA_BASE_URL).
-      AGENT_ROUTING_MODE: ${AGENT_ROUTING_MODE:-intent}
+      # Agent routing: `intent` (classifier) or `llm_tools` (provider-assisted MCP tool routing).
+      EASEAI_PIPELINE_V2: ${EASEAI_PIPELINE_V2:-true}
+      AGENT_ROUTING_MODE: ${AGENT_ROUTING_MODE:-llm_tools}
       AGENT_LLM_ROUTER_MODEL: ${AGENT_LLM_ROUTER_MODEL:-}
     depends_on:
       wheelsense-platform-server:

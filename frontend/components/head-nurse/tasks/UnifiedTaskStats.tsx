@@ -10,7 +10,6 @@ import {
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { 
   CheckCircle2, Clock, AlertCircle, Users, BarChart3, PieChartIcon, 
   TrendingUp, ListTodo, RefreshCw
@@ -53,7 +52,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
         return acc;
       }, {} as Record<string, number>)
     ).map(([name, value]) => ({ 
-      name: t(`workflowTasks.kanban.column${name.charAt(0).toUpperCase() + name.slice(1)}` as any) || name, 
+      name: t(`workflowTasks.kanban.column${name.charAt(0).toUpperCase() + name.slice(1)}`) || name,
       value,
       status: name
     }));
@@ -71,7 +70,7 @@ export function UnifiedTaskStats({ tasks, isLoading }: UnifiedTaskStatsProps) {
 
     // Priority Data
     const priorityData = ["low", "normal", "high", "critical"].map(priority => ({
-      name: t(`priority.${priority}` as any),
+      name: t(`priority.${priority}`),
       count: tasks.filter(t => t.priority === priority).length,
       priority
     }));

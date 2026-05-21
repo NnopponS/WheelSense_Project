@@ -252,6 +252,23 @@ export default function ObserverDevicesPage() {
         columns={columns}
         isLoading={isLoadingAny}
         emptyText={t("observer.devices.noDevices")}
+        mobileMode="cards"
+        csvExport={{
+          fileNameBase: "wheelsense-observer-devices",
+          headers: ["Device ID", "Display name", "Hardware", "Online", "Last seen", "Predicted room", "Confidence", "Alerts", "Heart rate", "Battery"],
+          getRowValues: (row) => [
+            row.deviceId,
+            row.displayName,
+            row.hardwareType,
+            row.isOnline ? "yes" : "no",
+            row.lastSeen,
+            row.predictedRoom,
+            row.confidence,
+            row.alertCount,
+            row.heartRate,
+            row.battery,
+          ],
+        }}
       />
     </div>
   );

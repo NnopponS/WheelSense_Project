@@ -20,6 +20,7 @@ import { useTranslation } from "@/lib/i18n";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import UserAvatar from "@/components/shared/UserAvatar";
 import {
   Table,
   TableBody,
@@ -99,7 +100,14 @@ export function PatientsDataTable({
           </Button>
         ),
         cell: ({ row }) => (
-          <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <UserAvatar
+              username={`${row.original.first_name} ${row.original.last_name}`.trim() || `Patient #${row.original.id}`}
+              profileImageUrl={row.original.photo_url}
+              sizePx={38}
+              fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+            />
+            <div className="space-y-1">
             <p className="font-semibold text-foreground">
               {row.original.first_name} {row.original.last_name}
             </p>
@@ -107,6 +115,7 @@ export function PatientsDataTable({
               ID #{row.original.id} · {t("patients.age")}:{" "}
               {ageYears(row.original.date_of_birth, nowMs) ?? "-"} {t("patients.years")}
             </p>
+            </div>
           </div>
         ),
         sortingFn: (left, right) => {

@@ -15,8 +15,8 @@ If you are changing backend behavior, read this first.
 - 105+ MCP workspace tools in `_WORKSPACE_TOOL_REGISTRY` with scope-based authorization across multiple domains
 - 6 role-based prompts for safe AI assistance
 - 4 MCP resources for real-time workspace data
-- Agent runtime: 5-layer EaseAI intelligence pipeline (ADR 0015) with deterministic intent routing, context validation, behavioral state tracking, constrained LLM synthesis, and safety-checked tool execution; legacy `AGENT_ROUTING_MODE=llm_tools` still available behind `EASEAI_PIPELINE_V2=0` (see `docker-compose.core.yml`, `docs/ENV.md`, ADR 0014, ADR 0015)
-- Patient-exclusive MCP tools: `sos_create_alert` (patient-only SOS creation, `_PATIENT_EXCLUSIVE_TOOLS` frozenset excludes from staff allowlists)
+- Agent runtime: 5-layer EaseAI intelligence pipeline (ADR 0015) with `llm_tools` strategy orchestration, deterministic intent fallback, context validation, behavioral state tracking, constrained LLM synthesis, and safety-checked tool execution; core compose enables this path by default (see `docker-compose.core.yml`, `docs/ENV.md`, ADR 0014, ADR 0015)
+- Patient-exclusive MCP tools: `sos_create_alert` (patient-only SOS creation, `app.mcp.tool_catalog` excludes from staff allowlists)
 - Chat actions: 3-stage confirmation flow (propose → confirm → execute)
 - Remote MCP OAuth with scope narrowing support
 - Runtime version exposed by `app.main`: `3.2.0`
@@ -38,12 +38,12 @@ WheelSense is an IoT platform for wheelchair monitoring, localization, patient w
 
 High-level flow:
 
-1. `firmware/M5StickCPlus2` publishes IMU, motion, RSSI, and battery telemetry to MQTT
+1. `firmware/M5StickCPlus2_BLEGateway` publishes IMU, motion, RSSI, and battery telemetry over BLE to the Flutter phone gateway, which forwards data to MQTT/backend services
 2. `firmware/Node_Tsimcam` publishes camera registration, status, and image payloads to MQTT
 3. `server/app/mqtt_handler.py` ingests MQTT data, resolves the registered device, writes DB rows, and triggers derived flows
 4. FastAPI exposes REST endpoints for the web app and operator tools
 5. `server/app/mcp_server.py` / `server/app/mcp/*` expose the authenticated MCP surface with workspace tools in `_WORKSPACE_TOOL_REGISTRY`, 6 prompts, 4 resources
-6. `server/app/agent_runtime/*` acts as the first-party MCP client/orchestrator for chat: 5-layer EaseAI pipeline (ADR 0015) with L1 deterministic intent routing, L2 context validation, L3 async behavioral state, L4 constrained LLM synthesis, L5 safety-checked execution; legacy **intent** routing and **`llm_tools`** routing remain available behind `EASEAI_PIPELINE_V2=0`
+6. `server/app/agent_runtime/*` acts as the first-party MCP client/orchestrator for chat: 5-layer EaseAI pipeline (ADR 0015) with L1 deterministic precheck, L2 context validation, L3 async behavioral state, L4 provider-backed `llm_tools` strategy with deterministic intent fallback, and L5 safety-checked execution
 7. `frontend/` consumes backend APIs through its own `/api/*` proxy, including AI chat with 3-stage action flow
 
 ## Core Invariants
@@ -326,11 +326,14 @@ Important canonical domain semantics:
 Current AI settings/runtime notes:
 
 - `GET /api/settings/ai/copilot/models` returns the live Copilot model list from the backend SDK, not a hardcoded frontend list
+- Copilot model-list responses include `source: "sdk" | "fallback"`; saving an unavailable Copilot model is rejected unless the admin sends an explicit manual override.
+- `app.mcp.tool_catalog` is the canonical MCP policy catalog for effect, risk, required scope, playbook, patient-only flags, EaseAI-forbidden flags, and confirmation requirements.
 - `DELETE /api/settings/ai/ollama/models/{name}` deletes a local Ollama model through the Ollama HTTP API
 - chat runtime answers about provider/model should come from backend-provided runtime metadata rather than model self-reporting
 - first-party chat proposal/execution no longer dispatches MCP tools by direct import from the API layer; it calls the internal `wheelsense-agent-runtime` service, which invokes MCP tools via the official Streamable HTTP client by default (`AGENT_RUNTIME_MCP_TOOL_TRANSPORT=http|asgi`, URL `MCP_STREAMABLE_HTTP_URL` or `{SERVER_BASE_URL}/mcp/mcp`), or `direct` (`execute_workspace_tool`) when explicitly configured
 - MCP auth/policy uses the same actor facts as REST (`workspace_id`, `role`, `patient_id`, `caregiver_id`, session-backed bearer auth) and derives effective MCP scopes from role plus optional token `scope`
 - MCP write tools must not trust caller-supplied actor identifiers such as `caregiver_id`
+- Chat action `force=true` may only bypass confirmation for read-only/no-op actions; mutating MCP tools and plans must be confirmed first.
 
 ### AI Chat Integration (Frontend)
 
@@ -530,7 +533,7 @@ The **WheelSense mobile app** (development build with native MQTT) subscribes to
 Current AI provider behavior:
 
 - provider choices remain `ollama` and `copilot`
-- Copilot model validation now happens on the backend against the SDK-reported model list before session creation
+- Copilot model validation now happens on the backend against the SDK-reported model list before saving settings or creating sessions; explicit manual overrides are allowed for admin-controlled rollout/testing.
 - the backend queries the active Copilot session model and injects runtime metadata so EaseAI does not claim a different provider/model than the one actually configured
 - frontend admin AI settings should treat backend model lists as source of truth
 - planner target defaults: `copilot:gpt-4.1` (`medium`) for plan synthesis, `ollama:gemma4:e4b` (`low`) for cheap summarization/grounding paths, and `copilot:gpt-4.1` (`high`) for escalated read-only investigations; these targets are runtime metadata today and do not require native provider support

@@ -17,6 +17,7 @@ import {
   Search,
   Home,
   DoorOpen,
+  type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,8 +33,44 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type FacilityTab = "facilities" | "floors" | "editor";
+
+type MetricTone = "blue" | "green" | "violet";
+
+const metricToneClasses: Record<MetricTone, string> = {
+  blue: "bg-blue-50 text-blue-600 ring-blue-500/10 dark:bg-blue-950/35 dark:text-blue-300",
+  green: "bg-emerald-50 text-emerald-600 ring-emerald-500/10 dark:bg-emerald-950/35 dark:text-emerald-300",
+  violet: "bg-violet-50 text-violet-600 ring-violet-500/10 dark:bg-violet-950/35 dark:text-violet-300",
+};
+
+function FacilityMetric({
+  label,
+  value,
+  icon: Icon,
+  tone,
+  detail,
+}: {
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+  tone: MetricTone;
+  detail?: string | null;
+}) {
+  return (
+    <div className="flex min-h-24 items-center gap-3 rounded-lg border border-border/70 bg-background/70 p-3 sm:p-4">
+      <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ring-1", metricToneClasses[tone])}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="mt-1 truncate text-2xl font-bold leading-none text-foreground">{value}</p>
+        {detail ? <p className="mt-1 truncate text-sm text-muted-foreground">{detail}</p> : null}
+      </div>
+    </div>
+  );
+}
 
 function FacilityManagementPageContent() {
   const { t } = useTranslation();
@@ -93,8 +130,8 @@ function FacilityManagementPageContent() {
     totalFacilities: facilities.length,
     totalFloors: floors.length,
     selectedFacilityName: selectedFacility?.name,
-    selectedFloorName: selectedFloor?.name || (selectedFloor ? `Floor ${selectedFloor.floor_number}` : null),
-  }), [facilities.length, floors.length, selectedFacility, selectedFloor]);
+    selectedFloorName: selectedFloor?.name || (selectedFloor ? `${t("floorplan.floor")} ${selectedFloor.floor_number}` : null),
+  }), [facilities.length, floors.length, selectedFacility, selectedFloor, t]);
 
   // Facility CRUD handlers - using generic API methods
   const handleCreateFacility = async () => {
@@ -143,7 +180,7 @@ function FacilityManagementPageContent() {
   };
 
   const handleDeleteFacility = async (id: number) => {
-    if (!window.confirm("Delete this facility and all its floors?")) return;
+    if (!window.confirm(t("facilityMgmt.deleteFacilityConfirm"))) return;
     try {
       await api.delete<void>(`/facilities/${id}`);
       await facilitiesQuery.refetch();
@@ -199,7 +236,7 @@ function FacilityManagementPageContent() {
   };
 
   const handleDeleteFloor = async (id: number) => {
-    if (!selectedFacilityId || !window.confirm("Delete this floor?")) return;
+    if (!selectedFacilityId || !window.confirm(t("facilityMgmt.deleteFloorConfirm"))) return;
     try {
       await api.delete<void>(`/facilities/${selectedFacilityId}/floors/${id}`);
       await floorsQuery.refetch();
@@ -250,10 +287,10 @@ function FacilityManagementPageContent() {
         <div>
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Building2 className="h-7 w-7 text-primary" />
-            Facility Management
+            {t("facilityMgmt.title")}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Manage buildings, floors, and floor plans in one place.
+            {t("facilityMgmt.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -264,7 +301,7 @@ function FacilityManagementPageContent() {
               {selectedFloor && (
                 <>
                   <ChevronRight className="mx-1 h-3 w-3" />
-                  {selectedFloor.name || `Floor ${selectedFloor.floor_number}`}
+                  {selectedFloor.name || `${t("floorplan.floor")} ${selectedFloor.floor_number}`}
                 </>
               )}
             </Badge>
@@ -273,68 +310,39 @@ function FacilityManagementPageContent() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Facilities</p>
-                <p className="text-3xl font-bold">{stats.totalFacilities}</p>
-              </div>
-              <div className="rounded-full bg-blue-50 p-3 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                <Building2 className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Floors</p>
-                <p className="text-3xl font-bold">{stats.totalFloors}</p>
-              </div>
-              <div className="rounded-full bg-green-50 p-3 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                <Layers className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1 space-y-1">
-                <p className="text-sm text-muted-foreground">{t("facilityMgmt.statsSelectedScope")}</p>
-                {stats.selectedFacilityName ? (
-                  <>
-                    <p className="text-lg font-medium leading-snug text-foreground break-words">
-                      {stats.selectedFacilityName}
-                    </p>
-                    {stats.selectedFloorName ? (
-                      <p className="text-sm text-muted-foreground break-words">{stats.selectedFloorName}</p>
-                    ) : null}
-                  </>
-                ) : (
-                  <p className="text-lg font-medium text-muted-foreground">{t("facilityMgmt.statsNoSelection")}</p>
-                )}
-              </div>
-              <div className="shrink-0 rounded-full bg-purple-50 p-3 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                <Home className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="rounded-lg border border-border/70 bg-card p-3 shadow-sm sm:p-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          <FacilityMetric
+            label={t("facilityMgmt.statsFacilities")}
+            value={stats.totalFacilities}
+            icon={Building2}
+            tone="blue"
+          />
+          <FacilityMetric
+            label={t("facilityMgmt.statsFloors")}
+            value={stats.totalFloors}
+            icon={Layers}
+            tone="green"
+          />
+          <FacilityMetric
+            label={t("facilityMgmt.statsSelectedScope")}
+            value={stats.selectedFacilityName ?? t("facilityMgmt.statsNoSelection")}
+            detail={stats.selectedFloorName}
+            icon={Home}
+            tone="violet"
+          />
+        </div>
       </div>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FacilityTab)} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 lg:w-auto">
-          <TabsTrigger value="facilities">Facilities</TabsTrigger>
+          <TabsTrigger value="facilities">{t("facilityMgmt.tabFacilities")}</TabsTrigger>
           <TabsTrigger value="floors" disabled={!selectedFacilityId}>
-            Floors
+            {t("facilityMgmt.tabFloors")}
           </TabsTrigger>
           <TabsTrigger value="editor" disabled={!selectedFloorId}>
-            Floor Plan
+            {t("facilityMgmt.tabFloorPlan")}
           </TabsTrigger>
         </TabsList>
 
@@ -343,23 +351,23 @@ function FacilityManagementPageContent() {
           <Card>
             <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>Facilities</CardTitle>
-                <CardDescription>Select or manage your facilities</CardDescription>
+                <CardTitle>{t("facilityMgmt.facilitiesTitle")}</CardTitle>
+                <CardDescription>{t("facilityMgmt.facilitiesDescription")}</CardDescription>
               </div>
-              <div className="flex gap-2">
-                <div className="relative">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                <div className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="search"
-                    placeholder="Search facilities..."
+                    placeholder={t("facilityMgmt.searchFacilities")}
                     value={facilitySearch}
                     onChange={(e) => setFacilitySearch(e.target.value)}
-                    className="pl-9 w-full sm:w-64"
+                    className="w-full pl-9"
                   />
                 </div>
-                <Button onClick={openCreateFacility}>
+                <Button onClick={openCreateFacility} className="sm:shrink-0">
                   <Plus className="mr-1 h-4 w-4" />
-                  Add Facility
+                  {t("facilityMgmt.addFacility")}
                 </Button>
               </div>
             </CardHeader>
@@ -371,46 +379,50 @@ function FacilityManagementPageContent() {
               ) : filteredFacilities.length === 0 ? (
                 <div className="text-center py-12">
                   <Building2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                  <p className="mt-4 text-muted-foreground">No facilities found.</p>
+                  <p className="mt-4 text-muted-foreground">{t("facilityMgmt.emptyFacilities")}</p>
                   <Button onClick={openCreateFacility} className="mt-4">
                     <Plus className="mr-1 h-4 w-4" />
-                    Create your first facility
+                    {t("facilityMgmt.createFirstFacility")}
                   </Button>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {filteredFacilities.map((facility) => (
-                    <Card
+                    <div
                       key={facility.id}
-                      className={`cursor-pointer transition-all hover:border-primary ${
-                        selectedFacilityId === facility.id ? "border-primary ring-1 ring-primary" : ""
-                      }`}
-                      onClick={() => {
-                        setSelectedFacilityId(facility.id);
-                        setActiveTab("floors");
-                      }}
+                      className={cn(
+                        "rounded-lg border border-border/70 bg-background/70 p-4 transition-all hover:border-primary",
+                        selectedFacilityId === facility.id ? "border-primary ring-1 ring-primary" : "",
+                      )}
                     >
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <button
+                          type="button"
+                          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          onClick={() => {
+                            setSelectedFacilityId(facility.id);
+                            setActiveTab("floors");
+                          }}
+                        >
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30">
                               <Building2 className="h-5 w-5" />
                             </div>
-                            <div>
-                              <p className="font-medium">{facility.name}</p>
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">{facility.name}</p>
                               {facility.address && (
                                 <p className="text-sm text-muted-foreground flex items-center gap-1">
                                   <MapPin className="h-3 w-3" />
-                                  {facility.address}
+                                  <span className="truncate">{facility.address}</span>
                                 </p>
                               )}
                             </div>
-                          </div>
-                          <div className="flex gap-1">
+                        </button>
+                        <div className="flex shrink-0 gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
+                              aria-label={t("facilityMgmt.editFacility")}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 openEditFacility(facility);
@@ -422,6 +434,7 @@ function FacilityManagementPageContent() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-destructive"
+                              aria-label={t("facilityMgmt.deleteFacility")}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteFacility(facility.id);
@@ -429,15 +442,12 @@ function FacilityManagementPageContent() {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                          </div>
                         </div>
-                        {facility.description && (
-                          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
-                            {facility.description}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
+                      </div>
+                      {facility.description && (
+                        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{facility.description}</p>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -452,26 +462,26 @@ function FacilityManagementPageContent() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Layers className="h-5 w-5" />
-                  Floors
+                  {t("facilityMgmt.floorsTitle")}
                   {selectedFacility && (
                     <span className="text-sm font-normal text-muted-foreground">
                       - {selectedFacility.name}
                     </span>
                   )}
                 </CardTitle>
-                <CardDescription>Manage floors for the selected facility</CardDescription>
+                <CardDescription>{t("facilityMgmt.floorsDescription")}</CardDescription>
               </div>
               <Button onClick={openCreateFloor} disabled={!selectedFacilityId}>
                 <Plus className="mr-1 h-4 w-4" />
-                Add Floor
+                {t("facilityMgmt.addFloor")}
               </Button>
             </CardHeader>
             <CardContent>
               {!selectedFacilityId ? (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">Select a facility first to manage floors.</p>
+                  <p className="text-muted-foreground">{t("facilityMgmt.selectFacilityFirst")}</p>
                   <Button onClick={() => setActiveTab("facilities")} className="mt-4">
-                    Go to Facilities
+                    {t("facilityMgmt.goToFacilities")}
                   </Button>
                 </div>
               ) : floorsQuery.isLoading ? (
@@ -481,45 +491,49 @@ function FacilityManagementPageContent() {
               ) : floors.length === 0 ? (
                 <div className="text-center py-12">
                   <Layers className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                  <p className="mt-4 text-muted-foreground">No floors found for this facility.</p>
+                  <p className="mt-4 text-muted-foreground">{t("facilityMgmt.emptyFloors")}</p>
                   <Button onClick={openCreateFloor} className="mt-4">
                     <Plus className="mr-1 h-4 w-4" />
-                    Add your first floor
+                    {t("facilityMgmt.addFirstFloor")}
                   </Button>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {floors.map((floor) => (
-                    <Card
+                    <div
                       key={floor.id}
-                      className={`cursor-pointer transition-all hover:border-primary ${
-                        selectedFloorId === floor.id ? "border-primary ring-1 ring-primary" : ""
-                      }`}
-                      onClick={() => {
-                        setSelectedFloorId(floor.id);
-                        setActiveTab("editor");
-                      }}
+                      className={cn(
+                        "rounded-lg border border-border/70 bg-background/70 p-4 transition-all hover:border-primary",
+                        selectedFloorId === floor.id ? "border-primary ring-1 ring-primary" : "",
+                      )}
                     >
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <button
+                          type="button"
+                          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                          onClick={() => {
+                            setSelectedFloorId(floor.id);
+                            setActiveTab("editor");
+                          }}
+                        >
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30">
                               <DoorOpen className="h-5 w-5" />
                             </div>
-                            <div>
-                              <p className="font-medium">
-                                {floor.name || `Floor ${floor.floor_number}`}
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">
+                                {floor.name || `${t("floorplan.floor")} ${floor.floor_number}`}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                Floor #{floor.floor_number}
+                                {t("floorplan.floor")} #{floor.floor_number}
                               </p>
                             </div>
-                          </div>
-                          <div className="flex gap-1">
+                        </button>
+                        <div className="flex shrink-0 gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
+                              aria-label={t("facilityMgmt.editFloor")}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 openEditFloor(floor);
@@ -531,6 +545,7 @@ function FacilityManagementPageContent() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-destructive"
+                              aria-label={t("facilityMgmt.deleteFloor")}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteFloor(floor.id);
@@ -538,10 +553,9 @@ function FacilityManagementPageContent() {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -579,46 +593,46 @@ function FacilityManagementPageContent() {
       <Dialog open={showFacilityDialog} onOpenChange={setShowFacilityDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingFacility ? "Edit Facility" : "Create Facility"}</DialogTitle>
+            <DialogTitle>{editingFacility ? t("facilityMgmt.editFacility") : t("facilityMgmt.createFacility")}</DialogTitle>
             <DialogDescription>
-              {editingFacility ? "Update facility details" : "Add a new facility to your workspace"}
+              {editingFacility ? t("facilityMgmt.updateFacilityDetails") : t("facilityMgmt.createFacilityDetails")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Name *</Label>
+              <Label>{t("facilityMgmt.nameRequired")}</Label>
               <Input
                 value={facilityForm.name}
                 onChange={(e) => setFacilityForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Facility name"
+                placeholder={t("facilityMgmt.namePlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label>Address</Label>
+              <Label>{t("facilityMgmt.addressLabel")}</Label>
               <Input
                 value={facilityForm.address}
                 onChange={(e) => setFacilityForm((prev) => ({ ...prev, address: e.target.value }))}
-                placeholder="Street address"
+                placeholder={t("facilityMgmt.addressPlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t("facilityMgmt.descriptionLabel")}</Label>
               <Input
                 value={facilityForm.description}
                 onChange={(e) => setFacilityForm((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional description"
+                placeholder={t("facilityMgmt.descriptionPlaceholder")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowFacilityDialog(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={editingFacility ? handleUpdateFacility : handleCreateFacility}
               disabled={submitting || !facilityForm.name.trim()}
             >
-              {submitting ? "Saving..." : editingFacility ? "Update" : "Create"}
+              {submitting ? t("common.saving") : editingFacility ? t("common.update") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -628,14 +642,14 @@ function FacilityManagementPageContent() {
       <Dialog open={showFloorDialog} onOpenChange={setShowFloorDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingFloor ? "Edit Floor" : "Create Floor"}</DialogTitle>
+            <DialogTitle>{editingFloor ? t("facilityMgmt.editFloor") : t("facilityMgmt.createFloor")}</DialogTitle>
             <DialogDescription>
-              {editingFloor ? "Update floor details" : "Add a new floor to the facility"}
+              {editingFloor ? t("facilityMgmt.updateFloorDetails") : t("facilityMgmt.createFloorDetails")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Floor Number *</Label>
+              <Label>{t("facilityMgmt.floorNumberRequired")}</Label>
               <Input
                 type="number"
                 min={0}
@@ -646,23 +660,23 @@ function FacilityManagementPageContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Display Name</Label>
+              <Label>{t("facilityMgmt.floorDisplayName")}</Label>
               <Input
                 value={floorForm.name}
                 onChange={(e) => setFloorForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Ground Floor, First Floor"
+                placeholder={t("facilityMgmt.floorDisplayNamePlaceholder")}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowFloorDialog(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={editingFloor ? handleUpdateFloor : handleCreateFloor}
               disabled={submitting}
             >
-              {submitting ? "Saving..." : editingFloor ? "Update" : "Create"}
+              {submitting ? t("common.saving") : editingFloor ? t("common.update") : t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -63,6 +63,7 @@ type CopilotModelsResponse = {
   models: CopilotModel[];
   connected: boolean;
   message?: string | null;
+  source?: "sdk" | "fallback";
 };
 
 type CopilotDeviceFlow = {
@@ -296,6 +297,13 @@ function ProviderModelSection({
         ) : null}
         {provider === "copilot" && copilotModels?.message ? (
           <SectionMessage tone="warning">{copilotModels.message}</SectionMessage>
+        ) : null}
+        {provider === "copilot" && copilotModels?.source ? (
+          <Badge variant={copilotModels.source === "sdk" ? "success" : "warning"}>
+            {copilotModels.source === "sdk"
+              ? t("settings.ai.copilotSourceSdk")
+              : t("settings.ai.copilotSourceFallback")}
+          </Badge>
         ) : null}
 
         <div className="flex justify-end">
@@ -847,6 +855,13 @@ export default function AiSettingsPanel() {
           ) : null}
 
           <div className="flex flex-wrap gap-2">
+            {sanitizedCopilotModels?.source ? (
+              <Badge variant={sanitizedCopilotModels.source === "sdk" ? "success" : "warning"}>
+                {sanitizedCopilotModels.source === "sdk"
+                  ? t("settings.ai.copilotSourceSdk")
+                  : t("settings.ai.copilotSourceFallback")}
+              </Badge>
+            ) : null}
             {availableCopilotModels.length > 0 ? (
               availableCopilotModels.map((model) => (
                 <Badge key={model.id} variant="outline">
@@ -1094,4 +1109,3 @@ export default function AiSettingsPanel() {
     </div>
   );
 }
-

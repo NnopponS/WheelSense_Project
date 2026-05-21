@@ -2,7 +2,7 @@
 
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ClipboardList, ListChecks, Plus, Trash2 } from "lucide-react";
+import { ListChecks, Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import type {
   CareScheduleOut,
@@ -12,7 +12,6 @@ import type {
 import type { User } from "@/lib/types";
 import { useTranslation } from "@/lib/i18n";
 import { utcShiftDateString } from "@/lib/shiftChecklistDefaults";
-import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { PersonSensorStatusPanel } from "@/components/shared/PersonSensorStatusPanel";
+import { StaffTimelinePanel } from "@/components/staff/StaffTimelinePanel";
 import {
   Sheet,
   SheetContent,
@@ -353,7 +354,9 @@ export function HeadNurseStaffMemberSheet({
         <div className="flex min-h-0 min-h-[200px] flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             <div className="space-y-5 pb-6">
-            {!linkedUser ? (
+              <PersonSensorStatusPanel personType="staff" personId={caregiver.id} compact />
+
+              {!linkedUser ? (
               <Card className="border-dashed border-border/80 bg-muted/20">
                 <CardContent className="pt-6">
                   <p className="text-sm leading-relaxed text-muted-foreground">
@@ -361,8 +364,8 @@ export function HeadNurseStaffMemberSheet({
                   </p>
                 </CardContent>
               </Card>
-            ) : (
-              <>
+              ) : (
+                <>
                 {templateQuery.isLoading ? (
                   <Card className="border-border/70 shadow-none">
                     <CardContent className="py-8">
@@ -383,81 +386,12 @@ export function HeadNurseStaffMemberSheet({
                   />
                 )}
 
-                <Card className="border-border/70 shadow-none">
-                  <CardHeader className="space-y-1 pb-3">
-                    <div className="flex items-center gap-2">
-                      <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                      <CardTitle className="text-base">{t("headNurse.staff.workSectionTitle")}</CardTitle>
-                    </div>
-                    <CardDescription>{t("headNurse.staff.workSectionDesc")}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {t("headNurse.staff.assignedTasks")}
-                      </h4>
-                      {tasksForUser.length === 0 ? (
-                        <p className="rounded-lg border border-dashed border-border/80 bg-muted/15 px-3 py-4 text-center text-xs text-muted-foreground">
-                          {t("headNurse.staff.none")}
-                        </p>
-                      ) : (
-                        <ul className="space-y-2">
-                          {tasksForUser.map((task) => (
-                            <li
-                              key={task.id}
-                              className="rounded-lg border border-border/70 bg-card/60 px-3 py-2.5 text-sm shadow-sm"
-                            >
-                              <p className="font-medium leading-snug text-foreground">{task.title}</p>
-                              <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-                                {task.description}
-                              </p>
-                              <div className="mt-2 flex flex-wrap items-center gap-2">
-                                <Badge variant="outline" className="text-[10px]">
-                                  {task.status}
-                                </Badge>
-                                <Badge variant="secondary" className="text-[10px]">
-                                  {task.priority}
-                                </Badge>
-                                {task.due_at ? (
-                                  <span className="text-[11px] text-muted-foreground">
-                                    {formatDateTime(task.due_at)} · {formatRelativeTime(task.due_at)}
-                                  </span>
-                                ) : null}
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-
-                    <div>
-                      <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        <CalendarClock className="h-3.5 w-3.5" />
-                        {t("headNurse.staff.assignedSchedules")}
-                      </h4>
-                      {schedulesForUser.length === 0 ? (
-                        <p className="rounded-lg border border-dashed border-border/80 bg-muted/15 px-3 py-4 text-center text-xs text-muted-foreground">
-                          {t("headNurse.staff.none")}
-                        </p>
-                      ) : (
-                        <ul className="space-y-2">
-                          {schedulesForUser.map((s) => (
-                            <li
-                              key={s.id}
-                              className="rounded-lg border border-border/70 bg-card/60 px-3 py-2.5 text-sm shadow-sm"
-                            >
-                              <p className="font-medium text-foreground">{s.title}</p>
-                              <p className="text-xs text-muted-foreground">{s.schedule_type}</p>
-                              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                                {formatDateTime(s.starts_at)} · {formatRelativeTime(s.starts_at)}
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <StaffTimelinePanel
+                  tasks={tasksForUser}
+                  schedules={schedulesForUser}
+                  title={t("headNurse.staff.workSectionTitle")}
+                  description={t("headNurse.staff.workSectionDesc")}
+                />
 
                 <Card className="border-border/70 shadow-none">
                   <CardHeader className="space-y-3 pb-3">

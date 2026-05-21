@@ -120,31 +120,31 @@ export function HeadNurseSituationBanner({
   return (
     <section
       aria-label={t("headNurse.situation.bannerLabel")}
-      className={cn("grid gap-3 sm:grid-cols-2 xl:grid-cols-4", className)}
+      className={cn("grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4", className)}
     >
       {tiles.map((tile) => {
         const Icon = tile.icon;
         return (
           <Link key={tile.labelKey} href={tile.href} className="block">
-            <Card className="h-full border-border/70 transition-shadow hover:shadow-md">
-              <CardContent className="flex items-start gap-3 p-4">
+            <Card className="h-full min-h-[7.25rem] border-border/70 transition-colors hover:border-primary/30 hover:bg-muted/20">
+              <CardContent className="flex h-full items-center gap-3.5 p-4">
                 <div
                   className={cn(
-                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl",
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
                     tile.iconBg,
                   )}
                 >
                   <Icon className="h-6 w-6" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="line-clamp-2 text-xs font-semibold uppercase leading-snug tracking-wide text-muted-foreground">
                     {t(tile.labelKey)}
                   </p>
-                  <p className={cn("mt-1 text-3xl font-semibold tabular-nums", tile.accent)}>
+                  <p className={cn("text-3xl font-semibold leading-none tabular-nums", tile.accent)}>
                     {tile.value}
                   </p>
                   {tile.hint ? (
-                    <p className="mt-0.5 text-xs font-medium text-muted-foreground">{tile.hint}</p>
+                    <p className="text-xs font-medium leading-tight text-muted-foreground">{tile.hint}</p>
                   ) : null}
                 </div>
               </CardContent>

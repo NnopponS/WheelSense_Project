@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -16,6 +17,8 @@ from app.models.chat import ChatConversation, WorkspaceAISettings
 from app.models.core import Workspace
 from app.models.users import User
 from app.core.security import get_password_hash
+from app.schemas.chat import ChatMessagePart
+from app.services import ai_chat
 
 
 @pytest.mark.asyncio
@@ -152,6 +155,14 @@ async def test_copilot_models_endpoint_mocked(
                         vision=True,
                     ),
                 ),
+                SimpleNamespace(
+                    id="gpt-4.1",
+                    name="GPT-4.1",
+                    capabilities=SimpleNamespace(
+                        reasoning_effort=False,
+                        vision=True,
+                    ),
+                ),
             ]
         ),
     )
@@ -176,6 +187,44 @@ async def test_copilot_models_endpoint_mocked(
     assert [model["id"] for model in r.json()["models"]] == ["gpt-4o", "gpt-4.1"]
     assert r.json()["models"][0]["supports_vision"] is True
     assert r.json()["connected"] is True
+    assert r.json()["source"] == "sdk"
+    assert r.json()["message"] is None
+
+
+@pytest.mark.asyncio
+async def test_copilot_models_endpoint_falls_back_when_sdk_fails(
+    db_session: AsyncSession, admin_token: str, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(
+        "app.api.endpoints.ai_settings.ai_chat.get_workspace_copilot_token",
+        AsyncMock(return_value="test-token"),
+    )
+    monkeypatch.setattr(
+        "app.api.endpoints.ai_settings.ai_chat.list_copilot_models",
+        AsyncMock(side_effect=RuntimeError("sdk offline")),
+    )
+
+    async def _override_db():
+        yield db_session
+
+    with (
+        patch("app.db.session.init_db", new_callable=AsyncMock),
+        patch("app.mqtt_handler.mqtt_listener", new_callable=AsyncMock),
+    ):
+        app.dependency_overrides[get_db] = _override_db
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        ) as client:
+            r = await client.get("/api/settings/ai/copilot/models")
+        app.dependency_overrides.clear()
+
+    assert r.status_code == 200
+    assert [model["id"] for model in r.json()["models"]] == ["gpt-4o", "gpt-4.1"]
+    assert r.json()["connected"] is True
+    assert r.json()["source"] == "fallback"
+    assert "sdk offline" in r.json()["message"]
 
 
 @pytest.mark.asyncio
@@ -210,7 +259,162 @@ async def test_copilot_models_endpoint_soft_fails_when_not_connected(
     assert r.status_code == 200
     assert r.json()["connected"] is False
     assert r.json()["models"] == []
+    assert r.json()["source"] == "fallback"
     assert "not connected" in r.json()["message"].lower()
+
+
+@pytest.mark.asyncio
+async def test_copilot_settings_rejects_unavailable_model_without_manual_override(
+    db_session: AsyncSession, admin_token: str, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(
+        "app.api.endpoints.ai_settings.ai_chat.get_workspace_copilot_token",
+        AsyncMock(return_value="test-token"),
+    )
+    monkeypatch.setattr(
+        "app.api.endpoints.ai_settings.ai_chat.list_copilot_models",
+        AsyncMock(
+            return_value=[
+                SimpleNamespace(id="gpt-4.1", name="GPT-4.1", capabilities={}),
+            ]
+        ),
+    )
+
+    async def _override_db():
+        yield db_session
+
+    with (
+        patch("app.db.session.init_db", new_callable=AsyncMock),
+        patch("app.mqtt_handler.mqtt_listener", new_callable=AsyncMock),
+    ):
+        app.dependency_overrides[get_db] = _override_db
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        ) as client:
+            rejected = await client.put(
+                "/api/settings/ai/global",
+                json={"default_provider": "copilot", "default_model": "made-up-model"},
+            )
+            accepted = await client.put(
+                "/api/settings/ai/global",
+                json={
+                    "default_provider": "copilot",
+                    "default_model": "made-up-model",
+                    "manual_override": True,
+                },
+            )
+        app.dependency_overrides.clear()
+
+    assert rejected.status_code == 422
+    assert "manual_override=true" in str(rejected.json())
+    assert accepted.status_code == 200
+    assert accepted.json()["workspace_default_model"] == "made-up-model"
+
+
+@pytest.mark.asyncio
+async def test_collect_chat_reply_best_effort_traces_provider_fallback(
+    db_session: AsyncSession,
+    admin_user: User,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    db_session.add(
+        WorkspaceAISettings(
+            workspace_id=admin_user.workspace_id,
+            default_provider="ollama",
+            default_model="broken-model",
+        )
+    )
+    await db_session.commit()
+    workspace = await db_session.get(Workspace, admin_user.workspace_id)
+    assert workspace is not None
+
+    async def fake_stream_chat_response(*, provider_override: str | None, **_kwargs):
+        if provider_override == "ollama":
+            yield "[AI service temporarily unavailable. Please try again.]"
+            return
+        yield "fallback ok"
+
+    monkeypatch.setattr(
+        "app.services.ai_chat.stream_chat_response",
+        fake_stream_chat_response,
+    )
+    caplog.set_level(logging.INFO, logger="wheelsense.ai_chat")
+
+    reply = await ai_chat.collect_chat_reply_best_effort(
+        db=db_session,
+        user=admin_user,
+        workspace=workspace,
+        messages=[ChatMessagePart(role="user", content="hello")],
+    )
+
+    assert reply == "fallback ok"
+    trace_records = [
+        record for record in caplog.records if record.getMessage() == "ai_provider_attempts"
+    ]
+    assert len(trace_records) == 1
+    attempts = trace_records[0].provider_attempts
+    assert attempts[0]["provider"] == "ollama"
+    assert attempts[0]["model"] == "broken-model"
+    assert attempts[0]["phase"] == "best_effort_reply"
+    assert attempts[0]["attempt"] == 1
+    assert attempts[0]["status"] == "fallback"
+    assert attempts[0]["fallback_reason"] == "provider_unavailable_reply"
+    assert isinstance(attempts[0]["latency_ms"], int)
+    assert attempts[1]["provider"] == "copilot"
+    assert attempts[1]["model"] == "gpt-4.1"
+    assert attempts[1]["attempt"] == 2
+    assert attempts[1]["status"] == "success"
+
+
+@pytest.mark.asyncio
+async def test_collect_chat_reply_best_effort_uses_ollama_fallback_model_for_copilot(
+    db_session: AsyncSession,
+    admin_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    db_session.add(
+        WorkspaceAISettings(
+            workspace_id=admin_user.workspace_id,
+            default_provider="copilot",
+            default_model="gpt-4.1",
+        )
+    )
+    await db_session.commit()
+    workspace = await db_session.get(Workspace, admin_user.workspace_id)
+    assert workspace is not None
+
+    seen: list[tuple[str | None, str | None]] = []
+
+    async def fake_stream_chat_response(
+        *,
+        provider_override: str | None,
+        model_override: str | None,
+        **_kwargs,
+    ):
+        seen.append((provider_override, model_override))
+        if provider_override == "copilot":
+            yield "[GitHub Copilot is not connected for this Workspace.]"
+            return
+        yield "ollama fallback ok"
+
+    monkeypatch.setattr(ai_chat.settings, "ollama_fallback_model", "llama3.2:3b")
+    monkeypatch.setattr(
+        "app.services.ai_chat.stream_chat_response",
+        fake_stream_chat_response,
+    )
+
+    reply = await ai_chat.collect_chat_reply_best_effort(
+        db=db_session,
+        user=admin_user,
+        workspace=workspace,
+        messages=[ChatMessagePart(role="user", content="summarize risk")],
+    )
+
+    assert reply == "ollama fallback ok"
+    assert seen == [("copilot", "gpt-4.1"), ("ollama", "llama3.2:3b")]
 
 
 @pytest.mark.asyncio

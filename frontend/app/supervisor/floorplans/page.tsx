@@ -15,7 +15,7 @@ export default function SupervisorFloorplansPage() {
           {t("floorplan.viewTitle")}
         </h2>
         <p className="text-sm text-foreground-variant mt-1">
-          Zone overview with live occupancy and emergency readiness.
+          {t("supervisor.floorplans.subtitle")}
         </p>
       </div>
 

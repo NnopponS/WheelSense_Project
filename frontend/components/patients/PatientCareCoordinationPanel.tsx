@@ -7,6 +7,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Activity, Bell, ClipboardList, HeartPulse, MessageSquare, NotebookPen } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import { PatientHealthAnalysisPanel } from "@/components/patients/PatientHealthAnalysisPanel";
+import { MovementTimelineCard } from "@/components/timeline/MovementTimelineCard";
+import UserAvatar from "@/components/shared/UserAvatar";
 import {
   WorkflowMessageDetailDialog,
   WorkflowMessagePreviewTrigger,
@@ -292,6 +295,19 @@ export function PatientCareCoordinationPanel({
     () => (patientQuery.data ?? null) as GetPatientResponse | null,
     [patientQuery.data],
   );
+  const patientDisplayName = useMemo(() => {
+    if (!patient) return null;
+    return `${patient.first_name} ${patient.last_name}`.trim() || `Patient #${patient.id}`;
+  }, [patient]);
+  const patientMeta = useMemo(() => {
+    if (!patient) return null;
+    return [
+      patient.room_id != null ? `Room #${patient.room_id}` : null,
+      patient.care_level || null,
+    ]
+      .filter(Boolean)
+      .join(" - ");
+  }, [patient]);
   const vitals = useMemo(
     () => (vitalsQuery.data ?? []) as ListVitalReadingsResponse,
     [vitalsQuery.data],
@@ -385,7 +401,7 @@ export function PatientCareCoordinationPanel({
         eventType: item.event_type,
         description: item.description,
         roomName: item.room_name,
-        source: item.source,
+        source: item.provenance || item.source,
         timestamp: item.timestamp,
       }));
   }, [timeline]);
@@ -901,11 +917,19 @@ export function PatientCareCoordinationPanel({
   return (
     <div className="space-y-6 animate-fade-in">
       {showHeader ? (
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">
-            {patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">{t("observer.patientDetail.subtitle")}</p>
+        <div className="flex min-w-0 items-center gap-4">
+          <UserAvatar
+            username={patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
+            profileImageUrl={patient?.photo_url}
+            sizePx={64}
+            fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+          />
+          <div className="min-w-0">
+            <h2 className="truncate text-2xl font-bold text-foreground">
+              {patient ? `${patient.first_name} ${patient.last_name}` : t("observer.patientDetail.title")}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("observer.patientDetail.subtitle")}</p>
+          </div>
         </div>
       ) : null}
 
@@ -915,6 +939,15 @@ export function PatientCareCoordinationPanel({
         <SummaryStatCard icon={ClipboardList} label={t("observer.patientDetail.openTasks")} value={taskRows.filter((row) => row.status !== "completed").length} tone="warning" />
         <SummaryStatCard icon={MessageSquare} label={t("observer.patientDetail.unreadMessages")} value={messageRows.filter((row) => !row.isRead).length} tone="warning" />
       </section>
+
+      <PatientHealthAnalysisPanel patientId={patientId} />
+
+      <MovementTimelineCard
+        events={timeline}
+        patientName={patientDisplayName}
+        patientMeta={patientMeta}
+        roomLabel={patient?.room_id != null ? `Room #${patient.room_id}` : null}
+      />
 
       {actionError ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">

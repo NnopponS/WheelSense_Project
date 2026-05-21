@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, KeyRound, Search, Shield, UserCog, UserPlus, Users } from "lucide-react";
+import { Activity, ArrowRight, Search, Shield, UserCog, UserPlus, Users } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import UserAvatar from "@/components/shared/UserAvatar";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { hasCapability } from "@/lib/permissions";
@@ -72,6 +73,10 @@ const USER_ROLE_TO_I18N: Record<string, TranslationKey> = {
 function formatUserRole(role: string, t: (key: TranslationKey) => string): string {
   const key = USER_ROLE_TO_I18N[role];
   return key ? t(key) : role.replace(/_/g, " ");
+}
+
+function personName(firstName?: string | null, lastName?: string | null, fallback = "Person"): string {
+  return `${firstName || ""} ${lastName || ""}`.trim() || fallback;
 }
 
 function PersonnelPageContent() {
@@ -494,17 +499,21 @@ function PersonnelPageContent() {
               <TabsContent value="staff" className="m-0 space-y-2">
                 {staffRows.map((row) => {
                   const linkedAccount = accountByCaregiverId.get(row.id);
+                  const fullName = personName(row.first_name, row.last_name, `Staff #${row.id}`);
                   return (
                   <div
                     key={row.id}
                     className="flex items-center justify-between rounded-xl border border-border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-blue-100 p-2 text-blue-600 dark:bg-blue-900/30">
-                        <UserCog className="h-4 w-4" />
-                      </div>
+                      <UserAvatar
+                        username={fullName}
+                        profileImageUrl={row.photo_url || linkedAccount?.profile_image_url || null}
+                        sizePx={44}
+                        fallbackClassName="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200"
+                      />
                       <div>
-                        <p className="font-medium">{row.first_name} {row.last_name}</p>
+                        <p className="font-medium">{fullName}</p>
                         <p className="text-sm text-muted-foreground">
                           {formatUserRole(row.role, t)} - {row.department || t("personnel.noDepartment")} - #{row.id}
                         </p>
@@ -540,17 +549,21 @@ function PersonnelPageContent() {
               <TabsContent value="patients" className="m-0 space-y-2">
                 {patientRows.map((row) => {
                   const linkedAccount = accountByPatientId.get(row.id);
+                  const fullName = personName(row.first_name, row.last_name, `Patient #${row.id}`);
                   return (
                   <div
                     key={row.id}
                     className="flex items-center justify-between rounded-xl border border-border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-green-100 p-2 text-green-600 dark:bg-green-900/30">
-                        <Users className="h-4 w-4" />
-                      </div>
+                      <UserAvatar
+                        username={fullName}
+                        profileImageUrl={row.photo_url || linkedAccount?.profile_image_url || null}
+                        sizePx={44}
+                        fallbackClassName="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200"
+                      />
                       <div>
-                        <p className="font-medium">{row.first_name} {row.last_name}</p>
+                        <p className="font-medium">{fullName}</p>
                         <p className="text-sm text-muted-foreground">
                           {t("personnel.role.patient")} #{row.id}
                           {row.nickname ? ` - ${row.nickname}` : ""}
@@ -565,6 +578,12 @@ function PersonnelPageContent() {
                         <Link href={getPatientDetailPath(me?.role || "admin", row.id)}>
                           {t("personnel.rowOpen")}
                           <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`${getPatientDetailPath(me?.role || "admin", row.id)}?tab=care#timeline`}>
+                          <Activity className="h-3.5 w-3.5" />
+                          Timeline
                         </Link>
                       </Button>
                       {canManageAccounts ? (
@@ -585,15 +604,31 @@ function PersonnelPageContent() {
               </TabsContent>
 
               <TabsContent value="accounts" className="m-0 space-y-2">
-                {accountRows.map((row) => (
+                {accountRows.map((row) => {
+                  const linkedStaff = row.caregiver_id != null ? caregivers.find((cg) => cg.id === row.caregiver_id) : undefined;
+                  const linkedPatient = row.patient_id != null ? patients.find((pt) => pt.id === row.patient_id) : undefined;
+                  const displayName = linkedStaff
+                    ? personName(linkedStaff.first_name, linkedStaff.last_name, row.username)
+                    : linkedPatient
+                      ? personName(linkedPatient.first_name, linkedPatient.last_name, row.username)
+                      : row.username;
+                  const avatarUrl =
+                    row.profile_image_url?.trim() ||
+                    linkedStaff?.photo_url?.trim() ||
+                    linkedPatient?.photo_url?.trim() ||
+                    null;
+                  return (
                   <div
                     key={row.id}
                     className="flex items-center justify-between rounded-xl border border-border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="rounded-full bg-violet-100 p-2 text-violet-600 dark:bg-violet-900/30">
-                        <KeyRound className="h-4 w-4" />
-                      </div>
+                      <UserAvatar
+                        username={displayName}
+                        profileImageUrl={avatarUrl}
+                        sizePx={44}
+                        fallbackClassName="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200"
+                      />
                       <div>
                         <p className="font-medium">{row.username}</p>
                         <p className="text-sm text-muted-foreground">
@@ -617,7 +652,7 @@ function PersonnelPageContent() {
                       ) : null}
                     </div>
                   </div>
-                ))}
+                )})}
                 {accountRows.length === 0 ? (
                   <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
                     {t("personnel.emptyAccounts")}

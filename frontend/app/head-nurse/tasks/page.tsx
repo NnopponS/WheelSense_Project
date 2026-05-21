@@ -1,29 +1,29 @@
 "use client";
 
+import { OperationsConsole } from "@/components/workflow/OperationsConsole";
+import { WorkflowTasksHubContent } from "@/components/workflow/WorkflowTasksHubContent";
 import { useTranslation } from "@/lib/i18n";
-import { TasksPageLayout } from "@/components/tasks/TasksPageLayout";
 
-/**
- * Head Nurse Tasks Page
- * 
- * Head Nurses have full task management control:
- * - Create, edit, delete tasks
- * - Assign tasks to any staff member
- * - Daily routine / shift checklist overview
- * - View all tasks in their workspace
- */
 export default function HeadNurseTasksPage() {
   const { t } = useTranslation();
 
   return (
-    <TasksPageLayout
-      title={t("tasks.taskManagement")}
-      description={t("tasks.taskManagementDesc")}
-      role="head-nurse"
-      canCreate={true}
-      canManage={true}
-      canExecute={true}
-      showDailyRoutineOverview={true}
-    />
+    <div className="space-y-6 pb-6 animate-fade-in">
+      <div className="space-y-1">
+        <h2 className="text-2xl font-semibold text-foreground md:text-3xl">
+          {t("tasks.taskManagement")}
+        </h2>
+        <p className="max-w-3xl text-sm text-muted-foreground">
+          {t("tasks.taskManagementDesc")}
+        </p>
+      </div>
+
+      <WorkflowTasksHubContent variant="head-nurse" />
+      <OperationsConsole
+        role="head_nurse"
+        title={t("admin.workflowQueue")}
+        subtitle={t("workflowTasks.hubBoardSubtitle")}
+      />
+    </div>
   );
 }

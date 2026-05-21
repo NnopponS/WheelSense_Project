@@ -5,7 +5,7 @@
 WheelSense has three runtime layers:
 
 1. `firmware/`
-   - `M5StickCPlus2`: wheelchair device firmware publishing IMU, battery, and BLE RSSI telemetry over MQTT
+   - `M5StickCPlus2_BLEGateway`: wheelchair device firmware publishing IMU, battery, and BLE RSSI telemetry through the phone gateway path
    - `Node_Tsimcam`: camera + BLE beacon node publishing registration, status, and image data over MQTT
 2. `server/`
    - FastAPI API

@@ -396,6 +396,20 @@ export default function PatientPharmacyPage() {
         isLoading={prescriptionsQuery.isLoading}
         emptyText={t("patient.pharmacy.emptyActiveRx")}
         rightSlot={<PackageCheck className="h-4 w-4 text-muted-foreground" />}
+        mobileMode="cards"
+        csvExport={{
+          fileNameBase: "wheelsense-patient-prescriptions",
+          headers: ["Prescription ID", "Medication", "Dosage", "Frequency", "Route", "Status", "Created"],
+          getRowValues: (row) => [
+            row.id,
+            row.medicationName,
+            row.dosage,
+            row.frequency,
+            row.route,
+            row.status,
+            row.createdAt,
+          ],
+        }}
       />
 
       <DataTableCard
@@ -406,6 +420,22 @@ export default function PatientPharmacyPage() {
         isLoading={ordersQuery.isLoading}
         emptyText={t("patient.pharmacy.emptyOrders")}
         rightSlot={<PackageCheck className="h-4 w-4 text-muted-foreground" />}
+        mobileMode="cards"
+        csvExport={{
+          fileNameBase: "wheelsense-patient-pharmacy-orders",
+          headers: ["Order ID", "Order number", "Prescription", "Pharmacy", "Quantity", "Refills remaining", "Status", "Requested", "Fulfilled"],
+          getRowValues: (row) => [
+            row.id,
+            row.orderNumber,
+            row.prescriptionLabel,
+            row.pharmacyName,
+            row.quantity,
+            row.refillsRemaining,
+            row.status,
+            row.requestedAt,
+            row.fulfilledAt,
+          ],
+        }}
       />
     </div>
   );

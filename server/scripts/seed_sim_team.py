@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seed a minimal simulator-ready workspace: rooms, 5 patients + devices, 4 staff users.
+"""Seed a minimal simulator-ready workspace: English rooms, 6 patients + devices, 4 staff users.
 
 Does not create a second admin account — use the bootstrap admin (BOOTSTRAP_ADMIN_*).
 Aligns workspace name with BOOTSTRAP_ADMIN_ATTACH_DEMO_WORKSPACE / bootstrap_demo_workspace_name.
@@ -25,7 +25,7 @@ from app.config import settings
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Seed sim team + 5 patients for MQTT simulator")
+    p = argparse.ArgumentParser(description="Seed sim team + 6 patients for MQTT simulator")
     p.add_argument(
         "--workspace",
         default=(settings.bootstrap_demo_workspace_name or "WheelSense Demo Workspace").strip(),

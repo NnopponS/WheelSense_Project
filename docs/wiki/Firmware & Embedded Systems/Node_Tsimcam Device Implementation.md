@@ -4,8 +4,8 @@
 **Referenced Files in This Document**
 - [main.cpp](file://firmware/Node_Tsimcam/src/main.cpp)
 - [platformio.ini](file://firmware/Node_Tsimcam/platformio.ini)
-- [BLEManager.cpp](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp)
-- [BLEManager.h](file://firmware/M5StickCPlus2/src/managers/BLEManager.h)
+- [BLEManager.cpp](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp)
+- [BLEManager.h](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h)
 - [mqtt_handler.py](file://server/app/mqtt_handler.py)
 - [device_management.py](file://server/app/services/device_management.py)
 - [0005-camera-photo-only-internet-independent.md](file://docs/adr/0005-camera-photo-only-internet-independent.md)
@@ -329,8 +329,8 @@ HANDLER --> DB["Device Management"]
 
 **Section sources**
 - [main.cpp:190-210](file://firmware/Node_Tsimcam/src/main.cpp#L190-L210)
-- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2/src/managers/BLEManager.cpp#L33-L62)
-- [BLEManager.h:12-17](file://firmware/M5StickCPlus2/src/managers/BLEManager.h#L12-L17)
+- [BLEManager.cpp:33-62](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.cpp#L33-L62)
+- [BLEManager.h:12-17](file://firmware/M5StickCPlus2_BLEGateway/src/managers/BLEManager.h#L12-L17)
 - [main.cpp:688-693](file://firmware/Node_Tsimcam/src/main.cpp#L688-L693)
 
 ### Network Connectivity and MQTT

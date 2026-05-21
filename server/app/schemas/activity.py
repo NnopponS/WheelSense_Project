@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
 # ── ActivityTimeline ──────────────────────────────────────────────────────────
 
@@ -32,6 +32,36 @@ class TimelineEventOut(BaseModel):
     data: dict[str, Any]
     source: str
     caregiver_id: int | None
+
+    @computed_field
+    @property
+    def provenance(self) -> str:
+        data = self.data if isinstance(self.data, dict) else {}
+        explicit = data.get("provenance")
+        if isinstance(explicit, str) and explicit.strip():
+            return explicit.strip()
+        data_source = data.get("source")
+        if isinstance(data_source, str) and data_source.strip():
+            normalized = data_source.strip().lower()
+            if normalized in {"simulation", "simulated", "simulator"}:
+                return "simulator"
+            return normalized
+        if data.get("simulated") is True:
+            return "simulator"
+        if data.get("seed") is True or self.source == "seed":
+            return "seed"
+        if self.source in {"observer", "caregiver", "manual"}:
+            return self.source
+        if self.source == "auto" and self.event_type in {
+            "room_enter",
+            "room_exit",
+            "fall_detected",
+            "no_movement",
+            "inactivity",
+            "mode_switch",
+        }:
+            return "telemetry"
+        return self.source or "system"
 
 # ── Alert ─────────────────────────────────────────────────────────────────────
 

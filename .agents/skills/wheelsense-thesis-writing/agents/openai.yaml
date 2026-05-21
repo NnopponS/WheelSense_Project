@@ -1,0 +1,4 @@
+interface:
+  display_name: "WheelSense Thesis Writing"
+  short_description: "Write and revise the Thai WheelSense thesis in the author style."
+  default_prompt: "Use this skill to revise WheelSense thesis content in Thai while preserving the existing author voice, LaTeX structure, citations, and chapter-specific scope."

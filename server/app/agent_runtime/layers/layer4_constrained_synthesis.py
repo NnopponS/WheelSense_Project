@@ -27,6 +27,7 @@ from app.agent_runtime.intent import ConversationContext, IntentClassifier
 from app.agent_runtime.layers.contracts import ValidatedContextPackage
 from app.agent_runtime.layers.contracts import PipelineEvent, SynthesisResult
 from app.agent_runtime.layers.observability import PipelineEventEmitter
+from app.mcp.tool_catalog import READ_ONLY_TOOL_NAMES, is_tool_read_only
 
 # ---------------------------------------------------------------------------
 # Strategy names — intentionally string constants so the orchestrator can
@@ -34,6 +35,9 @@ from app.agent_runtime.layers.observability import PipelineEventEmitter
 # ---------------------------------------------------------------------------
 STRATEGY_LLM_TOOL = "llm_tool"
 STRATEGY_GENERAL_CONVERSATION = "general_conversation"
+
+# Positive read-only catalog for propose-time auto execution.
+MCP_TOOL_READ_ONLY_NAMES: frozenset[str] = READ_ONLY_TOOL_NAMES
 
 # Intent keys that should route through the existing llm_tool_router strategy.
 # This list is the minimal set needed for current tests; the orchestrator
@@ -71,6 +75,11 @@ def check_tool_allowed(role: str, tool_name: str) -> bool:
     if allowed_tools is None:
         return False
     return tool_name in allowed_tools
+
+
+def is_mcp_tool_read_only(tool_name: str) -> bool:
+    """Return True only for MCP tools approved for propose-time auto-run."""
+    return is_tool_read_only(tool_name)
 
 
 def build_policy_context(package: ValidatedContextPackage) -> dict[str, Any]:
@@ -196,8 +205,10 @@ def synthesize(
 __all__ = [
     "STRATEGY_GENERAL_CONVERSATION",
     "STRATEGY_LLM_TOOL",
+    "MCP_TOOL_READ_ONLY_NAMES",
     "build_policy_context",
     "check_tool_allowed",
     "get_synthesis_strategy",
+    "is_mcp_tool_read_only",
     "synthesize",
 ]

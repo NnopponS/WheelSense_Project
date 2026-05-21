@@ -1,2 +1,5 @@
-export { default } from "@/app/admin/patients/page";
+import { redirect } from "next/navigation";
 
+export default function ObserverPatientsRedirectPage() {
+  redirect("/observer/personnel");
+}

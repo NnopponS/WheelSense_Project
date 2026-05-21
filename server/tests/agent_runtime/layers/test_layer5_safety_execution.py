@@ -5,10 +5,12 @@ from __future__ import annotations
 from app.agent_runtime.layers.contracts import (
     ActorFacts,
     SafeFailure,
+    SynthesisResult,
     new_correlation,
 )
 from app.agent_runtime.layers.layer5_safety_execution import (
     guard_execution_plan,
+    guard_synthesis,
     guard_tool_call,
 )
 from app.agent_runtime.layers.observability import PipelineEventEmitter
@@ -107,3 +109,26 @@ class TestGuardExecutionPlan:
 
         assert isinstance(result, SafeFailure)
         assert result.reason_code == "policy_denied"
+
+
+class TestGuardSynthesis:
+    def test_blocks_immediate_mutation_tool_during_propose(self) -> None:
+        corr = new_correlation()
+        synthesis = SynthesisResult(
+            correlation_id=corr.id,
+            strategy="llm_tool",
+            mode="tool",
+            intent_key="alerts.manage",
+            confidence=0.95,
+            immediate_tool_name="acknowledge_alert",
+            immediate_tool_arguments={"alert_id": 7},
+        )
+
+        result = guard_synthesis(
+            correlation=corr,
+            actor=_actor("supervisor"),
+            synthesis=synthesis,
+        )
+
+        assert isinstance(result, SafeFailure)
+        assert result.reason_code == "confirmation_required"

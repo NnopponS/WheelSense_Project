@@ -352,6 +352,139 @@ async def test_propose_endpoint_includes_ai_trace_when_requested(
 
 
 @pytest.mark.asyncio
+async def test_propose_endpoint_persists_rich_metadata_and_filters_actions_by_conversation(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    token = create_access_token(subject=str(admin_user.id), role=admin_user.role)
+    admin_user._access_token = token  # type: ignore[attr-defined]
+
+    created = await client.post(
+        "/api/chat/conversations",
+        json={"title": "metadata restore"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert created.status_code == 200
+    conversation_id = created.json()["id"]
+
+    plan = ExecutionPlan(
+        playbook="workflow",
+        summary="Create blood draw task",
+        model_target="copilot:gpt-4.1",
+        risk_level="medium",
+        steps=[
+            ExecutionPlanStep(
+                id="task-1",
+                title="Create blood draw task",
+                tool_name="create_task_management_task",
+                arguments={
+                    "title": "Blood draw",
+                    "patient_id": 1,
+                    "assign_to_self": True,
+                    "due_at": "2026-05-16T09:00:00+07:00",
+                    "priority": "high",
+                    "checklist": ["collect sample", "record result"],
+                },
+                risk_level="medium",
+                permission_basis=["workflow.write"],
+            )
+        ],
+    )
+
+    async def fake_propose_turn(**kwargs):
+        cid = kwargs["conversation_id"]
+        return AgentRuntimeProposeResponse(
+            mode="plan",
+            assistant_reply="Please confirm the task draft.",
+            plan=plan,
+            action_payload={
+                "conversation_id": cid,
+                "title": plan.summary,
+                "action_type": "mcp_plan",
+                "summary": plan.summary,
+                "proposed_changes": {
+                    "mode": "plan",
+                    "execution_plan": plan.model_dump(mode="json"),
+                },
+            },
+            grounding={
+                "classification_method": "test_router",
+                "ai_trace": [{"layer": 1, "label": "Trace", "outcome": "accept"}],
+                "provider_attempts": [{"provider": "copilot", "status": "success"}],
+                "response_cards": [
+                    {
+                        "kind": "task_draft",
+                        "title": "Blood draw",
+                        "task": plan.steps[0].arguments,
+                    }
+                ],
+            },
+        )
+
+    monkeypatch.setattr(
+        "app.services.agent_runtime_client.propose_turn",
+        fake_propose_turn,
+    )
+
+    other = await ai_chat.propose_chat_action(
+        db_session,
+        ws_id=admin_user.workspace_id,
+        actor=admin_user,
+        payload=ChatActionProposeIn(
+            title="Other action",
+            action_type="note",
+            summary="Not linked to this conversation",
+        ),
+    )
+
+    response = await client.post(
+        "/api/chat/actions/propose",
+        json={
+            "conversation_id": conversation_id,
+            "message": "create task for patient 1",
+            "messages": [{"role": "user", "content": "create task for patient 1"}],
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["proposal_id"] is not None
+    assert payload["proposal_id"] != other.id
+    assert payload["grounding"]["response_cards"][0]["kind"] == "task_draft"
+    assert "ai_trace" not in payload["grounding"]
+    assert "provider_attempts" not in payload["grounding"]
+    assert payload["ai_trace"] is None
+    assert payload["provider_attempts"] is None
+    assert payload["metadata"]["proposal_id"] == payload["proposal_id"]
+    assert payload["metadata"]["plan_status"] == "proposed"
+
+    messages = await client.get(
+        f"/api/chat/conversations/{conversation_id}/messages",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert messages.status_code == 200
+    assistant_messages = [
+        item for item in messages.json() if item["role"] == "assistant"
+    ]
+    assert assistant_messages
+    metadata = assistant_messages[-1]["metadata"]
+    assert metadata["proposal_id"] == payload["proposal_id"]
+    assert metadata["grounding"]["response_cards"][0]["kind"] == "task_draft"
+    assert "ai_trace" not in metadata["grounding"]
+
+    filtered = await client.get(
+        f"/api/chat/actions?conversation_id={conversation_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert filtered.status_code == 200
+    action_ids = [row["id"] for row in filtered.json()]
+    assert action_ids == [payload["proposal_id"]]
+
+
+@pytest.mark.asyncio
 async def test_step_results_in_executed_actions(
     db_session: AsyncSession,
     e2e_test_workspace: Workspace,
@@ -747,6 +880,63 @@ async def test_force_execute_bypasses_confirmation(
     assert executed.status == "executed"
     assert executed.confirmed_by_user_id is None  # Never confirmed
     assert result["ok"] is True
+
+
+@pytest.mark.asyncio
+async def test_force_execute_denies_mutating_plan(
+    db_session: AsyncSession,
+    e2e_test_workspace: Workspace,
+    e2e_admin_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    execute_plan = AsyncMock(
+        return_value=AgentRuntimeExecuteResponse(
+            message="should not execute",
+            execution_result={"ok": True},
+        )
+    )
+    monkeypatch.setattr("app.services.agent_runtime_client.execute_plan", execute_plan)
+    plan = ExecutionPlan(
+        playbook="clinical-triage",
+        summary="Acknowledge alert 55",
+        model_target="copilot:gpt-4.1",
+        risk_level="medium",
+        steps=[
+            ExecutionPlanStep(
+                id="ack-55",
+                title="Acknowledge alert 55",
+                tool_name="acknowledge_alert",
+                arguments={"alert_id": 55},
+                risk_level="medium",
+            )
+        ],
+    )
+    proposed = await ai_chat.propose_chat_action(
+        db_session,
+        ws_id=e2e_test_workspace.id,
+        actor=e2e_admin_user,
+        payload=ChatActionProposeIn(
+            title="Acknowledge alert 55",
+            action_type="mcp_plan",
+            tool_name=None,
+            tool_arguments={},
+            summary="Acknowledge alert 55",
+            proposed_changes={"execution_plan": plan.model_dump(mode="json")},
+        ),
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        await ai_chat.execute_chat_action(
+            db_session,
+            ws_id=e2e_test_workspace.id,
+            action_id=proposed.id,
+            actor=e2e_admin_user,
+            force=True,
+        )
+
+    assert exc.value.status_code == 409
+    assert "must be confirmed" in exc.value.detail
+    execute_plan.assert_not_called()
 
 
 @pytest.mark.asyncio

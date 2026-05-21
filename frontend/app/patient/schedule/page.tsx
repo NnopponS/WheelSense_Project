@@ -185,7 +185,7 @@ function ScheduleContent() {
         </p>
       </div>
 
-      <section className="grid grid-cols-3 gap-3">
+      <section className="grid gap-3 sm:grid-cols-3">
         <Card>
           <CardContent className="p-4">
             <p className="text-sm uppercase tracking-wide text-muted-foreground">

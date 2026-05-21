@@ -24,6 +24,7 @@ This file reflects the variables currently read by `server/app/config.py` and th
 | `MQTT_AUTO_REGISTER_BLE_NODES` | `true` | When `true`, BLE beacons reported in `WheelSense/data` `rssi[]` (`node` names like `WSN_*` plus `mac`) auto-create a **node** (`hardware_type=node`) in the **same workspace** as the wheelchair. Registry `device_id` is `BLE_<12 hex MAC>` (or `BLE_<sanitized node>` if MAC is missing). Same note as above: deleted rows can reappear if the broker still publishes those beacons. |
 | `MQTT_MERGE_BLE_CAMERA_BY_MAC` | `true` | When `true`, `WheelSense/camera/.../registration` JSON with `ble_mac` matching a `BLE_*` stub **renames** that registry row to the camera’s `device_id` (e.g. `CAM_*`) so MQTT topics and the web UI use one device. |
 | `MQTT_AUTO_REGISTER_WORKSPACE_ID` | empty | Optional integer workspace PK. When set, new devices from telemetry attach to this workspace. When unset and **exactly one** workspace exists, that workspace is used. If multiple workspaces exist and this is unset, auto-register is skipped (telemetry dropped until you register manually or set this variable). |
+| `MQTT_REST_PUBLISH_ENABLED` | `true` | Enables REST-triggered fire-and-forget MQTT publishes such as retained mobile assignment config and alert fanout. Tests disable this to avoid broker-dependent background tasks. |
 | `ROOM_TIMELINE_STABILITY_SAMPLES` | `3` | MQTT localization must produce the same predicted `room_id` this many times in a row before `activity_timeline` records `room_enter` / `room_exit`. Reduces duplicate timeline rows when RSSI/KNN flickers between rooms. Set to `1` for the previous immediate-logging behavior. |
 
 ## Docker Compose — Cloudflare quick tunnel (production)
@@ -45,7 +46,7 @@ Used by the `wheelsense-simulator` Compose service (`python sim_controller.py --
 | `SIM_ENABLE_ALERTS` | `true` | Set `false` / `0` / `no` / `off` to disable automatic alert generation from vitals |
 | `SIM_HEART_RATE_HIGH` | 110 | BPM threshold above which consecutive readings can raise `abnormal_hr` |
 
-**Runtime control (no env change):** when `ENV_MODE=simulator`, admins can call `POST /api/demo/simulator/command`, which publishes JSON to MQTT topic `WheelSense/sim/control` with `workspace_id` plus `command`: `pause`, `resume`, `set_config`, `inject_abnormal_hr`, or `inject_fall`. The simulator only applies messages whose `workspace_id` matches its loaded workspace.
+**Runtime control (no env change):** when `ENV_MODE=simulator`, admins can call `POST /api/demo/simulator/command`, which publishes JSON to MQTT topic `WheelSense/sim/control` with `workspace_id` plus `command`: `pause`, `resume`, `set_config`, `inject_abnormal_hr`, `inject_fall`, or `move_actor`. The simulator only applies messages whose `workspace_id` matches its loaded workspace. `move_actor` also powers Demo Control movement by emitting normal `WheelSense/data` telemetry with strongest RSSI at the target room node.
 
 ## App / auth
 
@@ -93,9 +94,10 @@ See `RUNBOOK.md` for the dual-environment workflow.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `AI_PROVIDER` | `ollama` | Default provider: `ollama` or `copilot` |
-| `AI_DEFAULT_MODEL` | `gemma4:e4b` | Workspace default model |
+| `AI_PROVIDER` | `ollama` (`copilot` in core compose) | Default provider: `ollama` or `copilot` |
+| `AI_DEFAULT_MODEL` | `gemma4:e4b` (`gpt-4.1` in core compose) | Workspace default model |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434/v1` | OpenAI-compatible Ollama URL |
+| `OLLAMA_FALLBACK_MODEL` | `gemma4:e4b` | Ollama model used when a Copilot workspace falls back to Ollama. Keep this separate from Copilot model ids such as `gpt-4.1`. |
 | `COPILOT_CLI_URL` | empty | GitHub Copilot CLI bridge URL |
 | `GITHUB_OAUTH_CLIENT_ID` | empty | OAuth app client ID for Copilot device flow |
 
@@ -111,16 +113,18 @@ Used by `wheelsense-agent-runtime` (`server/app/agent_runtime/`). MCP tool names
 | `INTENT_LLM_NORMALIZE_ENABLED` | `true` | When `true`, if regex+semantic yield no intent, call the workspace AI provider once for a compact English paraphrase and re-run classification (never used as tool arguments). |
 | `INTENT_LLM_NORMALIZE_TIMEOUT_SECONDS` | `12` | Hard cap for the normalizer call. |
 | `INTENT_AI_CONVERSATION_FASTPATH_ENABLED` | `true` | When `true`, very short greetings/thanks (EN/TH) skip intent + MCP and go straight to the workspace chat model for lower latency. |
-| `AGENT_ROUTING_MODE` | `intent` | `intent` uses the multilingual intent classifier; `llm_tools` uses the workspace **primary AI provider** (`WorkspaceAISettings` / `AI_PROVIDER`) to pick MCP tools: **Ollama** uses native `tools=` completions; **Copilot** uses a JSON tool-list prompt. On failure or no tool match, the router tries the other provider, then falls back to `intent`. |
-| `AGENT_LLM_ROUTER_MODEL` | empty | When set, forces that **Ollama** model name for the native `tools=` leg. When empty and the workspace primary provider is **ollama**, the router uses the workspace default model; when primary is **copilot**, the Ollama fallback leg uses `AI_DEFAULT_MODEL`. Used only when `AGENT_ROUTING_MODE=llm_tools`. |
+| `EASEAI_PIPELINE_V2` | `false` (`true` in core compose) | Enables the 5-layer EaseAI runtime. In core compose this is on and Layer 4 tries `llm_tools` first when `AGENT_ROUTING_MODE=llm_tools`, then falls back to deterministic intent and safe AI answer paths. |
+| `AGENT_ROUTING_MODE` | `intent` (`llm_tools` in core compose) | `intent` uses the multilingual intent classifier; `llm_tools` uses the workspace **primary AI provider** (`WorkspaceAISettings` / `AI_PROVIDER`) to pick MCP tools: **Ollama** uses native `tools=` completions; **Copilot** uses a JSON tool-list prompt. On failure or no tool match, the router tries the other provider, then falls back to `intent`. |
+| `AGENT_LLM_ROUTER_MODEL` | empty | When set, forces that **Ollama** model name for the native `tools=` leg. When empty and the workspace primary provider is **ollama**, the router uses the workspace default model; when primary is **copilot**, the Ollama fallback leg uses `OLLAMA_FALLBACK_MODEL`. Used only when `AGENT_ROUTING_MODE=llm_tools`. |
+| `MCP_STREAMABLE_HTTP_HOST_HEADER` | empty (`localhost:8000` in core compose) | Optional Host header override for agent-runtime MCP Streamable HTTP calls. Core compose sets this because FastMCP transport security accepts localhost but rejects Docker service DNS names such as `wheelsense-platform-server:8000`. |
 
 **Agent runtime conversation context:** There is no env toggle. The agent runtime process holds an in-memory `ConversationContext` per chat `conversation_id` (patient roster and last-focused patient for short clinical follow-ups). Multiple **`wheelsense-agent-runtime`** replicas would need a shared store for that map to stay consistent across instances.
 
-**`llm_tools` notes:** The router follows the same **effective provider** as normal chat (`resolve_effective_ai`). Copilot workspaces call Copilot first (JSON tool list); Ollama workspaces call Ollama first (OpenAI-style `tools=`). The other provider is used only as a fallback when the primary leg yields no tool calls. If both legs fail, routing falls back to the intent classifier.
+**`llm_tools` notes:** The router follows the same **effective provider** as normal chat (`resolve_effective_ai`). Copilot workspaces call Copilot first (JSON tool list); Ollama workspaces call Ollama first (OpenAI-style `tools=`). The other provider is used only as a fallback when the primary leg yields no tool calls. If both legs fail, routing falls back to the intent classifier. Read-only/no-op MCP tools may run during propose; every cataloged mutation returns a confirmation plan and cannot be force-executed from `proposed`.
 
 **Staging:** Prefer enabling `AGENT_ROUTING_MODE=llm_tools` on a non-production stack first; smoke the EaseAI popup and targeted pytest as described in `server/docs/RUNBOOK.md` § Agent runtime.
 
-**Compose:** override any of the above under the `wheelsense-agent-runtime` service `environment` block in `server/docker-compose.core.yml` if you need stricter defaults (for example `INTENT_SEMANTIC_ENABLED=false` on very small hosts). The core compose file wires `AGENT_ROUTING_MODE` / `AGENT_LLM_ROUTER_MODEL` through to that service (defaults preserve `intent`).
+**Compose:** override any of the above under the `wheelsense-agent-runtime` service `environment` block in `server/docker-compose.core.yml` if you need stricter defaults (for example `EASEAI_PIPELINE_V2=false`, `AGENT_ROUTING_MODE=intent`, or `INTENT_SEMANTIC_ENABLED=false` on very small hosts). The core compose file defaults to Copilot `gpt-4.1`, `EASEAI_PIPELINE_V2=true`, and `AGENT_ROUTING_MODE=llm_tools` for live EaseAI testing.
 
 ## Storage
 

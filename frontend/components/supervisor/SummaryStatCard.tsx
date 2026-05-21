@@ -1,5 +1,6 @@
-﻿import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 type Tone = "critical" | "warning" | "success" | "info";
 
@@ -22,17 +23,16 @@ export function SummaryStatCard({
   tone: Tone;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center justify-between gap-4 pt-6">
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-1 text-3xl font-semibold text-foreground">{value}</p>
+    <Card className="h-full overflow-hidden">
+      <CardContent className="flex min-h-24 items-center justify-between gap-4 p-4 sm:p-5">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="mt-1 text-3xl font-semibold leading-none text-foreground">{value}</p>
         </div>
-        <div className={`rounded-2xl p-3 ${toneClassMap[tone]}`}>
+        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-lg", toneClassMap[tone])}>
           <Icon className="h-5 w-5" />
         </div>
       </CardContent>
     </Card>
   );
 }
-

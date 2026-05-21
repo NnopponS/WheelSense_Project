@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Build Web Apps"
+  short_description: "WheelSense build-web-apps workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $build-web-apps for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

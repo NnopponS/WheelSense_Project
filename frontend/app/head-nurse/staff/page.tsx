@@ -1,13 +1,14 @@
 "use client";
 "use no memo";
 
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
 import { z } from "zod";
-import { CalendarClock, ClipboardList, Plus, Search, UserCog } from "lucide-react";
+import { CalendarClock, ClipboardList, ListTodo, Plus, Search, UserCog } from "lucide-react";
 import { HeadNurseStaffMemberSheet } from "@/components/head-nurse/HeadNurseStaffMemberSheet";
 import type { User } from "@/lib/types";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
@@ -39,6 +40,7 @@ import type {
 const EMPTY_SELECT = "__empty__";
 const TASK_PRIORITY_OPTIONS = ["normal", "high", "critical"] as const;
 const SCHEDULE_TYPE_OPTIONS = ["round", "check_in", "medication", "handoff"] as const;
+const SCHEDULE_RECURRENCE_OPTIONS = ["none", "daily", "weekly", "monthly"] as const;
 
 const taskFormSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
@@ -53,7 +55,7 @@ const scheduleFormSchema = z.object({
   title: z.string().trim().min(1, "Title is required"),
   scheduleType: z.enum(SCHEDULE_TYPE_OPTIONS),
   startsAt: z.string().min(1, "Start time is required"),
-  recurrenceRule: z.string().trim(),
+  recurrenceRule: z.enum(SCHEDULE_RECURRENCE_OPTIONS),
   notes: z.string().trim(),
   assignedUserId: z.string(),
 });
@@ -74,6 +76,7 @@ type ScheduleRow = {
   id: number;
   title: string;
   scheduleType: string;
+  recurrenceRule: string;
   status: string;
   assignedRole: string | null;
   assignedUserId: number | null;
@@ -117,6 +120,10 @@ function labelPortalUser(
 
 function toIsoDateTime(value: string): string {
   return new Date(value).toISOString();
+}
+
+function recurrenceToApiRule(value: ScheduleFormValues["recurrenceRule"]): string {
+  return value === "none" ? "" : value;
 }
 
 export default function HeadNurseStaffPage() {
@@ -167,7 +174,7 @@ export default function HeadNurseStaffPage() {
       title: "",
       scheduleType: "round",
       startsAt: "",
-      recurrenceRule: "RRULE:FREQ=DAILY",
+      recurrenceRule: "daily",
       notes: "",
       assignedUserId: EMPTY_SELECT,
     },
@@ -212,7 +219,7 @@ export default function HeadNurseStaffPage() {
         schedule_type: values.scheduleType,
         starts_at: toIsoDateTime(values.startsAt),
         ends_at: null,
-        recurrence_rule: values.recurrenceRule.trim() || "RRULE:FREQ=DAILY",
+        recurrence_rule: recurrenceToApiRule(values.recurrenceRule),
         assigned_role: null,
         assigned_user_id: values.assignedUserId === EMPTY_SELECT ? null : Number(values.assignedUserId),
         notes: values.notes.trim(),
@@ -226,7 +233,7 @@ export default function HeadNurseStaffPage() {
         title: "",
         scheduleType: "round",
         startsAt: "",
-        recurrenceRule: "RRULE:FREQ=DAILY",
+        recurrenceRule: "daily",
         notes: "",
         assignedUserId: EMPTY_SELECT,
       });
@@ -307,6 +314,18 @@ export default function HeadNurseStaffPage() {
     [t, userById, caregiverById],
   );
 
+  const recurrenceLabel = useCallback(
+    (value: string | null | undefined) => {
+      const base = (value || "").split("|")[0]?.trim();
+      if (!base) return t("headNurse.scheduleRecurrenceNone");
+      if (base === "daily") return t("headNurse.scheduleRecurrenceDaily");
+      if (base === "weekly") return t("headNurse.scheduleRecurrenceWeekly");
+      if (base === "monthly") return t("headNurse.scheduleRecurrenceMonthly");
+      return base;
+    },
+    [t],
+  );
+
   const caregiverRows = useMemo<CaregiverRow[]>(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
@@ -333,6 +352,7 @@ export default function HeadNurseStaffPage() {
         id: item.id,
         title: item.title,
         scheduleType: item.schedule_type,
+        recurrenceRule: item.recurrence_rule,
         status: item.status,
         assignedRole: item.assigned_role,
         assignedUserId: item.assigned_user_id,
@@ -431,7 +451,9 @@ export default function HeadNurseStaffPage() {
         cell: ({ row }) => (
           <div className="space-y-1">
             <p className="font-medium text-foreground">{row.original.title}</p>
-            <p className="text-sm text-muted-foreground">{row.original.scheduleType}</p>
+            <p className="text-sm text-muted-foreground">
+              {row.original.scheduleType} · {recurrenceLabel(row.original.recurrenceRule)}
+            </p>
           </div>
         ),
       },
@@ -457,7 +479,7 @@ export default function HeadNurseStaffPage() {
         ),
       },
     ],
-    [t, assignmentLabel],
+    [t, assignmentLabel, recurrenceLabel],
   );
 
   const tasksColumns = useMemo<ColumnDef<TaskRow>[]>(
@@ -578,31 +600,67 @@ export default function HeadNurseStaffPage() {
         </p>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <SummaryStatCard icon={UserCog} label="Active staff" value={activeStaffCount} tone="info" />
-        <SummaryStatCard icon={CalendarClock} label="Open schedules" value={openScheduleCount} tone="warning" />
-        <SummaryStatCard icon={ClipboardList} label="Open tasks" value={openTaskCount} tone="warning" />
+      <section className="grid gap-3 lg:grid-cols-2">
+        <Card className="border-border/70 bg-card/90">
+          <CardContent className="flex h-full flex-col gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <UserCog className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground">{t("headNurse.staffHubDifferenceTitle")}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{t("headNurse.staffHubDifferenceDesc")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/70 bg-card/90">
+          <CardContent className="flex h-full flex-col gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700">
+                <ListTodo className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-foreground">{t("headNurse.taskHubDifferenceTitle")}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{t("headNurse.taskHubDifferenceDesc")}</p>
+                <Button asChild variant="outline" size="sm" className="mt-3">
+                  <Link href="/head-nurse/tasks">{t("headNurse.openFullTaskManager")}</Link>
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="text"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t("headNurse.staffSearchPlaceholder")}
-          className="pl-9"
-        />
-      </div>
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <SummaryStatCard icon={UserCog} label={t("headNurse.activeStaff")} value={activeStaffCount} tone="info" />
+        <SummaryStatCard icon={CalendarClock} label={t("headNurse.openSchedules")} value={openScheduleCount} tone="warning" />
+        <SummaryStatCard icon={ClipboardList} label={t("headNurse.openTasks")} value={openTaskCount} tone="warning" />
+      </section>
+
+      <Card className="border-border/70">
+        <CardContent className="p-4">
+          <div className="relative w-full md:max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t("headNurse.staffSearchPlaceholder")}
+              className="pl-9"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t("headNurse.quickCreateTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid auto-rows-fr gap-4 lg:grid-cols-2">
             <form
-              className="space-y-4"
+              className="h-full space-y-4 rounded-lg border border-border/70 bg-background/65 p-4"
               onSubmit={taskForm.handleSubmit((values) => {
                 setTaskError(null);
                 createTaskMutation.mutate(values);
@@ -710,12 +768,12 @@ export default function HeadNurseStaffPage() {
 
               <Button type="submit" disabled={createTaskMutation.isPending}>
                 <Plus className="h-4 w-4" />
-                {createTaskMutation.isPending ? "Creating..." : "Create task"}
+                {createTaskMutation.isPending ? t("common.creating") : t("headNurse.quickCreateTaskLabel")}
               </Button>
             </form>
 
             <form
-              className="space-y-4"
+              className="h-full space-y-4 rounded-lg border border-border/70 bg-background/65 p-4"
               onSubmit={scheduleForm.handleSubmit((values) => {
                 setScheduleError(null);
                 createScheduleMutation.mutate(values);
@@ -723,9 +781,7 @@ export default function HeadNurseStaffPage() {
             >
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">{t("headNurse.scheduleTitle")}</p>
-                <p className="text-sm text-muted-foreground">
-                  Publish a recurring ward schedule and optionally assign it to a caregiver.
-                </p>
+                <p className="text-sm text-muted-foreground">{t("headNurse.scheduleDesc")}</p>
               </div>
 
               <div className="space-y-2">
@@ -770,7 +826,25 @@ export default function HeadNurseStaffPage() {
 
               <div className="space-y-2">
                 <Label>{t("headNurse.scheduleRecurrenceLabel")}</Label>
-                <Input {...scheduleForm.register("recurrenceRule")} placeholder={t("headNurse.scheduleRecurrencePlaceholder")} />
+                <Controller
+                  control={scheduleForm.control}
+                  name="recurrenceRule"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("headNurse.scheduleRecurrencePlaceholder")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCHEDULE_RECURRENCE_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {recurrenceLabel(option === "none" ? "" : option)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <p className="text-xs text-muted-foreground">{t("headNurse.scheduleRecurrenceHelp")}</p>
               </div>
 
               <div className="space-y-2">
@@ -805,7 +879,7 @@ export default function HeadNurseStaffPage() {
 
               <Button type="submit" disabled={createScheduleMutation.isPending}>
                 <Plus className="h-4 w-4" />
-                {createScheduleMutation.isPending ? "Creating..." : "Create schedule"}
+                {createScheduleMutation.isPending ? t("common.creating") : t("headNurse.scheduleTitle")}
               </Button>
             </form>
           </div>
@@ -814,29 +888,68 @@ export default function HeadNurseStaffPage() {
 
       <DataTableCard
         title={t("headNurse.rosterTitle")}
-        description="Current staff directory with active-state visibility."
+        description={t("headNurse.rosterDesc")}
         data={caregiverRows}
         columns={caregiversColumns}
         isLoading={isLoadingAny}
-        emptyText="No caregivers match this search."
+        emptyText={t("headNurse.rosterEmpty")}
+        csvExport={{
+          fileNameBase: "wheelsense-head-nurse-roster",
+          headers: ["Caregiver ID", "Name", "Role", "Phone", "Email", "Active"],
+          getRowValues: (row) => [
+            row.id,
+            row.fullName,
+            row.role,
+            row.phone,
+            row.email,
+            row.isActive ? "yes" : "no",
+          ],
+        }}
       />
 
       <DataTableCard
         title={t("headNurse.upcomingSchedulesTitle")}
-        description="Scheduled rounds ordered by start time."
+        description={t("headNurse.upcomingSchedulesDesc")}
         data={scheduleRows}
         columns={schedulesColumns}
         isLoading={isLoadingAny}
-        emptyText="No workflow schedules found."
+        emptyText={t("headNurse.upcomingSchedulesEmpty")}
+        csvExport={{
+          fileNameBase: "wheelsense-head-nurse-schedules",
+          headers: ["Schedule ID", "Title", "Type", "Recurrence", "Status", "Assigned role", "Assigned user ID", "Starts at"],
+          getRowValues: (row) => [
+            row.id,
+            row.title,
+            row.scheduleType,
+            row.recurrenceRule,
+            row.status,
+            row.assignedRole,
+            row.assignedUserId,
+            row.startsAt,
+          ],
+        }}
       />
 
       <DataTableCard
         title={t("headNurse.openTaskBoardTitle")}
-        description="Pending and in-progress tasks with inline status actions."
+        description={t("headNurse.openTaskBoardDesc")}
         data={taskRows}
         columns={tasksColumns}
         isLoading={isLoadingAny}
-        emptyText="No open tasks."
+        emptyText={t("headNurse.openTaskBoardEmpty")}
+        csvExport={{
+          fileNameBase: "wheelsense-head-nurse-tasks",
+          headers: ["Task ID", "Title", "Priority", "Status", "Due at", "Assigned role", "Assigned user ID"],
+          getRowValues: (row) => [
+            row.id,
+            row.title,
+            row.priority,
+            row.status,
+            row.dueAt,
+            row.assignedRole,
+            row.assignedUserId,
+          ],
+        }}
       />
 
       <HeadNurseStaffMemberSheet

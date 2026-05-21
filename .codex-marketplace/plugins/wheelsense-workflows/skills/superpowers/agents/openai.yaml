@@ -1,0 +1,7 @@
+﻿interface:
+  display_name: "Superpowers"
+  short_description: "WheelSense superpowers workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $superpowers for this WheelSense task."
+policy:
+  allow_implicit_invocation: true

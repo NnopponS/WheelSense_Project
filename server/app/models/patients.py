@@ -145,3 +145,52 @@ class PatientContact(Base):
 
     patient = orm_relationship("Patient", back_populates="contacts")
 
+
+class PatientHealthAnalysisSnapshot(Base):
+    """Persisted hybrid AI snapshot backed by deterministic health analysis."""
+
+    __tablename__ = "patient_health_analysis_snapshots"
+    __table_args__ = (
+        Index(
+            "ix_patient_health_analysis_snapshots_patient_generated",
+            "workspace_id",
+            "patient_id",
+            "generated_at",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    workspace_id = Column(
+        Integer,
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    patient_id = Column(
+        Integer,
+        ForeignKey("patients.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    generated_by_user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    triggered_by = Column(String(32), nullable=False, default="manual")
+    generated_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    deterministic_generated_at = Column(DateTime(timezone=True), nullable=False)
+    window_hours = Column(Integer, nullable=False, default=24)
+    source = Column(String(32), nullable=False, default="deterministic")
+    status = Column(String(32), nullable=False, default="deterministic_fallback")
+    provider = Column(String(32), nullable=True)
+    model_name = Column(String(128), nullable=True)
+    summary = Column(Text, nullable=False, default="")
+    snapshot_json = Column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict)
+    evidence_json = Column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict)
+    provider_attempts = Column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default=list)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    patient = orm_relationship("Patient", backref="health_analysis_snapshots")
+

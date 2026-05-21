@@ -41,7 +41,7 @@
 
 ระดับประมวลผลส่วนกลางประกอบด้วย MQTT Broker (Eclipse Mosquitto) สำหรับรับส่งข้อมูล telemetry จากอุปกรณ์ภาคสนามแบบ Publish/Subscribe Backend API ที่พัฒนาด้วย FastAPI ทำหน้าที่จัดการตรรกะธุรกิจ ตรวจสอบสิทธิ์การเข้าถึง และประมวลผลคำขอจากฝั่งผู้ใช้งาน ฐานข้อมูล PostgreSQL จัดเก็บทั้งข้อมูลที่มีโครงสร้างและข้อมูลกึ่งโครงสร้าง (JSONB) สำหรับ telemetry ข้อมูลการแจ้งเตือน และบันทึกตรวจสอบ (Audit Log) บริการ AI (Ollama ร่วมกับ FastMCP) ทำหน้าที่เป็นผู้ช่วยอัจฉริยะ รับคำถามจากผู้ใช้งาน วิเคราะห์บริบทระบบ และเรียกใช้เครื่องมือ (Tools) ในระบบผ่าน Model Context Protocol (MCP)
 
-ระดับส่วนติดต่อผู้ใช้งานประกอบด้วยแดชบอร์ดเว็บที่พัฒนาด้วย Next.js และแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ที่พัฒนาด้วย React Native ทั้งสองช่องทางรองรับการเข้าถึงตามบทบาท (Role-based) เช่น ผู้ดูแลระบบ พยาบาลหัวหน้า ผู้สังเกตการณ์ และผู้ใช้เก้าอี้รถเข็น โดยใช้ระบบตรวจสอบสิทธิ์ด้วย JWT ที่จัดเก็บในรูปแบบ HttpOnly cookie
+ระดับส่วนติดต่อผู้ใช้งานประกอบด้วยแดชบอร์ดเว็บที่พัฒนาด้วย Next.js และแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ที่พัฒนาด้วย Flutter/Dart ทั้งสองช่องทางรองรับการเข้าถึงตามบทบาท (Role-based) เช่น ผู้ดูแลระบบ พยาบาลหัวหน้า ผู้สังเกตการณ์ และผู้ใช้เก้าอี้รถเข็น โดยใช้ระบบตรวจสอบสิทธิ์ด้วย JWT ที่จัดเก็บในรูปแบบ HttpOnly cookie
 
 การไหลของข้อมูลในระบบเริ่มจากอุปกรณ์ภาคสนามส่งข้อมูล telemetry ผ่านโปรโตคอล MQTT ไปยัง MQTT Broker จากนั้น Backend API ดึงข้อมูลไปประมวลผล จัดเก็บในฐานข้อมูล PostgreSQL และส่งต่อไปยังหน้าจอผู้ใช้งานผ่าน REST API หรือ WebSocket สำหรับการอัปเดตแบบเรียลไทม์ บริการ AI สื่อสารกับ Backend API เพื่อดึงบริบทระบบและสั่งการผ่านเครื่องมือที่กำหนดไว้ ขณะที่ Frontend ส่งคำสั่งและคำถามจากผู้ใช้งานไปยัง Backend API เพื่อประมวลผลต่อไป
 
@@ -86,7 +86,7 @@
         \draw[draw=green, dashed, rounded corners, fill=green!5] (-7.2, 7.8) rectangle (7.2, 10.5);
         
         \node[box, fill=green!20, minimum width=3.2cm] (web) at (-2.5,9.2) {Web Dashboard\\(Next.js)};
-        \node[box, fill=green!20, minimum width=3.2cm] (mobile) at (2.5,9.2) {Mobile App\\(React Native)};
+        \node[box, fill=green!20, minimum width=3.2cm] (mobile) at (2.5,9.2) {Mobile App\\(Flutter/Dart)};
         
         \draw[bidir] (api.north) -- (0, 7.1) -| (web.south);
         \draw[bidir] (api.north) -- (0, 7.1) -| (mobile.south);
@@ -607,7 +607,7 @@ Home Assistant รองรับอุปกรณ์หลากหลาย�
 \subsection{สถาปัตยกรรม}
 \label{sec:ch3_ai_architecture}
 
-สถาปัตยกรรมของ AI ทำงานเป็นระบบผู้ช่วยอัจฉริยะผ่านโครงสร้าง Pipeline 5 ชั้น (EaseAI) เพื่อลดข้อผิดพลาดในการประมวลผลและป้องกันการดำเนินการนอกขอบเขต โดยเชื่อมโยงกับโมเดลภาษาขนาดใหญ่ (LLM) ในเครื่อง (On-premise) เช่น โมเดล Gemma 4 ผ่านแพลตฟอร์ม Ollama นอกจากนี้ยังใช้ Model Context Protocol (MCP) เป็นส่วนเชื่อมต่อเพื่อให้ AI สามารถเข้าถึงข้อมูลในระบบ และกระทำต่อระบบผ่านเครื่องมือ (Tools) ได้อย่างปลอดภัย
+สถาปัตยกรรมของ AI ทำงานเป็นระบบผู้ช่วยอัจฉริยะผ่านโครงสร้าง Pipeline 5 ชั้น (EaseAI) เพื่อลดข้อผิดพลาดในการประมวลผลและป้องกันการดำเนินการนอกขอบเขต โดยเชื่อมโยงกับโมเดลภาษาขนาดใหญ่ (LLM) ในเครื่อง (On-premise) เช่น โมเดล gemma4:e2b ผ่านแพลตฟอร์ม Ollama นอกจากนี้ยังใช้ Model Context Protocol (MCP) เป็นส่วนเชื่อมต่อเพื่อให้ AI สามารถเข้าถึงข้อมูลในระบบ และกระทำต่อระบบผ่านเครื่องมือ (Tools) ได้อย่างปลอดภัย
 
 \begin{table}[H]
     \centering
@@ -620,7 +620,7 @@ Home Assistant รองรับอุปกรณ์หลากหลาย�
         1 & Intent Router & Sentence-BERT & จำแนกประเภทคำถาม \\ \hline
         2 & Context Engine & FastAPI + DB & รวบรวมบริบทระบบปัจจุบัน \\ \hline
         3 & Behavioral State & Policy Engine & ตรวจสอบสิทธิ์และข้อจำกัด \\ \hline
-        4 & Synthesis & Ollama (Gemma/Llama) & สังเคราะห์คำตอบภาษาธรรมชาติ \\ \hline
+        4 & Synthesis & Ollama (gemma4:e2b) & สังเคราะห์คำตอบภาษาธรรมชาติ \\ \hline
         5 & Execution & FastMCP (MCP Protocol) & รันคำสั่งผ่าน tool call \\ \hline
     \end{tabular}
 \end{table}
@@ -630,7 +630,7 @@ Home Assistant รองรับอุปกรณ์หลากหลาย�
     \item \textbf{Layer 1 (Intent Router):} Sentence-BERT จำแนกว่าเป็นคำสั่งควบคุมอุปกรณ์ (device\_control) พร้อมดึงพารามิเตอร์ ``room\_id=101`` และ ``action=turn\_on``
     \item \textbf{Layer 2 (Context Engine):} ระบบดึงข้อมูลจากฐานข้อมูลว่าห้อง 101 มี Smart Device ประเภท ``light`` พร้อม ``ha\_entity\_id=light.bedroom\_101`` และตรวจสอบสิทธิ์ของผู้ใช้
     \item \textbf{Layer 3 (Behavioral State):} ตรวจสอบประวัติการสนทนาและนโยบายความปลอดภัย ยืนยันว่าผู้ใช้มีสิทธิ์ควบคุมอุปกรณ์ในห้องดังกล่าว
-    \item \textbf{Layer 4 (LLM Synthesis):} Gemma 4 สังเคราะห์แผนการดำเนินการ (execution plan) ตาม Schema ที่กำหนด ได้ผลลัพธ์เป็น JSON structure พร้อม tool call: ``control\_room\_smart\_device(room\_id=101, ha\_entity\_id=light.bedroom\_101, state=on)``
+    \item \textbf{Layer 4 (LLM Synthesis):} gemma4:e2b สังเคราะห์แผนการดำเนินการ (execution plan) ตาม Schema ที่กำหนด ได้ผลลัพธ์เป็น JSON structure พร้อม tool call: ``control\_room\_smart\_device(room\_id=101, ha\_entity\_id=light.bedroom\_101, state=on)``
     \item \textbf{Layer 5 (Safety Check \& Execution):} ระบบตรวจสอบว่า tool call ปลอดภัย ไม่ขัดต่อนโยบาย จากนั้นส่งคำสั่งไปยัง Home Assistant ผ่าน MCP Protocol และบันทึกผลลัพธ์กลับใน ``pipeline\_events``
 \end{itemize}
 
@@ -724,94 +724,102 @@ Home Assistant รองรับอุปกรณ์หลากหลาย�
     \end{tabular}
 \end{table}
 
-\section{HMI}
+
+\section{ส่วนติดต่อผู้ใช้งานและ HMI}
 \label{sec:ch3_hmi}
 
-\subsection{ส่วน UI แดชบอร์ดเว็บ}
-\label{sec:ch3_hmi_web}
+ส่วนติดต่อผู้ใช้งานของระบบออกแบบให้แยกตามบทบาท เพราะแต่ละกลุ่มไม่ได้ต้องการข้อมูลชุดเดียวกัน Admin ต้องเห็นภาพรวมระบบและจัดการอุปกรณ์ Head nurse ต้องเห็น alert และสถานะผู้พักอาศัย Supervisor ต้องติดตามงานและเหตุการณ์ Observer ใช้ดูข้อมูลเฉพาะพื้นที่รับผิดชอบ ส่วน Patient เห็นเฉพาะข้อมูลของตนเอง เช่น schedule, medicine, messages และ room controls ทุกคำขอจาก frontend จะผ่าน Next.js API proxy และ FastAPI server ก่อนเสมอ จากนั้น backend ตรวจ session, role, workspace, patient visibility และ scope ของ MCP/AI ก่อนส่งข้อมูลกลับไปยังหน้าจอ
 
-แดชบอร์ดเว็บพัฒนาด้วย Next.js 16 บน App Router แบ่งเส้นทางตามบทบาท (Role-based Access Control) เป็น 5 กลุ่ม: \texttt{/admin}, \texttt{/head-nurse}, \texttt{/supervisor}, \texttt{/observer}, และ \texttt{/patient} ระบบตรวจสอบสิทธิ์ด้วย Capability-based Permissions และจัดการสถานะผู้ใช้ด้วย Zustand
-
-ชั้นสถาปัตยกรรมประกอบด้วย Provider Stack (React Query, ThemeProvider, I18nProvider, AuthProvider) และ Component Library บน Radix UI + Tailwind CSS รองรับมาตรฐาน ARIA และการนำทางด้วยคีย์บอร์ด
-
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.5cm,
-        layer/.style={rectangle, draw, rounded corners, minimum width=3cm, minimum height=1cm, align=center, fill=blue!10},
-        component/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.8cm, align=center, fill=green!10},
-        arrow/.style={thick,->,>=stealth}
-    ]
-        \node[layer, fill=orange!20] (nextjs) {Next.js 16\\App Router};
-        \node[layer, below=of nextjs] (routes) {Role-based Routes\\5 Groups};
-        \node[layer, below=of routes] (providers) {Provider Stack\\React Query + Zustand};
-        \node[layer, below=of providers] (components) {Component Library\\Radix UI + Tailwind};
-        
-        \draw[arrow] (nextjs) -- (routes);
-        \draw[arrow] (routes) -- (providers);
-        \draw[arrow] (providers) -- (components);
-        
-        \node[right=0.5cm of routes, font=\tiny, align=left] {/admin\\ /head-nurse\\ /supervisor\\ /observer\\ /patient};
-        \node[right=0.5cm of providers, font=\tiny, align=left] {Auth\\ Theme\\ I18n\\ Query};
-        \node[right=0.5cm of components, font=\tiny, align=left] {ARIA\\ Keyboard\\ Focus};
-    \end{tikzpicture}
-    \caption{สถาปัตยกรรมแดชบอร์ดเว็บ}
-    \label{fig:ch3-web-arch}
+    \includegraphics[width=0.94\textwidth]{chapter3/hmi-role-flow.png}
+    \caption{workflow การใช้งาน HMI ของแต่ละบทบาทผ่าน frontend, FastAPI server, policy/visibility layer และ service ที่เกี่ยวข้อง}
+    \label{fig:ch3_hmi_role_flow}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{../../assets/figures/chapter3/Componen- Library.png}
-    \caption{ขั้นตอนการตรวจสอบสิทธิ์และโครงสร้าง Component Library}
-    \label{fig:ch3-web-auth}
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-login.png}
+        \caption{หน้าเลือกบทบาทก่อนเข้าสู่ระบบ}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-admin-overview.png}
+        \caption{หน้า System Overview ของ Admin}
+    \end{subfigure}
+    \caption{หน้าจอเริ่มต้นของ HMI สำหรับแยกบทบาทผู้ใช้และหน้าจอภาพรวมของผู้ดูแลระบบ}
+    \label{fig:ch3_ui_login_admin}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-head-nurse-dashboard.png}
+        \caption{หน้า command center ของ Head nurse}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-patient-dashboard.png}
+        \caption{หน้า Home ของ Patient}
+    \end{subfigure}
+    \caption{หน้าจอหลักของผู้ดูแลและผู้พักอาศัยที่ใช้ข้อมูลคนละระดับตามบทบาท}
+    \label{fig:ch3_ui_headnurse_patient}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-head-nurse-alerts.png}
+        \caption{หน้า Alerts สำหรับคัดกรองเหตุการณ์}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-admin-devices.png}
+        \caption{หน้า Device Fleet สำหรับสถานะอุปกรณ์}
+    \end{subfigure}
+    \caption{หน้าจอ HMI ที่ใช้ตอบสนองเหตุการณ์และตรวจสอบอุปกรณ์ภาคสนาม}
+    \label{fig:ch3_ui_alerts_devices}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.58\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-admin-facility.png}
+        \caption{หน้า Facility management สำหรับข้อมูลพื้นที่}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.32\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter4/PolarVerity-mobileapp.png}
+        \caption{หน้า /WheelSensor บนโทรศัพท์}
+    \end{subfigure}
+    \caption{หน้าจอที่ใช้เชื่อมบริบทพื้นที่กับ gateway บนโทรศัพท์สำหรับตรวจสถานะ BLE/Polar และการส่งข้อมูลขึ้น server}
+    \label{fig:ch3_ui_facility_wheelsensor}
 \end{figure}
 
 \begin{table}[H]
     \centering
-    \caption{ฟีเจอร์หลักของแดชบอร์ดเว็บตามบทบาทผู้ใช้}
-    \label{tab:ch3_webfeatures}
-    \small\renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{|L{4.5cm}|l|l|l|l|}
+    \caption{ขั้นตอนการใช้งานหลักของ dashboard ตามบทบาทผู้ใช้}
+    \renewcommand{\arraystretch}{1.18}
+    \begin{tabular}{|>{\raggedright\arraybackslash}p{2.6cm}|>{\raggedright\arraybackslash}p{4.5cm}|>{\raggedright\arraybackslash}p{6.2cm}|}
         \hline
-        \textbf{ฟีเจอร์} & \textbf{Admin} & \textbf{Head Nurse} & \textbf{Observer} & \textbf{Patient} \\ \hline
-        แผนที่ตำแหน่ง real-time & $\checkmark$ & $\checkmark$ & $\checkmark$ & -- \\ \hline
-        รายการแจ้งเตือนค้างอยู่ & $\checkmark$ & $\checkmark$ & $\checkmark$ & -- \\ \hline
-        สถานะอุปกรณ์ & $\checkmark$ & $\checkmark$ & $\checkmark$ & -- \\ \hline
-        ประวัติสัญญาณชีพ & $\checkmark$ & $\checkmark$ & $\checkmark$ & ตนเอง \\ \hline
-        จัดการอุปกรณ์ & $\checkmark$ & -- & -- & -- \\ \hline
-        จัดการผู้ใช้งาน & $\checkmark$ & -- & -- & -- \\ \hline
-        ผู้ช่วย AI Chat & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ \\ \hline
+        \textbf{บทบาท} & \textbf{หน้าจอหลักที่ใช้} & \textbf{งานหลักและผลลัพธ์ที่ต้องเห็น} \\ \hline
+        Admin & \texttt{/admin}, \texttt{personnel}, \texttt{facilities}, \texttt{devices}, \texttt{settings} & จัดการผู้ใช้ อุปกรณ์ พื้นที่ และการตั้งค่าระบบ ตรวจสถานะโดยรวมและ audit trail ของระบบ \\ \hline
+        Head nurse & \texttt{/head-nurse}, \texttt{alerts}, \texttt{personnel}, \texttt{staff}, \texttt{tasks} & เห็นภาพรวมผู้พักอาศัย alert สำคัญ การมอบหมายงาน และสถานะทีมดูแลในรอบทำงาน \\ \hline
+        Supervisor & \texttt{/supervisor}, \texttt{emergency}, \texttt{personnel}, \texttt{tasks}, \texttt{messages} & ตรวจคิวเหตุการณ์ ติดตามผู้ป่วยและงานของเวร ประสานข้อความหรือคำสั่งที่ต้องส่งต่อให้ทีมปฏิบัติการ \\ \hline
+        Observer & \texttt{/observer}, \texttt{tasks}, \texttt{alerts}, \texttt{personnel}, \texttt{messages} & เห็นงานประจำวัน alert และ handover เฉพาะส่วนที่เกี่ยวข้องกับตนเองหรือพื้นที่ที่รับผิดชอบ \\ \hline
+        Patient & \texttt{/patient}, \texttt{schedule}, \texttt{pharmacy}, \texttt{messages}, \texttt{room controls} & เห็นข้อมูลของตนเอง ตารางกิจกรรม การสื่อสารกับผู้ดูแล และใช้คำสั่งที่ไม่กระทบข้อมูลผู้อื่น \\ \hline
     \end{tabular}
+    \label{tab:ch3_hmi_role_flow}
 \end{table}
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{chapter3/Head-Nurse-view.png}
-    \caption{หน้าจอแดชบอร์ดหลักสำหรับผู้ดูแล (Head Nurse view)}
-    \label{fig:ch3-hmi-web}
-\end{figure}
+ในส่วน mobile UI แอป Flutter gateway ไม่ได้ถูกออกแบบให้แทน dashboard เต็มรูปแบบ แต่ทำหน้าที่จับคู่ BLE แสดงสถานะการเชื่อมต่อผ่านหน้า /WheelSensor และส่งข้อมูลขึ้น server เป็นหลัก ผู้ดูแลจึงใช้ mobile gateway เป็นเครื่องมือภาคสนาม ส่วนการวิเคราะห์และการตอบสนองเชิงระบบยังเกิดผ่าน dashboard และ backend เป็นหลัก ขอบเขตนี้ช่วยให้บทที่ 4 แยกทดสอบได้ว่าปัญหาเกิดที่ BLE pairing, MQTT publish, backend ingest หรือการแสดงผลใน dashboard
 
-\subsection{การเชื่อมต่อแบ็กเอนด์และประสิทธิภาพ}
-\label{sec:ch3_hmi_api}
-
-การเชื่อมต่อกับเซิร์ฟเวอร์ใช้ API Client แบบพิมพ์เขียม (Strongly Typed) ซึ่งห่อหุ้มคำขอ HTTP ด้วย JWT handling การหมดเวลา (Timeout) และการจัดการข้อผิดพลาดแบบมาตรฐาน คำขอทั้งหมดถูกนำผ่านเส้นทาง \texttt{/api} ของ Next.js เพื่อส่งต่อไปยัง FastAPI Backend โดยอัตโนมัติ
-
-การจัดการข้อผิดพลาดรวมถึงการเปลี่ยนเส้นทางไปยังหน้าเข้าสู่ระบบเมื่อพบรหัส 401 และแสดงข้อความข้อผิดพลาดที่มีโครงสร้างจากเซิร์ฟเวอร์ นอกจากนี้ API Client ยังรองรับการตรวจสอบสิทธิ์แบบจำลองบทบาท (Impersonation) โดยส่งหัวข้อพิเศษพร้อมคำขอเพื่อให้ผู้ดูแลระบบสามารถตรวจสอบมุมมองของผู้ใช้รายอื่นได้
-
-ด้านประสิทธิภาพ ระบบเปิดใช้งาน React Compiler ในการตั้งค่า Next.js เพื่อเพิ่มประสิทธิภาพการเรนเดอร์ React Query จัดการแคชข้อมูลด้วยนโยบายเวลาหมดอายุสั้น (Short Stale Time) และรีเฟรชอัตโนมัติเมื่อมีการเชื่อมต่อกลับ ช่วยลดการเรียกข้อมูลซ้ำจากเซิร์ฟเวอร์ ส่วนคอมโพเนนต์ที่มีขนาดใหญ่จะถูกโหลดแบบ Lazy Load เมื่อจำเป็น และรูปภาพใช้ Next/image เพื่อปรับขนาดและบีบอัดอัตโนมัติ
-
-\subsection{ส่วน UI แอปพลิเคชันบนอุปกรณ์เคลื่อนที่}
-\label{sec:ch3_hmi_mobile}
-
-แอปพลิเคชันบนอุปกรณ์เคลื่อนที่ถูกออกแบบมาเพื่อบุคลากรที่ต้องเดินตรวจตราในพื้นที่ โดยมีหน้าจอที่เน้นความสะดวกในการอ่านและตอบสนองขณะเคลื่อนไหว (Mobile First) การออกแบบเน้นปุ่มขนาดใหญ่ที่สามารถใช้งานด้วยมือเดียว (One-handed Operation) และสีที่มีความต่างชัดเจนเพื่อให้อ่านได้ในสภาพแสงน้อย
-
-หน้าจอหลักแบ่งเป็น 3 โซนหลัก ได้แก่ แถบสถานะด้านบนแสดงจำนวนการแจ้งเตือนที่ยังไม่รับทราบ บริเวณกลางแสดงรายการเหตุการณ์ล่าสุดพร้อมระดับความรุนแรง และแถบนำทางด้านล่างสำหรับสลับระหว่างมุมมองรายการเหตุการณ์ แผนที่ตำแหน่ง และการตั้งค่า
-
-การแจ้งเตือนฉุกเฉิน (Push Notification) ส่งตรงถึงอุปกรณ์เคลื่อนที่แม้อยู่นอกแอปพลิเคชัน เมื่อผู้ใช้เปิดการแจ้งเตือน ระบบจะแสดงรายละเอียดผู้ป่วย ตำแหน่งที่เกิดเหตุ และเวลา พร้อมปุ่มรับทราบ (Acknowledge) การกดรับทราบจะอัปเดตสถานะในระบบแบ็กเอนด์ทันทีผ่าน REST API
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.45\textwidth]{chapter3/observer-view.png}
-    \caption{หน้าจอแอปพลิเคชันบนอุปกรณ์เคลื่อนที่ (Observer view)}
-    \label{fig:ch3-hmi-mobile}
-\end{figure}

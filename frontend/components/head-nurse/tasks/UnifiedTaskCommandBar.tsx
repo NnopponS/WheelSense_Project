@@ -73,7 +73,7 @@ export function UnifiedTaskCommandBar({ tasks, isLoading, onExport }: UnifiedTas
     const critical = tasks.filter((t) => t.priority === "critical").length;
     const high = tasks.filter((t) => t.priority === "high").length;
     
-    const withReports = tasks.filter((t) => (t as any).report_count > 0).length;
+    const withReports = tasks.filter((t) => t.report_count > 0).length;
     const overdue = tasks.filter((t) => {
       if (!t.due_at) return false;
       return new Date(t.due_at) < new Date() && t.status !== "completed" && t.status !== "cancelled";

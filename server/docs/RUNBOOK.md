@@ -218,9 +218,10 @@ docker compose logs -f homeassistant
 
 ### Agent runtime (EaseAI chat popup)
 
-- Default routing is **`AGENT_ROUTING_MODE=intent`** (classifier). To trial **LLM tool routing** on a staging stack, set **`AGENT_ROUTING_MODE=llm_tools`** on the **`wheelsense-agent-runtime`** service (see `server/docker-compose.core.yml`). The router uses the **same workspace AI provider** as chat (Copilot vs Ollama); keep **`OLLAMA_BASE_URL`** reachable if you rely on Ollama (primary or fallback). See `server/docs/ENV.md` for behavior and fallback order.
+- Core compose now starts EaseAI with **`EASEAI_PIPELINE_V2=true`**, **`AGENT_ROUTING_MODE=llm_tools`**, and Copilot **`gpt-4.1`** defaults. The code defaults remain conservative (`EASEAI_PIPELINE_V2=false`, `AGENT_ROUTING_MODE=intent`) outside compose.
+- The router uses the **same workspace AI provider** as chat (Copilot vs Ollama); keep **`OLLAMA_BASE_URL`** reachable and set **`OLLAMA_FALLBACK_MODEL`** to an installed Ollama model if you rely on Ollama fallback. See `server/docs/ENV.md` for behavior and fallback order.
 - **Thai / multi-turn patient reads:** After `list_visible_patients` or `get_patient_details`, the runtime updates in-memory context for that `conversation_id` so follow-ups like vitals or **ประวัติสุขภาพ** map to `get_patient_vitals` (and timeline-style phrases map to `get_patient_timeline`) with a resolved `patient_id`, including names embedded in earlier user lines (Thai often has no spaces). Regression coverage: `python -m pytest tests/test_agent_runtime.py tests/test_agent_runtime_extended.py -q` from `server/`.
-- After changing routing: smoke **POST `/api/chat/actions/propose`** from the web app with a read-only question (e.g. system health) and a mutation (e.g. acknowledge alert) to verify `answer` vs `plan` modes; run `python -m pytest tests/test_llm_tool_propose_integration.py tests/test_chat_actions_integration.py -q` from `server/` when convenient.
+- After changing routing: smoke **POST `/api/chat/actions/propose?ai_trace=1`** from the web app with a read-only question (e.g. system health) and a mutation (e.g. acknowledge alert) to verify `answer` vs `plan` modes, provider-attempt trace, and that no mutating MCP call runs before confirmation. Run `python -m pytest tests/test_llm_tool_propose_integration.py tests/test_chat_actions_integration.py -q` from `server/` when convenient.
 
 ## Active MQTT Topic Map
 
@@ -244,7 +245,7 @@ docker compose logs -f homeassistant
 
 1. Register the wheelchair device through `/api/devices` with the exact `device_id`, **or** rely on **MQTT auto-register** (default `MQTT_AUTO_REGISTER_DEVICES=true`): first telemetry on `WheelSense/data` creates the row when the server can pick a workspace (single workspace, or `MQTT_AUTO_REGISTER_WORKSPACE_ID` set). If you have multiple workspaces and no env set, register manually.
 2. Optionally link the device to a patient through `/api/devices/{device_id}/patient`.
-3. Flash `firmware/M5StickCPlus2`.
+3. Flash `firmware/M5StickCPlus2_BLEGateway`.
 4. Open AP mode on the device, then set WiFi, MQTT broker/port/credentials, and the final `device_id`.
 5. Exit AP mode and wait for the device to reconnect on WiFi and MQTT.
 6. Confirm `/admin/devices` shows the expected firmware version and a fresh `last_seen`.

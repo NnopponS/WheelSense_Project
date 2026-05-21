@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  Bug,
   Calendar,
   Heart,
   Home,
@@ -31,11 +30,12 @@ import type { GetPatientResponse } from "@/lib/api/task-scope-types";
 import { PatientMySensors } from "@/components/patient/PatientMySensors";
 import { PatientCareRoadmap } from "@/components/patient/PatientCareRoadmap";
 import { PatientSosHero } from "@/components/patient/PatientSosHero";
-import { HubTabBar, useHubTab, type HubTab } from "@/components/shared/HubTabBar";
-import ReportIssueForm from "@/components/support/ReportIssueForm";
+import { PatientHealthAnalysisPanel } from "@/components/patients/PatientHealthAnalysisPanel";
 import UserAvatar from "@/components/shared/UserAvatar";
-import { EaseAIFab } from "@/components/ai/EaseAIFab";
 import { withPatientPreview } from "@/lib/patientPortalPreview";
+import { CsvExportButton } from "@/components/shared/CsvExportButton";
+import { HubTabBar, type HubTab } from "@/components/shared/HubTabBar";
+import ReportIssueForm from "@/components/support/ReportIssueForm";
 
 type MeProfileResponse = {
   user: {
@@ -71,15 +71,6 @@ export default function PatientDashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const hubTabs = useMemo<HubTab[]>(
-    () => [
-      { key: "overview", label: t("patient.hub.overview"), icon: Heart },
-      { key: "profile", label: t("patient.hub.profile"), icon: UserRound },
-      { key: "support", label: t("patient.hub.support"), icon: Bug },
-    ],
-    [t],
-  );
-  const tab = useHubTab(hubTabs);
   const nowMs = useFixedNowMs();
 
   const previewRaw = searchParams.get("previewAs");
@@ -106,6 +97,18 @@ export default function PatientDashboardPage() {
 
   const patient = patientQuery.data as GetPatientResponse | null;
   const profile = (profileQuery.data ?? null) as MeProfileResponse | null;
+  const patientTabs = useMemo<HubTab[]>(
+    () => [
+      { key: "overview", label: t("patient.hub.overview"), icon: Home },
+      { key: "profile", label: t("patient.hub.profile"), icon: UserRound },
+      { key: "support", label: t("patient.hub.support"), icon: MessageCircle },
+    ],
+    [t],
+  );
+  const activeTab = useMemo(() => {
+    const raw = searchParams.get("tab") ?? "overview";
+    return patientTabs.some((tab) => tab.key === raw) ? raw : "overview";
+  }, [patientTabs, searchParams]);
 
   const patientRoomQuery = useQuery({
     queryKey: ["patient", "dashboard", "room", effectivePatientId, patient?.room_id],
@@ -171,8 +174,8 @@ export default function PatientDashboardPage() {
         </div>
         <div className="h-10 w-80 rounded-full bg-muted/40" />
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="h-48 rounded-2xl border border-border/70 bg-card/60" />
-          <div className="h-48 rounded-2xl border border-border/70 bg-card/60" />
+          <div className="h-48 rounded-lg border border-border/70 bg-card/60" />
+          <div className="h-48 rounded-lg border border-border/70 bg-card/60" />
         </div>
       </div>
     );
@@ -181,7 +184,7 @@ export default function PatientDashboardPage() {
   if (!effectivePatientId || !patient) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center p-6 text-center animate-fade-in">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/12 text-red-600">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-lg bg-red-500/12 text-red-600">
           <AlertTriangle className="h-8 w-8" />
         </div>
         <h1 className="text-2xl font-semibold text-foreground md:text-3xl">{t("patient.page.notLinkedTitle")}</h1>
@@ -192,10 +195,18 @@ export default function PatientDashboardPage() {
 
   const currentPatient = patient as GetPatientResponse;
   const fullName = [currentPatient.first_name, currentPatient.last_name].filter(Boolean).join(" ").trim();
+  const patientExportRows = [
+    ["patient_id", currentPatient.id],
+    ["name", fullName],
+    ["room", roomHeadline],
+    ["care_level", currentPatient.care_level ?? ""],
+    ["date_of_birth", currentPatient.date_of_birth ?? ""],
+    ["age_years", ageYears(currentPatient.date_of_birth, nowMs) ?? ""],
+    ["active", String(currentPatient.is_active ?? "")],
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-6 animate-fade-in">
-      <EaseAIFab />
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -209,23 +220,30 @@ export default function PatientDashboardPage() {
             <p className="mt-1 text-sm text-muted-foreground">{t("patient.page.dashboardTagline")}</p>
           </div>
         </div>
-        {currentPatient.care_level ? (
-          <Badge
-            variant={
-              currentPatient.care_level === "critical"
-                ? "destructive"
-                : currentPatient.care_level === "special"
-                  ? "warning"
-                  : "outline"
-            }
-            className="text-sm"
-          >
-            {currentPatient.care_level} {t("patient.page.careSuffix")}
-          </Badge>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
+          <CsvExportButton
+            fileNameBase={`wheelsense-patient-${currentPatient.id}`}
+            headers={["Field", "Value"]}
+            rows={patientExportRows}
+          />
+          {currentPatient.care_level ? (
+            <Badge
+              variant={
+                currentPatient.care_level === "critical"
+                  ? "destructive"
+                  : currentPatient.care_level === "special"
+                    ? "warning"
+                    : "outline"
+              }
+              className="text-sm"
+            >
+              {currentPatient.care_level} {t("patient.page.careSuffix")}
+            </Badge>
+          ) : null}
+        </div>
       </div>
 
-      <Card className="border-primary/25 bg-gradient-to-br from-primary/[0.07] via-transparent to-sky-500/[0.04]">
+      <Card className="border-primary/25 bg-primary/5">
         <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex min-w-0 items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/12 text-primary">
@@ -242,11 +260,11 @@ export default function PatientDashboardPage() {
       </Card>
 
       <Suspense>
-        <HubTabBar tabs={hubTabs} />
+        <HubTabBar tabs={patientTabs} currentTab={activeTab} />
       </Suspense>
 
-      {tab === "overview" ? (
-        <OverviewTab
+      {activeTab === "overview" ? (
+        <PatientHomeContent
           patientId={Number(effectivePatientId)}
           previewPatientId={isAdminPreview ? previewPatientId : null}
           isPending={raiseAssistanceMutation.isPending}
@@ -254,31 +272,20 @@ export default function PatientDashboardPage() {
           t={t}
         />
       ) : null}
-
-      {tab === "profile" ? (
-        <ProfileTab patient={currentPatient} profile={profile} nowMs={nowMs} roomDisplay={roomHeadline} />
+      {activeTab === "profile" ? (
+        <ProfileTab
+          patient={currentPatient}
+          profile={profile}
+          nowMs={nowMs}
+          roomDisplay={roomHeadline}
+        />
       ) : null}
-
-      {tab === "support" ? <SupportTab t={t} /> : null}
+      {activeTab === "support" ? <ReportIssueForm audience="patient" /> : null}
     </div>
   );
 }
 
-function SupportTab({ t }: { t: (key: string) => string }) {
-  return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <h3 className="text-base font-semibold text-foreground">{t("patient.page.reportSectionTitle")}</h3>
-        <p className="text-sm text-muted-foreground">{t("patient.page.reportSectionDesc")}</p>
-      </div>
-      <div className="rounded-2xl border border-border/70 bg-card/40 p-4 md:p-5">
-        <ReportIssueForm />
-      </div>
-    </div>
-  );
-}
-
-function OverviewTab({
+function PatientHomeContent({
   patientId,
   previewPatientId,
   isPending,
@@ -299,10 +306,10 @@ function OverviewTab({
       <PatientCareRoadmap patientId={patientId} />
       <PatientMySensors patientId={patientId} />
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <section className="hidden grid-cols-1 gap-4 md:grid-cols-2">
         <Card className="border-border/70 transition-all hover:border-primary/50 hover:shadow-md">
           <CardContent className="flex flex-col items-center justify-center gap-4 p-8 md:p-12">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-sky-500/12 text-sky-600">
+            <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-sky-500/12 text-sky-600">
               <Phone className="h-10 w-10" />
             </div>
             <div className="text-center">
@@ -334,7 +341,7 @@ function OverviewTab({
 
         <Card className="border-red-500/30 bg-red-500/5 transition-all hover:border-red-500/60 hover:shadow-md">
           <CardContent className="flex flex-col items-center justify-center gap-4 p-8 md:p-12">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-500/12 text-red-600">
+            <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-red-500/12 text-red-600">
               <Siren className="h-10 w-10 animate-pulse" />
             </div>
             <div className="text-center">
@@ -364,37 +371,37 @@ function OverviewTab({
         <h3 id="patient-quicklinks-heading" className="text-sm font-semibold text-foreground">
           {t("patient.page.quickLinksTitle")}
         </h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           {
             href: "/patient/schedule",
             icon: Calendar,
             labelKey: "patient.page.navSchedule" as const,
-            color: "bg-emerald-500/12 text-emerald-600",
+            color: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-300",
           },
           {
             href: "/patient/room-controls",
             icon: Home,
             labelKey: "patient.page.navRoom" as const,
-            color: "bg-amber-500/12 text-amber-600",
+            color: "bg-amber-500/12 text-amber-600 dark:text-amber-300",
           },
           {
             href: "/patient/messages",
             icon: MessageCircle,
             labelKey: "patient.page.navMessages" as const,
-            color: "bg-sky-500/12 text-sky-600",
+            color: "bg-sky-500/12 text-sky-600 dark:text-sky-300",
           },
           {
             href: "/patient/services",
             icon: Sparkles,
             labelKey: "patient.page.navServices" as const,
-            color: "bg-violet-500/12 text-violet-600",
+            color: "bg-violet-500/12 text-violet-600 dark:text-violet-300",
           },
         ].map(({ href, icon: Icon, labelKey, color }) => (
-          <Link key={href} href={withPatientPreview(href, previewPatientId)}>
-            <Card className="border-border/70 transition-all hover:border-primary/40 hover:shadow-sm">
-              <CardContent className="flex flex-col items-center justify-center gap-3 p-6">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}>
+          <Link key={href} href={withPatientPreview(href, previewPatientId)} className="h-full">
+            <Card className="h-full border-border/70 transition-all hover:border-primary/40 hover:shadow-sm">
+              <CardContent className="flex h-full flex-col items-center justify-center gap-3 p-4 sm:p-5">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${color}`}>
                   <Icon className="h-6 w-6" />
                 </div>
                 <p className="text-sm font-semibold text-foreground">{t(labelKey)}</p>
@@ -429,7 +436,9 @@ function ProfileTab({
   const { t } = useTranslation();
 
   return (
-    <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+    <section className="space-y-4">
+      <PatientHealthAnalysisPanel patientId={patient.id} />
+      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
       <Card className="border-border/70">
         <CardHeader>
           <CardTitle>{t("patient.profileTitle")}</CardTitle>
@@ -461,7 +470,7 @@ function ProfileTab({
             <InfoCard label="Mobility" value={patient.mobility_type || "—"} />
           </div>
 
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+          <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
             {t("patient.page.profileCorrectionHint")}
           </div>
         </CardContent>
@@ -479,18 +488,19 @@ function ProfileTab({
             <InfoCard label="Email" value={profile?.user.email || "—"} />
             <InfoCard label="Phone" value={profile?.user.phone || "—"} />
           </div>
-          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+          <div className="rounded-lg border border-dashed border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
             Patients can review their own information here, but account and health-record edits must be requested from staff.
           </div>
         </CardContent>
       </Card>
+      </div>
     </section>
   );
 }
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-muted/15 p-3">
+    <div className="rounded-lg border border-border/70 bg-muted/15 p-3">
       <p className="text-sm uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
     </div>

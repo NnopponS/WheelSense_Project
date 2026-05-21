@@ -6,10 +6,11 @@ import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { AlertTriangle, MapPin, Radio, Siren } from "lucide-react";
+import { AlertTriangle, ClipboardList, LayoutDashboard, MapPin, Radio, Siren, Stethoscope } from "lucide-react";
 import { z } from "zod";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
 import { SummaryStatCard } from "@/components/supervisor/SummaryStatCard";
+import FeatureDetailActions from "@/components/dashboard/FeatureDetailActions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -386,6 +387,16 @@ export default function SupervisorEmergencyPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t("supervisor.emergency.pageSubtitle")}</p>
       </div>
 
+      <FeatureDetailActions
+        title="Related views"
+        actions={[
+          { label: t("nav.dashboard"), description: "Priority summary", href: "/supervisor", icon: LayoutDashboard, tone: "primary" },
+          { label: t("nav.tasks"), description: "Response work", href: "/supervisor/tasks", icon: ClipboardList, tone: "warning" },
+          { label: t("nav.patients"), description: "Risk review", href: "/supervisor/personnel", icon: Stethoscope, tone: "neutral" },
+          { label: t("nav.monitoring"), description: "Open map", href: "/supervisor/floorplans", icon: MapPin, tone: "neutral" },
+        ]}
+      />
+
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <SummaryStatCard
           icon={Siren}
@@ -422,6 +433,17 @@ export default function SupervisorEmergencyPage() {
             ? "bg-primary/10 ring-2 ring-primary/30 transition-colors"
             : undefined
         }
+        csvExport={{
+          fileNameBase: "wheelsense-supervisor-emergency-alerts",
+          headers: ["Alert ID", "Title", "Patient", "Room", "Timestamp"],
+          getRowValues: (row) => [
+            row.alertId,
+            row.title,
+            row.patientName,
+            row.patientRoomLine,
+            row.timestamp,
+          ],
+        }}
       />
 
       <DataTableCard
@@ -431,6 +453,19 @@ export default function SupervisorEmergencyPage() {
         columns={roomColumns}
         isLoading={isLoadingAny}
         emptyText={t("supervisor.emergency.floorCoverageEmpty")}
+        csvExport={{
+          fileNameBase: "wheelsense-supervisor-floor-coverage",
+          headers: ["Room ID", "Room", "Type", "Localized devices", "Average confidence", "Last signal", "Critical"],
+          getRowValues: (row) => [
+            row.roomId,
+            row.roomName,
+            row.roomType,
+            row.localizedDevices,
+            row.averageConfidence,
+            row.lastSignal,
+            row.isCritical ? "yes" : "no",
+          ],
+        }}
       />
 
       <DataTableCard
@@ -440,6 +475,17 @@ export default function SupervisorEmergencyPage() {
         columns={predictionColumns}
         isLoading={isLoadingAny}
         emptyText={t("supervisor.emergency.localizationFeedEmpty")}
+        csvExport={{
+          fileNameBase: "wheelsense-supervisor-localization",
+          headers: ["Device ID", "Room", "Confidence", "Model", "Timestamp"],
+          getRowValues: (row) => [
+            row.deviceId,
+            row.roomName,
+            row.confidence,
+            row.modelType,
+            row.timestamp,
+          ],
+        }}
       />
     </div>
   );

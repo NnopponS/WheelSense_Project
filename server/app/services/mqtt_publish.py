@@ -52,6 +52,8 @@ async def mqtt_publish_json(topic: str, payload: dict[str, Any], *, retain: bool
 
 
 def mqtt_publish_json_background(topic: str, payload: dict[str, Any], *, retain: bool = False) -> None:
+    if not settings.mqtt_rest_publish_enabled:
+        return
     asyncio.create_task(mqtt_publish_json(topic, payload, retain=retain))
 
 
@@ -75,6 +77,8 @@ async def publish_alert_to_mqtt(alert) -> None:
 
 
 def publish_alert_to_mqtt_background(alert) -> None:
+    if not settings.mqtt_rest_publish_enabled:
+        return
     asyncio.create_task(publish_alert_to_mqtt(alert))
 
 
@@ -158,6 +162,8 @@ def publish_mobile_device_config_background(
     patient_id: int | None,
     caregiver_id: int | None = None,
 ) -> None:
+    if not settings.mqtt_rest_publish_enabled:
+        return
     asyncio.create_task(publish_mobile_device_config(device_id, patient_id, caregiver_id))
 
 
@@ -175,6 +181,8 @@ async def publish_mobile_device_config_resolved(device_id: str) -> None:
 
 
 def publish_mobile_device_config_resolved_background(device_id: str) -> None:
+    if not settings.mqtt_rest_publish_enabled:
+        return
     asyncio.create_task(publish_mobile_device_config_resolved(device_id))
 
 
@@ -190,6 +198,8 @@ async def publish_portal_config_all() -> None:
 
 
 def publish_portal_config_all_background() -> None:
+    if not settings.mqtt_rest_publish_enabled:
+        return
     asyncio.create_task(publish_portal_config_all())
 
 

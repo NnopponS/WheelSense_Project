@@ -1,20 +1,23 @@
-# WheelSense Gemini Loader
+# WheelSense Gemini Loader (ECC Bridge)
 
-This file is the repo-local loader for Gemini-family tools.
+Repo-local loader for Gemini-family tools, bridged with the global ECC workflow.
 
-## Scope
+## Startup Routine (Required)
+1.  **Sync Skills**: Run `skillshare sync -p` (Synchronizes Windsurf/Copilot/Global stores).
+2.  **Query Memory**: Search MemPalace wing `wheelsense` for current task context.
+3.  **Load Workflow**: Use the global Antigravity `ecc-workflow.md`.
 
-- Apply these instructions only inside this repository.
-- Do not rely on home-directory/global WheelSense skills when a repo-local file exists.
+## Core Instructions
+- Follow the lean workflow in `.windsurf/workflows/`.
+- Use the entry point `/which-agent` if unsure.
+- Respect `.agents/core/source-of-truth.md`.
+- Keep the active context set small.
 
-## Read Order
+## Workflow Mapping
+Antigravity uses the global `ecc-workflow.md` which maps Windsurf commands (plan, implement, debug, etc.) to specialized ECC skills.
 
-1. `.agents/core/source-of-truth.md`
-2. Read only the smallest relevant canonical doc set for the current task.
-3. Use `.agents/workflows/wheelsense.md` for cross-domain work.
-
-## Notes
-
-- Repo-local WheelSense skills live under `.agents/skills/`.
-- Tool-native wrappers live under `.agent/`, `.windsurf/`, and other repo-local folders.
-- Keep the active skill/context set small.
+## Tooling & Sync
+- **Local Skills**: `.windsurf/skills/`, `.github/skills/`
+- **Source/Cache**: `.skillshare/agents/`
+- **Memory**: MemPalace wing `wheelsense`
+- **Sync**: `skillshare sync -p`

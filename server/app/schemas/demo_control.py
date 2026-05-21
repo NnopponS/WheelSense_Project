@@ -17,9 +17,17 @@ class DemoActorOut(BaseModel):
     updated_at: Optional[datetime] = None
 
 
+class DemoControlActionOut(BaseModel):
+    id: Literal["clean_state", "inject_events", "move_actor"]
+    label: str
+    description: str
+    endpoint: str
+
+
 class DemoControlStateOut(BaseModel):
     workspace_id: int
     actors: list[DemoActorOut] = Field(default_factory=list)
+    actions: list[DemoControlActionOut] = Field(default_factory=list)
 
 
 class DemoActorMoveRequest(BaseModel):
@@ -123,7 +131,14 @@ class SimulatorStatusResponse(BaseModel):
     statistics: dict[str, int] | None = None
 
 
-SimulatorCommandName = Literal["pause", "resume", "set_config", "inject_abnormal_hr", "inject_fall"]
+SimulatorCommandName = Literal[
+    "pause",
+    "resume",
+    "set_config",
+    "inject_abnormal_hr",
+    "inject_fall",
+    "move_actor",
+]
 
 
 class SimulatorRuntimeConfigPatch(BaseModel):
@@ -140,15 +155,32 @@ class SimulatorCommandIn(BaseModel):
 
     command: SimulatorCommandName
     patient_id: int | None = Field(default=None, ge=1)
+    actor_type: Literal["patient", "staff"] | None = None
+    actor_id: int | None = Field(default=None, ge=1)
+    room_id: int | None = Field(default=None, ge=1)
+    node_device_id: str | None = Field(default=None, max_length=64)
     config: SimulatorRuntimeConfigPatch | None = None
 
     @model_validator(mode="after")
-    def validate_set_config(self):
+    def validate_command_payload(self):
         if self.command == "set_config":
             if self.config is None:
                 raise ValueError("config is required when command is set_config")
             if not self.config.model_dump(exclude_none=True):
                 raise ValueError("config must include at least one field for set_config")
+        if self.command == "move_actor":
+            if self.room_id is None:
+                raise ValueError("room_id is required when command is move_actor")
+            if self.actor_id is None and self.patient_id is None:
+                raise ValueError("actor_id or patient_id is required when command is move_actor")
+            if self.actor_type is None:
+                self.actor_type = "patient" if self.patient_id is not None else None
+            if self.actor_type is None:
+                raise ValueError("actor_type is required when command is move_actor")
+            if self.actor_id is None:
+                self.actor_id = self.patient_id
+            if self.patient_id is None and self.actor_type == "patient":
+                self.patient_id = self.actor_id
         return self
 
 

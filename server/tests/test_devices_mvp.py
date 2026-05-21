@@ -1,5 +1,6 @@
 """Phase 1 device management: detail, patch, commands, caregiver device assign."""
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -10,7 +11,7 @@ from app.models.caregivers import CareGiver
 from app.models.core import Device, DeviceActivityEvent, Room
 from app.models.facility import Facility, Floor
 from app.models.patients import Patient
-from app.models.telemetry import IMUTelemetry
+from app.models.telemetry import IMUTelemetry, MobileDeviceTelemetry, NodeStatusTelemetry
 from app.models.users import User
 from app.models.vitals import VitalReading
 from sqlalchemy import select
@@ -44,6 +45,45 @@ async def test_list_devices_includes_hardware_type(
 
 
 @pytest.mark.asyncio
+async def test_list_devices_includes_freshness_from_latest_stream(
+    client: AsyncClient, admin_user: User, db_session
+):
+    ws = admin_user.workspace_id
+    now = datetime.now(timezone.utc)
+    db_session.add(
+        Device(
+            workspace_id=ws,
+            device_id="FRESH1",
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+            display_name="Fresh chair",
+            last_seen=now - timedelta(minutes=20),
+        )
+    )
+    await db_session.flush()
+    db_session.add(
+        IMUTelemetry(
+            workspace_id=ws,
+            device_id="FRESH1",
+            timestamp=now,
+            ax=0.1,
+        )
+    )
+    await db_session.commit()
+
+    res = await client.get("/api/devices")
+    assert res.status_code == 200
+    row = res.json()[0]
+    assert row["device_id"] == "FRESH1"
+    assert row["online"] is True
+    assert row["status"] == "online"
+    assert row["latest_reading_at"] == now.isoformat()
+    assert row["latest_reading_type"] == "imu"
+    assert row["stale_after_seconds"] == 300
+    assert row["stale_reason"] is None
+
+
+@pytest.mark.asyncio
 async def test_get_device_detail(
     client: AsyncClient, admin_user: User, db_session
 ):
@@ -67,6 +107,35 @@ async def test_get_device_detail(
     assert j["hardware_type"] == "node"
     assert "wifi_ssid" not in j
     assert "wifi_ssid" not in (j.get("config") or {})
+
+
+@pytest.mark.asyncio
+async def test_get_device_detail_marks_stale_from_last_seen(
+    client: AsyncClient, admin_user: User, db_session
+):
+    ws = admin_user.workspace_id
+    last_seen = datetime.now(timezone.utc) - timedelta(minutes=10)
+    db_session.add(
+        Device(
+            workspace_id=ws,
+            device_id="STALE1",
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+            display_name="Stale chair",
+            last_seen=last_seen,
+        )
+    )
+    await db_session.commit()
+
+    res = await client.get("/api/devices/STALE1")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["online"] is False
+    assert data["status"] == "stale"
+    assert data["latest_reading_at"] == last_seen.isoformat()
+    assert data["latest_reading_type"] == "last_seen"
+    assert data["stale_after_seconds"] == 300
+    assert data["stale_reason"] == "last_seen_older_than_300s"
 
 
 @pytest.mark.asyncio
@@ -105,6 +174,81 @@ async def test_get_device_detail_resolves_room_when_node_link_is_alias_label(
     loc = j.get("location") or {}
     assert loc.get("room_id") == room.id
     assert loc.get("room_name") == "Room104"
+
+
+@pytest.mark.asyncio
+async def test_get_device_history_returns_persisted_streams(
+    client: AsyncClient, admin_user: User, db_session: AsyncSession
+):
+    ws = admin_user.workspace_id
+    now = datetime.now(timezone.utc)
+    patient = Patient(
+        workspace_id=ws,
+        first_name="History",
+        last_name="Patient",
+        care_level="normal",
+    )
+    db_session.add(patient)
+    db_session.add(
+        Device(
+            workspace_id=ws,
+            device_id="HIST1",
+            device_type="wheelchair",
+            hardware_type="wheelchair",
+            display_name="History chair",
+        )
+    )
+    await db_session.flush()
+    db_session.add_all(
+        [
+            IMUTelemetry(
+                workspace_id=ws,
+                device_id="HIST1",
+                timestamp=now - timedelta(minutes=2),
+                battery_pct=88,
+                velocity_ms=0.8,
+                distance_m=12.5,
+                accel_ms2=0.4,
+            ),
+            MobileDeviceTelemetry(
+                workspace_id=ws,
+                device_id="HIST1",
+                timestamp=now - timedelta(minutes=1),
+                battery_pct=71,
+                steps=44,
+                rssi_vector={"DEMO_NODE_HALL": -41},
+                source="mobile_rest",
+            ),
+            VitalReading(
+                workspace_id=ws,
+                patient_id=patient.id,
+                device_id="HIST1",
+                timestamp=now,
+                heart_rate_bpm=76,
+                spo2=98,
+                sensor_battery=66,
+                source="ble",
+            ),
+            NodeStatusTelemetry(
+                workspace_id=ws,
+                device_id="HIST1",
+                timestamp=now,
+                status="online",
+                battery_pct=92,
+                heap=123456,
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    res = await client.get("/api/devices/HIST1/history?hours=24&limit=20")
+    assert res.status_code == 200, res.text
+    payload = res.json()
+    assert payload["device_id"] == "HIST1"
+    assert payload["wheelchair"][0]["distance_m"] == 12.5
+    assert payload["mobile"][0]["rssi_vector"] == {"DEMO_NODE_HALL": -41}
+    assert payload["polar"][0]["heart_rate_bpm"] == 76
+    assert payload["node"][0]["heap"] == 123456
 
 
 @pytest.mark.asyncio
@@ -543,6 +687,42 @@ async def test_assign_patient_from_device_endpoint(
     )
     assert un.status_code == 200
     assert un.json()["patient_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_mobile_ingest_auto_registers_real_mobile_device(
+    client: AsyncClient, admin_user: User, db_session: AsyncSession
+):
+    ws = admin_user.workspace_id
+    res = await client.post(
+        "/api/devices/mobile/ingest",
+        json={
+            "device_id": "REAL_MOBILE_01",
+            "battery_pct": 82,
+            "steps": 1234,
+            "polar_connected": True,
+            "rssi_observations": [{"node_id": "SIM_NODE_01", "rssi": -42}],
+        },
+    )
+    assert res.status_code == 200, res.text
+    payload = res.json()
+    assert payload["device_id"] == "REAL_MOBILE_01"
+    assert payload["stored_rssi_samples"] == 1
+
+    device = (
+        await db_session.execute(
+            select(Device).where(
+                Device.workspace_id == ws,
+                Device.device_id == "REAL_MOBILE_01",
+            )
+        )
+    ).scalar_one()
+    assert device.hardware_type == "mobile_phone"
+    assert device.config["registered_from"] == "mobile_rest"
+
+    detail = await client.get("/api/devices/REAL_MOBILE_01")
+    assert detail.status_code == 200
+    assert detail.json()["mobile_metrics"]["steps"] == 1234
 
 
 @pytest.mark.asyncio

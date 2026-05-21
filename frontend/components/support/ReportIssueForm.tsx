@@ -34,11 +34,13 @@ type ReportIssueFormValues = {
   priority: "low" | "normal" | "high" | "critical";
 };
 
-export default function ReportIssueForm() {
+export default function ReportIssueForm({ audience = "staff" }: { audience?: "staff" | "patient" }) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [created, setCreated] = useState<CreatedTicket | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const patientMode = audience === "patient";
+  const copy = (staffKey: string, patientKey: string) => t(patientMode ? patientKey : staffKey);
 
   const endpoint = withWorkspaceScope("/support/tickets", user?.workspace_id);
 
@@ -58,7 +60,7 @@ export default function ReportIssueForm() {
     defaultValues: {
       title: "",
       description: "",
-      category: "bug",
+      category: patientMode ? "general" : "bug",
       priority: "normal",
     },
   });
@@ -78,7 +80,7 @@ export default function ReportIssueForm() {
       form.reset({
         title: "",
         description: "",
-        category: "bug",
+        category: patientMode ? "general" : "bug",
         priority: "normal",
       });
     } catch (err) {
@@ -87,40 +89,55 @@ export default function ReportIssueForm() {
   });
 
   return (
-    <div className="max-w-2xl space-y-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-4xl space-y-6 animate-fade-in">
       <div className="flex items-center gap-2">
         <Bug className="h-8 w-8 text-primary" />
         <div>
-          <h2 className="text-2xl font-bold text-foreground">{t("support.reportTitle")}</h2>
-          <p className="text-sm text-muted-foreground">{t("support.reportSubtitle")}</p>
+          <h2 className="text-2xl font-bold text-foreground">
+            {copy("support.reportTitle", "support.patientReportTitle")}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {copy("support.reportSubtitle", "support.patientReportSubtitle")}
+          </p>
         </div>
       </div>
 
       {created ? (
         <Card>
           <CardHeader>
-            <CardTitle>{t("support.reportSuccessTitle")}</CardTitle>
+            <CardTitle>
+              {copy("support.reportSuccessTitle", "support.patientReportSuccessTitle")}
+            </CardTitle>
             <CardDescription>
-              {t("support.reportSuccessBody").replace("{id}", String(created.id))}
+              {copy("support.reportSuccessBody", "support.patientReportSuccessBody").replace(
+                "{id}",
+                String(created.id),
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">{t("support.reportAdminQueue")}</p>
+            <p className="text-sm text-muted-foreground">
+              {copy("support.reportAdminQueue", "support.patientReportQueue")}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>{t("support.reportFormTitle")}</CardTitle>
-            <CardDescription>{t("support.reportFormHint")}</CardDescription>
+            <CardTitle>{copy("support.reportFormTitle", "support.patientReportFormTitle")}</CardTitle>
+            <CardDescription>
+              {copy("support.reportFormHint", "support.patientReportFormHint")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-4" onSubmit={onSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="issue-title">{t("support.fieldTitle")}</Label>
+                <Label htmlFor="issue-title">
+                  {copy("support.fieldTitle", "support.patientFieldTitle")}
+                </Label>
                 <Input
                   id="issue-title"
-                  placeholder={t("support.fieldTitlePh")}
+                  placeholder={copy("support.fieldTitlePh", "support.patientFieldTitlePh")}
                   disabled={form.formState.isSubmitting}
                   {...form.register("title")}
                 />
@@ -129,11 +146,16 @@ export default function ReportIssueForm() {
                 ) : null}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="issue-desc">{t("support.fieldDescription")}</Label>
+                <Label htmlFor="issue-desc">
+                  {copy("support.fieldDescription", "support.patientFieldDescription")}
+                </Label>
                 <Textarea
                   id="issue-desc"
                   rows={6}
-                  placeholder={t("support.fieldDescriptionPh")}
+                  placeholder={copy(
+                    "support.fieldDescriptionPh",
+                    "support.patientFieldDescriptionPh",
+                  )}
                   disabled={form.formState.isSubmitting}
                   {...form.register("description")}
                 />
@@ -154,9 +176,15 @@ export default function ReportIssueForm() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="bug">{t("support.categoryBug")}</SelectItem>
-                          <SelectItem value="general">{t("support.categoryGeneral")}</SelectItem>
-                          <SelectItem value="device">{t("support.categoryDevice")}</SelectItem>
+                          <SelectItem value="bug">
+                            {copy("support.categoryBug", "support.patientCategoryCorrection")}
+                          </SelectItem>
+                          <SelectItem value="general">
+                            {copy("support.categoryGeneral", "support.patientCategoryCare")}
+                          </SelectItem>
+                          <SelectItem value="device">
+                            {copy("support.categoryDevice", "support.patientCategoryDevice")}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -189,7 +217,9 @@ export default function ReportIssueForm() {
               </div>
               {submitError ? <p className="text-sm text-destructive">{submitError}</p> : null}
               <Button type="submit" disabled={form.formState.isSubmitting || !endpoint}>
-                {form.formState.isSubmitting ? t("common.loading") : t("support.reportSubmit")}
+                {form.formState.isSubmitting
+                  ? t("common.loading")
+                  : copy("support.reportSubmit", "support.patientReportSubmit")}
               </Button>
             </form>
           </CardContent>

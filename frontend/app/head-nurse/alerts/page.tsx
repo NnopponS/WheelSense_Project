@@ -6,10 +6,12 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Bell, Filter } from "lucide-react";
+import { Bell, ClipboardList, Filter, LayoutDashboard, MapPin, Users } from "lucide-react";
 import { DataTableCard } from "@/components/supervisor/DataTableCard";
+import FeatureDetailActions from "@/components/dashboard/FeatureDetailActions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -288,37 +290,49 @@ export default function HeadNurseAlertsPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t("headNurse.alerts.pageSubtitle")}</p>
       </div>
 
-      <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t("headNurse.alerts.searchPlaceholder")}
-        />
+      <FeatureDetailActions
+        title="Related views"
+        actions={[
+          { label: t("nav.dashboard"), description: "Safety summary", href: "/head-nurse", icon: LayoutDashboard, tone: "primary" },
+          { label: t("nav.tasks"), description: "Assign response work", href: "/head-nurse/tasks", icon: ClipboardList, tone: "warning" },
+          { label: t("nav.personnel"), description: "Open patient or staff", href: "/head-nurse/personnel", icon: Users, tone: "neutral" },
+          { label: t("nav.monitoring"), description: "Locate room", href: "/head-nurse/floorplans", icon: MapPin, tone: "neutral" },
+        ]}
+      />
 
-        <Select value={status} onValueChange={(value) => setStatus(value as AlertStatusFilter)}>
-          <SelectTrigger>
-            <SelectValue placeholder={t("headNurse.alerts.filterStatusPlaceholder")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("headNurse.alerts.filterStatusAll")}</SelectItem>
-            <SelectItem value="active">{t("headNurse.alerts.statusActive")}</SelectItem>
-            <SelectItem value="acknowledged">{t("headNurse.alerts.statusAcknowledged")}</SelectItem>
-            <SelectItem value="resolved">{t("headNurse.alerts.statusResolved")}</SelectItem>
-          </SelectContent>
-        </Select>
+      <Card className="border-border/70">
+        <CardContent className="grid grid-cols-1 gap-3 p-4 md:grid-cols-3">
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t("headNurse.alerts.searchPlaceholder")}
+          />
 
-        <Select value={severity} onValueChange={(value) => setSeverity(value as AlertSeverityFilter)}>
-          <SelectTrigger>
-            <SelectValue placeholder={t("headNurse.alerts.filterSeverityPlaceholder")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("headNurse.alerts.filterSeverityAll")}</SelectItem>
-            <SelectItem value="critical">{t("headNurse.alerts.severityCritical")}</SelectItem>
-            <SelectItem value="warning">{t("headNurse.alerts.severityWarning")}</SelectItem>
-            <SelectItem value="info">{t("headNurse.alerts.severityInfo")}</SelectItem>
-          </SelectContent>
-        </Select>
-      </section>
+          <Select value={status} onValueChange={(value) => setStatus(value as AlertStatusFilter)}>
+            <SelectTrigger>
+              <SelectValue placeholder={t("headNurse.alerts.filterStatusPlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("headNurse.alerts.filterStatusAll")}</SelectItem>
+              <SelectItem value="active">{t("headNurse.alerts.statusActive")}</SelectItem>
+              <SelectItem value="acknowledged">{t("headNurse.alerts.statusAcknowledged")}</SelectItem>
+              <SelectItem value="resolved">{t("headNurse.alerts.statusResolved")}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={severity} onValueChange={(value) => setSeverity(value as AlertSeverityFilter)}>
+            <SelectTrigger>
+              <SelectValue placeholder={t("headNurse.alerts.filterSeverityPlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("headNurse.alerts.filterSeverityAll")}</SelectItem>
+              <SelectItem value="critical">{t("headNurse.alerts.severityCritical")}</SelectItem>
+              <SelectItem value="warning">{t("headNurse.alerts.severityWarning")}</SelectItem>
+              <SelectItem value="info">{t("headNurse.alerts.severityInfo")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
 
       <DataTableCard
         title={t("headNurse.alerts.streamTitle")}
@@ -335,6 +349,20 @@ export default function HeadNurseAlertsPage() {
             ? "bg-primary/10 ring-2 ring-primary/30 transition-colors"
             : undefined
         }
+        csvExport={{
+          fileNameBase: "wheelsense-head-nurse-alerts",
+          headers: ["Alert ID", "Title", "Type", "Severity", "Status", "Patient", "Room", "Timestamp"],
+          getRowValues: (row) => [
+            row.id,
+            row.title,
+            row.alertType,
+            row.severity,
+            row.status,
+            row.patientName,
+            row.patientRoomLine,
+            row.timestamp,
+          ],
+        }}
       />
 
       {actionError ? (

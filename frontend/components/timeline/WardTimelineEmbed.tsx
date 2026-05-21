@@ -27,6 +27,10 @@ const ALL_FILTER = "__all__";
 
 export type WardTimelineCacheScope = "head-nurse" | "observer" | "supervisor";
 
+function timelineSource(event: ListTimelineEventsResponse[number]): string {
+  return event.provenance || event.source || "system";
+}
+
 export function WardTimelineEmbed({ cacheScope }: { cacheScope: WardTimelineCacheScope }) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
@@ -56,7 +60,7 @@ export function WardTimelineEmbed({ cacheScope }: { cacheScope: WardTimelineCach
 
   const sources = useMemo(
     () =>
-      Array.from(new Set(timelineEvents.map((event) => event.source).filter(Boolean))).sort(),
+      Array.from(new Set(timelineEvents.map((event) => timelineSource(event)).filter(Boolean))).sort(),
     [timelineEvents],
   );
 
@@ -65,7 +69,7 @@ export function WardTimelineEmbed({ cacheScope }: { cacheScope: WardTimelineCach
       if (selectedPatientId !== ALL_FILTER && event.patient_id !== Number(selectedPatientId)) {
         return false;
       }
-      if (selectedSource !== ALL_FILTER && event.source !== selectedSource) {
+      if (selectedSource !== ALL_FILTER && timelineSource(event) !== selectedSource) {
         return false;
       }
       return true;
@@ -86,7 +90,7 @@ export function WardTimelineEmbed({ cacheScope }: { cacheScope: WardTimelineCach
             ? patientNameById.get(event.patient_id) ?? `Patient #${event.patient_id}`
             : null,
         assigneeId: event.caregiver_id,
-        assigneeName: event.source,
+        assigneeName: timelineSource(event),
         scheduleType: event.event_type,
         priority: "medium",
         status: "completed",
@@ -102,7 +106,7 @@ export function WardTimelineEmbed({ cacheScope }: { cacheScope: WardTimelineCach
       today: filteredTimeline.filter(
         (event) => format(new Date(event.timestamp), "yyyy-MM-dd") === today,
       ).length,
-      distinctSources: new Set(filteredTimeline.map((event) => event.source)).size,
+      distinctSources: new Set(filteredTimeline.map((event) => timelineSource(event))).size,
     };
   }, [filteredTimeline]);
 

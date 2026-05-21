@@ -20,6 +20,31 @@ const nextConfig: NextConfig = {
         destination: "/observer",
         permanent: false,
       },
+      {
+        source: "/supervisor/workflow",
+        destination: "/supervisor/tasks",
+        permanent: false,
+      },
+      {
+        source: "/supervisor/directives",
+        destination: "/supervisor/tasks?wtab=directives",
+        permanent: false,
+      },
+      {
+        source: "/supervisor/calendar",
+        destination: "/supervisor/tasks?tab=calendar",
+        permanent: false,
+      },
+      {
+        source: "/head-nurse/workflow",
+        destination: "/head-nurse/tasks",
+        permanent: false,
+      },
+      {
+        source: "/observer/workflow",
+        destination: "/observer/tasks",
+        permanent: false,
+      },
     ];
   },
   // API traffic is proxied by `app/api/[[...path]]/route.ts` so PATCH/DELETE/etc.

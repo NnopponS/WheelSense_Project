@@ -13,6 +13,7 @@ import { useFixedNowMs } from "@/hooks/useFixedNowMs";
 import SearchableListboxPicker, {
   type SearchableListboxOption,
 } from "@/components/shared/SearchableListboxPicker";
+import UserAvatar from "@/components/shared/UserAvatar";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,9 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StaffRoutineAndCalendarPanel } from "@/components/admin/caregivers/StaffRoutineAndCalendarPanel";
+import { PersonSensorStatusPanel } from "@/components/shared/PersonSensorStatusPanel";
+import { StaffTimelinePanel } from "@/components/staff/StaffTimelinePanel";
+import type { CareScheduleOut, CareTaskOut } from "@/lib/api/task-scope-types";
 import {
   Calendar,
   ChevronRight,
@@ -833,6 +837,33 @@ export default function CaregiverDetailPane({
     }
     return all;
   }, [allStaffCaregivers, caregiver.id, caregiver.role]);
+  const linkedUserIds = useMemo(() => new Set(linkedUsers.map((linkedUser) => linkedUser.id)), [linkedUsers]);
+  const staffTasksQuery = useQuery({
+    queryKey: ["admin", "caregivers", "detail", caregiver.id, "staff-tasks"],
+    queryFn: () => api.listWorkflowTasks({ limit: 240 }),
+    staleTime: 30_000,
+    enabled: linkedUsers.length > 0,
+  });
+  const staffSchedulesQuery = useQuery({
+    queryKey: ["admin", "caregivers", "detail", caregiver.id, "staff-schedules"],
+    queryFn: () => api.listWorkflowSchedules({ limit: 200 }),
+    staleTime: 30_000,
+    enabled: linkedUsers.length > 0,
+  });
+  const staffTimelineTasks = useMemo(
+    () =>
+      ((staffTasksQuery.data ?? []) as CareTaskOut[]).filter(
+        (item) => item.assigned_user_id != null && linkedUserIds.has(item.assigned_user_id),
+      ),
+    [linkedUserIds, staffTasksQuery.data],
+  );
+  const staffTimelineSchedules = useMemo(
+    () =>
+      ((staffSchedulesQuery.data ?? []) as CareScheduleOut[]).filter(
+        (item) => item.assigned_user_id != null && linkedUserIds.has(item.assigned_user_id),
+      ),
+    [linkedUserIds, staffSchedulesQuery.data],
+  );
   const hasAnyHeadNurseInWorkspace = useMemo(
     () => (allStaffCaregivers ?? []).some((c) => c.role === "head_nurse"),
     [allStaffCaregivers],
@@ -1258,746 +1289,401 @@ export default function CaregiverDetailPane({
             {t("caregivers.detailTabWork")}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="mt-0 space-y-0">
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="space-y-6 xl:col-span-2">
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-foreground-variant">
-                {t("caregivers.sectionAbout")}
-              </p>
-              {aboutEditing ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high"
-                    onClick={() => setAboutEditing(false)}
-                    disabled={profileSaving}
-                  >
-                    {t("common.cancel")}
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90"
-                    onClick={() => void saveProfileSection()}
-                    disabled={profileSaving}
-                  >
-                    {profileSaving ? t("common.saving") : t("common.save")}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="rounded-lg border border-outline-variant/30 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high"
-                  onClick={() => setAboutEditing(true)}
-                >
-                  {t("common.edit")}
-                </button>
-              )}
-            </div>
-            <div className="flex flex-col gap-5 sm:flex-row">
-              <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto">
-                <div className="relative flex aspect-[4/5] w-full items-end justify-start overflow-hidden rounded-xl border border-outline-variant/20 bg-gradient-to-br from-primary/20 to-primary/5 sm:w-40">
-                  {canEditCaregiverPhoto ? (
-                    <label
-                      htmlFor={caregiverPhotoInputId}
-                      className={`absolute inset-0 z-[5] cursor-pointer ${caregiverPhotoBusy ? "pointer-events-none" : ""}`}
-                      aria-hidden="true"
-                    />
-                  ) : null}
-                  <span className="absolute bottom-2 left-2 z-10 rounded bg-black/35 px-2 py-0.5 font-mono text-[10px] font-semibold text-foreground/90">
-                    Staff #{caregiver.id}
-                  </span>
-                  {canEditCaregiverPhoto && caregiverPhotoUrl ? (
-                    <div className="absolute top-2 right-2 z-10">
-                      <button
-                        type="button"
-                        className="rounded-lg bg-black/45 px-2 py-1 text-[10px] font-semibold text-white hover:bg-black/60 disabled:opacity-50"
-                        disabled={caregiverPhotoBusy}
-                        onClick={() => void onRemoveCaregiverPhoto()}
-                      >
-                        {t("profile.avatar.removePhoto")}
-                      </button>
-                    </div>
-                  ) : null}
+        <TabsContent value="overview" className="mt-0 space-y-5">
+
+          {/* ── HERO HEADER ────────────────────────────────────────────────── */}
+          <section className="relative overflow-hidden rounded-2xl border border-outline-variant/20 bg-gradient-to-br from-surface-container to-surface shadow-sm">
+            {/* edit toolbar */}
+            {user && hasCapability(user.role, "patients.manage") && (
+              <div className="absolute right-4 top-4 z-10">
+                {aboutEditing ? (
+                  <div className="flex items-center gap-2">
+                    <button type="button" className="rounded-lg border border-outline-variant/30 bg-surface px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={() => setAboutEditing(false)} disabled={profileSaving}>{t("common.cancel")}</button>
+                    <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50" onClick={() => void saveProfileSection()} disabled={profileSaving}>{profileSaving ? t("common.saving") : t("common.save")}</button>
+                  </div>
+                ) : (
+                  <button type="button" className="rounded-lg border border-outline-variant/30 bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-container-high" onClick={() => setAboutEditing(true)}>{t("common.edit")}</button>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:p-6">
+              {/* Avatar */}
+              <div className="flex shrink-0 flex-col items-center gap-2">
+                <div className="relative h-28 w-28 overflow-hidden rounded-2xl border-2 border-outline-variant/25 bg-gradient-to-br from-primary/20 to-primary/5 shadow-md sm:h-32 sm:w-32">
+                  {canEditCaregiverPhoto && (
+                    <label htmlFor={caregiverPhotoInputId} className={`absolute inset-0 z-[5] cursor-pointer ${caregiverPhotoBusy ? "pointer-events-none" : ""}`} aria-hidden="true" />
+                  )}
                   {caregiverPhotoUrl ? (
-                    <Image
-                      src={caregiverPhotoUrl}
-                      alt={fullName || `Staff #${caregiver.id}`}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
+                    <Image src={caregiverPhotoUrl} alt={fullName || `Staff #${caregiver.id}`} fill unoptimized className="object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-primary/40">
-                      {caregiver.first_name?.[0]}
-                      {caregiver.last_name?.[0]}
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-primary/50">
+                      {caregiver.first_name?.[0]}{caregiver.last_name?.[0]}
                     </div>
                   )}
+                  {canEditCaregiverPhoto && caregiverPhotoUrl && (
+                    <button type="button" className="absolute right-1 top-1 z-10 rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-semibold text-white hover:bg-black/70 disabled:opacity-50" disabled={caregiverPhotoBusy} onClick={() => void onRemoveCaregiverPhoto()}>{t("profile.avatar.removePhoto")}</button>
+                  )}
                 </div>
-                {canEditCaregiverPhoto ? (
-                  <div className="w-full sm:w-40">
-                    <label
-                      htmlFor={caregiverPhotoInputId}
-                      className="mb-1 block text-xs text-foreground-variant"
-                    >
-                      {t("profile.avatar.localFileLabel")}
-                    </label>
-                    <input
-                      id={caregiverPhotoInputId}
-                      type="file"
-                      accept="image/*"
-                      disabled={caregiverPhotoBusy}
-                      onChange={(e) => void onPickCaregiverPhoto(e)}
-                      className="block w-full min-w-0 cursor-pointer text-xs text-foreground file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground hover:file:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                  </div>
-                ) : null}
-                {caregiverPhotoErr ? (
-                  <p className="max-w-[min(100%,20rem)] text-xs text-destructive" role="alert">
-                    {caregiverPhotoErr}
-                  </p>
-                ) : null}
+                {canEditCaregiverPhoto && (
+                  <label htmlFor={caregiverPhotoInputId} className="cursor-pointer text-[10px] text-primary hover:underline">{t("profile.avatar.localFileLabel")}</label>
+                )}
+                <input id={caregiverPhotoInputId} type="file" accept="image/*" disabled={caregiverPhotoBusy} onChange={(e) => void onPickCaregiverPhoto(e)} className="sr-only" />
+                {caregiverPhotoErr && <p className="text-center text-[10px] text-destructive">{caregiverPhotoErr}</p>}
+                <span className="rounded-md bg-surface-container-high px-2 py-0.5 font-mono text-[9px] text-foreground-variant">#{caregiver.id}</span>
               </div>
+
+              {/* Info */}
               <div className="min-w-0 flex-1">
-                <h1
-                  id="caregiver-detail-heading"
-                  className="text-2xl font-bold text-foreground"
-                >
-                  {aboutEditing
-                    ? `${profileDraft.first_name || ""} ${profileDraft.last_name || ""}`.trim() ||
-                      `Staff #${caregiver.id}`
-                    : fullName || `Staff #${caregiver.id}`}
+                <h1 id="caregiver-detail-heading" className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+                  {aboutEditing ? (`${profileDraft.first_name} ${profileDraft.last_name}`.trim() || `Staff #${caregiver.id}`) : (fullName || `Staff #${caregiver.id}`)}
                 </h1>
+
                 {aboutEditing ? (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("personnel.firstName")}</span>
-                      <input
-                        className="input-field w-full text-sm"
-                        value={profileDraft.first_name}
-                        onChange={(event) =>
-                          setProfileDraft((prev) => ({ ...prev, first_name: event.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("personnel.lastName")}</span>
-                      <input
-                        className="input-field w-full text-sm"
-                        value={profileDraft.last_name}
-                        onChange={(event) =>
-                          setProfileDraft((prev) => ({ ...prev, last_name: event.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("admin.users.role")}</span>
-                      <select
-                        className="input-field w-full text-sm"
-                        value={profileDraft.role}
-                        onChange={(event) => setProfileDraft((prev) => ({ ...prev, role: event.target.value }))}
-                      >
-                        <option value="admin">{t("shell.roleAdmin")}</option>
-                        <option value="head_nurse">{t("shell.roleHeadNurse")}</option>
-                        <option value="supervisor">{t("shell.roleSupervisor")}</option>
-                        <option value="observer">{t("shell.roleObserver")}</option>
-                      </select>
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("caregivers.employeeCode")}</span>
-                      <input
-                        className="input-field w-full text-sm"
-                        value={profileDraft.employee_code}
-                        onChange={(event) =>
-                          setProfileDraft((prev) => ({ ...prev, employee_code: event.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("caregivers.department")}</span>
-                      <input
-                        className="input-field w-full text-sm"
-                        value={profileDraft.department}
-                        onChange={(event) => setProfileDraft((prev) => ({ ...prev, department: event.target.value }))}
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("caregivers.specialty")}</span>
-                      <input
-                        className="input-field w-full text-sm"
-                        value={profileDraft.specialty}
-                        onChange={(event) => setProfileDraft((prev) => ({ ...prev, specialty: event.target.value }))}
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("caregivers.licenseLabel")}</span>
-                      <input
-                        className="input-field w-full text-sm"
-                        value={profileDraft.license_number}
-                        onChange={(event) =>
-                          setProfileDraft((prev) => ({ ...prev, license_number: event.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("caregivers.emergencyContactName")}</span>
-                      <input
-                        className="input-field w-full text-sm"
-                        value={profileDraft.emergency_contact_name}
-                        onChange={(event) =>
-                          setProfileDraft((prev) => ({ ...prev, emergency_contact_name: event.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-xs text-foreground-variant">{t("caregivers.emergencyContactPhone")}</span>
-                      <input
-                        className="input-field w-full text-sm"
-                        value={profileDraft.emergency_contact_phone}
-                        onChange={(event) =>
-                          setProfileDraft((prev) => ({ ...prev, emergency_contact_phone: event.target.value }))
-                        }
-                      />
-                    </label>
-                    <label className="flex items-center gap-2 pt-5 text-sm text-foreground">
-                      <input
-                        type="checkbox"
-                        checked={profileDraft.is_active}
-                        onChange={(event) =>
-                          setProfileDraft((prev) => ({ ...prev, is_active: event.target.checked }))
-                        }
-                      />
-                      {t("common.active")}
-                    </label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("personnel.firstName")}</span><input className="input-field w-full text-sm" value={profileDraft.first_name} onChange={(e) => setProfileDraft((p) => ({ ...p, first_name: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("personnel.lastName")}</span><input className="input-field w-full text-sm" value={profileDraft.last_name} onChange={(e) => setProfileDraft((p) => ({ ...p, last_name: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("admin.users.role")}</span><select className="input-field w-full text-sm" value={profileDraft.role} onChange={(e) => setProfileDraft((p) => ({ ...p, role: e.target.value }))}><option value="admin">{t("shell.roleAdmin")}</option><option value="head_nurse">{t("shell.roleHeadNurse")}</option><option value="supervisor">{t("shell.roleSupervisor")}</option><option value="observer">{t("shell.roleObserver")}</option></select></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.employeeCode")}</span><input className="input-field w-full text-sm" value={profileDraft.employee_code} onChange={(e) => setProfileDraft((p) => ({ ...p, employee_code: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.department")}</span><input className="input-field w-full text-sm" value={profileDraft.department} onChange={(e) => setProfileDraft((p) => ({ ...p, department: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.specialty")}</span><input className="input-field w-full text-sm" value={profileDraft.specialty} onChange={(e) => setProfileDraft((p) => ({ ...p, specialty: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.licenseLabel")}</span><input className="input-field w-full text-sm" value={profileDraft.license_number} onChange={(e) => setProfileDraft((p) => ({ ...p, license_number: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.emergencyContactName")}</span><input className="input-field w-full text-sm" value={profileDraft.emergency_contact_name} onChange={(e) => setProfileDraft((p) => ({ ...p, emergency_contact_name: e.target.value }))} /></label>
+                    <label className="space-y-1"><span className="text-xs text-foreground-variant">{t("caregivers.emergencyContactPhone")}</span><input className="input-field w-full text-sm" value={profileDraft.emergency_contact_phone} onChange={(e) => setProfileDraft((p) => ({ ...p, emergency_contact_phone: e.target.value }))} /></label>
+                    <label className="flex items-center gap-2 pt-5 text-sm text-foreground"><input type="checkbox" checked={profileDraft.is_active} onChange={(e) => setProfileDraft((p) => ({ ...p, is_active: e.target.checked }))} />{t("common.active")}</label>
                   </div>
                 ) : (
                   <>
-                    <p className="mt-1 text-sm text-foreground-variant">
-                      {t("admin.users.role")}:{" "}
-                      <span className="font-medium text-foreground">
-                        {formatStaffRoleLabel(caregiver.role, t)}
+                    <p className="mt-0.5 text-sm text-foreground-variant">{formatStaffRoleLabel(caregiver.role, t)}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${caregiver.is_active ? "care-normal" : "bg-surface-container-high text-outline"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${caregiver.is_active ? "bg-emerald-500" : "bg-outline"}`} />
+                        {caregiver.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
                       </span>
-                    </p>
-                    <ul className="mt-3 space-y-1.5 text-sm text-foreground-variant">
-                      <li>
-                        {t("caregivers.employeeCode")}: {caregiver.employee_code?.trim() || "—"}
-                      </li>
-                      <li>
-                        {t("caregivers.department")}: {caregiver.department?.trim() || "—"}
-                      </li>
-                      <li>
-                        {t("caregivers.specialty")}: {caregiver.specialty?.trim() || "—"}
-                      </li>
-                      <li>
-                        {t("caregivers.licenseLabel")}: {caregiver.license_number?.trim() || "—"}
-                      </li>
-                      <li>
-                        {t("caregivers.emergencyContactName")}:{" "}
-                        {caregiver.emergency_contact_name?.trim() || "—"}
-                      </li>
-                      <li>
-                        {t("caregivers.emergencyContactPhone")}:{" "}
-                        {caregiver.emergency_contact_phone?.trim() || "—"}
-                      </li>
-                    </ul>
+                      {caregiver.department?.trim() && <span className="rounded-full bg-surface-container-high px-3 py-1 text-xs font-medium text-foreground-variant">{caregiver.department}</span>}
+                      {caregiver.employment_type?.trim() && <span className="rounded-full border border-outline-variant/30 px-3 py-1 text-xs font-medium text-foreground-variant">{caregiver.employment_type}</span>}
+                    </div>
+                    {/* Detail grid */}
+                    <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-foreground-variant sm:grid-cols-3">
+                      {[
+                        { label: t("caregivers.employeeCode"), value: caregiver.employee_code?.trim() },
+                        { label: t("caregivers.specialty"), value: caregiver.specialty?.trim() },
+                        { label: t("caregivers.licenseLabel"), value: caregiver.license_number?.trim() },
+                        { label: t("caregivers.emergencyContactName"), value: caregiver.emergency_contact_name?.trim() },
+                        { label: t("caregivers.emergencyContactPhone"), value: caregiver.emergency_contact_phone?.trim() },
+                      ].filter(({ value }) => value).map(({ label, value }) => (
+                        <div key={label}>
+                          <span className="block text-[10px] uppercase tracking-wide">{label}</span>
+                          <span className="font-medium text-foreground">{value}</span>
+                        </div>
+                      ))}
+                    </div>
                   </>
                 )}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium uppercase ${
-                      caregiver.is_active ? "care-normal" : "bg-surface-container-high text-outline"
-                    }`}
-                  >
-                    {caregiver.is_active ? t("patients.statusActive") : t("patients.statusInactive")}
-                  </span>
-                </div>
+                {profileError && <p className="mt-3 text-sm text-critical">{profileError}</p>}
               </div>
             </div>
-            {profileError ? <p className="mt-3 text-sm text-critical">{profileError}</p> : null}
-          </section>
 
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="flex items-center gap-2 font-semibold text-foreground">
-                  <Shield className="h-5 w-5 text-primary" aria-hidden />
-                  {t("caregivers.sectionPatientAccess")}
-                </h2>
-                <p className="mt-1 text-sm text-foreground-variant">
-                  {patientAccessDraftIds.length}{" "}
-                  {patientAccessDraftIds.length === 1
-                    ? t("caregivers.patientAccessCountOne")
-                    : t("caregivers.patientAccessCountMany")}
-                </p>
+            {/* ── Contact bar ──────────────────────────────────────────────── */}
+            {(caregiver.phone?.trim() || caregiver.email?.trim()) && !contactEditing && (
+              <div className="flex flex-wrap items-center gap-4 border-t border-outline-variant/15 px-6 py-3">
+                {caregiver.phone?.trim() && (
+                  <a href={`tel:${caregiver.phone.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-xs font-medium text-foreground-variant hover:text-primary">
+                    <Phone className="h-3.5 w-3.5" />{caregiver.phone}
+                  </a>
+                )}
+                {caregiver.email?.trim() && (
+                  <a href={`mailto:${caregiver.email}`} className="flex items-center gap-1.5 text-xs font-medium text-foreground-variant hover:text-primary">
+                    <Mail className="h-3.5 w-3.5" />{caregiver.email}
+                  </a>
+                )}
+                {user && hasCapability(user.role, "patients.manage") && (
+                  <button type="button" className="ml-auto text-xs font-semibold text-primary hover:underline" onClick={() => setContactEditing(true)}>{t("common.edit")}</button>
+                )}
               </div>
-              {canManagePatientAccess ? (
-                <button
-                  type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50"
-                  onClick={() => void handleSavePatientAccess()}
-                  disabled={patientAccessSaving}
-                >
-                  {patientAccessSaving
-                    ? t("caregivers.patientAccessSaving")
-                    : t("caregivers.patientAccessSave")}
-                </button>
-              ) : null}
-            </div>
-
-            {canManagePatientAccess ? (
-              <div className="mb-4">
-                <SearchableListboxPicker
-                  inputId={patientAccessInputId}
-                  listboxId={patientAccessListboxId}
-                  options={patientAccessOptions}
-                  search={patientAccessSearch}
-                  onSearchChange={setPatientAccessSearch}
-                  searchPlaceholder={t("caregivers.patientAccessSearchPlaceholder")}
-                  selectedOptionId={null}
-                  onSelectOption={(pid) => {
-                    const patientId = Number(pid);
-                    if (!Number.isFinite(patientId)) return;
-                    setPatientAccessDraftIds((prev) =>
-                      prev.includes(patientId) ? prev : [...prev, patientId],
-                    );
-                    setPatientAccessSearch("");
-                  }}
-                  disabled={patientAccessLoading}
-                  listboxAriaLabel={t("caregivers.patientAccessListbox")}
-                  noMatchMessage={t("caregivers.patientAccessNoMatch")}
-                  emptyStateMessage={
-                    patientAccessOptions.length === 0 ? t("caregivers.patientAccessNoPool") : null
-                  }
-                  emptyNoMatch={patientAccessSearch.trim().length > 0}
-                />
+            )}
+            {contactEditing && (
+              <div className="flex flex-wrap items-center gap-3 border-t border-outline-variant/15 px-6 py-4">
+                <input className="input-field flex-1 text-sm min-w-[12rem]" placeholder={t("caregivers.phone")} value={contactDraft.phone} onChange={(e) => setContactDraft((p) => ({ ...p, phone: e.target.value }))} />
+                <input className="input-field flex-1 text-sm min-w-[12rem]" placeholder={t("caregivers.email")} value={contactDraft.email} onChange={(e) => setContactDraft((p) => ({ ...p, email: e.target.value }))} />
+                <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-foreground-variant hover:bg-surface-container-high" onClick={() => setContactEditing(false)} disabled={profileSaving}>{t("common.cancel")}</button>
+                <button type="button" className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50" onClick={() => void saveContactSection()} disabled={profileSaving}>{profileSaving ? t("common.saving") : t("common.save")}</button>
               </div>
-            ) : null}
-
-            {patientAccessError ? (
-              <p className="mb-3 text-sm text-critical">{patientAccessError}</p>
-            ) : null}
-
-            {patientAccessLoading ? (
-              <div className="flex justify-center py-6">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              </div>
-            ) : patientAccessSelectedPatients.length === 0 ? (
-              <p className="text-sm text-foreground-variant">{t("caregivers.patientAccessEmpty")}</p>
-            ) : (
-              <ul className="space-y-2">
-                {patientAccessSelectedPatients.map((patient) => (
-                  <li
-                    key={patient.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4"
-                  >
-                    <Link href={`/admin/patients/${patient.id}`} className="min-w-0">
-                      <p className="font-semibold text-foreground">{formatPatientLabel(patient)}</p>
-                      <p className="text-xs text-foreground-variant">
-                        {patient.room_id != null ? `Room #${patient.room_id}` : `Patient #${patient.id}`} ·{" "}
-                        {patient.care_level}
-                      </p>
-                    </Link>
-                    {canManagePatientAccess ? (
-                      <button
-                        type="button"
-                        className="shrink-0 text-xs font-semibold text-critical hover:underline"
-                        onClick={() =>
-                          setPatientAccessDraftIds((prev) => prev.filter((pid) => pid !== patient.id))
-                        }
-                      >
-                        {t("caregivers.patientAccessRemove")}
-                      </button>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
             )}
           </section>
 
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
-              <Users className="h-5 w-5 text-primary" aria-hidden />
-              {t("caregivers.sectionLinkedPatients")}
-            </h2>
-            {linkedPatients.length === 0 ? (
-              <p className="text-sm text-foreground-variant">{t("caregivers.linkedPatientsEmpty")}</p>
-            ) : (
-              <ul className="space-y-2">
-                {linkedPatients.map((p) => (
-                  <li key={p.id}>
-                    <Link
-                      href={`/admin/patients/${p.id}`}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4 transition-smooth hover:border-primary/30 hover:shadow-sm"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground">
-                          {p.first_name} {p.last_name}
-                        </p>
-                        <p className="text-xs text-foreground-variant">
-                          {t("patients.age")}: {ageYears(p.date_of_birth, nowMs) ?? "—"} ·{" "}
-                          {p.care_level}
-                        </p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-outline" aria-hidden />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          {/* ── MAIN + SIDEBAR GRID ───────────────────────────────────────── */}
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <div className="space-y-5 xl:col-span-2">
 
-          {showHeadNurseGuide ? (
-            <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-              <h2 className="mb-2 flex items-center gap-2 font-semibold text-foreground">
-                <Users className="h-5 w-5 text-primary" aria-hidden />
-                {t("caregivers.sectionHeadNurses")}
-              </h2>
-              <p className="mb-4 text-sm text-foreground-variant">{t("caregivers.headNursesHint")}</p>
-              {headNursesLoading ? (
-                <div className="flex justify-center py-6">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <PersonSensorStatusPanel personType="staff" personId={caregiver.id} compact />
+
+              <StaffTimelinePanel tasks={staffTimelineTasks} schedules={staffTimelineSchedules} />
+
+              {/* Patient Access */}
+              <div className="surface-card rounded-2xl border border-outline-variant/20 p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" aria-hidden />
+                    <h2 className="text-sm font-semibold text-foreground">{t("caregivers.sectionPatientAccess")}</h2>
+                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">{patientAccessDraftIds.length}</span>
+                  </div>
+                  {canManagePatientAccess && (
+                    <button type="button" className="rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary hover:bg-primary/90 disabled:opacity-50" onClick={() => void handleSavePatientAccess()} disabled={patientAccessSaving}>{patientAccessSaving ? t("caregivers.patientAccessSaving") : t("caregivers.patientAccessSave")}</button>
+                  )}
                 </div>
-              ) : headNurses.length === 0 ? (
-                <p className="text-sm text-foreground-variant">
-                  {caregiver.role === "head_nurse" && hasAnyHeadNurseInWorkspace
-                    ? t("caregivers.headNursesPeerOnlySelf")
-                    : t("caregivers.headNursesEmpty")}
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {headNurses.map((hn) => (
-                    <li key={hn.id}>
-                      <Link
-                        href={`/admin/caregivers/${hn.id}`}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-outline-variant/15 bg-surface-container-low/50 p-4 transition-smooth hover:border-primary/30 hover:shadow-sm"
-                      >
-                        <div className="min-w-0">
-                          <p className="font-semibold text-foreground">
-                            {hn.first_name} {hn.last_name}
-                          </p>
-                          <p className="text-xs text-foreground-variant">
-                            {formatStaffRoleLabel(hn.role, t)}
-                            {hn.employee_code?.trim() ? ` · ${hn.employee_code.trim()}` : ""}
-                          </p>
-                        </div>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-outline" aria-hidden />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                {canManagePatientAccess && (
+                  <div className="mb-4">
+                    <SearchableListboxPicker inputId={patientAccessInputId} listboxId={patientAccessListboxId} options={patientAccessOptions} search={patientAccessSearch} onSearchChange={setPatientAccessSearch} searchPlaceholder={t("caregivers.patientAccessSearchPlaceholder")} selectedOptionId={null} onSelectOption={(pid) => { const n = Number(pid); if (!Number.isFinite(n)) return; setPatientAccessDraftIds((prev) => prev.includes(n) ? prev : [...prev, n]); setPatientAccessSearch(""); }} disabled={patientAccessLoading} listboxAriaLabel={t("caregivers.patientAccessListbox")} noMatchMessage={t("caregivers.patientAccessNoMatch")} emptyStateMessage={patientAccessOptions.length === 0 ? t("caregivers.patientAccessNoPool") : null} emptyNoMatch={patientAccessSearch.trim().length > 0} />
+                  </div>
+                )}
+                {patientAccessError && <p className="mb-3 text-sm text-critical">{patientAccessError}</p>}
+                {patientAccessLoading ? (
+                  <div className="flex justify-center py-6"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+                ) : patientAccessSelectedPatients.length === 0 ? (
+                  <p className="text-sm text-foreground-variant">{t("caregivers.patientAccessEmpty")}</p>
+                ) : (
+                  <ul className="divide-y divide-outline-variant/10">
+                    {patientAccessSelectedPatients.map((patient) => (
+                      <li key={patient.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                        <Link href={`/admin/patients/${patient.id}`} className="min-w-0 flex-1">
+                          <p className="font-semibold text-foreground text-sm">{formatPatientLabel(patient)}</p>
+                          <p className="text-xs text-foreground-variant">{patient.room_id != null ? `Room #${patient.room_id}` : `Patient #${patient.id}`} · {patient.care_level}</p>
+                        </Link>
+                        {canManagePatientAccess && (
+                          <button type="button" className="shrink-0 text-xs font-semibold text-critical hover:underline" onClick={() => setPatientAccessDraftIds((prev) => prev.filter((pid) => pid !== patient.id))}>{t("caregivers.patientAccessRemove")}</button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Linked patients via zones */}
+              <div className="surface-card rounded-2xl border border-outline-variant/20 p-5 shadow-sm">
+                <div className="mb-4 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" aria-hidden />
+                  <h2 className="text-sm font-semibold text-foreground">{t("caregivers.sectionLinkedPatients")}</h2>
+                </div>
+                {linkedPatients.length === 0 ? (
+                  <p className="text-sm text-foreground-variant">{t("caregivers.linkedPatientsEmpty")}</p>
+                ) : (
+                  <ul className="divide-y divide-outline-variant/10">
+                    {linkedPatients.map((p) => (
+                      <li key={p.id}>
+                        <Link href={`/admin/patients/${p.id}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:text-primary transition-smooth">
+                          <UserAvatar
+                            username={`${p.first_name} ${p.last_name}`.trim() || `Patient #${p.id}`}
+                            profileImageUrl={p.photo_url}
+                            sizePx={32}
+                            fallbackClassName="bg-surface-container-high text-foreground-variant"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-foreground text-sm">{p.first_name} {p.last_name}</p>
+                            <p className="text-xs text-foreground-variant">{t("patients.age")}: {ageYears(p.date_of_birth, nowMs) ?? "—"} · {p.care_level}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-outline" aria-hidden />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Head nurses guide */}
+              {showHeadNurseGuide && (
+                <div className="surface-card rounded-2xl border border-outline-variant/20 p-5 shadow-sm">
+                  <div className="mb-1 flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" aria-hidden />
+                    <h2 className="text-sm font-semibold text-foreground">{t("caregivers.sectionHeadNurses")}</h2>
+                  </div>
+                  <p className="mb-4 text-xs text-foreground-variant">{t("caregivers.headNursesHint")}</p>
+                  {headNursesLoading ? (
+                    <div className="flex justify-center py-6"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+                  ) : headNurses.length === 0 ? (
+                    <p className="text-sm text-foreground-variant">{caregiver.role === "head_nurse" && hasAnyHeadNurseInWorkspace ? t("caregivers.headNursesPeerOnlySelf") : t("caregivers.headNursesEmpty")}</p>
+                  ) : (
+                    <ul className="divide-y divide-outline-variant/10">
+                      {headNurses.map((hn) => (
+                        <li key={hn.id}>
+                          <Link href={`/admin/caregivers/${hn.id}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:text-primary transition-smooth">
+                            <UserAvatar
+                              username={`${hn.first_name} ${hn.last_name}`.trim() || `Staff #${hn.id}`}
+                              profileImageUrl={hn.photo_url}
+                              sizePx={32}
+                              fallbackClassName="bg-primary/10 text-primary"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-foreground text-sm">{hn.first_name} {hn.last_name}</p>
+                              <p className="text-xs text-foreground-variant">{formatStaffRoleLabel(hn.role, t)}{hn.employee_code?.trim() ? ` · ${hn.employee_code.trim()}` : ""}</p>
+                            </div>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-outline" aria-hidden />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               )}
-            </section>
-          ) : null}
 
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
-              <MapPin className="h-5 w-5 text-primary" aria-hidden />
-              {t("caregivers.sectionZones")}
-            </h2>
-            {canManageSchedule ? (
-              <div className="mb-4 flex items-center justify-end">
-                <button
-                  type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90"
-                  onClick={openCreateZone}
-                >
-                  Add zone
-                </button>
+              {/* Linked user accounts */}
+              <div className="surface-card rounded-2xl border border-outline-variant/20 p-5 shadow-sm">
+                <div className="mb-4 flex items-center gap-2">
+                  <UserCircle2 className="h-4 w-4 text-primary" aria-hidden />
+                  <h2 className="text-sm font-semibold text-foreground">{t("patients.sectionLinkedAccounts")}</h2>
+                </div>
+                {linkedUsers.length === 0 ? (
+                  <p className="text-sm text-foreground-variant">No user account linked to this caregiver record.</p>
+                ) : (
+                  <ul className="space-y-3" role="list">
+                    {linkedUsers.map((u) => (
+                      <UserAccountItem
+                        key={u.id}
+                        user={u}
+                        onUpdate={onUserUpdated}
+                        canManage={canManageAccounts}
+                      />
+                    ))}
+                  </ul>
+                )}
               </div>
-            ) : null}
-            {zonesLoading ? (
-              <div className="flex justify-center py-6">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              </div>
-            ) : !zones?.length ? (
-              <p className="text-sm text-foreground-variant">—</p>
-            ) : (
-              <ul className="space-y-2">
-                {zones.map((z) => (
-                  <li
-                    key={z.id}
-                    className="rounded-xl border border-outline-variant/15 bg-surface-container-low px-4 py-4 text-sm"
-                  >
-                    {(() => {
+
+              {scheduleError && <p className="text-sm text-critical">{scheduleError}</p>}
+
+              <p className="text-xs text-foreground-variant">Staff ID: {caregiver.id} · Workspace: {caregiver.workspace_id}</p>
+            </div>{/* end main col */}
+
+            {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
+            <aside className="space-y-5">
+
+              {/* Zone assignments */}
+              <div className="surface-card rounded-2xl border border-outline-variant/20 p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" aria-hidden />
+                    <h2 className="text-sm font-semibold text-foreground">{t("caregivers.sectionZones")}</h2>
+                  </div>
+                  {canManageSchedule && (
+                    <button type="button" className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={openCreateZone}>+ Add</button>
+                  )}
+                </div>
+                {zonesLoading ? (
+                  <div className="flex justify-center py-4"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+                ) : !zones?.length ? (
+                  <p className="text-sm text-foreground-variant">—</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {zones.map((z) => {
                       const room = z.room_id != null ? roomsById.get(z.room_id) ?? null : null;
-                      const patientCount =
-                        z.room_id != null ? patientCountByRoomId.get(z.room_id) ?? 0 : 0;
-                      const mapHref =
-                        room && room.facility_id != null && room.floor_id != null
-                          ? `/head-nurse/monitoring?facility=${room.facility_id}&floor=${room.floor_id}&view=map&room=${room.id}`
-                          : null;
+                      const patientCount = z.room_id != null ? patientCountByRoomId.get(z.room_id) ?? 0 : 0;
+                      const mapHref = room && room.facility_id != null && room.floor_id != null ? `/head-nurse/floorplans?facility=${room.facility_id}&floor=${room.floor_id}&view=map&room=${room.id}` : null;
                       return (
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0 space-y-1">
-                            <p className="font-semibold text-foreground">
-                              {z.zone_name || formatRoomLabel(room) || "—"}
-                            </p>
-                            <p className="text-xs text-foreground-variant">
-                              {formatRoomContext(room)}
-                            </p>
-                            <p className="text-xs text-foreground-variant">
-                              Linked patients: {patientCount}
-                            </p>
+                        <li key={z.id} className="rounded-xl border border-outline-variant/15 bg-surface-container-low/60 px-3 py-3 text-xs">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-foreground text-sm">{z.zone_name || formatRoomLabel(room) || "—"}</p>
+                              <p className="text-foreground-variant">{formatRoomContext(room)}</p>
+                              <p className="text-foreground-variant">Patients: {patientCount}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className={`rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${z.is_active ? "care-normal" : "bg-surface-container text-outline"}`}>{z.is_active ? t("patients.statusActive") : t("patients.statusInactive")}</span>
+                              {mapHref && <Link href={mapHref} className="text-[9px] font-semibold uppercase text-primary hover:underline">Map</Link>}
+                            </div>
                           </div>
-
-                          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${
-                                z.is_active ? "care-normal" : "bg-surface-container text-outline"
-                              }`}
-                            >
-                              {z.is_active
-                                ? t("patients.statusActive")
-                                : t("patients.statusInactive")}
-                            </span>
-                            {mapHref ? (
-                              <Link
-                                href={mapHref}
-                                className="rounded-full border border-outline-variant/25 px-2.5 py-1 text-[10px] font-semibold uppercase text-primary hover:bg-primary/5"
-                              >
-                                Open map
-                              </Link>
-                            ) : null}
-                            {canManageSchedule ? (
-                              <>
-                                <button
-                                  type="button"
-                                  className="text-xs font-semibold text-primary hover:underline"
-                                  onClick={() => openEditZone(z)}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="text-xs font-semibold text-critical hover:underline"
-                                  onClick={() => void handleDeleteZone(z.id)}
-                                >
-                                  Delete
-                                </button>
-                              </>
-                            ) : null}
-                          </div>
-                        </div>
+                          {canManageSchedule && (
+                            <div className="mt-2 flex gap-2">
+                              <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => openEditZone(z)}>Edit</button>
+                              <button type="button" className="text-xs font-semibold text-critical hover:underline" onClick={() => void handleDeleteZone(z.id)}>Delete</button>
+                            </div>
+                          )}
+                        </li>
                       );
-                    })()}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-                    <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
-              <Clock className="h-5 w-5 text-primary" aria-hidden />
-              Shift schedule
-            </h2>
-            {canManageSchedule ? (
-              <div className="mb-4 flex items-center justify-end">
-                <button
-                  type="button"
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-on-primary hover:bg-primary/90"
-                  onClick={openCreateShift}
-                >
-                  Add shift
-                </button>
+                    })}
+                  </ul>
+                )}
               </div>
-            ) : null}
-            {shiftsLoading ? (
-              <div className="flex justify-center py-6">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              </div>
-            ) : !shifts?.length ? (
-              <p className="text-sm text-foreground-variant">—</p>
-            ) : (
-              <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                {shifts.map((s) => (
-                  <li
-                    key={s.id}
-                    className="rounded-xl border border-outline-variant/15 bg-surface-container-low px-4 py-3 text-sm"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0 space-y-1">
-                        <p className="font-medium text-foreground">{formatDate(s.shift_date)}</p>
-                        <p className="text-xs text-foreground-variant">
-                          {formatTime(s.start_time)} – {formatTime(s.end_time)}
-                          {s.notes ? ` · ${s.notes}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                            SHIFT_BADGE[s.shift_type] ?? "bg-surface-container text-outline"
-                          }`}
-                        >
-                          {formatShiftType(s.shift_type)}
-                        </span>
-                        {canManageSchedule ? (
-                          <>
-                            <button
-                              type="button"
-                              className="text-xs font-semibold text-primary hover:underline"
-                              onClick={() => openEditShift(s)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="text-xs font-semibold text-critical hover:underline"
-                              onClick={() => void handleDeleteShift(s.id)}
-                            >
-                              Delete
-                            </button>
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
 
-          <section className="surface-card rounded-xl border border-outline-variant/20 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
-              <UserCircle2 className="h-5 w-5 text-primary" aria-hidden />
-              {t("patients.sectionLinkedAccounts")}
-            </h2>
-            {linkedUsers.length === 0 ? (
-              <p className="text-sm text-foreground-variant">
-                No user account linked to this caregiver record.
-              </p>
-            ) : (
-              <ul className="space-y-3" role="list">
-                {linkedUsers.map((u) => (
-                  <UserAccountItem
-                    key={u.id}
-                    user={u}
-                    onUpdate={onUserUpdated}
-                    canManage={canManageAccounts}
-                  />
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {scheduleError ? <p className="text-sm text-critical">{scheduleError}</p> : null}
-
-          <p className="text-xs text-foreground-variant">
-            Staff ID: {caregiver.id} · Workspace: {caregiver.workspace_id}
-          </p>
-        </div>
-
-        <aside className="space-y-4">
-          <section
-            className="surface-card rounded-xl border border-outline-variant/20 p-5"
-            style={{ background: "var(--color-primary)" }}
-          >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-[var(--color-on-primary)] font-semibold">
-                <Phone className="h-5 w-5 opacity-90" aria-hidden />
-                {t("caregivers.sectionContact")}
-              </h2>
-              {contactEditing ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="rounded-md bg-black/20 px-2 py-1 text-[11px] font-medium text-[var(--color-on-primary)]"
-                    onClick={() => setContactEditing(false)}
-                    disabled={profileSaving}
-                  >
-                    {t("common.cancel")}
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-md bg-black/30 px-2 py-1 text-[11px] font-semibold text-[var(--color-on-primary)]"
-                    onClick={() => void saveContactSection()}
-                    disabled={profileSaving}
-                  >
-                    {profileSaving ? t("common.saving") : t("common.save")}
-                  </button>
+              {/* Shift schedule */}
+              <div className="surface-card rounded-2xl border border-outline-variant/20 p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" aria-hidden />
+                    <h2 className="text-sm font-semibold text-foreground">Shift schedule</h2>
+                  </div>
+                  {canManageSchedule && (
+                    <button type="button" className="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-on-primary hover:bg-primary/90" onClick={openCreateShift}>+ Add</button>
+                  )}
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  className="rounded-md bg-black/20 px-2 py-1 text-[11px] font-semibold text-[var(--color-on-primary)]"
-                  onClick={() => setContactEditing(true)}
-                >
-                  {t("common.edit")}
-                </button>
-              )}
-            </div>
-            {contactEditing ? (
-              <div className="space-y-2 text-sm text-[var(--color-on-primary)]">
-                <label className="block space-y-1">
-                  <span className="text-[11px] opacity-90">{t("clinical.table.phone")}</span>
-                  <input
-                    className="w-full rounded-lg border border-white/25 bg-black/10 px-3 py-1.5 text-sm text-[var(--color-on-primary)] placeholder:text-[var(--color-on-primary)]/70"
-                    value={contactDraft.phone}
-                    onChange={(event) => setContactDraft((prev) => ({ ...prev, phone: event.target.value }))}
-                  />
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-[11px] opacity-90">{t("clinical.table.email")}</span>
-                  <input
-                    className="w-full rounded-lg border border-white/25 bg-black/10 px-3 py-1.5 text-sm text-[var(--color-on-primary)] placeholder:text-[var(--color-on-primary)]/70"
-                    value={contactDraft.email}
-                    onChange={(event) => setContactDraft((prev) => ({ ...prev, email: event.target.value }))}
-                  />
-                </label>
+                {shiftsLoading ? (
+                  <div className="flex justify-center py-4"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+                ) : !shifts?.length ? (
+                  <p className="text-sm text-foreground-variant">—</p>
+                ) : (
+                  <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                    {shifts.map((s) => (
+                      <li key={s.id} className="rounded-xl border border-outline-variant/15 bg-surface-container-low/60 px-3 py-2.5 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-medium text-foreground">{formatDate(s.shift_date)}</p>
+                            <p className="text-foreground-variant">{formatTime(s.start_time)} – {formatTime(s.end_time)}{s.notes ? ` · ${s.notes}` : ""}</p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase ${SHIFT_BADGE[s.shift_type] ?? "bg-surface-container text-outline"}`}>{formatShiftType(s.shift_type)}</span>
+                        </div>
+                        {canManageSchedule && (
+                          <div className="mt-1.5 flex gap-2">
+                            <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => openEditShift(s)}>Edit</button>
+                            <button type="button" className="text-xs font-semibold text-critical hover:underline" onClick={() => void handleDeleteShift(s.id)}>Delete</button>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            ) : (
-              <ul className="space-y-3 text-sm text-[var(--color-on-primary)]">
-                <li className="flex items-start gap-2">
-                  <Phone className="mt-0.5 h-4 w-4 shrink-0 opacity-90" aria-hidden />
-                  <span>{caregiver.phone?.trim() || "—"}</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 opacity-90" aria-hidden />
-                  <span className="break-all">{caregiver.email?.trim() || "—"}</span>
-                </li>
-                <li className="flex items-start gap-2 opacity-90">
-                  <Calendar className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+
+              {/* Joined date */}
+              <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low/50 px-4 py-3">
+                <div className="flex items-center gap-2 text-xs text-foreground-variant">
+                  <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden />
                   <span>{t("caregivers.addedAt")} {formatDate(caregiver.created_at)}</span>
-                </li>
-              </ul>
-            )}
-          </section>
-        </aside>
-
-        <ZoneDialog
-          open={zoneDialogOpen}
-          mode={zoneDialogMode}
-          draft={zoneDraft}
-          setDraft={setZoneDraft}
-          roomSearch={zoneRoomSearch}
-          setRoomSearch={setZoneRoomSearch}
-          roomOptions={roomOptions}
-          roomLoading={roomsLoading}
-          roomEmptyNoMatch={roomEmptyNoMatch}
-          roomEmptyPool={roomEmptyPool}
-          submitting={zoneSubmitting}
-          error={scheduleError}
-          onClose={() => setZoneDialogOpen(false)}
-          onSubmit={() => void handleSubmitZone()}
-        />
-
-        <ShiftDialog
-          open={shiftDialogOpen}
-          mode={shiftDialogMode}
-          draft={shiftDraft}
-          setDraft={setShiftDraft}
-          submitting={shiftSubmitting}
-          error={scheduleError}
-          onClose={() => setShiftDialogOpen(false)}
-          onSubmit={() => void handleSubmitShift()}
-        />
-      </div>
+                </div>
+              </div>
+            </aside>
+          </div>{/* end main+sidebar grid */}
         </TabsContent>
+
         <TabsContent value="work" className="mt-0">
           <StaffRoutineAndCalendarPanel linkedUsers={linkedUsers} />
         </TabsContent>
       </Tabs>
+
+      <ZoneDialog
+        open={zoneDialogOpen}
+        mode={zoneDialogMode}
+        draft={zoneDraft}
+        setDraft={setZoneDraft}
+        roomSearch={zoneRoomSearch}
+        setRoomSearch={setZoneRoomSearch}
+        roomOptions={roomOptions}
+        roomLoading={roomsLoading}
+        roomEmptyNoMatch={roomEmptyNoMatch}
+        roomEmptyPool={roomEmptyPool}
+        submitting={zoneSubmitting}
+        error={scheduleError}
+        onClose={() => setZoneDialogOpen(false)}
+        onSubmit={() => void handleSubmitZone()}
+      />
+
+      <ShiftDialog
+        open={shiftDialogOpen}
+        mode={shiftDialogMode}
+        draft={shiftDraft}
+        setDraft={setShiftDraft}
+        submitting={shiftSubmitting}
+        error={scheduleError}
+        onClose={() => setShiftDialogOpen(false)}
+        onSubmit={() => void handleSubmitShift()}
+      />
     </div>
   );
 }

@@ -14,6 +14,7 @@ from app.agent_runtime.layers.contracts import (
     SynthesisResult,
 )
 from app.agent_runtime.layers.layer4_constrained_synthesis import check_tool_allowed
+from app.agent_runtime.layers.layer4_constrained_synthesis import is_mcp_tool_read_only
 from app.agent_runtime.layers.observability import PipelineEventEmitter
 from app.schemas.agent_runtime import AgentRuntimeExecuteResponse, ExecutionPlan
 
@@ -32,6 +33,15 @@ def _policy_failure(correlation_id: str) -> SafeFailure:
         reason_code="policy_denied",
         message_en=en,
         message_th=th,
+    )
+
+
+def _mutation_during_propose_failure(correlation_id: str) -> SafeFailure:
+    return SafeFailure(
+        correlation_id=correlation_id,
+        reason_code="confirmation_required",
+        message_en="This action changes WheelSense data and must be confirmed before it can run.",
+        message_th="การดำเนินการนี้เปลี่ยนข้อมูล WheelSense และต้องยืนยันก่อนเริ่มทำงาน",
     )
 
 
@@ -96,6 +106,21 @@ def guard_synthesis(
     emitter: PipelineEventEmitter | None = None,
 ) -> SynthesisResult | SafeFailure:
     if synthesis.mode == "tool" and synthesis.immediate_tool_name is not None:
+        if not is_mcp_tool_read_only(synthesis.immediate_tool_name):
+            _emit(
+                emitter,
+                PipelineEvent(
+                    correlation_id=correlation.id,
+                    layer=5,
+                    phase="exit",
+                    outcome="reject",
+                    payload={
+                        "tool_name": synthesis.immediate_tool_name,
+                        "guard": "propose_mutation",
+                    },
+                ),
+            )
+            return _mutation_during_propose_failure(correlation.id)
         failure = guard_tool_call(
             correlation=correlation,
             actor=actor,
@@ -154,7 +179,12 @@ async def execute_confirmed_plan(
                 "result": result,
             }
         )
-        last_message = f"Executed {step.title}."
+        if step.tool_name == "create_task_management_task" and isinstance(result, dict):
+            task_id = result.get("id")
+            task_title = result.get("title") or step.arguments.get("title") or "task"
+            last_message = f"Created task #{task_id}: {task_title}."
+        else:
+            last_message = f"Executed {step.title}."
 
     return AgentRuntimeExecuteResponse(
         message=last_message,

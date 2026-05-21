@@ -10,6 +10,12 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_active_user, get_current_user_workspace, get_db
+from app.agent_runtime.response_cards import (
+    attach_response_cards,
+    cards_for_execution_result,
+    chat_message_metadata,
+    normalize_response_cards,
+)
 from app.models.chat import ChatConversation, ChatMessage
 from app.models.core import Workspace
 from app.models.users import User
@@ -95,18 +101,33 @@ def _should_include_ai_trace(value: str | None) -> bool:
     return normalized in {"1", "true", "yes", "on"}
 
 
+def _public_grounding(grounding: dict | None, *, include_ai_trace: bool) -> dict:
+    payload = attach_response_cards(dict(grounding or {}))
+    if not include_ai_trace:
+        payload.pop("ai_trace", None)
+        payload.pop("provider_attempts", None)
+    payload["response_cards"] = normalize_response_cards(payload.get("response_cards"))
+    return payload
+
+
 @router.get("/actions", response_model=list[ChatActionOut])
 async def list_actions(
     limit: int = Query(100, ge=1, le=500),
+    conversation_id: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_active_user),
     workspace: Workspace = Depends(get_current_user_workspace),
 ):
+    if conversation_id is not None:
+        conversation = await db.get(ChatConversation, conversation_id)
+        if conversation is None or conversation.workspace_id != workspace.id or conversation.user_id != user.id:
+            raise HTTPException(status_code=404, detail="Conversation not found")
     rows = await ai_chat.list_chat_actions(
         db,
         ws_id=workspace.id,
         user=user,
         limit=limit,
+        conversation_id=conversation_id,
     )
     return [_chat_action_out(row) for row in rows]
 
@@ -142,12 +163,19 @@ async def propose_action(
             actor=user,
             payload=body,
         )
+        metadata = chat_message_metadata(
+            proposal_id=row.id,
+            mode="plan",
+            plan_status=row.status,
+        )
         return ChatActionProposalResponse(
             proposal_id=row.id,
             assistant_reply=row.summary or row.title,
             reply=row.summary or row.title,
             summary=row.summary,
             actions=[_serialize_action_summary(row)],
+            grounding=metadata["grounding"],
+            metadata=metadata,
         )
 
     conversation = None
@@ -184,6 +212,7 @@ async def propose_action(
             messages=messages,
             conversation_id=body.conversation_id,
             page_patient_id=body.page_patient_id,
+            page_context=body.page_context,
         )
     except httpx.HTTPError as exc:
         raise HTTPException(
@@ -216,6 +245,19 @@ async def propose_action(
                 ) from exc
             raise
 
+    include_ai_trace = _should_include_ai_trace(ai_trace)
+    public_grounding = _public_grounding(runtime.grounding, include_ai_trace=include_ai_trace)
+    actions = [_serialize_action_summary(action_row)] if action_row is not None else []
+    assistant_metadata = chat_message_metadata(
+        grounding=public_grounding,
+        proposal_id=action_row.id if action_row is not None else None,
+        mode=runtime.mode,
+        plan_status=action_row.status if action_row is not None else None,
+    )
+    assistant_metadata["actions"] = [item.model_dump(mode="json") for item in actions]
+    if runtime.plan is not None:
+        assistant_metadata["execution_plan"] = runtime.plan.model_dump(mode="json")
+
     if conversation is not None and assistant_reply:
         conversation.updated_at = _utcnow()
         db.add(conversation)
@@ -224,11 +266,11 @@ async def propose_action(
                 conversation_id=conversation.id,
                 role="assistant",
                 content=assistant_reply,
+                ui_metadata=assistant_metadata,
             )
         )
         await db.commit()
 
-    actions = [_serialize_action_summary(action_row)] if action_row is not None else []
     summary = (
         action_row.summary
         if action_row is not None
@@ -242,9 +284,16 @@ async def propose_action(
         summary=summary,
         actions=actions,
         execution_plan=runtime.plan,
+        grounding=public_grounding,
+        metadata=assistant_metadata,
         ai_trace=(
             list(runtime.grounding.get("ai_trace") or [])
-            if _should_include_ai_trace(ai_trace)
+            if include_ai_trace
+            else None
+        ),
+        provider_attempts=(
+            list(runtime.grounding.get("provider_attempts") or [])
+            if include_ai_trace
             else None
         ),
     )
@@ -285,6 +334,15 @@ async def execute_action(
         force=body.force,
     )
     reply = _build_execution_message(row, execution_result)
+    response_cards = cards_for_execution_result(execution_result)
+    execution_metadata = chat_message_metadata(
+        grounding=None,
+        proposal_id=row.id,
+        mode="execution_result",
+        plan_status=row.status,
+        execution_result=execution_result,
+        response_cards=response_cards,
+    )
     if row.conversation_id is not None:
         conversation = await db.get(ChatConversation, row.conversation_id)
         if (
@@ -299,6 +357,7 @@ async def execute_action(
                     conversation_id=conversation.id,
                     role="assistant",
                     content=reply,
+                    ui_metadata=execution_metadata,
                 )
             )
             await db.commit()
@@ -307,4 +366,6 @@ async def execute_action(
         execution_result=execution_result,
         message=reply,
         reply=reply,
+        response_cards=response_cards,
+        metadata=execution_metadata,
     )

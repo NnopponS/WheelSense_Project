@@ -293,16 +293,16 @@ function SummaryStat({
 }) {
   const iconTone =
     tone === "critical"
-      ? "bg-red-500/12 text-red-700"
+      ? "bg-red-500/12 text-red-700 dark:text-red-300"
       : tone === "warning"
-        ? "bg-amber-500/12 text-amber-700"
+        ? "bg-amber-500/12 text-amber-700 dark:text-amber-300"
         : tone === "success"
-          ? "bg-emerald-500/12 text-emerald-700"
-          : "bg-sky-500/12 text-sky-700";
+          ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
+          : "bg-sky-500/12 text-sky-700 dark:text-sky-300";
 
   return (
-    <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low/60 p-3">
-      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${iconTone}`}>
+    <div className="h-full rounded-lg border border-outline-variant/20 bg-surface-container-low/60 p-3">
+      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${iconTone}`}>
         <Icon className="h-5 w-5" />
       </div>
       <p className="text-xs uppercase tracking-wide text-foreground-variant">{label}</p>
@@ -879,11 +879,11 @@ export default function FloorplanRoleViewer({
     Boolean(selectedId && rooms.some((room) => room.id === selectedId) && selectedRoomEntry);
 
   const headerClass = compact ? "space-y-2" : "space-y-4";
-  const shellClass = compact ? "p-4" : "p-5";
+  const shellClass = compact ? "p-3 sm:p-4" : "p-4 sm:p-5";
 
   if (!loadingFac && safeFacilities.length === 0) {
     return (
-      <section className={`surface-card ${shellClass} ${className}`.trim()}>
+      <section className={`surface-card overflow-hidden ${shellClass} ${className}`.trim()}>
         <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-foreground">
           <MapPin className="h-4 w-4 text-primary" />
           {t("floorplan.viewTitle")}
@@ -894,11 +894,11 @@ export default function FloorplanRoleViewer({
   }
 
   return (
-    <section className={`surface-card ${shellClass} ${className}`.trim()}>
+    <section className={`surface-card overflow-hidden ${shellClass} ${className}`.trim()}>
       <div className={headerClass}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-foreground">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
               <MapPin className="h-4 w-4 text-primary" />
               {compact ? "Ward monitoring summary" : "Live operations map"}
             </h3>
@@ -909,7 +909,7 @@ export default function FloorplanRoleViewer({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
             <div className="inline-flex rounded-lg border border-border p-0.5">
               <Button
                 type="button"
@@ -962,7 +962,7 @@ export default function FloorplanRoleViewer({
         ) : null}
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 sm:gap-3">
         <div>
           <label className="mb-1 block text-xs font-medium text-foreground-variant">
             {t("floorplan.building")}
@@ -1050,9 +1050,9 @@ export default function FloorplanRoleViewer({
           </>
         ) : (
           <>
-            <div className="min-w-0 space-y-3">
+            <div className="min-w-0 space-y-3 overflow-hidden rounded-lg border border-border/60 bg-surface-container-low/40 p-2 sm:p-3">
               {viewMode === "list" ? (
-                <div className="grid max-h-[720px] grid-cols-1 gap-2 overflow-y-auto pr-2 sm:grid-cols-2">
+                <div className="grid max-h-[720px] auto-rows-fr grid-cols-1 gap-2 overflow-y-auto pr-2 sm:grid-cols-2">
                   {roomEntries.map((entry) => {
                     const meta = roomMetaById[entry.room.id];
                     const toneClass = meta?.tone === "critical" ? "border-red-500/50 bg-red-500/10" :
@@ -1063,7 +1063,7 @@ export default function FloorplanRoleViewer({
                       <button
                         key={entry.room.id}
                         type="button"
-                        className={`text-left w-full rounded-xl border p-4 transition-colors ${entry.room.id === visibleSelectedId ? "ring-2 ring-primary" : ""} ${toneClass}`}
+                        className={`flex h-full w-full flex-col rounded-lg border p-4 text-left transition-colors ${entry.room.id === visibleSelectedId ? "ring-2 ring-primary" : ""} ${toneClass}`}
                         onClick={() => setSelectedId(entry.room.id)}
                       >
                         <div className="flex justify-between items-start gap-2">
@@ -1097,7 +1097,7 @@ export default function FloorplanRoleViewer({
                   roomMetaById={roomMetaById}
                 />
               )}
-              <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low/40 px-3 py-2 text-xs text-foreground-variant">
+              <div className="rounded-lg border border-outline-variant/20 bg-card px-3 py-2 text-xs text-foreground-variant">
                 {presenceError
                   ? "Presence feed degraded. Room geometry remains available while live overlays retry."
                   : "Select a room on the map or list to open live details in the side panel."}

@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { canAccessAppRole } from "@/lib/permissions";
 import { getRoleHome } from "@/lib/routes";
+import { filterNavItemsByCapability, getNavConfig } from "@/lib/sidebarConfig";
+import { hasCapability, type AppRole } from "@/lib/permissions";
 import RoleSidebar from "./RoleSidebar";
 import TopBar from "./TopBar";
 import AIChatPopup from "./ai/AIChatPopup";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import { MoreHorizontal } from "lucide-react";
 
 interface RoleShellProps {
   children: React.ReactNode;
@@ -17,6 +21,79 @@ interface RoleShellProps {
   appRoot: "/admin" | "/head-nurse" | "/supervisor" | "/observer" | "/patient";
   /** Optional additional classes for main content area */
   mainClassName?: string;
+}
+
+function MobileRoleTaskBar({ onMoreClick }: { onMoreClick: () => void }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  if (!user) return null;
+
+  const allItems = filterNavItemsByCapability(getNavConfig(user.role), (cap) =>
+    hasCapability(user.role as AppRole, cap),
+  ).flatMap((group) => group.items);
+
+  const mobilePriorityItems = allItems
+    .filter((item) => item.mobilePriority != null)
+    .sort((a, b) => (a.mobilePriority ?? 99) - (b.mobilePriority ?? 99));
+  const fallbackPrimaryItems = allItems.filter((item) => item.group !== "more");
+  const displayItems = (mobilePriorityItems.length > 0 ? mobilePriorityItems : fallbackPrimaryItems).slice(0, 5);
+  const displayHrefs = new Set(displayItems.map((item) => item.href));
+  const overflowItems = allItems.filter((item) => !displayHrefs.has(item.href));
+  const needsMoreButton = displayItems.length < 5 && overflowItems.length > 0;
+  const gridColsClass = `grid-cols-${displayItems.length + (needsMoreButton ? 1 : 0)}`;
+
+  return (
+    <nav
+      className="ws-role-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-card/98 px-2 pt-2 shadow-[0_-14px_35px_-28px_rgb(15_23_42/0.5)] lg:hidden"
+      aria-label="Mobile navigation"
+    >
+      <div className={cn("mx-auto grid max-w-md gap-1", gridColsClass === "grid-cols-5" ? "grid-cols-5" : gridColsClass === "grid-cols-4" ? "grid-cols-4" : gridColsClass === "grid-cols-3" ? "grid-cols-3" : "grid-cols-2")}>
+        {displayItems.map((item) => {
+          const Icon = item.icon;
+          const base = item.href.split("?")[0];
+          const active = (() => {
+            if (item.activeWhenQueryMatch) {
+              const { param, value } = item.activeWhenQueryMatch;
+              return (pathname === base || pathname.startsWith(`${base}/`)) && searchParams.get(param) === value;
+            }
+            if (item.inactiveWhenQueryMatch && pathname === base) {
+              const { param, value } = item.inactiveWhenQueryMatch;
+              if (searchParams.get(param) === value) return false;
+            }
+            if (item.activeForPaths?.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
+            return pathname === base || pathname.startsWith(`${base}/`);
+          })();
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium leading-tight transition-colors",
+                active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0" aria-hidden />
+              <span className="max-w-full truncate">{t(item.key)}</span>
+              {item.badge ? <span className="absolute right-3 top-2 h-2 w-2 rounded-full bg-critical" /> : null}
+            </Link>
+          );
+        })}
+        {needsMoreButton && (
+          <button
+            type="button"
+            className="relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium leading-tight text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            onClick={onMoreClick}
+            aria-label={t("nav.more")}
+          >
+            <MoreHorizontal className="h-5 w-5 shrink-0" aria-hidden />
+            <span className="max-w-full truncate">{t("nav.more")}</span>
+          </button>
+        )}
+      </div>
+    </nav>
+  );
 }
 
 /**
@@ -86,16 +163,19 @@ export default function RoleShell({ children, appRoot, mainClassName }: RoleShel
       <RoleSidebar mobileOpen={mobileNavOpen} onMobileOpenChange={setMobileNavOpen} />
 
       {/* Main Content Area */}
-      <div className="flex min-h-screen flex-1 flex-col lg:ml-[var(--sidebar-width)]">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:ml-[var(--sidebar-width)]">
         {/* Top Navigation Bar */}
         <TopBar onMenuClick={() => setMobileNavOpen(true)} />
 
         {/* Main Content */}
-        <main className={cn("min-w-0 flex-1 overflow-y-auto p-6 sm:p-8", mainClassName)}>{children}</main>
+        <main className={cn("ws-mobile-safe-bottom min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8", mainClassName)}>
+          {children}
+        </main>
       </div>
 
       {/* AI Chat Popup */}
       <AIChatPopup />
+      <MobileRoleTaskBar onMoreClick={() => setMobileNavOpen(true)} />
     </div>
   );
 }

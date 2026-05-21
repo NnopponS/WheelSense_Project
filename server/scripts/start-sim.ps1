@@ -105,9 +105,11 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host ""
     Write-Host "Login (default):" -ForegroundColor Cyan
     Write-Host "  Admin: admin / wheelsense2026" -ForegroundColor White
-    Write-Host "  Head Nurse: sim_headnurse / demo1234" -ForegroundColor White
-    Write-Host "  Supervisor: sim_supervisor / demo1234" -ForegroundColor White
-    Write-Host "  Observer: sim_observer1 / demo1234" -ForegroundColor White
+    Write-Host "  Demo Admin: ada.m / ada.m" -ForegroundColor White
+    Write-Host "  Head Nurse: helen.b / helen.b" -ForegroundColor White
+    Write-Host "  Supervisor: marcus.l / marcus.l" -ForegroundColor White
+    Write-Host "  Observer: nina.p / nina.p" -ForegroundColor White
+    Write-Host "  Observer: jason.k / jason.k" -ForegroundColor White
     Write-Host ""
     Write-Host "To reset simulator data, visit: /admin/settings > Server > Reset Simulator" -ForegroundColor Yellow
     if (-not $Detach) {

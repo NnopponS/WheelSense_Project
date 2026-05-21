@@ -158,7 +158,7 @@ function getStatusColor(status: string): string {
   }
 }
 
-function buildReportSchema(fields: ReportTemplateField[]): z.ZodObject<any> {
+function buildReportSchema(fields: ReportTemplateField[]): z.ZodObject<Record<string, z.ZodTypeAny>> {
   const schemaShape: Record<string, z.ZodTypeAny> = {};
 
   for (const field of fields) {
@@ -250,6 +250,7 @@ export function TaskDetailModal({
     mode: "onChange",
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect -- Reset transient modal state when a new task is opened. */
   useEffect(() => {
     if (isOpen) {
       setEditedFields({});
@@ -261,8 +262,9 @@ export function TaskDetailModal({
       reportForm.reset({});
     }
   }, [task.id, isOpen, reportForm]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
-  const handleFieldChange = (field: keyof TaskUpdate, value: any) => {
+  const handleFieldChange = (field: keyof TaskUpdate, value: TaskUpdate[keyof TaskUpdate]) => {
     setEditedFields((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
@@ -398,7 +400,7 @@ export function TaskDetailModal({
         return `/observer/personnel/${task.patient_id}`;
       case "head-nurse":
       default:
-        return `/head-nurse/patients/${task.patient_id}`;
+        return `/head-nurse/personnel/${task.patient_id}`;
     }
   })();
 
@@ -1094,27 +1096,27 @@ export function TaskDetailModal({
                                     placeholder={`Enter ${field.label.toLowerCase()}`}
                                   />
                                 ) : field.type === "boolean" ? (
-                                  <div className="flex items-center gap-2">
-                                    <Checkbox
-                                      id={`report-${field.key}`}
-                                      checked={
-                                        (reportForm.watch(field.key) as boolean) ||
-                                        false
-                                      }
-                                      onCheckedChange={(checked) =>
-                                        reportForm.setValue(
-                                          field.key,
-                                          Boolean(checked)
-                                        )
-                                      }
-                                    />
-                                    <Label
-                                      htmlFor={`report-${field.key}`}
-                                      className="cursor-pointer"
-                                    >
-                                      Yes
-                                    </Label>
-                                  </div>
+                                  <Controller
+                                    control={reportForm.control}
+                                    name={field.key}
+                                    render={({ field: controllerField }) => (
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox
+                                          id={`report-${field.key}`}
+                                          checked={Boolean(controllerField.value)}
+                                          onCheckedChange={(checked) =>
+                                            controllerField.onChange(Boolean(checked))
+                                          }
+                                        />
+                                        <Label
+                                          htmlFor={`report-${field.key}`}
+                                          className="cursor-pointer"
+                                        >
+                                          Yes
+                                        </Label>
+                                      </div>
+                                    )}
+                                  />
                                 ) : (
                                   <Input
                                     id={`report-${field.key}`}

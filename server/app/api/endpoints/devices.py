@@ -90,7 +90,7 @@ async def list_devices(
         query = query.where(Device.hardware_type == hardware_type)
     result = await db.execute(query)
     devices = result.scalars().all()
-    return [dm.device_summary_dict(d) for d in devices]
+    return [await dm.build_device_summary(db, ws.id, d) for d in devices]
 
 @router.get("/{device_id}/commands")
 async def list_device_commands(
@@ -126,6 +126,20 @@ async def list_device_commands(
         }
         for r in rows
     ]
+
+
+@router.get("/{device_id}/history")
+async def get_device_history(
+    device_id: str,
+    hours: int = 24,
+    limit: int = 240,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(get_current_active_user),
+):
+    await assert_patient_may_access_assigned_device_db(db, ws.id, current_user, device_id)
+    return await dm.build_device_history(db, ws.id, device_id, hours=hours, limit=limit)
+
 
 @router.get("/{device_id}")
 async def get_device_detail(
@@ -215,7 +229,7 @@ async def assign_caregiver_from_device_route(
             registry_device_id=device_id,
             details={"caregiver_id": None, "device_role": body.device_role},
         )
-        publish_mobile_device_config_resolved_background(device_id)
+        publish_mobile_device_config_background(device_id, None, None)
         return {"status": "ok", "caregiver_id": None}
     await device_activity_service.log_event(
         db,
