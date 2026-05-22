@@ -1,22 +1,85 @@
 %%================================================
 %% Appendix C
 %%================================================
-\chapter[แบบประเมินและข้อมูลประกอบการใช้งาน]{\texorpdfstring{ภาคผนวก ค\\แบบประเมินและข้อมูลประกอบการใช้งาน}{Appendix C: Questionnaire and Usage Notes}}
-\label{app:questionnaire}
+\chapter[Raw data และ Summary ของ KNN]{\texorpdfstring{ภาคผนวก ค\\Raw data และ Summary ของ KNN}{Appendix C: KNN Raw Data and Summary}}
+\label{app:knn_summary}
 
-ภาคผนวกนี้ใช้เก็บบริบทของแบบประเมินความพึงพอใจและการใช้งานระบบ โดยแบบประเมินเน้นประเด็นที่เกี่ยวกับความชัดเจนของหน้าจอ ความเข้าใจง่ายของข้อมูลแจ้งเตือน การเข้าถึงข้อมูลตามบทบาท และความเหมาะสมของการใช้ระบบในงานดูแลผู้พักอาศัย
+ภาคผนวกนี้รวมรายละเอียดของชุดทดลอง RSSI/KNN ที่ใช้ประกอบหัวข้อ indoor localization ในบทที่ 4 ชุดข้อมูลนี้เป็นหลักฐานที่ตรวจสอบได้ในปัจจุบัน จึงใช้สนับสนุนผลเฉพาะ 3 กรณีทดลองที่แสดงในตาราง ไม่ใช้แทนผล localization แบบ 12 โซนเดิมที่ยังไม่มี raw localization CSV รองรับครบถ้วน
 
 \begin{table}[H]
     \centering
-    \caption{หัวข้อที่ใช้ในแบบประเมิน HMI}
-    \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{|p{4.2cm}|p{9.0cm}|}
+    \caption{จำนวนข้อมูลที่ใช้ในชุดทดลอง RSSI/KNN}
+    \label{tab:app_knn_case_count}
+    \renewcommand{\arraystretch}{1.15}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.14\textwidth}|L{0.42\textwidth}|L{0.12\textwidth}|L{0.12\textwidth}|L{0.12\textwidth}|}
         \hline
-        \textbf{หัวข้อ} & \textbf{สิ่งที่ต้องการตรวจสอบ} \\ \hline
-        ความชัดเจนของข้อมูล & ผู้ใช้เห็นสถานะผู้พักอาศัย อุปกรณ์ และ alert ได้โดยไม่ต้องค้นหาหลายขั้นตอน \\ \hline
-        ความเข้าใจของบทบาท & admin, head nurse, supervisor, observer และ patient เห็นข้อมูลที่ตรงกับหน้าที่ของตนเอง \\ \hline
-        การตอบสนองต่อเหตุการณ์ & ผู้ดูแลสามารถเปิดดู alert และดูข้อมูลประกอบก่อนตัดสินใจได้ \\ \hline
-        ความเหมาะสมของ mobile gateway & หน้าจอ /WheelSensor ช่วยตรวจ BLE, Polar และการส่งข้อมูลขึ้น server ได้ชัดเจน \\ \hline
+        \textbf{Case} & \textbf{งานที่ทดสอบ} & \textbf{Train} & \textbf{Test} & \textbf{Outcome} \\ \hline
+        Case 1 & จำแนกทิศทาง facing in/facing out & 13 & 35 & 35 \\ \hline
+        Case 2 & จำแนก boundary transition & 13 & 35 & 35 \\ \hline
+        Case 3 & ทำนายลำดับ zone & 13 & 35 & 35 \\ \hline
     \end{tabular}
 \end{table}
 
+\begin{table}[H]
+    \centering
+    \caption{ผลเปรียบเทียบ KNN และ XGBoost ในชุดทดลองเดียวกัน}
+    \label{tab:app_knn_model_compare}
+    \renewcommand{\arraystretch}{1.15}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.13\textwidth}|L{0.16\textwidth}|L{0.15\textwidth}|L{0.15\textwidth}|L{0.15\textwidth}|L{0.13\textwidth}|}
+        \hline
+        \textbf{Case} & \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\ \hline
+        Case 1 & KNN & 0.8857 & 0.8421 & 0.9412 & 0.8889 \\ \hline
+        Case 1 & XGBoost & 0.9714 & 1.0000 & 0.9412 & 0.9697 \\ \hline
+        Case 2 & KNN & 0.6857 & 0.6875 & 0.6471 & 0.6667 \\ \hline
+        Case 2 & XGBoost & 0.5714 & 0.5455 & 0.7059 & 0.6154 \\ \hline
+        Case 3 & KNN & 0.8857 & 0.8857 & 0.8857 & 0.8857 \\ \hline
+        Case 3 & XGBoost & 0.4857 & 0.4857 & 0.4857 & 0.4857 \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{Confusion matrix ของ KNN ใน Case 1}
+    \label{tab:app_knn_case1_confusion}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|L{3.2cm}|c|c|}
+        \hline
+        \textbf{Actual / Predicted} & \textbf{0} & \textbf{1} \\ \hline
+        0 & 15 & 3 \\ \hline
+        1 & 1 & 16 \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{Confusion matrix ของ KNN ใน Case 2}
+    \label{tab:app_knn_case2_confusion}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|L{3.2cm}|c|c|}
+        \hline
+        \textbf{Actual / Predicted} & \textbf{0} & \textbf{1} \\ \hline
+        0 & 13 & 5 \\ \hline
+        1 & 6 & 11 \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{Confusion matrix รายตำแหน่งของ KNN ใน Case 3}
+    \label{tab:app_knn_case3_confusion}
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|L{3.2cm}|c|c|c|c|}
+        \hline
+        \textbf{Actual / Predicted} & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} \\ \hline
+        1 & 28 & 1 & 0 & 1 \\ \hline
+        2 & 0 & 35 & 1 & 0 \\ \hline
+        3 & 0 & 0 & 39 & 1 \\ \hline
+        4 & 0 & 0 & 0 & 34 \\ \hline
+    \end{tabular}
+\end{table}
+
+ใน Case 3 การนับแบบ exact sequence ได้ผลถูกต้อง 31 จาก 35 episode หรือ 88.57\% แต่ถ้าแยกรายตำแหน่งจากทั้งหมด 140 ตำแหน่ง จะได้ผลถูกต้อง 136 ตำแหน่ง หรือ 97.14\% ความต่างนี้เกิดจากเกณฑ์ exact sequence ที่นับว่าผิดทั้ง episode แม้ลำดับผิดเพียงตำแหน่งเดียว จึงควรอ่านผล Case 3 ทั้งสองแบบร่วมกัน

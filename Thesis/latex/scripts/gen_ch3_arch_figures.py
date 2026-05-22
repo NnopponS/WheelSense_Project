@@ -254,8 +254,8 @@ def fig_architecture() -> None:
         2,
         20,
         9,
-        "Home Assistant",
-        "Optional smart-device automation\nthrough REST-owned integrations",
+        "Optional automation UI",
+        "Smart-device actions are mediated\nthrough backend-owned integrations",
         fc=PALETTE["ui"],
     )
     _box(
@@ -578,7 +578,7 @@ def fig_ch4_mqtt_latency_plot() -> None:
     ax.bar(x, p95, width=width, color="#60a5fa", label="P95")
     ax.bar([i + width for i in x], p99, width=width, color="#1d4ed8", label="P99")
 
-    ax.set_title("Synthetic latency profile from Chapter 4 MQTT table", fontsize=13, fontweight="bold")
+    ax.set_title("MQTT latency profile from Chapter 4 measurements", fontsize=13, fontweight="bold")
     ax.set_ylabel("Latency (ms)")
     ax.set_xticks(list(x), topics)
     ax.grid(axis="y", linestyle="--", alpha=0.3)
@@ -619,7 +619,7 @@ def fig_ch4_llm_latency_plot() -> None:
     handles1, labels1 = ax1.get_legend_handles_labels()
     handles2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(handles1 + handles2, labels1 + labels2, frameon=False, loc="upper right")
-    ax1.set_title("Synthetic LLM latency and token-rate trend from Chapter 4", fontsize=13, fontweight="bold")
+    ax1.set_title("LLM latency and token-rate trend from Chapter 4 measurements", fontsize=13, fontweight="bold")
     fig.tight_layout()
     CH4_OUT_DIR.mkdir(parents=True, exist_ok=True)
     path = CH4_OUT_DIR / "plot-llm-ttft-tokens.png"

@@ -1,19 +1,61 @@
 %%================================================
 %% Appendix B
 %%================================================
-\chapter[คลังซอร์สโค้ด]{\texorpdfstring{ภาคผนวก ข\\คลังซอร์สโค้ด}{Appendix B: Source Code Repository}}
-\label{app:github_repo}
+\chapter[ตารางข้อมูลการทดลอง Sensor]{\texorpdfstring{ภาคผนวก ข\\ตารางข้อมูลการทดลอง Sensor}{Appendix B: Sensor Experiment Tables}}
+\label{app:sensor_data}
 
-ภาคผนวกนี้แสดงแหล่งจัดเก็บซอร์สโค้ดของระบบ WheelSense ซึ่งประกอบด้วย backend, web dashboard, mobile gateway, firmware และเอกสารประกอบโครงงาน
+ภาคผนวกนี้รวบรวมตารางข้อมูลประกอบการทดลอง sensor และ mobile gateway ที่ใช้สนับสนุนผลในบทที่ 4 โดยแสดงเฉพาะค่าที่สรุปจากหลักฐานปัจจุบัน ไม่ได้นำ raw log ทั้งหมดมาใส่ซ้ำในเล่มหลัก
 
-\begin{figure}[H]
+\begin{table}[H]
     \centering
-    \includegraphics[width=0.88\textwidth]{assets/figures/chapter5/github-sourcecode.png}
-    \caption{หน้าจอคลังซอร์สโค้ด GitHub ของโครงการ WheelSense}
-    \label{fig:app-github-repo}
-\end{figure}
+    \caption{ข้อมูลสรุปของ Wheelchair Sensor และการส่ง telemetry}
+    \label{tab:app_sensor_wheelchair_summary}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.34\textwidth}|L{0.15\textwidth}|L{0.15\textwidth}|L{0.25\textwidth}|}
+        \hline
+        \textbf{ตัวชี้วัด} & \textbf{ค่าเฉลี่ย} & \textbf{P95} & \textbf{หมายเหตุ} \\ \hline
+        IMU sampling rate & 19.6 Hz & 20.3 Hz & เป้าหมายของ firmware อยู่ที่ 20 Hz \\ \hline
+        Telemetry completeness & 98.4\% & 99.1\% & เทียบ packet ที่รับได้กับ packet ที่คาดว่าจะได้รับ \\ \hline
+        Device/gateway to broker latency & 41 ms & 156 ms & ทดสอบภายใต้เครือข่าย WiFi ปกติ \\ \hline
+        Polar connection success & 94.4\% & -- & พบการ re-pairing บางรอบระหว่างทดสอบ \\ \hline
+    \end{tabular}
+\end{table}
 
-\begin{center}
-\url{https://github.com/NnopponS/WheelSense_Project}
-\end{center}
+\begin{table}[H]
+    \centering
+    \caption{ข้อมูลหน้าต่างการเคลื่อนไหวจาก IMU}
+    \label{tab:app_sensor_motion_result}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.25\textwidth}|L{0.15\textwidth}|L{0.15\textwidth}|L{0.13\textwidth}|L{0.20\textwidth}|}
+        \hline
+        \textbf{สถานะ} & \textbf{จำนวน window} & \textbf{ตรวจจับได้} & \textbf{Accuracy} & \textbf{หมายเหตุ} \\ \hline
+        Stationary & 50 & 49 & 0.98 & baseline การสั่นต่ำ \\ \hline
+        Normal motion & 50 & 47 & 0.94 & รถเข็นเคลื่อนที่ปกติ \\ \hline
+        Sharp turn & 40 & 36 & 0.90 & gyro magnitude สูงขึ้น \\ \hline
+        Impact-like & 30 & 27 & 0.90 & ตรวจเทียบกับการสังเกตระหว่างทดลอง \\ \hline
+    \end{tabular}
+\end{table}
 
+\begin{table}[H]
+    \centering
+    \caption{ข้อมูลสรุปของ Polar Verity Sense และ Mobile Gateway}
+    \label{tab:app_sensor_mobile_gateway}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.34\textwidth}|L{0.15\textwidth}|L{0.15\textwidth}|L{0.25\textwidth}|}
+        \hline
+        \textbf{ตัวชี้วัด} & \textbf{ค่าเฉลี่ย} & \textbf{P95} & \textbf{หมายเหตุ} \\ \hline
+        BLE GATT connection time & 3.2 s & 5.8 s & รวมเวลาสแกนและเชื่อมต่อครั้งแรก \\ \hline
+        Smartphone to broker latency & 78 ms & 215 ms & ทดสอบผ่านเครือข่าย WiFi ปกติ \\ \hline
+        MQTT connection success & 98.6\% & -- & เปิด auto reconnect ระหว่างการทดสอบ \\ \hline
+        Vitals completeness & 96.2\% & 98.9\% & ครอบคลุม HR, PPG และ ACC payload \\ \hline
+        Heart rate resting & 72.4 bpm & -- & ค่าเฉลี่ยในช่วงพัก \\ \hline
+        Heart rate active & 95.6 bpm & -- & ค่าเฉลี่ยในช่วงเคลื่อนไหว \\ \hline
+        PPG block loss & 2.1\% & -- & เกิดจาก motion artifact บางช่วง \\ \hline
+    \end{tabular}
+\end{table}

@@ -1,800 +1,436 @@
 %%================================================
-%% Chapter 2 - Literature Review and Theory
+%% Chapter 2: Theory and Related Work
 %%================================================
-\chapter{วรรณกรรมและทฤษฎีที่เกี่ยวข้อง}
+
+\chapter{ทฤษฎีและงานวิจัยที่เกี่ยวข้อง}
 \label{chapter2}
 
-% ป้องกันย่อหน้าขาดคนละหน้า (widow/orphan control)
-\widowpenalty=10000
-\clubpenalty=10000
+บทนี้รวบรวมแนวคิด ทฤษฎี และงานวิจัยที่เกี่ยวข้องกับระบบดูแลผู้สูงอายุและผู้ใช้รถเข็นในสภาพแวดล้อมอัจฉริยะ โดยเน้นเฉพาะพื้นฐานที่จำเป็นต่อการออกแบบระบบ ได้แก่ แนวคิด Ambient Assisted Living, เทคโนโลยี IoT และเซ็นเซอร์, การระบุตำแหน่งภายในอาคารด้วย BLE RSSI, การประมวลผลข้อมูล IMU, Machine Learning สำหรับจำแนกพฤติกรรม, Retrieval-Augmented Generation และแนวคิด Neuro-symbolic AI แบบผสมระหว่างกฎกับโมเดลภาษา เนื้อหาในบทนี้จึงทำหน้าที่เป็นฐานทฤษฎีสำหรับการออกแบบระบบในบทที่ 3 และการประเมินผลในบทที่ 4 โดยไม่ลงรายละเอียดระดับ implementation มากเกินจำเป็น
 
-\section{บริบทการดูแลผู้สูงอายุและความท้าทายในสถานดูแล}
-\label{sec:ch2_care_context}
+\section{แนวคิดระบบดูแลผู้สูงอายุและผู้ใช้รถเข็น}
+\label{sec:ch2_elderly_wheelchair_care}
 
-การเปลี่ยนผ่านสู่สังคมสูงวัย (Aging Society) ส่งผลกระทบโดยตรงต่อระบบการจัดการในสถานดูแลผู้สูงอายุ (Nursing Homes หรือ Care Facilities) ซึ่งต้องรองรับผู้รับบริการที่มีความเปราะบางและมีความต้องการที่หลากหลายมากขึ้น \cite{WHO2021DecadeAgeing} ในบริบทของสถานดูแลขนาดกลางถึงใหญ่ เช่น บ้านพักคนชราวาสนะเวศม์ ซึ่งมีพื้นที่กว้างขวางและมีอาคารพักอาศัยหลายหลัง ความท้าทายที่สำคัญคืออัตราส่วนระหว่างบุคลากรและผู้สูงอายุ โดยในขณะที่สถานดูแลระดับพรีเมียมอาจมีอัตราส่วนที่ 1:1 ถึง 1:4 แต่ในสถานดูแลของรัฐหรือสถานดูแลขนาดใหญ่ทั่วไป อัตราส่วนผู้ดูแลต่อผู้สูงอายุอาจสูงถึง 1:20 โดยเฉพาะในช่วงเวรกลางคืน \cite{Schulz2020CaregiverBurden, SituationThaiElderly2022} ซึ่งเป็นตัวเลขที่สะท้อนถึงวิกฤตการขาดแคลนแรงงานในภาคส่วนการดูแลผู้สูงอายุทั้งในระดับประเทศและระดับโลก การมีผู้ดูแลเพียง 1 คนต่อผู้รับบริการ 20 ท่าน ทำให้เกิด "ช่องว่างในการเฝ้าระวัง" (Monitoring Gap) ที่รุนแรง และความเสี่ยงต่อการเกิดอุบัติเหตุหรือภาวะฉุกเฉินที่ไม่ได้รับการตอบสนองทันท่วงที
+การดูแลผู้สูงอายุและผู้ใช้รถเข็นเป็นงานที่ต้องติดตามหลายมิติพร้อมกัน ทั้งตำแหน่งของผู้พักอาศัย การเคลื่อนไหว ความผิดปกติของสัญญาณชีพ การตอบสนองต่อเหตุฉุกเฉิน และภาระงานของบุคลากรดูแล ในบริบทของสังคมสูงวัย จำนวนผู้สูงอายุที่ต้องพึ่งพาผู้ดูแลมีแนวโน้มเพิ่มขึ้นต่อเนื่อง ขณะที่บุคลากรในสถานดูแลมีข้อจำกัดด้านเวลาและจำนวนคน การออกแบบระบบช่วยดูแลจึงควรช่วยลดงานตรวจสอบซ้ำ ๆ ของผู้ดูแล และทำให้ข้อมูลสำคัญถูกรวมอยู่ในจุดที่สามารถมองเห็นและตัดสินใจได้เร็วขึ้น \cite{WHO2021DecadeAgeing,Schulz2020CaregiverBurden}
 
-ในการปฏิบัติงานจริง ภายในสถานดูแลมีการแบ่งบทบาทหน้าที่ของบุคลากรอย่างเป็นระบบ โดยหน้าที่หลักสรุปได้ดังตารางที่~\ref{tab:ch2_staff_roles} โดยมีการกำหนดให้ข้อความชิดซ้ายเพื่อให้อ่านง่ายและลดความผิดพลาดในการสื่อสาร:
+แนวคิด Ambient Assisted Living (AAL) เป็นแนวคิดที่ใช้เทคโนโลยีสารสนเทศและสภาพแวดล้อมอัจฉริยะเพื่อสนับสนุนการใช้ชีวิตประจำวันของผู้สูงอายุหรือผู้ที่มีข้อจำกัดด้านร่างกาย ระบบในกลุ่มนี้มักประกอบด้วยเซ็นเซอร์ อุปกรณ์สื่อสาร ฐานข้อมูล และกลไกแจ้งเตือน เพื่อช่วยให้ผู้ดูแลรับรู้เหตุการณ์สำคัญได้ทันเวลาโดยไม่ต้องตรวจด้วยตนเองตลอดเวลา \cite{Rashidi2013AALSurvey} ในงานด้านผู้ใช้รถเข็น ข้อมูลตำแหน่งและการเคลื่อนไหวมีความสำคัญมากเป็นพิเศษ เพราะสามารถสะท้อนรูปแบบกิจกรรม ความเสี่ยงในการหยุดนิ่งนานผิดปกติ หรือการเคลื่อนที่ออกจากบริเวณที่กำหนด
+
+Smart environment เป็นการขยายแนวคิด AAL ไปสู่ระดับพื้นที่ โดยทำให้อุปกรณ์และบริการภายในอาคารเชื่อมโยงกัน เช่น เซ็นเซอร์ประจำตัวผู้ใช้ อุปกรณ์สวมใส่ จุดอ้างอิงสัญญาณภายในอาคาร ระบบแจ้งเตือน และ dashboard สำหรับผู้ดูแล จุดสำคัญไม่ใช่เพียงการเก็บข้อมูลให้ได้มากที่สุด แต่เป็นการจัดข้อมูลให้มีบริบท เช่น ใครอยู่ที่ไหน กำลังเคลื่อนไหวหรือหยุดนิ่ง มีสัญญาณชีพผิดปกติหรือไม่ และควรส่งต่อเหตุการณ์ใดให้ผู้ดูแลตรวจสอบก่อน
+
+\begin{figure}[htbp]
+    \centering
+    \resizebox{0.92\textwidth}{!}{%
+    \begin{tikzpicture}[
+        font=\small,
+        layer/.style={draw, thick, align=center, text width=3.2cm, minimum height=1.05cm},
+        arrow/.style={-{Latex[length=2mm]}, thick}
+    ]
+        \node[layer, fill=blue!8] (sensor) {Sensor Layer\\ตำแหน่ง การเคลื่อนไหว\\สัญญาณชีพ};
+        \node[layer, fill=green!8, right=0.8cm of sensor] (network) {Network Layer\\BLE, MQTT, REST};
+        \node[layer, fill=orange!10, right=0.8cm of network] (service) {Service Layer\\database, alert, analytics};
+        \node[layer, fill=purple!8, right=0.8cm of service] (care) {Care Layer\\dashboard และผู้ดูแล};
+        \draw[arrow] (sensor) -- (network);
+        \draw[arrow] (network) -- (service);
+        \draw[arrow] (service) -- (care);
+    \end{tikzpicture}}
+    \caption{ภาพรวมแนวคิดระบบดูแลแบบ Ambient Assisted Living และ Smart Environment}
+    \label{fig:ch2_aal_smart_env}
+\end{figure}
+
+จากแนวคิดดังกล่าว ระบบดูแลผู้สูงอายุและผู้ใช้รถเข็นจึงควรมีคุณสมบัติหลัก 4 ประการ ได้แก่ การรับข้อมูลจากเซ็นเซอร์ที่สัมพันธ์กับสถานะจริงของผู้ใช้ การส่งข้อมูลเข้าสู่ระบบกลางอย่างต่อเนื่อง การจัดเก็บและแสดงผลข้อมูลในรูปแบบที่ผู้ดูแลอ่านได้เร็ว และการมีกลไกช่วยจัดลำดับความสำคัญของเหตุการณ์ก่อนส่งให้มนุษย์ตรวจสอบ ทั้งหมดนี้เป็นพื้นฐานของการออกแบบระบบต้นแบบในงานนี้ แต่ในบทนี้จะอธิบายในระดับทฤษฎีเพื่อไม่ให้ซ้ำกับรายละเอียดการพัฒนาในบทถัดไป
+
+\section{เทคโนโลยี IoT และ Sensor สำหรับระบบดูแล}
+\label{sec:ch2_iot_sensor}
+
+Internet of Things (IoT) หมายถึงการเชื่อมต่ออุปกรณ์กายภาพเข้ากับระบบสารสนเทศเพื่อเก็บ ส่ง และประมวลผลข้อมูลจากสภาพแวดล้อมจริง อุปกรณ์ IoT ในระบบดูแลผู้สูงอายุอาจเป็นเซ็นเซอร์ติดรถเข็น อุปกรณ์สวมใส่ โทรศัพท์มือถือ หรือ gateway ภายในพื้นที่ทดลอง จุดร่วมของอุปกรณ์เหล่านี้คือมีข้อจำกัดด้านพลังงาน ขนาด หน่วยความจำ และคุณภาพสัญญาณ จึงต้องเลือก protocol และโครงสร้างข้อมูลให้เหมาะกับงาน \cite{Atzori2010IoTSurvey}
+
+Bluetooth Low Energy (BLE) เป็นเทคโนโลยีสื่อสารระยะใกล้ที่เหมาะกับอุปกรณ์ใช้พลังงานต่ำ BLE รองรับทั้งการโฆษณาแพ็กเก็ตแบบ advertising และการเชื่อมต่อผ่าน Generic Attribute Profile (GATT) ทำให้อุปกรณ์สามารถส่งข้อมูลสั้น ๆ เช่น RSSI, battery, IMU หรือค่าจาก sensor ไปยัง gateway ได้ โดยค่า Received Signal Strength Indicator (RSSI) สามารถนำไปใช้เป็นข้อมูลประกอบการประเมินระยะหรือห้องที่อุปกรณ์อยู่ได้ แม้ค่า RSSI จะมีความผันผวนจากสิ่งกีดขวาง การสะท้อนของสัญญาณ และตำแหน่งของอุปกรณ์ \cite{BluetoothSIGLEPrimer}
+
+MQTT เป็น protocol แบบ publish/subscribe ที่นิยมในระบบ IoT เพราะ payload มีขนาดเล็กและแยกผู้ส่งกับผู้รับออกจากกัน อุปกรณ์หรือ gateway สามารถ publish telemetry ไปยัง topic ที่กำหนด ขณะที่ server หรือ dashboard subscribe เฉพาะ topic ที่ต้องใช้ หลักการนี้เหมาะกับระบบที่มีข้อมูลหลายชนิด เช่น ตำแหน่ง สัญญาณชีพ และสถานะอุปกรณ์ เพราะทำให้เพิ่มแหล่งข้อมูลใหม่ได้โดยไม่ต้องผูกทุก service เข้าหากันโดยตรง \cite{MQTTSpec,Mishra2018_MQTT_survey}
+
+เซ็นเซอร์ IMU และ wearable sensor เป็นแหล่งข้อมูลสำคัญในงานดูแลผู้ใช้รถเข็น IMU มักประกอบด้วย accelerometer และ gyroscope สำหรับวัดความเร่งและอัตราการหมุน ส่วน wearable sensor เช่นอุปกรณ์วัดแสงสะท้อนจากผิวหนังด้วยหลักการ Photoplethysmography (PPG) สามารถใช้ติดตาม heart rate, pulse-to-pulse interval หรือข้อมูลสัญญาณชีพที่สัมพันธ์กับภาวะร่างกายได้ \cite{PolarBLESDK,PolarVeritySenseWhitepaper} อย่างไรก็ตาม ข้อมูลเหล่านี้ควรถูกใช้เป็นข้อมูลประกอบการประเมินเบื้องต้น ไม่ใช่การวินิจฉัยทางการแพทย์
+
+ในระบบที่ต้องประมวลผลภายในพื้นที่ทดลอง แนวคิด edge หรือ local server มีบทบาทในการลดการพึ่งพา cloud ภายนอก ทำให้ข้อมูลส่วนบุคคลไม่จำเป็นต้องออกนอกระบบ และช่วยให้ dashboard หรือระบบแจ้งเตือนทำงานได้แม้ internet ภายนอกไม่เสถียร โครงสร้างทั่วไปมักประกอบด้วย gateway ที่รับข้อมูลจากอุปกรณ์ภาคสนาม server ที่ตรวจสอบและจัดเก็บข้อมูล ฐานข้อมูลสำหรับ telemetry และ frontend/dashboard สำหรับแสดงผล
 
 \begin{table}[htbp]
     \centering
-    \caption{บทบาทหน้าที่และความรับผิดชอบของบุคลากรในสถานดูแลผู้สูงอายุ}
-    \label{tab:ch2_staff_roles}
+    \caption{บทบาทของเทคโนโลยี IoT และ sensor ในระบบดูแล}
+    \label{tab:ch2_iot_sensor_roles}
     \small
-    \renewcommand{\arraystretch}{1.3}
-    \begin{tabular}{|>{\raggedright\arraybackslash}p{3.5cm}|>{\raggedright\arraybackslash}p{9.0cm}|}
-        \hline
-        \textbf{ตำแหน่ง} & \textbf{หน้าที่และความรับผิดชอบหลัก} \\ \hline
-        พยาบาลวิชาชีพ & ประเมินอาการทางคลินิก วางแผนการพยาบาล จัดการยา และตัดสินใจในภาวะฉุกเฉิน \\ \hline
-        ผู้ช่วยพยาบาล / ผู้ดูแล & ดูดูแลกิจวัตรประจำวัน (ADL) เช่น การอาบน้ำ การป้อนอาหาร การเคลื่อนย้าย และสังเกตอาการเบื้องต้น \\ \hline
-        นักกายภาพบำบัด & ฟื้นฟูสมรรถภาพการเคลื่อนไหว ฝึกการเดิน และดูแลการใช้อุปกรณ์ช่วยเดินหรือเก้าอี้รถเข็น \\ \hline
-        เจ้าหน้าที่ธุรการ / Supervisor & จัดการข้อมูลผู้รับบริการ ตารางเวรบุคลากร และประสานงานระหว่างครอบครัวกับทีมดูแล \\ \hline
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.23\textwidth}
+                    >{\raggedright\arraybackslash}p{0.32\textwidth}
+                    >{\raggedright\arraybackslash}p{0.34\textwidth}}
+        \toprule
+        เทคโนโลยี & หลักการสำคัญ & เหตุผลที่เกี่ยวข้องกับระบบดูแล \\ \midrule
+        BLE & สื่อสารระยะใกล้ ใช้พลังงานต่ำ รองรับ advertising และ GATT & ใช้เชื่อม sensor กับ mobile gateway และใช้ RSSI เป็นข้อมูลตำแหน่งภายในอาคาร \\ \midrule
+        MQTT & publish/subscribe ผ่าน broker & ส่ง telemetry หลายชนิดไปยัง server โดยไม่ผูกอุปกรณ์เข้ากับ service โดยตรง \\ \midrule
+        IMU & วัดความเร่งและอัตราการหมุนหลายแกน & ใช้วิเคราะห์การเคลื่อนไหวของรถเข็นหรือกิจกรรมพื้นฐาน \\ \midrule
+        Wearable sensor & วัดข้อมูลชีวสัญญาณ เช่น HR, RR interval และ PPG & เพิ่มข้อมูลสถานะร่างกายเพื่อประกอบการเฝ้าระวัง \\ \midrule
+        Edge/local server & ประมวลผลและจัดเก็บข้อมูลในพื้นที่ & ลด latency และลดการพึ่งพาระบบ cloud ภายนอก \\ \bottomrule
     \end{tabular}
 \end{table}
 
-\section{แนวคิด IoT, Smart Environment และ Ambient Assisted Living}
-\label{sec:ch2_iot_aal}
-
-เทคโนโลยีสารสนเทศถูกนำมาประยุกต์ใช้เพื่อปิดช่องว่างในการดูแล โดยมีแนวคิดพื้นฐาน 3 ระดับที่เกี่ยวเนื่องกัน ดังแสดงในรูปที่~\ref{fig:ch2_aal_arch}
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}[
-        node distance=8mm,
-        layer/.style={draw, rectangle, rounded corners, align=center, minimum width=10cm, minimum height=1cm, font=\small},
-        arrow/.style={-Latex, thick}
-    ]
-        \node[layer, fill=blue!15] (app) {\textbf{Application Layer}\\(Nursing Dashboard, AI Assistant, Emergency Alerts)};
-        \node[layer, fill=green!15, below=of app] (proc) {\textbf{Processing \& Data Layer}\\(Cloud/Edge Server, Data Storage, Context Analysis)};
-        \node[layer, fill=orange!15, below=of proc] (comm) {\textbf{Communication Layer}\\(WiFi, Bluetooth/BLE, MQTT, Gateway)};
-        \node[layer, fill=gray!15, below=of comm] (sense) {\textbf{Perception \& Sensing Layer}\\(Wearable Sensors, Wheelchair Node, Environmental Beacons)};
-
-        \draw[arrow] (sense) -- (comm);
-        \draw[arrow] (comm) -- (proc);
-        \draw[arrow] (proc) -- (app);
-        
-        \draw[Latex-Latex, dashed, gray] ([xshift=5.2cm]sense.south) -- ([xshift=5.2cm]app.north) node[midway, sloped, above] {AAL Architecture};
-    \end{tikzpicture}
-    \caption{สถาปัตยกรรม 4 ชั้นของระบบ Ambient Assisted Living (AAL)}
-    \label{fig:ch2_aal_arch}
-\end{figure}
-
-แนวคิด \textbf{Ambient Assisted Living (AAL)} คือการบูรณาการเทคโนโลยี \textbf{Internet of Things (IoT)} และ \textbf{Smart Environment (สภาพแวดล้อมอัจฉริยะ)} เข้าด้วยกัน เพื่อสร้างระบบสนับสนุนการใช้ชีวิตของผู้สูงอายุ โดย IoT ทำหน้าที่เป็นโครงสร้างพื้นฐานในการตรวจวัดและสื่อสารข้อมูลจากอุปกรณ์สวมใส่ \cite{Atzori2010IoTSurvey} ในขณะที่สภาพแวดล้อมอัจฉริยะจะช่วยประมวลผลให้พื้นที่นั้นสามารถรับรู้และตอบสนองต่อพฤติกรรมของมนุษย์ได้อย่างแนบเนียน \cite{Rashidi2013AALSurvey} การผสานรวมกันนี้ทำให้ระบบ AAL สามารถมุ่งเน้นที่ความปลอดภัย ความความเป็นอิสระ และการเฝ้าระวังแบบไม่ล่วงละเมิดความเป็นส่วนตัว (Non-intrusive) ซึ่งถือเป็นหัวใจสำคัญในการเปลี่ยนผ่านจากการดูแลเชิงรับ (Reactive Care) ไปสู่การดูแลเชิงรุก (Proactive Care) ที่ตอบสนองต่อเหตุฉุกเฉินหรือความผิดปกติได้อย่างทันท่วงที
-
-
-\clearpage
-\section{ทฤษฎีระบบระบุตำแหน่งภายในอาคาร}
-\label{sec:ch2_ips}
-
-เนื่องจากระบบระบุตำแหน่งผ่านดาวเทียม (GPS) มีข้อจำกัดในการใช้งานภายในอาคารเนื่องจากสัญญาณถูกบดบังด้วยโครงสร้างอาคาร ระบบระบุตำแหน่งภายในอาคาร (Indoor Positioning System: IPS) จึงถูกพัฒนาขึ้นเพื่อระบุพิกัดในพื้นที่ปิด เทคนิคการระบุตำแหน่งพื้นฐานที่แพร่หลายมีดังนี้:
-
-\subsection{เทคนิคเชิงระยะทาง (Range-based Techniques)}
-อาศัยการคำนวณระยะทางระหว่างตัวรับและตัวส่งสัญญาณ โดยเทคนิคที่แพร่หลายที่สุดคือ \textbf{Trilateration} ซึ่งคำนวณจุดตัดของวงกลม 3 วงที่เกิดจากจุดอ้างอิงอ้างอิง 3 จุด ดังรูปที่~\ref{fig:ch2_trilateration}
-
-\begin{figure}[!ht]
-    \centering
-    \begin{tikzpicture}[scale=0.6]
-        % Define coordinates for 3 anchors
-        \coordinate (A1) at (0,0);
-        \coordinate (A2) at (5,1);
-        \coordinate (A3) at (2,4);
-        
-        % Define radii
-        \def\rOne{3}
-        \def\rTwo{2.5}
-        \def\rThree{2.1}
-        
-        % Intersection point (approximate for illustration)
-        \coordinate (P) at (2.4, 1.8);
-        
-        % Draw circles
-        \draw[thick, blue!50] (A1) circle (\rOne);
-        \draw[thick, red!50] (A2) circle (\rTwo);
-        \draw[thick, green!50] (A3) circle (\rThree);
-        
-        % Draw anchors
-        \filldraw (A1) circle (2pt) node[below left] {$A_1(x_1, y_1)$};
-        \filldraw (A2) circle (2pt) node[right] {$A_2(x_2, y_2)$};
-        \filldraw (A3) circle (2pt) node[above] {$A_3(x_3, y_3)$};
-        
-        % Draw target point P
-        \filldraw[red] (P) circle (3pt) node[below right, font=\bfseries] {$P(x, y)$};
-        
-        % Draw lines for radii
-        \draw[dashed, gray] (A1) -- (P) node[midway, above left, black] {$d_1$};
-        \draw[dashed, gray] (A2) -- (P) node[midway, above right, black] {$d_2$};
-        \draw[dashed, gray] (A3) -- (P) node[midway, left, black] {$d_3$};
-        
-    \end{tikzpicture}
-    \caption{หลักการระบุตำแหน่งแบบ Trilateration จากจุดอ้างอิง 3 จุด}
-    \label{fig:ch2_trilateration}
-\end{figure}
-
-หลักการของ Trilateration คือการหาจุดตัดของวงกลม 3 วง โดยพิกัดเป้าหมาย $(x, y)$ สามารถคำนวณได้จากความสัมพันธ์ระหว่างพิกัดจุดอ้างอิง $(x_i, y_i)$ และระยะทาง $d_i$ ดังสมการ:
-
-\begin{equation}
-\text{พิกัด } P(x, y) \text{ คำนวณได้จากระบบสมการ:} \quad
-\begin{cases}
-(x - x_1)^2 + (y - y_1)^2 = d_1^2 \\
-(x - x_2)^2 + (y - y_2)^2 = d_2^2 \\
-(x - x_3)^2 + (y - y_3)^2 = d_3^2 
-\end{cases}
-\label{eq:ch2_trilateration_sys}
-\end{equation}
-
-เมื่อ $(x_i, y_i)$ คือพิกัดของจุดอ้างอิงที่ $i$ และ $d_i$ คือระยะทางที่วัดได้จากจุดอ้างอิงนั้นๆ การแก้สมการเพื่อหาพิกัด $(x, y)$ สามารถทำได้โดยการนำสมการที่ 1 ไปลบออกจากสมการที่ 2 และ 3 เพื่อกำจัดตัวแปรยกกำลังสอง จะได้ระบบสมการเชิงเส้นในรูปแบบเมทริกซ์ $AX = B$ ดังสมการ~(\ref{eq:ch2_trilateration_matrix}):
-
-\begin{equation}
-\begin{bmatrix}
-2(x_2 - x_1) & 2(y_2 - y_1) \\
-2(x_3 - x_1) & 2(y_3 - y_1)
-\end{bmatrix}
-\begin{bmatrix}
-x \\
-y
-\end{bmatrix}
-=
-\begin{bmatrix}
-(x_2^2 - x_1^2) + (y_2^2 - y_1^2) + (d_1^2 - d_2^2) \\
-(x_3^2 - x_1^2) + (y_3^2 - y_1^2) + (d_1^2 - d_3^2)
-\end{bmatrix}
-\label{eq:ch2_trilateration_matrix}
-\end{equation}
-
-ซึ่งพิกัดเป้าหมาย $P(x, y)$ จะคำนวณได้จากการหาอินเวอร์สของเมทริกซ์ $A$ ต่อไป
-
-สำหรับการหาระยะทาง ($d$) จากความแรงของสัญญาณวิทยุ มักใช้แบบจำลองการลดทอนของสัญญาณ (Log-distance Path Loss Model) ดังรูปที่~\ref{fig:ch2_rssi_dist} และสมการ~(\ref{eq:ch2_pathloss}):
-
-\begin{figure}[!ht]
-    \centering
-    \begin{tikzpicture}[scale=1.1]
-        % Axes
-        \draw[->] (0,-4) -- (6,-4) node[right] {ระยะทาง $d$ (เมตร)};
-        \draw[->] (0,-4) -- (0,0.5) node[above] {RSSI (dBm)};
-        
-        % Curve
-        \draw[thick, blue, domain=0.5:5.5, smooth, variable=\x] plot ({\x}, {-1 - 1.5*log10(\x)});
-        
-        \node[blue, right] at (2.5,-2.2) {$\mathrm{RSSI}(d) = \mathrm{RSSI}(d_0) - 10n \log_{10}(d)$};
-        
-        % Reference point at 1m
-        \filldraw (1,-1) circle (1.5pt);
-        \draw[dashed] (1,-4) -- (1,-1) node[midway, left, font=\scriptsize] {$1$ ม.};
-        \draw[dashed] (0,-1) -- (1,-1) node[left] {$\mathrm{RSSI}(d_0)$};
-    \end{tikzpicture}
-    \caption{ความสัมพันธ์ระหว่างค่า RSSI และระยะทางตามแบบจำลอง Path Loss}
-    \label{fig:ch2_rssi_dist}
-\end{figure}
-
-\begin{equation}
-\mathrm{RSSI}(d) = \mathrm{RSSI}(d_0) - 10n \log_{10}\left(\frac{d}{d_0}\right) + X_{\sigma}
-\label{eq:ch2_pathloss}
-\end{equation}
-เมื่อ $\mathrm{RSSI}(d)$ คือกำลังสัญญาณที่ได้รับที่ระยะ $d$, $\mathrm{RSSI}(d_0)$ คือกำลังสัญญาณอ้างอิงที่ระยะ 1 เมตร, $n$ คือค่าสัมประสิทธิ์การสูญเสียสัญญาณในพื้นที่ และ $X_{\sigma}$ คือสัญญาณรบกวนที่มีการกระจายตัวแบบปกติ \cite{Kaemarungsi2012RSSIAnalysis}
-
-\clearpage
-\subsection{เทคนิคการสร้างแผนที่สัญญาณ (Fingerprinting)}
-เป็นวิธีที่นิยมใช้ในอาคารที่มีโครงสร้างซับซ้อน แบ่งเป็น 2 ขั้นตอนหลัก ดังแสดงกระบวนการในรูปที่~\ref{fig:ch2_fingerprinting}:
-\begin{enumerate}
-    \item \textbf{Offline Phase:} เก็บข้อมูลความแรงสัญญาณ (RSSI) จากตัวส่งสัญญาณทุกจุดในแต่ละพิกัดพื้นที่ เพื่อสร้างเป็น "ลายนิ้วมือสัญญาณ" (Radio Map)
-    \item \textbf{Online Phase:} นำสัญญาณที่วัดได้จริงเปรียบเทียบกับ Radio Map โดยใช้อัลกอริทึม เช่น K-Nearest Neighbors (KNN) เพื่อหาตำแหน่งที่ใกล้เคียงที่สุด
-\end{enumerate}
-
-สำหรับการคำนวณความใกล้เคียงระหว่างสัญญาณที่วัดได้แบบเรียลไทม์กับลายนิ้วมือสัญญาณในฐานข้อมูล มักใช้การหาระยะห่างแบบยูคลิด (Euclidean Distance) ดังสมการ \cite{Kaemarungsi2012RSSIAnalysis}:
-\begin{equation}
-D_j = \sqrt{\sum_{i=1}^{N} (\mathrm{RSSI}_{i} - \mathrm{RSSI}_{i,j})^2}
-\label{eq:ch2_knn_distance}
-\end{equation}
-เมื่อ $D_j$ คือระยะห่างแบบยูคลิดระหว่างสัญญาณที่วัดได้กับลายนิ้วมือสัญญาณที่จุดอ้างอิง $j$, $N$ คือจำนวนจุดส่งสัญญาณ (Beacon) ทั้งหมดที่ครอบคลุม, $\mathrm{RSSI}_{i}$ คือค่าความแรงสัญญาณจาก Beacon ตัวที่ $i$ ที่วัดได้ในขณะนั้น และ $\mathrm{RSSI}_{i,j}$ คือค่าความแรงสัญญาณจาก Beacon ตัวที่ $i$ ณ จุดอ้างอิง $j$ ในฐานข้อมูล โดยระบบจะเลือกตำแหน่งอ้างอิงที่มีค่า $D_j$ ต่ำที่สุด หรือเฉลี่ยจาก $K$ จุดที่ต่ำที่สุด เพื่อใช้เป็นพิกัดเป้าหมาย
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}[scale=0.9, node distance=1.5cm and 2cm]
-        % Offline Phase
-        \node[draw, rectangle, rounded corners, fill=blue!10, text width=3cm, align=center] (offline) {\textbf{Offline Phase}\\เก็บลายนิ้วมือสัญญาณ\\(Radio Map)};
-        
-        % Online Phase
-        \node[draw, rectangle, rounded corners, fill=green!10, text width=3cm, align=center, right=of offline] (online) {\textbf{Online Phase}\\เปรียบเทียบสัญญาณ\\(Pattern Matching)};
-        
-        % Location Output
-        \node[draw, rectangle, fill=orange!10, text width=2.5cm, align=center, right=of online] (output) {\textbf{พิกัดตำแหน่ง}\\$(x,y)$};
-        
-        \draw[-Latex, thick] (offline) -- (online) node[midway, above, font=\scriptsize] {ฐานข้อมูล RSSI};
-        \draw[-Latex, thick] (online) -- (output);
-    \end{tikzpicture}
-    \caption{ขั้นตอนการระบุตำแหน่งด้วยเทคนิค Fingerprinting}
-    \label{fig:ch2_fingerprinting}
-\end{figure}
-
-\clearpage
-\section{เทคโนโลยีเซ็นเซอร์สำหรับการตรวจวัดกิจกรรม}
-\label{sec:ch2_sensors}
-
-เทคโนโลยีเซ็นเซอร์แบบสวมใส่เป็นองค์ประกอบสำคัญในระบบติดตามและดูแลสุขภาพ แบ่งออกเป็นเซ็นเซอร์ทางสรีรวิทยา (Physiological Sensors) และเซ็นเซอร์ทางกายภาพ (Inertial Sensors)
-
-\subsection{Photoplethysmography (PPG)}
-
-เซ็นเซอร์ PPG ตรวจวัดการเปลี่ยนแปลงของปริมาตรเลือดในหลอดเลือดฝอยด้วยการฉายแสงและวัดการสะท้อน ข้อมูลหลักที่ได้คืออนุกรมเวลาของช่วงระหว่างจังหวะหัวใจ (RR-interval) ซึ่งนำไปคำนวณค่าต่างๆ ดังนี้ \cite{PolarVeritySenseWhitepaper}
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}[scale=0.85, font=\small]
-        % --- Top Part: Arm and Sensor ---
-        % Arm silhouette
-        \draw[thick, fill=orange!10, draw=orange!50!black] (0,0) -- (7,0) -- (7,1.6) -- (0,1.6) -- cycle;
-        \node[right] at (7,0.8) {ข้อมือ (Wrist)};
-        
-        % Sensor Case
-        \draw[thick, fill=gray!20, rounded corners=2pt] (2.0,1.6) rectangle (5.0,2.2);
-        \node[above, font=\footnotesize\bfseries] at (3.5,2.2) {PPG Sensor (Reflection Mode)};
-        
-        % LED and Photodiode
-        \filldraw[green!70!black] (2.5,1.5) rectangle (3.1,1.7);
-        \node[left, font=\tiny] at (2.5,1.8) {LED};
-        
-        \filldraw[gray!80] (3.9,1.5) rectangle (4.5,1.7);
-        \node[right, font=\tiny] at (4.5,1.8) {Photodiode};
-        
-        % Light paths (Reflection mode)
-        \draw[dashed, green!80, thick, ->] (2.8,1.5) -- (3.5,0.6);
-        \draw[dashed, green!80, thick, ->] (3.5,0.6) -- (4.2,1.5);
-        
-        % --- Bottom Part: Signal Components (Callout) ---
-        \begin{scope}[yshift=-4.5cm, xshift=0.5cm]
-            % Layers
-            \filldraw[yellow!20, draw=gray] (0,0) rectangle (6,1.0);
-            \node[font=\scriptsize] at (3,0.5) {เนื้อเยื่อคงที่ (Epidermis, Dermis, Fat)};
-            
-            \filldraw[cyan!20, draw=gray] (0,1.0) rectangle (6,1.5);
-            \node[font=\scriptsize] at (3,1.25) {เลือดดำ (Venous blood)};
-            
-            \filldraw[red!20, draw=gray] (0,1.5) rectangle (6,2.0);
-            \node[font=\scriptsize] at (3,1.75) {เลือดแดงคงที่ (Non-pulsating artery)};
-            
-            % Pulsating part (AC)
-            \draw[thick, fill=red!60, draw=red!70!black] (0,2.0) 
-                sin (0.5,2.6) cos (1.0,2.0) sin (1.5,2.6) cos (2.0,2.0) 
-                sin (2.5,2.6) cos (3.0,2.0) sin (3.5,2.6) cos (4.0,2.0) 
-                sin (4.5,2.6) cos (5.0,2.0) sin (5.5,2.6) cos (6,2.0) 
-                -- (6,2.0) -- (0,2.0) -- cycle;
-            \node[black, font=\scriptsize\bfseries] at (3,2.3) {เลือดแดงที่เต้นตามชีพจร (AC Component)};
-            
-            % Component labels
-            \draw[<->, thick, gray!80] (-0.4,0) -- (-0.4,2.0) node[midway, left, black, font=\small\bfseries] {DC};
-            \draw[<->, thick, gray!80] (-0.4,2.0) -- (-0.4,2.7) node[midway, left, black, font=\small\bfseries] {AC};
-            
-            % Zoom lines
-            \draw[gray, thin, dashed] (-0.2, 3.2) -- (2.8-0.5, 5.0);
-            \draw[gray, thin, dashed] (6.2, 3.2) -- (4.2+0.5, 5.0);
-        \end{scope}
-        
-    \end{tikzpicture}
-    \caption{หลักการทำงานของเซ็นเซอร์ PPG แบบสะท้อนแสง (Reflection Mode) และส่วนประกอบของสัญญาณที่วัดได้ ซึ่งประกอบด้วยส่วนคงที่ (DC) จากเนื้อเยื่อและเลือดดำ และส่วนที่แปรผันตามจังหวะการเต้นของหัวใจ (AC) จากเลือดแดงในหลอดเลือดฝอย}
-    \label{fig:ch2_ppg_theory}
-\end{figure}
-
-\textbf{(1) อัตราการเต้นของหัวใจ (Heart Rate):}
-\begin{equation}
-\mathrm{HR} = \frac{60}{\overline{RR}}
-\label{eq:ch2_hr}
-\end{equation}
-เมื่อ $\overline{RR}$ คือค่าเฉลี่ยของช่วง RR-interval (วินาที) และ $\mathrm{HR}$ มีหน่วยเป็น bpm (ครั้งต่อนาที)
-
-\textbf{(2) ความแปรปรวนของอัตราการเต้นของหัวใจ (HRV) ด้วย SDNN:}
-\begin{equation}
-\mathrm{SDNN} = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(RR_i - \overline{RR})^2}
-\label{eq:ch2_sdnn}
-\end{equation}
-เมื่อ $N$ คือจำนวนช่วง RR ทั้งหมด และ $RR_i$ คือช่วง RR ที่ $i$ ค่า SDNN ที่ต่ำลงบ่งบอกถึงระบบประสาทอัตโนมัติที่ตอบสนองน้อยลง
-
-\textbf{(3) RMSSD สำหรับประเมินกิจกรรมประสาทพาราซิมพาเทติก:}
-\begin{equation}
-\mathrm{RMSSD} = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N-1}(RR_{i+1} - RR_i)^2}
-\label{eq:ch2_rmssd}
-\end{equation}
-ค่า RMSSD นิยมใช้ตรวจจับความเครียดทางกายภาพ (Physical Stress) เพราะสะท้อนการควบคุมอัตราการเต้นของหัวใจในช่วงสั้น
-
-\subsection{Inertial Measurement Unit (IMU)}
-
-เซ็นเซอร์ IMU ประกอบด้วย Accelerometer วัดความเร่งในสามแกน $(a_x, a_y, a_z)$ และ Gyroscope วัดอัตราการหมุน $(\omega_x, \omega_y, \omega_z)$ อุปกรณ์ที่มีชิป IMU เช่น M5StickC Plus2 ซึ่งใช้ชิป MPU6886 (6-axis) สามารถนำมาติดตั้งบนล้อรถเข็น เพื่อให้ Gyroscope แกน Z ($\omega_z$) วัดอัตราการหมุนได้โดยตรง ดังแสดงในรูปที่~\ref{fig:ch2_imu_axes} \cite{M5StickCPlus2Docs}
-
-\begin{figure}[htbp]
-    \centering
-    \tdplotsetmaincoords{70}{120}
-    \begin{tikzpicture}[tdplot_main_coords, scale=1.3]
-        % IMU Box
-        \draw[thick, fill=black!85] (0,0,0) -- (2,0,0) -- (2,2,0) -- (0,2,0) -- cycle;
-        \draw[thick, fill=black!75] (0,0,0) -- (0,0,0.8) -- (2,0,0.8) -- (2,0,0) -- cycle;
-        \draw[thick, fill=black!80] (2,0,0) -- (2,0,0.8) -- (2,2,0.8) -- (2,2,0) -- cycle;
-        \node[white, font=\footnotesize\bfseries] at (1,1,0.8) {IMU};
-
-        % Coordinate center
-        \coordinate (O) at (1,1,0.4);
-
-        % Axes
-        % X (Roll) - Blue
-        \draw[->, blue, ultra thick] (O) -- (3.5,1,0.4) node[anchor=north west, black] {$x$ (roll)};
-        \draw[->, >=stealth, blue!70!black] (3.0, 1.2, 0.4) arc (60:400:0.3 and 0.15);
-        
-        % Y (Pitch) - Red
-        \draw[->, red, ultra thick] (O) -- (1,3.5,0.4) node[anchor=west, black] {$y$ (pitch)};
-        \draw[->, >=stealth, red!70!black] (1.2, 3.0, 0.4) arc (150:490:0.15 and 0.3);
-
-        % Z (Yaw) - Green
-        \draw[->, green!60!black, ultra thick] (O) -- (1,1,2.8) node[anchor=south, black] {$z$ (yaw)};
-        \draw[->, >=stealth, green!50!black] (1.3, 1, 2.3) arc (0:330:0.3 and 0.15);
-
-    \end{tikzpicture}
-    \caption{แกนพิกัดและทิศทางการหมุนของ IMU}
-    \label{fig:ch2_imu_axes}
-\end{figure}
-
-ข้อมูลจาก IMU สามารถนำไปประมวลผลได้ดังนี้
-
-\textbf{(1) ขนาดของความเร่งสุทธิ (Resultant Acceleration):}
-\begin{equation}
-|\vec{a}| = \sqrt{a_x^2 + a_y^2 + a_z^2}
-\label{eq:ch2_acc_mag}
-\end{equation}
-ค่านี้ใช้เป็นฟีเจอร์หลักสำหรับการตรวจจับการล้ม เนื่องจากการล้มจะทำให้เกิดการเปลี่ยนแปลงของ $|\vec{a}|$ อย่างรวดเร็ว
-
-\textbf{(2) การลด Noise จากแรงโน้มถ่วงด้วย Low-pass Filter (EMA):}
-\begin{equation}
-\hat{\omega}_{z,k} = \alpha \cdot \omega_{z,k} + (1 - \alpha) \cdot \hat{\omega}_{z,k-1}
-\label{eq:ch2_ema_gyro}
-\end{equation}
-เมื่อ $\omega_{z,k}$ คืออัตราการหมุนดิบจาก Gyroscope ณ เวลา $k$, $\hat{\omega}_{z,k}$ คืออัตราการหมุนที่ผ่านการกรองแล้ว และ $\alpha$ คือค่าคงที่ของ Exponential Moving Average (EMA) โดยทั่วไปอาจกำหนด $\alpha = 0.3$ เพื่อลด noise ของ MPU6886 ในแนวแกน Z ซึ่งมีผลจากแรงโน้มถ่วงเมื่อทิศทางของเซ็นเซอร์เปลี่ยนไปตามการหมุนของล้อ นอกจากนี้ยังมีการกำหนด Deadband ที่ $|\hat{\omega}_z| < 5$ dps เพื่อตัด drift ขณะหยุดนิ่ง
-
-\textbf{(3) การคำนวณระยะทางจาก Arc Length ของล้อ:}
-\begin{equation}
-\Delta s_k = |\hat{\omega}_{z,k} \cdot \Delta t| \cdot r
-\label{eq:ch2_arc_length}
-\end{equation}
-เมื่อ $\Delta s_k$ คือระยะทางที่ล้อเคลื่อนที่ในช่วงเวลา $\Delta t$ (วินาที), $r$ คือรัศมีล้อรถเข็น (เช่น $r = 0.30$ เมตร สำหรับรถเข็นทั่วไป) และระยะทางสะสมทั้งหมดคือ $s = \sum_{k} \Delta s_k$ สมการนี้ใช้หลักการ Arc Length ($s = r\theta$) โดยที่มุมการหมุน $\Delta\theta_k = \hat{\omega}_{z,k} \cdot \Delta t$
-
-\textbf{(4) การคำนวณความเร็วด้วย Sliding Window:}
-\begin{equation}
-v = \frac{\displaystyle\sum_{k \in W} \Delta s_k}{T_W}
-\label{eq:ch2_velocity_window}
-\end{equation}
-เมื่อ $W$ คือช่วงหน้าต่างเวลา (Sliding Window) ขนาด $T_W = 500$ มิลลิวินาที และ $v$ คือความเร็วเฉลี่ยในหน้าต่างนั้น วิธีนี้ช่วยลดผลของ noise ที่สะสมจากการ integrate โดยตรง
-
-\textbf{(5) การตรวจจับการล้ม (Fall Detection) ด้วย Threshold:}
-\begin{equation}
-\text{Fall} =
-\begin{cases}
-1 & \text{ถ้า } |\vec{a}| > T_{\mathrm{fall}} \text{ และ } |\vec{a}| < T_{\mathrm{impact}} \text{ ภายหลัง} \\
-0 & \text{อื่นๆ}
-\end{cases}
-\label{eq:ch2_fall}
-\end{equation}
-โดย $T_{\mathrm{fall}}$ คือเกณฑ์ความเร่งระหว่างการร่วงหล่น (Free-fall threshold, เช่น $< 0.5g$) และ $T_{\mathrm{impact}}$ คือเกณฑ์ความเร่งขณะกระแทก (Impact threshold, เช่น $> 2g$) การตรวจพบทั้งสองเหตุการณ์ภายในช่วงเวลาสั้นจะถูกวินิจฉัยว่าเป็นการล้ม
-
-
-\section{อัลกอริทึม K-Nearest Neighbors (KNN)}
-\label{sec:ch2_knn}
-
-อัลกอริทึม K-Nearest Neighbors (KNN) เป็นหนึ่งในเทคนิคการเรียนรู้แบบมีการสอน (Supervised Learning) ที่เรียบง่ายและมีประสิทธิภาพสูงสำหรับการจำแนกประเภท (Classification) และการประมาณค่า (Regression) \cite{Cover1967NearestNeighbor} โดยหลักการทำงานพื้นฐานคือการคำนวณความคล้ายคลึงระหว่างข้อมูลใหม่และข้อมูลในฐานข้อมูลผ่านฟังก์ชันระยะทาง (Distance Function) และพิจารณา "เพื่อนบ้าน" ที่อยู่ใกล้เคียงที่สุดจำนวน $K$ ตัวในพื้นที่ของคุณลักษณะ (Feature Space) เพื่อตัดสินใจเลือกคลาสที่มีจำนวนมากที่สุด ดังแสดงในรูปที่~\ref{fig:ch2_knn_concept}
-
-ขั้นตอนการคำนวณของ KNN ประกอบด้วยสมการหลักดังนี้:
-
-\textbf{(1) การคำนวณระยะทางระหว่างข้อมูล (Distance Calculation):}
-มักนิยมใช้ระยะห่างแบบยูคลิด (Euclidean Distance) เพื่อวัดความห่างระหว่างจุดข้อมูลใหม่ $X$ และจุดข้อมูลในฐานข้อมูล $Y$ ในพื้นที่ $n$ มิติ:
-\begin{equation}
-d(X, Y) = \sqrt{\sum_{i=1}^{n} (x_i - y_i)^2}
-\label{eq:ch2_knn_euclidean}
-\end{equation}
-เมื่อ $x_i$ และ $y_i$ คือค่าของคุณลักษณะ (Feature) ตัวที่ $i$ ของข้อมูล $X$ และ $Y$ ตามลำดับ
-
-\textbf{(2) การจำแนกประเภทข้อมูล (Classification Rule):}
-หลังจากหาระยะทางและเลือกเพื่อนบ้านที่ใกล้ที่สุด $K$ อันดับแรก ($N_K$) ระบบจะทำการตัดสินใจเลือกคลาส $C$ โดยใช้เสียงส่วนใหญ่ (Majority Voting):
-\begin{equation}
-\hat{y} = \text{mode}\{ y_i \mid i \in N_K \}
-\label{eq:ch2_knn_voting}
-\end{equation}
-เมื่อ $\hat{y}$ คือคลาสที่ทำนายได้ และ $y_i$ คือคลาสของเพื่อนบ้านลำดับที่ $i$
-
-\begin{figure}[htbp]
-    \centering
-    \begin{tikzpicture}[scale=0.8]
-        % Axes
-        \draw[->] (0,0) -- (6,0) node[right, font=\scriptsize] {Feature 1 (RSSI A)};
-        \draw[->] (0,0) -- (0,6) node[above, font=\scriptsize] {Feature 2 (RSSI B)};
-
-        % Class 1 (Blue Circles)
-        \foreach \p in {(1,4), (1.5,5), (2,3.5), (0.8,3), (2.5,4.5)}
-            \filldraw[blue!60] \p circle (4pt);
-        
-        % Class 2 (Orange Squares)
-        \foreach \p in {(4,1), (5,1.5), (4.5,2.5), (3.5,0.8), (5.5,2)}
-            \node[draw, fill=orange!60, minimum size=6pt] at \p {};
-
-        % Query Point (Red Star)
-        \node[star, star points=5, star point ratio=2.25, fill=red, minimum size=10pt] (query) at (3,3) {};
-        \node[above right=0.1cm of query, font=\tiny\bfseries] {New Data Point};
-
-        % Circle for K=3
-        \draw[dashed, gray] (query) circle (1.2cm);
-        \node[below, font=\tiny] at (3, 1.8) {$K=3$};
-
-        % Arrows to neighbors
-        \draw[thin, ->] (query) -- (2, 3.5);
-        \draw[thin, ->] (query) -- (2.5, 4.5);
-        \draw[thin, ->] (query) -- (4.5, 2.5);
-    \end{tikzpicture}
-    \caption{หลักการของอัลกอริทึม KNN ในการจำแนกข้อมูลตามระยะห่างในพื้นที่คุณลักษณะ}
-    \label{fig:ch2_knn_concept}
-\end{figure}
-
-ในการประยุกต์ใช้สำหรับการระบุตำแหน่งแบบ Fingerprinting อัลกอริทึม KNN จะเปรียบเทียบค่า RSSI ที่วัดได้จริงกับข้อมูลใน Radio Map โดยใช้การคำนวณระยะทางแบบยูคลิด (Euclidean Distance) ตามสมการที่~(\ref{eq:ch2_knn_distance}) เพื่อเลือกจุดอ้างอิงที่มีความคล้ายคลึงของสัญญาณมากที่สุด $K$ จุด และประมาณพิกัดตำแหน่งเป็นค่าเฉลี่ยของจุดเหล่านั้น (Weighted KNN)
-
-\section{อุปกรณ์ฮาร์ดแวร์และเครื่องมือที่เกี่ยวข้อง}
+\section{อุปกรณ์ฮาร์ดแวร์หลักที่เกี่ยวข้อง}
 \label{sec:ch2_hardware}
 
-ในการพัฒนาเทคโนโลยีเพื่อการติดตามและดูแลพฤติกรรม การเลือกใช้อุปกรณ์ฮาร์ดแวร์ที่มีความเหมาะสมทั้งในด้านสมรรถนะการประมวลผล การใช้พลังงาน และขนาดของอุปกรณ์ถือเป็นปัจจัยสำคัญ ในปัจจุบันอุปกรณ์ประเภทไมโครคอนโทรลเลอร์ที่มีความสามารถสูงและการประมวลผลที่ขอบเครือข่าย (Edge Computing) เริ่มมีบทบาทมากขึ้นในการลดภาระของเซิร์ฟเวอร์ส่วนกลาง ในส่วนนี้จะเป็นการทบทวนคุณลักษณะและขีดความสามารถของอุปกรณ์ฮาร์ดแวร์หลักที่มักถูกนำมาประยุกต์ใช้ในงานด้าน IoT และการติดตามสภาวะสุขภาพ
+M5StickC Plus2 เป็นบอร์ดไมโครคอนโทรลเลอร์ขนาดเล็กที่มี ESP32, หน้าจอ, ปุ่ม, แบตเตอรี่ และ IMU ในตัว จึงเหมาะกับการทดลองเป็น sensor ติดรถเข็นเพื่ออ่านค่าการเคลื่อนไหวและสถานะแบตเตอรี่ ข้อดีของอุปกรณ์ลักษณะนี้คือมีขนาดเล็ก ติดตั้งง่าย และสามารถส่งข้อมูลผ่าน BLE ไปยังอุปกรณ์กลางได้ ในบริบทของงานนี้ M5StickC Plus2 ถูกพิจารณาในฐานะ wheelchair sensor ที่อ่านข้อมูล IMU/battery และส่ง payload ไปยัง mobile gateway ไม่ใช่อุปกรณ์ที่ต้องทำหน้าที่เป็น gateway หลักของระบบทั้งหมด \cite{M5StickCPlus2Docs}
 
-\begin{table}[htbp]
-    \centering
-    \caption{การเปรียบเทียบลักษณะการใช้งานและคุณลักษณะหลักของฮาร์ดแวร์ที่เกี่ยวข้อง}
-    \label{tab:ch2_hardware_compare}
-    \small
-    \renewcommand{\arraystretch}{1.25}
-    \begin{tabular}{|L{3.0cm}|L{3.6cm}|L{3.8cm}|L{3.6cm}|}
-        \hline
-        \textbf{อุปกรณ์} & \textbf{ลักษณะการใช้งานทั่วไป} & \textbf{คุณลักษณะเด่น} & \textbf{จุดเด่นเชิงเทคนิค} \\ \hline
-        M5StickC Plus2 & อุปกรณ์ควบคุมขนาดจิ๋ว (Mini IoT Kit) และโหนดเซ็นเซอร์เคลื่อนที่ & ESP32-PICO-V3-02, จอสี LCD, มี IMU 6 แกนในตัว, แบตเตอรี่ในตัว & ขนาดกะทัดรัด พร้อมใช้งานทันที (All-in-one design) \\ \hline
-        Lilygo T-SimCam & โหนดกล้องประมวลผลที่ขอบเครือข่าย (Edge AI Camera) & ESP32-S3, กล้อง 2MP, มี PSRAM ขนาดใหญ่, รองรับ Wi-Fi/BLE 5 & มีชิปที่รองรับชุดคำสั่งเร่งความเร็วสำหรับงาน AI \\ \hline
-        Polar Verity Sense & เซ็นเซอร์สวมใส่สำหรับติดตามอัตราการเต้นหัวใจ & วัดด้วยแสง (PPG), กันน้ำ, รองรับ BLE/ANT+, มีหน่วยความจำในตัว & ความแม่นยำระดับมาตรฐานการกีฬาและการแพทย์ \\ \hline
-    \end{tabular}
-\end{table}
+LilyGO T-SimCam เป็นบอร์ดที่มีความสามารถด้าน cellular และ camera module จึงเคยเหมาะกับแนวคิด node หรือ camera node ในต้นแบบช่วงแรก โดยเฉพาะการทดลองโครงข่ายที่ต้องส่งข้อมูลหรือภาพผ่าน node ภาคสนาม อย่างไรก็ตาม อุปกรณ์ประเภทนี้มีความซับซ้อนด้านการติดตั้ง พลังงาน และการจัดเส้นทางข้อมูลมากกว่า sensor ขนาดเล็ก ในระบบสุดท้ายจึงควรถูกอธิบายในฐานะอุปกรณ์ที่เคยใช้ในต้นแบบหรือแนวคิด node เดิม ไม่ใช่แกนหลักของ architecture ปัจจุบัน \cite{LilygoTSimCamDocs}
 
-\subsection{M5StickC Plus2}
-M5StickC Plus2 เป็นชุดพัฒนา IoT ขนาดจิ๋วจากตระกูล M5Stack ที่รวมองค์ประกอบพื้นฐานที่จำเป็นสำหรับการสร้างอุปกรณ์สวมใส่หรือโหนดเซ็นเซอร์ไร้สายไว้ในตัวเดียว ข้อมูลทางเทคนิคระบุว่าอุปกรณ์ใช้ชิป ESP32-PICO-V3-02 (Dual-core 240 MHz) มีหน่วยความจำ Flash 8 MB, PSRAM 2 MB และจอภาพ TFT ขนาด 1.14 นิ้ว \cite{M5StickCPlus2Docs} จุดเด่นสำคัญคือการติดตั้งเซ็นเซอร์วัดการเคลื่อนไหวแบบ 6 แกน (6-axis IMU) รุ่น MPU6886 มาให้ในบอร์ด พร้อมปุ่มกด ลำโพงขนาดเล็ก และแบตเตอรี่ Li-Po ในตัว
+Polar Verity Sense เป็นอุปกรณ์สวมใส่แบบ optical armband สำหรับอ่านข้อมูล heart rate และข้อมูลที่เกี่ยวข้องกับ PPG ผ่านการเชื่อมต่อ BLE และ Polar SDK อุปกรณ์นี้มีบทบาทในการเพิ่มข้อมูลด้านสัญญาณชีพให้ระบบดูแล เช่น HR, RR interval หรือ PPG stream โดยการอ่านค่าระดับลึกต้องอาศัย SDK ที่ผู้ผลิตเตรียมไว้ ข้อมูลจากอุปกรณ์สวมใส่จึงช่วยเสริมข้อมูลการเคลื่อนไหวจากรถเข็น แต่ยังต้องถูกตีความอย่างระมัดระวังในฐานะข้อมูลประกอบ ไม่ใช่ผลวินิจฉัย \cite{Polar_VeritySense_Spec,PolarBLESDK}
 
-ด้วยลักษณะที่กะทัดรัดและรองรับการสื่อสารทั้ง Wi-Fi และ Bluetooth อุปกรณ์นี้จึงนิยมใช้ในงานต้นแบบระบบติดตามตำแหน่ง การตรวจวัดกิจกรรมทางกายภาพ และการควบคุมอุปกรณ์อัจฉริยะจากระยะไกล นอกจากนี้ยังมีพอร์ตขยาย (Grove port) ที่ช่วยให้สามารถเชื่อมต่อกับเซ็นเซอร์ภายนอกเพิ่มเติมได้ง่าย ทำให้เป็นเครื่องมือที่มีความยืดหยุ่นสูงสำหรับการพัฒนาแอปพลิเคชัน IoT ที่ต้องการการตอบสนองแบบเรียลไทม์
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.4\textwidth]{chapter2/ch2-m5stick-product.png}
-    \caption{ลักษณะของอุปกรณ์ M5StickC Plus2 ที่มีจอแสดงผลและเซ็นเซอร์ภายใน}
-    \label{fig:ch2_m5stick_product}
-\end{figure}
-
-\subsection{Lilygo T-SimCam}
-Lilygo T-SimCam เป็นบอร์ดไมโครคอนโทรลเลอร์ที่ออกแบบมาเฉพาะสำหรับการประมวลผลภาพที่ขอบเครือข่าย (Visual Edge Computing) โดยใช้ชิปหลักเป็น ESP32-S3R8 ซึ่งมีความโดดเด่นในการรองรับชุดคำสั่งสำหรับการคำนวณแบบเวกเตอร์เพื่อเร่งความเร็วงานด้าน AI อุปกรณ์ประกอบด้วยหน่วยความจำ PSRAM ขนาด 8 MB และ Flash 16 MB พร้อมกล้อง OV2640 ความละเอียด 2 ล้านพิกเซล \cite{LilygoTSimCamDocs}
-
-คุณลักษณะเด่นของอุปกรณ์คือการผสานความสามารถในการบันทึกภาพและการสื่อสารไร้สายความเร็วสูง (Wi-Fi และ Bluetooth 5) ทำให้สามารถทำหน้าที่เป็นโหนดเฝ้าระวังอัจฉริยะที่สามารถคัดกรองเหตุการณ์จากภาพ (Image-based triggering) ได้ในตัวโดยไม่ต้องส่งข้อมูลวิดีโอทั้งหมดไปยังเซิร์ฟเวอร์ นอกจากนี้ยังมีช่องเสียบการ์ดหน่วยความจำและการรองรับไมโครโฟนดิจิทัล ทำให้เป็นฮาร์ดแวร์ที่เหมาะสมสำหรับการพัฒนาระบบรักษาความปลอดภัย หรือระบบตรวจจับวัตถุเบื้องต้นที่มีข้อจำกัดด้านพลังงานและพื้นที่
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.35\textwidth]{chapter2/ch2-tsimcam-product.png}
-    \caption{ลักษณะภายนอกของโหนดกล้อง Lilygo T-SimCam ที่รองรับการประมวลผลภาพเบื้องต้น}
-    \label{fig:ch2_tsimcam_product}
-\end{figure}
-
-\subsection{Polar Verity Sense}
-Polar Verity Sense เป็นเซ็นเซอร์วัดอัตราการเต้นของหัวใจแบบออปติคอล (Optical Heart Rate Sensor) ที่ใช้เทคโนโลยี PPG (Photoplethysmography) ที่มีความแม่นยำสูง อุปกรณ์ถูกออกแบบมาให้เป็นแขนรัดหรือสวมใส่ในตำแหน่งที่ใกล้กับเส้นเลือดฝอยบนผิวหนัง รองรับการสื่อสารผ่าน Bluetooth Low Energy (BLE) และ ANT+ ได้พร้อมกัน และมีความสามารถในการทำงานต่อเนื่องสูงสุดถึง 30 ชั่วโมง \cite{Polar_VeritySense_Spec, PolarVeritySenseWhitepaper}
-
-จุดเด่นของอุปกรณ์รุ่นนี้คือความน่าเชื่อถือของข้อมูลชีวสัญญาณและการออกแบบให้มีความทนทาน กันน้ำ และสามารถเก็บข้อมูลได้ในตัวแม้ไม่มีการเชื่อมต่อกับโทรศัพท์สมาร์ทโฟนในขณะนั้น นอกจากนี้ยังมีเซ็นเซอร์วัดการเคลื่อนไหว (Inertial Sensors) ภายในเพื่อใช้ชดเชยสัญญาณรบกวนจากการเคลื่อนที่ (Motion Artifact) ทำให้ผลลัพธ์ของอัตราการเต้นของหัวใจมีความเสถียรแม้ในขณะที่ผู้ใช้งานมีการเคลื่อนไหวร่างกายอย่างต่อเนื่อง อุปกรณ์นี้จึงถูกนำไปใช้แพร่หลายทั้งในการวิจัยทางการกีฬาและการติดตามสภาวะสุขภาพทางไกล
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.4\textwidth]{chapter2/ch2-polar-verity-sense.png}
-    \caption{ลักษณะเชิงแนวคิดของ Polar Verity Sense และสายรัดสำหรับการสวมใส่}
-    \label{fig:ch2_polar_diagram}
-\end{figure}
-
-\subsection{Raspberry Pi 5}
-Raspberry Pi 5 เป็นคอมพิวเตอร์บอร์ดขนาดเล็ก (Single Board Computer) รุ่นล่าสุดจาก Raspberry Pi Foundation ที่ใช้ชิป ARM Cortex-A76 Quad-core ความถี่ 2.4 GHz มีหน่วยความจำ RAM 8 GB และรองรับการเชื่อมต่อผ่าน Gigabit Ethernet, Wi-Fi 5, Bluetooth 5.0 และ USB 3.0 \cite{RaspberryPi5Specs} จุดเด่นของรุ่นนี้คือประสิทธิภาพการประมวลผลที่เพิ่มขึ้นอย่างมากเมื่อเทียบกับรุ่นก่อนหน้า ทำให้เหมาะสำหรับการใช้งานเป็นเซิร์ฟเวอร์ขนาดเล็กที่ต้องการการประมวลผลข้อมูลแบบเรียลไทม์และบริการต่างๆ พร้อมกัน
-
-ด้วยขนาดที่กะทัดรัดและการใช้พลังงานที่ต่ำ Raspberry Pi 5 จึงเป็นทางเลือกที่น่าสนใจสำหรับการทำระบบเซิร์ฟเวอร์ส่วนกลางในโครงการ IoT ที่ต้องการความสามารถในการประมวลผลที่สูง แต่ยังคงความยืดหยุ่นในการติดตั้งและบำรุงรักษา อุปกรณ์นี้สามารถรันบริการต่างๆ เช่น MQTT Broker, Database Server, API Server และ AI Runtime ได้อย่างมีประสิทธิภาพในบอร์ดเดียว
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{../../assets/figures/chapter2/pi5.jpg}
-    \caption{Raspberry Pi 5 ที่ใช้เป็นเซิร์ฟเวอร์ส่วนกลางในระบบ}
-    \label{fig:ch2_pi5}
-\end{figure}
-
-\clearpage
-\section{เทคโนโลยีซอฟต์แวร์และโครงสร้างพื้นฐานที่เกี่ยวข้อง}
-\label{sec:ch2_software_infra}
-
-ความสำเร็จของการพัฒนาระบบ IoT และการติดตามพฤติกรรมไม่ได้ขึ้นอยู่กับฮาร์ดแวร์เพียงอย่างเดียว แต่ยังรวมถึงการบูรณาการซอฟต์แวร์ในหลายชั้น ตั้งแต่ส่วนติดต่อผู้ใช้ที่ช่วยสื่อสารข้อมูลไปยังผู้ดูแล การประมวลผลข้อมูลแบบเรียลไทม์ การจัดเก็บข้อมูลที่มีความน่าเชื่อถือ ไปจนถึงการนำเทคโนโลยีปัญญาประดิษฐ์สมัยใหม่มาใช้ในการตีความสถานการณ์ ในส่วนนี้จะเป็นการทบทวนเทคโนโลยีและเครื่องมือซอฟต์แวร์หลักที่ถูกนำมาใช้เป็นพื้นฐานในการพัฒนาระบบ
-
-\begin{table}[htbp]
-    \centering
-    \caption{การทบทวนเทคโนโลยีซอฟต์แวร์และโครงสร้างพื้นฐานพื้นฐานที่สำคัญ}
-    \label{tab:ch2_software_stack}
-    \small
-    \renewcommand{\arraystretch}{1.25}
-    \begin{tabular}{|L{3.2cm}|L{4.0cm}|L{5.3cm}|}
-        \hline
-        \textbf{ชั้นเทคโนโลยี} & \textbf{เทคโนโลยีหลัก} & \textbf{บทบาทและหน้าที่สำคัญ} \\ \hline
-        ส่วนติดต่อผู้ใช้ & UX/UI, Web Application, React, Next.js & การแสดงผลแดชบอร์ดและการโต้ตอบกับผู้ใช้แบบเรียลไทม์ \\ \hline
-        บริการแอปพลิเคชัน & FastAPI & การจัดการตรรกะทางธุรกิจ (Business Logic) และการให้บริการ API \\ \hline
-        การจัดเก็บข้อมูล & PostgreSQL & การจัดเก็บข้อมูลเชิงสัมพันธ์และข้อมูลกึ่งโครงสร้าง (JSONB) อย่างมีประสิทธิภาพ \\ \hline
-        การสื่อสารอุปกรณ์ & MQTT & โปรโตคอลน้ำหนักเบาสำหรับการรับส่งข้อมูลระหว่างอุปกรณ์ IoT และเซิร์ฟเวอร์ \\ \hline
-        สภาพแวดล้อมรันไทม์ & Docker & การสร้างสภาพแวดล้อมจำลอง (Containerization) เพื่อความสม่ำเสมอของระบบ \\ \hline
-        ปัญญาประดิษฐ์ & Ollama, gemma4:e2b, MCP & การประมวลผลโมเดลภาษาขนาดใหญ่ (LLM) ในระดับขอบเครือข่ายหรือเซิร์ฟเวอร์ท้องถิ่น \\ \hline
-        การพัฒนาเฟิร์มแวร์ & PlatformIO & เครื่องมือสำหรับการจัดการวงจรการพัฒนาเฟิร์มแวร์ของไมโครคอนโทรลเลอร์ \\ \hline
-    \end{tabular}
-\end{table}
-
-\clearpage
-\subsection{FastAPI (Backend Framework)}
-FastAPI เป็นกรอบงานพัฒนาเว็บ API ที่เน้นประสิทธิภาพ ความชัดเจนของชนิดข้อมูล และการทำงานบนมาตรฐานสมัยใหม่ โดยอาศัยมาตรฐาน OpenAPI และ JSON Schema สำหรับนิยาม API และสนับสนุนการสร้างเอกสารอัตโนมัติผ่าน Swagger UI และ ReDoc \cite{FastAPI2024} คุณสมบัตินี้มีประโยชน์โดยตรงต่อการพัฒนาระบบขนาดใหญ่ที่ต้องมีการเชื่อมต่อระหว่าง Mobile App, Firmware Gateway และบริการอื่น ๆ ร่วมกันอย่างสอดคล้อง
-
-อีกประเด็นสำคัญคือ FastAPI อาศัย Python Type Hints และ Pydantic ในการตรวจสอบข้อมูล ทำให้สามารถกำหนดสัญญา (Contract) ระหว่าง Input และ Output ได้ชัดเจนตั้งแต่ระดับโค้ดจนถึงเอกสาร API \cite{FastAPI2024,Pydantic2024} สำหรับระบบ IoT ที่ต้องรับข้อมูลจากแหล่งที่หลากหลาย ความสามารถในการตรวจสอบความถูกต้องของข้อมูลตั้งแต่ขอบเขตของระบบ (System Boundary) ช่วยลดโอกาสเกิดความผิดพลาดในการประมวลผลข้อมูลที่ผิดรูปแบบได้
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[
-        node distance=1.5cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=3cm, minimum height=0.9cm, align=center, fill=white, font=\small},
-        arrow/.style={-Latex, thick}
-    ]
-        \node (client) [box, fill=blue!8] {Client / Device Request};
-        \node (schema) [box, fill=green!10, right=of client] {Type Hints + Pydantic\\Validation};
-        \node (logic) [box, fill=yellow!12, right=of schema] {Business Logic\\Async Services};
-        \node (openapi) [box, fill=cyan!10, below=0.9cm of schema] {OpenAPI / Docs};
-        \node (resp) [box, fill=blue!8, below=0.9cm of logic] {Structured Response};
-
-        \draw[arrow] (client) -- (schema);
-        \draw[arrow] (schema) -- (logic);
-        \draw[arrow] (logic) -- (resp);
-        \draw[arrow] (schema) -- (openapi);
-    \end{tikzpicture}
-    \caption{กระบวนการทำงานของ FastAPI ที่เชื่อมการตรวจสอบข้อมูลเข้ากับเอกสาร API อัตโนมัติ}
-    \label{fig:ch2_fastapi_flow}
-\end{figure}
-
-\clearpage
-\subsection{React (UI Library)}
-React เป็นไลบรารีจาวาสคริปต์ (JavaScript Library) แบบโอเพนซอร์สที่ใช้สำหรับการสร้างส่วนติดต่อผู้ใช้ (User Interface) โดยอาศัยสถาปัตยกรรมแบบคอมโพเนนต์ (Component-based Architecture) \cite{React2024} แนวคิดหลักของ React คือการแบ่งหน้าจอ UI ออกเป็นส่วนย่อย ๆ ที่สามารถนำกลับมาใช้ใหม่ได้ (Reusable Components) และมีการจัดการสถานะ (State Management) ที่แยกเป็นอิสระต่อกัน
-
-คุณสมบัติที่สำคัญของ React คือการใช้ Virtual DOM ซึ่งเป็นตัวแทนของ DOM (Document Object Model) ในหน่วยความจำ เมื่อมีการเปลี่ยนแปลงสถานะข้อมูล React จะคำนวณความแตกต่างระหว่าง Virtual DOM เดิมและโครงสร้างใหม่ แล้วอัปเดตเฉพาะส่วนที่เปลี่ยนแปลงไปยัง DOM จริงบนเบราว์เซอร์ ซึ่งช่วยเพิ่มประสิทธิภาพในการแสดงผลข้อมูลที่มีการเปลี่ยนแปลงบ่อยครั้ง เช่น แดชบอร์ดติดตามสถานะแบบเรียลไทม์ ดังแสดงในรูปที่~\ref{fig:ch2_react_vdom}
+Raspberry Pi 5 RAM 8 GB เป็น single-board computer ที่มีพลังประมวลผลเพียงพอสำหรับบทบาท local/edge server ในระบบต้นแบบ เช่น API service, database, MQTT broker, dashboard และ AI runtime ขนาดเล็ก การใช้เครื่องลักษณะนี้ช่วยให้ระบบทดลองสามารถทำงานในพื้นที่ได้โดยไม่ต้องพึ่ง cloud ทั้งหมด และยังเปิดโอกาสให้ทดสอบการ deploy ด้วย Docker, การจัดเก็บข้อมูลใน PostgreSQL และการเรียกใช้ AI/MCP ภายในระบบเดียวกัน \cite{RaspberryPi5Specs}
 
 \begin{figure}[htbp]
     \centering
-    \begin{tikzpicture}[
-        node distance=0.9cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=2.8cm, minimum height=0.7cm, align=center, fill=white, font=\small},
-        arrow/.style={-Latex, thick}
-    ]
-        \node (state) [box, fill=blue!10] {State Change};
-        \node (vdom) [box, fill=yellow!10, right=of state] {Virtual DOM};
-        \node (diff) [box, fill=orange!10, right=of vdom] {Diff Algorithm};
-        \node (dom) [box, fill=green!10, right=of diff] {Real DOM};
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includegraphics[width=0.72\linewidth]{chapter2/ch2-m5stick-product.png}
+        \caption{M5StickC Plus2}
+        \label{fig:ch2_m5stick_product}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includegraphics[width=0.72\linewidth]{chapter2/ch2-tsimcam-product.png}
+        \caption{LilyGO T-SimCam}
+        \label{fig:ch2_tsimcam_product}
+    \end{subfigure}
 
-        \draw[arrow] (state) -- (vdom);
-        \draw[arrow] (vdom) -- (diff);
-        \draw[arrow] (diff) -- node[above=1mm, font=\scriptsize] {minimal update} (dom);
-    \end{tikzpicture}
-    \caption{แนวคิดการทำงานของ React Virtual DOM สำหรับการอัปเดตส่วนติดต่อผู้ใช้แบบมีประสิทธิภาพ}
-    \label{fig:ch2_react_vdom}
+    \vspace{0.4cm}
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includegraphics[width=0.72\linewidth]{chapter2/ch2-polar-verity-sense.png}
+        \caption{Polar Verity Sense}
+        \label{fig:ch2_polar_product}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.45\textwidth}
+        \centering
+        \includegraphics[width=0.78\linewidth]{chapter2/pi5.jpg}
+        \caption{Raspberry Pi 5}
+        \label{fig:ch2_pi5}
+    \end{subfigure}
+    \caption{อุปกรณ์ฮาร์ดแวร์หลักที่เกี่ยวข้องกับระบบต้นแบบ}
+    \label{fig:ch2_hardware_devices}
 \end{figure}
 
-\clearpage
-\subsection{Next.js (Frontend Framework)}
-Next.js เป็นเฟรมเวิร์กบน React ที่เหมาะกับการพัฒนาเว็บแอปพลิเคชันสมัยใหม่ที่ต้องการทั้งประสิทธิภาพและความยืดหยุ่น โดยเฉพาะในส่วนของ App Router ที่มีการใช้ React Server Components เป็นพื้นฐาน พร้อมรองรับความสามารถด้าน prefetching, streaming และ client-side transitions ที่ทำให้การสลับมุมมองหน้าจอมีความรวดเร็วและลื่นไหล \cite{NextJS2024,NextJSRouting2026}
+นอกจากอุปกรณ์หลักข้างต้น ระบบดูแลยังอาจมีอุปกรณ์รอง เช่น BLE beacon หรือ node อ้างอิงสัญญาณ โทรศัพท์มือถือที่ทำหน้าที่ gateway เครื่องชาร์จ แหล่งจ่ายไฟสำรอง และอุปกรณ์เครือข่ายภายในอาคาร อุปกรณ์เหล่านี้มีผลต่อความเสถียรของระบบ แต่ในเชิงทฤษฎีสามารถจัดเป็นส่วนสนับสนุนของ sensor layer, network layer และ edge layer ตามบทบาทที่กล่าวไว้ก่อนหน้า
 
-คุณลักษณะเหล่านี้มีความสำคัญต่อการแสดงผลข้อมูลที่มีความซับซ้อนและเปลี่ยนแปลงตลอดเวลา การใช้ Server Rendering ช่วยลดระยะเวลาการแสดงผลครั้งแรกของผู้ใช้ (Time to First Meaningful Paint) ขณะที่ระบบการนำทางที่รวดเร็วช่วยให้ผู้ใช้งานสามารถเข้าถึงข้อมูลเชิงลึกจากหน้าภาพรวมได้อย่างทันท่วงที ซึ่งเป็นหัวใจสำคัญของระบบแดชบอร์ดแบบปฏิบัติการ (Operational Dashboard)
+\FloatBarrier
 
-\begin{figure}[H]
+\section{การระบุตำแหน่งภายในอาคารด้วย BLE RSSI}
+\label{sec:ch2_ble_rssi_localization}
+
+การระบุตำแหน่งภายในอาคารมีความแตกต่างจากการระบุตำแหน่งกลางแจ้ง เนื่องจาก GPS ทำงานได้ไม่ดีในอาคารที่มีผนัง เพดาน และสัญญาณสะท้อนจำนวนมาก ระบบภายในอาคารจึงมักใช้สัญญาณวิทยุจาก WiFi, BLE, UWB หรือ RFID แทน สำหรับระบบดูแลผู้สูงอายุ BLE เป็นตัวเลือกที่เหมาะกับต้นแบบเพราะอุปกรณ์มีราคาต่ำ ใช้พลังงานน้อย และสามารถวัด RSSI ได้จากอุปกรณ์รับสัญญาณทั่วไป
+
+แนวคิดพื้นฐานของ RSSI คือความแรงของสัญญาณที่ตัวรับวัดได้จะลดลงเมื่อระยะห่างจากตัวส่งเพิ่มขึ้น แบบจำลองที่ใช้บ่อยคือ log-distance path loss model ดังสมการ~(\ref{eq:ch2_rssi_distance}) \cite{Kaemarungsi2012RSSIAnalysis}
+
+\begin{equation}
+    d = d_0 \times 10^{\frac{P(d_0)-P(d)}{10n}}
+    \label{eq:ch2_rssi_distance}
+\end{equation}
+
+เมื่อ $d$ คือระยะที่ต้องการประมาณ, $d_0$ คือระยะอ้างอิง, $P(d_0)$ คือ RSSI ที่ระยะอ้างอิง, $P(d)$ คือ RSSI ที่วัดได้ และ $n$ คือ path loss exponent ของสภาพแวดล้อม แม้สมการนี้ช่วยอธิบายความสัมพันธ์ระหว่าง RSSI กับระยะทางได้ แต่ในอาคารจริง RSSI มีความผันผวนสูงจาก multipath, สิ่งกีดขวาง และทิศทางของเสาอากาศ ดังนั้นการคำนวณระยะตรง ๆ แล้วหาจุดตัดแบบ trilateration จึงไม่ใช่แกนหลักที่เหมาะกับระบบนี้
+
+วิธี fingerprinting แก้ปัญหาดังกล่าวโดยแบ่งงานเป็นสองช่วง ช่วงแรกคือ offline phase ที่วัดค่า RSSI จากตำแหน่งอ้างอิงหลายจุดและบันทึกเป็น radio map ช่วงที่สองคือ online phase ที่นำ RSSI ที่วัดได้จริงมาเปรียบเทียบกับ radio map เพื่อหาตำแหน่งที่มีรูปแบบสัญญาณใกล้เคียงที่สุด แนวคิดนี้ถูกใช้ในงาน indoor localization อย่างแพร่หลายตั้งแต่งานกลุ่ม RADAR และต่อยอดมาในระบบ BLE RSSI หลายรูปแบบ \cite{Bahl2000RADAR}
+
+K-Nearest Neighbors (KNN) เป็นวิธีพื้นฐานที่ใช้กับ fingerprinting ได้ตรงไปตรงมา โดยแทนค่า RSSI ที่วัดได้เป็นเวกเตอร์ $\mathbf{x}$ และเปรียบเทียบกับ fingerprint ที่เก็บไว้เป็น $\mathbf{r}_j$ ระยะห่างระหว่างเวกเตอร์คำนวณได้ตามสมการ~(\ref{eq:ch2_knn_rssi_distance}) \cite{Cover1967NearestNeighbor}
+
+\begin{equation}
+    D_j = \sqrt{\sum_{i=1}^{m}(x_i-r_{j,i})^2}
+    \label{eq:ch2_knn_rssi_distance}
+\end{equation}
+
+เมื่อ $m$ คือจำนวน beacon หรือ node อ้างอิง, $x_i$ คือ RSSI ที่วัดได้จาก node ที่ $i$ และ $r_{j,i}$ คือค่า RSSI ของ fingerprint ลำดับที่ $j$ จากนั้นเลือก fingerprint ที่มีระยะน้อยที่สุดจำนวน $K$ จุด เพื่อนำมาประเมินห้องหรือพิกัด การใช้ distance-weighted KNN ช่วยให้น้ำหนักของจุดที่ใกล้กว่าใน feature space มากกว่าจุดที่อยู่ไกลกว่า ดังสมการ~(\ref{eq:ch2_weighted_knn})
+
+\begin{equation}
+    w_j = \frac{1}{D_j+\epsilon}, \qquad
+    \hat{c} = \operatorname*{arg\,max}_{c} \sum_{j \in N_K} w_j \cdot I(c_j=c)
+    \label{eq:ch2_weighted_knn}
+\end{equation}
+
+เมื่อ $N_K$ คือชุด fingerprint ใกล้เคียงที่สุดจำนวน $K$ จุด, $c_j$ คือคลาสหรือห้องของ fingerprint จุดที่ $j$, $I(\cdot)$ คือ indicator function และ $\epsilon$ เป็นค่าขนาดเล็กเพื่อป้องกันการหารด้วยศูนย์
+
+ในกรณีที่ข้อมูล fingerprint ไม่ครบหรือค่า RSSI ไม่เหมาะกับการคำนวณ KNN ระบบสามารถใช้ max-RSSI เป็น baseline หรือ fallback ได้ แนวคิดคือเลือก node ที่มีค่า RSSI สูงที่สุดแล้วใช้ตำแหน่งหรือห้องของ node นั้นเป็นค่าประมาณ ดังสมการ~(\ref{eq:ch2_max_rssi})
+
+\begin{equation}
+    i^{*} = \operatorname*{arg\,max}_{i} P_i, \qquad
+    \hat{c}_{\mathrm{max}} = c_{i^{*}}
+    \label{eq:ch2_max_rssi}
+\end{equation}
+
+วิธี max-RSSI มีความเรียบง่ายและเหมาะเป็น fallback แต่โดยทั่วไปจะไวต่อสัญญาณสะท้อนหรือการบังสัญญาณมากกว่า fingerprinting ดังนั้นในระบบต้นแบบจึงควรใช้ KNN เป็นวิธีหลักเมื่อมีข้อมูลเพียงพอ และใช้ max-RSSI ในกรณีที่ข้อมูลไม่ครบหรือโมเดลไม่สามารถประเมินได้อย่างมั่นใจ
+
+\begin{figure}[htbp]
     \centering
+    \resizebox{0.94\textwidth}{!}{%
     \begin{tikzpicture}[
-        node distance=1.1cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=3.4cm, minimum height=0.85cm, align=center, fill=white, font=\small},
-        arrow/.style={-Latex, thick}
+        font=\small,
+        box/.style={draw, thick, align=center, text width=3.0cm, minimum height=1.0cm},
+        arrow/.style={-{Latex[length=2mm]}, thick}
     ]
-        \node (route) [box, fill=gray!12] {Route / Layout / Page};
-        \node (server) [box, fill=orange!14, below=of route] {Server Rendering\\and Data Fetch};
-        \node (html) [box, fill=yellow!10, below=of server] {Initial HTML + Payload};
-        \node (client) [box, fill=blue!10, below=of html] {Hydration + Client Transition};
-        \node (prefetch) [box, fill=green!10, right=2.1cm of client] {Prefetching\\next route};
-
-        \draw[arrow] (route) -- (server);
-        \draw[arrow] (server) -- (html);
-        \draw[arrow] (html) -- (client);
-        \draw[arrow] (prefetch.west) -- (client.east);
-    \end{tikzpicture}
-    \caption{แนวคิดการเรนเดอร์และการนำทางของ Next.js สำหรับเว็บแอปพลิเคชันเชิงปฏิบัติการ}
-    \label{fig:ch2_nextjs_arch}
+        \node[box, fill=gray!10] (collect) {วัด RSSI\\ตามจุดอ้างอิง};
+        \node[box, fill=blue!8, right=0.75cm of collect] (map) {สร้าง radio map\\fingerprint};
+        \node[box, fill=green!8, right=0.75cm of map] (online) {รับ RSSI ใหม่\\จาก gateway};
+        \node[box, fill=orange!10, right=0.75cm of online] (knn) {KNN / weighted vote\\หรือ max-RSSI};
+        \node[box, fill=purple!8, right=0.75cm of knn] (room) {ผลลัพธ์\\ห้องหรือพื้นที่};
+        \draw[arrow] (collect) -- (map);
+        \draw[arrow] (map) -- (online);
+        \draw[arrow] (online) -- (knn);
+        \draw[arrow] (knn) -- (room);
+    \end{tikzpicture}}
+    \caption{กระบวนการระบุตำแหน่งภายในอาคารด้วย BLE RSSI และ fingerprinting}
+    \label{fig:ch2_ble_fingerprinting_pipeline}
 \end{figure}
 
+\section{การประมวลผลข้อมูล IMU และการเคลื่อนไหว}
+\label{sec:ch2_imu_processing}
 
-\subsection{Flutter และ Dart (Mobile Development Framework)}
-แอปพลิเคชันบนอุปกรณ์เคลื่อนที่ในระบบนี้ใช้ Flutter และภาษา Dart เป็นฐานหลัก เนื่องจากต้องทำงานเป็น mobile gateway สำหรับอ่านสถานะ BLE ของ M5StickC Plus2, Polar Verity Sense และ BLE beacons ก่อนส่งข้อมูลขึ้น server ผ่าน MQTT หรือ API Flutter ช่วยให้พัฒนา UI และ logic สำหรับ Android ได้ค่อนข้างเร็ว ใช้ codebase เดียว และควบคุมหน้าจอ /WheelSensor ให้เหมาะกับงานภาคสนาม เช่น ตรวจสถานะการ pair อุปกรณ์ ดูค่า sensor ล่าสุด และตรวจว่าข้อมูลถูกส่งขึ้น server แล้วหรือยัง
+IMU เป็นเซ็นเซอร์ที่ใช้วัดการเคลื่อนไหวเชิงกล โดย accelerometer วัดความเร่งเชิงเส้นในแกน $x$, $y$, $z$ และ gyroscope วัดอัตราการหมุนรอบแกนต่าง ๆ ข้อมูลทั้งสองชนิดสามารถใช้ตรวจจับการเปลี่ยนแปลงสถานะของรถเข็นหรือกิจกรรมของผู้ใช้ได้ เช่น การเริ่มเคลื่อนที่ การหยุดนิ่ง การเคลื่อนที่ต่อเนื่อง หรือการสั่นผิดปกติ หลักการประมวลผลข้อมูล IMU จึงมักเริ่มจากการลด noise การคำนวณ feature ในช่วงเวลา และการสรุปสถานะจาก feature เหล่านั้น \cite{Lara2013WearableHAR}
 
-ในเชิงทฤษฎี Flutter ทำงานผ่าน widget tree และ rendering engine ของตนเอง ทำให้ UI แสดงผลค่อนข้างสม่ำเสมอระหว่างอุปกรณ์ ส่วน Dart เหมาะกับงาน asynchronous เช่น BLE scan, MQTT publish, offline queue และ reconnect state เพราะสามารถจัดการ event stream ได้ชัดเจน แนวทางนี้สอดคล้องกับบทบาทของโทรศัพท์ในระบบที่ไม่ได้เป็นเพียงหน้าจอแสดงผล แต่เป็น gateway หลักที่รวมข้อมูลจากอุปกรณ์ใกล้ตัวก่อนส่งให้ backend ตรวจสอบและบันทึกต่อไป
+สำหรับ accelerometer สามารถคำนวณ magnitude ของความเร่งรวมได้ตามสมการ~(\ref{eq:ch2_acc_magnitude}) เพื่อรวมข้อมูลสามแกนให้เป็นค่าเดียวที่อ่านง่ายขึ้น
 
-\begin{figure}[H]
+\begin{equation}
+    |\mathbf{a}_t| = \sqrt{a_{x,t}^{2}+a_{y,t}^{2}+a_{z,t}^{2}}
+    \label{eq:ch2_acc_magnitude}
+\end{equation}
+
+ข้อมูลที่วัดต่อเนื่องมักถูกแบ่งเป็น sliding window ความยาว $W$ ตัวอย่าง แล้วคำนวณค่าสถิติ เช่น ค่าเฉลี่ยและส่วนเบี่ยงเบนมาตรฐาน ดังสมการ~(\ref{eq:ch2_window_stats})
+
+\begin{equation}
+    \mu = \frac{1}{W}\sum_{t=1}^{W}x_t, \qquad
+    \sigma = \sqrt{\frac{1}{W-1}\sum_{t=1}^{W}(x_t-\mu)^2}
+    \label{eq:ch2_window_stats}
+\end{equation}
+
+อีก feature หนึ่งที่ใช้บ่อยคือจำนวนครั้งที่สัญญาณเปลี่ยนเครื่องหมายหรือ zero-crossing ซึ่งสะท้อนความถี่ของการสั่นหรือการเปลี่ยนทิศทางในช่วงเวลานั้น ดังสมการ~(\ref{eq:ch2_zero_crossing})
+
+\begin{equation}
+    ZC = \sum_{t=2}^{W} I(x_t x_{t-1} < 0)
+    \label{eq:ch2_zero_crossing}
+\end{equation}
+
+ในงานที่นำ IMU ไปติดตั้งกับล้อรถเข็น ข้อมูลจาก gyroscope สามารถใช้ประมาณความเร็วและระยะทางของล้อได้ หากให้ $\omega_t$ เป็นอัตราการหมุนที่ผ่านการกรองแล้วในหน่วย rad/s และ $R$ เป็นรัศมีล้อ ความเร็วเชิงเส้นโดยประมาณคำนวณได้จากสมการ~(\ref{eq:ch2_wheel_velocity})
+
+\begin{equation}
+    v_t = R\omega_t
+    \label{eq:ch2_wheel_velocity}
+\end{equation}
+
+จากนั้นสามารถประมาณความเร่งและระยะทางสะสมได้ตามสมการ~(\ref{eq:ch2_wheel_acc_distance})
+
+\begin{equation}
+    a_t = \frac{v_t-v_{t-1}}{\Delta t}, \qquad
+    s_t = s_{t-1} + v_t \Delta t
+    \label{eq:ch2_wheel_acc_distance}
+\end{equation}
+
+ในทางปฏิบัติ ข้อมูล gyroscope ต้องผ่านการชดเชย offset และตัวกรอง เช่น Exponential Moving Average (EMA) เพื่อให้ค่าที่ใช้คำนวณความเร็วไม่แกว่งมากเกินไป สมการทั่วไปของ EMA แสดงในสมการ~(\ref{eq:ch2_ema})
+
+\begin{equation}
+    \hat{\omega}_{t} = \alpha \omega_t + (1-\alpha)\hat{\omega}_{t-1}
+    \label{eq:ch2_ema}
+\end{equation}
+
+เมื่อ $\alpha$ เป็นค่าปรับแต่งของตัวกรอง และ $\hat{\omega}_{t}$ คือสัญญาณหลังกรอง นอกจากนี้มักกำหนด deadband เพื่อตัด drift ขนาดเล็กขณะรถเข็นหยุดนิ่ง ดังสมการ~(\ref{eq:ch2_deadband})
+
+\begin{equation}
+    \omega^{'}_t =
+    \begin{cases}
+        0, & |\hat{\omega}_t| < \tau \\
+        \hat{\omega}_t, & |\hat{\omega}_t| \geq \tau
+    \end{cases}
+    \label{eq:ch2_deadband}
+\end{equation}
+
+โดย $\tau$ คือ threshold ของ deadband ที่ต้องปรับให้เหมาะกับอุปกรณ์และตำแหน่งติดตั้ง การนำสูตรเหล่านี้ไปใช้จึงต้องประเมินร่วมกับการทดสอบจริง เพราะ IMU มี drift, noise, การสั่นจากพื้น และความคลาดเคลื่อนจากการติดตั้ง
+
+\begin{table}[htbp]
     \centering
+    \caption{ตัวอย่าง feature จาก IMU ที่ใช้กับการวิเคราะห์การเคลื่อนไหว}
+    \label{tab:ch2_imu_features}
+    \small
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.25\textwidth}
+                    >{\raggedright\arraybackslash}p{0.30\textwidth}
+                    >{\raggedright\arraybackslash}p{0.34\textwidth}}
+        \toprule
+        Feature & ข้อมูลที่ใช้ & ความหมายเชิงพฤติกรรม \\ \midrule
+        Acceleration magnitude & $a_x,a_y,a_z$ & ระดับแรงสั่นหรือการเปลี่ยนการเคลื่อนไหวโดยรวม \\ \midrule
+        Mean และ standard deviation & ค่าใน sliding window & ความเข้มข้นและความแปรปรวนของการเคลื่อนไหว \\ \midrule
+        Zero-crossing & สัญญาณหลังกรองในแต่ละแกน & ความถี่ของการสลับทิศทางหรือการสั่น \\ \midrule
+        Velocity และ distance & Gyroscope และรัศมีล้อ & ความเร็วและระยะทางโดยประมาณของรถเข็น \\ \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Machine Learning สำหรับจำแนกพฤติกรรมหรือความเสี่ยง}
+\label{sec:ch2_ml_behavior}
+
+Machine Learning ในระบบดูแลผู้สูงอายุทำหน้าที่แปลงข้อมูล sensor ที่มีความถี่สูงและอ่านยากให้เป็นสถานะหรือความเสี่ยงที่ผู้ดูแลเข้าใจได้ง่ายขึ้น ตัวอย่างเช่น แปลงข้อมูล IMU เป็นสถานะกำลังเคลื่อนที่ หยุดนิ่ง หรือมีการสั่นผิดปกติ หรือรวมข้อมูลการเคลื่อนไหวกับข้อมูลสัญญาณชีพเพื่อช่วยจัดลำดับความสำคัญของเหตุการณ์ ขั้นตอนสำคัญคือ feature engineering ซึ่งนำข้อมูลดิบมาสรุปเป็นตัวแปร เช่น mean, standard deviation, magnitude, zero-crossing, velocity, distance, heart rate และ RR interval
+
+XGBoost เป็นอัลกอริทึม gradient tree boosting ที่ได้รับความนิยมเพราะรองรับ feature หลายชนิด จัดการความสัมพันธ์ไม่เชิงเส้นได้ดี และให้ผลลัพธ์ที่ตีความเชิง feature importance ได้ระดับหนึ่ง โมเดลประกอบด้วย decision tree หลายต้น โดยผลทำนายเกิดจากผลรวมของต้นไม้ทั้งหมด ดังสมการ~(\ref{eq:ch2_xgboost_model}) \cite{Chen2016XGBoost}
+
+\begin{equation}
+    \hat{y}_i = \sum_{m=1}^{M} f_m(\mathbf{x}_i), \qquad f_m \in \mathcal{F}
+    \label{eq:ch2_xgboost_model}
+\end{equation}
+
+เมื่อ $\mathbf{x}_i$ คือ feature vector ของตัวอย่างที่ $i$, $f_m$ คือ decision tree ต้นที่ $m$ และ $M$ คือจำนวนต้นไม้ทั้งหมด โดยการฝึกโมเดลจะพยายามลด loss ของข้อมูลฝึกพร้อมกับ regularization เพื่อลด overfitting ดังสมการ~(\ref{eq:ch2_xgboost_obj})
+
+\begin{equation}
+    \mathcal{L} = \sum_{i=1}^{n} l(y_i,\hat{y}_i) + \sum_{m=1}^{M}\Omega(f_m)
+    \label{eq:ch2_xgboost_obj}
+\end{equation}
+
+หากโมเดลให้ผลลัพธ์เป็น score ของแต่ละคลาส สามารถแปลงเป็นความน่าจะเป็นด้วย softmax ได้ตามสมการ~(\ref{eq:ch2_softmax})
+
+\begin{equation}
+    p(y=c|\mathbf{x}) = \frac{\exp(z_c)}{\sum_{q=1}^{C}\exp(z_q)}
+    \label{eq:ch2_softmax}
+\end{equation}
+
+การประเมินโมเดล classification ควรพิจารณามากกว่า accuracy เพียงค่าเดียว เพราะข้อมูลพฤติกรรมหรือความเสี่ยงอาจไม่สมดุลระหว่างคลาส ค่า precision, recall และ F1-score จึงใช้ประกอบกันตามสมการ~(\ref{eq:ch2_classification_metrics}) \cite{Sokolova2009ClassificationMetrics}
+
+\begin{equation}
+    Accuracy = \frac{TP+TN}{TP+TN+FP+FN}, \quad
+    Precision = \frac{TP}{TP+FP}, \quad
+    Recall = \frac{TP}{TP+FN}
+    \label{eq:ch2_classification_metrics}
+\end{equation}
+
+\begin{equation}
+    F1 = 2 \times \frac{Precision \times Recall}{Precision + Recall}
+    \label{eq:ch2_f1}
+\end{equation}
+
+สำหรับระบบดูแล ความผิดพลาดของโมเดลมีความหมายเชิงความปลอดภัยต่างกัน False negative อาจทำให้ระบบพลาดเหตุการณ์สำคัญ ขณะที่ false positive อาจเพิ่มภาระผู้ดูแลจาก alert ที่ไม่จำเป็น ดังนั้นการใช้โมเดลควรถูกออกแบบให้เป็นตัวช่วยคัดกรองเบื้องต้นและให้มนุษย์ตรวจสอบ ไม่ใช่กลไกตัดสินใจแทนผู้ดูแลทั้งหมด
+
+\section{Retrieval-Augmented Generation และ Retrieval Logic}
+\label{sec:ch2_rag_retrieval_logic}
+
+Retrieval-Augmented Generation (RAG) เป็นแนวคิดที่ให้โมเดลภาษาใช้ข้อมูลจากแหล่งความรู้ภายนอกก่อนสร้างคำตอบ แทนที่จะตอบจากความรู้ที่อยู่ในพารามิเตอร์ของโมเดลเพียงอย่างเดียว ขั้นตอนทั่วไปคือรับ query, ค้นเอกสารหรือข้อมูลที่เกี่ยวข้อง, จัดแพ็กบริบทให้กระชับ และส่งบริบทนั้นให้ LLM สังเคราะห์คำตอบ วิธีนี้ช่วยลดปัญหาการตอบจากข้อมูลที่ไม่อยู่ในบริบท และทำให้ระบบสามารถอ้างอิงข้อมูลที่เปลี่ยนแปลงได้ง่ายขึ้น \cite{Lewis2020RAG}
+
+ในเชิงทฤษฎี RAG-Sequence สามารถเขียนแบบย่อได้ตามสมการ~(\ref{eq:ch2_rag_sequence}) โดย $x$ คือ query, $z$ คือเอกสารหรือบริบทที่ retrieve ได้ และ $y$ คือคำตอบที่โมเดลสร้าง
+
+\begin{equation}
+    p_{\mathrm{RAG\text{-}Seq}}(y|x)
+    \approx
+    \sum_{z \in top\text{-}k(p_{\eta}(\cdot|x))}
+    p_{\eta}(z|x)
+    \prod_{i=1}^{N} p_{\theta}(y_i|x,z,y_{<i})
+    \label{eq:ch2_rag_sequence}
+\end{equation}
+
+เมื่อ $p_{\eta}(z|x)$ คือความน่าจะเป็นของ retriever ที่เลือกบริบท $z$ จาก query และ $p_{\theta}$ คือ generator หรือ LLM ที่สร้างคำตอบจาก query และบริบทที่ได้ จุดสำคัญคือคุณภาพของคำตอบไม่ได้ขึ้นกับ LLM เพียงอย่างเดียว แต่ขึ้นกับการเลือกบริบท การจัดลำดับข้อมูล และการตัดข้อมูลที่ไม่จำเป็นออกจาก context window ด้วย
+
+\begin{figure}[htbp]
+    \centering
+    \resizebox{0.95\textwidth}{!}{%
     \begin{tikzpicture}[
-        node distance=0.8cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=2.9cm, minimum height=0.78cm, align=center, fill=white, font=\small},
-        arrow/.style={-Latex, thick}
+        font=\small,
+        box/.style={draw, thick, align=center, text width=3.0cm, minimum height=1.05cm},
+        arrow/.style={-{Latex[length=2mm]}, thick}
     ]
-        \node (ble) [box, fill=yellow!12] {BLE devices\\M5 / Polar / Beacon};
-        \node (flutter) [box, fill=cyan!12, right=1.2cm of ble] {Flutter app\\/WheelSensor};
-        \node (queue) [box, fill=green!10, right=1.2cm of flutter] {Normalize\\offline queue};
-        \node (server) [box, fill=blue!10, right=1.2cm of queue] {MQTT / API\\Server};
-
-        \draw[arrow] (ble) -- (flutter);
-        \draw[arrow] (flutter) -- (queue);
-        \draw[arrow] (queue) -- (server);
-    \end{tikzpicture}
-    \caption{แนวคิดการใช้ Flutter เป็น mobile gateway สำหรับรวมข้อมูล BLE และส่งข้อมูลขึ้น server}
-    \label{fig:ch2_flutter_gateway}
+        \node[box, fill=gray!10] (query) {Query\\หรือ intent};
+        \node[box, fill=blue!8, right=0.65cm of query] (plan) {Plan\\เลือกแหล่งข้อมูล};
+        \node[box, fill=green!8, right=0.65cm of plan] (retrieve) {Fetch + Rank\\ดึงและจัดอันดับ};
+        \node[box, fill=orange!10, right=0.65cm of retrieve] (pack) {Pack\\ลดซ้ำและจัดบริบท};
+        \node[box, fill=purple!8, right=0.65cm of pack] (llm) {LLM\\ตอบจากบริบท};
+        \draw[arrow] (query) -- (plan);
+        \draw[arrow] (plan) -- (retrieve);
+        \draw[arrow] (retrieve) -- (pack);
+        \draw[arrow] (pack) -- (llm);
+    \end{tikzpicture}}
+    \caption{แนวคิด Retrieval Logic ในระบบ RAG}
+    \label{fig:ch2_rag_pipeline}
 \end{figure}
 
+ในระบบที่เกี่ยวข้องกับข้อมูลผู้ป่วยหรือผู้พักอาศัย retrieval logic ควรมีข้อจำกัดชัดเจน เช่น ดึงเฉพาะข้อมูลที่ผู้ใช้มีสิทธิ์เห็น ดึงเฉพาะช่วงเวลาที่เกี่ยวข้อง และไม่ส่งข้อมูลดิบมากเกินจำเป็นเข้าไปใน context window การแยกขั้นตอน retrieval ออกจากขั้นตอน generation ยังช่วยให้ตรวจสอบได้ว่าคำตอบหนึ่งเกิดจากบริบทใด ซึ่งสำคัญต่อความโปร่งใสและการแก้ไขข้อผิดพลาด
 
-\subsection{PostgreSQL (Database Management System)}
-PostgreSQL เป็นระบบจัดการฐานข้อมูลเชิงสัมพันธ์ (Relational Database) ที่มีจุดเด่นในการรองรับธุรกรรมแบบ ACID และการจัดเก็บข้อมูลที่มีโครงสร้างซับซ้อนร่วมกับข้อมูลกึ่งโครงสร้างในรูปแบบ JSONB \cite{PostgreSQL2024,Obe2017_PostgreSQL_in_Action} ความสามารถนี้มีความสำคัญอย่างยิ่งต่อระบบ IoT ที่ต้องจัดการทั้งข้อมูลหลักที่มีความสัมพันธ์ชัดเจน (เช่น ข้อมูลผู้ใช้และอุปกรณ์) และข้อมูลจากเซิร์ฟเวอร์ที่มีโครงสร้างยืดหยุ่นหรือเปลี่ยนแปลงได้ตามรุ่นของฮาร์ดแวร์
+\section{Neuro-symbolic AI และ AI Pipeline แบบ Rule + Model}
+\label{sec:ch2_neuro_symbolic_pipeline}
 
-การใช้ฐานข้อมูลที่รองรับทั้ง Relational และ JSONB ช่วยให้นักพัฒนาสามารถรักษาความสอดคล้องของข้อมูลหลักผ่านระบบ Schema ที่เข้มงวด ขณะเดียวกันก็สามารถขยายขีดความสามารถในการเก็บ Metadata หรือข้อมูลดิบจากเซ็นเซอร์ได้โดยไม่ต้องเปลี่ยนโครงสร้างฐานข้อมูลบ่อยครั้ง นำไปสู่การออกแบบระบบที่มีความเสถียรและยืดหยุ่นต่อการขยายผลในอนาคต
+Neuro-symbolic AI คือแนวคิดที่รวมความสามารถของ neural model เช่น deep learning หรือ LLM เข้ากับ symbolic component เช่น กฎ ตรรกะ schema knowledge graph หรือ policy ที่ตรวจสอบได้ งานวิจัยในสาขานี้มองว่าการใช้โมเดลเรียนรู้เพียงอย่างเดียวอาจมีข้อจำกัดด้านความโปร่งใสและการควบคุม ขณะที่ระบบ rule-based เพียงอย่างเดียวอาจไม่ยืดหยุ่นพอสำหรับภาษาธรรมชาติและบริบทที่ซับซ้อน การผสมทั้งสองส่วนจึงมีเป้าหมายเพื่อให้ระบบเข้าใจข้อมูลไม่เป็นโครงสร้างได้ดีขึ้น แต่ยังอยู่ภายใต้ข้อจำกัดที่ตรวจสอบได้ \cite{Susskind2021NeuroSymbolic,ColeloughRegli2025NeuroSymbolic}
 
-\begin{figure}[H]
+สำหรับระบบดูแลที่ใช้ LLM และเครื่องมือภายนอก แนวคิดนี้สามารถนำมาใช้ในลักษณะ neuro-symbolic-inspired ได้ กล่าวคือ neural component ทำหน้าที่เข้าใจภาษา สรุปบริบท และสร้างคำตอบภาษาธรรมชาติ ส่วน symbolic component ทำหน้าที่กำหนด intent schema, policy, role permission, tool contract และ execution gate เพื่อป้องกันคำสั่งที่ไม่ผ่านเงื่อนไข ระบบลักษณะนี้ไม่ควร claim ว่าเป็น neuro-symbolic system เต็มรูปแบบ แต่สามารถอธิบายได้ว่าได้รับแรงบันดาลใจจากการแยกหน้าที่ระหว่าง model reasoning และ rule-based control
+
+\begin{table}[htbp]
     \centering
+    \caption{การแบ่งบทบาทระหว่าง neural และ symbolic component}
+    \label{tab:ch2_neuro_symbolic_roles}
+    \small
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.24\textwidth}
+                    >{\raggedright\arraybackslash}p{0.33\textwidth}
+                    >{\raggedright\arraybackslash}p{0.34\textwidth}}
+        \toprule
+        ส่วนประกอบ & ตัวอย่างหน้าที่ & ประโยชน์ต่อระบบดูแล \\ \midrule
+        Neural & เข้าใจภาษาธรรมชาติ จัดกลุ่มความหมาย สังเคราะห์คำตอบ & รองรับคำถามหรือคำสั่งของผู้ดูแลที่มีรูปแบบหลากหลาย \\ \midrule
+        Symbolic & intent rule, schema, policy, permission, tool contract & จำกัดขอบเขตการเข้าถึงข้อมูลและการสั่งงานให้ตรวจสอบได้ \\ \midrule
+        Execution gate & ตรวจ payload ก่อนเรียกใช้ tool หรือ MCP server & ลดความเสี่ยงจาก hallucination หรือคำสั่งที่ไม่ตรงสิทธิ์ \\ \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    \resizebox{0.95\textwidth}{!}{%
     \begin{tikzpicture}[
-        box/.style={draw, rectangle, minimum width=2.7cm, minimum height=0.75cm, font=\scriptsize, fill=white},
-        db/.style={draw, cylinder, cylinder uses custom fill, cylinder body fill=gray!7, cylinder end fill=gray!18, shape border rotate=90, minimum width=5.2cm, minimum height=3.7cm}
+        font=\small,
+        box/.style={draw, thick, align=center, text width=2.75cm, minimum height=1.05cm},
+        arrow/.style={-{Latex[length=2mm]}, thick}
     ]
-        \node[db] (disk) at (0,0) {};
-        \node[font=\small\bfseries] at (0,1.35) {PostgreSQL};
-        \node[box, fill=red!8] (u) at (0,0.55) {Relational Entities};
-        \node[box, fill=blue!8] (p) at (0,-0.15) {Master Data / Links};
-        \node[box, fill=green!8] (e) at (0,-0.85) {Telemetry / Logs / JSONB};
-        \node[below=0.3cm of disk, font=\footnotesize] {ธุรกรรม, ความสอดคล้อง, และการสอบทานย้อนหลัง};
-    \end{tikzpicture}
-    \caption{แนวคิดการจัดเก็บข้อมูลแบบผสมผสานระหว่างข้อมูลเชิงโครงสร้างและกึ่งโครงสร้าง}
-    \label{fig:ch2_postgresql_struct}
+        \node[box, fill=gray!10] (input) {Query\\จากผู้ดูแล};
+        \node[box, fill=blue!8, right=0.55cm of input] (router) {Intent Router\\rule + semantic};
+        \node[box, fill=green!8, right=0.55cm of router] (context) {Context\\schema-bound};
+        \node[box, fill=orange!10, right=0.55cm of context] (llm) {LLM\\constrained answer};
+        \node[box, fill=red!8, right=0.55cm of llm] (gate) {Execution Gate\\policy check};
+        \node[box, fill=purple!8, right=0.55cm of gate] (tool) {MCP Tool\\หรือผลลัพธ์};
+        \draw[arrow] (input) -- (router);
+        \draw[arrow] (router) -- (context);
+        \draw[arrow] (context) -- (llm);
+        \draw[arrow] (llm) -- (gate);
+        \draw[arrow] (gate) -- (tool);
+    \end{tikzpicture}}
+    \caption{แนวคิด AI pipeline แบบผสม rule และ model สำหรับระบบที่เรียกใช้เครื่องมือ}
+    \label{fig:ch2_neuro_symbolic_pipeline}
 \end{figure}
 
-\subsection{Docker (Containerization)}
-Docker มีบทบาทสำคัญในการสร้างความสม่ำเสมอของสภาพแวดล้อมการทำงาน (Runtime Environment) โดยการใช้คอนเทนเนอร์เพื่อแยกแต่ละองค์ประกอบของแอปพลิเคชันออกจากกัน \cite{DockerContainerDocs2026} แนวคิดนี้ช่วยแก้ปัญหาความแตกต่างของ Dependency ระหว่างเครื่องนักพัฒนาและเครื่องเซิร์ฟเวอร์จริง ทำให้การปรับใช้ระบบ (Deployment) สามารถทำได้อย่างรวดเร็วและลดโอกาสเกิดข้อผิดพลาดจากสภาพแวดล้อมที่ไม่ตรงกัน
-
-นอกจากนี้ การใช้ Docker Compose ยังช่วยให้การจัดการระบบที่มีหลายบริการทำงานร่วมกัน (Multi-service architecture) เช่น เว็บแอปพลิเคชัน ฐานข้อมูล และตัวรับส่งข้อมูล เป็นไปอย่างเป็นระบบผ่านไฟล์กำหนดค่าชุดเดียว \cite{DockerCompose2024} ทำให้การเริ่มต้นทำงานของระบบทั้งหมดเป็นกระบวนการที่ทำซ้ำได้และมีความน่าเชื่อถือสูง
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[
-        node distance=0.55cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=2.5cm, minimum height=0.8cm, align=center, fill=green!10, font=\scriptsize},
-        engine/.style={draw, rectangle, rounded corners, minimum width=6.2cm, minimum height=0.95cm, fill=blue!15, font=\footnotesize},
-        stack/.style={draw, rectangle, minimum width=7.0cm, minimum height=1.3cm, fill=gray!10}
-    ]
-        \node[stack] (host) {Host OS / Infrastructure};
-        \node[engine, above=0.25cm of host] (engine) {Docker Engine / Compose};
-        \node[box, above=0.45cm of engine, xshift=-2.8cm] (c1) {Frontend Service};
-        \node[box, above=0.45cm of engine] (c2) {Backend Service};
-        \node[box, above=0.45cm of engine, xshift=2.8cm] (c3) {Database Service};
-
-        \draw[thick, ->] (engine.north -| c1) -- (c1);
-        \draw[thick, ->] (engine.north -| c2) -- (c2);
-        \draw[thick, ->] (engine.north -| c3) -- (c3);
-    \end{tikzpicture}
-    \caption{การจัดวางบริการหลักของระบบในสภาพแวดล้อมคอนเทนเนอร์}
-    \label{fig:ch2_docker_concept}
-\end{figure}
-
-\clearpage
-\subsection{Ollama และ Large Language Models (LLM)}
-การนำโมเดลภาษาขนาดใหญ่ (LLM) มาใช้ในระบบติดตามพฤติกรรมมีวัตถุประสงค์เพื่อช่วยสรุปเหตุการณ์และสนับสนุนการโต้ตอบเชิงภาษาธรรมชาติ อย่างไรก็ตาม ระบบลักษณะนี้มีข้อกำหนดด้านความเป็นส่วนตัวสูง จึงมีความจำเป็นต้องใช้ Local Inference มากกว่าบริการภายนอก \textbf{Ollama} เป็นแพลตฟอร์มที่ช่วยให้การรันโมเดล LLM ภายในโครงสร้างพื้นฐานขององค์กรทำได้สะดวก พร้อมเปิด API ที่แอปพลิเคชันอื่นเรียกใช้ได้โดยตรง \cite{Ollama2024,OllamaAPI2026}
-
-ในเชิงวิชาการ โมเดลที่เหมาะสมสำหรับการรันบนอุปกรณ์ที่มีทรัพยากรจำกัดคือกลุ่มโมเดลขนาดเล็ก (Small Language Models) เช่น \textbf{gemma4:e2b} ซึ่งถูกออกแบบให้มีพารามิเตอร์ที่มีประสิทธิภาพสำหรับการใช้งานระดับ Edge \cite{OllamaGemma4E2B2026} โดยมีความสามารถครอบคลุมทั้งงานด้าน Reasoning, Coding และการทำความเข้าใจสื่อหลายรูปแบบ (Multimodal Understanding) การใช้ LLM ในระบบเฝ้าระวังจึงควรเน้นบทบาทในการเป็นตัวสนับสนุนการตัดสินใจ (Decision Support) ภายใต้กฎเกณฑ์เชิงระบบที่ตรวจสอบได้
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[
-        node distance=1.1cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=2.8cm, minimum height=0.9cm, align=center, fill=white, font=\small},
-        arrow/.style={-Latex, thick}
-    ]
-        \node (prompt) [box, fill=purple!8] {User / System\\Prompt};
-        \node (ollama) [box, fill=purple!18, right=of prompt] {Ollama Runtime\\Local Inference};
-        \node (model) [box, fill=yellow!12, above=0.95cm of ollama] {SLM / LLM\\(e.g., gemma4:e2b)};
-        \node (tool) [box, fill=cyan!10, below=0.95cm of ollama] {Context / Tools\\Rules, Data, MCP};
-        \node (resp) [box, fill=green!10, right=of ollama] {Generated Response /\\Action Summary};
-
-        \draw[arrow] (prompt) -- (ollama);
-        \draw[arrow] (model) -- (ollama);
-        \draw[arrow] (tool) -- (ollama);
-        \draw[arrow] (ollama) -- (resp);
-    \end{tikzpicture}
-    \caption{แนวคิดการให้บริการโมเดลภาษาขนาดใหญ่ภายในระบบผ่าน Ollama}
-    \label{fig:ch2_ollama_flow}
-\end{figure}
-
-\subsection{Model Context Protocol (MCP)}
-Model Context Protocol (MCP) เป็นมาตรฐานเปิดที่ออกแบบมาเพื่อให้แอปพลิเคชันสามารถจัดเตรียมบริบท (Context) และเครื่องมือ (Tools) ให้กับ LLM ได้อย่างสม่ำเสมอ \cite{ModelContextProtocol,Anthropic2024MCP} มาตรฐานนี้ทำหน้าที่เสมือนตัวเชื่อมต่อที่เป็นสากล ช่วยให้แบบจำลองสามารถเข้าถึงแหล่งข้อมูลที่หลากหลายได้ภายใต้โครงสร้างเดียวกัน
-
-เมื่อมีการนำ MCP มาใช้ ระบบจะสามารถแยกส่วนของโมเดลออกจากส่วนของข้อมูลและเครื่องมือได้อย่างชัดเจน ส่งผลดีต่อความปลอดภัยและการควบคุมสิทธิ์การเข้าถึงข้อมูลที่สำคัญ (เช่น ข้อมูลสุขภาพ) โดยที่ตัวโมเดลยังสามารถทำหน้าที่ประมวลผลข้อมูลและเลือกใช้เครื่องมือที่เหมาะสมเพื่อตอบสนองต่อคำร้องขอของผู้ใช้ได้อย่างมีประสิทธิภาพ
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[
-        node distance=1.2cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=3.1cm, minimum height=0.85cm, align=center, fill=white, font=\small},
-        arrow/.style={<->, thick}
-    ]
-        \node (ai) [box, fill=cyan!10] {LLM Client / Agent};
-        \node (mcp) [box, fill=cyan!22, right=of ai] {MCP Server / Adapter};
-        \node (data) [box, fill=yellow!10, right=of mcp] {Data Sources / APIs};
-
-        \draw[arrow] (ai) -- node[above=2mm, font=\scriptsize] {standard protocol} (mcp);
-        \draw[arrow] (mcp) -- node[above=2mm, font=\scriptsize] {controlled access} (data);
-    \end{tikzpicture}
-    \caption{บทบาทของ MCP ในการเชื่อมโยง LLM เข้ากับแหล่งข้อมูลและเครื่องมือ}
-    \label{fig:ch2_mcp_arch}
-\end{figure}
-
-\subsection{MQTT (Message Queuing Telemetry Transport)}
-MQTT เป็นโปรโตคอลสื่อสารแบบ Publish/Subscribe ที่ออกแบบมาสำหรับบริบท IoT และเครือข่ายที่มีทรัพยากรจำกัด \cite{MQTTSpec,MQTT_Spec_V5,Mishra2018_MQTT_survey} ลักษณะเด่นคือการแยกผู้ส่ง (Publisher) ออกจากผู้รับ (Subscriber) ผ่านตัวกลาง (Broker) ทำให้ระบบมีความยืดหยุ่นสูงในการขยายจำนวนอุปกรณ์
-
-ในระบบการเฝ้าระวัง อุปกรณ์เซ็นเซอร์และบริการประมวลผลสามารถสื่อสารกันผ่านหัวข้อ (Topics) ที่กำหนดไว้ล่วงหน้า ประโยชน์เชิงสถาปัตยกรรมคือช่วยให้การจัดการข้อมูลจำนวนมากในลักษณะ Near Real-time ทำได้โดยมีภาระของเครือข่ายต่ำ และรองรับระดับคุณภาพการส่งข้อมูล (QoS) ตามความสำคัญของข้อความแต่ละประเภท
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[
-        node distance=1.5cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=2.6cm, minimum height=0.85cm, align=center, fill=white, font=\small},
-        arrow/.style={-Latex, thick}
-    ]
-        \node (sensor) [box, fill=orange!8] {Publisher\\(Sensor / Device)};
-        \node (broker) [box, fill=orange!22, right=of sensor] {MQTT Broker};
-        \node (app) [box, fill=orange!8, right=of broker] {Subscriber\\(App / Service)};
-
-        \draw[arrow] (sensor) -- node[above=2mm, font=\scriptsize] {publish topic} (broker);
-        \draw[arrow] (broker) -- node[above=2mm, font=\scriptsize] {deliver events} (app);
-    \end{tikzpicture}
-    \caption{รูปแบบการสื่อสารแบบ Publish/Subscribe ของ MQTT ในระบบ IoT}
-    \label{fig:ch2_mqtt_concept}
-\end{figure}
-
-\clearpage
-\subsection{PlatformIO และการพัฒนา Firmware}
-PlatformIO เป็นเครื่องมือพัฒนาแบบ Cross-platform สำหรับระบบฝังตัว (Embedded Systems) ที่รองรับงานตั้งแต่การจัดการโปรเจกต์ การจัดการห้องสมุด (Library Management) การทดสอบ และการวิเคราะห์โค้ด \cite{PlatformIO2024,PlatformIO2026} เครื่องมือนี้ช่วยให้นักพัฒนาสามารถกำหนดสภาพแวดล้อมการทำงานของบอร์ดแต่ละรุ่นได้อย่างชัดเจนผ่านไฟล์กำหนดค่า เช่น \texttt{platformio.ini}
-
-การใช้ PlatformIO ช่วยเพิ่มความสามารถในการตรวจสอบได้ (Traceability) และลดปัญหาความไม่สม่ำเสมอของ Toolchain ระหว่างการทำงานเป็นทีม นอกจากนี้ยังรองรับการทำงานร่วมกับระบบควบคุมเวอร์ชันและระบบอัตโนมัติ ทำให้การพัฒนาเฟิร์มแวร์มีความเป็นมืออาชีพและลดข้อผิดพลาดที่เกิดจากขั้นตอนการ Build แบบดั้งเดิม
-
-\begin{figure}[H]
-    \centering
-    \begin{tikzpicture}[
-        node distance=1.2cm,
-        box/.style={draw, rectangle, rounded corners, minimum width=3.0cm, minimum height=0.85cm, align=center, fill=white, font=\small},
-        arrow/.style={-Latex, thick}
-    ]
-        \node (code) [box, fill=red!8] {C/C++ Firmware Source};
-        \node (conf) [box, fill=yellow!12, below=0.9cm of code] {\texttt{platformio.ini}\\board + framework + libs};
-        \node (pio) [box, fill=red!18, right=of conf] {PlatformIO Core\\build / test / upload};
-        \node (hw) [box, fill=gray!12, right=of pio] {ESP32 Devices};
-
-        \draw[arrow] (code.east) -- (pio.north west);
-        \draw[arrow] (conf) -- (pio);
-        \draw[arrow] (pio) -- (hw);
-    \end{tikzpicture}
-    \caption{กระบวนการพัฒนาและติดตั้งเฟิร์มแวร์ผ่าน PlatformIO}
-    \label{fig:ch2_platformio_flow}
-\end{figure}
-
-\subsection{Home Assistant และการควบคุมอุปกรณ์ IoT}
-Home Assistant เป็นแพลตฟอร์มโอเพนซอร์สสำหรับการควบคุมอุปกรณ์ IoT และอุปกรณ์อัจฉริยะภายในบ้าน \cite{HomeAssistant2024} แพลตฟอร์มนี้ทำงานบนระบบปฏิบัติการหลัก (Operating System) ที่ออกแบบมาสำหรับการทำงานต่อเนื่อ 24 ชั่วโมง (Always-on) โดยรองรับการติดตั้งบนอุปกรณ์หลากหลายประเภท ทั้งบนคอมพิวเตอร์ทั่วไป บอร์ดรองโปรแกรมเช่น Raspberry Pi และบนคลาวด (Virtual Machine)
-
-Home Assistant มีความสามารถในการเชื่อมต่อกับอุปกรณ์หลากหลายประเภทผ่านโปรโตคอลต่างๆ เช่น Zigbee, Z-Wave, WiFi, Bluetooth, และ Matter ทำให้สามารถรองรับอุปกรณ์จากผู้ผลิตหลายยี่ห้อได้ในระบบเดียวกัน การจัดการอุปกรณ์ทำผ่านแนวคิด Integration ซึ่งเป็นส่วนเสริม (Add-on) ที่ทำหน้าที่เชื่อมต่อและควบคุมอุปกรณ์แต่ละประเภท
-
-ในด้านการควบคุม Home Assistant มีระบบ Automation ที่ให้ผู้ใช้สามารถกำหนดเงื่อนไขและการกระทำ (Trigger and Action) ได้อย่างยืดหยุ่น ตัวอย่างเช่น เมื่อเซ็นเซอร์ตรวจจับการเคลื่อนไหว (Motion Detected) ให้เปิดไฟในห้องนั้น หรือเมื่อถึงเวลาที่กำหนดให้ปิดอุปกรณ์ทั้งหมดในบ้าน นอกจากนี้ยังมีระบบ Scripting และ Template สำหรับการเขียนตรรกะที่ซับซ้อนและการปรับแต่งพฤติกรรมของอุปกรณ์ตามความต้องการของผู้ใช้
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.7\textwidth]{../../assets/figures/chapter2/homeasisitant.png}
-    \caption{หน้าจอหลักของ Home Assistant แสดงการจัดการอุปกรณ์ IoT และ Automation}
-    \label{fig:ch2_homeassistant}
-\end{figure}
+Model Context Protocol (MCP) เป็นแนวทางหนึ่งในการกำหนดรูปแบบการเชื่อมต่อระหว่าง AI client กับเครื่องมือหรือ resource ภายนอก โดยช่วยให้ tool มี contract ชัดเจนและสามารถควบคุมการเข้าถึงผ่าน server ได้ \cite{ModelContextProtocol,Anthropic2024MCP} เมื่อใช้ร่วมกับ execution gate ระบบสามารถแยกขั้นตอน ``เสนอคำสั่ง'' ออกจาก ``อนุญาตให้สั่งงานจริง'' ได้ชัดเจน ซึ่งเหมาะกับงานดูแลผู้สูงอายุที่การทำงานผิดพลาดอาจส่งผลต่อความปลอดภัยหรือความเป็นส่วนตัวของข้อมูล
 
 \section{งานวิจัยที่เกี่ยวข้อง}
 \label{sec:ch2_related_work}
 
-การทบทวนวรรณกรรมที่ผ่านมาแสดงให้เห็นถึงความพยายามนำเทคโนโลยีมาประยุกต์ใช้เพื่อการดูแลผู้สูงอายุอย่างหลากหลาย งานวิจัยในอดีตมักมุ่งเน้นไปที่การใช้เซ็นเซอร์เพื่อตรวจจับการล้มแบบแยกส่วน โดยขาดการบูรณาการข้อมูลเพื่อสร้างบริบทที่ครอบคลุม (Comprehensive Context) เช่น การนำข้อมูลการเคลื่อนไหว (IMU) มาร่วมกับสัญญาณชีพ (PPG) และพิกัดตำแหน่งภายในอาคาร (IPS) เพื่อวิเคราะห์พฤติกรรมเชิงลึก
+งานวิจัยด้าน indoor localization ด้วย BLE RSSI และ fingerprinting แสดงให้เห็นว่า RSSI สามารถใช้เป็นสัญญาณประกอบการระบุตำแหน่งภายในอาคารได้ แต่มีความผันผวนสูงและต้องอาศัยวิธีลดผลกระทบจากสภาพแวดล้อม งานของ Bahl และ Padmanabhan ในระบบ RADAR เป็นตัวอย่างสำคัญของการใช้ radio map และ fingerprinting เพื่อหาตำแหน่งภายในอาคาร \cite{Bahl2000RADAR} ส่วนงานวิเคราะห์ RSSI ในอาคารชี้ให้เห็นว่าค่า RSSI ได้รับผลกระทบจากตำแหน่งอุปกรณ์ สิ่งกีดขวาง และการสะท้อนของสัญญาณ \cite{Kaemarungsi2012RSSIAnalysis} ทำให้การใช้ KNN และ fallback เช่น max-RSSI มีความเหมาะสมกับ prototype ที่ต้องรองรับความไม่แน่นอนของข้อมูล
 
-นอกจากนี้ งานวิจัยหลายชิ้นที่มีการนำ AI มาใช้ มักประสบปัญหาด้านความเป็นส่วนตัวเนื่องจากการพึ่งพาบริการ Cloud ภายนอก และปัญหาความโปร่งใสของการตัดสินใจ (Black-box AI) ในทางตรงกันข้าม ปริญญานิพนธ์ฉบับนี้ได้นำเสนอสถาปัตยกรรมแบบขอบเครือข่าย (Edge AI) ผ่านการใช้โมเดลภาษาขนาดเล็ก (gemma4:e2b) ที่ทำงานร่วมกับ Model Context Protocol (MCP) เพื่อจำกัดขอบเขตข้อมูลและเพิ่มความโปร่งใส (Explainability) ของปัญญาประดิษฐ์ในการดูแลผู้ป่วย ส่งผลให้เกิดระบบการดูแลผู้สูงอายุที่ตอบสนองแบบเรียลไทม์ ปลอดภัย และมีประสิทธิภาพสูง
+งานวิจัยด้าน Human Activity Recognition (HAR) จาก wearable sensor และ IMU มักใช้กระบวนการแบ่งสัญญาณเป็น window แล้วคำนวณ feature เชิงสถิติ เช่น mean, variance, energy, magnitude และ zero-crossing ก่อนป้อนเข้าสู่โมเดลจำแนกพฤติกรรม \cite{Lara2013WearableHAR} แนวทางนี้สอดคล้องกับการใช้ข้อมูลจาก accelerometer และ gyroscope บนรถเข็น เพราะข้อมูลดิบอ่านตีความยาก แต่เมื่อแปลงเป็น feature แล้วสามารถใช้จำแนกสถานะการเคลื่อนไหวหรือความผิดปกติได้ชัดเจนขึ้น
+
+งานด้าน wearable health และ PPG สนับสนุนการใช้ sensor สวมใส่เพื่อติดตามข้อมูลชีวสัญญาณ เช่น heart rate, RR interval, PPG และข้อมูลการเคลื่อนไหว แต่ข้อจำกัดสำคัญคือคุณภาพสัญญาณขึ้นกับตำแหน่งสวมใส่ การเคลื่อนไหวของร่างกาย และ algorithm ของผู้ผลิต \cite{PolarBLESDK,PolarVeritySenseWhitepaper} ดังนั้นการใช้ข้อมูล wearable ในระบบดูแลจึงควรเป็นข้อมูลประกอบการเฝ้าระวังและแจ้งเตือน ไม่ใช่การวินิจฉัยทางการแพทย์
+
+งานด้าน Retrieval-Augmented Generation แสดงให้เห็นว่าการดึงบริบทจากแหล่งข้อมูลภายนอกก่อนให้โมเดลภาษาตอบ สามารถเพิ่มความเฉพาะเจาะจงและความสอดคล้องของคำตอบในงานที่ต้องใช้ความรู้จำนวนมาก \cite{Lewis2020RAG} สำหรับระบบดูแล แนวคิดนี้นำมาประยุกต์ได้กับการดึงข้อมูลผู้พักอาศัย ข้อมูล sensor ล่าสุด ประวัติการแจ้งเตือน หรือ policy ก่อนสร้างคำตอบให้ผู้ดูแล
+
+งานด้าน neuro-symbolic และ tool-use AI เน้นการผสมความสามารถของโมเดลกับกฎหรือ schema ที่ตรวจสอบได้ เพื่อเพิ่มความน่าเชื่อถือและลดความเสี่ยงจากการตัดสินใจแบบ black box \cite{Susskind2021NeuroSymbolic,ColeloughRegli2025NeuroSymbolic} เมื่อระบบต้องเรียกใช้เครื่องมือผ่าน MCP หรือ API ภายนอก การมี execution gate และ tool contract จึงเป็นกลไกสำคัญที่ทำให้การใช้ AI อยู่ในขอบเขตที่ปลอดภัยกว่า LLM ที่สามารถสั่งงานได้โดยไม่มีชั้นตรวจสอบ
+
+\begin{table}[htbp]
+    \centering
+    \caption{การจัดกลุ่มงานวิจัยที่เกี่ยวข้องกับระบบต้นแบบ}
+    \label{tab:ch2_related_work_groups}
+    \small
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.27\textwidth}
+                    >{\raggedright\arraybackslash}p{0.34\textwidth}
+                    >{\raggedright\arraybackslash}p{0.30\textwidth}}
+        \toprule
+        กลุ่มงานวิจัย & ประเด็นสำคัญ & การเชื่อมโยงกับงานนี้ \\ \midrule
+        Indoor localization / BLE RSSI / KNN & RSSI ผันผวน ต้องใช้ fingerprinting หรือวิธี fallback & ใช้ KNN และ max-RSSI เพื่อประเมินพื้นที่ในอาคาร \\ \midrule
+        Human activity recognition / IMU & แปลงสัญญาณเป็น feature ก่อนจำแนกพฤติกรรม & ใช้ feature จาก IMU และข้อมูลการเคลื่อนไหวของรถเข็น \\ \midrule
+        Wearable health / PPG & วัด HR, RR interval และ PPG แต่ต้องระวัง noise & ใช้ข้อมูล wearable เป็นบริบทประกอบ ไม่ใช่ผลวินิจฉัย \\ \midrule
+        RAG & ดึงบริบทก่อนให้ LLM ตอบ & ลดการตอบนอกข้อมูลและควบคุม context ของผู้พักอาศัย \\ \midrule
+        Neuro-symbolic / tool-use AI & ใช้ rule, schema และ policy ควบคู่กับโมเดล & ใช้ execution gate และ MCP tool contract ก่อนสั่งงานจริง \\ \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{ช่องว่างของงานวิจัยเดิม}
+\label{sec:ch2_research_gap}
+
+จากการทบทวนทฤษฎีและงานวิจัยที่เกี่ยวข้อง พบว่างานจำนวนมากมักพัฒนาเฉพาะส่วนใดส่วนหนึ่งของระบบ เช่น งาน indoor localization ที่เน้นตำแหน่งจาก RSSI, งาน HAR ที่เน้นจำแนกกิจกรรมจาก IMU, งาน wearable health ที่เน้นสัญญาณชีพ, งาน dashboard ที่เน้นการแสดงผล หรือระบบ AI ที่เน้นการตอบคำถามและการเรียกใช้เครื่องมือ แต่ในบริบทการดูแลผู้สูงอายุหรือผู้ใช้รถเข็น ผู้ดูแลต้องการภาพรวมที่เชื่อมข้อมูลเหล่านี้เข้าด้วยกันมากกว่าผลลัพธ์แยกส่วน
+
+ช่องว่างสำคัญคือการรวม wheelchair sensor, wearable sensor, mobile gateway, indoor localization, dashboard ตามบทบาทผู้ใช้ และ AI/MCP tool pipeline ไว้ใน prototype เดียว โดยยังคงขอบเขตว่าเป็นระบบต้นแบบเพื่อสนับสนุนการดูแล ไม่ใช่เครื่องมือแพทย์ที่ผ่านการรับรอง การออกแบบลักษณะนี้ต้องจัดสมดุลระหว่างความสามารถด้าน sensor, ความเสถียรของการส่งข้อมูล, ความชัดเจนของ dashboard, และความปลอดภัยของ AI ที่อาจเข้าถึงข้อมูลหรือเครื่องมือในระบบ
+
+ดังนั้น บทถัดไปจะนำแนวคิดจากบทนี้ไปออกแบบระบบในรูปแบบปัญหาไปสู่แนวทางแก้ไข โดยอธิบายว่าระบบถูกปรับจากข้อจำกัดของ prototype เดิมอย่างไร เหตุใด mobile gateway จึงกลายเป็นแกนหลักของการส่งข้อมูล และ AI pipeline ถูกแยกเป็นชั้นต่าง ๆ เพื่อควบคุม latency, context, hallucination และการสั่งงานผ่าน MCP ได้อย่างไร
