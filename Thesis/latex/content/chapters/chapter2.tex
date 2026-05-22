@@ -5,7 +5,7 @@
 \chapter{ทฤษฎีและงานวิจัยที่เกี่ยวข้อง}
 \label{chapter2}
 
-บทนี้รวบรวมแนวคิด ทฤษฎี และงานวิจัยที่เกี่ยวข้องกับระบบดูแลผู้สูงอายุและผู้ใช้รถเข็นในสภาพแวดล้อมอัจฉริยะ โดยเน้นเฉพาะพื้นฐานที่จำเป็นต่อการออกแบบระบบ ได้แก่ แนวคิด Ambient Assisted Living, เทคโนโลยี IoT และเซ็นเซอร์, การระบุตำแหน่งภายในอาคารด้วย BLE RSSI, การประมวลผลข้อมูล IMU, Machine Learning สำหรับจำแนกพฤติกรรม, Retrieval-Augmented Generation และแนวคิด Neuro-symbolic AI แบบผสมระหว่างกฎกับโมเดลภาษา เนื้อหาในบทนี้จึงทำหน้าที่เป็นฐานทฤษฎีสำหรับการออกแบบระบบในบทที่ 3 และการประเมินผลในบทที่ 4 โดยไม่ลงรายละเอียดระดับ implementation มากเกินจำเป็น
+บทนี้รวบรวมแนวคิด ทฤษฎี และงานวิจัยที่เกี่ยวข้องกับระบบดูแลผู้สูงอายุและผู้ใช้รถเข็นในสภาพแวดล้อมอัจฉริยะ โดยเน้นเฉพาะพื้นฐานที่จำเป็นต่อการออกแบบระบบ ได้แก่ แนวคิด Ambient Assisted Living, เทคโนโลยี IoT และเซ็นเซอร์, การระบุตำแหน่งภายในอาคารด้วย BLE RSSI, การประมวลผลข้อมูล IMU, Machine Learning สำหรับจำแนกพฤติกรรม, Retrieval-Augmented Generation และแนวคิด Neuro-symbolic AI แบบผสมระหว่างกฎกับโมเดลภาษา
 
 \section{แนวคิดระบบดูแลผู้สูงอายุและผู้ใช้รถเข็น}
 \label{sec:ch2_elderly_wheelchair_care}
@@ -18,21 +18,20 @@ Smart environment เป็นการขยายแนวคิด AAL ไป
 
 \begin{figure}[htbp]
     \centering
-    \resizebox{0.92\textwidth}{!}{%
-    \begin{tikzpicture}[
-        font=\small,
-        layer/.style={draw, thick, align=center, text width=3.2cm, minimum height=1.05cm},
-        arrow/.style={-{Latex[length=2mm]}, thick}
-    ]
-        \node[layer, fill=blue!8] (sensor) {Sensor Layer\\ตำแหน่ง การเคลื่อนไหว\\สัญญาณชีพ};
-        \node[layer, fill=green!8, right=0.8cm of sensor] (network) {Network Layer\\BLE, MQTT, REST};
-        \node[layer, fill=orange!10, right=0.8cm of network] (service) {Service Layer\\database, alert, analytics};
-        \node[layer, fill=purple!8, right=0.8cm of service] (care) {Care Layer\\dashboard และผู้ดูแล};
-        \draw[arrow] (sensor) -- (network);
-        \draw[arrow] (network) -- (service);
-        \draw[arrow] (service) -- (care);
-    \end{tikzpicture}}
-    \caption{ภาพรวมแนวคิดระบบดูแลแบบ Ambient Assisted Living และ Smart Environment}
+    \begin{subfigure}[t]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter2/ch2-aal-care-context.jpg}
+        \caption{บริบทผู้สูงอายุในสถานดูแล}
+        \label{fig:ch2_aal_care_context}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter2/ch2-care-facility-context.jpg}
+        \caption{ตัวอย่างพื้นที่บริการภายในสถานดูแล}
+        \label{fig:ch2_care_facility_context}
+    \end{subfigure}
+    \caption{บริบทของสถานดูแลที่ทำให้ระบบติดตามตำแหน่ง sensor และ dashboard รวมศูนย์มีความสำคัญ}
     \label{fig:ch2_aal_smart_env}
 \end{figure}
 
@@ -112,6 +111,25 @@ Raspberry Pi 5 RAM 8 GB เป็น single-board computer ที่มีพล
     \end{subfigure}
     \caption{อุปกรณ์ฮาร์ดแวร์หลักที่เกี่ยวข้องกับระบบต้นแบบ}
     \label{fig:ch2_hardware_devices}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[t]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter2/ch2-wheelchair-install.jpg}
+        \caption{ตัวอย่างการติดตั้งอุปกรณ์กับรถเข็น}
+        \label{fig:ch2_wheelchair_install}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{chapter2/ch2-field-node-install.jpg}
+        \caption{ตัวอย่างการติดตั้ง node อ้างอิงสัญญาณ}
+        \label{fig:ch2_field_node_install}
+    \end{subfigure}
+    \caption{ตัวอย่างการติดตั้งอุปกรณ์ภาคสนามที่เกี่ยวข้องกับการรับข้อมูลจากรถเข็นและ BLE node}
+    \label{fig:ch2_field_installation_examples}
 \end{figure}
 
 นอกจากอุปกรณ์หลักข้างต้น ระบบดูแลยังอาจมีอุปกรณ์รอง เช่น BLE beacon หรือ node อ้างอิงสัญญาณ โทรศัพท์มือถือที่ทำหน้าที่ gateway เครื่องชาร์จ แหล่งจ่ายไฟสำรอง และอุปกรณ์เครือข่ายภายในอาคาร อุปกรณ์เหล่านี้มีผลต่อความเสถียรของระบบ แต่ในเชิงทฤษฎีสามารถจัดเป็นส่วนสนับสนุนของ sensor layer, network layer และ edge layer ตามบทบาทที่กล่าวไว้ก่อนหน้า

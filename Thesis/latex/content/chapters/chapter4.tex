@@ -1,4 +1,4 @@
-%%================================================
+﻿%%================================================
 %% Chapter 4 - Evaluation Results
 %%================================================
 \chapter{ผลการทดลองและการประเมินผล}
@@ -6,7 +6,6 @@
 
 \section{ภาพรวมการทดลอง}
 \label{sec:ch4_overview}
-\noindent
 การประเมินผลระบบต้นแบบ WheelSense ในบทนี้จัดทำเพื่อดูว่าองค์ประกอบหลักที่พัฒนาไว้สามารถทำงานร่วมกันได้ในระดับต้นแบบหรือไม่ โดยแบ่งการทดสอบออกเป็นส่วนที่สอดคล้องกับสถาปัตยกรรมในบทที่~\ref{chapter3} ได้แก่ อุปกรณ์ sensor และอุปกรณ์ภาคสนาม การระบุตำแหน่งภายในอาคารด้วย RSSI/KNN การทำงานของ mobile gateway และ server การใช้งาน dashboard/HMI พร้อมการประเมิน SUS และการทดสอบ AI/MCP pipeline ในด้านความสอดคล้องของการเลือกเครื่องมือ ความสม่ำเสมอของคำตอบ และเวลาแฝงของแต่ละ layer
 
 การทดลองทั้งหมดเป็นการทดสอบในพื้นที่ทดลองและสภาพแวดล้อมของโครงงาน ไม่ใช่การนำระบบไปใช้งานจริงในสถานดูแลผู้สูงอายุแบบต่อเนื่อง ดังนั้นผลที่รายงานจึงเป็นผลเพื่อยืนยันความเป็นไปได้ของระบบต้นแบบและเพื่อระบุข้อจำกัดที่ต้องพัฒนาต่อ ไม่ใช่การรับรองความพร้อมใช้งานทางการแพทย์หรือการใช้งานจริงในทุกสภาพแวดล้อม ตารางที่~\ref{tab:ch4_experiment_scope} แสดงขอบเขตการทดลองที่ใช้ในบทนี้
@@ -34,7 +33,6 @@
 
 \section{การทดสอบ Sensor และอุปกรณ์ภาคสนาม}
 \label{sec:ch4_sensor_field}
-\noindent
 การทดสอบส่วนนี้ตรวจสอบการทำงานของ M5StickC Plus2 ที่ติดตั้งกับรถเข็นเพื่ออ่านค่า IMU และ battery ร่วมกับ Polar Verity Sense ที่อ่านข้อมูลสัญญาณชีพผ่าน mobile gateway การทดสอบทำในพื้นที่ทดลองโดยกำหนดลักษณะการเคลื่อนไหวของรถเข็นเป็น 4 กลุ่ม ได้แก่ หยุดนิ่ง เคลื่อนที่ปกติ เลี้ยวแรง และเหตุการณ์ลักษณะกระแทก เพื่อดูว่าข้อมูล sensor มีความต่อเนื่องเพียงพอและสามารถใช้จำแนกสถานะเบื้องต้นได้หรือไม่
 
 \begin{figure}[!htbp]
@@ -87,8 +85,7 @@
 
 \section{การทดสอบ Indoor Localization ด้วย KNN}
 \label{sec:ch4_localization}
-\noindent
-การทดสอบการระบุตำแหน่งภายในอาคารใช้ข้อมูล RSSI จาก BLE node ในพื้นที่ทดลอง โดย mobile gateway สแกนสัญญาณและส่งรายการ RSSI พร้อม timestamp เข้าสู่ backend เพื่อประเมินตำแหน่งด้วย fingerprint และ KNN ในกรณีที่ fingerprint ยังไม่พร้อมหรือค่าความมั่นใจต่ำ ระบบสามารถใช้ max-RSSI เป็น baseline หรือ fallback ได้
+การทดสอบการระบุตำแหน่งภายในอาคารใช้ข้อมูล RSSI จาก BLE node ในพื้นที่ทดลอง โดย gateway สแกนสัญญาณและส่งรายการ RSSI พร้อม timestamp เข้าสู่ backend เพื่อประเมินตำแหน่งด้วย fingerprint และ KNN ในกรณีที่ fingerprint ยังไม่พร้อมหรือค่าความมั่นใจต่ำ ระบบสามารถใช้ max-RSSI เป็น baseline หรือ fallback ได้ การรายงานหัวข้อนี้ใช้รูปแบบ Setting, How we test, Result และ Analysis เพื่อแยกเงื่อนไขการทดลองออกจากการวิเคราะห์ผล
 
 \begin{figure}[!htbp]
     \centering
@@ -97,7 +94,18 @@
     \label{fig:ch4-user-location}
 \end{figure}
 
-วิธีทดสอบใช้ชุดข้อมูล RSSI ที่แบ่งเป็นกรณีทดลองตามเงื่อนไขของข้อมูลในภาคผนวก~\ref{app:knn_summary} แล้วเปรียบเทียบผลของ KNN กับผลที่ระบุไว้ในชุดทดสอบ ตารางที่~\ref{tab:ch4_knn_result} แสดงผลสรุปจากชุดข้อมูลที่มีหลักฐานประกอบในปัจจุบัน
+\textbf{Setting} พื้นที่ทดลองจากชุดข้อมูล RSSI แบ่งห้องหนึ่งออกเป็น 4 zone ขนาดประมาณ \(4 \times 4\) เมตรต่อ zone โดยใช้ฉากผ้าเป็นขอบเขตระหว่างพื้นที่ และติดตั้ง ESP32-S3 BLE anchor จำนวน 4 ตัวไว้บริเวณกึ่งกลางของแต่ละ zone ที่ระดับความสูงประมาณ 0.7 เมตร อุปกรณ์ tag คือ M5StickC Plus2 ที่โฆษณา BLE ด้วยอัตราประมาณ 5 Hz หรือคาบ 200 ms และอยู่ที่ระดับความสูงประมาณ 0.7 เมตรเช่นกัน ข้อมูลหนึ่งตัวอย่างประกอบด้วย timestamp และค่า RSSI จาก anchor ทั้ง 4 ตัวในรูปแบบ \((timestamp, r_1, r_2, r_3, r_4)\)
+
+\textbf{How we test} ชุดทดลองแบ่งเป็น 3 กรณี กรณีละ 48 episode และใช้การแบ่งข้อมูลแบบเดียวกันคือ 13 episode สำหรับ train และ 35 episode สำหรับ test โดย Case 1 เป็นการตรวจ body orientation แบบ facing-in/facing-out, Case 2 เป็น boundary transition ระหว่างในและนอก zone และ Case 3 เป็น multi-zone trajectory ที่ต้องทำนายลำดับการเคลื่อนที่ผ่าน 4 zone วิธี KNN ใช้ \(k=5\) และ Euclidean distance สำหรับ Case 1 และ Case 2 จะทำนายจาก RSSI 4 มิติราย sample แล้วรวมผลเป็นระดับ episode ด้วยค่าเฉลี่ยของผลทำนาย ส่วน Case 3 แบ่ง episode เป็น 4 segment ต่อเนื่องและใช้ feature mean/std ของ RSSI จาก anchor ทั้ง 4 ตัวในแต่ละ segment เพื่อทำนายลำดับ zone
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.86\textwidth]{chapter4/paperieee-combined-rssi-plot.pdf}
+    \caption{ตัวอย่างสัญญาณ RSSI ต่อเนื่องจากชุดทดลอง Case 1, Case 2 และ Case 3}
+    \label{fig:ch4_paperieee_rssi_plot}
+\end{figure}
+
+\textbf{Result} ผลการทดสอบ KNN จากชุดข้อมูลที่มีหลักฐานประกอบแสดงในตารางที่~\ref{tab:ch4_knn_result} โดยรายละเอียด raw data และ summary อยู่ในภาคผนวก~\ref{app:knn_summary} และแนบหน้าเอกสาร PaperIEEE ที่เกี่ยวข้องไว้ในภาคผนวก~\ref{app:paperieee_extract}
 
 \begin{table}[!htbp]
     \centering
@@ -106,21 +114,20 @@
     \renewcommand{\arraystretch}{1.18}
     \small
     \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{|L{0.16\textwidth}|L{0.30\textwidth}|L{0.16\textwidth}|L{0.14\textwidth}|L{0.14\textwidth}|}
+    \begin{tabular}{|L{0.12\textwidth}|L{0.32\textwidth}|L{0.12\textwidth}|L{0.12\textwidth}|L{0.12\textwidth}|L{0.12\textwidth}|}
         \hline
-        \textbf{Case} & \textbf{เงื่อนไขทดลอง} & \textbf{Accuracy} & \textbf{Recall} & \textbf{F1} \\ \hline
-        Case 1 & Binary activity case & 0.8857 & 0.8751 & 0.8889 \\ \hline
-        Case 2 & Multi-class transition & 0.6857 & 0.6712 & 0.6667 \\ \hline
-        Case 3 & Virtual location sequence & 0.8857 & 0.8751 & 0.8857 \\ \hline
+        \textbf{Case} & \textbf{เงื่อนไขทดลอง} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\ \hline
+        Case 1 & Body orientation, facing-in/facing-out & 0.8857 & 0.8421 & 0.9412 & 0.8889 \\ \hline
+        Case 2 & Boundary transition, in/out zone & 0.6857 & 0.6875 & 0.6471 & 0.6667 \\ \hline
+        Case 3 & Multi-zone trajectory, exact sequence & 0.8857 & 0.8857 & 0.8857 & 0.8857 \\ \hline
     \end{tabular}
 \end{table}
 
-จากตารางที่~\ref{tab:ch4_knn_result} Case 1 และ Case 3 ให้ค่าความถูกต้องใกล้เคียงกันที่ 0.8857 แต่ Case 2 ลดลงเหลือ 0.6857 สะท้อนว่าการจำแนกตำแหน่งด้วย RSSI ยังไวต่อรูปแบบของข้อมูลและสภาพแวดล้อม เมื่อสัญญาณระหว่าง zone ใกล้กันมีค่าคล้ายกัน KNN จะสับสนได้ง่าย ดังนั้นผลนี้จึงควรตีความเป็นหลักฐานระดับชุดทดลอง ไม่ใช่ค่าความแม่นยำสุดท้ายของอาคารทั้งระบบ และควรเก็บ raw localization dataset ที่ครอบคลุมตำแหน่งจริงมากขึ้นในการพัฒนาต่อ
+\textbf{Analysis} จากตารางที่~\ref{tab:ch4_knn_result} Case 1 และ Case 3 ให้ค่าความถูกต้องเท่ากันที่ 0.8857 โดย Case 3 ยังมีค่า per-position accuracy สูงกว่าค่า exact sequence เพราะการทำนายลำดับหนึ่ง episode ต้องถูกครบทุกตำแหน่งพร้อมกันจึงนับว่าถูก ส่วน Case 2 ลดลงเหลือ 0.6857 เนื่องจากตำแหน่งบริเวณ boundary มี RSSI จากหลาย anchor ใกล้เคียงกันและได้รับผลจาก body shadowing หรือ multipath พร้อมกันหลายช่องสัญญาณ KNN จึงสับสนได้ง่ายเมื่อ distribution ของ RSSI ซ้อนทับกัน ผลนี้สะท้อนว่า BLE RSSI ใช้ได้ในระดับ zone สำหรับ prototype แต่ยังต้องเก็บ fingerprint ในตำแหน่งจริงให้มากขึ้น ปรับจำนวน anchor หรือใช้ fallback เช่น max-RSSI/temporal smoothing เมื่อค่า confidence ต่ำ
 \FloatBarrier
 
 \section{การทดสอบ Mobile Gateway และ Server}
 \label{sec:ch4_gateway_server}
-\noindent
 ส่วน mobile gateway ถูกทดสอบเพื่อดูการรวมข้อมูลจาก M5StickC Plus2, Polar Verity Sense และข้อมูลจากโทรศัพท์ก่อนส่งเข้าสู่ platform ผ่าน MQTT หรือ REST API การทดสอบเน้นเวลาการเชื่อมต่อ BLE, latency จาก smartphone ไปถึง broker, อัตราความสำเร็จของ MQTT publish, ความครบถ้วนของ vitals telemetry และการทำงานเมื่อเกิด reconnect หรือ retry queue
 
 \begin{figure}[!htbp]
@@ -190,7 +197,6 @@
 
 \section{การประเมิน Dashboard/HMI และ SUS Score}
 \label{sec:ch4_dashboard_hmi}
-\noindent
 การประเมิน dashboard/HMI ใช้ task scenario ตามบทบาทผู้ใช้ เช่น Admin, Head Nurse, Supervisor, Observer และ Patient โดยดูว่าผู้ใช้สามารถเข้าถึงข้อมูลผู้พักอาศัย สถานะอุปกรณ์ alert และหน้าที่เกี่ยวข้องกับ mobile gateway ได้ครบหรือไม่ ผลที่รายงานเป็นข้อมูลระดับต้นแบบและใช้เพื่อประเมินทิศทาง usability ของระบบ
 
 \begin{table}[!htbp]
@@ -236,7 +242,6 @@
 
 \section{การทดสอบ AI: Inter-Rater Reliability}
 \label{sec:ch4_ai_irr}
-\noindent
 การทดสอบ Inter-Rater Reliability ใช้เพื่อประเมินว่า AI/MCP pipeline เลือกเครื่องมือหรือแนวทางปฏิบัติได้สอดคล้องกับมนุษย์หรือไม่ ชุดคำสั่งทดสอบมีจำนวน 36 ข้อ แบ่งตามระดับความกำกวมเป็น 4 กลุ่ม โดยมี human raters จำนวน 2 คนเป็นผู้กำหนด ground truth ของเจตนาและเครื่องมือที่เหมาะสม
 
 ผลการทดสอบแสดงในตารางที่~\ref{tab:ch4_ai_irr} ระบบทำได้ถูกต้อง 31 จาก 36 ข้อ หรือ 86.11\% โดยข้อผิดพลาดทั้ง 5 ข้ออยู่ในกลุ่มที่มีความกำกวมสูง
@@ -264,7 +269,6 @@
 
 \section{การทดสอบ AI: Text-Distance / Cosine Similarity}
 \label{sec:ch4_ai_cosine}
-\noindent
 การทดสอบ Text-Distance ใช้ cosine similarity เพื่อประเมินความสม่ำเสมอของคำตอบจาก Layer 4 เมื่อได้รับคำถามเดิมซ้ำหลายรอบ การทดสอบเริ่ม session ใหม่ทุกครั้งและไม่ใช้ context window เดิม เพื่อให้เห็นผลของ retrieval ranking และลำดับบริบทที่ Layer 2 ส่งให้ Layer 4 โดยตรง
 
 \begin{table}[!htbp]
@@ -287,7 +291,6 @@
 
 \section{การทดสอบ AI: Latency Analysis}
 \label{sec:ch4_ai_latency}
-\noindent
 การวัด latency ของ AI/MCP pipeline ใช้เพื่อระบุคอขวดหลังจากปรับสถาปัตยกรรมจากแนวทางเดิมที่ใส่กฎ เครื่องมือ และตัวอย่างจำนวนมากไว้ใน prompt เดียว ไปสู่ pipeline แบบแยกส่วน 5 layer การวัดครั้งนี้ตัดตัวแปรด้าน UI และเครือข่ายภายนอกออก แล้ววัดเฉพาะเส้นทาง blocking หลัก ได้แก่ Layer 1 Intent Router, Layer 2 Context Assembler, Layer 4 Constrained LLM และ Layer 5 Execution Gate จำนวน 30 รอบ
 
 \begin{table}[!htbp]
@@ -320,7 +323,6 @@
 
 \section{สรุปผลการทดลอง}
 \label{sec:ch4_summary}
-\noindent
 ตารางที่~\ref{tab:ch4_result_summary} สรุปผลหลักของการทดลองโดยยึดเฉพาะค่าที่มีหลักฐานประกอบหรือระบุข้อจำกัดไว้อย่างชัดเจน ผลโดยรวมแสดงว่าระบบต้นแบบสามารถรวมข้อมูลจาก sensor, wearable, mobile gateway, server, dashboard และ AI/MCP pipeline ได้ในระดับการทดลอง แต่ยังมีข้อจำกัดด้านข้อมูลจริงระยะยาว BLE/RSSI usability evidence และ latency ของ LLM
 
 \begin{table}[!htbp]
@@ -334,7 +336,7 @@
         \hline
         \textbf{ส่วนของระบบ} & \textbf{ผลหลัก} & \textbf{ข้อจำกัดที่ต้องอ่านร่วมกัน} \\ \hline
         Sensor/field device & IMU เฉลี่ย 19.6 Hz, telemetry completeness 98.4\%, motion accuracy 0.90--0.98 & ทดสอบในพื้นที่ทดลองและใช้ rule-based state \\ \hline
-        Indoor localization & KNN ได้ 0.8857 ใน Case 1 และ Case 3 แต่ลดลงเหลือ 0.6857 ใน Case 2 & ยังไม่มี raw 12-zone localization CSV ในชุดหลักฐานปัจจุบัน \\ \hline
+        Indoor localization & KNN ได้ 0.8857 ใน Case 1 และ Case 3 แต่ลดลงเหลือ 0.6857 ใน Case 2 & ชุดทดลองเป็นพื้นที่ 4 zone แบบควบคุม ยังไม่ใช่ข้อมูลใช้งานจริงระยะยาวทั้งอาคาร \\ \hline
         Mobile gateway/server & MQTT success 98.6\%, query ฐานข้อมูล P95 ต่ำกว่า 51 ms & BLE/PPG ยังมีผลจากการเคลื่อนไหวและ re-pairing \\ \hline
         Dashboard/HMI & task completion 0.93, satisfaction 4.31/5, alert readability 4.42/5 & SUS 76.5 ยังต้องแนบ raw item ก่อนใช้เป็นผลยืนยัน \\ \hline
         AI/MCP & IRR 86.11\%, cosine 0.85/0.76, latency p50 14.59 s & Layer 4 ยังเป็น bottleneck และ p95 ยังสูง \\ \hline

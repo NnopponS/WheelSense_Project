@@ -1,4 +1,4 @@
-%%================================================
+﻿%%================================================
 %% Chapter 3 - System Design and Development
 %%================================================
 \chapter{วิธีการออกแบบและพัฒนาระบบ}
@@ -6,7 +6,6 @@
 
 \section{ภาพรวมของระบบ}
 \label{sec:ch3_system_design}
-\noindent
 ระบบต้นแบบ WheelSense ถูกออกแบบเป็นระบบดูแลและติดตามสถานะผู้ใช้รถเข็นและผู้สูงอายุในสภาพแวดล้อมภายในอาคาร โดยรวมข้อมูลจากเซ็นเซอร์รถเข็น อุปกรณ์สวมใส่ สมาร์ทโฟนที่ทำหน้าที่เป็น mobile gateway เซิร์ฟเวอร์ส่วนกลาง แดชบอร์ดตามบทบาทผู้ใช้ และระบบผู้ช่วย AI/MCP ให้อยู่ในโครงสร้างเดียวกัน จุดสำคัญของการออกแบบคือการลดภาระของผู้ดูแลที่ต้องตรวจข้อมูลจากหลายแหล่งด้วยตนเอง และทำให้ข้อมูลตำแหน่ง การเคลื่อนไหว สัญญาณชีพ และเหตุการณ์ที่เกี่ยวข้องถูกส่งเข้าสู่ backend เดียวกันก่อนแสดงผลหรือใช้ประกอบการวิเคราะห์
 
 แนวทางของระบบไม่ได้เริ่มจากการนำไปใช้งานจริงในสถานดูแลผู้สูงอายุทันที แต่ปรับรูปแบบจากการทดสอบภายในพื้นที่ทดลองของโครงงาน เมื่อพบข้อจำกัดของการติดตั้งโหนด การเชื่อมต่อ Wi-Fi การรับค่า RSSI และความล่าช้าของการเรียกใช้ AI จึงปรับสถาปัตยกรรมให้สมาร์ทโฟนเป็น gateway หลักแทนการให้อุปกรณ์ภาคสนามส่งข้อมูลขึ้นระบบโดยตรงทั้งหมด สถาปัตยกรรมที่ใช้ในเล่มนี้จึงแยกภาระงานออกเป็น 4 ส่วน คือ field devices, mobile gateway, platform services และ dashboard/AI ดังรูปที่~\ref{fig:ch3-system-architecture}
@@ -60,10 +59,9 @@
 
 \section{การเชื่อมต่ออุปกรณ์ภาคสนามและ Mobile Gateway}
 \label{sec:ch3_field_gateway}
-\noindent
 การออกแบบส่วนเชื่อมต่ออุปกรณ์ภาคสนามผ่านการทดลองหลายรูปแบบเพื่อหาจุดสมดุลระหว่างความง่ายในการติดตั้ง ความต่อเนื่องของข้อมูล และภาระของ backend ในระยะแรกของแนวคิด ผู้พัฒนาเคยใช้โครงสร้าง Wi-Fi mesh โดยให้ Node T-SimCam รับข้อมูลจาก Xiao nRF52840 ที่โฆษณาสัญญาณ BLE แล้วส่งต่อข้อมูลเป็นทอด ๆ ไปยัง gateway node ที่มีอินเทอร์เน็ต ขณะเดียวกันฝั่งเว็บเริ่มจาก Vite ร่วมกับ React เพราะตอบสนองเร็วและพัฒนา UI ได้ง่าย แต่เมื่อระบบต้องรับ telemetry หลายชนิดและมี workflow เพิ่มขึ้น backend ต้องรับภาระจัดรูปแบบข้อมูลจำนวนมากเกินไป ข้อจำกัดที่พบในระยะนี้คือการติดตั้ง mesh ใช้เวลานาน การหา route ในพื้นที่จริงทำได้ยากเมื่อสภาพแวดล้อมเปลี่ยน และ delay สูงเกินกว่าจะใช้ติดตามสถานะผู้ใช้แบบต่อเนื่องได้ดี
 
-แนวทางต่อมาคือย้ายภาระ gateway บางส่วนมาไว้ที่ M5StickC Plus2 โดยให้อุปกรณ์เชื่อมต่อ Wi-Fi และส่งค่า RSSI จาก node รวมถึงข้อมูลเซ็นเซอร์ของรถเข็นขึ้น server เอง เมื่อไม่มี Wi-Fi จึงเพิ่ม Wi-Fi Manager ให้ M5StickC เปิดเป็น access point เพื่อให้โทรศัพท์เข้าไปตั้งค่าและใช้ hotspot ได้ ส่วน node ที่ต้องส่งภาพหรือข้อมูลจากอาคารยังใช้เครือข่ายของพื้นที่และ WebSocket ส่งข้อมูลเข้าสู่ server ในช่วงนี้ frontend ถูกย้ายไปใช้ Next.js เพื่อรองรับ routing, server-side data และโครงสร้าง dashboard ที่ซับซ้อนขึ้น วิธีนี้ลดการพึ่งพา mesh ลง แต่ยังมีข้อจำกัดสำคัญคือเมื่อเครือข่าย Wi-Fi ไม่พร้อมใช้งาน การส่งข้อมูลจะหยุดชะงัก
+แนวทางต่อมาคือย้ายภาระ gateway บางส่วนมาไว้ที่ M5StickC Plus2 โดยให้อุปกรณ์เชื่อมต่อ Wi-Fi และส่งค่า RSSI จาก node รวมถึงข้อมูลเซ็นเซอร์ของรถเข็นขึ้น server เอง เมื่อไม่มี Wi-Fi จึงเพิ่ม Wi-Fi Manager ให้ M5StickC เปิดเป็น access point เพื่อให้โทรศัพท์เข้าไปตั้งค่าและใช้ hotspot ได้ ส่วน node ที่ต้องส่งภาพหรือข้อมูลจากอาคารยังใช้เครือข่ายของพื้นที่และสื่อสารผ่าน MQTT/HTTP เพื่อส่งสถานะ คำสั่งควบคุม และภาพจากกล้องเข้าสู่ server ในช่วงนี้ frontend ถูกย้ายไปใช้ Next.js เพื่อรองรับ routing, server-side data และโครงสร้าง dashboard ที่ซับซ้อนขึ้น วิธีนี้ลดการพึ่งพา mesh ลง แต่ยังมีข้อจำกัดสำคัญคือเมื่อเครือข่าย Wi-Fi ไม่พร้อมใช้งาน การส่งข้อมูลจะหยุดชะงัก
 
 เมื่อเพิ่ม Polar Verity Sense เข้ามาในระบบ ข้อมูล heart rate, RR interval และ PPG ต้องอ่านผ่าน Polar SDK ทำให้โทรศัพท์เริ่มมีบทบาทสำคัญมากขึ้น มีการพัฒนา mobile app ต้นแบบด้วย React Native และ Expo ซึ่งสามารถเชื่อมต่อ sensor และส่งข้อมูลผ่าน MQTT ได้ แต่การ build และ debug บนอุปกรณ์จริงใช้เวลานาน อีกทั้ง M5StickC Plus2 ยังทำหน้าที่ทั้งรับ RSSI จาก node และส่งข้อมูลผ่าน Wi-Fi ทำให้ตำแหน่งของผู้ใช้มีข้อมูลซ้ำจากสองแหล่ง คือ RSSI ที่ M5StickC รับได้และ RSSI ที่โทรศัพท์รับได้ การจัดการข้อมูลจึงเริ่มซับซ้อนและเสี่ยงต่อการตีความตำแหน่งผิด
 
@@ -99,6 +97,44 @@
 \end{figure}
 \FloatBarrier
 
+ในต้นแบบ Node T-SimCam ถูกใช้เป็นตัวอย่างของ camera/BLE node ภาคสนาม โค้ดเฟิร์มแวร์ใน \texttt{firmware/Node\_Tsimcam} เริ่มจากโหลด configuration จากหน่วยความจำ ตั้งค่า camera และเริ่ม BLE beacon ด้วยชื่อ node ที่กำหนดไว้ หากยังไม่ได้ตั้งค่าหรือผู้ใช้กดปุ่ม boot ระหว่างเริ่มต้น อุปกรณ์จะเข้าสู่ config portal ผ่าน Wi-Fi access point เพื่อรับค่า device id, node id, Wi-Fi และ MQTT server แต่ถ้ามี configuration แล้วจะเชื่อมต่อ Wi-Fi เปิดหน้า HTTP status/config และเชื่อมต่อ MQTT broker จากนั้น loop หลักจะรับคำสั่งผ่าน MQTT/HTTP ส่ง registration, status, ack และภาพถ่ายหรือ frame ตามคำสั่งที่ได้รับ
+
+\begin{figure}[!htbp]
+    \centering
+    \resizebox{0.95\textwidth}{!}{%
+    \begin{tikzpicture}[
+        box/.style={draw, rounded corners, align=center, text width=2.55cm, minimum height=0.82cm, font=\scriptsize, fill=white},
+        dec/.style={draw, diamond, aspect=2.1, align=center, inner sep=1pt, font=\scriptsize, fill=yellow!12},
+        arrow/.style={->, >=Stealth, thick}
+    ]
+        \node[box, fill=gray!10] (boot) {Boot\\load config};
+        \node[box, fill=orange!10, right=0.45cm of boot] (camera) {Init camera\\BLE beacon};
+        \node[dec, right=0.55cm of camera] (setup) {Setup\\needed?};
+        \node[box, fill=yellow!10, below=0.75cm of setup] (portal) {Config portal\\AP + HTTP save};
+        \node[box, fill=green!10, right=0.55cm of setup] (wifi) {Connect Wi-Fi\\HTTP status page};
+        \node[box, fill=blue!10, right=0.45cm of wifi] (mqtt) {Connect MQTT\\subscribe control};
+        \node[box, fill=purple!10, right=0.45cm of mqtt] (loop) {Loop\\HTTP + MQTT};
+        \node[box, fill=purple!10, below=0.75cm of loop] (actions) {Capture/stream\\status/ack};
+        \node[box, fill=red!7, below=0.75cm of wifi] (retry) {Reconnect or\\enter config};
+
+        \draw[arrow] (boot) -- (camera);
+        \draw[arrow] (camera) -- (setup);
+        \draw[arrow] (setup) -- node[right, font=\tiny] {yes} (portal);
+        \draw[arrow] (setup) -- node[above, font=\tiny] {no} (wifi);
+        \draw[arrow] (wifi) -- (mqtt);
+        \draw[arrow] (mqtt) -- (loop);
+        \draw[arrow] (loop) -- (actions);
+        \draw[arrow] (actions.west) -| (retry.south);
+        \draw[arrow] (retry.north) -- (wifi.south);
+        \draw[arrow] (portal.west) -- ++(-0.8,0) |- node[pos=0.25, left, font=\tiny] {save/reboot} (boot.south);
+    \end{tikzpicture}}
+    \caption{วงรอบเฟิร์มแวร์ Node T-SimCam สำหรับ config portal, HTTP status, MQTT control และการส่งภาพ}
+    \label{fig:ch3_node_tsimcam_loop}
+\end{figure}
+\FloatBarrier
+
+ข้อจำกัดที่พบจากแนวทางนี้คือการเชื่อมต่อ Wi-Fi มีช่วงเวลารอที่ทำให้การเริ่มต้นช้าได้ และการ stream ภาพผ่าน HTTP client ต่อเนื่องอาจกินรอบการทำงานของ node มากกว่าการส่ง telemetry ขนาดเล็ก จึงเหมาะเป็นองค์ประกอบเสริมของต้นแบบมากกว่าการเป็น gateway หลักของระบบสุดท้าย การตัดสินใจย้าย gateway หลักไปไว้ที่โทรศัพท์จึงลดทั้งความซับซ้อนของ route และลดปัญหาความล่าช้าจาก node ที่ต้องทำงานหลายหน้าที่พร้อมกัน
+
 จากลำดับดังกล่าว สถาปัตยกรรมปัจจุบันจึงย้ายจุดรวมข้อมูลมาอยู่ที่โทรศัพท์เป็นหลัก การส่งข้อมูลไม่ให้ไหลจากหลาย gateway พร้อมกันช่วยลดความซ้ำซ้อนของ RSSI และทำให้ backend รับข้อมูลจากแหล่งเดียวที่จัดรูปแบบแล้ว ก่อนจะส่งต่อเข้าสู่ MQTT, REST API, ฐานข้อมูล และ dashboard ดังแสดงในรูปที่~\ref{fig:ch3-gateway-flow}
 
 \begin{figure}[!htbp]
@@ -127,7 +163,6 @@
 
 \section{M5StickC Plus2 BLE Wheelchair Sensor}
 \label{sec:ch3_wheelchair_sensor}
-\noindent
 M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ประจำรถเข็นเพื่อตรวจจับการเคลื่อนไหวของตัวรถ ไม่ได้ทำหน้าที่เป็น gateway หลักในสถาปัตยกรรมปัจจุบัน เฟิร์มแวร์ถูกออกแบบให้ทำงานเป็น BLE peripheral พร้อม custom GATT service เพื่อให้แอป Flutter บนโทรศัพท์เชื่อมต่อ อ่านค่า และรับ notification ได้อย่างต่อเนื่อง ข้อมูลที่ส่งออกประกอบด้วยค่า IMU สถานะแบตเตอรี่ metadata ของอุปกรณ์ และค่าที่ประมวลผลแล้ว เช่น ความเร็ว ระยะทาง และความเร่งในช่วงเวลาปัจจุบัน
 
 เมื่อเริ่มทำงาน เฟิร์มแวร์จะโหลด configuration ที่บันทึกไว้ เช่น ชื่ออุปกรณ์ ค่า room หรือค่าจับคู่ จากนั้นเริ่ม BLE advertising เพื่อประกาศ service UUID และรอ mobile gateway เชื่อมต่อ หลังเชื่อมต่อแล้วอุปกรณ์จะอ่านค่า IMU และแบตเตอรี่ตามรอบเวลา ประมวลผล gyro offset เพื่อลด bias ของแกนหมุน ใช้ exponential moving average (EMA) เพื่อลดสัญญาณรบกวน และใช้ deadband เพื่อตัดค่าการเคลื่อนไหวขนาดเล็กที่อาจเกิดจาก noise ก่อนคำนวณความเร็ว ระยะทาง และความเร่งของรถเข็น
@@ -152,28 +187,14 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 
 \begin{figure}[!htbp]
     \centering
-    \resizebox{0.72\textwidth}{!}{%
-    \begin{tikzpicture}[
-        part/.style={draw, rounded corners, align=center, font=\scriptsize, fill=white},
-        arrow/.style={->, >=Stealth, thick}
-    ]
-        \draw[line width=1.2pt] (-3.2,0) circle (0.9);
-        \draw[line width=1.2pt] (2.4,0) circle (0.65);
-        \draw[line width=1.2pt] (-2.4,0.8) -- (-0.7,1.75) -- (1.35,0.5) -- (2.4,0.65);
-        \draw[line width=1.2pt] (-1.1,1.55) -- (-1.65,0.2);
-        \draw[line width=1.2pt] (-0.45,1.6) -- (-0.15,0.45);
-        \node[part, fill=orange!12, minimum width=2.45cm, minimum height=0.7cm] (sensor) at (-0.35,2.15) {M5StickC Plus2\\BLE sensor};
-        \node[part, fill=green!12, minimum width=2.35cm, minimum height=0.7cm] (phone) at (3.7,2.15) {Phone gateway};
-        \draw[arrow] (sensor) -- node[above, font=\tiny] {BLE telemetry} (phone);
-        \draw[arrow] (sensor.south) -- node[left, font=\tiny] {IMU on chair frame} (-0.7,1.55);
-    \end{tikzpicture}}
-    \caption{ตำแหน่งเชิงแนวคิดของ M5StickC Plus2 สำหรับอ่านค่าการเคลื่อนไหวของรถเข็นและส่งข้อมูลไปยังโทรศัพท์}
+    \includegraphics[width=0.72\textwidth]{chapter3/ch3-m5-wheelchair-placement.jpg}
+    \caption{ตัวอย่างตำแหน่งติดตั้ง M5StickC Plus2 บนรถเข็นสำหรับอ่านค่าการเคลื่อนไหวและส่งข้อมูลผ่าน BLE ไปยังโทรศัพท์}
     \label{fig:ch3-m5-placement}
 \end{figure}
 
 โครงสร้างข้อมูลที่ส่งไปยังโทรศัพท์ถูกกำหนดให้เป็น JSON เพื่อให้ mobile gateway สามารถ normalize และส่งต่อเข้าระบบได้โดยไม่ต้องผูกกับรูปแบบ binary ของเฟิร์มแวร์โดยตรง ตัวอย่างกลุ่มข้อมูลหลัก ได้แก่ timestamp, device identifier, ค่า IMU, motion summary, battery level และสถานะการเชื่อมต่อ การกำหนดข้อมูลเป็น schema ลักษณะนี้ช่วยให้ backend ตรวจสอบและจัดเก็บข้อมูลใน PostgreSQL/JSONB ได้ง่ายขึ้น
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
     \centering
     \resizebox{0.85\textwidth}{!}{%
     \begin{tikzpicture}[
@@ -209,10 +230,10 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
     \caption{แผนผังวงรอบการทำงานของเฟิร์มแวร์ M5StickC Plus2 แบบ BLE wheelchair sensor}
     \label{fig:ch3-firmware-loop}
 \end{figure}
+\FloatBarrier
 
 \section{Polar Verity Sense และ Flutter Mobile Gateway}
 \label{sec:ch3_mobile_gateway}
-\noindent
 อุปกรณ์ Polar Verity Sense ถูกเพิ่มเข้ามาเพื่อให้ระบบมีข้อมูลสัญญาณชีพประกอบกับข้อมูลการเคลื่อนไหวของรถเข็น การอ่านข้อมูลจาก Polar ไม่ได้ใช้เพียง BLE GATT มาตรฐานทั่วไปเท่านั้น แต่ใช้ Polar SDK เพื่ออ่านข้อมูลที่ละเอียดขึ้น เช่น heart rate, RR interval และ PPG stream จากนั้นแอป Flutter จะรวมข้อมูลของ Polar เข้ากับข้อมูลจาก M5StickC Plus2 และข้อมูล step counter ของโทรศัพท์
 
 แอป Flutter ทำหน้าที่เป็น gateway หลักในระบบ เพราะเป็นจุดที่มีทั้ง BLE สำหรับเชื่อมต่ออุปกรณ์ภาคสนามและอินเทอร์เน็ตผ่าน Wi-Fi หรือเครือข่ายเซลลูลาร์ หน้าการทำงานที่เกี่ยวข้องกับการติดตั้งภาคสนามคือหน้า \texttt{/WheelSensor} ซึ่งใช้ตรวจสถานะการเชื่อมต่อ BLE, Polar, M5StickC Plus2, MQTT และการส่งข้อมูลขึ้น server จุดนี้ช่วยให้ผู้ดูแลหรือผู้พัฒนาสามารถแยกปัญหาได้ว่าข้อมูลหายจากระดับ pairing, sensor stream, network publish หรือ backend ingest
@@ -300,15 +321,36 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 
 \section{Indoor Localization}
 \label{sec:ch3_localization}
-\noindent
 การระบุตำแหน่งภายในอาคารของระบบใช้ค่า RSSI จาก BLE node ที่ติดตั้งตามพื้นที่อ้างอิง โดย mobile gateway สแกนสัญญาณจาก node รอบตัวและส่งรายการค่า RSSI พร้อม timestamp ไปยัง server สำหรับประเมินห้องหรือโซนของผู้ใช้ การออกแบบในบทนี้ไม่ลงรายละเอียดสมการซ้ำจากบทที่ 2 แต่เน้นกระบวนการนำข้อมูล RSSI เข้าระบบและการเลือกกลยุทธ์ที่ backend รองรับ
 
 ในเชิง implementation ระบบรองรับทั้งการเทียบกับ fingerprint ด้วย KNN และการใช้ max-RSSI เป็น baseline หรือ fallback เมื่อข้อมูล fingerprint ยังไม่พร้อมหรือความมั่นใจต่ำ การใช้ KNN ต้องมีชุดข้อมูลอ้างอิงของแต่ละตำแหน่ง เช่น room, beacon alias, ค่า RSSI และข้อมูลผู้ใช้หรืออุปกรณ์ที่จับคู่ไว้ ส่วน max-RSSI เลือกตำแหน่งจาก beacon ที่มีสัญญาณแรงที่สุดในรอบปัจจุบัน จึงใช้งานง่ายกว่าแต่ไวต่อการสะท้อนและการเปลี่ยนแปลงของสภาพแวดล้อม
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.86\textwidth]{chapter3/floorplan.png}
-    \caption{แผนผังพื้นที่ทดลองที่ใช้วาง BLE node สำหรับเก็บค่า RSSI ภายในอาคาร}
+    \resizebox{0.68\textwidth}{!}{%
+    \begin{tikzpicture}[
+        bleanchor/.style={circle, draw, thick, fill=blue!25, minimum size=0.72cm, font=\bfseries\small},
+        zonelabel/.style={font=\bfseries\small},
+        note/.style={font=\scriptsize, text=gray}
+    ]
+        \draw[thick, fill=gray!3] (-2,-1.6) rectangle (6,4.8);
+        \draw[thick] (2,-1.6) -- (2,4.8);
+        \draw[thick] (-2,1.6) -- (6,1.6);
+
+        \node[zonelabel] at (0,4.35) {Room / Zone A};
+        \node[zonelabel] at (4,4.35) {Room / Zone B};
+        \node[zonelabel] at (0,1.15) {Room / Zone C};
+        \node[zonelabel] at (4,1.15) {Room / Zone D};
+
+        \node[bleanchor] at (0,3.2) {1};
+        \node[bleanchor] at (4.0,3.2) {2};
+        \node[bleanchor] at (0,0) {3};
+        \node[bleanchor] at (4.0,0) {4};
+
+        \node[note] at (2,-2.05) {เส้นแบ่งแทนฉากกั้นหรือขอบเขตพื้นที่ทดลอง};
+        \node[note] at (2,-2.45) {หมายเลข 1--4 คือ BLE node ที่วางบริเวณกึ่งกลางของแต่ละ zone};
+    \end{tikzpicture}}
+    \caption{แผนผังพื้นที่ทดลอง 4 zone พร้อมตำแหน่ง BLE node กึ่งกลางแต่ละพื้นที่สำหรับเก็บค่า RSSI}
     \label{fig:ch3-beacon-layout}
 \end{figure}
 
@@ -343,7 +385,6 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 
 \section{Server, API และ Database}
 \label{sec:ch3_server}
-\noindent
 ส่วน server ของ WheelSense ประกอบด้วย MQTT broker, FastAPI backend, PostgreSQL 16 และบริการที่เกี่ยวข้องกับ dashboard/AI โดยออกแบบให้รองรับข้อมูลทั้งแบบ structured และ semi-structured ข้อมูล structured เช่น users, patients, devices, workspaces, rooms และ assignments ใช้สำหรับกำหนดความสัมพันธ์หลักของระบบ ส่วนข้อมูล semi-structured เช่น telemetry payload, AI trace, device configuration และ event metadata เก็บใน JSONB เพื่อรองรับ payload จากอุปกรณ์ที่อาจเปลี่ยนรายละเอียดระหว่างการทดลอง
 
 MQTT broker รับ telemetry จาก mobile gateway และ topic ที่เกี่ยวกับอุปกรณ์ภาคสนาม ส่วน FastAPI รับทั้งข้อมูลจาก gateway, dashboard และ AI/MCP pipeline ผ่าน REST endpoint หรือ internal service การออกแบบ backend ใช้ async I/O เพื่อให้รับข้อมูลจากหลายอุปกรณ์พร้อมกันได้โดยไม่บล็อกการทำงานของ API หลัก เมื่อข้อมูลเข้ามา server จะทำขั้นตอน ingest, validate, store, query และส่งต่อไปยัง dashboard หรือ AI ตามลำดับ
@@ -416,53 +457,54 @@ schema หลักของระบบสามารถแบ่งได้�
 
 \section{Dashboard และ HMI ตามบทบาทผู้ใช้}
 \label{sec:ch3_hmi}
-\noindent
-Dashboard ของ WheelSense พัฒนาด้วย Next.js เพื่อเป็นหน้าจอหลักสำหรับผู้ดูแลและผู้ใช้งานตามบทบาท การออกแบบ HMI ไม่ได้ให้ผู้ใช้ทุกกลุ่มเห็นข้อมูลเท่ากัน แต่กำหนด permission และมุมมองตามหน้าที่จริงในระบบ เพื่อให้ผู้ใช้แต่ละกลุ่มเห็นเฉพาะข้อมูลที่จำเป็นต่อการตัดสินใจหรือติดตามสถานะ ขณะที่ mobile app ทำหน้าที่เป็นเครื่องมือภาคสนามสำหรับ pairing และส่งข้อมูล ไม่ใช่ dashboard หลักของทุกบทบาท
+Dashboard ของ WheelSense พัฒนาด้วย Next.js เพื่อเป็นหน้าจอหลักสำหรับผู้ดูแลและผู้ใช้งานตามบทบาท การออกแบบ HMI ไม่ได้ให้ผู้ใช้ทุกกลุ่มเห็นข้อมูลเท่ากัน แต่กำหนด permission และมุมมองตามหน้าที่จริงในระบบ เพื่อให้ผู้ใช้แต่ละกลุ่มเห็นเฉพาะข้อมูลที่จำเป็นต่อการตัดสินใจหรือติดตามสถานะ ขณะที่ mobile app ทำหน้าที่เป็น gateway ภาคสนามสำหรับ pairing sensor และส่งข้อมูล ไม่ใช่ dashboard หลักของทุกบทบาท
 
 \begin{table}[H]
     \centering
-    \caption{บทบาทผู้ใช้และหน้าที่หลักบน dashboard}
+    \caption{บทบาทผู้ใช้ หน้าจอหลัก และหน้าที่ที่รองรับบน dashboard}
     \label{tab:ch3_hmi_role_flow}
     \small
-    \renewcommand{\arraystretch}{1.18}
-    \begin{tabular}{|L{2.5cm}|L{4.2cm}|L{5.9cm}|}
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|L{2.4cm}|L{4.4cm}|L{5.8cm}|}
         \hline
         \textbf{บทบาท} & \textbf{หน้าจอหลักที่ใช้} & \textbf{งานที่ทำได้ในระบบ} \\ \hline
-        Admin & System overview, facility, device fleet, user management & จัดการ workspace, ผู้ใช้, อุปกรณ์, ห้อง, การตั้งค่าระบบ และตรวจสถานะของ platform \\ \hline
-        Head Nurse & Care dashboard, alerts, patient detail, task/observation view & ติดตามผู้พักอาศัยหลายคน ตรวจ alert จัดลำดับความสำคัญ และดูภาพรวมสัญญาณชีพ/ตำแหน่ง \\ \hline
-        Supervisor & Team and facility overview, reports, status summary & ตรวจภาพรวมการทำงานของพื้นที่และติดตามปัญหาที่ต้องส่งต่อผู้ดูแลระดับปฏิบัติการ \\ \hline
-        Observer & Read-only dashboard, map/floorplan, event timeline & เฝ้าดูสถานะและเหตุการณ์โดยไม่แก้ไขข้อมูลสำคัญหรือสั่งงานระบบ \\ \hline
-        Patient & Personal dashboard, own status, limited notifications & ดูข้อมูลสถานะของตนเองและข้อมูลที่ระบบอนุญาตให้เข้าถึงได้เท่านั้น \\ \hline
+        Admin & Dashboard overview, task operations, facility, floorplans, devices, personnel, alerts, messages, support, settings, EaseAI & จัดการ workspace, ผู้ใช้, อุปกรณ์, ห้อง, floorplan, task, profile ของผู้พักอาศัยและ staff รวมถึงตรวจสถานะของ platform และเรียกใช้ AI assistant ภายใต้สิทธิ์ผู้ดูแลระบบ \\ \hline
+        Head Nurse & Dashboard overview, alerts, patient profile, task operations, devices, floorplans, personnel, staff, messages, support & ติดตามผู้พักอาศัยหลายคน ตรวจ alert จัดลำดับความสำคัญ มอบหมายงาน และดูข้อมูลสัญญาณชีพ/ตำแหน่งในระดับที่เกี่ยวข้องกับการดูแล \\ \hline
+        Supervisor & Dashboard overview, emergency, task operations, floorplans, personnel, prescriptions, patient profile, messages, support & ตรวจภาพรวมงานและเหตุการณ์ในพื้นที่ ติดตาม emergency/task ที่ต้องส่งต่อ และตรวจข้อมูลผู้พักอาศัยหรือบุคลากรในขอบเขตการกำกับดูแล \\ \hline
+        Observer & Dashboard overview, alerts, floorplans, prescriptions, task operations, patient profile, personnel, messages, support & เฝ้าดูสถานะและเหตุการณ์แบบจำกัดสิทธิ์ ใช้ข้อมูลเพื่อสังเกตการณ์หรือรายงานต่อผู้ดูแล โดยไม่แก้ไขข้อมูลสำคัญของระบบ \\ \hline
+        Patient & Personal dashboard, schedule, pharmacy, room controls, services, messages, support, settings & ดูข้อมูลส่วนตัวของตนเอง เช่น care plan, schedule, medication/service request, room control และช่องทางขอความช่วยเหลือหรือสื่อสารกับผู้ดูแล \\ \hline
     \end{tabular}
 \end{table}
 
-ตารางบทบาทข้างต้นถูกแปลงเป็น role flow เพื่อให้เห็นว่าแต่ละกลุ่มผู้ใช้ไม่ได้เข้าถึงข้อมูลชุดเดียวกันทั้งหมด แต่ผ่าน permission และ visibility layer ก่อนเรียกข้อมูลจาก FastAPI หรือ telemetry/AI context รูปที่~\ref{fig:ch3_hmi_role_flow} จึงใช้เป็นแผนภาพเชื่อมระหว่างสิทธิ์ผู้ใช้ หน้าจอ และ service ที่ dashboard เรียกใช้งาน
+ตารางบทบาทข้างต้นถูกแปลงเป็น role flow เพื่อให้เห็นว่าแต่ละกลุ่มผู้ใช้ไม่ได้เข้าถึงข้อมูลชุดเดียวกันทั้งหมด แต่ทุกคำขอจะผ่าน permission และ visibility layer ก่อนเรียกข้อมูลจาก FastAPI หรือ telemetry/AI context รูปที่~\ref{fig:ch3_hmi_role_flow} แสดงลำดับการไหลของหน้าจอจากบทบาทผู้ใช้ไปยัง service หลักของระบบ โดยไม่รวม mobile gateway เพราะ mobile gateway อยู่ในเส้นทางรับส่งข้อมูล sensor ที่อธิบายไว้ก่อนหน้า
 
 \begin{figure}[!htbp]
     \centering
-    \resizebox{0.88\textwidth}{!}{%
+    \resizebox{0.94\textwidth}{!}{%
     \begin{tikzpicture}[
-        role/.style={draw, rounded corners, align=center, minimum width=2.35cm, minimum height=0.64cm, font=\scriptsize, fill=orange!10},
-        page/.style={draw, rounded corners, align=center, minimum width=3.0cm, minimum height=0.64cm, font=\scriptsize, fill=green!10},
-        service/.style={draw, rounded corners, align=center, minimum width=2.75cm, minimum height=0.68cm, font=\scriptsize, fill=blue!10},
-        gate/.style={draw, rounded corners, align=center, minimum width=2.55cm, minimum height=5.05cm, font=\scriptsize, fill=blue!8},
+        role/.style={draw, rounded corners, align=center, text width=2.05cm, minimum height=0.56cm, font=\scriptsize, fill=orange!10},
+        page/.style={draw, rounded corners, align=center, text width=3.15cm, minimum height=0.6cm, font=\scriptsize, fill=green!10},
+        gate/.style={draw, rounded corners, align=center, text width=2.45cm, minimum height=4.7cm, font=\scriptsize, fill=blue!8},
+        service/.style={draw, rounded corners, align=center, text width=2.8cm, minimum height=0.65cm, font=\scriptsize, fill=blue!10},
         arrow/.style={->, >=Stealth, thick}
     ]
-        \node[role] (admin) at (0,2.0) {Admin};
-        \node[role] (hn) at (0,1.0) {Head Nurse};
+        \node[role] (admin) at (0,2.4) {Admin};
+        \node[role] (hn) at (0,1.2) {Head Nurse};
         \node[role] (sup) at (0,0.0) {Supervisor};
-        \node[role] (obs) at (0,-1.0) {Observer};
-        \node[role] (pat) at (0,-2.0) {Patient};
+        \node[role] (obs) at (0,-1.2) {Observer};
+        \node[role] (pat) at (0,-2.4) {Patient};
 
-        \node[page] (adminp) at (3.6,2.0) {System + device\\management};
-        \node[page] (hnp) at (3.6,1.0) {Care dashboard\\alerts};
-        \node[page] (supp) at (3.6,0.0) {Reports + facility\\overview};
-        \node[page] (obsp) at (3.6,-1.0) {Read-only map\\event timeline};
-        \node[page] (patp) at (3.6,-2.0) {Own status\\limited notice};
+        \node[page] (adminp) at (3.55,2.4) {System, task, profile,\\device management};
+        \node[page] (hnp) at (3.55,1.2) {Care dashboard,\\alerts, assignment};
+        \node[page] (supp) at (3.55,0.0) {Operations and\\emergency overview};
+        \node[page] (obsp) at (3.55,-1.2) {Read-only monitoring\\and reporting};
+        \node[page] (patp) at (3.55,-2.4) {Own schedule, service,\\room controls};
 
-        \node[gate] (perm) at (7.1,0) {Permission\\and visibility\\layer};
-        \node[service] (api) at (10.5,0.75) {FastAPI\\services};
-        \node[service] (data) at (10.5,-0.75) {Telemetry +\\AI context};
+        \node[gate] (perm) at (7.2,0) {Role permission\\workspace scope\\patient visibility\\action policy};
+        \node[service] (api) at (10.8,1.45) {FastAPI\\application API};
+        \node[service] (db) at (10.8,0.35) {PostgreSQL/JSONB\\query layer};
+        \node[service] (tele) at (10.8,-0.75) {Telemetry, alert\\and location data};
+        \node[service] (ai) at (10.8,-1.85) {EaseAI/MCP\\context and tools};
 
         \draw[arrow] (admin) -- (adminp);
         \draw[arrow] (hn) -- (hnp);
@@ -475,76 +517,84 @@ Dashboard ของ WheelSense พัฒนาด้วย Next.js เพื่�
         \draw[arrow] (obsp.east) -- (perm.west |- obsp.east);
         \draw[arrow] (patp.east) -- (perm.west |- patp.east);
         \draw[arrow] (perm.east |- api.west) -- (api.west);
-        \draw[arrow] (api) -- (data);
+        \draw[arrow] (perm.east |- db.west) -- (db.west);
+        \draw[arrow] (perm.east |- tele.west) -- (tele.west);
+        \draw[arrow] (perm.east |- ai.west) -- (ai.west);
     \end{tikzpicture}}
-    \caption{HMI role flow ของระบบ WheelSense แสดงความสัมพันธ์ระหว่างบทบาทผู้ใช้ หน้าจอ และ service ที่เกี่ยวข้อง}
+    \caption{HMI role flow ของระบบ WheelSense แสดงการผ่านสิทธิ์ บริบท workspace และ service ที่ dashboard เรียกใช้งาน}
     \label{fig:ch3_hmi_role_flow}
 \end{figure}
 \FloatBarrier
 
-ตัวอย่างหน้าจอเริ่มต้นของระบบประกอบด้วยหน้าเข้าสู่ระบบและหน้า overview ของ Admin โดยหน้าเข้าสู่ระบบใช้แยกตัวตนผู้ใช้ก่อนเข้าสู่ dashboard ส่วนหน้า overview แสดงภาพรวมของ platform เช่น จำนวนผู้ใช้งาน อุปกรณ์ พื้นที่ และสถานะระบบ เพื่อให้ผู้ดูแลระบบเห็นปัญหาหลักก่อนเข้าไปจัดการรายละเอียด
+การใช้งานที่ซ้ำกันหลายบทบาท เช่น task operations, patient profile, staff profile, messages และ support ถูกอธิบายจากสิทธิ์ของ Admin ก่อน เนื่องจาก Admin เห็นภาพรวมมากที่สุดและใช้ตรวจความครบถ้วนของข้อมูลระบบได้ หน้าจอ task operations ใช้ติดตามงานหรือเหตุการณ์ที่ต้องมอบหมายให้ผู้ดูแล ส่วน patient/staff profile ใช้ดูรายละเอียดรายบุคคลและสถานะที่เกี่ยวข้อง เช่น ข้อมูลผู้พักอาศัย อุปกรณ์ที่ผูกไว้ การแจ้งเตือน และข้อมูลบุคลากรใน workspace เมื่อบทบาทอื่นใช้งานหน้าจอกลุ่มเดียวกัน ระบบจะลดข้อมูลหรือ action ตาม permission ไม่ใช่แยก logic ใหม่ทั้งหมด
 
 \begin{figure}[!htbp]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-login.png}
-        \caption{หน้าเข้าสู่ระบบ}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-admin-overview.png}
-        \caption{ภาพรวมระบบของ Admin}
-    \end{subfigure}
-    \caption{หน้าจอเริ่มต้นและภาพรวมระบบสำหรับผู้ดูแลระบบ}
-    \label{fig:ch3_ui_login_admin}
+    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-admin-contact.png}
+    \caption{ภาพหน้าจอระบบในมุมมอง Admin ครอบคลุม overview, task, profile, device, facility, alert, message, support, setting และ EaseAI}
+    \label{fig:ch3_hmi_admin_contact}
 \end{figure}
 \FloatBarrier
 
-สำหรับการทำงานของผู้ดูแลในระดับปฏิบัติการ ระบบเน้นให้เห็น alert และสถานะอุปกรณ์ภาคสนามควบคู่กัน เพราะเหตุการณ์บางอย่างอาจเกิดจากผู้พักอาศัยจริง หรืออาจเกิดจากอุปกรณ์ขาดการเชื่อมต่อ รูปที่~\ref{fig:ch3_ui_alerts_devices} แสดงตัวอย่างหน้าจอที่ใช้ตรวจเหตุการณ์ของ Head Nurse และหน้า Device fleet ที่ใช้ดูสถานะอุปกรณ์
+ในมุมมอง Head Nurse ระบบเน้นข้อมูลที่ต้องใช้ดูแลผู้พักอาศัยโดยตรง เช่น alert, patient profile, task operations, device status และ floorplan เพราะเหตุการณ์หนึ่งอาจมาจากอาการหรือพฤติกรรมของผู้พักอาศัย หรืออาจมาจากอุปกรณ์ขาดการเชื่อมต่อ ภาพที่~\ref{fig:ch3_hmi_head_nurse_contact} จึงแสดง workflow หลักที่ Head Nurse ใช้ตรวจสถานะก่อนตัดสินใจส่งงานหรือแจ้งผู้ดูแลคนอื่น
 
 \begin{figure}[!htbp]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-head-nurse-alerts.png}
-        \caption{หน้า Alerts ของ Head Nurse}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-admin-devices.png}
-        \caption{หน้า Device fleet}
-    \end{subfigure}
-    \caption{หน้าจอสำหรับตรวจเหตุการณ์และสถานะอุปกรณ์ภาคสนาม}
-    \label{fig:ch3_ui_alerts_devices}
+    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-head-nurse-contact.png}
+    \caption{ภาพหน้าจอระบบในมุมมอง Head Nurse สำหรับติดตามผู้พักอาศัย alert, task, device, floorplan และช่องทางสื่อสาร}
+    \label{fig:ch3_hmi_head_nurse_contact}
 \end{figure}
 \FloatBarrier
 
-หน้าจอ Facility ใช้แสดงข้อมูลพื้นที่และการจัดวางอุปกรณ์ในระดับ workspace ส่วนหน้าจอ Patient dashboard แสดงข้อมูลของผู้ใช้รายบุคคลตามสิทธิ์ที่ได้รับ การแยกสองหน้าจอนี้ช่วยให้ผู้ดูแลมองทั้งระดับพื้นที่และระดับบุคคลได้ โดยไม่ต้องรวมข้อมูลทั้งหมดไว้ในหน้าเดียวจนอ่านยาก
+บทบาท Supervisor และ Observer มีหน้าจอหลายส่วนร่วมกับผู้ดูแล แต่ขอบเขตต่างกัน Supervisor ใช้ dashboard เพื่อมองภาพรวมงาน เหตุการณ์ฉุกเฉิน และข้อมูลที่ต้องส่งต่อในระดับปฏิบัติการ ส่วน Observer ใช้สำหรับเฝ้าดูสถานะหรือบันทึกเหตุการณ์โดยลด action ที่มีผลต่อข้อมูลหลักของระบบ ภาพที่~\ref{fig:ch3_hmi_supervisor_observer_contact} แสดงหน้าจอที่ใช้ในสองบทบาทนี้ โดยคงโครงสร้าง navigation ใกล้กันเพื่อให้ผู้ใช้เปลี่ยนบทบาทหรือฝึกใช้งานได้ง่ายขึ้น
 
 \begin{figure}[!htbp]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
+    \begin{subfigure}[b]{0.49\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-admin-facility.png}
-        \caption{หน้า Facility}
+        \includegraphics[width=\linewidth]{chapter3/dashboard-hmi/role-supervisor-contact.png}
+        \caption{มุมมอง Supervisor}
     \end{subfigure}
-    \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
+    \begin{subfigure}[b]{0.49\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{chapter3/ui/ch3-ui-patient-dashboard.png}
-        \caption{หน้า Patient dashboard}
+        \includegraphics[width=\linewidth]{chapter3/dashboard-hmi/role-observer-contact.png}
+        \caption{มุมมอง Observer}
     \end{subfigure}
-    \caption{หน้าจอข้อมูลพื้นที่และหน้าจอผู้ใช้ตามสิทธิ์การเข้าถึง}
-    \label{fig:ch3_ui_facility_patient}
+    \caption{ภาพหน้าจอระบบในมุมมอง Supervisor และ Observer สำหรับการติดตามงานและสถานะตามสิทธิ์}
+    \label{fig:ch3_hmi_supervisor_observer_contact}
+\end{figure}
+\FloatBarrier
+
+หน้าจอ Patient ถูกออกแบบให้เห็นเฉพาะข้อมูลของผู้ใช้รายนั้น เช่น care plan, schedule, medication, room control, service request และช่องทางติดต่อผู้ดูแล ไม่แสดงรายการผู้พักอาศัยคนอื่นหรือข้อมูลบุคลากรที่ไม่เกี่ยวข้อง ภาพที่~\ref{fig:ch3_hmi_patient_dashboard} เป็นภาพหน้าจอของ Patient dashboard ที่ใช้ในการตรวจสอบรอบปัจจุบัน ส่วนภาพที่~\ref{fig:ch3_hmi_patient_contact} แสดงหน้าจออื่นใน portal ของผู้ป่วย เช่น schedule, pharmacy, room controls, services, messages, support และ settings
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{chapter3/dashboard-hmi/patient-dashboard-overview.png}
+    \caption{ภาพหน้าจอ Patient dashboard สำหรับผู้ใช้รายบุคคล แสดงข้อมูล care plan สถานะรถเข็น และช่องทางขอความช่วยเหลือ}
+    \label{fig:ch3_hmi_patient_dashboard}
+\end{figure}
+\FloatBarrier
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-patient-contact.png}
+    \caption{ภาพหน้าจอระบบในมุมมอง Patient ครอบคลุม personal dashboard, schedule, pharmacy, room controls, services, messages, support และ settings}
+    \label{fig:ch3_hmi_patient_contact}
+\end{figure}
+\FloatBarrier
+
+EaseAI เป็น assistant ที่เปิดจาก dashboard เพื่อช่วยผู้ดูแลค้นข้อมูล สรุปบริบท หรือเตรียม action candidate จากข้อมูลที่ระบบอนุญาตให้เข้าถึง การใช้งานเริ่มจากผู้ใช้เปิดแผง EaseAI เลือกคำถามตัวอย่างหรือพิมพ์คำถามเอง จากนั้นระบบส่งข้อความพร้อม role, workspace และบริบทที่จำเป็นเข้าสู่ AI pipeline ในหัวข้อ~\ref{sec:ch3_ai} หากคำตอบเป็นเพียงการสรุปข้อมูล ระบบจะแสดงผลกลับในหน้าต่างสนทนา แต่ถ้าเกี่ยวข้องกับการสั่งงานจริงจะต้องผ่าน execution gate และเงื่อนไขการยืนยันก่อนเสมอ ภาพที่~\ref{fig:ch3_hmi_easeai} แสดงตัวอย่างหน้าจอ EaseAI บนมุมมอง Admin
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{chapter3/dashboard-hmi/admin-easeai-chat.png}
+    \caption{ภาพหน้าจอ EaseAI ใน dashboard สำหรับถามข้อมูลหรือเตรียม action ภายใต้ role permission และ MCP execution gate}
+    \label{fig:ch3_hmi_easeai}
 \end{figure}
 \FloatBarrier
 
 \section{ระบบ AI และ MCP Tool Pipeline}
 \label{sec:ch3_ai}
-\noindent
 ส่วน AI ของระบบถูกออกแบบใหม่จากปัญหาของแนวทางเดิมที่ให้ LLM และ MCP agent จัดการงานส่วนใหญ่ในเส้นทางเดียว เมื่อระบบมี tool หลายกลุ่ม เช่น การค้นข้อมูลผู้พักอาศัย การอ่านข้อมูล sensor การสรุปสถานะ และการเตรียม action ให้ผู้ดูแลตรวจสอบ prompt ต้องบรรจุคำอธิบาย tool, schema, policy และบริบทจำนวนมาก ส่งผลให้เกิด token overhead สูงและ latency เพิ่มขึ้นมาก จากบันทึกการพัฒนาระบบเดิมพบว่าโมเดลขนาด 7B บางรอบใช้เวลาประมาณ 30--45 นาที หรือมากกว่านั้นเมื่อต้อง reasoning กับ tool หลายขั้นตอน แม้ภายหลังจะลดขนาดโมเดลและปรับ prompt แล้ว เวลาตอบสนองยังไม่เหมาะกับ dashboard ที่ผู้ดูแลต้องรอผลในรอบการทำงานสั้นกว่าเดิม
 
 หลังการทดสอบรอบแรก ระบบถูกปรับเป็นแนวทางที่แยก logic เชิงสัญลักษณ์ออกจากการสังเคราะห์ภาษาของ LLM โดยให้ deterministic rule, schema, policy และ tool contract ทำงานร่วมกับ LLM แทนการปล่อยให้โมเดลตัดสินใจทุกขั้นตอน แนวทางนี้เป็นการออกแบบแบบ neuro-symbolic-inspired กล่าวคือใช้ LLM สำหรับความเข้าใจเชิงภาษาและการเรียบเรียงคำตอบ ส่วนเงื่อนไขเชิงระบบและการสั่งงานจริงยังถูกควบคุมด้วยกฎและ schema ที่ตรวจสอบได้ จึงไม่กล่าวอ้างว่าเป็นระบบ neuro-symbolic เต็มรูปแบบ แต่ใช้หลักการดังกล่าวเพื่อลด hallucination และลดคำสั่งที่อยู่นอกขอบเขต
@@ -575,7 +625,6 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\noindent
 \textbf{Layer 1 Intent Router} ทำหน้าที่รับคำสั่งจากผู้ใช้แล้วจัดกลุ่มเจตนาเบื้องต้นก่อนให้ LLM ทำงาน ระบบเริ่มจาก deterministic matching เช่น keyword, route, role และ schema ที่คาดหวัง หาก confidence เพียงพอจะส่ง query พร้อม intent ไปยัง Layer 2 ได้ทันที หากยังไม่ชัดเจนจึงใช้ semantic matching เพื่อวัดความใกล้เคียงเชิงความหมาย และหากยังขาดข้อมูลสำคัญ เช่น ไม่ระบุผู้พักอาศัย ห้อง หรือ action ที่ต้องการ ระบบจะหยุด pipeline แล้วถามกลับแทนการเดาคำสั่ง
 
 \begin{figure}[!htbp]
@@ -602,7 +651,6 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\noindent
 \textbf{Layer 2 Context Assembler} รับ intent จาก Layer 1 แล้วเลือกบริบทที่เกี่ยวข้องกับคำสั่ง เช่น ข้อมูลผู้พักอาศัย สถานะ sensor ล่าสุด ประวัติ telemetry สรุปเชิงพฤติกรรม หรือเอกสารใน RAG ขั้นตอนนี้ไม่ได้ดึงข้อมูลทั้งหมดเข้า prompt แต่เริ่มจากการวางแผนว่าคำสั่งต้องใช้หัวข้อใด จากนั้น fetch และ rank เฉพาะ chunk ที่อนุญาตตาม role และ policy ก่อนแพ็กบริบทให้สั้น ไม่ซ้ำ และตรวจย้อนกลับได้
 
 \begin{figure}[!htbp]
@@ -629,7 +677,6 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\noindent
 บริบทที่ถูกส่งต่อจะประกอบด้วยข้อมูลที่จำเป็นต่อคำตอบหรือการสั่งงานเท่านั้น เช่น patient id, device id, ค่า telemetry ล่าสุด, สิทธิ์ของผู้ใช้ และข้อความอ้างอิงที่ถูกดึงจาก retrieval logic วิธีนี้ทำให้ Layer 4 ไม่ต้องรับ prompt ขนาดใหญ่ทุกครั้ง และลดโอกาสที่ LLM จะเห็นข้อมูลที่ไม่เกี่ยวข้องจนสรุปผิด
 
 \begin{figure}[!htbp]
@@ -654,7 +701,6 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\noindent
 \textbf{Layer 4 Constrained LLM} เป็นชั้นที่ใช้ LLM สังเคราะห์คำตอบภายใต้ prompt และ schema ที่จำกัดไว้ ระบบใช้ schema-bound prompting เพื่อระบุรูปแบบผลลัพธ์ที่ต้องการ เช่น ต้องตอบเป็นข้อความสรุป ต้องคืนค่า action candidate หรือไม่ควรเรียก tool ใดในสถานการณ์นั้น หากคำสั่งเกี่ยวข้องกับ MCP ระบบจะให้ LLM สร้าง execution candidate ที่มี argument ตาม schema เท่านั้น ยังไม่ให้ดำเนินการกับระบบจริงในชั้นนี้
 
 \begin{figure}[!htbp]
@@ -677,10 +723,8 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\noindent
 \textbf{Layer 5 Execution Gate} เป็นชั้นป้องกันก่อนส่งคำสั่งไปยัง MCP server หรือ backend tool โดยตรวจ schema, policy, role, allowlist และเงื่อนไขด้านความปลอดภัยของ action อีกครั้ง หาก argument ไม่ครบ สิทธิ์ไม่ตรง หรือ action เสี่ยงเกินขอบเขต ระบบจะไม่ execute และส่งผลกลับเป็นคำถามหรือคำอธิบายให้ผู้ดูแลตรวจสอบ วิธีนี้ทำให้ LLM ไม่สามารถสั่งงานจริงได้โดยลำพัง แม้จะสร้างข้อความที่ดูเหมือนคำสั่งถูกต้อง
 
-\noindent
 \textbf{Layer 3 Behavioral State} ทำงานเป็นกระบวนการเตรียมบริบทจากข้อมูล biometrics, movement, resident id และ timestamp ที่ระบบรับมาอย่างต่อเนื่อง ข้อมูลรายวันถูกบีบให้เป็นสัญญาณที่อ่านได้ เช่น ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน rolling window แนวโน้มจาก linear regression และจำนวนเหตุการณ์ผิดปกติ จากนั้นระบบใช้ rule หรือ model เช่น XGBoost ในระดับต้นแบบเพื่อจัดกลุ่มความเร่งด่วนและแกนปัญหาที่ควรเฝ้าดู ผลลัพธ์ถูกเก็บเป็น behavioral database เพื่อให้ Layer 2 ดึงกลับไปประกอบคำตอบรอบถัดไป ไม่ใช่การวินิจฉัยทางการแพทย์หรือการตัดสินแทนผู้ดูแล
 
 \begin{figure}[!htbp]
@@ -729,14 +773,12 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\noindent
 Context Window Management เป็นส่วนสนับสนุนที่ช่วยให้การสนทนาและผลลัพธ์จาก tool ไม่โตจนเกินขอบเขตของโมเดล แต่ยังย้อนกลับได้ว่าแต่ละคำตอบใช้ข้อมูลใด ระบบจึง tag payload ตาม session และ I/O turn เก็บ embedding signal สำหรับใช้ rank ร่วมกับความใหม่ของข้อมูล และมี policy จำกัดจำนวน active session หรือ bundle ที่เก็บใน context เมื่อข้อมูลเก่าเกินจำเป็นจะถูกลดความสำคัญหรือถอดออกจาก prompt แต่ยังคงบันทึกในฐานข้อมูลหรือ log เพื่อการตรวจสอบภายหลัง
 
 MCP ทำหน้าที่เป็นสัญญาระหว่าง AI runtime กับระบบจริง โดยฝั่ง agent runtime เป็นผู้ประกอบเจตนา บริบท และ schema ก่อนส่ง execution candidate ไปยัง execution gate ส่วน MCP server เปิด resources, prompts และ tools ที่ผ่านการควบคุมสิทธิ์แล้ว การแยกเช่นนี้ช่วยลดโอกาสที่ LLM จะเรียกใช้คำสั่งนอกขอบเขต เพราะ tool ที่รันจริงต้องผ่านทั้ง schema validation, allowlist ตามบทบาท และ execution gate ก่อนเสมอ
 
 \section{แนวทางการประเมินผลระบบ}
 \label{sec:ch3_evaluation_plan}
-\noindent
 การประเมินผลระบบถูกออกแบบให้เชื่อมกับองค์ประกอบหลักของสถาปัตยกรรมที่อธิบายในบทนี้ โดยไม่สรุปผลเกินกว่าข้อมูลทดลองที่มี ในบทที่ 4 แต่ละหัวข้อจึงระบุสภาพแวดล้อมการทดสอบ วิธีทดสอบ ผลที่ได้ และการวิเคราะห์ในรูปแบบย่อหน้าต่อเนื่อง เพื่อให้ผู้อ่านแยกได้ว่าปัญหาหรือข้อจำกัดเกิดจาก sensor, gateway, server, dashboard หรือ AI pipeline
 
 \begin{table}[H]
