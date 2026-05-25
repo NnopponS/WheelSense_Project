@@ -1,0 +1,46 @@
+%%================================================
+%% Appendix F
+%%================================================
+\chapter[ภาพหน้าจอ Dashboard และ Mobile Gateway]{\texorpdfstring{ภาคผนวก ฉ\\ภาพหน้าจอ Dashboard และ Mobile Gateway}{Appendix F: Dashboard and Mobile Gateway Screens}}
+\label{app:dashboard_mobile_screens}
+
+ภาคผนวกนี้แสดงตัวอย่างหน้าจอ dashboard และหน้าจอที่ใช้ประกอบ workflow ของผู้ดูแล เพื่อสนับสนุนหัวข้อ dashboard/HMI และ SUS score ในบทที่ 4 ภาพที่แสดงเป็นหน้าจอระบบที่จัดตามบทบาทผู้ใช้ เช่น head nurse และ observer/mobile view
+
+\begin{table}[H]
+    \centering
+    \caption{ข้อมูลประกอบการประเมิน Dashboard/HMI และ SUS score}
+    \label{tab:app_hmi_sus_summary}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.34\textwidth}|L{0.20\textwidth}|L{0.34\textwidth}|}
+        \hline
+        \textbf{ตัวชี้วัด} & \textbf{ผลที่พบ} & \textbf{หมายเหตุ} \\ \hline
+        Task completion rate & 0.93 & ผู้เข้าร่วม 15 คนในชุดทดสอบ HMI \\ \hline
+        Average satisfaction & 4.31/5 & คะแนนจากแบบประเมิน 5 ระดับ \\ \hline
+        Alert readability & 4.42/5 & ผู้ใช้กลุ่มผู้ดูแลให้ความสำคัญกับความอ่านง่ายของ alert \\ \hline
+        Role navigation clarity & 4.18/5 & ใช้ประเมินความเข้าใจ route ตามบทบาท \\ \hline
+        SUS score summary & 76.5, SD 8.7 & ใช้เป็นผลเบื้องต้นเท่านั้นจนกว่าจะมี raw item score ครบ \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\textwidth]{chapter3/Head-Nurse-view.png}
+    \caption{หน้าจอ dashboard สำหรับ head nurse ในการติดตามสถานะผู้พักอาศัยและ alert}
+    \label{fig:app-head-nurse-screen}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.62\textwidth]{chapter3/observer-view.png}
+    \caption{หน้าจอ observer/mobile view สำหรับตรวจ alert และข้อมูลสถานะพื้นที่}
+    \label{fig:app-observer-mobile-screen}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.82\textwidth]{chapter3/ui/ch3-ui-head-nurse-dashboard.png}
+    \caption{หน้าจอ head nurse dashboard สำหรับ workflow การดูแลและติดตามสถานะ}
+    \label{fig:app-head-nurse-dashboard-ui}
+\end{figure}

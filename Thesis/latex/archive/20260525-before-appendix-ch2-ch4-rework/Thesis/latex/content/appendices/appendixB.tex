@@ -16,19 +16,12 @@
     \begin{tabular}{|L{0.34\textwidth}|L{0.15\textwidth}|L{0.15\textwidth}|L{0.25\textwidth}|}
         \hline
         \textbf{ตัวชี้วัด} & \textbf{ค่าเฉลี่ย} & \textbf{P95} & \textbf{หมายเหตุ} \\ \hline
-        IMU sampling rate & 19.6 Hz & 20.3 Hz & ทดสอบ 10 รอบ รอบละ 60 วินาที เป้าหมายของ firmware อยู่ที่ 20 Hz \\ \hline
-        Telemetry completeness & 98.4\% & 99.1\% & รับได้ 11,808 จาก 12,000 packet ที่คาดว่าจะได้รับ \\ \hline
+        IMU sampling rate & 19.6 Hz & 20.3 Hz & เป้าหมายของ firmware อยู่ที่ 20 Hz \\ \hline
+        Telemetry completeness & 98.4\% & 99.1\% & เทียบ packet ที่รับได้กับ packet ที่คาดว่าจะได้รับ \\ \hline
         Device/gateway to broker latency & 41 ms & 156 ms & ทดสอบภายใต้เครือข่าย WiFi ปกติ \\ \hline
-        Polar connection success & 94.4\% & -- & สำเร็จ 34 จาก 36 ครั้ง พบการ re-pairing บางรอบระหว่างทดสอบ \\ \hline
+        Polar connection success & 94.4\% & -- & พบการ re-pairing บางรอบระหว่างทดสอบ \\ \hline
     \end{tabular}
 \end{table}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.76\textwidth]{chapter4/ch4-motion-accuracy.png}
-    \caption{กราฟ accuracy ของหน้าต่างข้อมูล IMU ตามสถานะการเคลื่อนไหว}
-    \label{fig:app_sensor_motion_accuracy}
-\end{figure}
 
 \begin{table}[H]
     \centering
@@ -59,8 +52,8 @@
         \textbf{ตัวชี้วัด} & \textbf{ค่าเฉลี่ย} & \textbf{P95} & \textbf{หมายเหตุ} \\ \hline
         BLE GATT connection time & 3.2 s & 5.8 s & รวมเวลาสแกนและเชื่อมต่อครั้งแรก \\ \hline
         Smartphone to broker latency & 78 ms & 215 ms & ทดสอบผ่านเครือข่าย WiFi ปกติ \\ \hline
-        MQTT connection success & 98.6\% & -- & ส่งสำเร็จ 1,183 จาก 1,200 publish และเปิด auto reconnect ระหว่างการทดสอบ \\ \hline
-        Vitals completeness & 96.2\% & 98.9\% & รับได้ 2,309 จาก 2,400 block ครอบคลุม HR, PPG และ ACC payload \\ \hline
+        MQTT connection success & 98.6\% & -- & เปิด auto reconnect ระหว่างการทดสอบ \\ \hline
+        Vitals completeness & 96.2\% & 98.9\% & ครอบคลุม HR, PPG และ ACC payload \\ \hline
         Heart rate resting & 72.4 bpm & -- & ค่าเฉลี่ยในช่วงพัก \\ \hline
         Heart rate active & 95.6 bpm & -- & ค่าเฉลี่ยในช่วงเคลื่อนไหว \\ \hline
         PPG block loss & 2.1\% & -- & เกิดจาก motion artifact บางช่วง \\ \hline

@@ -1,0 +1,96 @@
+%%================================================
+%% Appendix E
+%%================================================
+\chapter[ตัวอย่าง Schema, API และ MQTT Payload]{\texorpdfstring{ภาคผนวก จ\\ตัวอย่าง Schema, API และ MQTT Payload}{Appendix E: Schema API and MQTT Payload}}
+\label{app:schema_payload}
+
+ภาคผนวกนี้แสดงตัวอย่างโครงสร้างข้อมูลและ payload ที่เกี่ยวข้องกับระบบ WheelSense เพื่อประกอบคำอธิบาย server, API, database และ MQTT ในบทที่ 3 และผลการทดสอบในบทที่ 4 ตัวอย่างนี้ใช้เพื่ออธิบายรูปแบบข้อมูลระดับระบบต้นแบบ ไม่ใช่สัญญา API ฉบับสมบูรณ์สำหรับ production
+
+\begin{table}[H]
+    \centering
+    \caption{กลุ่ม schema หลักของฐานข้อมูล}
+    \label{tab:app_schema_groups}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.26\textwidth}|L{0.34\textwidth}|L{0.30\textwidth}|}
+        \hline
+        \textbf{กลุ่มข้อมูล} & \textbf{ตัวอย่าง entity} & \textbf{บทบาทในระบบ} \\ \hline
+        User และ workspace & users, roles, workspaces & กำหนดสิทธิ์การเข้าใช้งานและบริบทของสถานดูแล \\ \hline
+        Patient และ assignment & patients, caregivers, room assignments & เชื่อมผู้พักอาศัยกับผู้ดูแล ห้อง และอุปกรณ์ \\ \hline
+        Device registry & devices, device bindings, node status & ลงทะเบียน M5StickC Plus2, mobile gateway, wearable และ BLE node \\ \hline
+        Telemetry และ vitals & imu\_telemetry, mobile\_device\_telemetry, vital readings & เก็บข้อมูล IMU, RSSI, HR, PPG, step count และสถานะอุปกรณ์ \\ \hline
+        Localization และ alert & room prediction, alerts, workflow audit & เก็บผลตำแหน่ง เหตุการณ์แจ้งเตือน และประวัติการดำเนินงาน \\ \hline
+        AI/runtime context & chat actions, audit trail, execution result & ใช้ประกอบ AI/MCP pipeline และ execution gate \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{ตัวอย่าง API และ MQTT topic ที่เกี่ยวข้อง}
+    \label{tab:app_api_mqtt_topics}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.32\textwidth}|L{0.18\textwidth}|L{0.40\textwidth}|}
+        \hline
+        \textbf{เส้นทางหรือ topic} & \textbf{ชนิด} & \textbf{หน้าที่} \\ \hline
+        \texttt{/api/patients} & REST API & จัดการข้อมูลผู้พักอาศัยและข้อมูลที่ dashboard ใช้แสดงผล \\ \hline
+        \texttt{/api/devices} & REST API & ลงทะเบียนและตรวจสถานะอุปกรณ์ \\ \hline
+        \texttt{/api/telemetry} & REST API & อ่านข้อมูล telemetry เพื่อใช้กับ dashboard และ report \\ \hline
+        \texttt{/api/chat/actions} & REST API & เก็บ action proposal, confirmation และ execution result ของ AI \\ \hline
+        \texttt{WheelSense/data} & MQTT & รับ telemetry จาก wheelchair sensor หรือ gateway รุ่นเดิม \\ \hline
+        \texttt{WheelSense/mobile/\{device\_id\}/telemetry} & MQTT & รับข้อมูลจาก Flutter mobile gateway \\ \hline
+        \texttt{WheelSense/mobile/\{device\_id\}/register} & MQTT & ลงทะเบียน mobile gateway เข้ากับ workspace \\ \hline
+        \texttt{WheelSense/mobile/\{device\_id\}/walkstep} & MQTT & รับข้อมูลจำนวนก้าวเดินจากโทรศัพท์ \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{lstlisting}[caption={ตัวอย่าง payload จาก M5StickC Plus2 ผ่าน mobile gateway},label={lst:app_m5_payload}]
+{
+  "device_id": "M5C-WS-001",
+  "patient_id": "P001",
+  "timestamp": "2026-05-22T10:00:00+07:00",
+  "battery": { "percent": 84, "voltage": 4.02 },
+  "imu": {
+    "accel": { "x": 0.02, "y": -0.01, "z": 0.98 },
+    "gyro": { "x": 0.12, "y": 0.04, "z": -0.02 },
+    "magnitude": 0.981
+  },
+  "motion": {
+    "state": "normal_motion",
+    "velocity_mps": 0.42,
+    "distance_m": 12.4
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={ตัวอย่าง payload จาก Flutter mobile gateway},label={lst:app_mobile_gateway_payload}]
+{
+  "device_id": "MOBILE-GW-001",
+  "patient_id": "P001",
+  "timestamp": "2026-05-22T10:00:02+07:00",
+  "m5": { "device_id": "M5C-WS-001", "battery_percent": 84 },
+  "polar": { "hr_bpm": 76, "rr_ms": 812, "ppg_quality": "usable" },
+  "phone": { "steps_today": 1840 },
+  "rssi": [
+    { "node_id": "BLE-NODE-01", "rssi": -61 },
+    { "node_id": "BLE-NODE-02", "rssi": -74 }
+  ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={ตัวอย่าง action candidate ที่ต้องผ่าน execution gate},label={lst:app_ai_action_candidate}]
+{
+  "intent": "care_alert_proposal",
+  "patient_id": "P001",
+  "summary": "Heart rate is above the configured threshold",
+  "evidence": ["latest_vitals", "active_alerts", "patient_context"],
+  "proposed_action": {
+    "type": "notify_caregiver",
+    "target_role": "head_nurse",
+    "requires_confirmation": true
+  },
+  "policy": { "medical_claim": false, "execute_without_user": false }
+}
+\end{lstlisting}

@@ -24,22 +24,6 @@
 
 \begin{table}[H]
     \centering
-    \caption{ผลเปรียบเทียบ KNN กับ max-RSSI baseline}
-    \label{tab:app_knn_max_rssi_baseline}
-    \renewcommand{\arraystretch}{1.15}
-    \small
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{|L{0.13\textwidth}|L{0.38\textwidth}|L{0.14\textwidth}|L{0.16\textwidth}|L{0.12\textwidth}|}
-        \hline
-        \textbf{Case} & \textbf{งานที่ทดสอบ} & \textbf{KNN} & \textbf{Max-RSSI} & \textbf{ส่วนต่าง} \\ \hline
-        Case 1 & จำแนกทิศทาง facing in/facing out & 0.8857 & 0.8000 & +0.0857 \\ \hline
-        Case 2 & จำแนก boundary transition & 0.6857 & 0.6286 & +0.0571 \\ \hline
-        Case 3 & ทำนายลำดับ zone แบบ exact sequence & 0.8857 & 0.7714 & +0.1143 \\ \hline
-    \end{tabular}
-\end{table}
-
-\begin{table}[H]
-    \centering
     \caption{ผลเปรียบเทียบ KNN และ XGBoost ในชุดทดลองเดียวกัน}
     \label{tab:app_knn_model_compare}
     \renewcommand{\arraystretch}{1.15}

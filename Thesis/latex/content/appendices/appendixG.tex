@@ -1,0 +1,129 @@
+%%================================================
+%% Appendix G
+%%================================================
+\chapter[Flow Diagram และ Firmware Loop เพิ่มเติม]{\texorpdfstring{ภาคผนวก ช\\Flow Diagram และ Firmware Loop เพิ่มเติม}{Appendix G: Additional Flow and Firmware Loop}}
+\label{app:flow_firmware_loop}
+
+ภาคผนวกนี้สรุปลำดับการทำงานของ firmware, mobile gateway, server ingest และ AI pipeline ในรูปแบบตารางขั้นตอน เพื่อใช้ประกอบบทที่ 3 โดยไม่ใส่รายละเอียด implementation ซ้ำมากเกินไปในเนื้อหาหลัก
+
+\begin{table}[H]
+    \centering
+    \caption{ลำดับ firmware loop ของ M5StickC Plus2}
+    \label{tab:app_m5_firmware_loop}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.12\textwidth}|L{0.30\textwidth}|L{0.46\textwidth}|}
+        \hline
+        \textbf{ขั้น} & \textbf{การทำงาน} & \textbf{รายละเอียด} \\ \hline
+        1 & Boot และ load config & เริ่มระบบ อ่านค่าคอนฟิก และตรวจสถานะแบตเตอรี่ \\ \hline
+        2 & BLE GATT advertise & ประกาศ service ให้ mobile gateway ค้นหาและเชื่อมต่อ \\ \hline
+        3 & Read IMU/battery & อ่านค่า acceleration, gyro และ battery ตามรอบ sampling \\ \hline
+        4 & Filter และ calibrate & ใช้ gyro offset, EMA และ deadband เพื่อลด noise \\ \hline
+        5 & Compute motion & คำนวณ magnitude, velocity, distance และ acceleration สำหรับสถานะการเคลื่อนไหว \\ \hline
+        6 & Notify JSON payload & ส่ง payload ผ่าน BLE notification ไปยังโทรศัพท์ \\ \hline
+        7 & Receive command/config & รับคำสั่ง config, time sync หรือ parameter จาก mobile gateway \\ \hline
+        8 & Repeat loop & กลับไปอ่าน sensor รอบถัดไปและจัดการ reconnect เมื่อ connection หลุด \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{ผล latency ของ server path ที่ใช้ประกอบบทที่ 4}
+    \label{tab:app_server_latency_result}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.34\textwidth}|L{0.14\textwidth}|L{0.14\textwidth}|L{0.14\textwidth}|L{0.14\textwidth}|}
+        \hline
+        \textbf{Path} & \textbf{P50} & \textbf{P95} & \textbf{P99} & \textbf{หน่วย} \\ \hline
+        MQTT telemetry end-to-end & 46 & 178 & 304 & ms \\ \hline
+        REST API read latency & 63 & 212 & 341 & ms \\ \hline
+        Alert propagation latency & 71 & 236 & 388 & ms \\ \hline
+        Room prediction publication & 58 & 191 & 325 & ms \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\textwidth]{chapter4/ch4-server-latency-summary.png}
+    \caption{กราฟ P50/P95 ของ server path สำหรับ ingest, API, alert และ room prediction}
+    \label{fig:app_server_latency_summary}
+\end{figure}
+
+\begin{table}[H]
+    \centering
+    \caption{ผล end-to-end scenario ของระบบต้นแบบ}
+    \label{tab:app_e2e_result}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.34\textwidth}|L{0.16\textwidth}|L{0.16\textwidth}|L{0.24\textwidth}|}
+        \hline
+        \textbf{Scenario} & \textbf{Result} & \textbf{Latency} & \textbf{หมายเหตุ} \\ \hline
+        Motion detection & pass & 0.82 s & แสดงผลครบใน dashboard \\ \hline
+        Zone change and store & pass & 1.14 s & บันทึกประวัติตำแหน่งได้ \\ \hline
+        Abnormal alert & pass & 1.27 s & สร้าง alert พร้อม context \\ \hline
+        AI confirmed action & pass & 4.88 s & ผ่าน confirm gate ก่อนดำเนินการ \\ \hline
+        Network recovery & partial & 7.90 s & มี interval ที่หายบางช่วง \\ \hline
+        Stress load & pass & 1.96 s & tail latency สูงขึ้นแต่ยังแสดงผลได้ \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{ลำดับการทำงานของ Flutter Mobile Gateway}
+    \label{tab:app_mobile_gateway_loop}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.12\textwidth}|L{0.30\textwidth}|L{0.46\textwidth}|}
+        \hline
+        \textbf{ขั้น} & \textbf{การทำงาน} & \textbf{รายละเอียด} \\ \hline
+        1 & Scan และ connect & ค้นหา M5StickC Plus2 และ Polar Verity Sense ผ่าน BLE \\ \hline
+        2 & Read wearable data & อ่าน HR, RR interval และ PPG ผ่าน Polar SDK \\ \hline
+        3 & Read phone context & รับ step count และข้อมูลบริบทจากโทรศัพท์ \\ \hline
+        4 & Collect RSSI & รับหรือสแกนค่า RSSI จาก BLE node สำหรับ localization \\ \hline
+        5 & Normalize payload & รวมข้อมูล M5, Polar, phone และ RSSI ให้อยู่ใน schema เดียว \\ \hline
+        6 & Publish to server & ส่งข้อมูลผ่าน MQTT หรือ REST ตามประเภทข้อมูล \\ \hline
+        7 & Buffer/retry & เก็บข้อมูลชั่วคราวและ reconnect เมื่อเครือข่ายหรือ BLE หลุด \\ \hline
+        8 & Update status UI & แสดงสถานะ BLE, Polar, M5 และการส่งข้อมูลในหน้า \texttt{/WheelSensor} \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{ลำดับ server ingest และการนำข้อมูลไปใช้}
+    \label{tab:app_server_ingest_loop}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.12\textwidth}|L{0.30\textwidth}|L{0.46\textwidth}|}
+        \hline
+        \textbf{ขั้น} & \textbf{การทำงาน} & \textbf{รายละเอียด} \\ \hline
+        1 & Ingest & รับข้อมูลจาก MQTT broker หรือ REST endpoint \\ \hline
+        2 & Validate & ตรวจ schema, device id, workspace และขนาด payload \\ \hline
+        3 & Store & บันทึก structured/semi-structured data ลง PostgreSQL และ JSONB \\ \hline
+        4 & Derive state & สร้างสถานะล่าสุด เช่น room prediction, alert และ motion summary \\ \hline
+        5 & Query & dashboard และ API อ่านข้อมูลล่าสุดตาม role และ workspace \\ \hline
+        6 & AI context & Context Assembler ดึงข้อมูลที่จำเป็นไปประกอบคำตอบหรือ action candidate \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \caption{ลำดับ AI/MCP pipeline แบบ 5 layer}
+    \label{tab:app_ai_pipeline_loop}
+    \renewcommand{\arraystretch}{1.18}
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{|L{0.18\textwidth}|L{0.30\textwidth}|L{0.40\textwidth}|}
+        \hline
+        \textbf{Layer} & \textbf{บทบาท} & \textbf{การทำงานในระบบ} \\ \hline
+        Layer 1 & Intent Router & แยก deterministic matching, semantic matching และ clarification \\ \hline
+        Layer 2 & Context Assembler & ดึงและจัดลำดับข้อมูลที่เกี่ยวข้องจากฐานข้อมูลและ RAG context \\ \hline
+        Layer 3 & Behavioral State & สรุปข้อมูลพฤติกรรมและความเสี่ยงแบบ background context ไม่อยู่ใน execute path หลัก \\ \hline
+        Layer 4 & Constrained LLM & ใช้ prompt ที่ผูกกับ schema/tool contract เพื่อสร้างคำตอบหรือ action candidate \\ \hline
+        Layer 5 & Execution Gate & ตรวจ schema, policy และสิทธิ์ก่อนแสดงผลหรือส่งคำสั่งที่ผู้ใช้ยืนยันแล้ว \\ \hline
+    \end{tabular}
+\end{table}

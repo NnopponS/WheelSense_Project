@@ -31,13 +31,6 @@ MQTT เป็น protocol แบบ publish/subscribe ที่นิยมใ�
 
 ในระบบที่ต้องประมวลผลภายในพื้นที่ทดลอง แนวคิด edge หรือ local server มีบทบาทในการลดการพึ่งพา cloud ภายนอก ทำให้ข้อมูลส่วนบุคคลไม่จำเป็นต้องออกนอกระบบ และช่วยให้ dashboard หรือระบบแจ้งเตือนทำงานได้แม้ internet ภายนอกไม่เสถียร โครงสร้างทั่วไปมักประกอบด้วย gateway ที่รับข้อมูลจากอุปกรณ์ภาคสนาม server ที่ตรวจสอบและจัดเก็บข้อมูล ฐานข้อมูลสำหรับ telemetry และ frontend/dashboard สำหรับแสดงผล
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.72\textwidth]{chapter2/homeasisitant.png}
-    \caption{ตัวอย่างหน้าจอ dashboard ของระบบ smart environment ที่รวมสถานะจากอุปกรณ์ IoT หลายชนิด}
-    \label{fig:ch2_smart_environment_dashboard}
-\end{figure}
-
 \begin{table}[htbp]
     \centering
     \caption{บทบาทของเทคโนโลยี IoT และ sensor ในระบบดูแล}

@@ -9,7 +9,7 @@
 \vspace {\baselineskip }
 \contentsline {section}{สารบัญตาราง}{(8)}{section*.7}%
 \vspace {\baselineskip }
-\contentsline {section}{สารบัญรูป}{(10)}{section*.9}%
+\contentsline {section}{สารบัญรูป}{(11)}{section*.9}%
 \vspace {\baselineskip }
 \contentsline {section}{สัญลักษณ์และคำย่อ}{16}{section*.11}%
 \vspace {\baselineskip }
@@ -26,51 +26,51 @@
 \contentsline {section}{\numberline {2.4}การระบุตำแหน่งภายในอาคารด้วย BLE RSSI}{26}{section.2.4}%
 \contentsline {section}{\numberline {2.5}การประมวลผลข้อมูล IMU และการเคลื่อนไหว}{28}{section.2.5}%
 \contentsline {section}{\numberline {2.6}Machine Learning สำหรับจำแนกพฤติกรรมหรือความเสี่ยง}{30}{section.2.6}%
-\contentsline {section}{\numberline {2.7}Retrieval-Augmented Generation และ Retrieval Logic}{31}{section.2.7}%
+\contentsline {section}{\numberline {2.7}Retrieval-Augmented Generation และ Retrieval Logic}{32}{section.2.7}%
 \contentsline {section}{\numberline {2.8}Neuro-symbolic AI และ AI Pipeline แบบ Rule + Model}{32}{section.2.8}%
-\contentsline {section}{\numberline {2.9}งานวิจัยที่เกี่ยวข้อง}{33}{section.2.9}%
-\contentsline {section}{\numberline {2.10}ช่องว่างของงานวิจัยเดิม}{34}{section.2.10}%
-\contentsline {chapter}{\numberline {บทที่ 3}วิธีการออกแบบและพัฒนาระบบ}{36}{chapter.3}%
-\contentsline {section}{\numberline {3.1}ภาพรวมของระบบ}{36}{section.3.1}%
-\contentsline {section}{\numberline {3.2}การเชื่อมต่ออุปกรณ์ภาคสนามและ Mobile Gateway}{37}{section.3.2}%
-\contentsline {section}{\numberline {3.3}M5StickC Plus2 BLE Wheelchair Sensor}{39}{section.3.3}%
-\contentsline {section}{\numberline {3.4}Polar Verity Sense และ Flutter Mobile Gateway}{43}{section.3.4}%
-\contentsline {section}{\numberline {3.5}Indoor Localization}{44}{section.3.5}%
-\contentsline {section}{\numberline {3.6}Server, API และ Database}{47}{section.3.6}%
-\contentsline {section}{\numberline {3.7}Dashboard และ HMI ตามบทบาทผู้ใช้}{50}{section.3.7}%
-\contentsline {section}{\numberline {3.8}ระบบ AI และ MCP Tool Pipeline}{59}{section.3.8}%
-\contentsline {section}{\numberline {3.9}แนวทางการประเมินผลระบบ}{63}{section.3.9}%
-\contentsline {chapter}{\numberline {บทที่ 4}ผลการทดลองและการประเมินผล}{64}{chapter.4}%
-\contentsline {section}{\numberline {4.1}ภาพรวมการทดลอง}{64}{section.4.1}%
-\contentsline {section}{\numberline {4.2}การทดสอบ Sensor และอุปกรณ์ภาคสนาม}{65}{section.4.2}%
-\contentsline {section}{\numberline {4.3}การทดสอบ Indoor Localization ด้วย KNN}{67}{section.4.3}%
-\contentsline {section}{\numberline {4.4}การทดสอบ Mobile Gateway และ Server}{69}{section.4.4}%
-\contentsline {section}{\numberline {4.5}การประเมิน Dashboard/HMI และ SUS Score}{72}{section.4.5}%
-\contentsline {section}{\numberline {4.6}การทดสอบ AI: Inter-Rater Reliability}{73}{section.4.6}%
-\contentsline {section}{\numberline {4.7}การทดสอบ AI: Text-Distance / Cosine Similarity}{73}{section.4.7}%
-\contentsline {section}{\numberline {4.8}การทดสอบ AI: Latency Analysis}{74}{section.4.8}%
-\contentsline {section}{\numberline {4.9}สรุปผลการทดลอง}{75}{section.4.9}%
-\contentsline {chapter}{\numberline {บทที่ 5}สรุปผล ข้อจำกัด และข้อเสนอแนะ}{77}{chapter.5}%
-\contentsline {section}{\numberline {5.1}สรุปภาพรวมของระบบ}{77}{section.5.1}%
-\contentsline {section}{\numberline {5.2}ข้อจำกัดของระบบ}{79}{section.5.2}%
-\contentsline {section}{\numberline {5.3}ข้อเสนอแนะในการพัฒนาต่อ}{81}{section.5.3}%
+\contentsline {section}{\numberline {2.9}งานวิจัยที่เกี่ยวข้อง}{34}{section.2.9}%
+\contentsline {section}{\numberline {2.10}ช่องว่างของงานวิจัยเดิม}{35}{section.2.10}%
+\contentsline {chapter}{\numberline {บทที่ 3}วิธีการออกแบบและพัฒนาระบบ}{37}{chapter.3}%
+\contentsline {section}{\numberline {3.1}ภาพรวมของระบบ}{37}{section.3.1}%
+\contentsline {section}{\numberline {3.2}การเชื่อมต่ออุปกรณ์ภาคสนามและ Mobile Gateway}{38}{section.3.2}%
+\contentsline {section}{\numberline {3.3}M5StickC Plus2 BLE Wheelchair Sensor}{41}{section.3.3}%
+\contentsline {section}{\numberline {3.4}Polar Verity Sense และ Flutter Mobile Gateway}{44}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Indoor Localization}{45}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Server, API และ Database}{49}{section.3.6}%
+\contentsline {section}{\numberline {3.7}Dashboard และ HMI ตามบทบาทผู้ใช้}{52}{section.3.7}%
+\contentsline {section}{\numberline {3.8}ระบบ AI และ MCP Tool Pipeline}{61}{section.3.8}%
+\contentsline {section}{\numberline {3.9}แนวทางการประเมินผลระบบ}{65}{section.3.9}%
+\contentsline {chapter}{\numberline {บทที่ 4}ผลการทดลองและการประเมินผล}{66}{chapter.4}%
+\contentsline {section}{\numberline {4.1}ภาพรวมการทดลอง}{66}{section.4.1}%
+\contentsline {section}{\numberline {4.2}การทดสอบ Sensor และอุปกรณ์ภาคสนาม}{67}{section.4.2}%
+\contentsline {section}{\numberline {4.3}การทดสอบ Indoor Localization ด้วย KNN}{69}{section.4.3}%
+\contentsline {section}{\numberline {4.4}การทดสอบ Mobile Gateway และ Server}{72}{section.4.4}%
+\contentsline {section}{\numberline {4.5}การประเมิน Dashboard/HMI และ SUS Score}{76}{section.4.5}%
+\contentsline {section}{\numberline {4.6}การทดสอบ AI: Inter-Rater Reliability}{78}{section.4.6}%
+\contentsline {section}{\numberline {4.7}การทดสอบ AI: Text-Distance / Cosine Similarity}{79}{section.4.7}%
+\contentsline {section}{\numberline {4.8}การทดสอบ AI: Latency Analysis}{79}{section.4.8}%
+\contentsline {section}{\numberline {4.9}สรุปผลการทดลอง}{82}{section.4.9}%
+\contentsline {chapter}{\numberline {บทที่ 5}สรุปผล ข้อจำกัด และข้อเสนอแนะ}{83}{chapter.5}%
+\contentsline {section}{\numberline {5.1}สรุปภาพรวมของระบบ}{83}{section.5.1}%
+\contentsline {section}{\numberline {5.2}ข้อจำกัดของระบบ}{85}{section.5.2}%
+\contentsline {section}{\numberline {5.3}ข้อเสนอแนะในการพัฒนาต่อ}{87}{section.5.3}%
 \vspace {\baselineskip }
-\contentsline {chapter}{รายการอ้างอิง}{83}{section*.77}%
+\contentsline {chapter}{รายการอ้างอิง}{89}{section*.86}%
 \vspace {\baselineskip }
-\contentsline {chapter}{ภาคผนวก}{86}{section*.79}%
-\contentsline {section}{รายละเอียดบริบทโครงงาน}{87}{appendix.A}%
-\contentsline {section}{\numberline {ก.1}ปัญหาทางวิศวกรรมที่ซับซ้อน}{88}{section.A.1}%
-\contentsline {section}{\numberline {ก.2}องค์ความรู้และเครื่องมืออุปกรณ์ที่ใช้}{88}{section.A.2}%
-\contentsline {section}{\numberline {ก.3}มาตรฐาน กฎหมาย และข้อบังคับที่เกี่ยวข้อง}{89}{section.A.3}%
-\contentsline {section}{\numberline {ก.4}ผู้มีส่วนได้ส่วนเสีย ผลกระทบ และความยั่งยืน}{89}{section.A.4}%
-\contentsline {section}{\numberline {ก.5}การบริหารงานวิศวกรรมและโครงการ}{89}{section.A.5}%
-\contentsline {section}{ตารางข้อมูลการทดลอง Sensor}{91}{appendix.B}%
-\contentsline {section}{Raw data และ Summary ของ KNN}{93}{appendix.C}%
-\contentsline {section}{ตัวอย่างชุดคำสั่ง AI Test}{95}{appendix.D}%
-\contentsline {section}{ตัวอย่าง Schema, API และ MQTT Payload}{99}{appendix.E}%
-\contentsline {section}{ภาพหน้าจอ Dashboard และ Mobile Gateway}{102}{appendix.F}%
-\contentsline {section}{Flow Diagram และ Firmware Loop เพิ่มเติม}{105}{appendix.G}%
-\contentsline {section}{แบบสอบถามประเมินความพึงพอใจ Google Form}{108}{appendix.H}%
-\contentsline {section}{ภาพประกอบการสำรวจพื้นที่และการติดตั้งต้นแบบ}{112}{appendix.I}%
-\contentsline {section}{เอกสาร PaperIEEE ประกอบการทดลอง RSSI}{116}{appendix.J}%
+\contentsline {chapter}{ภาคผนวก}{92}{section*.88}%
+\contentsline {section}{รายละเอียดบริบทโครงงาน}{93}{appendix.A}%
+\contentsline {section}{\numberline {ก.1}ปัญหาทางวิศวกรรมที่ซับซ้อน}{94}{section.A.1}%
+\contentsline {section}{\numberline {ก.2}องค์ความรู้และเครื่องมืออุปกรณ์ที่ใช้}{95}{section.A.2}%
+\contentsline {section}{\numberline {ก.3}มาตรฐาน กฎหมาย และข้อบังคับที่เกี่ยวข้อง}{95}{section.A.3}%
+\contentsline {section}{\numberline {ก.4}ผู้มีส่วนได้ส่วนเสีย ผลกระทบ และความยั่งยืน}{96}{section.A.4}%
+\contentsline {section}{\numberline {ก.5}การบริหารงานวิศวกรรมและโครงการ}{97}{section.A.5}%
+\contentsline {section}{ตารางข้อมูลการทดลอง Sensor}{98}{appendix.B}%
+\contentsline {section}{Raw data และ Summary ของ KNN}{100}{appendix.C}%
+\contentsline {section}{ตัวอย่างชุดคำสั่ง AI Test}{102}{appendix.D}%
+\contentsline {section}{ตัวอย่าง Schema, API และ MQTT Payload}{106}{appendix.E}%
+\contentsline {section}{ภาพหน้าจอ Dashboard และ Mobile Gateway}{109}{appendix.F}%
+\contentsline {section}{Flow Diagram และ Firmware Loop เพิ่มเติม}{113}{appendix.G}%
+\contentsline {section}{แบบสอบถามประเมินความพึงพอใจ Google Form}{117}{appendix.H}%
+\contentsline {section}{ภาพประกอบการสำรวจพื้นที่และการติดตั้งต้นแบบ}{121}{appendix.I}%
+\contentsline {section}{Comparative Performance Evaluation of BLE-Based Indoor Motion Tracking}{125}{appendix.J}%
 \contentsfinish 

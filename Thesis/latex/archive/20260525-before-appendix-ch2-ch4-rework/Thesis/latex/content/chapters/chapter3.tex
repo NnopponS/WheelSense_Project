@@ -37,19 +37,19 @@
         \node[box, fill=purple!10] (dash) at (12.0,1.68) {Next.js dashboard\\role-based HMI};
         \node[box, fill=purple!10] (ai) at (12.0,0.52) {AI/MCP pipeline\\RAG, tools, gate};
 
-        \draw[arrow] (m5.east) -- node[above, font=\tiny] {BLE GATT} ([yshift=0.36cm]phone.west);
+        \draw[arrow] (m5.east) -- node[above, font=\tiny] {BLE GATT} (phone.west |- m5.east);
         \draw[arrow] (polar.east) -- node[above, font=\tiny] {Polar SDK/BLE} (phone.west);
-        \draw[arrow] (beacon.east) -- node[below, font=\tiny] {RSSI scan} ([yshift=-0.36cm]phone.west);
+        \draw[arrow] (beacon.east) -- node[below, font=\tiny] {RSSI scan} (phone.west |- beacon.east);
 
         \draw[arrow] (phone.east) -- node[above, font=\tiny] {MQTT telemetry} (mqtt.west);
         \draw[arrow] (phone.east) -- node[above, font=\tiny] {REST/config} (api.west);
         \draw[arrow] (mqtt.south) -- (api.north);
         \draw[arrow] (api.south) -- (db.north);
-        \draw[back] (api.west) -- ++(-0.70,0) |- node[pos=0.24, left, font=\tiny, fill=white, inner sep=1pt] {config/command} (phone.south);
+        \draw[back] (api.west) -- ++(-0.70,0) |- node[pos=0.24, left, font=\tiny] {config/command} (phone.south);
 
         \draw[arrow] (api.east) -- node[above, font=\tiny] {REST/WS} (dash.west);
         \draw[arrow] (db.east) -- node[below, font=\tiny] {context} (ai.west);
-        \draw[back] (ai.south) |- ++(-1.65,-0.52) -| node[pos=0.72, below, font=\tiny, fill=white, inner sep=1pt] {tool request} (api.south);
+        \draw[back] (ai.south) |- ++(-1.65,-0.52) -| node[pos=0.72, below, font=\tiny] {tool request} (api.south);
     \end{tikzpicture}}
     \caption{สถาปัตยกรรมโดยรวมของระบบ WheelSense จากอุปกรณ์ภาคสนามไปยัง mobile gateway, platform services, dashboard และ AI}
     \label{fig:ch3-system-architecture}
@@ -143,20 +143,20 @@
 
 \begin{figure}[!htbp]
     \centering
-    \resizebox{0.92\textwidth}{!}{%
+    \resizebox{0.95\textwidth}{!}{%
     \begin{tikzpicture}[
-        box/.style={draw, rounded corners, align=center, text width=2.55cm, minimum height=0.92cm, font=\scriptsize, fill=white},
+        box/.style={draw, rounded corners, align=center, minimum width=2.9cm, minimum height=0.95cm, font=\scriptsize, fill=white},
         arrow/.style={->, >=Stealth, thick}
     ]
         \node[box, fill=orange!10] (s1) {BLE devices\\M5, Polar, beacons};
-        \node[box, fill=green!10, right=0.55cm of s1] (s2) {Flutter gateway\\pair, scan, buffer};
-        \node[box, fill=blue!10, right=0.55cm of s2] (s3) {MQTT/REST\\publish telemetry};
-        \node[box, fill=blue!10, below=0.85cm of s3] (s4) {FastAPI\\validate + store};
-        \node[box, fill=purple!10, left=0.55cm of s4] (s5) {Dashboard/AI\\query + action};
+        \node[box, fill=green!10, right=0.85cm of s1] (s2) {Flutter gateway\\pair, scan, buffer};
+        \node[box, fill=blue!10, right=0.85cm of s2] (s3) {MQTT/REST\\publish telemetry};
+        \node[box, fill=blue!10, right=0.85cm of s3] (s4) {FastAPI\\validate + store};
+        \node[box, fill=purple!10, right=0.85cm of s4] (s5) {Dashboard/AI\\query + action};
         \draw[arrow] (s1) -- node[above, font=\tiny] {BLE} (s2);
         \draw[arrow] (s2) -- node[above, font=\tiny] {JSON payload} (s3);
-        \draw[arrow] (s3) -- node[right, font=\tiny, fill=white, inner sep=1pt] {ingest} (s4);
-        \draw[arrow] (s4) -- node[above, font=\tiny, fill=white, inner sep=1pt] {query/result} (s5);
+        \draw[arrow] (s3) -- (s4);
+        \draw[arrow] (s4) -- (s5);
     \end{tikzpicture}}
     \caption{ขั้นตอนการเชื่อมต่อรวมระหว่างอุปกรณ์ภาคสนาม mobile gateway และบริการส่วนกลาง}
     \label{fig:ch3-gateway-flow}
@@ -346,32 +346,25 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{chapter3/Node-location.png}
-    \caption{ตัวอย่างตำแหน่ง BLE node ในพื้นที่ทดลองสำหรับเก็บค่า RSSI ภายในอาคาร}
-    \label{fig:ch3-node-location-real}
-\end{figure}
-
-\begin{figure}[!htbp]
-    \centering
-    \resizebox{0.88\textwidth}{!}{%
+    \resizebox{0.95\textwidth}{!}{%
     \begin{tikzpicture}[
-        box/.style={draw, rounded corners, align=center, text width=2.55cm, minimum height=0.85cm, font=\scriptsize, fill=white},
+        box/.style={draw, rounded corners, align=center, minimum width=2.8cm, minimum height=0.85cm, font=\scriptsize, fill=white},
         arrow/.style={->, >=Stealth, thick}
     ]
         \node[box, fill=orange!10] (scan) {Phone scans\\BLE RSSI nodes};
-        \node[box, fill=green!10, right=0.55cm of scan] (send) {Gateway sends\\RSSI list};
-        \node[box, fill=blue!10, right=0.55cm of send] (ready) {Backend checks\\assignment + room};
-        \node[box, fill=blue!10, below=0.85cm of ready] (knn) {KNN if fingerprint\\is available};
-        \node[box, fill=yellow!12, left=0.55cm of knn] (fallback) {Max-RSSI fallback\\or baseline};
-        \node[box, fill=purple!10, right=0.55cm of knn] (store) {Store prediction\\and confidence};
-        \node[box, fill=purple!10, right=0.55cm of store] (view) {Dashboard/API\\uses location};
+        \node[box, fill=green!10, right=0.7cm of scan] (send) {Gateway sends\\RSSI list};
+        \node[box, fill=blue!10, right=0.7cm of send] (ready) {Backend checks\\assignment + room};
+        \node[box, fill=blue!10, right=0.7cm of ready] (knn) {KNN if fingerprint\\is available};
+        \node[box, fill=yellow!12, below=0.55cm of knn] (fallback) {Max-RSSI fallback\\or baseline};
+        \node[box, fill=purple!10, right=0.7cm of knn] (store) {Store prediction\\and confidence};
+        \node[box, fill=purple!10, right=0.7cm of store] (view) {Dashboard/API\\uses location};
 
         \draw[arrow] (scan) -- (send);
         \draw[arrow] (send) -- (ready);
-        \draw[arrow] (ready) -- node[right, font=\tiny, fill=white, inner sep=1pt] {fingerprint ready} (knn);
-        \draw[arrow] (ready.south west) |- node[left, font=\tiny, fill=white, inner sep=1pt] {not ready} (fallback.north);
-        \draw[arrow] (knn) -- node[above, font=\tiny, fill=white, inner sep=1pt] {confident} (store);
-        \draw[arrow] (fallback) -- node[above, font=\tiny, fill=white, inner sep=1pt] {baseline} (knn);
+        \draw[arrow] (ready) -- (knn);
+        \draw[arrow] (knn) -- node[above, font=\tiny] {confident} (store);
+        \draw[arrow] (knn) -- node[right, font=\tiny] {not ready} (fallback);
+        \draw[arrow] (fallback) -| (store);
         \draw[arrow] (store) -- (view);
     \end{tikzpicture}}
     \caption{Flowchart การส่งข้อมูล RSSI และการประเมินตำแหน่งด้วย KNN หรือ max-RSSI fallback}
