@@ -85,7 +85,7 @@
 
 \section{การทดสอบ Indoor Localization ด้วย KNN}
 \label{sec:ch4_localization}
-การทดสอบการระบุตำแหน่งภายในอาคารใช้ข้อมูล RSSI จาก BLE node ในพื้นที่ทดลอง โดย gateway สแกนสัญญาณและส่งรายการ RSSI พร้อม timestamp เข้าสู่ backend เพื่อประเมินตำแหน่งด้วย fingerprint และ KNN ในกรณีที่ fingerprint ยังไม่พร้อมหรือค่าความมั่นใจต่ำ ระบบสามารถใช้ max-RSSI เป็น baseline หรือ fallback ได้ การรายงานหัวข้อนี้ใช้รูปแบบ Setting, How we test, Result และ Analysis เพื่อแยกเงื่อนไขการทดลองออกจากการวิเคราะห์ผล
+การทดสอบการระบุตำแหน่งภายในอาคารใช้ข้อมูล RSSI จาก BLE node ในพื้นที่ทดลอง โดย gateway สแกนสัญญาณและส่งรายการ RSSI พร้อม timestamp เข้าสู่ backend เพื่อประเมินตำแหน่งด้วย fingerprint และ KNN ในกรณีที่ fingerprint ยังไม่พร้อมหรือค่าความมั่นใจต่ำ ระบบสามารถใช้ max-RSSI เป็น baseline หรือ fallback ได้ หัวข้อนี้จึงอธิบายสภาพพื้นที่ทดลอง วิธีจัดชุดข้อมูล ผลที่ได้ และข้อสังเกตจากความผันผวนของ RSSI ต่อเนื่องในรูปแบบเดียวกับการทดสอบส่วนอื่นของบทนี้
 
 \begin{figure}[!htbp]
     \centering
@@ -94,9 +94,9 @@
     \label{fig:ch4-user-location}
 \end{figure}
 
-\textbf{Setting} พื้นที่ทดลองจากชุดข้อมูล RSSI แบ่งห้องหนึ่งออกเป็น 4 zone ขนาดประมาณ \(4 \times 4\) เมตรต่อ zone โดยใช้ฉากผ้าเป็นขอบเขตระหว่างพื้นที่ และติดตั้ง ESP32-S3 BLE anchor จำนวน 4 ตัวไว้บริเวณกึ่งกลางของแต่ละ zone ที่ระดับความสูงประมาณ 0.7 เมตร อุปกรณ์ tag คือ M5StickC Plus2 ที่โฆษณา BLE ด้วยอัตราประมาณ 5 Hz หรือคาบ 200 ms และอยู่ที่ระดับความสูงประมาณ 0.7 เมตรเช่นกัน ข้อมูลหนึ่งตัวอย่างประกอบด้วย timestamp และค่า RSSI จาก anchor ทั้ง 4 ตัวในรูปแบบ \((timestamp, r_1, r_2, r_3, r_4)\)
+พื้นที่ทดลองจากชุดข้อมูล RSSI แบ่งห้องหนึ่งออกเป็น 4 zone ขนาดประมาณ \(4 \times 4\) เมตรต่อ zone โดยใช้ฉากผ้าเป็นขอบเขตระหว่างพื้นที่ และติดตั้ง ESP32-S3 BLE anchor จำนวน 4 ตัวไว้บริเวณกึ่งกลางของแต่ละ zone ที่ระดับความสูงประมาณ 0.7 เมตร อุปกรณ์ tag คือ M5StickC Plus2 ที่โฆษณา BLE ด้วยอัตราประมาณ 5 Hz หรือคาบ 200 ms และอยู่ที่ระดับความสูงประมาณ 0.7 เมตรเช่นกัน ข้อมูลหนึ่งตัวอย่างประกอบด้วย timestamp และค่า RSSI จาก anchor ทั้ง 4 ตัวในรูปแบบ \((timestamp, r_1, r_2, r_3, r_4)\)
 
-\textbf{How we test} ชุดทดลองแบ่งเป็น 3 กรณี กรณีละ 48 episode และใช้การแบ่งข้อมูลแบบเดียวกันคือ 13 episode สำหรับ train และ 35 episode สำหรับ test โดย Case 1 เป็นการตรวจ body orientation แบบ facing-in/facing-out, Case 2 เป็น boundary transition ระหว่างในและนอก zone และ Case 3 เป็น multi-zone trajectory ที่ต้องทำนายลำดับการเคลื่อนที่ผ่าน 4 zone วิธี KNN ใช้ \(k=5\) และ Euclidean distance สำหรับ Case 1 และ Case 2 จะทำนายจาก RSSI 4 มิติราย sample แล้วรวมผลเป็นระดับ episode ด้วยค่าเฉลี่ยของผลทำนาย ส่วน Case 3 แบ่ง episode เป็น 4 segment ต่อเนื่องและใช้ feature mean/std ของ RSSI จาก anchor ทั้ง 4 ตัวในแต่ละ segment เพื่อทำนายลำดับ zone
+ชุดทดลองแบ่งเป็น 3 กรณี กรณีละ 48 episode และใช้การแบ่งข้อมูลแบบเดียวกันคือ 13 episode สำหรับ train และ 35 episode สำหรับ test โดย Case 1 เป็นการตรวจ body orientation แบบ facing-in/facing-out, Case 2 เป็น boundary transition ระหว่างในและนอก zone และ Case 3 เป็น multi-zone trajectory ที่ต้องทำนายลำดับการเคลื่อนที่ผ่าน 4 zone วิธี KNN ใช้ \(k=5\) และ Euclidean distance สำหรับ Case 1 และ Case 2 จะทำนายจาก RSSI 4 มิติราย sample แล้วรวมผลเป็นระดับ episode ด้วยค่าเฉลี่ยของผลทำนาย ส่วน Case 3 แบ่ง episode เป็น 4 segment ต่อเนื่องและใช้ feature mean/std ของ RSSI จาก anchor ทั้ง 4 ตัวในแต่ละ segment เพื่อทำนายลำดับ zone
 
 \begin{figure}[!htbp]
     \centering
@@ -105,7 +105,7 @@
     \label{fig:ch4_paperieee_rssi_plot}
 \end{figure}
 
-\textbf{Result} ผลการทดสอบ KNN จากชุดข้อมูลที่มีหลักฐานประกอบแสดงในตารางที่~\ref{tab:ch4_knn_result} โดยรายละเอียด raw data และ summary อยู่ในภาคผนวก~\ref{app:knn_summary} และแนบหน้าเอกสาร PaperIEEE ที่เกี่ยวข้องไว้ในภาคผนวก~\ref{app:paperieee_extract}
+ผลการทดสอบ KNN จากชุดข้อมูลที่มีหลักฐานประกอบแสดงในตารางที่~\ref{tab:ch4_knn_result} โดยรายละเอียด raw data และ summary อยู่ในภาคผนวก~\ref{app:knn_summary} และแนบหน้าเอกสาร PaperIEEE ที่เกี่ยวข้องไว้ในภาคผนวก~\ref{app:paperieee_extract}
 
 \begin{table}[!htbp]
     \centering
@@ -123,7 +123,7 @@
     \end{tabular}
 \end{table}
 
-\textbf{Analysis} จากตารางที่~\ref{tab:ch4_knn_result} Case 1 และ Case 3 ให้ค่าความถูกต้องเท่ากันที่ 0.8857 โดย Case 3 ยังมีค่า per-position accuracy สูงกว่าค่า exact sequence เพราะการทำนายลำดับหนึ่ง episode ต้องถูกครบทุกตำแหน่งพร้อมกันจึงนับว่าถูก ส่วน Case 2 ลดลงเหลือ 0.6857 เนื่องจากตำแหน่งบริเวณ boundary มี RSSI จากหลาย anchor ใกล้เคียงกันและได้รับผลจาก body shadowing หรือ multipath พร้อมกันหลายช่องสัญญาณ KNN จึงสับสนได้ง่ายเมื่อ distribution ของ RSSI ซ้อนทับกัน ผลนี้สะท้อนว่า BLE RSSI ใช้ได้ในระดับ zone สำหรับ prototype แต่ยังต้องเก็บ fingerprint ในตำแหน่งจริงให้มากขึ้น ปรับจำนวน anchor หรือใช้ fallback เช่น max-RSSI/temporal smoothing เมื่อค่า confidence ต่ำ
+จากตารางที่~\ref{tab:ch4_knn_result} Case 1 และ Case 3 ให้ค่าความถูกต้องเท่ากันที่ 0.8857 โดย Case 3 ยังมีค่า per-position accuracy สูงกว่าค่า exact sequence เพราะการทำนายลำดับหนึ่ง episode ต้องถูกครบทุกตำแหน่งพร้อมกันจึงนับว่าถูก ส่วน Case 2 ลดลงเหลือ 0.6857 เนื่องจากตำแหน่งบริเวณ boundary มี RSSI จากหลาย anchor ใกล้เคียงกันและได้รับผลจาก body shadowing หรือ multipath พร้อมกันหลายช่องสัญญาณ KNN จึงสับสนได้ง่ายเมื่อ distribution ของ RSSI ซ้อนทับกัน ผลนี้สะท้อนว่า BLE RSSI ใช้ได้ในระดับ zone สำหรับ prototype แต่ยังต้องเก็บ fingerprint ในตำแหน่งจริงให้มากขึ้น ปรับจำนวน anchor หรือใช้ fallback เช่น max-RSSI/temporal smoothing เมื่อค่า confidence ต่ำ
 \FloatBarrier
 
 \section{การทดสอบ Mobile Gateway และ Server}

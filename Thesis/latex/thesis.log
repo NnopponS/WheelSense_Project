@@ -1,6 +1,7 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (MiKTeX 24.1) (preloaded format=xelatex 2025.12.13)  23 MAY 2026 01:57
+This is XeTeX, Version 3.141592653-2.6-0.999995 (MiKTeX 24.1) (preloaded format=xelatex 2025.12.13)  25 MAY 2026 21:19
 entering extended mode
  restricted \write18 enabled.
+ file:line:error style messages enabled.
  %&-line parsing enabled.
 **./thesis.tex
 (thesis.tex
@@ -1020,56 +1021,79 @@ Package: multirow 2024/11/12 v2.9 Span multiple rows of a table
 \multirow@cntb=\count347
 \multirow@dima=\skip82
 \bigstrutjot=\dimen298
-) (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption.sty
+) (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/pdfpages\pdfpages.sty
+Package: pdfpages 2026/03/30 v0.6h Insert pages of external PDF documents (AM)
+(C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/eso-pic\eso-pic.sty
+Package: eso-pic 2025/12/10 v3.0d eso-pic (RN)
+\ESO@tempdima=\dimen299
+\ESO@tempdimb=\dimen300
+)
+\AM@pagewidth=\dimen301
+\AM@pageheight=\dimen302
+\AM@fboxrule=\dimen303
+
+(C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/pdfpages\ppxetex.def
+File: ppxetex.def 2026/03/30 v0.6h Pdfpages driver for XeTeX (AM)
+)
+\pdfpages@includegraphics@status=\count348
+\AM@pagebox=\box103
+\AM@global@opts=\toks54
+\AM@pagecnt=\count349
+\AM@toc@title=\toks55
+\AM@lof@heading=\toks56
+\c@AM@survey=\count350
+\AM@templatesizebox=\box104
+)
+(C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption.sty
 Package: caption 2023/08/05 v3.6o Customizing captions (AR)
 
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption3.sty
 Package: caption3 2023/07/31 v2.4d caption3 kernel (AR)
-\caption@tempdima=\dimen299
-\captionmargin=\dimen300
-\caption@leftmargin=\dimen301
-\caption@rightmargin=\dimen302
-\caption@width=\dimen303
-\caption@indent=\dimen304
-\caption@parindent=\dimen305
-\caption@hangindent=\dimen306
+\caption@tempdima=\dimen304
+\captionmargin=\dimen305
+\caption@leftmargin=\dimen306
+\caption@rightmargin=\dimen307
+\caption@width=\dimen308
+\caption@indent=\dimen309
+\caption@parindent=\dimen310
+\caption@hangindent=\dimen311
 Package caption Info: Standard document class detected.
 )
-\c@caption@flags=\count348
-\c@continuedfloat=\count349
+\c@caption@flags=\count351
+\c@continuedfloat=\count352
 Package caption Info: float package is loaded.
 Package caption Info: listings package is loaded.
 )
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/caption\subcaption.sty
 Package: subcaption 2023/07/28 v1.6b Sub-captions (AR)
 Package caption Info: New subtype `subfigure' on input line 238.
-\c@subfigure=\count350
+\c@subfigure=\count353
 Package caption Info: New subtype `subtable' on input line 238.
-\c@subtable=\count351
+\c@subtable=\count354
 ) (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/booktabs\booktabs.sty
 Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
-\heavyrulewidth=\dimen307
-\lightrulewidth=\dimen308
-\cmidrulewidth=\dimen309
-\belowrulesep=\dimen310
-\belowbottomsep=\dimen311
-\aboverulesep=\dimen312
-\abovetopsep=\dimen313
-\cmidrulesep=\dimen314
-\cmidrulekern=\dimen315
-\defaultaddspace=\dimen316
-\@cmidla=\count352
-\@cmidlb=\count353
-\@aboverulesep=\dimen317
-\@belowrulesep=\dimen318
-\@thisruleclass=\count354
-\@lastruleclass=\count355
-\@thisrulewidth=\dimen319
+\heavyrulewidth=\dimen312
+\lightrulewidth=\dimen313
+\cmidrulewidth=\dimen314
+\belowrulesep=\dimen315
+\belowbottomsep=\dimen316
+\aboverulesep=\dimen317
+\abovetopsep=\dimen318
+\cmidrulesep=\dimen319
+\cmidrulekern=\dimen320
+\defaultaddspace=\dimen321
+\@cmidla=\count355
+\@cmidlb=\count356
+\@aboverulesep=\dimen322
+\@belowrulesep=\dimen323
+\@thisruleclass=\count357
+\@lastruleclass=\count358
+\@thisrulewidth=\dimen324
 )
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/threeparttable\threepar
 ttable.sty
 Package: threeparttable 2003/06/13  v 3.0
-\@tempboxb=\box103
+\@tempboxb=\box105
 )
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/tools\longtable.sty
 Package: longtable 2025-10-13 v4.24 Multi-page Table package (DPC)
@@ -1077,25 +1101,25 @@ Package: longtable 2025-10-13 v4.24 Multi-page Table package (DPC)
 \LTright=\skip84
 \LTpre=\skip85
 \LTpost=\skip86
-\LTchunksize=\count356
-\LTcapwidth=\dimen320
-\LT@head=\box104
-\LT@firsthead=\box105
-\LT@foot=\box106
-\LT@lastfoot=\box107
-\LT@gbox=\box108
-\LT@cols=\count357
-\LT@rows=\count358
-\c@LT@tables=\count359
-\c@LT@chunks=\count360
-\LT@p@ftn=\toks54
+\LTchunksize=\count359
+\LTcapwidth=\dimen325
+\LT@head=\box106
+\LT@firsthead=\box107
+\LT@foot=\box108
+\LT@lastfoot=\box109
+\LT@gbox=\box110
+\LT@cols=\count360
+\LT@rows=\count361
+\c@LT@tables=\count362
+\c@LT@chunks=\count363
+\LT@p@ftn=\toks57
 )
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/tcolorbox\tcolorbox.sty
 Package: tcolorbox 2024/01/10 version 6.2.0 text color boxes
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/tools\verbatim.sty
 Package: verbatim 2024-01-22 v1.5x LaTeX2e package for verbatim enhancements
-\every@verbatim=\toks55
-\verbatim@line=\toks56
+\every@verbatim=\toks58
+\verbatim@line=\toks59
 \verbatim@in@stream=\read3
 )
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/environ\environ.sty
@@ -1105,19 +1129,19 @@ Package: environ 2014/05/04 v0.3 A new way to define environments
 ty
 Package: trimspaces 2009/09/17 v1.1 Trim spaces around a token list
 ))
-\tcb@titlebox=\box109
-\tcb@upperbox=\box110
-\tcb@lowerbox=\box111
-\tcb@phantombox=\box112
-\c@tcbbreakpart=\count361
-\c@tcblayer=\count362
-\c@tcolorbox@number=\count363
-\l__tcobox_tmpa_box=\box113
-\l__tcobox_tmpa_dim=\dimen321
-\tcb@temp=\box114
-\tcb@temp=\box115
+\tcb@titlebox=\box111
+\tcb@upperbox=\box112
+\tcb@lowerbox=\box113
+\tcb@phantombox=\box114
+\c@tcbbreakpart=\count364
+\c@tcblayer=\count365
+\c@tcolorbox@number=\count366
+\l__tcobox_tmpa_box=\box115
+\l__tcobox_tmpa_dim=\dimen326
 \tcb@temp=\box116
 \tcb@temp=\box117
+\tcb@temp=\box118
+\tcb@temp=\box119
 )
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/ragged2e\ragged2e.sty
 Package: ragged2e 2023/06/22 v3.6 ragged2e Package
@@ -1162,7 +1186,7 @@ Package: kvoptions 2022-06-15 v3.15 Key value format for package options (HO)
 Package: kvsetkeys 2022-10-05 v1.19 Key value parser (HO)
 )) (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/logreq\logreq.sty
 Package: logreq 2010/08/04 v1.0 xml request logger
-\lrq@indent=\count364
+\lrq@indent=\count367
 
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/logreq\logreq.def
 File: logreq.def 2010/08/04 v1.0 logreq spec v1.0
@@ -1171,49 +1195,49 @@ File: logreq.def 2010/08/04 v1.0 logreq spec v1.0
 \Urlmuskip=\muskip18
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
-\c@tabx@nest=\count365
-\c@listtotal=\count366
-\c@listcount=\count367
-\c@liststart=\count368
-\c@liststop=\count369
-\c@citecount=\count370
-\c@citetotal=\count371
-\c@multicitecount=\count372
-\c@multicitetotal=\count373
-\c@instcount=\count374
-\c@maxnames=\count375
-\c@minnames=\count376
-\c@maxitems=\count377
-\c@minitems=\count378
-\c@citecounter=\count379
-\c@maxcitecounter=\count380
-\c@savedcitecounter=\count381
-\c@uniquelist=\count382
-\c@uniquename=\count383
-\c@refsection=\count384
-\c@refsegment=\count385
-\c@maxextratitle=\count386
-\c@maxextratitleyear=\count387
-\c@maxextraname=\count388
-\c@maxextradate=\count389
-\c@maxextraalpha=\count390
-\c@abbrvpenalty=\count391
-\c@highnamepenalty=\count392
-\c@lownamepenalty=\count393
-\c@maxparens=\count394
-\c@parenlevel=\count395
-\blx@tempcnta=\count396
-\blx@tempcntb=\count397
-\blx@tempcntc=\count398
-\c@blx@maxsection=\count399
-\blx@maxsegment@0=\count400
-\blx@notetype=\count401
-\blx@parenlevel@text=\count402
-\blx@parenlevel@foot=\count403
-\blx@sectionciteorder@0=\count404
-\blx@sectionciteorderinternal@0=\count405
-\blx@entrysetcounter=\count406
-\blx@biblioinstance=\count407
+\c@tabx@nest=\count368
+\c@listtotal=\count369
+\c@listcount=\count370
+\c@liststart=\count371
+\c@liststop=\count372
+\c@citecount=\count373
+\c@citetotal=\count374
+\c@multicitecount=\count375
+\c@multicitetotal=\count376
+\c@instcount=\count377
+\c@maxnames=\count378
+\c@minnames=\count379
+\c@maxitems=\count380
+\c@minitems=\count381
+\c@citecounter=\count382
+\c@maxcitecounter=\count383
+\c@savedcitecounter=\count384
+\c@uniquelist=\count385
+\c@uniquename=\count386
+\c@refsection=\count387
+\c@refsegment=\count388
+\c@maxextratitle=\count389
+\c@maxextratitleyear=\count390
+\c@maxextraname=\count391
+\c@maxextradate=\count392
+\c@maxextraalpha=\count393
+\c@abbrvpenalty=\count394
+\c@highnamepenalty=\count395
+\c@lownamepenalty=\count396
+\c@maxparens=\count397
+\c@parenlevel=\count398
+\blx@tempcnta=\count399
+\blx@tempcntb=\count400
+\blx@tempcntc=\count401
+\c@blx@maxsection=\count402
+\blx@maxsegment@0=\count403
+\blx@notetype=\count404
+\blx@parenlevel@text=\count405
+\blx@parenlevel@foot=\count406
+\blx@sectionciteorder@0=\count407
+\blx@sectionciteorderinternal@0=\count408
+\blx@entrysetcounter=\count409
+\blx@biblioinstance=\count410
 \labelnumberwidth=\skip101
 \labelalphawidth=\skip102
 \biblabelsep=\skip103
@@ -1225,9 +1249,9 @@ Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 \blx@bcfin=\read4
 \blx@bcfout=\write4
 \blx@langwohyphens=\language79
-\c@mincomprange=\count408
-\c@maxcomprange=\count409
-\c@mincompwidth=\count410
+\c@mincomprange=\count411
+\c@maxcomprange=\count412
+\c@mincompwidth=\count413
 Package biblatex Info: Trying to load biblatex default data model...
 Package biblatex Info: ... file 'blx-dm.def' found.
 
@@ -1238,74 +1262,74 @@ Package biblatex Info: Trying to load biblatex style data model...
 Package biblatex Info: ... file 'ieee.dbx' not found.
 Package biblatex Info: Trying to load biblatex custom data model...
 Package biblatex Info: ... file 'biblatex-dm.cfg' not found.
-\c@afterword=\count411
-\c@savedafterword=\count412
-\c@annotator=\count413
-\c@savedannotator=\count414
-\c@author=\count415
-\c@savedauthor=\count416
-\c@bookauthor=\count417
-\c@savedbookauthor=\count418
-\c@commentator=\count419
-\c@savedcommentator=\count420
-\c@editor=\count421
-\c@savededitor=\count422
-\c@editora=\count423
-\c@savededitora=\count424
-\c@editorb=\count425
-\c@savededitorb=\count426
-\c@editorc=\count427
-\c@savededitorc=\count428
-\c@foreword=\count429
-\c@savedforeword=\count430
-\c@holder=\count431
-\c@savedholder=\count432
-\c@introduction=\count433
-\c@savedintroduction=\count434
-\c@namea=\count435
-\c@savednamea=\count436
-\c@nameb=\count437
-\c@savednameb=\count438
-\c@namec=\count439
-\c@savednamec=\count440
-\c@translator=\count441
-\c@savedtranslator=\count442
-\c@shortauthor=\count443
-\c@savedshortauthor=\count444
-\c@shorteditor=\count445
-\c@savedshorteditor=\count446
-\c@labelname=\count447
-\c@savedlabelname=\count448
-\c@institution=\count449
-\c@savedinstitution=\count450
-\c@lista=\count451
-\c@savedlista=\count452
-\c@listb=\count453
-\c@savedlistb=\count454
-\c@listc=\count455
-\c@savedlistc=\count456
-\c@listd=\count457
-\c@savedlistd=\count458
-\c@liste=\count459
-\c@savedliste=\count460
-\c@listf=\count461
-\c@savedlistf=\count462
-\c@location=\count463
-\c@savedlocation=\count464
-\c@organization=\count465
-\c@savedorganization=\count466
-\c@origlocation=\count467
-\c@savedoriglocation=\count468
-\c@origpublisher=\count469
-\c@savedorigpublisher=\count470
-\c@publisher=\count471
-\c@savedpublisher=\count472
-\c@language=\count473
-\c@savedlanguage=\count474
-\c@origlanguage=\count475
-\c@savedoriglanguage=\count476
-\c@pageref=\count477
-\c@savedpageref=\count478
+\c@afterword=\count414
+\c@savedafterword=\count415
+\c@annotator=\count416
+\c@savedannotator=\count417
+\c@author=\count418
+\c@savedauthor=\count419
+\c@bookauthor=\count420
+\c@savedbookauthor=\count421
+\c@commentator=\count422
+\c@savedcommentator=\count423
+\c@editor=\count424
+\c@savededitor=\count425
+\c@editora=\count426
+\c@savededitora=\count427
+\c@editorb=\count428
+\c@savededitorb=\count429
+\c@editorc=\count430
+\c@savededitorc=\count431
+\c@foreword=\count432
+\c@savedforeword=\count433
+\c@holder=\count434
+\c@savedholder=\count435
+\c@introduction=\count436
+\c@savedintroduction=\count437
+\c@namea=\count438
+\c@savednamea=\count439
+\c@nameb=\count440
+\c@savednameb=\count441
+\c@namec=\count442
+\c@savednamec=\count443
+\c@translator=\count444
+\c@savedtranslator=\count445
+\c@shortauthor=\count446
+\c@savedshortauthor=\count447
+\c@shorteditor=\count448
+\c@savedshorteditor=\count449
+\c@labelname=\count450
+\c@savedlabelname=\count451
+\c@institution=\count452
+\c@savedinstitution=\count453
+\c@lista=\count454
+\c@savedlista=\count455
+\c@listb=\count456
+\c@savedlistb=\count457
+\c@listc=\count458
+\c@savedlistc=\count459
+\c@listd=\count460
+\c@savedlistd=\count461
+\c@liste=\count462
+\c@savedliste=\count463
+\c@listf=\count464
+\c@savedlistf=\count465
+\c@location=\count466
+\c@savedlocation=\count467
+\c@organization=\count468
+\c@savedorganization=\count469
+\c@origlocation=\count470
+\c@savedoriglocation=\count471
+\c@origpublisher=\count472
+\c@savedorigpublisher=\count473
+\c@publisher=\count474
+\c@savedpublisher=\count475
+\c@language=\count476
+\c@savedlanguage=\count477
+\c@origlanguage=\count478
+\c@savedoriglanguage=\count479
+\c@pageref=\count480
+\c@savedpageref=\count481
 \shorthandwidth=\skip109
 \shortjournalwidth=\skip110
 \shortserieswidth=\skip111
@@ -1335,19 +1359,19 @@ Package biblatex Info: Trying to load generic definitions...
 Package biblatex Info: ... file 'biblatex.def' found.
  (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\biblatex.def
 File: biblatex.def 2025/07/10 v3.21 biblatex compatibility (PK/MW)
-\c@textcitecount=\count479
-\c@textcitetotal=\count480
-\c@textcitemaxnames=\count481
-\c@biburlbigbreakpenalty=\count482
-\c@biburlbreakpenalty=\count483
-\c@biburlnumpenalty=\count484
-\c@biburlucpenalty=\count485
-\c@biburllcpenalty=\count486
+\c@textcitecount=\count482
+\c@textcitetotal=\count483
+\c@textcitemaxnames=\count484
+\c@biburlbigbreakpenalty=\count485
+\c@biburlbreakpenalty=\count486
+\c@biburlnumpenalty=\count487
+\c@biburlucpenalty=\count488
+\c@biburllcpenalty=\count489
 \biburlbigskip=\muskip19
 \biburlnumskip=\muskip20
 \biburlucskip=\muskip21
 \biburllcskip=\muskip22
-\c@smartand=\count487
+\c@smartand=\count490
 )
 Package biblatex Info: Trying to load bibliography style 'ieee'...
 Package biblatex Info: ... file 'ieee.bbx' found.
@@ -1372,8 +1396,8 @@ Package biblatex Info: ... file 'standard.bbx' found.
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/biblatex/bbx\standard.b
 bx
 File: standard.bbx 2025/07/10 v3.21 biblatex bibliography style (PK/MW)
-\c@bbx:relatedcount=\count488
-\c@bbx:relatedtotal=\count489
+\c@bbx:relatedcount=\count491
+\c@bbx:relatedtotal=\count492
 ))))
 Package biblatex Info: Trying to load citation style 'ieee'...
 Package biblatex Info: ... file 'ieee.cbx' found.
@@ -1417,9 +1441,9 @@ Package: blx-case-expl3 2025/07/10 v3.21 expl3 case changing code for biblatex
 ))
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/appendix\appendix.sty
 Package: appendix 2020/02/08 v1.2c extra appendix facilities
-\c@@pps=\count490
-\c@@ppsavesec=\count491
-\c@@ppsaveapp=\count492
+\c@@pps=\count493
+\c@@ppsavesec=\count494
+\c@@ppsaveapp=\count495
 )
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/graphics\lscape.sty
 Package: lscape 2020/05/28 v3.02 Landscape Pages (DPC)
@@ -1457,22 +1481,22 @@ Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
 lestring.sty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
-\c@section@level=\count493
+\c@section@level=\count496
 )
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/generic/stringenc\stringenc.s
 ty
 Package: stringenc 2019/11/29 v1.12 Convert strings between diff. encodings (HO
 )
 )
-\@linkdim=\dimen322
-\Hy@linkcounter=\count494
-\Hy@pagecounter=\count495
+\@linkdim=\dimen327
+\Hy@linkcounter=\count497
+\Hy@pagecounter=\count498
  (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\pd1enc.def
 File: pd1enc.def 2025-07-12 v7.01o Hyperref: PDFDocEncoding definition (HO)
 ) (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/generic/intcalc\intcalc.sty
 Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
 )
-\Hy@SavedSpaceFactor=\count496
+\Hy@SavedSpaceFactor=\count499
  (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\puenc.def
 File: puenc.def 2025-07-12 v7.01o Hyperref: PDF Unicode definition (HO)
 
@@ -1499,9 +1523,9 @@ Package hyperref Info: Plain pages OFF on input line 4210.
 Package hyperref Info: Backreferencing OFF on input line 4215.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4462.
-\c@Hy@tempcnt=\count497
+\c@Hy@tempcnt=\count500
 LaTeX Info: Redefining \url on input line 4801.
-\XeTeXLinkMargin=\dimen323
+\XeTeXLinkMargin=\dimen328
 
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/generic/bitset\bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
@@ -1511,9 +1535,9 @@ Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
 Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO
 )
 ))
-\Fld@menulength=\count498
-\Field@Width=\dimen324
-\Fld@charsize=\dimen325
+\Fld@menulength=\count501
+\Field@Width=\dimen329
+\Fld@charsize=\dimen330
 Package hyperref Info: Hyper figures OFF on input line 6078.
 Package hyperref Info: Link nesting OFF on input line 6083.
 Package hyperref Info: Hyper index ON on input line 6086.
@@ -1521,19 +1545,19 @@ Package hyperref Info: backreferencing OFF on input line 6093.
 Package hyperref Info: Link coloring OFF on input line 6098.
 Package hyperref Info: Link coloring with OCG OFF on input line 6103.
 Package hyperref Info: PDF/A mode OFF on input line 6108.
-\Hy@abspage=\count499
-\c@Item=\count500
-\c@Hfootnote=\count501
+\Hy@abspage=\count502
+\c@Item=\count503
+\c@Hfootnote=\count504
 )
 Package hyperref Info: Driver (autodetected): hxetex.
 
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/hyperref\hxetex.def
 File: hxetex.def 2025-07-12 v7.01o Hyperref driver for XeTeX
-\pdfm@box=\box118
-\c@Hy@AnnotLevel=\count502
-\HyField@AnnotCount=\count503
-\Fld@listcount=\count504
-\c@bookmark@seq@number=\count505
+\pdfm@box=\box120
+\c@Hy@AnnotLevel=\count505
+\HyField@AnnotCount=\count506
+\Fld@listcount=\count507
+\c@bookmark@seq@number=\count508
 
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/rerunfilecheck\rerunfil
 echeck.sty
@@ -1631,14 +1655,14 @@ Library (tcolorbox): 'tcblistingscore.code.tex' version '6.2.0'
 .code.tex
 Library (tcolorbox): 'tcbprocessing.code.tex' version '6.2.0'
 )
-\c@tcblisting=\count506
+\c@tcblisting=\count509
 ))
-Package hyperref Info: Option `colorlinks' set `true' on input line 209.
-\c@tcb@cnt@exampleBox=\count507
+Package hyperref Info: Option `colorlinks' set `true' on input line 210.
+\c@tcb@cnt@exampleBox=\count510
 \bibparskip=\skip124
 ) (meta/info.tex)
-\@quotelevel=\count508
-\@quotereset=\count509
+\@quotelevel=\count511
+\@quotereset=\count512
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -1696,7 +1720,8 @@ LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
 (content/appendices/appendixA.aux) (content/appendices/appendixB.aux)
 (content/appendices/appendixC.aux) (content/appendices/appendixD.aux)
 (content/appendices/appendixE.aux) (content/appendices/appendixF.aux)
-(content/appendices/appendixG.aux))
+(content/appendices/appendixG.aux) (content/appendices/appendixH.aux)
+(content/appendices/appendixI.aux) (content/appendices/appendixJ.aux))
 \openout1 = `thesis.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 82.
@@ -1727,9 +1752,20 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 82.
 LaTeX Font Info:    ... okay on input line 82.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 82.
 LaTeX Font Info:    ... okay on input line 82.
-\c@lstlisting=\count510
+\c@lstlisting=\count513
 Package newfloat Info: Trying Plan B...
 Package newfloat Info: `float' package detected.
+
+(C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/pdflscape\pdflscape.sty
+Package: pdflscape 2022-10-27 v0.13 Display of landscape pages in PDF
+
+(C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/pdflscape\pdflscape-nom
+etadata.sty
+Package: pdflscape-nometadata 2022-10-28 v0.13 Display of landscape pages in PD
+F (HO)
+Package pdflscape Info: Auto-detected driver: dvipdfm (xetex) on input line 98.
+
+))
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: hyperref package is loaded.
 Package caption Info: longtable package is loaded.
@@ -1899,6 +1935,18 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 )
 Package biblatex Info: Reference section=0 on input line 82.
 Package biblatex Info: Reference segment=0 on input line 82.
@@ -1911,7 +1959,7 @@ Package hyperref Info: Link coloring ON on input line 82.
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count511
+\thai@year=\count514
 \openout2 = `front/1_with_logo_th.aux'.
 
  (front/1_with_logo_th.tex
@@ -2117,7 +2165,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count512
+\thai@year=\count515
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2374,6 +2422,18 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 )
 \tf@toc=\write6
 \openout6 = `thesis.toc'.
@@ -2390,33 +2450,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
  (thesis.lot
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count513
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count514
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count515
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2611,16 +2644,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[8
-
-
-]
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -2647,6 +2670,16 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[8
+
+
+]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2800,26 +2833,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-)
-\tf@lot=\write7
-\openout7 = `thesis.lot'.
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[9]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
- (thesis.lof
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2847,6 +2860,26 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+)
+\tf@lot=\write7
+\openout7 = `thesis.lot'.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[9]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+ (thesis.lof
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2855,12 +2888,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 9--9
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ รวม แนวคิด ระบบ ดูแล แบบ Ambient Ass
-isted Living และ Smart 
- []
 
 
 Package fontspec Info: 
@@ -2899,12 +2926,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 13--13
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 แนวคิด AI pipeline แบบ ผสม rule และ mode
-l สำหรับ ระบบ ที่ เรียก ใช้ 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -2923,6 +2944,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Underfull \hbox (badness 10000) in paragraph at lines 12--12
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 แนวคิด AI pipeline แบบ ผสม rule และ mode
+l สำหรับ ระบบ ที่ เรียก ใช้ 
+ []
+
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -2930,12 +2957,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 2005) in paragraph at lines 17--17
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ขั้น ตอน การ เชื่อม ต่อ รวม ระหว่าง อุปก
-รณ์ ภาค สนาม mobile gateway และ 
- []
 
 
 Package fontspec Info: 
@@ -2956,9 +2977,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 19--19
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 แผนผัง วง รอบ การ ทำ งา นข อง เฟิร์มแวร์
- M5StickC Plus2 แบบ BLE 
+Underfull \hbox (badness 10000) in paragraph at lines 16--16
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 วง รอบ เฟิร์มแวร์ Node T-SimCam สำหรับ c
+onfig portal, HTTP status, 
  []
 
 
@@ -2971,10 +2992,54 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Underfull \hbox (badness 2005) in paragraph at lines 17--17
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 ขั้น ตอน การ เชื่อม ต่อ รวม ระหว่าง อุปก
+รณ์ ภาค สนาม mobile gateway และ 
+ []
+
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 \thai@year=\count571
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 18--18
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 ตัวอย่าง ตำแหน่ง 
+ []
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count572
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 19--19
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 แผนผัง วง รอบ การ ทำ งา นข อง เฟิร์มแวร์
+ M5StickC Plus2 แบบ BLE 
+ []
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count573
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count574
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2999,7 +3064,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count572
+\thai@year=\count575
 LaTeX Font Info:    Font shape `TU/DejaVuSansMono(1)/m/n' will be
 (Font)              scaled to size 9.60004pt on input line 22.
 
@@ -3017,16 +3082,22 @@ us2
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count573
+\thai@year=\count576
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Underfull \hbox (badness 5504) in paragraph at lines 23--23
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 แผนผัง พื้นที่ ทดลอง 4 zone พร้อม ตำแหน่
+ง BLE node กึ่งกลาง แต่ละ พื้นที่ 
+ []
+
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count574
+\thai@year=\count577
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3041,7 +3112,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 24--24
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count575
+\thai@year=\count578
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3055,7 +3126,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 25--25
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count576
+\thai@year=\count579
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3070,37 +3141,16 @@ workspaces, users, patients,
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count577
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count578
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count579
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 \thai@year=\count580
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 27--27
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 HMI role flow ของ ระบบ WheelSense แสดง ก
+าร ผ่าน สิทธิ์ บริบท 
+ []
 
 
 Package fontspec Info: 
@@ -3112,9 +3162,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 31--31
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 โครงสร้าง AI pipeline 5 layer โดย Layer 
-3 ทำ หน้าที่ เตรียม behavioral 
+Underfull \hbox (badness 10000) in paragraph at lines 28--28
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ หน้า จอ ระบบ ใน มุม มอง Admin ครอบคล
+ุม overview, task, profile, 
  []
 
 
@@ -3127,9 +3177,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 32--32
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 1 Intent Router สำหรับ จับ เจตนา แ
-บบ deterministic ก่อน ใช้ 
+Underfull \hbox (badness 1484) in paragraph at lines 29--29
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ หน้า จอ ระบบ ใน มุม มอง Head Nurse ส
+ำหรับ ติดตาม ผู้ พัก อาศัย alert, 
  []
 
 
@@ -3151,8 +3201,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 34--34
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 4 Constrained 
+Underfull \hbox (badness 6741) in paragraph at lines 31--31
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ หน้า จอ Patient dashboard สำหรับ ผู้
+ ใช้ ราย บุคคล แสดง ข้อมูล care 
  []
 
 
@@ -3165,6 +3216,11 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Underfull \hbox (badness 10000) in paragraph at lines 32--32
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ หน้า จอ ระบบ ใน 
+ []
+
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3174,10 +3230,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 36--36
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 3 Behavioral State สำหรับ เตรียม บ
-ริบท พฤติกรรม จาก ข้อมูล 
+Underfull \hbox (badness 10000) in paragraph at lines 33--33
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ 
  []
+
+
+Underfull \vbox (badness 1990) has occurred while \output is active []
 
 
 
@@ -3196,9 +3254,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 3407) in paragraph at lines 37--37
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Context Window Management สำหรับ จำกัด บ
-ริบท ให้ มี ขนาด เหมาะ สม 
+Underfull \hbox (badness 10000) in paragraph at lines 34--34
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 โครงสร้าง AI pipeline 5 layer โดย Layer 
+3 ทำ หน้าที่ เตรียม behavioral 
  []
 
 
@@ -3211,9 +3269,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 39--39
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 การ ติด ตั้ง M5StickC Plus2 บน รถ เข็น ส
-ำหรับ ทดสอบ ข้อมูล IMU และ 
+Underfull \hbox (badness 10000) in paragraph at lines 35--35
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 1 Intent Router สำหรับ จับ เจตนา แ
+บบ deterministic ก่อน ใช้ 
  []
 
 
@@ -3235,9 +3293,8 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 41--41
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ mobile gateway สำหรับ ตรวจ สอบ ก
-าร เชื่อม ต่อ Polar Verity 
+Underfull \hbox (badness 10000) in paragraph at lines 37--37
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 4 Constrained 
  []
 
 
@@ -3250,12 +3307,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 42--42
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ตัวอย่าง การ ตรวจ สอบ บริการ บน Raspberr
-y Pi 5 และ Docker runtime 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3263,6 +3314,12 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 39--39
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 3 Behavioral State สำหรับ เตรียม บ
+ริบท พฤติกรรม จาก ข้อมูล 
+ []
 
 
 Package fontspec Info: 
@@ -3274,6 +3331,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Underfull \hbox (badness 3407) in paragraph at lines 40--40
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 Context Window Management สำหรับ จำกัด บ
+ริบท ให้ มี ขนาด เหมาะ สม 
+ []
+
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3283,9 +3346,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 3838) in paragraph at lines 47--47
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ dashboard สำหรับ head nurse ใน ก
-าร ติดตาม สถานะ ผู้ พัก อาศัย 
+Underfull \hbox (badness 10000) in paragraph at lines 42--42
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 การ ติด ตั้ง M5StickC Plus2 บน รถ เข็น ส
+ำหรับ ทดสอบ ข้อมูล IMU และ 
  []
 
 
@@ -3307,10 +3370,215 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 49--49
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count597
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 45--45
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ mobile gateway สำหรับ ตรวจ สอบ ก
+าร เชื่อม ต่อ Polar Verity 
+ []
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count598
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 46--46
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 ตัวอย่าง การ ตรวจ สอบ บริการ บน Raspberr
+y Pi 5 และ Docker runtime 
+ []
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count599
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count600
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[12]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count601
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \hbox (badness 3838) in paragraph at lines 51--51
+ [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ dashboard สำหรับ head nurse ใน ก
+าร ติดตาม สถานะ ผู้ พัก อาศัย 
+ []
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count602
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count603
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 53--53
  [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ head nurse dashboard สำหรับ work
 flow การ ดูแล และ ติดตาม 
  []
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count604
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count605
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count606
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count607
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count608
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count609
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count610
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count611
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count612
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count613
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count614
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count615
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count616
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
 
 )
 \tf@lof=\write8
@@ -3322,7 +3590,7 @@ flow การ ดูแล และ ติดตาม
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[12] (front/9_acronyms.tex
+[13] (front/9_acronyms.tex
 Package newfloat Info: Setting Plan B file extension to `toc'... on input line 
 9.
 
@@ -3375,6 +3643,16 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[17
+
+
+]
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3400,16 +3678,11 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[17
-
-
-]
-
+[18]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[18]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3437,17 +3710,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[21]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3456,14 +3718,14 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/b/n' will be
-(Font)              scaled to size 15.32993pt on input line 102.
+(Font)              scaled to size 15.32993pt on input line 96.
 )
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[22
+[21
 
 ]
 \openout2 = `content/chapters/chapter2.aux'.
@@ -3484,11 +3746,22 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[23
+[22
 
 
 
 ]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[23]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3508,28 +3781,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 [24]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[25]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3566,7 +3817,22 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 3029) has occurred while \output is active []
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[25]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \vbox (badness 2556) has occurred while \output is active []
 
 
 
@@ -3584,7 +3850,11 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 3989) has occurred while \output is active []
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 
@@ -3593,6 +3863,22 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 [27]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3633,24 +3919,19 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [29]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3678,6 +3959,14 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
+(Font)              scaled to size 12.59995pt on input line 295.
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
+(Font)              scaled to size 9.79996pt on input line 295.
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3716,14 +4005,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 [32]
-LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 12.59995pt on input line 315.
-LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 9.79996pt on input line 315.
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3756,45 +4037,18 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[34]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
+[34])
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[35])
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[36]
+[35]
 \openout2 = `content/chapters/chapter3.aux'.
 
  (content/chapters/chapter3.tex
@@ -3812,11 +4066,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 11.19995pt on input line 54.
-LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/b/n' will be
-(Font)              scaled to size 11.19995pt on input line 54.
+(Font)              scaled to size 11.19995pt on input line 53.
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 8.39996pt on input line 54.
+(Font)              scaled to size 8.39996pt on input line 53.
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3827,7 +4079,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[37
+[36
 
 
 
@@ -3842,11 +4094,32 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[38]
+[37]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/b/n' will be
+(Font)              scaled to size 11.19995pt on input line 94.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[38]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3878,8 +4151,20 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+File: ./assets/figures/chapter3/ch3-m5-wheelchair-placement.jpg Graphic file (t
+ype bmp)
+<./assets/figures/chapter3/ch3-m5-wheelchair-placement.jpg>
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
 
 
 
@@ -3888,26 +4173,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 [40]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
@@ -3915,16 +4180,15 @@ Package fontspec Info:
 
 [41]
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [42]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3945,6 +4209,33 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[43
+
+]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/ch3-wheelsensor-real.png Graphic file (type bmp
+)
+<./assets/figures/chapter3/ch3-wheelsensor-real.png>
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3961,15 +4252,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 3098) has occurred while \output is active []
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[43]
 
 
 Package fontspec Info: 
@@ -3977,55 +4262,17 @@ Package fontspec Info:
 
 [44]
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/floorplan.png Graphic file (type bmp)
-<./assets/figures/chapter3/floorplan.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [45]
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [46]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4049,8 +4296,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/ER-Diagram.png Graphic file (type bmp)
-<./assets/figures/chapter3/ER-Diagram.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4062,9 +4307,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 6995) has occurred while \output is active []
 
 
 
@@ -4073,6 +4315,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 [48]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/ER-Diagram.png Graphic file (type bmp)
+<./assets/figures/chapter3/ER-Diagram.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4104,47 +4352,19 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [50]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/ui/ch3-ui-login.png Graphic file (type bmp)
-<./assets/figures/chapter3/ui/ch3-ui-login.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/ui/ch3-ui-admin-overview.png Graphic file (type
- bmp)
-<./assets/figures/chapter3/ui/ch3-ui-admin-overview.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/ui/ch3-ui-head-nurse-alerts.png Graphic file (t
-ype bmp)
-<./assets/figures/chapter3/ui/ch3-ui-head-nurse-alerts.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/ui/ch3-ui-admin-devices.png Graphic file (type 
-bmp)
-<./assets/figures/chapter3/ui/ch3-ui-admin-devices.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4164,24 +4384,9 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/ui/ch3-ui-admin-facility.png Graphic file (type
- bmp)
-<./assets/figures/chapter3/ui/ch3-ui-admin-facility.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/ui/ch3-ui-patient-dashboard.png Graphic file (t
-ype bmp)
-<./assets/figures/chapter3/ui/ch3-ui-patient-dashboard.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
+File: ./assets/figures/chapter3/dashboard-hmi/role-admin-contact.png Graphic fi
+le (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-admin-contact.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4194,15 +4399,6 @@ Package fontspec Info:
 
 [52]
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4212,30 +4408,9 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
+File: ./assets/figures/chapter3/dashboard-hmi/role-head-nurse-contact.png Graph
+ic file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-head-nurse-contact.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4251,6 +4426,16 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+File: ./assets/figures/chapter3/dashboard-hmi/role-supervisor-contact.png Graph
+ic file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-supervisor-contact.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/role-observer-contact.png Graphic
+ file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-observer-contact.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4259,6 +4444,13 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/patient-dashboard-overview.png Gr
+aphic file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/patient-dashboard-overview.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4270,6 +4462,120 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 [55]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[56]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/role-patient-contact.png Graphic 
+file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-patient-contact.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/admin-easeai-chat.png Graphic fil
+e (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/admin-easeai-chat.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[57]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[58]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[59]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[60]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[61]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4291,13 +4597,22 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[56])
+[62]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[57]
+)
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[63]
 \openout2 = `content/chapters/chapter4.aux'.
 
  (content/chapters/chapter4.tex
@@ -4324,7 +4639,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[58
+[64
 
 
 
@@ -4366,13 +4681,13 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[59]
+[65]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[60]
+[66]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4388,6 +4703,20 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[67]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter4/paperieee-combined-rssi-plot.pdf Graphic file (
+type pdf)
+<use ./assets/figures/chapter4/paperieee-combined-rssi-plot.pdf>
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -4396,12 +4725,21 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Overfull \hbox (3.61131pt too wide) in paragraph at lines 117--124
+ [][] 
+ []
+
+
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[61]
+[68]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4460,50 +4798,19 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[62]
+[69]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[63]
+[70]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[64]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[65]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
+[71]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4530,7 +4837,38 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[66]
+[72]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[73]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4560,7 +4898,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[67]
+[74]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4579,13 +4917,13 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[68])
+[75])
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[69]
+[76]
 \openout2 = `content/chapters/chapter5.aux'.
 
  (content/chapters/chapter5.tex
@@ -4607,7 +4945,7 @@ Underfull \vbox (badness 2142) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[70
+[77
 
 
 
@@ -4620,7 +4958,7 @@ Underfull \vbox (badness 1418) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[71]
+[78]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4631,7 +4969,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[72]
+[79]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4642,19 +4980,19 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[73]
+[80]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[74])
+[81])
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[75]
+[82]
 \openout2 = `content/backmatter/1_reference.aux'.
 
  (content/backmatter/1_reference.tex)
@@ -4726,7 +5064,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[76
+[83
 
 
 
@@ -4795,7 +5133,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[77]
+[84]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4813,27 +5151,39 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[78]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[85]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 34.83185pt on input line 152.
+(Font)              scaled to size 34.83185pt on input line 155.
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/b/n' will be
-(Font)              scaled to size 34.83185pt on input line 152.
+(Font)              scaled to size 34.83185pt on input line 155.
 
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[79
+[86
 
 
 ]
@@ -4866,7 +5216,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[80
+[87
 
 
 ]
@@ -4880,7 +5230,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[81]
+[88]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4899,13 +5249,13 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[82]
+[89]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[83]
+[90]
 \openout2 = `content/appendices/appendixB.aux'.
 
  (content/appendices/appendixB.tex
@@ -4947,7 +5297,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[84
+[91
 
 
 
@@ -4957,7 +5307,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[85]
+[92]
 \openout2 = `content/appendices/appendixC.aux'.
 
  (content/appendices/appendixC.tex
@@ -5007,7 +5357,7 @@ Underfull \vbox (badness 2189) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[86
+[93
 
 
 
@@ -5026,7 +5376,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[87]
+[94]
 \openout2 = `content/appendices/appendixD.aux'.
 
  (content/appendices/appendixD.tex
@@ -5060,7 +5410,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[88
+[95
 
 
 
@@ -5084,7 +5434,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[89]
+[96]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5102,7 +5452,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[90]
+[97]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5117,7 +5467,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[91]
+[98]
 \openout2 = `content/appendices/appendixE.aux'.
 
  (content/appendices/appendixE.tex
@@ -5151,7 +5501,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[92
+[99
 
 
 
@@ -5174,7 +5524,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[93]
+[100]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5185,7 +5535,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[94]
+[101]
 \openout2 = `content/appendices/appendixF.aux'.
 
  (content/appendices/appendixF.tex
@@ -5231,7 +5581,7 @@ Underfull \vbox (badness 2409) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[95
+[102
 
 
 
@@ -5256,13 +5606,13 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[96]
+[103]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[97]
+[104]
 \openout2 = `content/appendices/appendixG.aux'.
 
  (content/appendices/appendixG.tex
@@ -5296,7 +5646,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[98
+[105
 
 
 
@@ -5326,13 +5676,307 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[99]
+[106]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[100] (thesis.aux (front/1_with_logo_th.aux) (front/2_without_logo_th.aux)
+[107]
+\openout2 = `content/appendices/appendixH.aux'.
+
+ (content/appendices/appendixH.tex
+ภาคผนวก ซ.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-google-form/form1.png Graphic file (type bmp)
+<assets/appendices/legacy-google-form/form1.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-google-form/form2.png Graphic file (type bmp)
+<assets/appendices/legacy-google-form/form2.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[108
+
+
+
+]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-google-form/form3.png Graphic file (type bmp)
+<assets/appendices/legacy-google-form/form3.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[109]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-google-form/form4.png Graphic file (type bmp)
+<assets/appendices/legacy-google-form/form4.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+)
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[110]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[111]
+\openout2 = `content/appendices/appendixI.aux'.
+
+ (content/appendices/appendixI.tex
+ภาคผนวก ฌ.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/facility-building.jpg Graphic file (type b
+mp)
+<assets/appendices/legacy-field/facility-building.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/node-install-1.jpg Graphic file (type bmp)
+
+<assets/appendices/legacy-field/node-install-1.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/node-install-2.jpg Graphic file (type bmp)
+
+<assets/appendices/legacy-field/node-install-2.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[112
+
+
+
+]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/wheelchair-install.jpg Graphic file (type 
+bmp)
+<assets/appendices/legacy-field/wheelchair-install.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/elderly-home.jpg Graphic file (type bmp)
+<assets/appendices/legacy-field/elderly-home.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[113]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/elderly-device-use.jpg Graphic file (type 
+bmp)
+<assets/appendices/legacy-field/elderly-device-use.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/workflow-board-1.jpg Graphic file (type bm
+p)
+<assets/appendices/legacy-field/workflow-board-1.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/workflow-board-2.jpg Graphic file (type bm
+p)
+<assets/appendices/legacy-field/workflow-board-2.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/caregiver-feedback.jpg Graphic file (type 
+bmp)
+<assets/appendices/legacy-field/caregiver-feedback.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[114]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/legacy-field/group-photo.jpg Graphic file (type bmp)
+<assets/appendices/legacy-field/group-photo.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+)
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[115]
+\openout2 = `content/appendices/appendixJ.aux'.
+
+ (content/appendices/appendixJ.tex
+ภาคผนวก ญ.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf>
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf, page 1>
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf, page 1>
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[116
+
+
+
+]
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf, page 1>
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf, page 1>
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf, page 1>
+[117
+
+]
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf, page 2>
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf, page 2>
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
+<use assets/appendices/paperieee/Draft_Paper.pdf, page 2>
+[118
+
+]) (thesis.aux (front/1_with_logo_th.aux) (front/2_without_logo_th.aux)
 (front/3_without_logo_en.aux) (front/4_signature.aux) (front/5_abstract_th.aux)
 (front/6_abstract_en.aux) (front/7_ack_th.aux) (front/8_toc_lof_lot_lol.aux)
 (content/chapters/chapter1.aux) (content/chapters/chapter2.aux)
@@ -5341,24 +5985,25 @@ Package fontspec Info:
 (content/appendices/appendixA.aux) (content/appendices/appendixB.aux)
 (content/appendices/appendixC.aux) (content/appendices/appendixD.aux)
 (content/appendices/appendixE.aux) (content/appendices/appendixF.aux)
-(content/appendices/appendixG.aux))
+(content/appendices/appendixG.aux) (content/appendices/appendixH.aux)
+(content/appendices/appendixI.aux) (content/appendices/appendixJ.aux))
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-11-06>
  ***********
 Package rerunfilecheck Info: File `thesis.out' has not changed.
-(rerunfilecheck)             Checksum: 6E6FF0D8ABF18EF7DED081368F6FBA16;15287.
+(rerunfilecheck)             Checksum: DA45A5ADA284E6CA5B7F5CD40BF85271;16170.
 Package logreq Info: Writing requests to 'thesis.run.xml'.
 \openout1 = `thesis.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 47542 strings out of 403160
- 979932 string characters out of 5462805
- 2035261 words of memory out of 5000000
- 75199 multiletter control sequences out of 15000+600000
+ 48508 strings out of 403160
+ 1004860 string characters out of 5462805
+ 2061141 words of memory out of 5000000
+ 76106 multiletter control sequences out of 15000+600000
  650881 words of font info for 157 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 99i,12n,110p,889b,5007s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 99i,17n,110p,936b,4995s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on thesis.pdf (101 pages).
+Output written on thesis.pdf (120 pages).

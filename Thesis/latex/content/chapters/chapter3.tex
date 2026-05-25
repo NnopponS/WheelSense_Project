@@ -12,44 +12,44 @@
 
 \begin{figure}[!htbp]
     \centering
-    \resizebox{0.98\textwidth}{!}{%
+    \resizebox{0.97\textwidth}{!}{%
     \begin{tikzpicture}[
-        node distance=1.2cm,
-        group/.style={draw, rounded corners, dashed, inner sep=0.18cm},
-        box/.style={draw, rounded corners, align=center, minimum height=0.9cm, minimum width=2.8cm, font=\scriptsize, fill=white},
+        title/.style={align=center, font=\bfseries\small},
+        box/.style={draw, rounded corners, align=center, text width=2.95cm, minimum height=0.76cm, font=\scriptsize, fill=white},
         arrow/.style={->, >=Stealth, thick},
-        back/.style={<-, >=Stealth, thick, dashed}
+        back/.style={->, >=Stealth, thick, dashed}
     ]
-        \node[box, fill=orange!12] (m5) {M5StickC Plus2\\BLE wheelchair sensor};
-        \node[box, fill=orange!12, below=0.35cm of m5] (polar) {Polar Verity Sense\\HR, RR, PPG};
-        \node[box, fill=orange!12, below=0.35cm of polar] (beacon) {BLE RSSI nodes\\room beacons};
-        \node[group, fit=(m5)(polar)(beacon), label={[font=\bfseries\scriptsize]above:Field devices}] (field) {};
+        \node[title] at (0,2.95) {Field devices};
+        \node[title] at (4.0,2.95) {Mobile gateway};
+        \node[title] at (8.0,2.95) {Platform services};
+        \node[title] at (12.0,2.95) {Dashboard / AI};
 
-        \node[box, fill=green!12, right=1.4cm of polar, minimum width=3.1cm, minimum height=1.25cm] (phone) {Flutter mobile gateway\\BLE pairing, RSSI scan\\step counter, MQTT/REST};
-        \node[group, fit=(phone), label={[font=\bfseries\scriptsize]above:Mobile gateway}] {};
+        \node[box, fill=orange!12] (m5) at (0,2.15) {M5StickC Plus2\\BLE wheelchair sensor};
+        \node[box, fill=orange!12] (polar) at (0,1.10) {Polar Verity Sense\\HR, RR interval, PPG};
+        \node[box, fill=orange!12] (beacon) at (0,0.05) {BLE RSSI nodes\\room references};
 
-        \node[box, fill=blue!10, right=1.4cm of phone, yshift=0.95cm] (mqtt) {MQTT broker\\telemetry topics};
-        \node[box, fill=blue!10, below=0.35cm of mqtt] (api) {FastAPI backend\\validate, query, auth};
-        \node[box, fill=blue!10, below=0.35cm of api] (db) {PostgreSQL 16\\structured + JSONB};
-        \node[group, fit=(mqtt)(api)(db), label={[font=\bfseries\scriptsize]above:Platform services}] {};
+        \node[box, fill=green!12, text width=3.05cm, minimum height=1.15cm] (phone) at (4.0,1.10) {Flutter mobile gateway\\BLE pairing, RSSI scan\\step counter, MQTT/REST};
 
-        \node[box, fill=purple!10, right=1.4cm of api, yshift=0.65cm] (dash) {Next.js dashboard\\role-based HMI};
-        \node[box, fill=purple!10, below=0.35cm of dash] (ai) {AI/MCP pipeline\\RAG, tools, gate};
-        \node[group, fit=(dash)(ai), label={[font=\bfseries\scriptsize]above:Dashboard and AI}] {};
+        \node[box, fill=blue!10] (mqtt) at (8.0,2.15) {MQTT broker\\telemetry topics};
+        \node[box, fill=blue!10] (api) at (8.0,1.10) {FastAPI backend\\validate, query, auth};
+        \node[box, fill=blue!10] (db) at (8.0,0.05) {PostgreSQL 16\\structured + JSONB};
+
+        \node[box, fill=purple!10] (dash) at (12.0,1.68) {Next.js dashboard\\role-based HMI};
+        \node[box, fill=purple!10] (ai) at (12.0,0.52) {AI/MCP pipeline\\RAG, tools, gate};
 
         \draw[arrow] (m5.east) -- node[above, font=\tiny] {BLE GATT} (phone.west |- m5.east);
         \draw[arrow] (polar.east) -- node[above, font=\tiny] {Polar SDK/BLE} (phone.west);
         \draw[arrow] (beacon.east) -- node[below, font=\tiny] {RSSI scan} (phone.west |- beacon.east);
 
         \draw[arrow] (phone.east) -- node[above, font=\tiny] {MQTT telemetry} (mqtt.west);
-        \draw[arrow] (phone.east) -- node[below, font=\tiny] {REST/config} (api.west);
-        \draw[arrow] (mqtt) -- (api);
-        \draw[arrow] (api) -- (db);
-        \draw[back] (api.west) -- ++(-0.45,0) |- node[pos=0.25, left, font=\tiny] {config/command} (phone.west);
+        \draw[arrow] (phone.east) -- node[above, font=\tiny] {REST/config} (api.west);
+        \draw[arrow] (mqtt.south) -- (api.north);
+        \draw[arrow] (api.south) -- (db.north);
+        \draw[back] (api.west) -- ++(-0.70,0) |- node[pos=0.24, left, font=\tiny] {config/command} (phone.south);
 
         \draw[arrow] (api.east) -- node[above, font=\tiny] {REST/WS} (dash.west);
-        \draw[arrow] (db.east) -- ++(0.55,0) |- (ai.west);
-        \draw[arrow] (ai.west) -- ++(-0.55,0) |- node[pos=0.28, below, font=\tiny] {tool request} (api.east);
+        \draw[arrow] (db.east) -- node[below, font=\tiny] {context} (ai.west);
+        \draw[back] (ai.south) |- ++(-1.65,-0.52) -| node[pos=0.72, below, font=\tiny] {tool request} (api.south);
     \end{tikzpicture}}
     \caption{สถาปัตยกรรมโดยรวมของระบบ WheelSense จากอุปกรณ์ภาคสนามไปยัง mobile gateway, platform services, dashboard และ AI}
     \label{fig:ch3-system-architecture}
@@ -101,34 +101,38 @@
 
 \begin{figure}[!htbp]
     \centering
-    \resizebox{0.95\textwidth}{!}{%
+    \resizebox{0.96\textwidth}{!}{%
     \begin{tikzpicture}[
-        box/.style={draw, rounded corners, align=center, text width=2.55cm, minimum height=0.82cm, font=\scriptsize, fill=white},
-        dec/.style={draw, diamond, aspect=2.1, align=center, inner sep=1pt, font=\scriptsize, fill=yellow!12},
+        box/.style={draw, rounded corners, align=center, text width=2.65cm, minimum height=0.78cm, font=\scriptsize, fill=white},
+        dec/.style={draw, diamond, aspect=2.25, align=center, inner sep=1.2pt, font=\scriptsize, fill=yellow!12},
         arrow/.style={->, >=Stealth, thick}
     ]
         \node[box, fill=gray!10] (boot) {Boot\\load config};
-        \node[box, fill=orange!10, right=0.45cm of boot] (camera) {Init camera\\BLE beacon};
-        \node[dec, right=0.55cm of camera] (setup) {Setup\\needed?};
-        \node[box, fill=yellow!10, below=0.75cm of setup] (portal) {Config portal\\AP + HTTP save};
-        \node[box, fill=green!10, right=0.55cm of setup] (wifi) {Connect Wi-Fi\\HTTP status page};
-        \node[box, fill=blue!10, right=0.45cm of wifi] (mqtt) {Connect MQTT\\subscribe control};
-        \node[box, fill=purple!10, right=0.45cm of mqtt] (loop) {Loop\\HTTP + MQTT};
-        \node[box, fill=purple!10, below=0.75cm of loop] (actions) {Capture/stream\\status/ack};
-        \node[box, fill=red!7, below=0.75cm of wifi] (retry) {Reconnect or\\enter config};
+        \node[box, fill=orange!10, right=0.55cm of boot] (camera) {Init camera\\start BLE beacon};
+        \node[dec, right=0.65cm of camera] (setup) {Config\\ready?};
+        \node[box, fill=yellow!10, below=0.90cm of setup] (portal) {Config portal\\AP mode + HTTP form};
+        \node[box, fill=green!10, right=0.70cm of setup] (wifi) {Connect Wi-Fi\\open HTTP status};
+        \node[box, fill=blue!10, right=0.55cm of wifi] (mqtt) {Connect MQTT\\subscribe control};
+        \node[box, fill=purple!10, right=0.55cm of mqtt] (loop) {Main loop\\HTTP + MQTT};
+        \node[box, fill=purple!10, below=0.90cm of loop] (status) {Registration\\status + ack};
+        \node[box, fill=purple!10, left=0.60cm of status] (image) {Capture / stream\\image payload};
+        \node[box, fill=red!7, below=0.90cm of mqtt] (retry) {Reconnect\\or return config};
 
         \draw[arrow] (boot) -- (camera);
         \draw[arrow] (camera) -- (setup);
-        \draw[arrow] (setup) -- node[right, font=\tiny] {yes} (portal);
-        \draw[arrow] (setup) -- node[above, font=\tiny] {no} (wifi);
+        \draw[arrow] (setup) -- node[right, font=\tiny] {no} (portal);
+        \draw[arrow] (setup) -- node[above, font=\tiny] {yes} (wifi);
         \draw[arrow] (wifi) -- (mqtt);
         \draw[arrow] (mqtt) -- (loop);
-        \draw[arrow] (loop) -- (actions);
-        \draw[arrow] (actions.west) -| (retry.south);
-        \draw[arrow] (retry.north) -- (wifi.south);
-        \draw[arrow] (portal.west) -- ++(-0.8,0) |- node[pos=0.25, left, font=\tiny] {save/reboot} (boot.south);
+        \draw[arrow] (loop) -- (status);
+        \draw[arrow] (loop.south west) |- (image.east);
+        \draw[arrow] (status.west) -- (image.east);
+        \draw[arrow] (image.north) |- (loop.west);
+        \draw[arrow] (mqtt.south) -- node[right, font=\tiny] {lost} (retry.north);
+        \draw[arrow] (retry.west) -| node[pos=0.25, below, font=\tiny] {retry} (wifi.south);
+        \draw[arrow] (portal.west) -- ++(-0.85,0) |- node[pos=0.25, left, font=\tiny] {save/reboot} (boot.south);
     \end{tikzpicture}}
-    \caption{วงรอบเฟิร์มแวร์ Node T-SimCam สำหรับ config portal, HTTP status, MQTT control และการส่งภาพ}
+    \caption{วงรอบเฟิร์มแวร์ Node T-SimCam สำหรับ config portal, HTTP status, MQTT status/ack/control และการส่งภาพแบบ capture/stream}
     \label{fig:ch3_node_tsimcam_loop}
 \end{figure}
 \FloatBarrier
@@ -298,23 +302,9 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
     \label{fig:ch3-smartphone-loop}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
     \centering
-    \resizebox{0.72\textwidth}{!}{%
-    \begin{tikzpicture}[
-        panel/.style={draw, rounded corners, minimum width=8.5cm, minimum height=5.0cm, fill=gray!4},
-        row/.style={draw, rounded corners, minimum width=7.4cm, minimum height=0.55cm, align=left, font=\scriptsize, fill=white},
-        ok/.style={fill=green!12},
-        warn/.style={fill=yellow!14}
-    ]
-        \node[panel] (p) {};
-        \node[font=\bfseries\small] at (0,2.0) {/WheelSensor};
-        \node[row, ok] at (0,1.25) {BLE permission: ready \hfill scan};
-        \node[row, ok] at (0,0.55) {M5StickC Plus2: connected \hfill notify active};
-        \node[row, ok] at (0,-0.15) {Polar Verity Sense: HR/RR/PPG stream \hfill active};
-        \node[row, warn] at (0,-0.85) {MQTT publish: retry queue \hfill 2 pending};
-        \node[row, ok] at (0,-1.55) {Server status: last accepted payload \hfill 3 s ago};
-    \end{tikzpicture}}
+    \includegraphics[width=0.38\textwidth]{chapter3/ch3-wheelsensor-real.png}
     \caption{หน้าจอ \texttt{/WheelSensor} สำหรับตรวจสถานะ BLE, Polar, M5StickC Plus2 และการส่งข้อมูลขึ้น server}
     \label{fig:ch3_wheelsensor_status}
 \end{figure}

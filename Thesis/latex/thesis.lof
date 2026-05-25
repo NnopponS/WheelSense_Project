@@ -2,69 +2,67 @@
 ~\hfill \textnormal {หน้า}\par 
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริบทการดูแลผู้สูงอายุและผู้พิการที่ใช้เก้าอี้รถเข็นในสถานดูแลของประเทศไทย}}{18}{figure.caption.13}%
+\contentsline {figure}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริบทการดูแลผู้สูงอายุและผู้พิการที่ใช้เก้าอี้รถเข็นในสถานดูแลของประเทศไทย}}{17}{figure.caption.13}%
 \contentsline {figure}{\numberline {1.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces อาคารและพื้นที่บริการหลักของบ้านพักคนชราวาสนะเวศม์ที่ใช้เป็นบริบทศึกษา}}{18}{figure.caption.14}%
-\contentsline {figure}{\numberline {1.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การใช้กระดานบันทึกข้อมูลแบบแอนะล็อกที่พบในหน้างานจริง}}{19}{figure.caption.15}%
+\contentsline {figure}{\numberline {1.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การใช้กระดานบันทึกข้อมูลแบบแอนะล็อกที่พบในหน้างานจริง}}{18}{figure.caption.15}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริบทของสถานดูแลที่ทำให้ระบบติดตามตำแหน่ง sensor และ dashboard รวมศูนย์มีความสำคัญ}}{24}{figure.caption.17}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces อุปกรณ์ฮาร์ดแวร์หลักที่เกี่ยวข้องกับระบบต้นแบบ}}{27}{figure.caption.19}%
-\contentsline {figure}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการติดตั้งอุปกรณ์ภาคสนามที่เกี่ยวข้องกับการรับข้อมูลจากรถเข็นและ BLE node}}{27}{figure.caption.20}%
-\contentsline {figure}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กระบวนการระบุตำแหน่งภายในอาคารด้วย BLE RSSI และ fingerprinting}}{29}{figure.caption.21}%
-\contentsline {figure}{\numberline {2.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิด Retrieval Logic ในระบบ RAG}}{34}{figure.caption.23}%
-\contentsline {figure}{\numberline {2.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิด AI pipeline แบบผสม rule และ model สำหรับระบบที่เรียกใช้เครื่องมือ}}{35}{figure.caption.25}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces อุปกรณ์ฮาร์ดแวร์หลักที่เกี่ยวข้องกับระบบต้นแบบ}}{26}{figure.caption.18}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กระบวนการระบุตำแหน่งภายในอาคารด้วย BLE RSSI และ fingerprinting}}{28}{figure.caption.19}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิด Retrieval Logic ในระบบ RAG}}{32}{figure.caption.21}%
+\contentsline {figure}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวคิด AI pipeline แบบผสม rule และ model สำหรับระบบที่เรียกใช้เครื่องมือ}}{33}{figure.caption.23}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมโดยรวมของระบบ WheelSense จากอุปกรณ์ภาคสนามไปยัง mobile gateway, platform services, dashboard และ AI}}{38}{figure.caption.27}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับการปรับแนวทางการเชื่อมต่ออุปกรณ์ภาคสนามจากการทดลองภายในพื้นที่ทดสอบ}}{40}{figure.caption.28}%
-\contentsline {figure}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces วงรอบเฟิร์มแวร์ Node T-SimCam สำหรับ config portal, HTTP status, MQTT control และการส่งภาพ}}{41}{figure.caption.29}%
-\contentsline {figure}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ขั้นตอนการเชื่อมต่อรวมระหว่างอุปกรณ์ภาคสนาม mobile gateway และบริการส่วนกลาง}}{41}{figure.caption.30}%
-\contentsline {figure}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างตำแหน่งติดตั้ง M5StickC Plus2 บนรถเข็นสำหรับอ่านค่าการเคลื่อนไหวและส่งข้อมูลผ่าน BLE ไปยังโทรศัพท์}}{43}{figure.caption.32}%
-\contentsline {figure}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังวงรอบการทำงานของเฟิร์มแวร์ M5StickC Plus2 แบบ BLE wheelchair sensor}}{44}{figure.caption.33}%
-\contentsline {figure}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การใช้งาน Polar Verity Sense ร่วมกับสมาร์ทโฟนที่ทำหน้าที่เป็น mobile gateway}}{45}{figure.caption.34}%
-\contentsline {figure}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ \texttt {/WheelSensor} สำหรับตรวจสถานะ BLE, Polar, M5StickC Plus2 และการส่งข้อมูลขึ้น server}}{46}{figure.caption.37}%
-\contentsline {figure}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces วงรอบการทำงานของ Flutter mobile gateway สำหรับรวมข้อมูล Polar, M5StickC Plus2, RSSI และ step counter}}{47}{figure.caption.36}%
-\contentsline {figure}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังพื้นที่ทดลอง 4 zone พร้อมตำแหน่ง BLE node กึ่งกลางแต่ละพื้นที่สำหรับเก็บค่า RSSI}}{48}{figure.caption.38}%
-\contentsline {figure}{\numberline {3.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Flowchart การส่งข้อมูล RSSI และการประเมินตำแหน่งด้วย KNN หรือ max-RSSI fallback}}{48}{figure.caption.39}%
-\contentsline {figure}{\numberline {3.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับการประมวลผลข้อมูลฝั่ง server ตั้งแต่ ingest, validate, store, query ไปจนถึง dashboard และ AI}}{50}{figure.caption.41}%
-\contentsline {figure}{\numberline {3.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนภาพ schema ฐานข้อมูลที่ใช้เชื่อม workspaces, users, patients, devices และข้อมูล telemetry}}{50}{figure.caption.42}%
-\contentsline {figure}{\numberline {3.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces HMI role flow ของระบบ WheelSense แสดงการผ่านสิทธิ์ บริบท workspace และ service ที่ dashboard เรียกใช้งาน}}{53}{figure.caption.45}%
-\contentsline {figure}{\numberline {3.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอระบบในมุมมอง Admin ครอบคลุม overview, task, profile, device, facility, alert, message, support, setting และ EaseAI}}{54}{figure.caption.46}%
-\contentsline {figure}{\numberline {3.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอระบบในมุมมอง Head Nurse สำหรับติดตามผู้พักอาศัย alert, task, device, floorplan และช่องทางสื่อสาร}}{55}{figure.caption.47}%
-\contentsline {figure}{\numberline {3.17}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอระบบในมุมมอง Supervisor และ Observer สำหรับการติดตามงานและสถานะตามสิทธิ์}}{56}{figure.caption.48}%
-\contentsline {figure}{\numberline {3.18}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอ Patient dashboard สำหรับผู้ใช้รายบุคคล แสดงข้อมูล care plan สถานะรถเข็น และช่องทางขอความช่วยเหลือ}}{57}{figure.caption.49}%
-\contentsline {figure}{\numberline {3.19}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอระบบในมุมมอง Patient ครอบคลุม personal dashboard, schedule, pharmacy, room controls, services, messages, support และ settings}}{58}{figure.caption.50}%
-\contentsline {figure}{\numberline {3.20}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอ EaseAI ใน dashboard สำหรับถามข้อมูลหรือเตรียม action ภายใต้ role permission และ MCP execution gate}}{59}{figure.caption.51}%
-\contentsline {figure}{\numberline {3.21}{\ignorespaces \xpg@aux {}{thai}\ignorespaces โครงสร้าง AI pipeline 5 layer โดย Layer 3 ทำหน้าที่เตรียม behavioral context นอกเส้นทาง execute หลัก}}{61}{figure.caption.52}%
-\contentsline {figure}{\numberline {3.22}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 1 Intent Router สำหรับจับเจตนาแบบ deterministic ก่อนใช้ semantic matching และ clarification}}{61}{figure.caption.53}%
-\contentsline {figure}{\numberline {3.23}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 2 Context Assembler สำหรับดึงและจัดแพ็กบริบทก่อนส่งเข้า LLM}}{61}{figure.caption.54}%
-\contentsline {figure}{\numberline {3.24}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 4 Constrained LLM สำหรับสังเคราะห์คำตอบหรือ execution candidate ภายใต้ schema ที่กำหนด}}{62}{figure.caption.55}%
-\contentsline {figure}{\numberline {3.25}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 5 Execution Gate สำหรับตรวจ schema, policy และยืนยันการสั่งงานผ่าน MCP tool}}{62}{figure.caption.56}%
-\contentsline {figure}{\numberline {3.26}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 3 Behavioral State สำหรับเตรียมบริบทพฤติกรรมจากข้อมูล sensor และเหตุการณ์ของผู้ใช้}}{63}{figure.caption.57}%
-\contentsline {figure}{\numberline {3.27}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Context Window Management สำหรับจำกัดบริบทให้มีขนาดเหมาะสมและตรวจสอบย้อนกลับได้}}{63}{figure.caption.58}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สถาปัตยกรรมโดยรวมของระบบ WheelSense จากอุปกรณ์ภาคสนามไปยัง mobile gateway, platform services, dashboard และ AI}}{36}{figure.caption.25}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับการปรับแนวทางการเชื่อมต่ออุปกรณ์ภาคสนามจากการทดลองภายในพื้นที่ทดสอบ}}{38}{figure.caption.26}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces วงรอบเฟิร์มแวร์ Node T-SimCam สำหรับ config portal, HTTP status, MQTT status/ack/control และการส่งภาพแบบ capture/stream}}{39}{figure.caption.27}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ขั้นตอนการเชื่อมต่อรวมระหว่างอุปกรณ์ภาคสนาม mobile gateway และบริการส่วนกลาง}}{39}{figure.caption.28}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างตำแหน่งติดตั้ง M5StickC Plus2 บนรถเข็นสำหรับอ่านค่าการเคลื่อนไหวและส่งข้อมูลผ่าน BLE ไปยังโทรศัพท์}}{41}{figure.caption.30}%
+\contentsline {figure}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังวงรอบการทำงานของเฟิร์มแวร์ M5StickC Plus2 แบบ BLE wheelchair sensor}}{42}{figure.caption.31}%
+\contentsline {figure}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การใช้งาน Polar Verity Sense ร่วมกับสมาร์ทโฟนที่ทำหน้าที่เป็น mobile gateway}}{43}{figure.caption.32}%
+\contentsline {figure}{\numberline {3.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces วงรอบการทำงานของ Flutter mobile gateway สำหรับรวมข้อมูล Polar, M5StickC Plus2, RSSI และ step counter}}{45}{figure.caption.34}%
+\contentsline {figure}{\numberline {3.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ \texttt {/WheelSensor} สำหรับตรวจสถานะ BLE, Polar, M5StickC Plus2 และการส่งข้อมูลขึ้น server}}{46}{figure.caption.35}%
+\contentsline {figure}{\numberline {3.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนผังพื้นที่ทดลอง 4 zone พร้อมตำแหน่ง BLE node กึ่งกลางแต่ละพื้นที่สำหรับเก็บค่า RSSI}}{47}{figure.caption.36}%
+\contentsline {figure}{\numberline {3.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Flowchart การส่งข้อมูล RSSI และการประเมินตำแหน่งด้วย KNN หรือ max-RSSI fallback}}{47}{figure.caption.37}%
+\contentsline {figure}{\numberline {3.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับการประมวลผลข้อมูลฝั่ง server ตั้งแต่ ingest, validate, store, query ไปจนถึง dashboard และ AI}}{48}{figure.caption.39}%
+\contentsline {figure}{\numberline {3.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนภาพ schema ฐานข้อมูลที่ใช้เชื่อม workspaces, users, patients, devices และข้อมูล telemetry}}{49}{figure.caption.40}%
+\contentsline {figure}{\numberline {3.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces HMI role flow ของระบบ WheelSense แสดงการผ่านสิทธิ์ บริบท workspace และ service ที่ dashboard เรียกใช้งาน}}{52}{figure.caption.43}%
+\contentsline {figure}{\numberline {3.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอระบบในมุมมอง Admin ครอบคลุม overview, task, profile, device, facility, alert, message, support, setting และ EaseAI}}{53}{figure.caption.44}%
+\contentsline {figure}{\numberline {3.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอระบบในมุมมอง Head Nurse สำหรับติดตามผู้พักอาศัย alert, task, device, floorplan และช่องทางสื่อสาร}}{54}{figure.caption.45}%
+\contentsline {figure}{\numberline {3.17}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอระบบในมุมมอง Supervisor และ Observer สำหรับการติดตามงานและสถานะตามสิทธิ์}}{55}{figure.caption.46}%
+\contentsline {figure}{\numberline {3.18}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอ Patient dashboard สำหรับผู้ใช้รายบุคคล แสดงข้อมูล care plan สถานะรถเข็น และช่องทางขอความช่วยเหลือ}}{56}{figure.caption.47}%
+\contentsline {figure}{\numberline {3.19}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอระบบในมุมมอง Patient ครอบคลุม personal dashboard, schedule, pharmacy, room controls, services, messages, support และ settings}}{57}{figure.caption.48}%
+\contentsline {figure}{\numberline {3.20}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพหน้าจอ EaseAI ใน dashboard สำหรับถามข้อมูลหรือเตรียม action ภายใต้ role permission และ MCP execution gate}}{58}{figure.caption.49}%
+\contentsline {figure}{\numberline {3.21}{\ignorespaces \xpg@aux {}{thai}\ignorespaces โครงสร้าง AI pipeline 5 layer โดย Layer 3 ทำหน้าที่เตรียม behavioral context นอกเส้นทาง execute หลัก}}{60}{figure.caption.50}%
+\contentsline {figure}{\numberline {3.22}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 1 Intent Router สำหรับจับเจตนาแบบ deterministic ก่อนใช้ semantic matching และ clarification}}{60}{figure.caption.51}%
+\contentsline {figure}{\numberline {3.23}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 2 Context Assembler สำหรับดึงและจัดแพ็กบริบทก่อนส่งเข้า LLM}}{60}{figure.caption.52}%
+\contentsline {figure}{\numberline {3.24}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 4 Constrained LLM สำหรับสังเคราะห์คำตอบหรือ execution candidate ภายใต้ schema ที่กำหนด}}{61}{figure.caption.53}%
+\contentsline {figure}{\numberline {3.25}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 5 Execution Gate สำหรับตรวจ schema, policy และยืนยันการสั่งงานผ่าน MCP tool}}{61}{figure.caption.54}%
+\contentsline {figure}{\numberline {3.26}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Layer 3 Behavioral State สำหรับเตรียมบริบทพฤติกรรมจากข้อมูล sensor และเหตุการณ์ของผู้ใช้}}{62}{figure.caption.55}%
+\contentsline {figure}{\numberline {3.27}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Context Window Management สำหรับจำกัดบริบทให้มีขนาดเหมาะสมและตรวจสอบย้อนกลับได้}}{62}{figure.caption.56}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้ง M5StickC Plus2 บนรถเข็นสำหรับทดสอบข้อมูล IMU และ telemetry}}{67}{figure.caption.61}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างหน้าจอ mobile gateway ที่ใช้ตรวจสถานะตำแหน่งและข้อมูลจาก BLE node}}{68}{figure.caption.64}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างสัญญาณ RSSI ต่อเนื่องจากชุดทดลอง Case 1, Case 2 และ Case 3}}{69}{figure.caption.65}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ mobile gateway สำหรับตรวจสอบการเชื่อมต่อ Polar Verity Sense และสถานะส่งข้อมูล}}{71}{figure.caption.67}%
-\contentsline {figure}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการตรวจสอบบริการบน Raspberry Pi 5 และ Docker runtime ระหว่างการทดสอบ server}}{72}{figure.caption.69}%
-\contentsline {figure}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กราฟสรุปการกระจายของ latency ในเส้นทาง MQTT ระหว่างการทดสอบ}}{72}{figure.caption.70}%
-\contentsline {figure}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กราฟประกอบการวิเคราะห์เวลาแฝงของการประมวลผล LLM ใน pipeline}}{76}{figure.caption.77}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การติดตั้ง M5StickC Plus2 บนรถเข็นสำหรับทดสอบข้อมูล IMU และ telemetry}}{66}{figure.caption.59}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างหน้าจอ mobile gateway ที่ใช้ตรวจสถานะตำแหน่งและข้อมูลจาก BLE node}}{67}{figure.caption.62}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างสัญญาณ RSSI ต่อเนื่องจากชุดทดลอง Case 1, Case 2 และ Case 3}}{68}{figure.caption.63}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ mobile gateway สำหรับตรวจสอบการเชื่อมต่อ Polar Verity Sense และสถานะส่งข้อมูล}}{70}{figure.caption.65}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการตรวจสอบบริการบน Raspberry Pi 5 และ Docker runtime ระหว่างการทดสอบ server}}{71}{figure.caption.67}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กราฟสรุปการกระจายของ latency ในเส้นทาง MQTT ระหว่างการทดสอบ}}{71}{figure.caption.68}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กราฟประกอบการวิเคราะห์เวลาแฝงของการประมวลผล LLM ใน pipeline}}{75}{figure.caption.75}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {ฉ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ dashboard สำหรับ head nurse ในการติดตามสถานะผู้พักอาศัยและ alert}}{103}{figure.caption.105}%
-\contentsline {figure}{\numberline {ฉ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ observer/mobile view สำหรับตรวจ alert และข้อมูลสถานะพื้นที่}}{104}{figure.caption.106}%
-\contentsline {figure}{\numberline {ฉ.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ head nurse dashboard สำหรับ workflow การดูแลและติดตามสถานะ}}{105}{figure.caption.107}%
-\contentsline {figure}{\numberline {ซ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าแรกและคำชี้แจงของแบบสอบถามประเมินความพึงพอใจ}}{109}{figure.caption.114}%
-\contentsline {figure}{\numberline {ซ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนคำถามประเมินความพึงพอใจของแบบสอบถาม}}{110}{figure.caption.115}%
-\contentsline {figure}{\numberline {ซ.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนคำถามประเมินความพึงพอใจเพิ่มเติม}}{111}{figure.caption.116}%
-\contentsline {figure}{\numberline {ซ.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนข้อเสนอแนะและหน้าขอบคุณของแบบสอบถาม}}{112}{figure.caption.117}%
-\contentsline {figure}{\numberline {ฌ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างอาคารและพื้นที่บริการหลักของสถานดูแล}}{113}{figure.caption.119}%
-\contentsline {figure}{\numberline {ฌ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการติดตั้ง node อ้างอิงสัญญาณภายในอาคาร}}{113}{figure.caption.120}%
-\contentsline {figure}{\numberline {ฌ.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างตำแหน่งติดตั้ง node ภายในอาคารอีกมุมมองหนึ่ง}}{114}{figure.caption.121}%
-\contentsline {figure}{\numberline {ฌ.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการติดตั้งอุปกรณ์กับเก้าอี้รถเข็นสำหรับเก็บข้อมูลการเคลื่อนไหว}}{114}{figure.caption.122}%
-\contentsline {figure}{\numberline {ฌ.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างบริบทผู้สูงอายุในสถานดูแล}}{115}{figure.caption.123}%
-\contentsline {figure}{\numberline {ฌ.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการใช้งานอุปกรณ์ในบริบทการทดลองต้นแบบ}}{115}{figure.caption.124}%
-\contentsline {figure}{\numberline {ฌ.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพประกอบการสรุปแนวคิดและ workflow ระหว่างการออกแบบระบบ}}{115}{figure.caption.125}%
-\contentsline {figure}{\numberline {ฌ.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการอธิบายแนวทางใช้งานระบบและรับฟังความคิดเห็นจากผู้ดูแล}}{116}{figure.caption.126}%
-\contentsline {figure}{\numberline {ฌ.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพประกอบการลงพื้นที่และการพูดคุยกับผู้เกี่ยวข้อง}}{116}{figure.caption.127}%
+\contentsline {figure}{\numberline {ฉ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ dashboard สำหรับ head nurse ในการติดตามสถานะผู้พักอาศัยและ alert}}{102}{figure.caption.103}%
+\contentsline {figure}{\numberline {ฉ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ observer/mobile view สำหรับตรวจ alert และข้อมูลสถานะพื้นที่}}{103}{figure.caption.104}%
+\contentsline {figure}{\numberline {ฉ.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าจอ head nurse dashboard สำหรับ workflow การดูแลและติดตามสถานะ}}{104}{figure.caption.105}%
+\contentsline {figure}{\numberline {ซ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าแรกและคำชี้แจงของแบบสอบถามประเมินความพึงพอใจ}}{108}{figure.caption.112}%
+\contentsline {figure}{\numberline {ซ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนคำถามประเมินความพึงพอใจของแบบสอบถาม}}{109}{figure.caption.113}%
+\contentsline {figure}{\numberline {ซ.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนคำถามประเมินความพึงพอใจเพิ่มเติม}}{110}{figure.caption.114}%
+\contentsline {figure}{\numberline {ซ.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ส่วนข้อเสนอแนะและหน้าขอบคุณของแบบสอบถาม}}{111}{figure.caption.115}%
+\contentsline {figure}{\numberline {ฌ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างอาคารและพื้นที่บริการหลักของสถานดูแล}}{112}{figure.caption.117}%
+\contentsline {figure}{\numberline {ฌ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการติดตั้ง node อ้างอิงสัญญาณภายในอาคาร}}{112}{figure.caption.118}%
+\contentsline {figure}{\numberline {ฌ.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างตำแหน่งติดตั้ง node ภายในอาคารอีกมุมมองหนึ่ง}}{113}{figure.caption.119}%
+\contentsline {figure}{\numberline {ฌ.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการติดตั้งอุปกรณ์กับเก้าอี้รถเข็นสำหรับเก็บข้อมูลการเคลื่อนไหว}}{113}{figure.caption.120}%
+\contentsline {figure}{\numberline {ฌ.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างบริบทผู้สูงอายุในสถานดูแล}}{114}{figure.caption.121}%
+\contentsline {figure}{\numberline {ฌ.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการใช้งานอุปกรณ์ในบริบทการทดลองต้นแบบ}}{114}{figure.caption.122}%
+\contentsline {figure}{\numberline {ฌ.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพประกอบการสรุปแนวคิดและ workflow ระหว่างการออกแบบระบบ}}{114}{figure.caption.123}%
+\contentsline {figure}{\numberline {ฌ.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างการอธิบายแนวทางใช้งานระบบและรับฟังความคิดเห็นจากผู้ดูแล}}{115}{figure.caption.124}%
+\contentsline {figure}{\numberline {ฌ.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพประกอบการลงพื้นที่และการพูดคุยกับผู้เกี่ยวข้อง}}{115}{figure.caption.125}%
 \contentsfinish 
 \contentsfinish 

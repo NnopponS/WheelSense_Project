@@ -16,25 +16,6 @@
 
 Smart environment เป็นการขยายแนวคิด AAL ไปสู่ระดับพื้นที่ โดยทำให้อุปกรณ์และบริการภายในอาคารเชื่อมโยงกัน เช่น เซ็นเซอร์ประจำตัวผู้ใช้ อุปกรณ์สวมใส่ จุดอ้างอิงสัญญาณภายในอาคาร ระบบแจ้งเตือน และ dashboard สำหรับผู้ดูแล จุดสำคัญไม่ใช่เพียงการเก็บข้อมูลให้ได้มากที่สุด แต่เป็นการจัดข้อมูลให้มีบริบท เช่น ใครอยู่ที่ไหน กำลังเคลื่อนไหวหรือหยุดนิ่ง มีสัญญาณชีพผิดปกติหรือไม่ และควรส่งต่อเหตุการณ์ใดให้ผู้ดูแลตรวจสอบก่อน
 
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[t]{0.47\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter2/ch2-aal-care-context.jpg}
-        \caption{บริบทผู้สูงอายุในสถานดูแล}
-        \label{fig:ch2_aal_care_context}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.47\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter2/ch2-care-facility-context.jpg}
-        \caption{ตัวอย่างพื้นที่บริการภายในสถานดูแล}
-        \label{fig:ch2_care_facility_context}
-    \end{subfigure}
-    \caption{บริบทของสถานดูแลที่ทำให้ระบบติดตามตำแหน่ง sensor และ dashboard รวมศูนย์มีความสำคัญ}
-    \label{fig:ch2_aal_smart_env}
-\end{figure}
-
 จากแนวคิดดังกล่าว ระบบดูแลผู้สูงอายุและผู้ใช้รถเข็นจึงควรมีคุณสมบัติหลัก 4 ประการ ได้แก่ การรับข้อมูลจากเซ็นเซอร์ที่สัมพันธ์กับสถานะจริงของผู้ใช้ การส่งข้อมูลเข้าสู่ระบบกลางอย่างต่อเนื่อง การจัดเก็บและแสดงผลข้อมูลในรูปแบบที่ผู้ดูแลอ่านได้เร็ว และการมีกลไกช่วยจัดลำดับความสำคัญของเหตุการณ์ก่อนส่งให้มนุษย์ตรวจสอบ ทั้งหมดนี้เป็นพื้นฐานของการออกแบบระบบต้นแบบในงานนี้ แต่ในบทนี้จะอธิบายในระดับทฤษฎีเพื่อไม่ให้ซ้ำกับรายละเอียดการพัฒนาในบทถัดไป
 
 \section{เทคโนโลยี IoT และ Sensor สำหรับระบบดูแล}
@@ -111,25 +92,6 @@ Raspberry Pi 5 RAM 8 GB เป็น single-board computer ที่มีพล
     \end{subfigure}
     \caption{อุปกรณ์ฮาร์ดแวร์หลักที่เกี่ยวข้องกับระบบต้นแบบ}
     \label{fig:ch2_hardware_devices}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \begin{subfigure}[t]{0.47\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter2/ch2-wheelchair-install.jpg}
-        \caption{ตัวอย่างการติดตั้งอุปกรณ์กับรถเข็น}
-        \label{fig:ch2_wheelchair_install}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.47\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter2/ch2-field-node-install.jpg}
-        \caption{ตัวอย่างการติดตั้ง node อ้างอิงสัญญาณ}
-        \label{fig:ch2_field_node_install}
-    \end{subfigure}
-    \caption{ตัวอย่างการติดตั้งอุปกรณ์ภาคสนามที่เกี่ยวข้องกับการรับข้อมูลจากรถเข็นและ BLE node}
-    \label{fig:ch2_field_installation_examples}
 \end{figure}
 
 นอกจากอุปกรณ์หลักข้างต้น ระบบดูแลยังอาจมีอุปกรณ์รอง เช่น BLE beacon หรือ node อ้างอิงสัญญาณ โทรศัพท์มือถือที่ทำหน้าที่ gateway เครื่องชาร์จ แหล่งจ่ายไฟสำรอง และอุปกรณ์เครือข่ายภายในอาคาร อุปกรณ์เหล่านี้มีผลต่อความเสถียรของระบบ แต่ในเชิงทฤษฎีสามารถจัดเป็นส่วนสนับสนุนของ sensor layer, network layer และ edge layer ตามบทบาทที่กล่าวไว้ก่อนหน้า

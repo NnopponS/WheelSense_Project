@@ -19,81 +19,6 @@
 
 \refsection{0}
   \datalist[entry]{none/global//global/global/global}
-    \entry{SituationThaiElderly2022}{report}{}{}
-      \name{author}{1}{}{%
-        {{hash=a995a6dacbbc052a23bccca05d5f01ce}{%
-           family={{Foundation of Thai Gerontology Research and Development Institute (TGRI)}},
-           familyi={F\bibinitperiod}}}%
-      }
-      \list{institution}{2}{%
-        {Ministry of Social Development}%
-        {Human Security}%
-      }
-      \list{location}{1}{%
-        {Bangkok, Thailand}%
-      }
-      \strng{namehash}{a995a6dacbbc052a23bccca05d5f01ce}
-      \strng{fullhash}{a995a6dacbbc052a23bccca05d5f01ce}
-      \strng{fullhashraw}{a995a6dacbbc052a23bccca05d5f01ce}
-      \strng{bibnamehash}{a995a6dacbbc052a23bccca05d5f01ce}
-      \strng{authorbibnamehash}{a995a6dacbbc052a23bccca05d5f01ce}
-      \strng{authornamehash}{a995a6dacbbc052a23bccca05d5f01ce}
-      \strng{authorfullhash}{a995a6dacbbc052a23bccca05d5f01ce}
-      \strng{authorfullhashraw}{a995a6dacbbc052a23bccca05d5f01ce}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{title}{Situation of the Thai Older Persons 2022}
-      \field{urlday}{21}
-      \field{urlmonth}{4}
-      \field{urlyear}{2026}
-      \field{year}{2023}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://thaitgri.org/?p=40026
-      \endverb
-      \verb{url}
-      \verb https://thaitgri.org/?p=40026
-      \endverb
-    \endentry
-    \entry{WHO2021DecadeAgeing}{report}{}{}
-      \name{author}{1}{}{%
-        {{hash=531217507bec092b6ec36c0f78f46736}{%
-           family={{World Health Organization}},
-           familyi={W\bibinitperiod}}}%
-      }
-      \list{institution}{1}{%
-        {World Health Organization}%
-      }
-      \list{location}{1}{%
-        {Geneva}%
-      }
-      \strng{namehash}{531217507bec092b6ec36c0f78f46736}
-      \strng{fullhash}{531217507bec092b6ec36c0f78f46736}
-      \strng{fullhashraw}{531217507bec092b6ec36c0f78f46736}
-      \strng{bibnamehash}{531217507bec092b6ec36c0f78f46736}
-      \strng{authorbibnamehash}{531217507bec092b6ec36c0f78f46736}
-      \strng{authornamehash}{531217507bec092b6ec36c0f78f46736}
-      \strng{authorfullhash}{531217507bec092b6ec36c0f78f46736}
-      \strng{authorfullhashraw}{531217507bec092b6ec36c0f78f46736}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{title}{Decade of Healthy Ageing: Baseline Report}
-      \field{urlday}{20}
-      \field{urlmonth}{4}
-      \field{urlyear}{2026}
-      \field{year}{2021}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://www.who.int/publications/i/item/9789240017900
-      \endverb
-      \verb{url}
-      \verb https://www.who.int/publications/i/item/9789240017900
-      \endverb
-    \endentry
     \entry{MSDHS_Disability_2024}{online}{}{}
       \name{author}{1}{}{%
         {{hash=af6cf6a77f7a8ec4e7b4291f77b2e3e8}{%
@@ -111,8 +36,8 @@
       \strng{authornamehash}{af6cf6a77f7a8ec4e7b4291f77b2e3e8}
       \strng{authorfullhash}{af6cf6a77f7a8ec4e7b4291f77b2e3e8}
       \strng{authorfullhashraw}{af6cf6a77f7a8ec4e7b4291f77b2e3e8}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{สถานการณ์คนพิการในประเทศไทย ปี พ.ศ. 2567}
@@ -122,6 +47,61 @@
       \endverb
       \verb{url}
       \verb https://mgronline.com/greeninnovation/detail/9670000123512
+      \endverb
+    \endentry
+    \entry{DEP_Employment_2024}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=c5da467bb9cfd13e09251ba982a084a2}{%
+           family={{กรมส่งเสริมและพัฒนาคุณภาพบุคลากรภาครัฐวิชาการคนพิการ}},
+           familyi={ก\bibinitperiod}}}%
+      }
+      \strng{namehash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{fullhash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{fullhashraw}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{bibnamehash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{authorbibnamehash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{authornamehash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{authorfullhash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{authorfullhashraw}{c5da467bb9cfd13e09251ba982a084a2}
+      \field{extraname}{1}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{รายงานการจ้างงานคนพิการในหน่วยงานรัฐ ปี พ.ศ. 2567}
+      \field{year}{2567}
+      \verb{urlraw}
+      \verb https://www.prd.go.th/th/content/category/detail/id/39/iid/420342
+      \endverb
+      \verb{url}
+      \verb https://www.prd.go.th/th/content/category/detail/id/39/iid/420342
+      \endverb
+    \endentry
+    \entry{UN_CRPD_2008}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=3cc54e2c0d69c1b76b4d49edb22dd6d1}{%
+           family={{United Nations}},
+           familyi={U\bibinitperiod}}}%
+      }
+      \strng{namehash}{3cc54e2c0d69c1b76b4d49edb22dd6d1}
+      \strng{fullhash}{3cc54e2c0d69c1b76b4d49edb22dd6d1}
+      \strng{fullhashraw}{3cc54e2c0d69c1b76b4d49edb22dd6d1}
+      \strng{bibnamehash}{3cc54e2c0d69c1b76b4d49edb22dd6d1}
+      \strng{authorbibnamehash}{3cc54e2c0d69c1b76b4d49edb22dd6d1}
+      \strng{authornamehash}{3cc54e2c0d69c1b76b4d49edb22dd6d1}
+      \strng{authorfullhash}{3cc54e2c0d69c1b76b4d49edb22dd6d1}
+      \strng{authorfullhashraw}{3cc54e2c0d69c1b76b4d49edb22dd6d1}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Convention on the Rights of Persons with Disabilities (CRPD)}
+      \field{year}{2008}
+      \verb{urlraw}
+      \verb https://www.un.org/development/desa/disabilities/convention-on-the-rights-of-persons-with-disabilities.html
+      \endverb
+      \verb{url}
+      \verb https://www.un.org/development/desa/disabilities/convention-on-the-rights-of-persons-with-disabilities.html
       \endverb
     \endentry
     \entry{Rashidi2013AALSurvey}{article}{}{}
@@ -145,8 +125,8 @@
       \strng{authornamehash}{d64f74e21e50774a861e0a57a16a6cc4}
       \strng{authorfullhash}{d64f74e21e50774a861e0a57a16a6cc4}
       \strng{authorfullhashraw}{d64f74e21e50774a861e0a57a16a6cc4}
-      \field{sortinit}{3}
-      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Journal of Biomedical and Health Informatics}
@@ -159,6 +139,49 @@
       \verb{doi}
       \verb 10.1109/JBHI.2012.2234129
       \endverb
+    \endentry
+    \entry{MOTS_SportsPlan_2022}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=b504faa199677807f932d3d4c1ccca27}{%
+           family={{กระทรวงการท่องเที่ยวและกีฬา}},
+           familyi={ก\bibinitperiod}}}%
+      }
+      \strng{namehash}{b504faa199677807f932d3d4c1ccca27}
+      \strng{fullhash}{b504faa199677807f932d3d4c1ccca27}
+      \strng{fullhashraw}{b504faa199677807f932d3d4c1ccca27}
+      \strng{bibnamehash}{b504faa199677807f932d3d4c1ccca27}
+      \strng{authorbibnamehash}{b504faa199677807f932d3d4c1ccca27}
+      \strng{authornamehash}{b504faa199677807f932d3d4c1ccca27}
+      \strng{authorfullhash}{b504faa199677807f932d3d4c1ccca27}
+      \strng{authorfullhashraw}{b504faa199677807f932d3d4c1ccca27}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{แผนพัฒนาการกีฬาแห่งชาติ ชุดที่ 6 (พ.ศ. 2565-2569)}
+      \field{year}{2565}
+    \endentry
+    \entry{DEP_DisabilityPlan_2023}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=c5da467bb9cfd13e09251ba982a084a2}{%
+           family={{กรมส่งเสริมและพัฒนาคุณภาพบุคลากรภาครัฐวิชาการคนพิการ}},
+           familyi={ก\bibinitperiod}}}%
+      }
+      \strng{namehash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{fullhash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{fullhashraw}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{bibnamehash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{authorbibnamehash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{authornamehash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{authorfullhash}{c5da467bb9cfd13e09251ba982a084a2}
+      \strng{authorfullhashraw}{c5da467bb9cfd13e09251ba982a084a2}
+      \field{extraname}{2}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{แผนพัฒนาคุณภาพบุคลากรภาครัฐวิชาการคนพิการแห่งชาติ ชุดที่ 5 (พ.ศ. 2566-2570)}
+      \field{year}{2566}
     \endentry
     \entry{Sterling2016FallsInCareHomes}{article}{}{}
       \name{author}{3}{}{%
@@ -186,8 +209,8 @@
       \strng{authornamehash}{dc7d487e6145f159c206dbd5d1ba51e1}
       \strng{authorfullhash}{5d5a47462ed3a0f2c4db17e41d00ad84}
       \strng{authorfullhashraw}{5d5a47462ed3a0f2c4db17e41d00ad84}
-      \field{sortinit}{4}
-      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Injury Prevention}
@@ -242,8 +265,8 @@
       \strng{authornamehash}{9fa979ff9a90f6ea25183c8b79855088}
       \strng{authorfullhash}{56aa74883c7ba6a654a3939c68d41ca3}
       \strng{authorfullhashraw}{56aa74883c7ba6a654a3939c68d41ca3}
-      \field{sortinit}{5}
-      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Journal of the American Medical Informatics Association}
@@ -278,8 +301,8 @@
       \strng{authornamehash}{0ee0e568407bc16b2e59c543352280c6}
       \strng{authorfullhash}{0ee0e568407bc16b2e59c543352280c6}
       \strng{authorfullhashraw}{0ee0e568407bc16b2e59c543352280c6}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Consumer Electronics Magazine}
@@ -287,8 +310,8 @@
       \field{year}{2023}
     \endentry
     \entry{Indoor_GPS_Limitations}{online}{}{}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labeltitlesource}{title}
       \field{title}{Indoor GPS - Does it work? Everything you need to know}
       \field{urlday}{5}
@@ -320,13 +343,50 @@
       \strng{authornamehash}{a73b40a9f6f20d3f4741bddad399dcba}
       \strng{authorfullhash}{a73b40a9f6f20d3f4741bddad399dcba}
       \strng{authorfullhashraw}{a73b40a9f6f20d3f4741bddad399dcba}
-      \field{sortinit}{6}
-      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Sensors}
       \field{title}{Ultra-Wideband Localization: Accuracy and Cost Analysis in Modern Buildings}
       \field{year}{2023}
+    \endentry
+    \entry{WHO2021DecadeAgeing}{report}{}{}
+      \name{author}{1}{}{%
+        {{hash=531217507bec092b6ec36c0f78f46736}{%
+           family={{World Health Organization}},
+           familyi={W\bibinitperiod}}}%
+      }
+      \list{institution}{1}{%
+        {World Health Organization}%
+      }
+      \list{location}{1}{%
+        {Geneva}%
+      }
+      \strng{namehash}{531217507bec092b6ec36c0f78f46736}
+      \strng{fullhash}{531217507bec092b6ec36c0f78f46736}
+      \strng{fullhashraw}{531217507bec092b6ec36c0f78f46736}
+      \strng{bibnamehash}{531217507bec092b6ec36c0f78f46736}
+      \strng{authorbibnamehash}{531217507bec092b6ec36c0f78f46736}
+      \strng{authornamehash}{531217507bec092b6ec36c0f78f46736}
+      \strng{authorfullhash}{531217507bec092b6ec36c0f78f46736}
+      \strng{authorfullhashraw}{531217507bec092b6ec36c0f78f46736}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Decade of Healthy Ageing: Baseline Report}
+      \field{urlday}{20}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{year}{2021}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.who.int/publications/i/item/9789240017900
+      \endverb
+      \verb{url}
+      \verb https://www.who.int/publications/i/item/9789240017900
+      \endverb
     \endentry
     \entry{Schulz2020CaregiverBurden}{article}{}{}
       \name{author}{5}{}{%
@@ -364,8 +424,8 @@
       \strng{authornamehash}{a1c820526eaa48ae208e311e020b721f}
       \strng{authorfullhash}{78361a75707ecf7a06b88c23ab4997f9}
       \strng{authorfullhashraw}{78361a75707ecf7a06b88c23ab4997f9}
-      \field{sortinit}{7}
-      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Annual Review of Psychology}
@@ -404,8 +464,8 @@
       \strng{authornamehash}{6472bbdf9a81622f8531de34f5cdec3f}
       \strng{authorfullhash}{d555c18a15d1f74d97fe275b8a534091}
       \strng{authorfullhashraw}{d555c18a15d1f74d97fe275b8a534091}
-      \field{sortinit}{9}
-      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Computer Networks}
@@ -712,8 +772,8 @@
       \strng{authornamehash}{2c06d7d6babef375e7855601375f27a3}
       \strng{authorfullhash}{2c06d7d6babef375e7855601375f27a3}
       \strng{authorfullhashraw}{2c06d7d6babef375e7855601375f27a3}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Pervasive and Mobile Computing}
@@ -748,8 +808,8 @@
       \strng{authornamehash}{acdac437cbcff8d31878b78407aa76a2}
       \strng{authorfullhash}{acdac437cbcff8d31878b78407aa76a2}
       \strng{authorfullhashraw}{acdac437cbcff8d31878b78407aa76a2}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings IEEE INFOCOM 2000}
@@ -782,8 +842,8 @@
       \strng{authornamehash}{eb69740a4f3f76303d133be440a6480b}
       \strng{authorfullhash}{eb69740a4f3f76303d133be440a6480b}
       \strng{authorfullhashraw}{eb69740a4f3f76303d133be440a6480b}
-      \field{sortinit}{1}
-      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Transactions on Information Theory}
