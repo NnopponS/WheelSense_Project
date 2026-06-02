@@ -4,120 +4,117 @@
 \chapter[รายละเอียดบริบทโครงงาน]{\texorpdfstring{ภาคผนวก ก\\รายละเอียดบริบทโครงงาน}{Appendix A: Project Context}}
 \label{app:project_context}
 
-ภาคผนวกนี้จัดทำในรูปแบบตารางสรุปคล้ายเอกสารประกอบแบบ DOCX เพื่อรวบรวมบริบทของโครงงาน ขอบเขตปัญหาทางวิศวกรรม องค์ความรู้ที่ใช้ มาตรฐานที่เกี่ยวข้อง ผู้มีส่วนได้ส่วนเสีย และการบริหารงานโครงงาน โดยเขียนด้วย LaTeX เพื่อให้รูปแบบสอดคล้องกับเล่มวิทยานิพนธ์ปัจจุบัน
+\newcommand{\wschecked}{\makebox[1.4em][l]{\ensuremath{\boxtimes}}}
+\newcommand{\wsunchecked}{\makebox[1.4em][l]{\ensuremath{\square}}}
 
-\begin{table}[H]
-    \centering
-    \caption{ข้อมูลทั่วไปของโครงงาน}
-    \label{tab:app_project_context_summary}
-    \renewcommand{\arraystretch}{1.18}
-    \small
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|L{0.28\textwidth}|L{0.62\textwidth}|}
-        \hline
-        \textbf{หัวข้อ} & \textbf{รายละเอียด} \\ \hline
-        ชื่อโครงงาน & การพัฒนาต้นแบบสภาพแวดล้อมอัจฉริยะสำหรับผู้ใช้งานวีลแชร์ (WheelSense: Prototyping Development of Smart Environment for Wheelchair User) \\ \hline
-        ลักษณะโครงงาน & ระบบต้นแบบที่บูรณาการ wheelchair sensor, wearable sensor, mobile gateway, edge server, dashboard และ AI/MCP pipeline เพื่อสนับสนุนการดูแลผู้สูงอายุและผู้ใช้เก้าอี้รถเข็น \\ \hline
-        ขอบเขตการประเมิน & ประเมินการรับข้อมูล sensor, BLE RSSI localization, gateway/server path, dashboard/HMI, SUS score และ AI/MCP pipeline ในระดับระบบต้นแบบ \\ \hline
-    \end{tabular}
-\end{table}
+โครงงานเรื่อง ``WheelSense: Prototyping Development of Smart Environment for Wheelchair User'' เป็นโครงงานต้นแบบที่บูรณาการอุปกรณ์ตรวจวัดบนเก้าอี้รถเข็น อุปกรณ์สวมใส่ โทรศัพท์มือถือที่ทำหน้าที่เป็น gateway, edge server, dashboard และ AI/MCP pipeline เพื่อสนับสนุนการติดตามสถานะผู้ใช้เก้าอี้รถเข็นและผู้สูงอายุในสภาพแวดล้อมภายในอาคาร
 
 \section{ปัญหาทางวิศวกรรมที่ซับซ้อน}
 
-\begin{table}[H]
-    \centering
-    \caption{การจัดเข้ากลุ่มปัญหาทางวิศวกรรมที่ซับซ้อนตามกรอบ IEA}
-    \renewcommand{\arraystretch}{1.22}
-    \small
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|L{0.30\textwidth}|L{0.60\textwidth}|}
-        \hline
-        \textbf{หัวข้อ} & \textbf{รายละเอียดในโครงงาน} \\ \hline
-        R WP 1: ความลึกของความรู้ (Depth of knowledge) & ต้องบูรณาการความรู้ข้ามศาสตร์ ได้แก่ IoT, การประมวลผลสัญญาณ, indoor positioning, backend systems และ AI เข้าด้วยกันเป็นระบบเดียวแบบ end-to-end \\ \hline
-        R WP 2: ข้อกำหนดที่ขัดแย้งกัน (Range of conflicting requirements) & ต้องสร้างสมดุลระหว่าง latency กับความสามารถของ AI, privacy กับการประมวลผลข้อมูล, ความแม่นยำของตำแหน่งกับความเรียบง่ายของการติดตั้ง และการติดตามแบบต่อเนื่องกับข้อจำกัดของอุปกรณ์ภาคสนาม \\ \hline
-        R WP 3: ความลึกของการวิเคราะห์ (Depth of analysis) & ต้องวิเคราะห์ data flow ทั้งระบบ ตั้งแต่ sensor, BLE/MQTT, database, dashboard ไปจนถึง AI/MCP pipeline รวมถึงการแยกขั้นตอน Propose-Confirm-Execute เพื่อลดความเสี่ยงจากการสั่งงานผิดพลาด \\ \hline
-        R WP 4: ความคุ้นเคยกับปัญหา (Familiarity of issues) & เป็นการผสมผสาน indoor localization, IoT sensor และ AI-assisted care ในบริบทผู้ใช้เก้าอี้รถเข็น ซึ่งยังไม่มีระบบมาตรฐานเดียวที่ครอบคลุมทุกส่วนสำหรับงานต้นแบบนี้ \\ \hline
-        R WP 5: ขอบเขตของมาตรฐาน (Extent of applicable codes) & ไม่มีมาตรฐานเดียวที่ครอบคลุมทั้งระบบ จึงต้องอ้างอิง BLE สำหรับการสื่อสารระยะใกล้ หลักการ privacy-aware สำหรับข้อมูลสุขภาพ และข้อจำกัดด้านสิทธิ์การเข้าถึงข้อมูลตามบทบาทผู้ใช้ \\ \hline
-        R WP 6: ผู้มีส่วนได้ส่วนเสีย (Stakeholder involvement and needs) & เกี่ยวข้องกับผู้ใช้เก้าอี้รถเข็น ผู้สูงอายุ ผู้ดูแล หัวหน้าพยาบาล ผู้บริหารสถานดูแล และทีมพัฒนา ซึ่งมีความต้องการต่างกันทั้งด้านความปลอดภัย ความสะดวก และการปฏิบัติงาน \\ \hline
-        R WP 7: ความเกี่ยวพันของระบบ (Interdependence) & อุปกรณ์ sensor, mobile gateway, MQTT broker, backend, database, dashboard และ AI interface เชื่อมโยงกันใกล้ชิด หากระบบย่อยใดล้มเหลวจะกระทบต่อการรับรู้สถานะของผู้ดูแลทั้งระบบ \\ \hline
-    \end{tabular}
-\end{table}
+\noindent\wschecked WP 1: ความลึกของความรู้ (Depth of knowledge)
+\begin{itemize}
+    \item โครงงานต้องบูรณาการความรู้ด้าน embedded system, IoT, BLE, IMU signal processing, indoor localization, backend system, dashboard และ AI/MCP pipeline เข้าด้วยกันเป็นระบบเดียว
+    \item การคำนวณระยะทาง ความเร็ว ความเร่ง และ motion state ต้องอาศัยทั้งการตั้งค่าอุปกรณ์จริงและการกรองสัญญาณจากข้อมูล sensor
+\end{itemize}
+
+\noindent\wschecked WP 2: ข้อกำหนดที่ขัดแย้งกัน (Range of conflicting requirements)
+\begin{itemize}
+    \item ระบบต้องรักษาสมดุลระหว่างความละเอียดของข้อมูลกับข้อจำกัดของอุปกรณ์ภาคสนาม เช่น battery, BLE stability และ bandwidth
+    \item AI ต้องให้คำตอบที่มีบริบทเพียงพอ แต่ต้องไม่ข้ามขั้นตอนการยืนยันของผู้ดูแลเมื่อเป็นคำสั่งที่เปลี่ยนสถานะระบบ
+\end{itemize}
+
+\noindent\wschecked WP 3: ความลึกของการวิเคราะห์ (Depth of analysis)
+\begin{itemize}
+    \item ต้องวิเคราะห์ข้อมูลตั้งแต่ sensor, mobile gateway, MQTT/REST, database, dashboard จนถึง AI pipeline เพื่อหาจุดที่ทำให้ข้อมูลล่าช้า ขาดหาย หรือแสดงผลผิดบริบท
+    \item ผลการทดลองในบทที่ 4 แยกการวิเคราะห์ตาม subsystem เพื่อให้เห็นข้อจำกัดของแต่ละส่วนอย่างชัดเจน
+\end{itemize}
+
+\noindent\wsunchecked WP 4: ความคุ้นเคยกับปัญหา (Familiarity of issues)
+\begin{itemize}
+    \item ไม่ใช่ปัญหาซ้ำรูปแบบตรงไปตรงมา เพราะต้องเชื่อมบริบทผู้ใช้เก้าอี้รถเข็น งานดูแลผู้สูงอายุ และระบบซอฟต์แวร์หลายชั้นเข้าด้วยกัน
+\end{itemize}
+
+\noindent\wsunchecked WP 5: ขอบเขตของมาตรฐาน (Extent of applicable codes)
+\begin{itemize}
+    \item ยังไม่มีมาตรฐานเดียวที่ครอบคลุมทั้ง BLE sensor, indoor localization, dashboard care workflow และ AI tool execution ในโครงงานต้นแบบนี้
+\end{itemize}
+
+\noindent\wsunchecked WP 6: ผู้มีส่วนได้ส่วนเสีย (Extent of stakeholder involvement and needs)
+\begin{itemize}
+    \item ผู้ใช้แต่ละบทบาทมีความต้องการต่างกัน เช่น ผู้พักอาศัยต้องเห็นข้อมูลส่วนตัว ผู้ดูแลต้องเห็น alert และหัวหน้าพยาบาลต้องเห็นภาพรวมของงานดูแล
+\end{itemize}
+
+\noindent\wschecked WP 7: ความเกี่ยวพันของระบบ (Interdependence)
+\begin{itemize}
+    \item Sensor, mobile gateway, backend, database, dashboard และ AI/MCP เชื่อมต่อกันเป็นลำดับ หากส่วนใดส่วนหนึ่งขัดข้องจะกระทบต่อการเห็นสถานะของผู้ดูแล
+    \item Execution Gate ถูกออกแบบให้คั่นระหว่างคำตอบของ AI กับการสั่งงานจริง เพื่อให้การเปลี่ยนสถานะต้องผ่านการตรวจสอบก่อนดำเนินการ
+\end{itemize}
 
 \section{องค์ความรู้และเครื่องมืออุปกรณ์ที่ใช้}
 
-\begin{table}[H]
-    \centering
-    \caption{องค์ความรู้และเครื่องมือหลักที่ใช้ในโครงงาน}
-    \label{tab:app_project_knowledge_tools}
-    \renewcommand{\arraystretch}{1.18}
-    \small
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|L{0.28\textwidth}|L{0.62\textwidth}|}
-        \hline
-        \textbf{กลุ่มความรู้หรือเครื่องมือ} & \textbf{การนำไปใช้ในโครงงาน} \\ \hline
-        Signal Processing and Motion Estimation & ใช้กับข้อมูล IMU จาก M5StickC Plus2 เพื่อคำนวณ magnitude, velocity, distance, acceleration และ motion state เบื้องต้น \\ \hline
-        IoT network architecture and MQTT & ใช้ออกแบบการรับส่ง telemetry จาก mobile gateway ไปยัง MQTT broker, FastAPI และฐานข้อมูลส่วนกลาง \\ \hline
-        AI Pipeline and LLM inference workflow & ใช้แยก Intent Router, Context Assembler, Behavioral State, Constrained LLM และ Execution Gate เพื่อควบคุมการตอบและการสั่งงานของ AI \\ \hline
-        Elderly care and wheelchair-user context & ใช้กำหนดว่าข้อมูลใดควรแสดงให้ผู้ดูแลเห็น เช่น ตำแหน่ง สถานะรถเข็น สัญญาณชีพ และ alert ที่ต้องตรวจสอบก่อน \\ \hline
-        FastAPI, Docker และ PostgreSQL & ใช้เป็น backend service, container runtime บน edge server และฐานข้อมูลสำหรับ structured data กับ JSONB telemetry \\ \hline
-    \end{tabular}
-\end{table}
+\subsection*{องค์ความรู้ทางวิศวกรรม}
+\begin{itemize}
+    \item การประมวลผลสัญญาณจาก IMU สำหรับ motion magnitude, velocity, distance และ acceleration
+    \item การระบุตำแหน่งภายในอาคารด้วย BLE RSSI, fingerprinting, KNN และ max-RSSI baseline
+    \item ระบบ IoT และ message flow ผ่าน BLE, MQTT, REST API และ database
+    \item การออกแบบ AI pipeline แบบแยกชั้น ได้แก่ Intent Router, Context Assembler, Behavioral State, Constrained LLM และ Execution Gate
+\end{itemize}
+
+\subsection*{เครื่องมือและอุปกรณ์หลัก}
+\begin{itemize}
+    \item M5StickC Plus2 สำหรับอ่านข้อมูล IMU และส่ง telemetry จากเก้าอี้รถเข็น
+    \item Polar Verity Sense สำหรับข้อมูลสัญญาณชีพในระดับต้นแบบ
+    \item Flutter mobile gateway สำหรับรวมข้อมูลจากอุปกรณ์ภาคสนามและส่งข้อมูลไปยัง server
+    \item Raspberry Pi 5, Docker, FastAPI, PostgreSQL/JSONB และ MQTT broker สำหรับ edge/server runtime
+    \item Next.js dashboard สำหรับแสดงผลตามบทบาทผู้ใช้ และ EaseAI/MCP สำหรับช่วยค้นบริบทและเตรียม action candidate
+\end{itemize}
 
 \section{มาตรฐาน กฎหมาย และข้อบังคับที่เกี่ยวข้อง}
 
-\begin{table}[H]
-    \centering
-    \caption{มาตรฐานและข้อพิจารณาที่เกี่ยวข้องกับระบบ}
-    \label{tab:app_project_standards}
-    \renewcommand{\arraystretch}{1.18}
-    \small
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|L{0.28\textwidth}|L{0.62\textwidth}|}
-        \hline
-        \textbf{หัวข้อ} & \textbf{ความเกี่ยวข้องกับโครงงาน} \\ \hline
-        BLE communication standard & ใช้เป็นพื้นฐานสำหรับการเชื่อมต่อ M5StickC Plus2, Polar Verity Sense และ BLE RSSI node กับ mobile gateway \\ \hline
-        CRPD & ใช้เป็นบริบทด้านสิทธิและการดำรงชีวิตอิสระของคนพิการ ซึ่งสนับสนุนแนวคิดการออกแบบระบบที่ลดอุปสรรคในการใช้ชีวิตประจำวัน \\ \hline
-        Privacy-aware health data handling & ใช้เป็นแนวทางในการจำกัดการเข้าถึงข้อมูลผู้พักอาศัยตามบทบาท และไม่ออกแบบระบบให้สั่งงานเปลี่ยนสถานะโดยไม่มีขั้นตอนยืนยัน \\ \hline
-    \end{tabular}
-\end{table}
+\subsection*{มาตรฐานทางวิศวกรรม}
+\begin{itemize}
+    \item BLE communication ใช้เป็นพื้นฐานของการเชื่อมต่ออุปกรณ์ระยะใกล้ระหว่าง sensor และ mobile gateway
+    \item MQTT ใช้เป็นแนวทางการส่ง telemetry แบบ lightweight ระหว่าง gateway และ server
+    \item Role-based access control และ audit trail ใช้จำกัดการเข้าถึงข้อมูลตามบทบาทผู้ใช้
+\end{itemize}
+
+\subsection*{ข้อพิจารณาด้านกฎหมายและจริยธรรม}
+\begin{itemize}
+    \item ข้อมูลสัญญาณชีพและข้อมูลพฤติกรรมการเคลื่อนไหวควรถูกจำกัดการเข้าถึงเฉพาะบทบาทที่เกี่ยวข้อง
+    \item ระบบต้นแบบนี้ไม่ใช่อุปกรณ์ทางการแพทย์ที่ผ่านการรับรอง และไม่ควรถูกใช้แทนการประเมินจากบุคลากรทางการแพทย์
+    \item การทดสอบกับผู้ใช้จริงในอนาคตควรมีกระบวนการขอความยินยอม การจัดการข้อมูลส่วนบุคคล และการกำหนดขอบเขตการใช้ข้อมูลอย่างชัดเจน
+\end{itemize}
 
 \section{ผู้มีส่วนได้ส่วนเสีย ผลกระทบ และความยั่งยืน}
 
-\begin{table}[H]
-    \centering
-    \caption{ผู้มีส่วนได้ส่วนเสียและผลกระทบของโครงงาน}
-    \label{tab:app_project_stakeholders}
-    \renewcommand{\arraystretch}{1.18}
-    \small
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|L{0.28\textwidth}|L{0.62\textwidth}|}
-        \hline
-        \textbf{กลุ่มหรือประเด็น} & \textbf{รายละเอียด} \\ \hline
-        ผู้ใช้เก้าอี้รถเข็นและผู้สูงอายุ & ได้รับประโยชน์จากการติดตามตำแหน่ง การเคลื่อนไหว และสถานะเบื้องต้นที่ผู้ดูแลสามารถตรวจสอบได้จากระบบกลาง \\ \hline
-        ผู้ดูแลและหัวหน้าพยาบาล & ได้ข้อมูลช่วยจัดลำดับความสำคัญของงาน ลดการตรวจซ้ำ และใช้ dashboard เป็นจุดรวมสถานะผู้พักอาศัยกับ alert \\ \hline
-        ผู้บริหารสถานดูแล & ใช้ข้อมูลรวมประกอบการวางแผนทรัพยากร บุคลากร และการติดตามเหตุการณ์ย้อนหลังในระดับระบบต้นแบบ \\ \hline
-        ผลกระทบทางสังคม & สนับสนุนการดูแลที่ปลอดภัยขึ้น ลดความเสี่ยงจากเหตุฉุกเฉินที่ไม่มีผู้พบเห็น และช่วยให้ข้อมูลถูกค้นย้อนกลับได้มากกว่าการบันทึกแบบแอนะล็อก \\ \hline
-        ข้อจำกัดด้านสิ่งแวดล้อม & อาจเกิด e-waste จากแบตเตอรี่และชิ้นส่วนอิเล็กทรอนิกส์ จึงควรออกแบบโมดูลให้ถอดเปลี่ยนได้และจัดการซากอิเล็กทรอนิกส์เข้าสู่กระบวนการรีไซเคิล \\ \hline
-        ความเชื่อมโยงกับ SDG & สอดคล้องกับ SDG 3 ด้านสุขภาพและความเป็นอยู่ที่ดี, SDG 9 ด้านอุตสาหกรรม นวัตกรรม และโครงสร้างพื้นฐาน, SDG 10 ด้านการลดความเหลื่อมล้ำ และ SDG 11 ด้านเมืองและถิ่นฐานมนุษย์อย่างยั่งยืน \\ \hline
-    \end{tabular}
-\end{table}
+\subsection*{ผู้มีส่วนได้ส่วนเสีย}
+\begin{itemize}
+    \item ผู้ใช้เก้าอี้รถเข็นและผู้สูงอายุ เป็นผู้ที่ได้รับผลจากการติดตามตำแหน่ง การเคลื่อนไหว และสถานะเบื้องต้น
+    \item ผู้ดูแลและหัวหน้าพยาบาล ใช้ dashboard, alert และข้อมูลบริบทเพื่อช่วยจัดลำดับงานดูแล
+    \item ผู้บริหารสถานดูแล ใช้ข้อมูลภาพรวมเพื่อประกอบการวางแผนทรัพยากรและติดตามเหตุการณ์ย้อนหลัง
+    \item ทีมพัฒนาและผู้ดูแลระบบ รับผิดชอบความถูกต้องของข้อมูล การบำรุงรักษาระบบ และการควบคุมสิทธิ์การเข้าถึง
+\end{itemize}
+
+\subsection*{ผลกระทบและความยั่งยืน}
+\begin{itemize}
+    \item ด้านสังคม: ช่วยให้ผู้ดูแลเห็นข้อมูลตำแหน่ง สถานะ และ alert จากจุดศูนย์กลาง ลดการค้นหาข้อมูลจากหลายแหล่ง
+    \item ด้านเศรษฐกิจ: ต้นแบบใช้ hardware และ open-source software ที่หาได้ทั่วไป จึงเหมาะกับการทดลองและพัฒนาต่อโดยควบคุมต้นทุน
+    \item ด้านสิ่งแวดล้อม: อุปกรณ์อิเล็กทรอนิกส์และแบตเตอรี่ควรถูกออกแบบให้ถอดเปลี่ยนและจัดการซากอุปกรณ์ได้อย่างเหมาะสม
+    \item ความเชื่อมโยงกับ SDGs: โครงงานเกี่ยวข้องกับสุขภาพและความเป็นอยู่ที่ดี นวัตกรรมโครงสร้างพื้นฐาน และการลดอุปสรรคในการดูแลผู้สูงอายุหรือผู้ใช้เก้าอี้รถเข็น
+\end{itemize}
 
 \section{การบริหารงานวิศวกรรมและโครงการ}
 
-\begin{table}[H]
-    \centering
-    \caption{การบริหารงานวิศวกรรมและความเสี่ยงของโครงงาน}
-    \label{tab:app_project_management}
-    \renewcommand{\arraystretch}{1.18}
-    \small
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{|L{0.28\textwidth}|L{0.62\textwidth}|}
-        \hline
-        \textbf{หัวข้อ} & \textbf{รายละเอียด} \\ \hline
-        การแบ่งหน้าที่ในทีม & วรพล แสงสระศรี รับผิดชอบ full-stack IoT, hardware sensor และการบูรณาการข้อมูลจากอุปกรณ์ ส่วนศุภวิชญ์ อัศวลายทอง รับผิดชอบ AI architecture, reasoning workflow และส่วน backend ที่เกี่ยวข้อง \\ \hline
-        การติดตามความคืบหน้า & ใช้แผนงานแบบ Gantt chart และการประชุมรายงานความคืบหน้ากับอาจารย์ที่ปรึกษาเป็นประจำ เพื่อปรับขอบเขตงานตามปัญหาที่พบระหว่างพัฒนา \\ \hline
-        การสนับสนุนอุปกรณ์ & ใช้อุปกรณ์หลัก ได้แก่ M5StickC Plus2, Polar Verity Sense, Raspberry Pi 5 และเก้าอี้รถเข็นสำหรับการติดตั้งทดสอบ โดยมีการสนับสนุนด้านเก้าอี้รถเข็นจาก Matsunaga ในช่วงการจัดเตรียมต้นแบบ \\ \hline
-        การบริหารทรัพยากร & บันทึกรายการอุปกรณ์และทรัพยากรที่ใช้ในโครงงานไว้เป็นหลักฐานประกอบ แต่ควรใช้ตัวเลขต้นทุนเชิงทางการเมื่อมีใบเสนอราคาหรือเอกสารยืนยันครบถ้วน \\ \hline
-        การบริหารความเสี่ยง & แยกการพัฒนาเป็นระบบย่อยเพื่อลดผลกระทบเมื่อ hardware delay, sensor instability, BLE/RSSI fluctuation หรือ AI latency สูงกว่าที่คาด และใช้ Propose-Confirm-Execute เพื่อลดความเสี่ยงจากคำสั่งอัตโนมัติที่ผิดพลาด \\ \hline
-    \end{tabular}
-\end{table}
+\subsection*{การแบ่งงานและการติดตาม}
+\begin{itemize}
+    \item แบ่งงานตาม subsystem ได้แก่ sensor/firmware, mobile gateway, backend/server, dashboard/HMI และ AI/MCP pipeline
+    \item ใช้การทดสอบรายส่วนและการทดสอบการเชื่อมต่อระบบเพื่อตรวจความพร้อมก่อนรวบรวมผลในบทที่ 4
+    \item ติดตามความคืบหน้าด้วยการประชุมกับอาจารย์ที่ปรึกษาและการปรับขอบเขตตามข้อจำกัดที่พบระหว่างพัฒนา
+\end{itemize}
+
+\subsection*{การบริหารทรัพยากรและความเสี่ยง}
+\begin{itemize}
+    \item ทรัพยากรหลักประกอบด้วย M5StickC Plus2, Polar Verity Sense, Raspberry Pi 5, โทรศัพท์สำหรับ gateway และเก้าอี้รถเข็นสำหรับติดตั้งทดสอบ
+    \item ความเสี่ยงด้าน hardware delay, BLE/RSSI fluctuation, sensor noise และ AI latency ถูกจัดการด้วยการแบ่งระบบเป็นชั้นและมี fallback ในระดับที่เหมาะสมกับต้นแบบ
+    \item ความเสี่ยงจากการสั่งงานของ AI ลดลงด้วยแนวทาง Propose--Confirm--Execute เพื่อให้ผู้ดูแลตรวจสอบก่อนดำเนินการ
+\end{itemize}

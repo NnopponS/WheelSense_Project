@@ -1,4 +1,6 @@
 {
-  "managed": {},
-  "updated_at": "2026-05-11T18:46:42.2464735+07:00"
+  "managed": {
+    "wheelsense-thesis-writing": "symlink"
+  },
+  "updated_at": "2026-05-26T02:23:19.1119786+07:00"
 }

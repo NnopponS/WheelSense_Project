@@ -25,7 +25,57 @@ Internet of Things (IoT) หมายถึงการเชื่อมต่�
 
 Bluetooth Low Energy (BLE) เป็นเทคโนโลยีสื่อสารระยะใกล้ที่เหมาะกับอุปกรณ์ใช้พลังงานต่ำ BLE รองรับทั้งการโฆษณาแพ็กเก็ตแบบ advertising และการเชื่อมต่อผ่าน Generic Attribute Profile (GATT) ทำให้อุปกรณ์สามารถส่งข้อมูลสั้น ๆ เช่น RSSI, battery, IMU หรือค่าจาก sensor ไปยัง gateway ได้ โดยค่า Received Signal Strength Indicator (RSSI) สามารถนำไปใช้เป็นข้อมูลประกอบการประเมินระยะหรือห้องที่อุปกรณ์อยู่ได้ แม้ค่า RSSI จะมีความผันผวนจากสิ่งกีดขวาง การสะท้อนของสัญญาณ และตำแหน่งของอุปกรณ์ \cite{BluetoothSIGLEPrimer}
 
+\begin{figure}[htbp]
+    \centering
+    \resizebox{0.92\textwidth}{!}{%
+    \begin{tikzpicture}[
+        font=\small,
+        box/.style={draw, thick, align=center, text width=2.8cm, minimum height=1.0cm},
+        arrow/.style={-{Latex[length=2mm]}, thick},
+        dasharrow/.style={-{Latex[length=2mm]}, thick, dashed}
+    ]
+        \node[box, fill=blue!8] (sensor) {BLE Sensor\\(Peripheral)};
+        \node[box, fill=gray!10, right=1.0cm of sensor] (adv) {Advertising\\Packet (RSSI)};
+        \node[box, fill=green!8, right=1.0cm of adv] (scan) {Scan / Observe\\(Central)};
+        \node[box, fill=orange!10, right=1.0cm of scan] (gatt) {GATT Connect\\อ่าน IMU, HR};
+        \node[box, fill=purple!8, right=1.0cm of gatt] (gw) {Mobile\\Gateway};
+        \draw[arrow] (sensor) -- (adv);
+        \draw[arrow] (adv) -- (scan);
+        \draw[dasharrow] (scan) -- node[above, font=\scriptsize]{เชื่อมต่อ} (gatt);
+        \draw[arrow] (gatt) -- (gw);
+    \end{tikzpicture}}
+    \caption{กระบวนการสื่อสาร BLE: advertising สำหรับ RSSI และ GATT สำหรับข้อมูล sensor}
+    \label{fig:ch2_ble_advertising_flow}
+\end{figure}
+
+
 MQTT เป็น protocol แบบ publish/subscribe ที่นิยมในระบบ IoT เพราะ payload มีขนาดเล็กและแยกผู้ส่งกับผู้รับออกจากกัน อุปกรณ์หรือ gateway สามารถ publish telemetry ไปยัง topic ที่กำหนด ขณะที่ server หรือ dashboard subscribe เฉพาะ topic ที่ต้องใช้ หลักการนี้เหมาะกับระบบที่มีข้อมูลหลายชนิด เช่น ตำแหน่ง สัญญาณชีพ และสถานะอุปกรณ์ เพราะทำให้เพิ่มแหล่งข้อมูลใหม่ได้โดยไม่ต้องผูกทุก service เข้าหากันโดยตรง \cite{MQTTSpec,Mishra2018_MQTT_survey}
+
+\begin{figure}[htbp]
+    \centering
+    \resizebox{0.92\textwidth}{!}{%
+    \begin{tikzpicture}[
+        font=\small,
+        box/.style={draw, thick, align=center, text width=2.6cm, minimum height=1.0cm},
+        broker/.style={draw, thick, align=center, text width=2.6cm, minimum height=1.3cm, fill=yellow!12},
+        arrow/.style={-{Latex[length=2mm]}, thick}
+    ]
+        \node[box, fill=blue!8] (wc) {Wheelchair\\Sensor};
+        \node[box, fill=blue!8, below=0.5cm of wc] (wear) {Wearable\\Sensor};
+        \node[box, fill=green!8, right=0.8cm of wc, yshift=-0.5cm] (gw) {Mobile\\Gateway};
+        \node[broker, right=0.9cm of gw] (brk) {MQTT\\Broker};
+        \node[box, fill=orange!10, right=0.9cm of brk, yshift=0.45cm] (api) {API\\Server};
+        \node[box, fill=purple!8, right=0.9cm of brk, yshift=-0.45cm] (dash) {Dashboard};
+        \draw[arrow] (wc) -- (gw);
+        \draw[arrow] (wear) -- (gw);
+        \draw[arrow] (gw) -- node[above, font=\scriptsize]{publish} (brk);
+        \draw[arrow] (brk) -- node[above, font=\scriptsize]{subscribe} (api);
+        \draw[arrow] (brk) -- node[below, font=\scriptsize]{subscribe} (dash);
+    \end{tikzpicture}}
+    \caption{รูปแบบ publish/subscribe ของ MQTT ในระบบดูแล: gateway ส่งข้อมูลผ่าน broker ไปยัง server และ dashboard}
+    \label{fig:ch2_mqtt_pubsub}
+\end{figure}
+
 
 เซ็นเซอร์ IMU และ wearable sensor เป็นแหล่งข้อมูลสำคัญในงานดูแลผู้ใช้รถเข็น IMU มักประกอบด้วย accelerometer และ gyroscope สำหรับวัดความเร่งและอัตราการหมุน ส่วน wearable sensor เช่นอุปกรณ์วัดแสงสะท้อนจากผิวหนังด้วยหลักการ Photoplethysmography (PPG) สามารถใช้ติดตาม heart rate, pulse-to-pulse interval หรือข้อมูลสัญญาณชีพที่สัมพันธ์กับภาวะร่างกายได้ \cite{PolarBLESDK,PolarVeritySenseWhitepaper} อย่างไรก็ตาม ข้อมูลเหล่านี้ควรถูกใช้เป็นข้อมูลประกอบการประเมินเบื้องต้น ไม่ใช่การวินิจฉัยทางการแพทย์
 
@@ -101,7 +151,70 @@ Raspberry Pi 5 RAM 8 GB เป็น single-board computer ที่มีพล
     \label{fig:ch2_hardware_devices}
 \end{figure}
 
+\begin{table}[htbp]
+    \centering
+    \caption{สเปคสำคัญของอุปกรณ์ฮาร์ดแวร์หลัก}
+    \label{tab:ch2_hardware_specs}
+    \small
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.22\textwidth}
+                    >{\raggedright\arraybackslash}p{0.20\textwidth}
+                    >{\raggedright\arraybackslash}p{0.24\textwidth}
+                    >{\raggedright\arraybackslash}p{0.24\textwidth}}
+        \toprule
+        คุณสมบัติ & M5StickC Plus2 & Polar Verity Sense & Raspberry Pi 5 \\ \midrule
+        MCU / CPU & ESP32-PICO-V3 & Nordic nRF5340 & BCM2712 Cortex-A76 \\ \midrule
+        Sensor & IMU 6 แกน (MPU-6886) & PPG (HR, RR interval) & -- \\ \midrule
+        การเชื่อมต่อ & BLE 4.2, WiFi & BLE, ANT+ & WiFi 5, GbE, BLE 5.0 \\ \midrule
+        แบตเตอรี่ & 200 mAh LiPo & 110 mAh (สวมใส่ 20+ ชม.) & ต้องใช้ไฟภายนอก 5V/5A \\ \midrule
+        RAM & 520 KB SRAM & -- & 8 GB LPDDR4X \\ \midrule
+        บทบาทในระบบ & Wheelchair sensor & Wearable sensor & Edge / local server \\ \bottomrule
+    \end{tabular}
+\end{table}
+
 นอกจากอุปกรณ์หลักข้างต้น ระบบดูแลยังอาจมีอุปกรณ์รอง เช่น BLE beacon หรือ node อ้างอิงสัญญาณ โทรศัพท์มือถือที่ทำหน้าที่ gateway เครื่องชาร์จ แหล่งจ่ายไฟสำรอง และอุปกรณ์เครือข่ายภายในอาคาร อุปกรณ์เหล่านี้มีผลต่อความเสถียรของระบบ แต่ในเชิงทฤษฎีสามารถจัดเป็นส่วนสนับสนุนของ sensor layer, network layer และ edge layer ตามบทบาทที่กล่าวไว้ก่อนหน้า
+
+\FloatBarrier
+
+\section{เครื่องมือซอฟต์แวร์และไลบรารีที่ใช้พัฒนา}
+\label{sec:ch2_software_tools}
+
+นอกจากฮาร์ดแวร์แล้ว ระบบต้นแบบยังอาศัยเครื่องมือซอฟต์แวร์หลายชนิดที่ทำงานร่วมกัน ตารางที่~\ref{tab:ch2_software_tools} สรุปเครื่องมือหลักที่เกี่ยวข้องกับการพัฒนาระบบ โดยแต่ละเครื่องมือถูกเลือกจากเหตุผลเชิงเทคนิคและข้อจำกัดของ prototype
+
+\begin{table}[htbp]
+    \centering
+    \caption{เครื่องมือซอฟต์แวร์และไลบรารีหลักที่ใช้ในระบบต้นแบบ}
+    \label{tab:ch2_software_tools}
+    \small
+    \begin{tabular}{>{\raggedright\arraybackslash}p{0.18\textwidth}
+                    >{\raggedright\arraybackslash}p{0.14\textwidth}
+                    >{\raggedright\arraybackslash}p{0.30\textwidth}
+                    >{\raggedright\arraybackslash}p{0.28\textwidth}}
+        \toprule
+        เครื่องมือ & ประเภท & หน้าที่ & เหตุผลที่เลือกใช้ \\ \midrule
+        Flutter & Mobile SDK & พัฒนา mobile gateway app สำหรับ Android & รองรับ BLE plugin, cross-platform, UI สำหรับ caregiver \\ \midrule
+        Next.js & Web framework & พัฒนา dashboard สำหรับ admin และ caregiver & Server-side rendering, real-time update \\ \midrule
+        FastAPI & Backend API & RESTful API, WebSocket, business logic & Async, type-safe, รองรับ Python AI ecosystem \\ \midrule
+        PostgreSQL & Database & จัดเก็บ telemetry, user, alert ด้วย JSONB & รองรับ JSON payload ยืดหยุ่น \\ \midrule
+        Docker & Containerization & Deploy service ทั้งหมดบน Raspberry Pi 5 & แยก environment, ทำซ้ำได้ \\ \midrule
+        Ollama + Gemma 3 4B & AI runtime & Local LLM สำหรับ AI assistant & ทำงานบน edge ได้, ไม่ต้องพึ่ง cloud \\ \midrule
+        FastMCP & MCP server & กำหนด tool contract สำหรับ AI เรียกใช้ & สอดคล้องกับ MCP specification \\ \midrule
+        PlatformIO & Embedded IDE & พัฒนา firmware สำหรับ M5StickC Plus2 & รองรับ ESP32, จัดการ library อัตโนมัติ \\ \bottomrule
+    \end{tabular}
+\end{table}
+
+Flutter เป็น SDK สำหรับพัฒนาแอปพลิเคชันมือถือแบบ cross-platform ที่ใช้ภาษา Dart สามารถเชื่อมต่อ BLE ผ่าน plugin และสร้าง UI สำหรับแสดงสถานะ sensor ได้ ในระบบนี้ Flutter ถูกใช้พัฒนา mobile gateway ที่รับข้อมูลจาก sensor ติดรถเข็นและ wearable sensor ผ่าน BLE แล้วส่งต่อไปยัง server ผ่าน MQTT หรือ REST API \cite{FlutterDocs}
+
+Next.js เป็น React-based web framework ที่รองรับ server-side rendering และ API routes ใช้พัฒนา dashboard สำหรับ admin และ caregiver ให้สามารถดูข้อมูลผู้พักอาศัย สถานะ sensor ตำแหน่งภายในอาคาร และประวัติการแจ้งเตือน \cite{NextJS2024}
+
+FastAPI เป็น Python web framework แบบ asynchronous ที่รองรับ type hint และ auto-documentation ทำหน้าที่เป็น backend หลักของระบบ รับ telemetry จาก gateway, ประมวลผล business logic, จัดเก็บข้อมูลใน PostgreSQL และให้บริการ WebSocket สำหรับ real-time update \cite{FastAPI2024}
+
+PostgreSQL เป็นระบบฐานข้อมูลเชิงสัมพันธ์แบบ open source ที่รองรับ JSONB ทำให้สามารถจัดเก็บ telemetry payload ที่มีโครงสร้างยืดหยุ่นได้โดยไม่ต้องเปลี่ยน schema ทุกครั้งที่เพิ่มข้อมูลใหม่ \cite{PostgreSQL2024}
+
+Docker เป็นเครื่องมือ containerization ที่ช่วยให้ deploy service ทุกส่วนบน Raspberry Pi 5 ด้วย docker-compose ทำให้แต่ละ service แยก environment และทำซ้ำได้ \cite{DockerCompose2024}
+
+Ollama เป็น runtime สำหรับเรียกใช้ Large Language Model บน local machine ในระบบนี้ใช้ร่วมกับ Gemma 3 4B เพื่อให้ AI assistant ทำงานบน edge server ได้โดยไม่ต้องส่งข้อมูลไปยัง cloud ภายนอก \cite{Ollama2024}
+
+FastMCP เป็น Python library สำหรับสร้าง MCP server ตาม Model Context Protocol specification ทำให้ AI client สามารถเรียกใช้เครื่องมือภายในระบบผ่าน tool contract ที่มีการกำหนด input/output schema ชัดเจน \cite{ModelContextProtocol}
 
 \FloatBarrier
 

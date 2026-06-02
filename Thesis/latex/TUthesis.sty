@@ -330,7 +330,27 @@
 \renewcommand*\l@chapter{\@dottedtocline{1}{1.2em}{2.4em}}
 \renewcommand*\l@section{\@dottedtocline{2}{3.4em}{1.8em}}
 \renewcommand*\l@subsection{\@dottedtocline{3}{5.0em}{2.4em}}
-\renewcommand*\l@figure{\@dottedtocline{1}{1.2em}{2.4em}}
+\newcommand*\l@frontmatter{\@dottedtocline{1}{0pt}{0pt}}
+\providecommand*\toclevel@frontmatter{1}
+\newcommand*\WS@raggedtocline[5]{%
+    \ifnum #1>\c@tocdepth \else
+        \vskip \z@ \@plus.2\p@
+        {%
+            \leftskip #2\relax
+            \rightskip \@tocrmarg plus 2em\relax
+            \parfillskip -\@tocrmarg
+            \parindent #2\relax
+            \@afterindenttrue
+            \interlinepenalty\@M
+            \leavevmode
+            \@tempdima #3\relax
+            \advance\leftskip \@tempdima \null\nobreak\hskip -\leftskip
+            {#4}\nobreak\hfill\nobreak
+            \hb@xt@\@pnumwidth{\hfil\normalfont\normalcolor #5}%
+            \par
+        }%
+    \fi}
+\renewcommand*\l@figure[2]{\WS@raggedtocline{1}{1.2em}{2.4em}{#1}{#2}}
 \renewcommand*\l@table{\@dottedtocline{1}{1.2em}{2.4em}}
 
 \renewcommand*\l@subsubsection{\@dottedtocline{4}{6.8em}{3em}}

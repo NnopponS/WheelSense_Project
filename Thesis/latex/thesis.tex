@@ -34,6 +34,10 @@
 %% Put everything else in "mystyle" package
 \usepackage{mystyle}
 
+% Keep the page-break behavior of \include without creating per-file .aux files.
+% This avoids intermittent Windows/MiKTeX locks on generated include aux files.
+\newcommand{\WSInclude}[1]{\clearpage\input{#1}\clearpage}
+
 %%=================================================
 %% END Packages
 %%=================================================
@@ -85,14 +89,14 @@
 %% ไม่ใช้หัว "สารบัญ - ต่อ" ระหว่างหน้าสารบัญ (เดิม: \addtocontents{toc}{\contheading})
 \setlength{\parskip}{0pt plus1pt minus1pt}
 
-\include{front/1_with_logo_th}
-\include{front/2_without_logo_th}
-\include{front/3_without_logo_en}
-\include{front/4_signature}
-\include{front/5_abstract_th}
-\include{front/6_abstract_en}
-\include{front/7_ack_th}
-\include{front/8_toc_lof_lot_lol}
+\WSInclude{front/1_with_logo_th}
+\WSInclude{front/2_without_logo_th}
+\WSInclude{front/3_without_logo_en}
+\WSInclude{front/4_signature}
+\WSInclude{front/5_abstract_th}
+\WSInclude{front/6_abstract_en}
+\WSInclude{front/7_ack_th}
+\WSInclude{front/8_toc_lof_lot_lol}
 %%=================================================
 %% Chapters
 %%=================================================
@@ -109,30 +113,30 @@
 
 %% บทนำ
 %% Introduction
-\include{content/chapters/chapter1}
+\WSInclude{content/chapters/chapter1}
 
 %% วรรณกรรมและงานวิจัยที่เกี่ยวข้อง
 %% Literature Review
-\include{content/chapters/chapter2}
+\WSInclude{content/chapters/chapter2}
 
 %% วิธีการศึกษา
 %% Methodology
-\include{content/chapters/chapter3}
+\WSInclude{content/chapters/chapter3}
 
 %% ผลการวิจัย
 %% Results
-\include{content/chapters/chapter4}
+\WSInclude{content/chapters/chapter4}
 
 %% สรุปผลการวิจัย และข้อเสนอแนะ
 %% Conclusions and recommendations
-\include{content/chapters/chapter5}
+\WSInclude{content/chapters/chapter5}
 
 %% LaTeX writing examples (lists, figures, cites): compile separately via latex-writing-guide.tex
 
 %%=================================================
 %% References
 %%=================================================
-\include{content/backmatter/1_reference}
+\WSInclude{content/backmatter/1_reference}
 
 %%=================================================
 %% Appendices
@@ -142,16 +146,16 @@
 \IfAddAppendix{
 	\appendix
 	\appendixpage
-	\include{content/appendices/appendixA}
-	\include{content/appendices/appendixB}
-	\include{content/appendices/appendixC}
-	\include{content/appendices/appendixD}
-	\include{content/appendices/appendixE}
-	\include{content/appendices/appendixF}
-	\include{content/appendices/appendixG}
-	\include{content/appendices/appendixH}
-	\include{content/appendices/appendixI}
-	\include{content/appendices/appendixJ}
+	\WSInclude{content/appendices/appendixA}
+	\WSInclude{content/appendices/appendixB}
+	\WSInclude{content/appendices/appendixC}
+	\WSInclude{content/appendices/appendixD}
+	\WSInclude{content/appendices/appendixE}
+	\WSInclude{content/appendices/appendixF}
+	\WSInclude{content/appendices/appendixG}
+	\WSInclude{content/appendices/appendixH}
+	\WSInclude{content/appendices/appendixI}
+	\WSInclude{content/appendices/appendixJ}
 }
 
 \end{document}

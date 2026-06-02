@@ -1,4 +1,4 @@
-﻿%%================================================
+%%================================================
 %% Chapter 3 - System Design and Development
 %%================================================
 \chapter{วิธีการออกแบบและพัฒนาระบบ}
@@ -380,6 +380,7 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 
 การเขียนข้อมูลตำแหน่งกลับเข้าสู่ระบบทำเป็นข้อมูลที่ตรวจสอบย้อนกลับได้ โดยเก็บทั้ง raw RSSI reading และผล room prediction แยกกัน เพื่อให้สามารถวิเคราะห์ภายหลังได้ว่าความคลาดเคลื่อนเกิดจากสัญญาณต้นทาง การตั้งค่า fingerprint หรือการเลือกกลยุทธ์ของ localization ในช่วงเวลานั้น การแยก raw data กับ prediction ยังช่วยให้ Chapter 4 สามารถประเมินความแม่นยำของ KNN และ fallback ได้อย่างเป็นระบบ
 
+\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
 \section{Server, API และ Database}
 \label{sec:ch3_server}
 ส่วน server ของ WheelSense ประกอบด้วย MQTT broker, FastAPI backend, PostgreSQL 16 และบริการที่เกี่ยวข้องกับ dashboard/AI โดยออกแบบให้รองรับข้อมูลทั้งแบบ structured และ semi-structured ข้อมูล structured เช่น users, patients, devices, workspaces, rooms และ assignments ใช้สำหรับกำหนดความสัมพันธ์หลักของระบบ ส่วนข้อมูล semi-structured เช่น telemetry payload, AI trace, device configuration และ event metadata เก็บใน JSONB เพื่อรองรับ payload จากอุปกรณ์ที่อาจเปลี่ยนรายละเอียดระหว่างการทดลอง
@@ -452,6 +453,15 @@ schema หลักของระบบสามารถแบ่งได้�
     \end{tabular}
 \end{table}
 
+\refstepcounter{subsection}
+\subsection*{\thesubsection\quad ระบบควบคุมการเข้าถึงและความปลอดภัยของเซสชัน}
+\label{sec:ch3_session_security}
+การรักษาความปลอดภัยของข้อมูลในส่วนบริการส่วนกลางใช้สถาปัตยกรรมสิทธิ์การเข้าถึงแบบกำหนดสิทธิ์ตามบทบาทและบริบทของ workspace (Workspace-Context Access Control) โดยผู้ใช้งานที่ผ่านการยืนยันตัวตนจะได้รับ JSON Web Token (JWT) สำหรับระบุ \texttt{user\_id}, \texttt{workspace\_id}, role และ session id ของการล็อกอิน ข้อมูล token ฝั่งเว็บถูกส่งผ่าน HTTP-only cookie ชื่อ \texttt{ws\_token} เพื่อลดความเสี่ยงจากการอ่าน token ด้วยสคริปต์ฝั่งไคลเอนต์ และให้ backend สามารถตรวจสอบสิทธิ์ทุกครั้งก่อนอ่านหรือแก้ไขข้อมูลผู้พักอาศัย อุปกรณ์ ห้อง task และ telemetry
+
+นอกจากการตรวจ JWT ตามปกติ ระบบยังเก็บสถานะเซสชันไว้ในตาราง \texttt{auth\_sessions} เพื่อให้สามารถถอดถอนสิทธิ์ย้อนหลังได้ หากผู้ดูแลระบบต้องการยุติ session ที่ยังใช้งานอยู่ backend จะทำเครื่องหมาย session นั้นเป็น revoked หรือ expired แล้วปฏิเสธคำขอถัดไปที่อ้างอิง session เดิม วิธีนี้ทำให้การออกจากระบบ การเปลี่ยนรหัสผ่าน หรือการพบพฤติกรรมผิดปกติไม่ต้องรอให้ JWT หมดอายุเอง
+
+ส่วน MCP ใช้ token แยกจาก session หลักและเก็บ metadata ไว้ในตาราง \texttt{mcp\_tokens} โดย token แต่ละรายการผูกกับ \texttt{auth\_session\_id}, workspace, role และขอบเขตสิทธิ์ที่อนุญาตให้ใช้กับเครื่องมือ MCP ได้ การถอดถอน token รายตัวทำผ่าน endpoint \texttt{DELETE /api/mcp/token/\{token\_id\}} และการถอดถอน token ทั้งหมดของผู้ใช้ทำผ่าน \texttt{POST /api/mcp/tokens/revoke-all} เมื่อ token ถูก revoke แล้ว execution gate จะไม่อนุญาตให้เรียก tool แม้ payload ของ LLM จะมีรูปแบบถูกต้องก็ตาม กลไกนี้จึงเป็นชั้นป้องกันร่วมระหว่าง authentication, role scope, workspace scope และ MCP tool policy
+
 \section{Dashboard และ HMI ตามบทบาทผู้ใช้}
 \label{sec:ch3_hmi}
 Dashboard ของ WheelSense พัฒนาด้วย Next.js เพื่อเป็นหน้าจอหลักสำหรับผู้ดูแลและผู้ใช้งานตามบทบาท การออกแบบ HMI ไม่ได้ให้ผู้ใช้ทุกกลุ่มเห็นข้อมูลเท่ากัน แต่กำหนด permission และมุมมองตามหน้าที่จริงในระบบ เพื่อให้ผู้ใช้แต่ละกลุ่มเห็นเฉพาะข้อมูลที่จำเป็นต่อการตัดสินใจหรือติดตามสถานะ ขณะที่ mobile app ทำหน้าที่เป็น gateway ภาคสนามสำหรับ pairing sensor และส่งข้อมูล ไม่ใช่ dashboard หลักของทุกบทบาท
@@ -523,72 +533,15 @@ Dashboard ของ WheelSense พัฒนาด้วย Next.js เพื่�
 \end{figure}
 \FloatBarrier
 
-การใช้งานที่ซ้ำกันหลายบทบาท เช่น task operations, patient profile, staff profile, messages และ support ถูกอธิบายจากสิทธิ์ของ Admin ก่อน เนื่องจาก Admin เห็นภาพรวมมากที่สุดและใช้ตรวจความครบถ้วนของข้อมูลระบบได้ หน้าจอ task operations ใช้ติดตามงานหรือเหตุการณ์ที่ต้องมอบหมายให้ผู้ดูแล ส่วน patient/staff profile ใช้ดูรายละเอียดรายบุคคลและสถานะที่เกี่ยวข้อง เช่น ข้อมูลผู้พักอาศัย อุปกรณ์ที่ผูกไว้ การแจ้งเตือน และข้อมูลบุคลากรใน workspace เมื่อบทบาทอื่นใช้งานหน้าจอกลุ่มเดียวกัน ระบบจะลดข้อมูลหรือ action ตาม permission ไม่ใช่แยก logic ใหม่ทั้งหมด
+การใช้งานที่ซ้ำกันหลายบทบาท เช่น task operations, patient profile, staff profile, messages และ support ถูกควบคุมด้วย permission เดียวกันในระดับ backend แต่แสดงข้อมูลและ action ต่างกันตามบทบาท Admin เห็นภาพรวมมากที่สุดและใช้ตรวจความครบถ้วนของ workspace ได้ จึงสามารถจัดการผู้ใช้ อุปกรณ์ ห้อง floorplan task profile การตั้งค่าระบบ และช่องทาง EaseAI ได้ครบ ส่วนบทบาทอื่นจะใช้ชุดหน้าจอบางส่วนร่วมกัน แต่ถูกลดข้อมูลหรือปิด action ที่ไม่เกี่ยวข้องกับหน้าที่ของตนเอง
 
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-admin-contact.png}
-    \caption{ภาพหน้าจอระบบในมุมมอง Admin ครอบคลุม overview, task, profile, device, facility, alert, message, support, setting และ EaseAI}
-    \label{fig:ch3_hmi_admin_contact}
-\end{figure}
-\FloatBarrier
+บทบาท Head Nurse ใช้ dashboard เพื่อดูแลผู้พักอาศัยหลายคนในเวลาเดียวกัน หน้าจอหลักจึงเน้น alert, patient profile, task operations, device status และ floorplan เพื่อให้สามารถแยกได้ว่าเหตุการณ์มาจากสภาพของผู้พักอาศัย ตำแหน่งในอาคาร หรืออุปกรณ์ที่ขาดการเชื่อมต่อ เมื่อผู้ใช้ยืนยัน alert หรือมอบหมายงาน ระบบจะบันทึก action พร้อมผู้กระทำและเวลาเพื่อให้ตรวจสอบย้อนหลังได้ในเวรถัดไป
 
-ในมุมมอง Head Nurse ระบบเน้นข้อมูลที่ต้องใช้ดูแลผู้พักอาศัยโดยตรง เช่น alert, patient profile, task operations, device status และ floorplan เพราะเหตุการณ์หนึ่งอาจมาจากอาการหรือพฤติกรรมของผู้พักอาศัย หรืออาจมาจากอุปกรณ์ขาดการเชื่อมต่อ ภาพที่~\ref{fig:ch3_hmi_head_nurse_contact} จึงแสดง workflow หลักที่ Head Nurse ใช้ตรวจสถานะก่อนตัดสินใจส่งงานหรือแจ้งผู้ดูแลคนอื่น
+บทบาท Supervisor ใช้ตรวจภาพรวมเชิงปฏิบัติการ เช่น งานที่ค้าง เหตุการณ์ฉุกเฉิน บุคลากรที่เกี่ยวข้อง และรายการที่ต้องส่งต่อระหว่างทีม จึงเห็นข้อมูลมากกว่า Observer แต่ยังไม่ควรแก้ไขค่าคอนฟิกหลักของระบบหรือสิทธิ์ผู้ใช้ระดับ workspace ขณะที่ Observer ถูกออกแบบเป็นมุมมองอ่านอย่างเดียวสำหรับเฝ้าดูสถานะและจัดทำรายงาน จึงมีสิทธิ์เข้าถึงข้อมูลสถานะและเหตุการณ์แต่ไม่สามารถสร้างคำสั่งที่เปลี่ยนสถานะสำคัญของระบบได้
 
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-head-nurse-contact.png}
-    \caption{ภาพหน้าจอระบบในมุมมอง Head Nurse สำหรับติดตามผู้พักอาศัย alert, task, device, floorplan และช่องทางสื่อสาร}
-    \label{fig:ch3_hmi_head_nurse_contact}
-\end{figure}
-\FloatBarrier
+บทบาท Patient ถูกจำกัดให้เห็นเฉพาะข้อมูลของตนเอง เช่น care plan, schedule, medication, room control, service request และช่องทางติดต่อผู้ดูแล ไม่แสดงรายชื่อผู้พักอาศัยคนอื่นหรือข้อมูลบุคลากรที่ไม่เกี่ยวข้อง การออกแบบนี้ช่วยลดความซับซ้อนของหน้าจอสำหรับผู้ใช้รายบุคคลและลดความเสี่ยงจากการเปิดเผยข้อมูลข้ามบุคคล
 
-บทบาท Supervisor และ Observer มีหน้าจอหลายส่วนร่วมกับผู้ดูแล แต่ขอบเขตต่างกัน Supervisor ใช้ dashboard เพื่อมองภาพรวมงาน เหตุการณ์ฉุกเฉิน และข้อมูลที่ต้องส่งต่อในระดับปฏิบัติการ ส่วน Observer ใช้สำหรับเฝ้าดูสถานะหรือบันทึกเหตุการณ์โดยลด action ที่มีผลต่อข้อมูลหลักของระบบ ภาพที่~\ref{fig:ch3_hmi_supervisor_observer_contact} แสดงหน้าจอที่ใช้ในสองบทบาทนี้ โดยคงโครงสร้าง navigation ใกล้กันเพื่อให้ผู้ใช้เปลี่ยนบทบาทหรือฝึกใช้งานได้ง่ายขึ้น
-
-\begin{figure}[!htbp]
-    \centering
-    \begin{subfigure}[b]{0.49\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter3/dashboard-hmi/role-supervisor-contact.png}
-        \caption{มุมมอง Supervisor}
-    \end{subfigure}
-    \begin{subfigure}[b]{0.49\textwidth}
-        \centering
-        \includegraphics[width=\linewidth]{chapter3/dashboard-hmi/role-observer-contact.png}
-        \caption{มุมมอง Observer}
-    \end{subfigure}
-    \caption{ภาพหน้าจอระบบในมุมมอง Supervisor และ Observer สำหรับการติดตามงานและสถานะตามสิทธิ์}
-    \label{fig:ch3_hmi_supervisor_observer_contact}
-\end{figure}
-\FloatBarrier
-
-หน้าจอ Patient ถูกออกแบบให้เห็นเฉพาะข้อมูลของผู้ใช้รายนั้น เช่น care plan, schedule, medication, room control, service request และช่องทางติดต่อผู้ดูแล ไม่แสดงรายการผู้พักอาศัยคนอื่นหรือข้อมูลบุคลากรที่ไม่เกี่ยวข้อง ภาพที่~\ref{fig:ch3_hmi_patient_dashboard} เป็นภาพหน้าจอของ Patient dashboard ที่ใช้ในการตรวจสอบรอบปัจจุบัน ส่วนภาพที่~\ref{fig:ch3_hmi_patient_contact} แสดงหน้าจออื่นใน portal ของผู้ป่วย เช่น schedule, pharmacy, room controls, services, messages, support และ settings
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{chapter3/dashboard-hmi/patient-dashboard-overview.png}
-    \caption{ภาพหน้าจอ Patient dashboard สำหรับผู้ใช้รายบุคคล แสดงข้อมูล care plan สถานะรถเข็น และช่องทางขอความช่วยเหลือ}
-    \label{fig:ch3_hmi_patient_dashboard}
-\end{figure}
-\FloatBarrier
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-patient-contact.png}
-    \caption{ภาพหน้าจอระบบในมุมมอง Patient ครอบคลุม personal dashboard, schedule, pharmacy, room controls, services, messages, support และ settings}
-    \label{fig:ch3_hmi_patient_contact}
-\end{figure}
-\FloatBarrier
-
-EaseAI เป็น assistant ที่เปิดจาก dashboard เพื่อช่วยผู้ดูแลค้นข้อมูล สรุปบริบท หรือเตรียม action candidate จากข้อมูลที่ระบบอนุญาตให้เข้าถึง การใช้งานเริ่มจากผู้ใช้เปิดแผง EaseAI เลือกคำถามตัวอย่างหรือพิมพ์คำถามเอง จากนั้นระบบส่งข้อความพร้อม role, workspace และบริบทที่จำเป็นเข้าสู่ AI pipeline ในหัวข้อ~\ref{sec:ch3_ai} หากคำตอบเป็นเพียงการสรุปข้อมูล ระบบจะแสดงผลกลับในหน้าต่างสนทนา แต่ถ้าเกี่ยวข้องกับการสั่งงานจริงจะต้องผ่าน execution gate และเงื่อนไขการยืนยันก่อนเสมอ ภาพที่~\ref{fig:ch3_hmi_easeai} แสดงตัวอย่างหน้าจอ EaseAI บนมุมมอง Admin
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{chapter3/dashboard-hmi/admin-easeai-chat.png}
-    \caption{ภาพหน้าจอ EaseAI ใน dashboard สำหรับถามข้อมูลหรือเตรียม action ภายใต้ role permission และ MCP execution gate}
-    \label{fig:ch3_hmi_easeai}
-\end{figure}
-\FloatBarrier
+EaseAI เป็น assistant ที่เปิดจาก dashboard เพื่อช่วยค้นข้อมูล สรุปบริบท หรือเตรียม action candidate ตามสิทธิ์ของบทบาทผู้ใช้ ระบบจะส่ง role, workspace และบริบทที่จำเป็นเข้าสู่ AI pipeline ในหัวข้อ~\ref{sec:ch3_ai} หากคำตอบเป็นการสรุปข้อมูลจะตอบกลับในหน้าต่างสนทนา แต่ถ้าเกี่ยวข้องกับการสั่งงานจริงจะต้องผ่าน execution gate และเงื่อนไขการยืนยันก่อนเสมอ ภาพหน้าจอจริงของแต่ละบทบาทและตัวอย่าง EaseAI ถูกนำไปแสดงในบทที่~\ref{chapter4} เพื่อใช้ประกอบผลการประเมิน HMI และ SUS Score แทนการวางซ้ำในบทสถาปัตยกรรม
 
 \section{ระบบ AI และ MCP Tool Pipeline}
 \label{sec:ch3_ai}
@@ -622,7 +575,14 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\textbf{Layer 1 Intent Router} ทำหน้าที่รับคำสั่งจากผู้ใช้แล้วจัดกลุ่มเจตนาเบื้องต้นก่อนให้ LLM ทำงาน ระบบเริ่มจาก deterministic matching เช่น keyword, route, role และ schema ที่คาดหวัง หาก confidence เพียงพอจะส่ง query พร้อม intent ไปยัง Layer 2 ได้ทันที หากยังไม่ชัดเจนจึงใช้ semantic matching เพื่อวัดความใกล้เคียงเชิงความหมาย และหากยังขาดข้อมูลสำคัญ เช่น ไม่ระบุผู้พักอาศัย ห้อง หรือ action ที่ต้องการ ระบบจะหยุด pipeline แล้วถามกลับแทนการเดาคำสั่ง
+\textbf{Layer 1 Intent Router} ทำหน้าที่รับคำสั่งจากผู้ใช้แล้วจัดกลุ่มเจตนาเบื้องต้นก่อนให้ LLM ทำงาน ระบบเริ่มจาก deterministic matching เช่น keyword, route, role และ schema ที่คาดหวัง หาก confidence เพียงพอจะส่ง query พร้อม intent ไปยัง Layer 2 ได้ทันที หากยังไม่ชัดเจนจึงใช้ semantic matching ร่วมกับ Sentence-BERT เพื่อคำนวณเวกเตอร์ฝังตัว (embedding vector) ของคำถามเปรียบเทียบกับกลุ่มคำถามอ้างอิง โดยคำนวณความใกล้เคียงด้วยสมการความคล้ายคลึงโคไซน์ (Cosine Similarity) ดังสมการที่~(\ref{eq:ch3_cosine_similarity})
+
+\begin{equation}
+\text{cos}(u, v) = \frac{u \cdot v}{\|u\| \|v\|}
+\label{eq:ch3_cosine_similarity}
+\end{equation}
+
+เมื่อ $u$ และ $v$ คือเวกเตอร์ฝังตัวของคำถามผู้ใช้และคำถามต้นแบบตามลำดับ หากความคล้ายคลึงมีค่าเกินเกณฑ์ที่กำหนดจะส่งข้อมูลไปยัง Layer 2 และหากยังขาดข้อมูลสำคัญ เช่น ไม่ระบุผู้พักอาศัย ห้อง หรือ action ที่ต้องการ ระบบจะหยุด pipeline แล้วถามกลับแทนการเดาคำสั่ง
 
 \begin{figure}[!htbp]
     \centering
@@ -648,7 +608,7 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\textbf{Layer 2 Context Assembler} รับ intent จาก Layer 1 แล้วเลือกบริบทที่เกี่ยวข้องกับคำสั่ง เช่น ข้อมูลผู้พักอาศัย สถานะ sensor ล่าสุด ประวัติ telemetry สรุปเชิงพฤติกรรม หรือเอกสารใน RAG ขั้นตอนนี้ไม่ได้ดึงข้อมูลทั้งหมดเข้า prompt แต่เริ่มจากการวางแผนว่าคำสั่งต้องใช้หัวข้อใด จากนั้น fetch และ rank เฉพาะ chunk ที่อนุญาตตาม role และ policy ก่อนแพ็กบริบทให้สั้น ไม่ซ้ำ และตรวจย้อนกลับได้
+\textbf{Layer 2 Context Assembler} รับ intent จาก Layer 1 แล้วเลือกบริบทที่เกี่ยวข้องกับคำสั่ง เช่น ข้อมูลผู้พักอาศัย สถานะ sensor ล่าสุด ประวัติ telemetry สรุปเชิงพฤติกรรม หรือเอกสารใน RAG ขั้นตอนนี้ไม่ได้ดึงข้อมูลทั้งหมดเข้า prompt แต่เริ่มจากการวางแผนว่าคำสั่งต้องใช้หัวข้อใด จากนั้น fetch และ rank เฉพาะ chunk ที่อนุญาตตาม role และ policy ก่อนแพ็กข้อมูลในรูปแบบแพลตฟอร์มที่สะอาดและมีขนาดควบคุมได้ ข้อมูลที่ประกอบขึ้นจะอยู่ภายใต้ data contract ชื่อ \texttt{ValidatedContextPackage} ซึ่งประกอบด้วย \texttt{correlation\_id}, \texttt{actor}, \texttt{intent}, \texttt{required\_facts}, \texttt{system\_state\_snapshot} และ \texttt{policy\_tags} เพื่อให้แต่ละคำตอบตรวจย้อนกลับได้ว่าใครเป็นผู้ถาม อยู่ใน workspace ใด ตั้งใจเรียกงานประเภทใด และใช้บริบทระบบชุดใดก่อนส่งเข้า Layer 4
 
 \begin{figure}[!htbp]
     \centering
@@ -674,7 +634,7 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-บริบทที่ถูกส่งต่อจะประกอบด้วยข้อมูลที่จำเป็นต่อคำตอบหรือการสั่งงานเท่านั้น เช่น patient id, device id, ค่า telemetry ล่าสุด, สิทธิ์ของผู้ใช้ และข้อความอ้างอิงที่ถูกดึงจาก retrieval logic วิธีนี้ทำให้ Layer 4 ไม่ต้องรับ prompt ขนาดใหญ่ทุกครั้ง และลดโอกาสที่ LLM จะเห็นข้อมูลที่ไม่เกี่ยวข้องจนสรุปผิด
+บริบทที่ถูกส่งต่อจะประกอบด้วยข้อมูลที่จำเป็นต่อคำตอบหรือการสั่งงานเท่านั้น เช่น actor facts ของผู้ใช้, patient id ที่ระบุในคำถาม, required facts ที่ยังขาด, ค่า telemetry ล่าสุดที่ถูกสรุปเป็น \texttt{system\_state\_snapshot}, สิทธิ์ของผู้ใช้ และข้อความอ้างอิงที่ถูกดึงจาก retrieval logic วิธีนี้ทำให้ Layer 4 ไม่ต้องรับ prompt ขนาดใหญ่ทุกครั้ง และลดโอกาสที่ LLM จะเห็นข้อมูลที่ไม่เกี่ยวข้องจนสรุปผิด
 
 \begin{figure}[!htbp]
     \centering
@@ -698,7 +658,7 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\textbf{Layer 4 Constrained LLM} เป็นชั้นที่ใช้ LLM สังเคราะห์คำตอบภายใต้ prompt และ schema ที่จำกัดไว้ ระบบใช้ schema-bound prompting เพื่อระบุรูปแบบผลลัพธ์ที่ต้องการ เช่น ต้องตอบเป็นข้อความสรุป ต้องคืนค่า action candidate หรือไม่ควรเรียก tool ใดในสถานการณ์นั้น หากคำสั่งเกี่ยวข้องกับ MCP ระบบจะให้ LLM สร้าง execution candidate ที่มี argument ตาม schema เท่านั้น ยังไม่ให้ดำเนินการกับระบบจริงในชั้นนี้
+\textbf{Layer 4 Constrained LLM} เป็นชั้นที่ใช้ LLM (เช่น gemma4:e2b หรือโมเดลในระดับเดียวกัน) สังเคราะห์คำตอบภายใต้ prompt และ schema ที่จำกัดไว้ ระบบใช้ schema-bound prompting เพื่อระบุรูปแบบผลลัพธ์ที่ต้องการ เช่น ต้องตอบเป็นข้อความสรุป ต้องคืนค่า action candidate หรือไม่ควรเรียก tool ใดในสถานการณ์นั้น หากคำสั่งเกี่ยวข้องกับ MCP ระบบจะให้ LLM สร้าง execution candidate ที่มี argument ตาม schema เท่านั้น ยังไม่ให้ดำเนินการกับระบบจริงในชั้นนี้
 
 \begin{figure}[!htbp]
     \centering
@@ -720,9 +680,9 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 \end{figure}
 \FloatBarrier
 
-\textbf{Layer 5 Execution Gate} เป็นชั้นป้องกันก่อนส่งคำสั่งไปยัง MCP server หรือ backend tool โดยตรวจ schema, policy, role, allowlist และเงื่อนไขด้านความปลอดภัยของ action อีกครั้ง หาก argument ไม่ครบ สิทธิ์ไม่ตรง หรือ action เสี่ยงเกินขอบเขต ระบบจะไม่ execute และส่งผลกลับเป็นคำถามหรือคำอธิบายให้ผู้ดูแลตรวจสอบ วิธีนี้ทำให้ LLM ไม่สามารถสั่งงานจริงได้โดยลำพัง แม้จะสร้างข้อความที่ดูเหมือนคำสั่งถูกต้อง
+\textbf{Layer 5 Execution Gate} เป็นชั้นป้องกันก่อนส่งคำสั่งไปยัง MCP server หรือ backend tool โดยตรวจ schema, policy, role, allowlist และเงื่อนไขด้านความปลอดภัยของ action อีกครั้ง หาก argument ไม่ครบ สิทธิ์ไม่ตรง หรือ action เสี่ยงเกินขอบเขต ระบบจะไม่ execute และส่งผลกลับเป็นคำถามหรือคำอธิบายให้ผู้ดูแลตรวจสอบ วิธีนี้ทำให้ LLM ไม่สามารถสั่งงานจริงได้โดยลำพัง แม้จะสร้างข้อความที่ดูเหมือนคำสั่งถูกต้อง โดยขั้นตอนการสั่งงานจริงทั้งหมดจะทำงานเป็นสัญญาระหว่างส่วนงานแบบ 3 ขั้นตอน (3-stage chat action flow) คือ \textbf{Propose (นำเสนอ)} $\rightarrow$ \textbf{Confirm (ยืนยันจากผู้ใช้)} $\rightarrow$ \textbf{Execute (ดำเนินการจริงบนระบบ)} เสมอ
 
-\textbf{Layer 3 Behavioral State} ทำงานเป็นกระบวนการเตรียมบริบทจากข้อมูล biometrics, movement, resident id และ timestamp ที่ระบบรับมาอย่างต่อเนื่อง ข้อมูลรายวันถูกบีบให้เป็นสัญญาณที่อ่านได้ เช่น ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน rolling window แนวโน้มจาก linear regression และจำนวนเหตุการณ์ผิดปกติ จากนั้นระบบใช้ rule หรือ model เช่น XGBoost ในระดับต้นแบบเพื่อจัดกลุ่มความเร่งด่วนและแกนปัญหาที่ควรเฝ้าดู ผลลัพธ์ถูกเก็บเป็น behavioral database เพื่อให้ Layer 2 ดึงกลับไปประกอบคำตอบรอบถัดไป ไม่ใช่การวินิจฉัยทางการแพทย์หรือการตัดสินแทนผู้ดูแล
+\textbf{Layer 3 Behavioral State} ทำงานเป็นกระบวนการเตรียมบริบทจากข้อมูล biometrics, movement, resident id และ timestamp ที่ระบบรับมาอย่างต่อเนื่อง ข้อมูลรายวันถูกบีบให้เป็นสัญญาณที่อ่านได้ เช่น ค่าเฉลี่ย ส่วนเบี่ยงเบนมาตรฐาน rolling window แนวโน้มจาก linear regression และจำนวนเหตุการณ์ผิดปกติ จากนั้นระบบใช้ rule หรือ model เช่น XGBoost ในระดับต้นแบบเพื่อจัดกลุ่มความเร่งด่วนและแกนปัญหาที่ควรเฝ้าดู ผลลัพธ์ถูกเก็บเป็น state snapshot เชิงพฤติกรรมหรือ \texttt{BehavioralStateSnapshot} ในความหมายของเล่มนี้ และถูกบันทึกเป็น payload ภายใต้ \texttt{system\_state\_snapshot} หรือเหตุการณ์ใน \texttt{pipeline\_events} เพื่อให้ Layer 2 ดึงกลับไปประกอบคำตอบรอบถัดไป โครงสร้างนี้ไม่ใช่ผลวินิจฉัยทางการแพทย์หรือการตัดสินแทนผู้ดูแล แต่เป็นบริบทช่วยจัดลำดับสิ่งที่ควรตรวจสอบ โดยการทำงานของแต่ละเลเยอร์ถูกบันทึกลงใน \texttt{pipeline\_events} เพื่อใช้ประเมินความหน่วงรายขั้นตอนภายใต้สภาพแวดล้อมระบบที่ระบุแฟล็ก \texttt{EASEAI\_PIPELINE\_V2=1}
 
 \begin{figure}[!htbp]
     \centering
@@ -773,6 +733,53 @@ pipeline หลักของระบบแบ่งเป็น 5 layer ไ�
 Context Window Management เป็นส่วนสนับสนุนที่ช่วยให้การสนทนาและผลลัพธ์จาก tool ไม่โตจนเกินขอบเขตของโมเดล แต่ยังย้อนกลับได้ว่าแต่ละคำตอบใช้ข้อมูลใด ระบบจึง tag payload ตาม session และ I/O turn เก็บ embedding signal สำหรับใช้ rank ร่วมกับความใหม่ของข้อมูล และมี policy จำกัดจำนวน active session หรือ bundle ที่เก็บใน context เมื่อข้อมูลเก่าเกินจำเป็นจะถูกลดความสำคัญหรือถอดออกจาก prompt แต่ยังคงบันทึกในฐานข้อมูลหรือ log เพื่อการตรวจสอบภายหลัง
 
 MCP ทำหน้าที่เป็นสัญญาระหว่าง AI runtime กับระบบจริง โดยฝั่ง agent runtime เป็นผู้ประกอบเจตนา บริบท และ schema ก่อนส่ง execution candidate ไปยัง execution gate ส่วน MCP server เปิด resources, prompts และ tools ที่ผ่านการควบคุมสิทธิ์แล้ว การแยกเช่นนี้ช่วยลดโอกาสที่ LLM จะเรียกใช้คำสั่งนอกขอบเขต เพราะ tool ที่รันจริงต้องผ่านทั้ง schema validation, allowlist ตามบทบาท และ execution gate ก่อนเสมอ
+
+\refstepcounter{subsection}
+\subsection*{\thesubsection\quad สถาปัตยกรรมเซิร์ฟเวอร์ MCP และการจำกัดขอบเขตสิทธิ์การใช้งาน}
+เพื่อรองรับการขยายขอบเขตการทำงานร่วมกับบริการภายนอก ระบบออกแบบให้ MCP Server ทำงานเป็นบริการแยกส่วนบน FastMCP และถูก mount เข้ากับ FastAPI ภายใต้ path หลัก \texttt{/mcp} โดยรองรับระบบขนส่งข้อมูลสองรูปแบบ (Dual Transport Layer) คือ Server-Sent Events (SSE) ที่ \texttt{/mcp/sse} สำหรับ client ที่ต้องการ session แบบต่อเนื่อง และ Streamable HTTP ที่ \texttt{/mcp/mcp} สำหรับการเรียกใช้ MCP ผ่าน HTTP request/response ตัว registry ของ MCP ใน snapshot ที่ใช้เขียนเล่มมี registered tools หลายกลุ่มรวม 112 tools, 6 prompts และ 4 resources อย่างไรก็ตามการประเมินในเล่มนี้จำกัดขอบเขตเฉพาะ core/evaluated tools จำนวน 28 รายการที่เกี่ยวข้องกับผู้พักอาศัย อุปกรณ์ telemetry dashboard และ action candidate เพื่อลดการปะปนกับเครื่องมือช่วยพัฒนาที่ไม่ได้อยู่ในเส้นทางทดลองหลัก
+
+ความปลอดภัยของ MCP Server ถูกควบคุมผ่านกลไกการจำกัดขอบเขตของโทเค็น (OAuth-based Scope Narrowing) โดยทุกครั้งที่ AI Agent ร้องขอการรันเครื่องมือ ระบบควบคุมสิทธิ์ของ MCP Gateway จะทำการคำนวณขอบเขตสิทธิ์ที่มีผลบังคับใช้จริง (effective scopes) ตามความสัมพันธ์ระหว่างบทบาทของผู้ใช้ (allowed scopes) และขอบเขตการเข้าถึงที่โทเค็นนั้น ๆ ร้องขอ (requested scopes) ดังแสดงในสมการที่~(\ref{eq:ch3_oauth_scope})
+
+\begin{equation}
+S_{\mathrm{effective}} = S_{\mathrm{allowed}} \cap S_{\mathrm{requested}}
+\label{eq:ch3_oauth_scope}
+\end{equation}
+
+เมื่อ \(S_{\mathrm{allowed}}\) คือ scope ที่ role และ workspace อนุญาตให้ใช้ และ \(S_{\mathrm{requested}}\) คือ scope ที่ token หรือเครื่องมือร้องขอ หากเครื่องมือหรือคำสั่งใดต้องการสิทธิ์ที่อยู่นอกเหนือจาก \(S_{\mathrm{effective}}\) ระบบรักษาความปลอดภัยระดับ MCP Gateway จะสกัดกั้นคำขอนั้นทันทีโดยไม่ส่งคำขอไปยังเครื่องมือจริง กลไกนี้ทำงานร่วมกับ session revocation ในหัวข้อ~\ref{sec:ch3_session_security} และ execution gate ของ Layer 5 เพื่อป้องกันไม่ให้ LLM หรือ client เรียกใช้คำสั่งที่อยู่นอกขอบเขตของผู้ใช้
+
+\addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+\section{การทดสอบโครงงาน}
+\label{sec:ch3_project_testing}
+การทดสอบโครงงานถูกกำหนดให้สอดคล้องกับโครงสร้างระบบที่ออกแบบไว้ในบทนี้ โดยแยกการตรวจสอบออกเป็นกลุ่มตามส่วนประกอบหลัก ได้แก่ firmware, mobile gateway, backend, dashboard และ AI/MCP pipeline จุดประสงค์ของการทดสอบในขั้นนี้คือการตรวจว่าระบบย่อยแต่ละส่วนทำงานตามหน้าที่ที่ออกแบบไว้ก่อนนำผลจากการทดลองจริงไปวิเคราะห์ในบทที่~\ref{chapter4}
+
+\begin{table}[H]
+    \centering
+    \caption[กลยุทธ์การทดสอบโครงงาน]{กลยุทธ์การทดสอบโครงงานและความเชื่อมโยงกับผลการประเมินในบทที่ 4}
+    \label{tab:ch3_testing_strategy}
+    \small
+    \renewcommand{\arraystretch}{1.18}
+    \begin{tabular}{|L{3.1cm}|L{4.8cm}|L{4.7cm}|}
+        \hline
+        \textbf{กลุ่มการทดสอบ} & \textbf{เครื่องมือและสิ่งที่ตรวจสอบ} & \textbf{ผลที่เชื่อมโยงในบทที่ 4} \\ \hline
+        Backend/API และ EaseAI & \texttt{pytest} ตรวจ FastAPI endpoint, policy, contract และ pipeline event ของ agent runtime & ความเสถียรของ server, IRR, cosine similarity และ latency ราย layer \\ \hline
+        Frontend unit & \texttt{Jest} ตรวจ navigation, hook และ utility ที่เกี่ยวข้องกับ dashboard role flow & ความชัดเจนของ HMI และ task completion ของแต่ละบทบาท \\ \hline
+        Dashboard E2E & \texttt{Playwright} ตรวจ login, role visibility, dashboard navigation และ EaseAI interaction & ผลประเมิน Dashboard/HMI และ SUS Score \\ \hline
+        Mobile gateway & \texttt{flutter test} ตรวจ gateway runtime, sensor telemetry model และ widget พื้นฐานของ Flutter app & ผลทดสอบ BLE gateway, MQTT/REST publish และ dashboard update \\ \hline
+        Firmware & \texttt{PlatformIO} ตรวจการ build firmware ในโฟลเดอร์ \texttt{M5StickCPlus2\_BLEGateway} และการตั้งค่า board/library & ผลทดสอบ IMU, velocity, distance และ telemetry completeness \\ \hline
+        CI/CD & GitHub Actions ใน \texttt{ci.yml} และ \texttt{security.yml} ตรวจ backend, frontend, E2E และ security gate & สรุปเสถียรภาพระบบและข้อจำกัดก่อนนำไปใช้จริง \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{enumerate}
+    \item \textbf{Backend/API และ EaseAI pipeline:} ใช้ \texttt{pytest} ตรวจเส้นทาง API, data contract, การตรวจสิทธิ์, การบันทึก \texttt{pipeline\_events} และการประกอบ \texttt{ValidatedContextPackage} ชุดทดสอบนี้จำลอง actor facts เช่น role, user id, workspace id และ patient id เพื่อดูว่า policy และ scope ถูกบังคับใช้ก่อนส่งข้อมูลไปยังชั้น LLM ผลการทดสอบเชื่อมกับหัวข้อ~\ref{sec:ch4_gateway_server}, \ref{sec:ch4_ai_irr} และ \ref{sec:ch4_ai_latency}
+    \item \textbf{Frontend unit และ dashboard behavior:} ใช้ \texttt{Jest} ตรวจ logic ของ Next.js เช่น navigation, role route, utility และการแสดงผลพื้นฐานของ dashboard เพื่อดูว่าหน้าจอเปลี่ยนตามสิทธิ์ผู้ใช้ได้ถูกต้องก่อนนำไปประเมินกับ workflow ของผู้ใช้ในหัวข้อ~\ref{sec:ch4_dashboard_hmi}
+    \item \textbf{End-to-End HMI:} ใช้ \texttt{Playwright} จำลองการใช้งานผ่านเบราว์เซอร์ ตั้งแต่ login, การเปิด dashboard ตามบทบาท Admin, Head Nurse, Supervisor, Observer และ Patient, การตรวจ alert card และการเรียก EaseAI ในสถานการณ์ที่กำหนด ผลส่วนนี้ใช้ประกอบการประเมิน task completion และ SUS Score
+    \item \textbf{Mobile gateway:} ใช้ \texttt{flutter test} กับชุดทดสอบ เช่น \texttt{gateway\_runtime\_service\_test.dart}, \texttt{sensor\_telemetry\_test.dart} และ \texttt{widget\_test.dart} เพื่อตรวจ model ของ telemetry, state ของ gateway runtime และองค์ประกอบ UI พื้นฐานของแอป Flutter ผลการทดสอบเชื่อมกับการส่งข้อมูลจาก M5StickC Plus2, Polar Verity Sense และ phone gateway ในหัวข้อ~\ref{sec:ch4_gateway_server}
+    \item \textbf{Firmware และอุปกรณ์ภาคสนาม:} ใช้ \texttt{PlatformIO} ตรวจว่า firmware ของ \texttt{M5StickCPlus2\_BLEGateway} build ได้ตาม board และ library ที่กำหนด ก่อนนำไปทดสอบกับอุปกรณ์จริงในเรื่อง IMU, battery, BLE notification, velocity และ distance การทดสอบ build เป็นการตรวจความถูกต้องของการตั้งค่า firmware ไม่ใช่การยืนยันค่าความแม่นยำของ sensor โดยตรง
+    \item \textbf{CI/CD และ security gate:} ใช้ GitHub Actions ตรวจ backend test, frontend build, E2E test และ dependency/security gate ที่กำหนดไว้ ผลส่วนนี้ใช้เป็นหลักฐานประกอบว่าระบบย่อยผ่านการตรวจขั้นพื้นฐานก่อนรวบรวมผลทดลอง แต่ยังไม่ใช่การประเมินความทนทานระยะยาวของระบบทั้งหมด
+\end{enumerate}
+
+จากขั้นตอนดังกล่าว การทดสอบโครงงานจึงทำหน้าที่เป็นหลักฐานสนับสนุนด้านวิศวกรรมก่อนเข้าสู่บทผลการทดลอง โดยผลที่นำเสนอในบทที่~\ref{chapter4} ยังต้องอ่านร่วมกับข้อจำกัดของข้อมูลทดสอบ สภาพแวดล้อม และจำนวนผู้เข้าร่วมที่ใช้ในการประเมิน
 
 \section{แนวทางการประเมินผลระบบ}
 \label{sec:ch3_evaluation_plan}

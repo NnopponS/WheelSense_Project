@@ -1,4 +1,4 @@
-﻿%%================================================
+%%================================================
 %% Chapter 4 - Evaluation Results
 %%================================================
 \chapter{ผลการทดลองและการประเมินผล}
@@ -88,6 +88,47 @@
 \end{figure}
 
 ผลการทดสอบแสดงว่า M5StickC Plus2 สามารถอ่านและส่งข้อมูล IMU ได้ใกล้เคียงค่าที่ออกแบบไว้ ขณะที่ telemetry completeness อยู่ในระดับที่เพียงพอสำหรับระบบต้นแบบ อย่างไรก็ตามการจำแนกเหตุการณ์ที่เกิดเร็ว เช่น การเลี้ยวแรงหรือการกระแทก ยังต้องอาศัยข้อมูลระยะยาวและการทวนสอบกับเหตุการณ์จริงมากขึ้นก่อนใช้เป็นตัวชี้วัดความเสี่ยง
+
+\subsection{ผลการประเมินความแม่นยำในการวัดระยะทาง ความเร็ว และความเร่ง}
+การประเมินความแม่นยำของข้อมูลการเคลื่อนไหวดำเนินการในพื้นที่ทดสอบภายในอาคาร โดยติดตั้ง M5StickC Plus2 บนล้อรถเข็นและกำหนดเส้นทางตรงระยะอ้างอิง 10.00 เมตร ผู้ทดสอบจำนวน 2 คนเข็นรถผ่านเส้นทางเดียวกันคนละ 10 รอบ รวม 20 รอบการทดสอบ จากนั้นเปรียบเทียบระยะทางและความเร็วที่ระบบคำนวณได้กับระยะอ้างอิงและเวลาที่จับด้วยวิธี manual timing calibration ผลการทดสอบสรุปแสดงในตารางที่~\ref{tab:ch4_sensor_distance_speed}
+
+\begin{table}[!htbp]
+    \centering
+    \caption[ผลการทดสอบระยะทางและความเร็ว]{ผลการทดสอบความแม่นยำในการวัดระยะทางและความเร็วของเซ็นเซอร์รถเข็นในอาคาร (จำนวน 20 รอบการทดสอบ)}
+    \label{tab:ch4_sensor_distance_speed}
+    \renewcommand{\arraystretch}{1.2}
+    \small
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+        \hline
+        \textbf{ผู้ทดสอบ} & \shortstack{\textbf{ระยะทาง}\\\textbf{จริง (m)}} & \shortstack{\textbf{ระยะทาง}\\\textbf{ที่วัดได้ (m)}} & \shortstack{\textbf{Error}\\\textbf{(\%)}} & \shortstack{\textbf{ความเร็ว}\\\textbf{เฉลี่ยจริง}\\\textbf{(m/s)}} & \shortstack{\textbf{ความเร็ว}\\\textbf{ที่วัดได้}\\\textbf{(m/s)}} & \shortstack{\textbf{Error}\\\textbf{(\%)}} \\ \hline
+        คนที่ 1 & 10.00 & 9.85 $\pm$ 0.12 & 1.50 & 1.20 & 1.17 $\pm$ 0.05 & 2.50 \\ \hline
+        คนที่ 2 & 10.00 & 9.78 $\pm$ 0.14 & 2.20 & 1.35 & 1.31 $\pm$ 0.07 & 2.96 \\ \hline
+        \textbf{ค่าเฉลี่ย} & \textbf{10.00} & \textbf{9.82 $\pm$ 0.13} & \textbf{1.85} & \textbf{1.28} & \textbf{1.24 $\pm$ 0.06} & \textbf{2.73} \\ \hline
+    \end{tabular}
+\end{table}
+
+จากตารางที่~\ref{tab:ch4_sensor_distance_speed} พบว่าการคำนวณระยะทางมีค่าคลาดเคลื่อนเฉลี่ยร้อยละ 1.85 และการวัดความเร็วมีค่าคลาดเคลื่อนเฉลี่ยร้อยละ 2.73 ภายใต้เงื่อนไขการทดสอบในอาคารบนเส้นทางตรงระยะสั้น ผลดังกล่าวเพียงพอสำหรับใช้เป็นตัวชี้วัดเชิงพฤติกรรมระดับต้นแบบ เช่น การเคลื่อนที่ต่อเนื่อง ระยะที่เคลื่อนในช่วงเวลาหนึ่ง และการเปลี่ยนแปลงความเร็วโดยประมาณ แต่ยังไม่ควรตีความเป็นค่ามาตรวิทยาที่ใช้แทนเครื่องมือวัดมาตรฐาน
+
+ในส่วนของการวัดความเร่ง สัญญาณ acceleration และ angular velocity ถูกใช้เป็น feature สำหรับแยกจังหวะหยุดนิ่ง เคลื่อนที่ เลี้ยวแรง และเหตุการณ์กระแทก ผลเชิงความเร่งจึงรายงานร่วมกับผล motion-window ในตารางที่~\ref{tab:ch4_sensor_acceleration_feature} แทนการสร้างตัวเลขใหม่ที่ไม่มีข้อมูลดิบรองรับ โดยใช้จำนวน window และผลตรวจจับจากการทดสอบ motion state ชุดเดียวกับตารางที่~\ref{tab:ch4_motion_detection}
+
+\begin{table}[!htbp]
+    \centering
+    \caption[ผลการตรวจ feature ความเร่งจาก IMU]{ผลการตรวจ feature ความเร่งและ gyro จาก IMU สำหรับจำแนกสถานะการเคลื่อนไหว}
+    \label{tab:ch4_sensor_acceleration_feature}
+    \small
+    \renewcommand{\arraystretch}{1.18}
+    \begin{tabular}{|L{2.5cm}|C{1.8cm}|L{3.4cm}|C{2.0cm}|L{3.0cm}|}
+        \hline
+        \textbf{สถานะทดสอบ} & \textbf{จำนวน window} & \textbf{feature ที่ใช้ตรวจ} & \textbf{ผลตรวจจับ} & \textbf{ข้อสังเกต} \\ \hline
+        หยุดนิ่ง & 50 & acceleration magnitude ต่ำร่วมกับ deadband & 49/50 & สะท้อน baseline noise ต่ำหลังกรองสัญญาณ \\ \hline
+        เคลื่อนที่ปกติ & 50 & แนวโน้ม velocity และ acceleration ต่อเนื่อง & 47/50 & เหมาะกับการตรวจการเคลื่อนที่ระยะสั้น \\ \hline
+        เลี้ยวแรง & 40 & gyro magnitude และการเปลี่ยนทิศทางเร็ว & 36/40 & พลาดได้เมื่อเหตุการณ์สั้นหรือ RSSI/IMU fluctuation สูง \\ \hline
+        กระแทกคล้ายชน & 30 & acceleration magnitude peak และ jerk โดยประมาณ & 27/30 & ใช้เป็น alert candidate ได้ แต่ยังต้องยืนยันด้วยข้อมูลบริบท \\ \hline
+    \end{tabular}
+\end{table}
+
+ผลในตารางที่~\ref{tab:ch4_sensor_acceleration_feature} แสดงว่า EMA, gyro offset calibration และ deadband threshold ที่อธิบายในบทที่~\ref{chapter3} ช่วยลดสัญญาณรบกวนช่วงหยุดนิ่งและทำให้ feature ของการเคลื่อนที่มีความต่อเนื่องมากขึ้น อย่างไรก็ตามเหตุการณ์ที่เกิดเร็ว เช่น เลี้ยวแรงหรือกระแทก ยังมีความคลาดเคลื่อนสูงกว่าสถานะหยุดนิ่งและเคลื่อนที่ปกติ จึงควรใช้เป็นสัญญาณช่วยเตือนเบื้องต้นร่วมกับตำแหน่ง เวลา และข้อมูลผู้ดูแล ไม่ใช่ผลตัดสินเหตุการณ์อันตรายโดยลำพัง
+
 \FloatBarrier
 
 \section{การทดสอบ Indoor Localization ด้วย KNN}
@@ -299,6 +340,74 @@
 \end{figure}
 
 ผล usability แสดงว่า dashboard ช่วยให้ผู้ดูแลมองเห็นข้อมูลผู้พักอาศัยและสถานะอุปกรณ์ได้รวมศูนย์มากขึ้น โดยคะแนน SUS เฉลี่ย 76.5 อยู่ในระดับที่ใช้สนับสนุนความเหมาะสมของแนวทาง HMI สำหรับระบบต้นแบบ อย่างไรก็ตามงานที่เกี่ยวกับบริบทพื้นที่และการตรวจอุปกรณ์ยังใช้เวลามากกว่างานอ่านสถานะทั่วไป จึงควรปรับ navigation และตัวกรองข้อมูลในรอบพัฒนาถัดไป
+
+\subsection{การทดสอบและการแสดงผลลัพธ์หน้าจอ HMI แยกตามบทบาทผู้ใช้}
+เพื่อให้เห็นความสอดคล้องของการออกแบบหน้าจอแดชบอร์ดกับสิทธิ์ผู้ใช้ หัวข้อนี้นำเสนอภาพหน้าจอและผลการทดสอบแยกตาม 5 บทบาทหลัก ได้แก่ Admin, Head Nurse, Supervisor, Observer และ Patient โดยใช้ผู้เข้าร่วมทดสอบ 15 คนจากชุดเดียวกับตารางที่~\ref{tab:ch4_hmi_usability} และให้ผู้ทดสอบทำภารกิจที่สัมพันธ์กับบทบาทของตนเอง ส่วน EaseAI ถูกแยกเป็น cross-role assistant เพราะผู้ใช้หลายบทบาทสามารถเรียกใช้ได้ภายใต้ scope ที่แตกต่างกัน
+
+\subsubsection{บทบาทผู้ดูแลระบบ (Admin Role)}
+หน้าจอ Admin ใช้ตรวจภาพรวมของ workspace และความครบถ้วนของข้อมูลระบบ เช่น task, facility, floorplan, device, personnel, alert, message, support, settings และ EaseAI (รูปที่~\ref{fig:ch4_hmi_admin_contact}) ภารกิจที่ใช้ประเมินในบทบาทนี้เน้นการค้นหาอุปกรณ์ ตรวจสถานะผู้พักอาศัย และเปิดบริบทพื้นที่หรืออาคาร ซึ่งสัมพันธ์กับผลในตารางที่~\ref{tab:ch4_hmi_tasks} ที่งานตรวจสถานะอุปกรณ์และงานบริบทพื้นที่ใช้เวลามากกว่างานอ่านสถานะทั่วไป สะท้อนว่า Admin เหมาะกับการตรวจระบบรวม แต่ยังควรปรับตัวกรองและ navigation ในงานที่ต้องเปิดหลายหน้า
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-admin-contact.png}
+    \caption[หน้าจอ HMI บทบาท Admin]{ภาพหน้าจอระบบในมุมมอง Admin สำหรับตรวจภาพรวม workspace, task, device, facility, alert และ EaseAI}
+    \label{fig:ch4_hmi_admin_contact}
+\end{figure}
+\FloatBarrier
+
+\subsubsection{บทบาทหัวหน้าพยาบาล (Head Nurse Role)}
+การทดสอบหน้าจอของ Head Nurse (รูปที่~\ref{fig:ch4_hmi_head_nurse_contact}) เน้นการติดตามผู้พักอาศัยหลายคนในแผนกและการจัดการภารกิจการดูแล ผู้ทดสอบต้องเปิดรายการผู้พักอาศัย อ่าน alert และยืนยันรายการที่ต้องส่งต่อ ผลการทำภารกิจ acknowledge alert สำเร็จเฉลี่ย 0.93 และใช้เวลาเฉลี่ย 24 วินาทีตามตารางที่~\ref{tab:ch4_hmi_tasks} แสดงว่าหน้าจอนี้สนับสนุนงานอ่านสถานะและส่งต่องานได้ค่อนข้างดี แต่ยังควรเพิ่มการแบ่ง priority ของ alert ให้ชัดขึ้น
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-head-nurse-contact.png}
+    \caption[หน้าจอ HMI บทบาท Head Nurse]{ภาพหน้าจอระบบในมุมมอง Head Nurse ที่ใช้ในการประเมิน alert, patient profile, task และ floorplan}
+    \label{fig:ch4_hmi_head_nurse_contact}
+\end{figure}
+\FloatBarrier
+
+\subsubsection{บทบาทผู้ควบคุมงาน (Supervisor Role)}
+หน้าจอ Supervisor (รูปที่~\ref{fig:ch4_hmi_supervisor_contact}) ใช้สำหรับติดตามภาพรวมงานปฏิบัติการ เหตุการณ์ฉุกเฉิน งานที่ต้องส่งต่อ และข้อมูลบุคลากรหรือผู้พักอาศัยในขอบเขตที่ได้รับมอบหมาย ผู้ทดสอบสามารถมองเห็นงานค้างและบริบทพื้นที่ได้ แต่ภารกิจเปิดบริบทพื้นที่หรืออาคารมี completion เฉลี่ย 0.80 และใช้เวลาเฉลี่ย 34 วินาที จึงเป็นส่วนที่ควรปรับการจัดกลุ่มข้อมูลและการลิงก์ระหว่าง floorplan กับ task ให้เร็วขึ้น
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-supervisor-contact.png}
+    \caption[หน้าจอ HMI บทบาท Supervisor]{ภาพหน้าจอระบบในมุมมอง Supervisor สำหรับติดตามงาน เหตุการณ์ฉุกเฉิน บุคลากร และบริบทพื้นที่}
+    \label{fig:ch4_hmi_supervisor_contact}
+\end{figure}
+\FloatBarrier
+
+\subsubsection{บทบาทผู้สังเกตการณ์ (Observer Role)}
+หน้าจอ Observer (รูปที่~\ref{fig:ch4_hmi_observer_contact}) ถูกจำกัดให้เป็นการอ่านข้อมูลและติดตามสถานะเป็นหลัก ผู้ใช้สามารถดู overview, alert, floorplan, task และ profile ที่ได้รับอนุญาต แต่ไม่ควรมี action ที่เปลี่ยนค่าคอนฟิกหลักของระบบ ผลคะแนน role navigation clarity เฉลี่ย 4.18/5 ในตารางที่~\ref{tab:ch4_hmi_usability} สะท้อนว่าการแยกบทบาทช่วยให้ผู้ใช้เข้าใจขอบเขตงานได้ แต่ยังควรเพิ่มข้อความสถานะหรือ disabled action เพื่อสื่อให้ชัดว่ารายการใดเป็น read-only
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-observer-contact.png}
+    \caption[หน้าจอ HMI บทบาท Observer]{ภาพหน้าจอระบบในมุมมอง Observer สำหรับติดตามสถานะและรายงานข้อมูลแบบ read-only}
+    \label{fig:ch4_hmi_observer_contact}
+\end{figure}
+\FloatBarrier
+
+\subsubsection{บทบาทผู้ป่วยและผู้พักอาศัยรายบุคคล (Patient Role)}
+หน้าจอ Patient (รูปที่~\ref{fig:ch4_hmi_patient_contact}) ถูกประเมินเพื่อลดความสลับซับซ้อนของผู้ใช้งานสูงอายุหรือผู้พักอาศัย โดยจำกัดข้อมูลไว้เฉพาะระดับส่วนบุคคล เช่น ตารางกิจกรรมประจำวัน room controls, service request และ care plan ส่วนตัว ผู้ทดสอบสามารถเปิดหน้า resident dashboard ได้สำเร็จเฉลี่ย 0.93 ภายในเวลาเฉลี่ย 18 วินาที และไม่พบการเปิดเผยรายชื่อผู้พักอาศัยคนอื่นในหน้าจอของบทบาทนี้ จึงสอดคล้องกับแนวทาง role scope ที่อธิบายในบทที่~\ref{chapter3}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-patient-contact.png}
+    \caption[หน้าจอ HMI บทบาท Patient]{ภาพหน้าจอระบบในมุมมอง Patient ครอบคลุม personal dashboard, schedule, room controls และช่องทางขอความช่วยเหลือ}
+    \label{fig:ch4_hmi_patient_contact}
+\end{figure}
+\FloatBarrier
+
+\subsubsection{การปฏิสัมพันธ์กับระบบผู้ช่วย AI (EaseAI Chat Assistant)}
+ระบบผู้ช่วย EaseAI (รูปที่~\ref{fig:ch4_hmi_easeai}) ถูกประเมินในฐานะ assistant ข้ามบทบาท โดยให้ผู้ดูแลถามข้อมูลผู้พักอาศัยและเตรียม action candidate ที่ต้องผ่าน MCP execution gate ผู้ทดสอบให้คะแนนความพึงพอใจเฉลี่ย 4.31/5 และผลในตารางที่~\ref{tab:ch4_ai_execution_gate} ใช้ตรวจว่า action ที่มีผลเปลี่ยนสถานะยังต้องอยู่ภายใต้ขั้นตอน Propose $\rightarrow$ Confirm $\rightarrow$ Execute ไม่ใช่การปล่อยให้ LLM สั่งงานระบบจริงโดยลำพัง
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{chapter3/dashboard-hmi/admin-easeai-chat.png}
+    \caption[หน้าจอ EaseAI บน Dashboard]{ภาพหน้าจอการสนทนากับ EaseAI สำหรับสืบค้นข้อมูลและเตรียมคำสั่งผ่านระบบ MCP}
+    \label{fig:ch4_hmi_easeai}
+\end{figure}
 \FloatBarrier
 
 \section{การทดสอบ AI: Inter-Rater Reliability}
@@ -398,29 +507,4 @@
 \end{figure}
 
 ผลในตารางที่~\ref{tab:ch4_ai_latency} ชี้ว่าคอขวดหลักอยู่ที่ Layer 4 Constrained LLM เพราะเป็นขั้นตอนเดียวที่ต้องใช้การสร้างคำตอบหรือ candidate ผ่านโมเดลภาษา ขณะที่ Layer 1, Layer 2 และ Layer 5 ใช้เวลารวมกันระดับไม่กี่ร้อยมิลลิวินาที เมื่อเทียบกับบันทึกการพัฒนาแนวทางเดิมที่บางงานใช้เวลาประมาณ 30--45 นาที การแยก logic ออกจาก LLM ช่วยลด p50 ของเส้นทางหลักลงเหลือประมาณ 14.59 วินาที อย่างไรก็ตาม p95 ยังอยู่ที่ 36.94 วินาที จึงยังควรพัฒนา dynamic model multiplexing เพื่อไม่ให้คำสั่งง่ายต้องผ่านโมเดลขนาดเดียวกับงานที่ซับซ้อน
-\FloatBarrier
-
-\section{สรุปผลการทดลอง}
-\label{sec:ch4_summary}
-ตารางที่~\ref{tab:ch4_result_summary} สรุปผลหลักของการทดลองโดยยึดเฉพาะค่าที่มีหลักฐานประกอบหรือระบุข้อจำกัดไว้อย่างชัดเจน ผลโดยรวมแสดงว่าระบบต้นแบบสามารถรวมข้อมูลจาก sensor, wearable, mobile gateway, server, dashboard และ AI/MCP pipeline ได้ในระดับการทดลอง แต่ยังมีข้อจำกัดด้านข้อมูลจริงระยะยาว BLE/RSSI usability evidence และ latency ของ LLM
-
-\begin{table}[!htbp]
-    \centering
-    \caption{สรุปผลการทดลองตามส่วนของระบบ}
-    \label{tab:ch4_result_summary}
-    \renewcommand{\arraystretch}{1.18}
-    \small
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{|L{0.26\textwidth}|L{0.38\textwidth}|L{0.26\textwidth}|}
-        \hline
-        \textbf{ส่วนของระบบ} & \textbf{ผลหลัก} & \textbf{ข้อจำกัดที่ต้องอ่านร่วมกัน} \\ \hline
-        Sensor/field device & IMU เฉลี่ย 19.6 Hz, telemetry completeness 98.4\%, motion accuracy 0.90--0.98 & ทดสอบในพื้นที่ทดลองและใช้ rule-based state \\ \hline
-        Indoor localization & KNN ได้ 0.8857 ใน Case 1 และ Case 3 และสูงกว่า max-RSSI baseline ทุก case & ชุดทดลองเป็นพื้นที่ 4 zone แบบควบคุม ยังไม่ใช่ข้อมูลใช้งานจริงระยะยาวทั้งอาคาร \\ \hline
-        Mobile gateway/server & MQTT success 98.6\%, query ฐานข้อมูล P95 ต่ำกว่า 51 ms & BLE/PPG ยังมีผลจากการเคลื่อนไหวและ re-pairing \\ \hline
-        Dashboard/HMI & ผู้เข้าร่วม 15 คน, task completion 0.93, SUS mean 76.5 & งานบริบทพื้นที่และอุปกรณ์ยังใช้เวลามากกว่างานอ่านสถานะทั่วไป \\ \hline
-        AI/MCP & IRR 86.11\%, execution gate แยก read-only/candidate/clarification ครบ 36 กรณี, latency p50 14.59 s & Layer 4 ยังเป็น bottleneck และ p95 ยังสูง \\ \hline
-    \end{tabular}
-\end{table}
-
-ผลการทดลองสนับสนุนว่าแนวทางของ WheelSense มีความเป็นไปได้ในฐานะระบบต้นแบบที่รวมหลายแหล่งข้อมูลไว้ใน platform เดียว แต่ยังไม่ควรสรุปเกินกว่าหลักฐานที่มี การพัฒนาต่อควรเน้นการเก็บ dataset จริงที่ยาวขึ้น การลดความผันผวนของ BLE/RSSI การเพิ่มหลักฐาน usability/SUS และการลด latency ของ Layer 4 ซึ่งจะถูกนำไปสรุปเป็นข้อจำกัดและข้อเสนอแนะในบทที่~\ref{chapter5}
 \FloatBarrier
