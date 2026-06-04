@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../models/gateway_config.dart';
+import '../models/gateway_runtime_snapshot.dart';
 import '../models/gateway_status.dart';
 import '../models/ble_device_snapshot.dart';
 import '../models/mqtt_gateway_message.dart';
@@ -37,22 +38,38 @@ class GatewayRuntimeService {
       StreamController<GatewayStatus>.broadcast();
   final StreamController<GatewayConfig> _configController =
       StreamController<GatewayConfig>.broadcast();
+  final StreamController<GatewayRuntimeSnapshot> _snapshotController =
+      StreamController<GatewayRuntimeSnapshot>.broadcast();
 
   StreamSubscription<String>? _m5TelemetrySubscription;
   StreamSubscription<PolarTelemetrySample>? _polarTelemetrySubscription;
   StreamSubscription<MqttGatewayMessage>? _mqttStatusSubscription;
   GatewayStatus _status = GatewayStatus.initial();
+  GatewayRuntimeSnapshot _snapshot = GatewayRuntimeSnapshot.initial();
 
   Stream<GatewayStatus> get statuses => _statusController.stream;
   Stream<GatewayConfig> get configUpdates => _configController.stream;
+  Stream<GatewayRuntimeSnapshot> get snapshots => _snapshotController.stream;
   GatewayStatus get status => _status;
+  GatewayRuntimeSnapshot get snapshot => _snapshot;
 
-  Future<GatewayConfig> loadConfig() => _preferences.loadConfig();
-  Future<void> saveConfig(GatewayConfig config) =>
-      _preferences.saveConfig(config);
+  Future<GatewayConfig> loadConfig() async {
+    final config = await _preferences.loadConfig();
+    _emitSnapshot(_snapshot.copyWith(config: config));
+    return config;
+  }
+
+  Future<void> saveConfig(GatewayConfig config) async {
+    await _preferences.saveConfig(config);
+    _emitSnapshot(_snapshot.copyWith(config: config));
+    if (!_configController.isClosed) {
+      _configController.add(config);
+    }
+  }
 
   Future<GatewayStatus> bootstrap({GatewayConfig? config}) async {
     final effectiveConfig = config ?? await loadConfig();
+    await _loadPairedDevicesIntoSnapshot(effectiveConfig);
     final permissionResult = await _permissions.requestRuntimePermissions();
     final notificationsReady = await _notifications.initialize();
     final notificationAllowed = await _notifications.requestPermission();
@@ -78,6 +95,34 @@ class GatewayRuntimeService {
             : 'Production gateway ready',
       ),
     );
+  }
+
+  Future<GatewayStatus> resumeGateway({bool autoStartBle = true}) async {
+    final config = await loadConfig();
+    final status = await bootstrap(config: config);
+    if (!shouldAutoStartBleRelay(
+      config: config,
+      status: status,
+      requested: autoStartBle,
+    )) {
+      if (autoStartBle && status.bleReady && !config.setupCompleted) {
+        return _emit(
+          status.copyWith(
+            message: 'Complete gateway setup before automatic BLE relay starts',
+          ),
+        );
+      }
+      return status;
+    }
+    final pairedM5 = await _preferences.loadPairedM5Device();
+    final pairedPolar = await _preferences.loadPairedPolarDevice();
+    if (pairedM5 != null && _m5TelemetrySubscription == null) {
+      unawaited(startM5TelemetryRelay(config, pairedM5));
+    }
+    if (pairedPolar != null && _polarTelemetrySubscription == null) {
+      unawaited(startPolarTelemetryRelay(config, pairedPolar));
+    }
+    return status;
   }
 
   Future<GatewayStatus> requestPermissionsForAppOpen() async {
@@ -147,6 +192,7 @@ class GatewayRuntimeService {
     BleDeviceSnapshot device,
   ) async {
     await _preferences.savePairedM5Device(device);
+    _emitSnapshot(_snapshot.copyWith(pairedM5Device: device));
     await _ensureMqtt(config);
     await _m5TelemetrySubscription?.cancel();
     unawaited(
@@ -166,7 +212,12 @@ class GatewayRuntimeService {
         .asBroadcastStream();
     _m5TelemetrySubscription = stream.listen(
       (payload) async {
-        await _mqttService.publishTelemetry(config: config, payload: payload);
+        final result = await _mqttService.publishTelemetry(
+          config: _snapshot.config,
+          payload: payload,
+        );
+        _recordPublishResult(result);
+        _recordM5Payload(payload);
       },
       onError: (Object error) {
         _emit(
@@ -192,6 +243,7 @@ class GatewayRuntimeService {
     BleDeviceSnapshot device,
   ) async {
     await _preferences.savePairedPolarDevice(device);
+    _emitSnapshot(_snapshot.copyWith(pairedPolarDevice: device));
     await _ensureMqtt(config);
     await _polarTelemetrySubscription?.cancel();
     unawaited(
@@ -212,10 +264,12 @@ class GatewayRuntimeService {
         .asBroadcastStream();
     _polarTelemetrySubscription = stream.listen(
       (sample) async {
-        await _mqttService.publishPolarTelemetry(
-          config: config,
+        final result = await _mqttService.publishPolarTelemetry(
+          config: _snapshot.config,
           sample: sample,
         );
+        _recordPublishResult(result);
+        _emitSnapshot(_snapshot.copyWith(latestPolarSample: sample));
       },
       onError: (Object error) {
         _emit(
@@ -243,6 +297,7 @@ class GatewayRuntimeService {
   }) async {
     final renamed = device.copyWith(name: name);
     await _preferences.savePairedM5Device(renamed);
+    _emitSnapshot(_snapshot.copyWith(pairedM5Device: renamed));
     try {
       await _bleService.writeM5RoomConfig(
         config: config,
@@ -276,6 +331,7 @@ class GatewayRuntimeService {
   }) async {
     final renamed = device.copyWith(name: name);
     await _preferences.savePairedPolarDevice(renamed);
+    _emitSnapshot(_snapshot.copyWith(pairedPolarDevice: renamed));
     await _mqttService.publishRegistration(
       config: config,
       companionPolar: <String, Object?>{
@@ -289,12 +345,23 @@ class GatewayRuntimeService {
     );
   }
 
-  Future<void> forgetM5Device() {
-    return _preferences.clearPairedM5Device();
+  Future<void> forgetM5Device() async {
+    await _m5TelemetrySubscription?.cancel();
+    _m5TelemetrySubscription = null;
+    await _preferences.clearPairedM5Device();
+    _emitSnapshot(_snapshot.copyWith(pairedM5Device: null));
   }
 
-  Future<void> forgetPolarDevice() {
-    return _preferences.clearPairedPolarDevice();
+  Future<void> forgetPolarDevice() async {
+    await _polarTelemetrySubscription?.cancel();
+    _polarTelemetrySubscription = null;
+    await _preferences.clearPairedPolarDevice();
+    _emitSnapshot(_snapshot.copyWith(pairedPolarDevice: null));
+  }
+
+  Future<void> markSetupCompleted() async {
+    final config = (await loadConfig()).copyWith(setupCompleted: true);
+    await saveConfig(config);
   }
 
   Future<void> sendM5Command({
@@ -324,6 +391,7 @@ class GatewayRuntimeService {
     await _mqtt?.disconnect();
     await _foreground.stop();
     await _configController.close();
+    await _snapshotController.close();
     await _statusController.close();
   }
 
@@ -374,24 +442,77 @@ class GatewayRuntimeService {
   }
 
   Future<void> _handleMqttMessage(MqttGatewayMessage message) async {
-    if (!message.topic.startsWith('WheelSense/config/')) {
+    if (message.topic.startsWith('WheelSense/config/')) {
+      await _handleConfigMessage(message);
       return;
     }
+    if (message.topic.startsWith('WheelSense/room/')) {
+      _handleRoomMessage(message);
+      return;
+    }
+    if (message.topic.startsWith('WheelSense/alerts/')) {
+      await _handleAlertMessage(message);
+      return;
+    }
+    if (message.topic.endsWith('/control')) {
+      _emit(
+        _status.copyWith(
+          mqttReady: true,
+          message: 'Mobile control message received from server',
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleConfigMessage(MqttGatewayMessage message) async {
     final current = await loadConfig();
     final next = applyMqttConfigUpdate(current, message.payload);
-    if (next == current) {
+    if (gatewayConfigEquals(next, current)) {
       return;
     }
     await _preferences.saveConfig(next);
     if (!_configController.isClosed) {
       _configController.add(next);
     }
+    _emitSnapshot(_snapshot.copyWith(config: next));
+    if (_mqttService.isConnected) {
+      _startMqttSubscriptions(next);
+    }
     _emit(
       _status.copyWith(
         mqttReady: true,
-        message: 'Portal link updated from MQTT',
+        message: 'Gateway config updated from MQTT',
       ),
     );
+  }
+
+  void _handleRoomMessage(MqttGatewayMessage message) {
+    _emitSnapshot(
+      _snapshot.copyWith(
+        latestRoomPrediction: RoomPredictionEvent.fromPayload(message.payload),
+      ),
+    );
+    _emit(
+      _status.copyWith(mqttReady: true, message: 'Room prediction updated'),
+    );
+  }
+
+  Future<void> _handleAlertMessage(MqttGatewayMessage message) async {
+    final alert = GatewayAlertEvent.fromMqtt(
+      topic: message.topic,
+      payload: message.payload,
+    );
+    final nextAlerts = <GatewayAlertEvent>[
+      alert,
+      ..._snapshot.alerts.where((existing) => existing.id != alert.id),
+    ];
+    if (nextAlerts.length > 50) {
+      nextAlerts.removeRange(50, nextAlerts.length);
+    }
+    _emitSnapshot(_snapshot.copyWith(alerts: nextAlerts));
+    if (alert.severity == GatewayAlertSeverity.critical) {
+      await notifyStatus(alert.title, alert.description);
+    }
   }
 
   GatewayStatus _emit(GatewayStatus next) {
@@ -399,34 +520,67 @@ class GatewayRuntimeService {
     if (!_statusController.isClosed) {
       _statusController.add(next);
     }
+    _emitSnapshot(_snapshot.copyWith(status: next));
     return next;
   }
-}
 
-GatewayConfig applyMqttConfigUpdate(
-  GatewayConfig current,
-  Map<String, Object?> payload,
-) {
-  final portalBaseUrl = _portalUrl(payload['portal_base_url']);
-  if (portalBaseUrl == null || portalBaseUrl == current.portalBaseUrl) {
-    return current;
+  void _emitSnapshot(GatewayRuntimeSnapshot next) {
+    _snapshot = next;
+    if (!_snapshotController.isClosed) {
+      _snapshotController.add(next);
+    }
   }
-  return current.copyWith(portalBaseUrl: portalBaseUrl);
-}
 
-String? _portalUrl(Object? value) {
-  final raw = value == null
-      ? ''
-      : '$value'.trim().replaceAll(RegExp(r'/+$'), '');
-  if (raw.isEmpty) {
-    return null;
+  void _recordPublishResult(TelemetryPublishResult result) {
+    _emitSnapshot(_snapshot.recordPublish(result));
+    if (result.success) {
+      if (!_status.mqttReady ||
+          _status.mode == GatewayConnectionMode.degraded ||
+          _status.mode == GatewayConnectionMode.error) {
+        _emit(
+          _status.copyWith(
+            mode: GatewayConnectionMode.connected,
+            mqttReady: true,
+            message: 'Telemetry publish recovered',
+          ),
+        );
+      }
+      return;
+    }
+    if (!result.success) {
+      _emit(
+        _status.copyWith(
+          mode: GatewayConnectionMode.degraded,
+          mqttReady: false,
+          message: 'Telemetry publish failed: ${result.reason.name}',
+        ),
+      );
+    }
   }
-  final uri = Uri.tryParse(raw);
-  if (uri == null || uri.host.isEmpty) {
-    return null;
+
+  void _recordM5Payload(String payload) {
+    try {
+      final sample = M5TelemetrySample.fromPayload(payload);
+      _emitSnapshot(_snapshot.copyWith(latestM5Sample: sample));
+    } on Object {
+      _emit(
+        _status.copyWith(
+          mode: GatewayConnectionMode.degraded,
+          message: 'M5 packet is not valid JSON telemetry',
+        ),
+      );
+    }
   }
-  if (uri.scheme != 'https' && uri.scheme != 'http') {
-    return null;
+
+  Future<void> _loadPairedDevicesIntoSnapshot(GatewayConfig config) async {
+    final pairedM5 = await _preferences.loadPairedM5Device();
+    final pairedPolar = await _preferences.loadPairedPolarDevice();
+    _emitSnapshot(
+      _snapshot.copyWith(
+        config: config,
+        pairedM5Device: pairedM5,
+        pairedPolarDevice: pairedPolar,
+      ),
+    );
   }
-  return raw;
 }

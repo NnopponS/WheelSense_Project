@@ -171,6 +171,13 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 
 เมื่อเริ่มทำงาน เฟิร์มแวร์จะโหลด configuration ที่บันทึกไว้ เช่น ชื่ออุปกรณ์ ค่า room หรือค่าจับคู่ จากนั้นเริ่ม BLE advertising เพื่อประกาศ service UUID และรอ mobile gateway เชื่อมต่อ หลังเชื่อมต่อแล้วอุปกรณ์จะอ่านค่า IMU และแบตเตอรี่ตามรอบเวลา ประมวลผล gyro offset เพื่อลด bias ของแกนหมุน ใช้ exponential moving average (EMA) เพื่อลดสัญญาณรบกวน และใช้ deadband เพื่อตัดค่าการเคลื่อนไหวขนาดเล็กที่อาจเกิดจาก noise ก่อนคำนวณความเร็ว ระยะทาง และความเร่งของรถเข็น
 
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.58\textwidth,height=0.26\textheight,keepaspectratio]{chapter3/ch3-m5-wheelchair-placement.jpg}
+    \caption{ตัวอย่างตำแหน่งติดตั้ง M5StickC Plus2 บนรถเข็นสำหรับอ่านค่าการเคลื่อนไหวและส่งข้อมูลผ่าน BLE ไปยังโทรศัพท์}
+    \label{fig:ch3-m5-placement}
+\end{figure}
+
 \begin{table}[H]
     \centering
     \caption{หน้าที่หลักของเฟิร์มแวร์ M5StickC Plus2 ในระบบปัจจุบัน}
@@ -188,13 +195,6 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
         Command receiver & รับคำสั่ง start, stop, identify, pair, calibrate, reset distance, config และ time sync จากโทรศัพท์ \\ \hline
     \end{tabular}
 \end{table}
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.72\textwidth]{chapter3/ch3-m5-wheelchair-placement.jpg}
-    \caption{ตัวอย่างตำแหน่งติดตั้ง M5StickC Plus2 บนรถเข็นสำหรับอ่านค่าการเคลื่อนไหวและส่งข้อมูลผ่าน BLE ไปยังโทรศัพท์}
-    \label{fig:ch3-m5-placement}
-\end{figure}
 
 โครงสร้างข้อมูลที่ส่งไปยังโทรศัพท์ถูกกำหนดให้เป็น JSON เพื่อให้ mobile gateway สามารถ normalize และส่งต่อเข้าระบบได้โดยไม่ต้องผูกกับรูปแบบ binary ของเฟิร์มแวร์โดยตรง ตัวอย่างกลุ่มข้อมูลหลัก ได้แก่ timestamp, device identifier, ค่า IMU, motion summary, battery level และสถานะการเชื่อมต่อ การกำหนดข้อมูลเป็น schema ลักษณะนี้ช่วยให้ backend ตรวจสอบและจัดเก็บข้อมูลใน PostgreSQL/JSONB ได้ง่ายขึ้น
 
@@ -240,34 +240,25 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 \label{sec:ch3_mobile_gateway}
 อุปกรณ์ Polar Verity Sense ถูกเพิ่มเข้ามาเพื่อให้ระบบมีข้อมูลสัญญาณชีพประกอบกับข้อมูลการเคลื่อนไหวของรถเข็น การอ่านข้อมูลจาก Polar ไม่ได้ใช้เพียง BLE GATT มาตรฐานทั่วไปเท่านั้น แต่ใช้ Polar SDK เพื่ออ่านข้อมูลที่ละเอียดขึ้น เช่น heart rate, RR interval และ PPG stream จากนั้นแอป Flutter จะรวมข้อมูลของ Polar เข้ากับข้อมูลจาก M5StickC Plus2 และข้อมูล step counter ของโทรศัพท์
 
-แอป Flutter ทำหน้าที่เป็น gateway หลักในระบบ เพราะเป็นจุดที่มีทั้ง BLE สำหรับเชื่อมต่ออุปกรณ์ภาคสนามและอินเทอร์เน็ตผ่าน Wi-Fi หรือเครือข่ายเซลลูลาร์ หน้าการทำงานที่เกี่ยวข้องกับการติดตั้งภาคสนามคือหน้า \texttt{/WheelSensor} ซึ่งใช้ตรวจสถานะการเชื่อมต่อ BLE, Polar, M5StickC Plus2, MQTT และการส่งข้อมูลขึ้น server จุดนี้ช่วยให้ผู้ดูแลหรือผู้พัฒนาสามารถแยกปัญหาได้ว่าข้อมูลหายจากระดับ pairing, sensor stream, network publish หรือ backend ingest
-
-\begin{figure}[H]
+\begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{chapter3/ch3-polar-smartphone.png}
+    \includegraphics[width=0.64\textwidth,height=0.30\textheight,keepaspectratio]{chapter3/ch3-polar-smartphone.png}
     \caption{การใช้งาน Polar Verity Sense ร่วมกับสมาร์ทโฟนที่ทำหน้าที่เป็น mobile gateway}
     \label{fig:ch3-polar-smartphone}
 \end{figure}
 
-\begin{table}[H]
-    \centering
-    \caption{กลุ่มข้อมูลที่ mobile gateway รวมก่อนส่งเข้าสู่ระบบ}
-    \label{tab:ch3_mobile_payload}
-    \small
-    \renewcommand{\arraystretch}{1.25}
-    \begin{tabular}{|L{3.2cm}|L{4.7cm}|L{4.7cm}|}
-        \hline
-        \textbf{แหล่งข้อมูล} & \textbf{ข้อมูลที่รับเข้า gateway} & \textbf{การส่งต่อเข้าสู่ระบบ} \\ \hline
-        M5StickC Plus2 & IMU, motion summary, battery, device metadata & รวมเป็น telemetry ของรถเข็นและ publish ผ่าน MQTT/REST \\ \hline
-        Polar Verity Sense & HR, RR interval, PPG และสถานะแบตเตอรี่ตามที่ SDK รองรับ & normalize เป็นข้อมูลสัญญาณชีพของผู้ใช้และส่งพร้อม timestamp \\ \hline
-        Phone sensor & step counter และสถานะเครือข่ายของเครื่อง & ใช้ประกอบบริบทผู้ใช้ที่ไม่ได้อยู่บนรถเข็นตลอดเวลา \\ \hline
-        BLE RSSI nodes & รายการ beacon ที่พบและค่า RSSI & ส่งเป็นข้อมูลตำแหน่งให้ backend ประเมินห้องหรือโซน \\ \hline
-    \end{tabular}
-\end{table}
+แอป Flutter ทำหน้าที่เป็น gateway หลักในระบบ เพราะเป็นจุดที่มีทั้ง BLE สำหรับเชื่อมต่ออุปกรณ์ภาคสนามและอินเทอร์เน็ตผ่าน Wi-Fi หรือเครือข่ายเซลลูลาร์ หน้าการทำงานที่เกี่ยวข้องกับการติดตั้งภาคสนามคือหน้า \texttt{/WheelSensor} ซึ่งใช้ตรวจสถานะการเชื่อมต่อ BLE, Polar, M5StickC Plus2, MQTT และการส่งข้อมูลขึ้น server จุดนี้ช่วยให้ผู้ดูแลหรือผู้พัฒนาสามารถแยกปัญหาได้ว่าข้อมูลหายจากระดับ pairing, sensor stream, network publish หรือ backend ingest
 
 \begin{figure}[!htbp]
     \centering
-    \resizebox{0.88\textwidth}{!}{%
+    \includegraphics[width=0.30\textwidth,height=0.40\textheight,keepaspectratio]{chapter3/ch3-wheelsensor-real.png}
+    \caption{หน้าจอ \texttt{/WheelSensor} สำหรับตรวจสถานะ BLE, Polar, M5StickC Plus2 และการส่งข้อมูลขึ้น server}
+    \label{fig:ch3_wheelsensor_status}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.64\textwidth}{!}{%
     \begin{tikzpicture}[
         node distance=0.75cm,
         proc/.style={draw, rounded corners, align=center, minimum width=4.2cm, minimum height=0.78cm, font=\scriptsize, fill=green!7},
@@ -302,22 +293,30 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
     \label{fig:ch3-smartphone-loop}
 \end{figure}
 
-\begin{figure}[!htbp]
+\begin{table}[H]
     \centering
-    \includegraphics[width=0.38\textwidth]{chapter3/ch3-wheelsensor-real.png}
-    \caption{หน้าจอ \texttt{/WheelSensor} สำหรับตรวจสถานะ BLE, Polar, M5StickC Plus2 และการส่งข้อมูลขึ้น server}
-    \label{fig:ch3_wheelsensor_status}
-\end{figure}
+    \caption{กลุ่มข้อมูลที่ mobile gateway รวมก่อนส่งเข้าสู่ระบบ}
+    \label{tab:ch3_mobile_payload}
+    \small
+    \renewcommand{\arraystretch}{1.25}
+    \begin{tabular}{|L{3.2cm}|L{4.7cm}|L{4.7cm}|}
+        \hline
+        \textbf{แหล่งข้อมูล} & \textbf{ข้อมูลที่รับเข้า gateway} & \textbf{การส่งต่อเข้าสู่ระบบ} \\ \hline
+        M5StickC Plus2 & IMU, motion summary, battery, device metadata & รวมเป็น telemetry ของรถเข็นและ publish ผ่าน MQTT/REST \\ \hline
+        Polar Verity Sense & HR, RR interval, PPG และสถานะแบตเตอรี่ตามที่ SDK รองรับ & normalize เป็นข้อมูลสัญญาณชีพของผู้ใช้และส่งพร้อม timestamp \\ \hline
+        Phone sensor & step counter และสถานะเครือข่ายของเครื่อง & ใช้ประกอบบริบทผู้ใช้ที่ไม่ได้อยู่บนรถเข็นตลอดเวลา \\ \hline
+        BLE RSSI nodes & รายการ beacon ที่พบและค่า RSSI & ส่งเป็นข้อมูลตำแหน่งให้ backend ประเมินห้องหรือโซน \\ \hline
+    \end{tabular}
+\end{table}
+\FloatBarrier
 
 \section{Indoor Localization}
 \label{sec:ch3_localization}
 การระบุตำแหน่งภายในอาคารของระบบใช้ค่า RSSI จาก BLE node ที่ติดตั้งตามพื้นที่อ้างอิง โดย mobile gateway สแกนสัญญาณจาก node รอบตัวและส่งรายการค่า RSSI พร้อม timestamp ไปยัง server สำหรับประเมินห้องหรือโซนของผู้ใช้ การออกแบบในบทนี้ไม่ลงรายละเอียดสมการซ้ำจากบทที่ 2 แต่เน้นกระบวนการนำข้อมูล RSSI เข้าระบบและการเลือกกลยุทธ์ที่ backend รองรับ
 
-ในเชิง implementation ระบบรองรับทั้งการเทียบกับ fingerprint ด้วย KNN และการใช้ max-RSSI เป็น baseline หรือ fallback เมื่อข้อมูล fingerprint ยังไม่พร้อมหรือความมั่นใจต่ำ การใช้ KNN ต้องมีชุดข้อมูลอ้างอิงของแต่ละตำแหน่ง เช่น room, beacon alias, ค่า RSSI และข้อมูลผู้ใช้หรืออุปกรณ์ที่จับคู่ไว้ ส่วน max-RSSI เลือกตำแหน่งจาก beacon ที่มีสัญญาณแรงที่สุดในรอบปัจจุบัน จึงใช้งานง่ายกว่าแต่ไวต่อการสะท้อนและการเปลี่ยนแปลงของสภาพแวดล้อม
-
-\begin{figure}[H]
+\begin{figure}[!htbp]
     \centering
-    \resizebox{0.68\textwidth}{!}{%
+    \resizebox{0.54\textwidth}{!}{%
     \begin{tikzpicture}[
         bleanchor/.style={circle, draw, thick, fill=blue!25, minimum size=0.72cm, font=\bfseries\small},
         zonelabel/.style={font=\bfseries\small},
@@ -346,14 +345,16 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.82\textwidth]{chapter3/Node-location.png}
+    \includegraphics[width=0.62\textwidth,height=0.26\textheight,keepaspectratio]{chapter3/Node-location.png}
     \caption{ตัวอย่างตำแหน่ง BLE node ในพื้นที่ทดลองสำหรับเก็บค่า RSSI ภายในอาคาร}
     \label{fig:ch3-node-location-real}
 \end{figure}
 
+ในเชิง implementation ระบบรองรับทั้งการเทียบกับ fingerprint ด้วย KNN และการใช้ max-RSSI เป็น baseline หรือ fallback เมื่อข้อมูล fingerprint ยังไม่พร้อมหรือความมั่นใจต่ำ การใช้ KNN ต้องมีชุดข้อมูลอ้างอิงของแต่ละตำแหน่ง เช่น room, beacon alias, ค่า RSSI และข้อมูลผู้ใช้หรืออุปกรณ์ที่จับคู่ไว้ ส่วน max-RSSI เลือกตำแหน่งจาก beacon ที่มีสัญญาณแรงที่สุดในรอบปัจจุบัน จึงใช้งานง่ายกว่าแต่ไวต่อการสะท้อนและการเปลี่ยนแปลงของสภาพแวดล้อม
+
 \begin{figure}[!htbp]
     \centering
-    \resizebox{0.88\textwidth}{!}{%
+    \resizebox{0.76\textwidth}{!}{%
     \begin{tikzpicture}[
         box/.style={draw, rounded corners, align=center, text width=2.55cm, minimum height=0.85cm, font=\scriptsize, fill=white},
         arrow/.style={->, >=Stealth, thick}
@@ -379,6 +380,7 @@ M5StickC Plus2 ถูกใช้เป็นเซ็นเซอร์ปร�
 \end{figure}
 
 การเขียนข้อมูลตำแหน่งกลับเข้าสู่ระบบทำเป็นข้อมูลที่ตรวจสอบย้อนกลับได้ โดยเก็บทั้ง raw RSSI reading และผล room prediction แยกกัน เพื่อให้สามารถวิเคราะห์ภายหลังได้ว่าความคลาดเคลื่อนเกิดจากสัญญาณต้นทาง การตั้งค่า fingerprint หรือการเลือกกลยุทธ์ของ localization ในช่วงเวลานั้น การแยก raw data กับ prediction ยังช่วยให้ Chapter 4 สามารถประเมินความแม่นยำของ KNN และ fallback ได้อย่างเป็นระบบ
+\FloatBarrier
 
 \addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
 \section{Server, API และ Database}
@@ -430,7 +432,7 @@ schema หลักของระบบสามารถแบ่งได้�
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/ER-Diagram.png}
+    \includegraphics[width=0.88\textwidth,height=0.52\textheight,keepaspectratio]{chapter3/ER-Diagram.png}
     \caption{แผนภาพ schema ฐานข้อมูลที่ใช้เชื่อม workspaces, users, patients, devices และข้อมูล telemetry}
     \label{fig:ch3-database-erd}
 \end{figure}

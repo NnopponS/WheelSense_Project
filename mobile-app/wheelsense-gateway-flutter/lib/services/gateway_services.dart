@@ -1,5 +1,7 @@
 export '../models/ble_device_snapshot.dart';
 export '../models/gateway_config.dart';
+export '../models/gateway_runtime_snapshot.dart';
+export '../models/gateway_setup_form.dart';
 export '../models/gateway_status.dart';
 export '../models/mqtt_gateway_message.dart';
 export '../models/sensor_telemetry.dart';

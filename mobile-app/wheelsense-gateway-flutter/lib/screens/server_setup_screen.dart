@@ -25,6 +25,7 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
   GatewayStatus _status = GatewayStatus.initial();
   bool _loaded = false;
   bool _saving = false;
+  String? _formError;
 
   @override
   void didChangeDependencies() {
@@ -94,7 +95,7 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                 controller: _portalController,
                 decoration: const InputDecoration(
                   labelText: 'Portal base URL',
-                  hintText: 'http://192.168.1.42:3000',
+                  hintText: 'https://portal.wheelsense.example',
                   prefixIcon: Icon(Icons.link),
                 ),
               ),
@@ -103,7 +104,7 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                 controller: _mqttController,
                 decoration: const InputDecoration(
                   labelText: 'MQTT broker',
-                  hintText: 'mqtt://broker.emqx.io:1883',
+                  hintText: 'mqtts://mqtt.wheelsense.example:8883',
                   prefixIcon: Icon(Icons.settings_ethernet),
                 ),
               ),
@@ -115,6 +116,36 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                   hintText: 'ward-a-gateway-01',
                   prefixIcon: Icon(Icons.badge_outlined),
                 ),
+              ),
+              if (_formError != null) ...[
+                const SizedBox(height: 10),
+                CompactRowCard(
+                  icon: Icons.error_outline,
+                  title: 'Settings need attention',
+                  subtitle: _formError!,
+                  meta: 'Fix',
+                  severity: ClinicalSeverity.warning,
+                ),
+              ],
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _saving ? null : _applyLocalPreset,
+                      icon: const Icon(Icons.developer_mode),
+                      label: const Text('Local dev preset'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _saving ? null : _reset,
+                      icon: const Icon(Icons.restore),
+                      label: const Text('Reset'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
               Row(
@@ -188,9 +219,12 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
   }
 
   Future<void> _save() async {
+    final next = _validatedConfigFromInputs();
+    if (next == null) {
+      return;
+    }
     setState(() => _saving = true);
     final runtime = GatewayServicesScope.of(context);
-    final next = _configFromInputs();
     await runtime.saveConfig(next);
     final status = await runtime.connectMqttConfigStream(config: next);
     final saved = await runtime.loadConfig();
@@ -201,14 +235,18 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
       _config = saved;
       _status = status;
       _saving = false;
+      _formError = null;
     });
     _show(status.message);
   }
 
   Future<void> _testConnection() async {
+    final next = _validatedConfigFromInputs();
+    if (next == null) {
+      return;
+    }
     setState(() => _saving = true);
     final runtime = GatewayServicesScope.of(context);
-    final next = _configFromInputs();
     await runtime.saveConfig(next);
     final status = await runtime.bootstrap(config: next);
     final saved = await runtime.loadConfig();
@@ -219,35 +257,55 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
       _config = saved;
       _status = status;
       _saving = false;
+      _formError = null;
     });
     _show(status.message);
   }
 
-  GatewayConfig _configFromInputs() {
-    final mqtt = _parseMqtt(_mqttController.text.trim());
-    return _config.copyWith(
-      portalBaseUrl: _portalController.text.trim().isEmpty
-          ? GatewayConfig.defaults().portalBaseUrl
-          : _portalController.text.trim(),
-      mqttHost: mqtt.$1,
-      mqttPort: mqtt.$2,
-      mqttUseTls: mqtt.$3,
-      deviceId: _gatewayController.text.trim().isEmpty
-          ? GatewayConfig.defaults().deviceId
-          : _gatewayController.text.trim(),
-      mqttUsername: _userController.text.trim(),
-      mqttPassword: _passwordController.text,
+  GatewayConfig? _validatedConfigFromInputs() {
+    final result = buildGatewayConfigFromSetupForm(
+      current: _config,
+      portalInput: _portalController.text,
+      mqttInput: _mqttController.text,
+      gatewayIdInput: _gatewayController.text,
+      usernameInput: _userController.text,
+      passwordInput: _passwordController.text,
     );
+    if (!result.isValid) {
+      setState(() => _formError = result.error);
+      return null;
+    }
+    return result.config;
   }
 
-  (String, int, bool) _parseMqtt(String value) {
+  Future<void> _applyLocalPreset() async {
+    setState(() {
+      _portalController.text = 'http://localhost:3000';
+      _mqttController.text = 'mqtt://broker.emqx.io:1883';
+      _userController.text = '';
+      _passwordController.text = '';
+      _formError =
+          'Local dev preset uses cleartext URLs. It is intended for debug/profile builds, not release deployment.';
+    });
+  }
+
+  Future<void> _reset() async {
     final defaults = GatewayConfig.defaults();
-    final uri = Uri.tryParse(value.contains('://') ? value : 'mqtt://$value');
-    if (uri == null || uri.host.isEmpty) {
-      return (defaults.mqttHost, defaults.mqttPort, defaults.mqttUseTls);
+    final runtime = GatewayServicesScope.of(context);
+    await runtime.saveConfig(defaults);
+    if (!mounted) {
+      return;
     }
-    final tls = uri.scheme == 'mqtts' || uri.scheme == 'ssl';
-    return (uri.host, uri.hasPort ? uri.port : (tls ? 8883 : 1883), tls);
+    setState(() {
+      _config = defaults;
+      _portalController.text = defaults.portalBaseUrl;
+      _mqttController.text =
+          '${defaults.mqttUseTls ? 'mqtts' : 'mqtt'}://${defaults.mqttHost}:${defaults.mqttPort}';
+      _gatewayController.text = defaults.deviceId;
+      _userController.text = defaults.mqttUsername;
+      _passwordController.text = defaults.mqttPassword;
+      _formError = null;
+    });
   }
 
   String _hostLabel(String url) {

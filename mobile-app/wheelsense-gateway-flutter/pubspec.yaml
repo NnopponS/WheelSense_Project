@@ -1,5 +1,5 @@
 name: wheelsense_gateway_flutter
-description: "A new Flutter project."
+description: "Android-first WheelSense BLE-to-MQTT mobile gateway."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -44,6 +44,7 @@ dependencies:
   intl: ^0.20.2
   collection: ^1.19.1
   polar: ^7.10.0
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +69,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/brand/
     - assets/devices/
 
   # To add assets to your application, add an assets section, like this:

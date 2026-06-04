@@ -4,65 +4,63 @@
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {1.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แผนการดำเนินงานของโครงงาน}}{21}{table.caption.16}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บทบาทของเทคโนโลยี IoT และ sensor ในระบบดูแล}}{25}{table.caption.18}%
-\contentsline {table}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่าง feature จาก IMU ที่ใช้กับการวิเคราะห์การเคลื่อนไหว}}{30}{table.caption.21}%
-\contentsline {table}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การแบ่งบทบาทระหว่าง neural และ symbolic component}}{33}{table.caption.23}%
-\contentsline {table}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การจัดกลุ่มงานวิจัยที่เกี่ยวข้องกับระบบต้นแบบ}}{35}{table.caption.25}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บทบาทของเทคโนโลยี IoT และ sensor ในระบบดูแล}}{25}{table.caption.20}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สเปคสำคัญของอุปกรณ์ฮาร์ดแวร์หลัก}}{26}{table.caption.22}%
+\contentsline {table}{\numberline {2.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces เครื่องมือซอฟต์แวร์และไลบรารีหลักที่ใช้ในระบบต้นแบบ}}{28}{table.caption.23}%
+\contentsline {table}{\numberline {2.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่าง feature จาก IMU ที่ใช้กับการวิเคราะห์การเคลื่อนไหว}}{32}{table.caption.25}%
+\contentsline {table}{\numberline {2.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การแบ่งบทบาทระหว่าง neural และ symbolic component}}{35}{table.caption.27}%
+\contentsline {table}{\numberline {2.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การจัดกลุ่มงานวิจัยที่เกี่ยวข้องกับระบบต้นแบบ}}{37}{table.caption.29}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าที่หลักของเฟิร์มแวร์ M5StickC Plus2 ในระบบปัจจุบัน}}{41}{table.caption.30}%
-\contentsline {table}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กลุ่มข้อมูลที่ mobile gateway รวมก่อนส่งเข้าสู่ระบบ}}{45}{table.caption.34}%
-\contentsline {table}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริการหลักของ platform services ในระบบ WheelSense}}{50}{table.caption.40}%
-\contentsline {table}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างกลุ่มข้อมูลที่จัดเก็บใน PostgreSQL และ JSONB}}{52}{table.caption.43}%
-\contentsline {table}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บทบาทผู้ใช้ หน้าจอหลัก และหน้าที่ที่รองรับบน dashboard}}{53}{table.caption.44}%
-\contentsline {table}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวทางการประเมินผลที่ใช้ต่อเนื่องไปยังบทผลการทดลอง}}{65}{table.caption.59}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces หน้าที่หลักของเฟิร์มแวร์ M5StickC Plus2 ในระบบปัจจุบัน}}{44}{table.caption.35}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กลุ่มข้อมูลที่ mobile gateway รวมก่อนส่งเข้าสู่ระบบ}}{48}{table.caption.40}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บริการหลักของ platform services ในระบบ WheelSense}}{50}{table.caption.44}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างกลุ่มข้อมูลที่จัดเก็บใน PostgreSQL และ JSONB}}{52}{table.caption.47}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces บทบาทผู้ใช้ หน้าจอหลัก และหน้าที่ที่รองรับบน dashboard}}{54}{table.caption.48}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กลยุทธ์การทดสอบโครงงาน}}{62}{table.caption.57}%
+\contentsline {table}{\numberline {3.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces แนวทางการประเมินผลที่ใช้ต่อเนื่องไปยังบทผลการทดลอง}}{64}{table.caption.58}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพรวมขอบเขตการทดลองของระบบ WheelSense}}{67}{table.caption.60}%
-\contentsline {table}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลสรุปการทดสอบอุปกรณ์ภาคสนาม}}{68}{table.caption.62}%
-\contentsline {table}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการตรวจจับสถานะการเคลื่อนไหวจากหน้าต่างข้อมูล IMU}}{69}{table.caption.63}%
-\contentsline {table}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ RSSI/KNN จากชุดข้อมูลที่มีหลักฐานประกอบ}}{71}{table.caption.67}%
-\contentsline {table}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลเปรียบเทียบ KNN กับ max-RSSI baseline}}{71}{table.caption.68}%
-\contentsline {table}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ mobile gateway และ latency ของ server path}}{73}{table.caption.70}%
-\contentsline {table}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ latency ของ server path}}{75}{table.caption.75}%
-\contentsline {table}{\numberline {4.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ latency ของ query ฐานข้อมูล}}{76}{table.caption.76}%
-\contentsline {table}{\numberline {4.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลสรุป usability ของ dashboard/HMI จากหลักฐานปัจจุบัน}}{76}{table.caption.77}%
-\contentsline {table}{\numberline {4.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทำภารกิจบน dashboard และ mobile gateway}}{77}{table.caption.78}%
-\contentsline {table}{\numberline {4.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ AI Inter-Rater Reliability ตามระดับความกำกวม}}{78}{table.caption.80}%
-\contentsline {table}{\numberline {4.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการตรวจสอบ execution gate ของ AI/MCP pipeline}}{78}{table.caption.81}%
-\contentsline {table}{\numberline {4.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ Text-Distance / Cosine Similarity ของคำตอบ AI}}{79}{table.caption.82}%
-\contentsline {table}{\numberline {4.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ latency ของ AI/MCP pipeline (n=30)}}{80}{table.caption.83}%
-\contentsline {table}{\numberline {4.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปผลการทดลองตามส่วนของระบบ}}{82}{table.caption.85}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ภาพรวมขอบเขตการทดลองของระบบ WheelSense}}{66}{table.caption.59}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลสรุปการทดสอบอุปกรณ์ภาคสนาม}}{67}{table.caption.61}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการตรวจจับสถานะการเคลื่อนไหวจากหน้าต่างข้อมูล IMU}}{68}{table.caption.62}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบระยะทางและความเร็ว}}{69}{table.caption.64}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการตรวจ feature ความเร่งจาก IMU}}{70}{table.caption.65}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ RSSI/KNN จากชุดข้อมูลที่มีหลักฐานประกอบ}}{72}{table.caption.68}%
+\contentsline {table}{\numberline {4.7}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลเปรียบเทียบ KNN กับ max-RSSI baseline}}{72}{table.caption.69}%
+\contentsline {table}{\numberline {4.8}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ mobile gateway และ latency ของ server path}}{74}{table.caption.71}%
+\contentsline {table}{\numberline {4.9}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ latency ของ server path}}{76}{table.caption.76}%
+\contentsline {table}{\numberline {4.10}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ latency ของ query ฐานข้อมูล}}{76}{table.caption.77}%
+\contentsline {table}{\numberline {4.11}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลสรุป usability ของ dashboard/HMI จากหลักฐานปัจจุบัน}}{77}{table.caption.78}%
+\contentsline {table}{\numberline {4.12}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทำภารกิจบน dashboard และ mobile gateway}}{78}{table.caption.79}%
+\contentsline {table}{\numberline {4.13}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ AI Inter-Rater Reliability ตามระดับความกำกวม}}{86}{table.caption.87}%
+\contentsline {table}{\numberline {4.14}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการตรวจสอบ execution gate ของ AI/MCP pipeline}}{86}{table.caption.88}%
+\contentsline {table}{\numberline {4.15}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ Text-Distance / Cosine Similarity ของคำตอบ AI}}{87}{table.caption.89}%
+\contentsline {table}{\numberline {4.16}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการทดสอบ latency ของ AI/MCP pipeline (n=30)}}{88}{table.caption.90}%
 \addvspace {10\p@ }
+\contentsline {table}{\numberline {5.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces สรุปผลการดำเนินงานตามส่วนของระบบ}}{90}{table.caption.92}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {ก.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลทั่วไปของโครงงาน}}{93}{table.caption.90}%
-\contentsline {table}{\numberline {ก.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การจัดเข้ากลุ่มปัญหาทางวิศวกรรมที่ซับซ้อนตามกรอบ IEA}}{94}{table.caption.91}%
-\contentsline {table}{\numberline {ก.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces องค์ความรู้และเครื่องมือหลักที่ใช้ในโครงงาน}}{95}{table.caption.92}%
-\contentsline {table}{\numberline {ก.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces มาตรฐานและข้อพิจารณาที่เกี่ยวข้องกับระบบ}}{95}{table.caption.93}%
-\contentsline {table}{\numberline {ก.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผู้มีส่วนได้ส่วนเสียและผลกระทบของโครงงาน}}{96}{table.caption.94}%
-\contentsline {table}{\numberline {ก.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces การบริหารงานวิศวกรรมและความเสี่ยงของโครงงาน}}{97}{table.caption.95}%
-\contentsline {table}{\numberline {ข.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลสรุปของ Wheelchair Sensor และการส่ง telemetry}}{98}{table.caption.97}%
-\contentsline {table}{\numberline {ข.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลหน้าต่างการเคลื่อนไหวจาก IMU}}{99}{table.caption.99}%
-\contentsline {table}{\numberline {ข.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลสรุปของ Polar Verity Sense และ Mobile Gateway}}{99}{table.caption.100}%
-\contentsline {table}{\numberline {ค.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces จำนวนข้อมูลที่ใช้ในชุดทดลอง RSSI/KNN}}{100}{table.caption.102}%
-\contentsline {table}{\numberline {ค.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลเปรียบเทียบ KNN กับ max-RSSI baseline}}{100}{table.caption.103}%
-\contentsline {table}{\numberline {ค.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลเปรียบเทียบ KNN และ XGBoost ในชุดทดลองเดียวกัน}}{100}{table.caption.104}%
-\contentsline {table}{\numberline {ค.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Confusion matrix ของ KNN ใน Case 1}}{101}{table.caption.105}%
-\contentsline {table}{\numberline {ค.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Confusion matrix ของ KNN ใน Case 2}}{101}{table.caption.106}%
-\contentsline {table}{\numberline {ค.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Confusion matrix รายตำแหน่งของ KNN ใน Case 3}}{101}{table.caption.107}%
-\contentsline {table}{\numberline {ง.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลสรุปชุดทดสอบ AI ตามระดับความกำกวม}}{102}{table.caption.109}%
-\contentsline {table}{\numberline {ง.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการผ่าน execution gate ของชุดทดสอบ AI}}{102}{table.caption.110}%
-\contentsline {table}{\numberline {ง.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างคำสั่งกลุ่ม No-ambiguous}}{103}{table.caption.111}%
-\contentsline {table}{\numberline {ง.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างคำสั่งกลุ่ม Low-ambiguous}}{104}{table.caption.112}%
-\contentsline {table}{\numberline {ง.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างคำสั่งกลุ่ม Medium-ambiguous}}{105}{table.caption.113}%
-\contentsline {table}{\numberline {ง.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างคำสั่งกลุ่ม High-ambiguous}}{105}{table.caption.114}%
-\contentsline {table}{\numberline {จ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces กลุ่ม schema หลักของฐานข้อมูล}}{106}{table.caption.116}%
-\contentsline {table}{\numberline {จ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่าง API และ MQTT topic ที่เกี่ยวข้อง}}{107}{table.caption.117}%
-\contentsline {table}{\numberline {ฉ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลประกอบการประเมิน Dashboard/HMI และ SUS score}}{109}{table.caption.119}%
-\contentsline {table}{\numberline {ฉ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูล task scenario ที่ใช้ประเมิน Dashboard/HMI}}{109}{table.caption.120}%
-\contentsline {table}{\numberline {ช.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับ firmware loop ของ M5StickC Plus2}}{113}{table.caption.126}%
-\contentsline {table}{\numberline {ช.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผล latency ของ server path ที่ใช้ประกอบบทที่ 4}}{113}{table.caption.127}%
-\contentsline {table}{\numberline {ช.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผล end-to-end scenario ของระบบต้นแบบ}}{114}{table.caption.129}%
-\contentsline {table}{\numberline {ช.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับการทำงานของ Flutter Mobile Gateway}}{115}{table.caption.130}%
-\contentsline {table}{\numberline {ช.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับ server ingest และการนำข้อมูลไปใช้}}{115}{table.caption.131}%
-\contentsline {table}{\numberline {ช.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับ AI/MCP pipeline แบบ 5 layer}}{116}{table.caption.132}%
+\contentsline {table}{\numberline {ข.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลสรุปของ Wheelchair Sensor และการส่ง telemetry}}{112}{table.caption.98}%
+\contentsline {table}{\numberline {ข.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลหน้าต่างการเคลื่อนไหวจาก IMU}}{113}{table.caption.100}%
+\contentsline {table}{\numberline {ข.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลสรุปของ Polar Verity Sense และ Mobile Gateway}}{113}{table.caption.101}%
+\contentsline {table}{\numberline {ค.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces จำนวนข้อมูลที่ใช้ในชุดทดลอง RSSI/KNN}}{114}{table.caption.103}%
+\contentsline {table}{\numberline {ค.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลเปรียบเทียบ KNN กับ max-RSSI baseline}}{114}{table.caption.104}%
+\contentsline {table}{\numberline {ค.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลเปรียบเทียบ KNN และ XGBoost ในชุดทดลองเดียวกัน}}{114}{table.caption.105}%
+\contentsline {table}{\numberline {ค.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Confusion matrix ของ KNN ใน Case 1}}{115}{table.caption.106}%
+\contentsline {table}{\numberline {ค.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Confusion matrix ของ KNN ใน Case 2}}{115}{table.caption.107}%
+\contentsline {table}{\numberline {ค.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces Confusion matrix รายตำแหน่งของ KNN ใน Case 3}}{115}{table.caption.108}%
+\contentsline {table}{\numberline {ง.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลสรุปชุดทดสอบ AI ตามระดับความกำกวม}}{116}{table.caption.110}%
+\contentsline {table}{\numberline {ง.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผลการผ่าน execution gate ของชุดทดสอบ AI}}{116}{table.caption.111}%
+\contentsline {table}{\numberline {ง.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างคำสั่งกลุ่ม No-ambiguous}}{117}{table.caption.112}%
+\contentsline {table}{\numberline {ง.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างคำสั่งกลุ่ม Low-ambiguous}}{118}{table.caption.113}%
+\contentsline {table}{\numberline {ง.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างคำสั่งกลุ่ม Medium-ambiguous}}{119}{table.caption.114}%
+\contentsline {table}{\numberline {ง.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่างคำสั่งกลุ่ม High-ambiguous}}{119}{table.caption.115}%
+\contentsline {table}{\numberline {จ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ตัวอย่าง MQTT topic ที่ใช้กับระบบต้นแบบ}}{121}{table.caption.117}%
+\contentsline {table}{\numberline {ฉ.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูลประกอบการประเมิน Dashboard/HMI และ SUS score}}{123}{table.caption.119}%
+\contentsline {table}{\numberline {ฉ.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ข้อมูล task scenario ที่ใช้ประเมิน Dashboard/HMI}}{123}{table.caption.120}%
+\contentsline {table}{\numberline {ช.1}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับ firmware loop ของ M5StickC Plus2}}{126}{table.caption.125}%
+\contentsline {table}{\numberline {ช.2}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผล latency ของ server path ที่ใช้ประกอบบทที่ 4}}{126}{table.caption.126}%
+\contentsline {table}{\numberline {ช.3}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ผล end-to-end scenario ของระบบต้นแบบ}}{127}{table.caption.128}%
+\contentsline {table}{\numberline {ช.4}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับการทำงานของ Flutter Mobile Gateway}}{128}{table.caption.129}%
+\contentsline {table}{\numberline {ช.5}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับ server ingest และการนำข้อมูลไปใช้}}{128}{table.caption.130}%
+\contentsline {table}{\numberline {ช.6}{\ignorespaces \xpg@aux {}{thai}\ignorespaces ลำดับ AI/MCP pipeline แบบ 5 layer}}{129}{table.caption.131}%
 \contentsfinish 
 \contentsfinish 

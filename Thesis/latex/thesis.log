@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (MiKTeX 24.1) (preloaded format=xelatex 2025.12.13)  25 MAY 2026 22:17
+This is XeTeX, Version 3.141592653-2.6-0.999995 (MiKTeX 24.1) (preloaded format=xelatex 2025.12.13)  4 JUN 2026 22:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1656,7 +1656,7 @@ Library (tcolorbox): 'tcbprocessing.code.tex' version '6.2.0'
 )
 \c@tcblisting=\count509
 ))
-Package hyperref Info: Option `colorlinks' set `true' on input line 210.
+Package hyperref Info: Option `colorlinks' set `true' on input line 211.
 \c@tcb@cnt@exampleBox=\count510
 \bibparskip=\skip124
 ) (meta/info.tex)
@@ -1708,49 +1708,38 @@ anguage=dflt;mapping=tex-text;"
 thai;language=dflt;mapping=tex-text;"
 
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 16.79993pt on input line 82.
- (thesis.aux (front/1_with_logo_th.aux)
-(front/2_without_logo_th.aux) (front/3_without_logo_en.aux)
-(front/4_signature.aux) (front/5_abstract_th.aux) (front/6_abstract_en.aux)
-(front/7_ack_th.aux) (front/8_toc_lof_lot_lol.aux)
-(content/chapters/chapter1.aux) (content/chapters/chapter2.aux)
-(content/chapters/chapter3.aux) (content/chapters/chapter4.aux)
-(content/chapters/chapter5.aux) (content/backmatter/1_reference.aux)
-(content/appendices/appendixA.aux) (content/appendices/appendixB.aux)
-(content/appendices/appendixC.aux) (content/appendices/appendixD.aux)
-(content/appendices/appendixE.aux) (content/appendices/appendixF.aux)
-(content/appendices/appendixG.aux) (content/appendices/appendixH.aux)
-(content/appendices/appendixI.aux) (content/appendices/appendixJ.aux))
+(Font)              scaled to size 16.79993pt on input line 86.
+ (thesis.aux)
 \openout1 = `thesis.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for T3/cmr/m/n on input line 82.
-LaTeX Font Info:    Trying to load font information for T3+cmr on input line 82
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for T3/cmr/m/n on input line 86.
+LaTeX Font Info:    Trying to load font information for T3+cmr on input line 86
 .
 
 (C:\Users\worap\AppData\Local\Programs\MiKTeX\tex/latex/tipa\t3cmr.fd
 File: t3cmr.fd 2001/12/31 TIPA font definitions
 )
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 86.
+LaTeX Font Info:    ... okay on input line 86.
 \c@lstlisting=\count513
 Package newfloat Info: Trying Plan B...
 Package newfloat Info: `float' package detected.
@@ -1799,7 +1788,7 @@ Package biblatex Info: ... file 'thai.lbx' not found.
 
 
 Package biblatex Warning: Language 'thai' not supported.
-(biblatex)                Using dummy definitions on input line 82.
+(biblatex)                Using dummy definitions on input line 86.
 
 Package biblatex Info: XeTeX detected.
 (biblatex)             Assuming input encoding 'utf8'.
@@ -1946,10 +1935,34 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 )
-Package biblatex Info: Reference section=0 on input line 82.
-Package biblatex Info: Reference segment=0 on input line 82.
-Package hyperref Info: Link coloring ON on input line 82.
+Package biblatex Info: Reference section=0 on input line 86.
+Package biblatex Info: Reference segment=0 on input line 86.
+Package hyperref Info: Link coloring ON on input line 86.
  (thesis.out) (thesis.out)
 \@outlinefile=\write5
 \openout5 = `thesis.out'.
@@ -1959,8 +1972,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 \thai@year=\count514
-\openout2 = `front/1_with_logo_th.aux'.
-
  (front/1_with_logo_th.tex
 File: ./figures/tu-logo-color.jpg Graphic file (type bmp)
 <./figures/tu-logo-color.jpg>
@@ -1978,10 +1989,7 @@ Package fontspec Info:
 
 
 
-]
-\openout2 = `front/2_without_logo_th.aux'.
-
- (front/2_without_logo_th.tex)
+] (front/2_without_logo_th.tex)
 
 
 Package fontspec Info: 
@@ -1990,10 +1998,7 @@ Package fontspec Info:
 [2
 
 
-]
-\openout2 = `front/3_without_logo_en.aux'.
-
- (front/3_without_logo_en.tex)
+] (front/3_without_logo_en.tex)
 
 
 Package fontspec Info: 
@@ -2002,10 +2007,7 @@ Package fontspec Info:
 [3
 
 
-]
-\openout2 = `front/4_signature.aux'.
-
- (front/4_signature.tex
+] (front/4_signature.tex
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2064,10 +2066,7 @@ Package fontspec Info:
 [4
 
 
-]
-\openout2 = `front/5_abstract_th.aux'.
-
- (front/5_abstract_th.tex
+] (front/5_abstract_th.tex
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2094,10 +2093,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[2])
-\openout2 = `front/6_abstract_en.aux'.
-
- (front/6_abstract_en.tex
+[2]) (front/6_abstract_en.tex
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2125,10 +2121,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[4]
-\openout2 = `front/7_ack_th.aux'.
-
- (front/7_ack_th.tex
+[4] (front/7_ack_th.tex
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2147,10 +2140,7 @@ Package fontspec Info:
 
 
 
-]
-\openout2 = `front/8_toc_lof_lot_lol.aux'.
-
- (front/8_toc_lof_lot_lol.tex
+] (front/8_toc_lof_lot_lol.tex
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2426,15 +2416,7 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 75--75
+Underfull \hbox (badness 10000) in paragraph at lines 86--86
  [][] [][]\TU/THSarabunNew(1)/m/n/12 Comparative Performance Evaluation of BLE-
 Based Indoor Motion 
  []
@@ -2920,6 +2902,13 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[9]
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -2928,13 +2917,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[9]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -2971,24 +2953,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count571
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count572
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 )
 \tf@lot=\write7
 \openout7 = `thesis.lot'.
@@ -3005,6 +2969,24 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
  (thesis.lof
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count571
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count572
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3082,12 +3064,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 13--13
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 แนวคิด AI pipeline แบบ ผสม rule และ mode
-l สำหรับ ระบบ ที่ เรียก ใช้ 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3115,12 +3091,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 17--17
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 วง รอบ เฟิร์มแวร์ Node T-SimCam สำหรับ c
-onfig portal, HTTP status, 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3130,45 +3100,10 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 2005) in paragraph at lines 18--18
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ขั้น ตอน การ เชื่อม ต่อ รวม ระหว่าง อุปก
-รณ์ ภาค สนาม mobile gateway และ 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 \thai@year=\count585
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 19--19
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ตัวอย่าง ตำแหน่ง 
- []
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count586
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 20--20
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 แผนผัง วง รอบ การ ทำ งา นข อง เฟิร์มแวร์
- M5StickC Plus2 แบบ BLE 
- []
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count587
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3187,34 +3122,39 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count588
+\thai@year=\count586
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 3168) in paragraph at lines 22--22
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 วง รอบ การ ทำงาน ของ Flutter mobile gate
-way สำหรับ รวม ข้อมูล Polar, 
- []
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count587
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count588
+LaTeX Font Info:    Font shape `TU/DejaVuSansMono(1)/m/n' will be
+(Font)              scaled to size 9.60004pt on input line 24.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 \thai@year=\count589
-LaTeX Font Info:    Font shape `TU/DejaVuSansMono(1)/m/n' will be
-(Font)              scaled to size 9.60004pt on input line 23.
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 1490) in paragraph at lines 23--23
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ \TU/DejaVuSansMono(1)/m/n/12 / W
-heelSensor \TU/THSarabunNew(1)/m/n/12 สำหรับ ตรวจ สถานะ BLE, Polar, M5StickC Pl
-us2 
- []
 
 
 Package fontspec Info: 
@@ -3224,12 +3164,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 5504) in paragraph at lines 24--24
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 แผนผัง พื้นที่ ทดลอง 4 zone พร้อม ตำแหน่
-ง BLE node กึ่งกลาง แต่ละ พื้นที่ 
- []
 
 
 Package fontspec Info: 
@@ -3250,12 +3184,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 26--26
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Flowchart การ ส่ง ข้อมูล RSSI และ การ ปร
-ะเมิน ตำแหน่ง ด้วย KNN หรือ 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3263,11 +3191,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 27--27
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ลำดับ การ 
- []
 
 
 Package fontspec Info: 
@@ -3279,12 +3202,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 28--28
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 แผนภาพ schema ฐาน ข้อมูล ที่ ใช้ เชื่อม 
-workspaces, users, patients, 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3292,12 +3209,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 29--29
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 HMI role flow ของ ระบบ WheelSense แสดง ก
-าร ผ่าน สิทธิ์ บริบท 
- []
 
 
 Package fontspec Info: 
@@ -3309,12 +3220,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 30--30
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ หน้า จอ ระบบ ใน มุม มอง Admin ครอบคล
-ุม overview, task, profile, 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3322,12 +3227,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 1484) in paragraph at lines 31--31
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ หน้า จอ ระบบ ใน มุม มอง Head Nurse ส
-ำหรับ ติดตาม ผู้ พัก อาศัย alert, 
- []
 
 
 Package fontspec Info: 
@@ -3348,29 +3247,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 6741) in paragraph at lines 33--33
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ หน้า จอ Patient dashboard สำหรับ ผู้
- ใช้ ราย บุคคล แสดง ข้อมูล care 
- []
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count600
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 34--34
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ หน้า จอ ระบบ ใน 
- []
-
-
-Underfull \vbox (badness 1371) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
@@ -3381,15 +3257,19 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-\thai@year=\count601
+\thai@year=\count600
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 35--35
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ภาพ 
- []
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+\thai@year=\count601
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
 
 
 Package fontspec Info: 
@@ -3401,12 +3281,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 36--36
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 โครงสร้าง AI pipeline 5 layer โดย Layer 
-3 ทำ หน้าที่ เตรียม behavioral 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3414,12 +3288,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 37--37
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 1 Intent Router สำหรับ จับ เจตนา แ
-บบ deterministic ก่อน ใช้ 
- []
 
 
 Package fontspec Info: 
@@ -3440,11 +3308,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 39--39
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 4 Constrained 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3463,12 +3326,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 41--41
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Layer 3 Behavioral State สำหรับ เตรียม บ
-ริบท พฤติกรรม จาก ข้อมูล 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3478,12 +3335,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 3407) in paragraph at lines 42--42
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 Context Window Management สำหรับ จำกัด บ
-ริบท ให้ มี ขนาด เหมาะ สม 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3491,12 +3342,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 44--44
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 การ ติด ตั้ง M5StickC Plus2 บน รถ เข็น ส
-ำหรับ ทดสอบ ข้อมูล IMU และ 
- []
 
 
 Package fontspec Info: 
@@ -3535,19 +3380,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 48--48
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ mobile gateway สำหรับ ตรวจ สอบ ก
-าร เชื่อม ต่อ Polar Verity 
- []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[13]
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3555,12 +3387,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 49--49
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 ตัวอย่าง การ ตรวจ สอบ บริการ บน Raspberr
-y Pi 5 และ Docker runtime 
- []
 
 
 Package fontspec Info: 
@@ -3571,6 +3397,13 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[13]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -3597,12 +3430,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 4954) in paragraph at lines 53--53
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 กราฟ สรุป task completion ของ dashboard/
- HMI จาก ผู้ เข้า ร่วม ทดสอบ 
- []
 
 
 Package fontspec Info: 
@@ -3632,12 +3459,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 58--58
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 กราฟ task completion ของ dashboard และ m
-obile gateway ใน การ 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3645,12 +3466,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 3838) in paragraph at lines 59--59
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ dashboard สำหรับ head nurse ใน ก
-าร ติดตาม สถานะ ผู้ พัก อาศัย 
- []
 
 
 Package fontspec Info: 
@@ -3671,12 +3486,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 61--61
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 หน้า จอ head nurse dashboard สำหรับ work
-flow การ ดูแล และ ติดตาม 
- []
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -3684,12 +3493,6 @@ Package fontspec Info:
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 62--62
- [][] [][][]\TU/THSarabunNew(1)/m/n/12 กราฟ P50/ P95 ของ server path สำหรับ ing
-est, API, alert และ room 
- []
 
 
 Package fontspec Info: 
@@ -3745,76 +3548,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[14]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count632
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count633
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count634
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count635
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count636
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count637
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-\thai@year=\count638
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 )
 \tf@lof=\write8
 \openout8 = `thesis.lof'.
@@ -3825,7 +3558,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[15] (front/9_acronyms.tex
+[14] (front/9_acronyms.tex
 Package newfloat Info: Setting Plan B file extension to `toc'... on input line 
 9.
 
@@ -3852,10 +3585,7 @@ Package fontspec Info:
 
 
 
-]
-\openout2 = `content/chapters/chapter1.aux'.
-
- (content/chapters/chapter1.tex
+] (content/chapters/chapter1.tex
 บทที่ 1.
 
 Package fontspec Info: 
@@ -3961,10 +3691,7 @@ Package fontspec Info:
 
 [21
 
-]
-\openout2 = `content/chapters/chapter2.aux'.
-
- (content/chapters/chapter2.tex
+] (content/chapters/chapter2.tex
 บทที่ 2.
 
 Package fontspec Info: 
@@ -3985,6 +3712,24 @@ Package fontspec Info:
 
 
 ]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
+(Font)              scaled to size 11.19995pt on input line 46.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4071,6 +3816,15 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Overfull \hbox (4.02765pt too wide) in paragraph at lines 159--172
+ [][] 
+ []
+
+
 
 
 Package fontspec Info: 
@@ -4090,33 +3844,22 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Overfull \hbox (13.19745pt too wide) in paragraph at lines 198--198
+[]|\TU/THSarabunNew(1)/m/n/10.95 Containerization|  
+ []
+
+
+Overfull \hbox (4.02094pt too wide) in paragraph at lines 188--203
+ [][] 
+ []
+
+
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [27]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
 
 
 Package fontspec Info: 
@@ -4132,31 +3875,20 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [29]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4201,19 +3933,16 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [31]
-LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 12.59995pt on input line 302.
-LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 9.79996pt on input line 302.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4254,20 +3983,35 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 1694) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [33]
-Underfull \vbox (badness 3029) has occurred while \output is active []
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
+(Font)              scaled to size 12.59995pt on input line 415.
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
+(Font)              scaled to size 9.79996pt on input line 415.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
 
 
 
@@ -4288,7 +4032,15 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-)
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
 
 
 Package fontspec Info: 
@@ -4296,14 +4048,41 @@ Package fontspec Info:
 
 [35]
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [36]
-\openout2 = `content/chapters/chapter3.aux'.
 
- (content/chapters/chapter3.tex
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[37])
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[38] (content/chapters/chapter3.tex
 บทที่ 3.
 
 Package fontspec Info: 
@@ -4318,8 +4097,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 11.19995pt on input line 53.
-LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
 (Font)              scaled to size 8.39996pt on input line 53.
 
 Package fontspec Info: 
@@ -4331,7 +4108,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[37
+[39
 
 
 
@@ -4346,7 +4123,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[38]
+[40]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4371,55 +4148,11 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[39]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[40]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/ch3-m5-wheelchair-placement.jpg Graphic file (t
-ype bmp)
-<./assets/figures/chapter3/ch3-m5-wheelchair-placement.jpg>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 [41]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4436,6 +4169,26 @@ Package fontspec Info:
 
 [42]
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/ch3-m5-wheelchair-placement.jpg Graphic file (t
+ype bmp)
+<./assets/figures/chapter3/ch3-m5-wheelchair-placement.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4449,24 +4202,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/ch3-polar-smartphone.png Graphic file (type bmp
-)
-<./assets/figures/chapter3/ch3-polar-smartphone.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
 
 
 
@@ -4475,9 +4210,22 @@ Package fontspec Info:
 
 [44]
 
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+[45]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/ch3-polar-smartphone.png Graphic file (type bmp
+)
+<./assets/figures/chapter3/ch3-polar-smartphone.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4502,25 +4250,15 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[45]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [46]
+Overfull \vbox (32.1516pt too high) has occurred while \output is active []
+
+
 
 
 Package fontspec Info: 
@@ -4531,16 +4269,28 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 File: ./assets/figures/chapter3/Node-location.png Graphic file (type bmp)
 <./assets/figures/chapter3/Node-location.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4565,9 +4315,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
@@ -4586,8 +4333,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/ER-Diagram.png Graphic file (type bmp)
-<./assets/figures/chapter3/ER-Diagram.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4600,6 +4345,25 @@ Package fontspec Info:
 
 [50]
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/ER-Diagram.png Graphic file (type bmp)
+<./assets/figures/chapter3/ER-Diagram.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4609,25 +4373,10 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
+(Font)              scaled to size 18.19992pt on input line 459.
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/b/n' will be
+(Font)              scaled to size 18.19992pt on input line 459.
 
 
 
@@ -4635,6 +4384,10 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 [52]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4654,9 +4407,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/dashboard-hmi/role-admin-contact.png Graphic fi
-le (type bmp)
-<./assets/figures/chapter3/dashboard-hmi/role-admin-contact.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4678,13 +4428,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/dashboard-hmi/role-head-nurse-contact.png Graph
-ic file (type bmp)
-<./assets/figures/chapter3/dashboard-hmi/role-head-nurse-contact.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 
 
 
@@ -4696,16 +4439,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/dashboard-hmi/role-supervisor-contact.png Graph
-ic file (type bmp)
-<./assets/figures/chapter3/dashboard-hmi/role-supervisor-contact.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/dashboard-hmi/role-observer-contact.png Graphic
- file (type bmp)
-<./assets/figures/chapter3/dashboard-hmi/role-observer-contact.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4718,9 +4451,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/dashboard-hmi/patient-dashboard-overview.png Gr
-aphic file (type bmp)
-<./assets/figures/chapter3/dashboard-hmi/patient-dashboard-overview.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4733,6 +4463,31 @@ Package fontspec Info:
 
 [57]
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4742,20 +4497,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: ./assets/figures/chapter3/dashboard-hmi/role-patient-contact.png Graphic 
-file (type bmp)
-<./assets/figures/chapter3/dashboard-hmi/role-patient-contact.png>
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-File: ./assets/figures/chapter3/dashboard-hmi/admin-easeai-chat.png Graphic fil
-e (type bmp)
-<./assets/figures/chapter3/dashboard-hmi/admin-easeai-chat.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4767,6 +4508,19 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 [59]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
 
 
 Package fontspec Info: 
@@ -4786,6 +4540,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+LaTeX Font Info:    Font shape `TU/DejaVuSansMono(1)/m/n' will be
+(Font)              scaled to size 8.76003pt on input line 766.
+
 
 
 Package fontspec Info: 
@@ -4793,39 +4553,16 @@ Package fontspec Info:
 
 [61]
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [62]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
+Underfull \hbox (badness 7415) in paragraph at lines 779--780
+[]\TU/THSarabunNew(1)/b/n/12 Mobile gateway: \TU/THSarabunNew(1)/m/n/12 ใช้ \TU
+/DejaVuSansMono(1)/m/n/12 flutter test \TU/THSarabunNew(1)/m/n/12 กับ ชุด ทดสอบ
+ เช่น 
+ []
 
 
 Package fontspec Info: 
@@ -4845,47 +4582,13 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[63]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
+[63])
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[64]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-)
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[65]
-\openout2 = `content/chapters/chapter4.aux'.
-
- (content/chapters/chapter4.tex
+[64] (content/chapters/chapter4.tex
 บทที่ 4.
 
 Package fontspec Info: 
@@ -4909,7 +4612,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[66
+[65
 
 
 
@@ -4951,13 +4654,13 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[67]
+[66]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[68]
+[67]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -4974,12 +4677,39 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[68]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [69]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5009,7 +4739,7 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/it' will be
-(Font)              scaled to size 16.79993pt on input line 115.
+(Font)              scaled to size 16.79993pt on input line 156.
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5019,7 +4749,7 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Overfull \hbox (3.61131pt too wide) in paragraph at lines 124--131
+Overfull \hbox (3.61131pt too wide) in paragraph at lines 165--172
  [][] 
  []
 
@@ -5053,6 +4783,19 @@ p)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[72]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[73]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5125,18 +4868,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[72]
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[73]
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 [74]
 
 
@@ -5145,6 +4876,12 @@ Package fontspec Info:
 
 [75]
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[76]
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -5164,8 +4901,6 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-LaTeX Font Info:    Font shape `TU/DejaVuSansMono(1)/m/n' will be
-(Font)              scaled to size 8.76003pt on input line 290.
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5178,12 +4913,10 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[76]
+
 
 
 Package fontspec Info: 
@@ -5191,36 +4924,178 @@ Package fontspec Info:
 
 [77]
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [78]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/role-admin-contact.png Graphic fi
+le (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-admin-contact.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[79]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[80]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/role-head-nurse-contact.png Graph
+ic file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-head-nurse-contact.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[81]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/role-supervisor-contact.png Graph
+ic file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-supervisor-contact.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/role-observer-contact.png Graphic
+ file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-observer-contact.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[82]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[83]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/role-patient-contact.png Graphic 
+file (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/role-patient-contact.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+File: ./assets/figures/chapter3/dashboard-hmi/admin-easeai-chat.png Graphic fil
+e (type bmp)
+<./assets/figures/chapter3/dashboard-hmi/admin-easeai-chat.png>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[84]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[85]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[86]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5258,154 +5133,14 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[79]
+[87]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[80]
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[81]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-)
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[82]
-\openout2 = `content/chapters/chapter5.aux'.
-
- (content/chapters/chapter5.tex
+[88]) (content/chapters/chapter5.tex
 บทที่ 5.
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 2142) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[83
-
-
-
-]
-Underfull \vbox (badness 1418) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[84]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[85]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[86]
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[87])
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[88]
-\openout2 = `content/backmatter/1_reference.aux'.
-
- (content/backmatter/1_reference.tex)
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5432,96 +5167,13 @@ Package fontspec Info:
 
 
 
-
-
 ]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 [90]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5534,26 +5186,253 @@ Package fontspec Info:
 
 [91]
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[92]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[93])
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[94]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[95] (content/backmatter/1_reference.tex)
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[96
+
+
+
+
+
+]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[97]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[98]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[99]
+
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
-(Font)              scaled to size 34.83185pt on input line 155.
+(Font)              scaled to size 34.83185pt on input line 159.
 LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/b/n' will be
-(Font)              scaled to size 34.83185pt on input line 155.
+(Font)              scaled to size 34.83185pt on input line 159.
 
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[92
+[100
 
 
-]
-\openout2 = `content/appendices/appendixA.aux'.
-
- (content/appendices/appendixA.tex
+] (content/appendices/appendixA.tex
 ภาคผนวก ก.
 
 Package fontspec Info: 
@@ -5563,6 +5442,10 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 21.
+LaTeX Font Info:    Font shape `TU/THSarabunNew(1)/m/n' will be
+(Font)              scaled to size 6.99997pt on input line 21.
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5580,15 +5463,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[93
+[101
 
 
 ]
@@ -5605,16 +5485,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[94]
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -5635,19 +5505,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[95]
+[102]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5656,29 +5519,405 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[103]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[104]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[105]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[106]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[107]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[108]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[109]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[110]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 )
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[96]
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[97]
-\openout2 = `content/appendices/appendixB.aux'.
-
- (content/appendices/appendixB.tex
+[111] (content/appendices/appendixB.tex
 ภาคผนวก ข.
 
 Package fontspec Info: 
@@ -5712,15 +5951,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[98
+[112
 
 
 
@@ -5739,10 +5975,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[99]
-\openout2 = `content/appendices/appendixC.aux'.
-
- (content/appendices/appendixC.tex
+[113] (content/appendices/appendixC.tex
 ภาคผนวก ค.
 
 Package fontspec Info: 
@@ -5791,7 +6024,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[100
+[114
 
 
 
@@ -5818,10 +6051,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[101]
-\openout2 = `content/appendices/appendixD.aux'.
-
- (content/appendices/appendixD.tex
+[115] (content/appendices/appendixD.tex
 ภาคผนวก ง.
 
 Package fontspec Info: 
@@ -5857,7 +6087,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[102
+[116
 
 
 
@@ -5871,7 +6101,19 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[117]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
 
 
 
@@ -5879,25 +6121,7 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[103]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[104]
+[118]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5912,10 +6136,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[105]
-\openout2 = `content/appendices/appendixE.aux'.
-
- (content/appendices/appendixE.tex
+[119] (content/appendices/appendixE.tex
 ภาคผนวก จ.
 
 Package fontspec Info: 
@@ -5925,40 +6146,22 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[106
-
-
-
-]
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 49.
+nput line 11.
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
 LaTeX Font Info:    Font shape `TU/DejaVuSansMonoThai(0)/m/n' will be
-(Font)              scaled to size 9.60004pt on input line 49.
+(Font)              scaled to size 9.60004pt on input line 11.
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5969,7 +6172,30 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[107]
+[120
+
+
+
+]
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[121]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -5980,10 +6206,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[108]
-\openout2 = `content/appendices/appendixF.aux'.
-
- (content/appendices/appendixF.tex
+[122] (content/appendices/appendixF.tex
 ภาคผนวก ฉ.
 
 Package fontspec Info: 
@@ -6017,20 +6240,6 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[109
-
-
-
-]
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
@@ -6050,20 +6259,6 @@ File: ./assets/figures/chapter3/observer-view.png Graphic file (type bmp)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[110]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 File: ./assets/figures/chapter3/ui/ch3-ui-head-nurse-dashboard.png Graphic file
  (type bmp)
 <./assets/figures/chapter3/ui/ch3-ui-head-nurse-dashboard.png>
@@ -6071,25 +6266,33 @@ File: ./assets/figures/chapter3/ui/ch3-ui-head-nurse-dashboard.png Graphic file
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 )
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[111]
+[123
+
+
+
+]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[112]
-\openout2 = `content/appendices/appendixG.aux'.
+[124]
 
- (content/appendices/appendixG.tex
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[125] (content/appendices/appendixG.tex
 ภาคผนวก ช.
 
 Package fontspec Info: 
@@ -6128,7 +6331,7 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[113
+[126
 
 
 
@@ -6150,15 +6353,12 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[114]
+[127]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -6176,24 +6376,18 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 )
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[115]
+[128]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[116]
-\openout2 = `content/appendices/appendixH.aux'.
-
- (content/appendices/appendixH.tex
+[129] (content/appendices/appendixH.tex
 ภาคผนวก ซ.
 
 Package fontspec Info: 
@@ -6209,10 +6403,6 @@ File: assets/appendices/legacy-google-form/form1.png Graphic file (type bmp)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 File: assets/appendices/legacy-google-form/form2.png Graphic file (type bmp)
 <assets/appendices/legacy-google-form/form2.png>
 
@@ -6220,19 +6410,9 @@ Package fontspec Info:
 (fontspec)             THSarabunNew scale = 1.4.
 
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[117
-
-
-
-]
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -6243,45 +6423,33 @@ File: assets/appendices/legacy-google-form/form3.png Graphic file (type bmp)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[118]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 File: assets/appendices/legacy-google-form/form4.png Graphic file (type bmp)
 <assets/appendices/legacy-google-form/form4.png>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 )
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[119]
+[130
+
+
+
+]
 
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[120]
-\openout2 = `content/appendices/appendixI.aux'.
-
- (content/appendices/appendixI.tex
+[131] (content/appendices/appendixI.tex
 ภาคผนวก ฌ.
 
 Package fontspec Info: 
@@ -6298,13 +6466,13 @@ mp)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
+File: assets/appendices/legacy-field/node-install-1.jpg Graphic file (type bmp)
+
+<assets/appendices/legacy-field/node-install-1.jpg>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-File: assets/appendices/legacy-field/node-install-1.jpg Graphic file (type bmp)
-
-<assets/appendices/legacy-field/node-install-1.jpg>
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -6320,24 +6488,13 @@ File: assets/appendices/legacy-field/node-install-2.jpg Graphic file (type bmp)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[121
-
-
-
-]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 File: assets/appendices/legacy-field/wheelchair-install.jpg Graphic file (type 
 bmp)
 <assets/appendices/legacy-field/wheelchair-install.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -6352,23 +6509,13 @@ File: assets/appendices/legacy-field/elderly-home.jpg Graphic file (type bmp)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[122]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 File: assets/appendices/legacy-field/elderly-device-use.jpg Graphic file (type 
 bmp)
 <assets/appendices/legacy-field/elderly-device-use.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -6406,19 +6553,12 @@ bmp)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-
-
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
-[123]
-
-Package fontspec Info: 
-(fontspec)             THSarabunNew scale = 1.4.
-
 File: assets/appendices/legacy-field/group-photo.jpg Graphic file (type bmp)
 <assets/appendices/legacy-field/group-photo.jpg>
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
 
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
@@ -6429,10 +6569,17 @@ Package fontspec Info:
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[124]
-\openout2 = `content/appendices/appendixJ.aux'.
+[132
 
- (content/appendices/appendixJ.tex
+
+
+]
+
+
+Package fontspec Info: 
+(fontspec)             THSarabunNew scale = 1.4.
+
+[133] (content/appendices/appendixJ.tex
 ภาคผนวก ญ.
 
 Package fontspec Info: 
@@ -6450,7 +6597,7 @@ File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
 Package fontspec Info: 
 (fontspec)             THSarabunNew scale = 1.4.
 
-[125
+[134
 
 
 
@@ -6467,7 +6614,7 @@ Package fontspec Info:
 
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
 <use assets/appendices/paperieee/Draft_Paper.pdf, page 1>
-[126
+[135
 
 ]
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
@@ -6482,7 +6629,7 @@ Package fontspec Info:
 
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
 <use assets/appendices/paperieee/Draft_Paper.pdf, page 2>
-[127
+[136
 
 ]
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
@@ -6497,7 +6644,7 @@ Package fontspec Info:
 
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
 <use assets/appendices/paperieee/Draft_Paper.pdf, page 3>
-[128
+[137
 
 ]
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
@@ -6512,7 +6659,7 @@ Package fontspec Info:
 
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
 <use assets/appendices/paperieee/Draft_Paper.pdf, page 4>
-[129
+[138
 
 ]
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
@@ -6527,7 +6674,7 @@ Package fontspec Info:
 
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
 <use assets/appendices/paperieee/Draft_Paper.pdf, page 5>
-[130
+[139
 
 ]
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
@@ -6542,36 +6689,26 @@ Package fontspec Info:
 
 File: assets/appendices/paperieee/Draft_Paper.pdf Graphic file (type pdf)
 <use assets/appendices/paperieee/Draft_Paper.pdf, page 6>
-[131
+[140
 
-]) (thesis.aux (front/1_with_logo_th.aux) (front/2_without_logo_th.aux)
-(front/3_without_logo_en.aux) (front/4_signature.aux) (front/5_abstract_th.aux)
-(front/6_abstract_en.aux) (front/7_ack_th.aux) (front/8_toc_lof_lot_lol.aux)
-(content/chapters/chapter1.aux) (content/chapters/chapter2.aux)
-(content/chapters/chapter3.aux) (content/chapters/chapter4.aux)
-(content/chapters/chapter5.aux) (content/backmatter/1_reference.aux)
-(content/appendices/appendixA.aux) (content/appendices/appendixB.aux)
-(content/appendices/appendixC.aux) (content/appendices/appendixD.aux)
-(content/appendices/appendixE.aux) (content/appendices/appendixF.aux)
-(content/appendices/appendixG.aux) (content/appendices/appendixH.aux)
-(content/appendices/appendixI.aux) (content/appendices/appendixJ.aux))
+]) (thesis.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-11-06>
  ***********
 Package rerunfilecheck Info: File `thesis.out' has not changed.
-(rerunfilecheck)             Checksum: F719B770754BD3EA40636E060B5563B0;16292.
+(rerunfilecheck)             Checksum: 2B928F8A507CDDAEAA7A4EEAD596859C;17945.
 Package logreq Info: Writing requests to 'thesis.run.xml'.
 \openout1 = `thesis.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 48606 strings out of 403160
- 1009188 string characters out of 5462805
- 2063406 words of memory out of 5000000
- 76198 multiletter control sequences out of 15000+600000
- 650881 words of font info for 157 fonts, out of 8000000 for 9000
+ 48522 strings out of 403160
+ 1005165 string characters out of 5462805
+ 1971700 words of memory out of 5000000
+ 76208 multiletter control sequences out of 15000+600000
+ 654023 words of font info for 168 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 99i,17n,110p,936b,4995s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 99i,17n,110p,1010b,4995s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on thesis.pdf (135 pages).
+Output written on thesis.pdf (143 pages).

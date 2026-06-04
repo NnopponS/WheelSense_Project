@@ -9,21 +9,30 @@ class GatewayConfig {
     required this.portalBaseUrl,
     required this.bleServiceUuid,
     required this.bleTelemetryCharacteristicUuid,
+    this.linkedPatientId,
+    this.linkedCaregiverId,
+    this.linkedPersonType,
+    this.alertsEnabled = false,
+    this.setupCompleted = false,
   });
 
   factory GatewayConfig.defaults() {
     return const GatewayConfig(
       deviceId: 'wheelsense-mobile-gateway',
-      mqttHost: 'broker.emqx.io',
-      mqttPort: 1883,
-      mqttUseTls: false,
+      mqttHost: 'mqtt.wheelsense.local',
+      mqttPort: 8883,
+      mqttUseTls: true,
       mqttUsername: '',
       mqttPassword: '',
-      portalBaseUrl: 'http://localhost:3000',
+      portalBaseUrl: 'https://portal.wheelsense.local',
       bleServiceUuid: '8f6e0001-b5a3-f393-e0a9-e50e24dcca9e',
       bleTelemetryCharacteristicUuid: '8f6e0003-b5a3-f393-e0a9-e50e24dcca9e',
+      alertsEnabled: false,
+      setupCompleted: false,
     );
   }
+
+  static const Object _unset = Object();
 
   final String deviceId;
   final String mqttHost;
@@ -34,6 +43,11 @@ class GatewayConfig {
   final String portalBaseUrl;
   final String bleServiceUuid;
   final String bleTelemetryCharacteristicUuid;
+  final int? linkedPatientId;
+  final int? linkedCaregiverId;
+  final String? linkedPersonType;
+  final bool alertsEnabled;
+  final bool setupCompleted;
 
   GatewayConfig copyWith({
     String? deviceId,
@@ -45,6 +59,11 @@ class GatewayConfig {
     String? portalBaseUrl,
     String? bleServiceUuid,
     String? bleTelemetryCharacteristicUuid,
+    Object? linkedPatientId = _unset,
+    Object? linkedCaregiverId = _unset,
+    Object? linkedPersonType = _unset,
+    bool? alertsEnabled,
+    bool? setupCompleted,
   }) {
     return GatewayConfig(
       deviceId: deviceId ?? this.deviceId,
@@ -57,6 +76,17 @@ class GatewayConfig {
       bleServiceUuid: bleServiceUuid ?? this.bleServiceUuid,
       bleTelemetryCharacteristicUuid:
           bleTelemetryCharacteristicUuid ?? this.bleTelemetryCharacteristicUuid,
+      linkedPatientId: identical(linkedPatientId, _unset)
+          ? this.linkedPatientId
+          : linkedPatientId as int?,
+      linkedCaregiverId: identical(linkedCaregiverId, _unset)
+          ? this.linkedCaregiverId
+          : linkedCaregiverId as int?,
+      linkedPersonType: identical(linkedPersonType, _unset)
+          ? this.linkedPersonType
+          : linkedPersonType as String?,
+      alertsEnabled: alertsEnabled ?? this.alertsEnabled,
+      setupCompleted: setupCompleted ?? this.setupCompleted,
     );
   }
 
@@ -71,6 +101,11 @@ class GatewayConfig {
       'portalBaseUrl': portalBaseUrl,
       'bleServiceUuid': bleServiceUuid,
       'bleTelemetryCharacteristicUuid': bleTelemetryCharacteristicUuid,
+      'linkedPatientId': linkedPatientId,
+      'linkedCaregiverId': linkedCaregiverId,
+      'linkedPersonType': linkedPersonType,
+      'alertsEnabled': alertsEnabled,
+      'setupCompleted': setupCompleted,
     };
   }
 
@@ -89,6 +124,29 @@ class GatewayConfig {
       bleTelemetryCharacteristicUuid:
           json['bleTelemetryCharacteristicUuid'] as String? ??
           defaults.bleTelemetryCharacteristicUuid,
+      linkedPatientId: _optionalInt(json['linkedPatientId']),
+      linkedCaregiverId: _optionalInt(json['linkedCaregiverId']),
+      linkedPersonType: _optionalString(json['linkedPersonType']),
+      alertsEnabled: json['alertsEnabled'] as bool? ?? defaults.alertsEnabled,
+      setupCompleted:
+          json['setupCompleted'] as bool? ?? defaults.setupCompleted,
     );
+  }
+
+  static int? _optionalInt(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is num) {
+      return value.round();
+    }
+    return int.tryParse('$value');
+  }
+
+  static String? _optionalString(Object? value) {
+    if (value == null || '$value'.trim().isEmpty) {
+      return null;
+    }
+    return '$value'.trim();
   }
 }

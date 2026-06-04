@@ -11,7 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wheelsense_gateway_flutter/main.dart';
 
 void main() {
-  testWidgets('Gateway shell renders core tabs', (WidgetTester tester) async {
+  testWidgets('Gateway shell renders production workflow tabs and setup', (
+    WidgetTester tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
 
     await tester.pumpWidget(
@@ -19,9 +21,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Server'), findsWidgets);
-    expect(find.text('Sensors'), findsWidgets);
+    expect(find.text('Overview'), findsWidgets);
+    expect(find.text('Devices'), findsWidgets);
+    expect(find.text('Operations'), findsWidgets);
     expect(find.text('Portal'), findsWidgets);
-    expect(find.text('M5StickC Plus2'), findsWidgets);
+    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Gateway setup'), findsOneWidget);
+    expect(find.text('Open Settings'), findsOneWidget);
   });
 }

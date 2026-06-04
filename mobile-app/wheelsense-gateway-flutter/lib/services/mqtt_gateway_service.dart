@@ -6,6 +6,7 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
 import '../models/gateway_config.dart';
+import '../models/gateway_runtime_snapshot.dart';
 import '../models/mqtt_gateway_message.dart';
 import '../models/sensor_telemetry.dart';
 
@@ -14,7 +15,9 @@ class MqttGatewayService {
 
   MqttServerClient? _client;
   StreamSubscription<List<MqttReceivedMessage<MqttMessage>>>? _subscription;
+  StreamController<MqttGatewayMessage>? _messageController;
   String? _connectionKey;
+  Set<String> _subscribedTopics = const <String>{};
 
   bool get isConnected =>
       _client?.connectionStatus?.state == MqttConnectionState.connected;
@@ -65,68 +68,106 @@ class MqttGatewayService {
       return const Stream<MqttGatewayMessage>.empty();
     }
 
-    final topics = <String>{
-      'WheelSense/config/all',
-      'WheelSense/config/${config.deviceId}',
-      'WheelSense/mobile/${config.deviceId}/#',
-    };
+    final topics = subscriptionTopicsFor(config);
+    final removedTopics = _subscribedTopics.difference(topics);
+    for (final topic in removedTopics) {
+      _client?.unsubscribe(topic);
+    }
     for (final topic in topics) {
       _client?.subscribe(topic, MqttQos.atLeastOnce);
     }
+    _subscribedTopics = topics;
 
-    final controller = StreamController<MqttGatewayMessage>.broadcast();
-    _subscription?.cancel();
-    _subscription = _client?.updates?.listen((messages) {
+    final controller = _messageController ??=
+        StreamController<MqttGatewayMessage>.broadcast();
+    _subscription ??= _client?.updates?.listen((messages) {
       for (final message in messages) {
         final publish = message.payload as MqttPublishMessage;
         final raw = MqttPublishPayload.bytesToStringAsString(
           publish.payload.message,
         );
-        controller.add(
-          MqttGatewayMessage(
-            topic: message.topic,
-            payload: _decodePayload(raw),
-            receivedAt: DateTime.now(),
-          ),
-        );
+        if (!controller.isClosed) {
+          controller.add(
+            MqttGatewayMessage(
+              topic: message.topic,
+              payload: _decodePayload(raw),
+              receivedAt: DateTime.now(),
+            ),
+          );
+        }
       }
     }, onError: controller.addError);
-
-    controller.onCancel = () async {
-      await _subscription?.cancel();
-      _subscription = null;
-    };
     return controller.stream;
   }
 
-  Future<bool> publishTelemetry({
+  static Set<String> subscriptionTopicsFor(GatewayConfig config) {
+    final topics = <String>{
+      'WheelSense/config/all',
+      'WheelSense/config/${config.deviceId}',
+      'WheelSense/mobile/${config.deviceId}/#',
+      'WheelSense/mobile/${config.deviceId}/control',
+      'WheelSense/room/${config.deviceId}',
+    };
+    if (config.alertsEnabled) {
+      if (config.linkedPatientId != null) {
+        topics.add('WheelSense/alerts/${config.linkedPatientId}');
+      } else {
+        topics.add('WheelSense/alerts/${config.deviceId}');
+      }
+    }
+    return topics;
+  }
+
+  Future<TelemetryPublishResult> publishTelemetry({
     required GatewayConfig config,
     required String payload,
   }) async {
+    final topic = 'WheelSense/mobile/${config.deviceId}/telemetry';
     if (!isConnected) {
-      return false;
+      return TelemetryPublishResult.failed(
+        topic: topic,
+        reason: TelemetryPublishFailureReason.disconnected,
+      );
     }
 
     final builder = MqttClientPayloadBuilder()
       ..addUTF8String(_buildMobileTelemetryPayload(config, payload));
-    final topic = 'WheelSense/mobile/${config.deviceId}/telemetry';
-    _client?.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-    return true;
+    try {
+      _client?.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+      return TelemetryPublishResult.sent(topic);
+    } on Object catch (error) {
+      return TelemetryPublishResult.failed(
+        topic: topic,
+        reason: TelemetryPublishFailureReason.exception,
+        errorMessage: '$error',
+      );
+    }
   }
 
-  Future<bool> publishPolarTelemetry({
+  Future<TelemetryPublishResult> publishPolarTelemetry({
     required GatewayConfig config,
     required PolarTelemetrySample sample,
   }) async {
+    final topic = 'WheelSense/mobile/${config.deviceId}/telemetry';
     if (!isConnected) {
-      return false;
+      return TelemetryPublishResult.failed(
+        topic: topic,
+        reason: TelemetryPublishFailureReason.disconnected,
+      );
     }
 
     final builder = MqttClientPayloadBuilder()
       ..addUTF8String(_buildPolarTelemetryPayload(config, sample));
-    final topic = 'WheelSense/mobile/${config.deviceId}/telemetry';
-    _client?.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-    return true;
+    try {
+      _client?.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+      return TelemetryPublishResult.sent(topic);
+    } on Object catch (error) {
+      return TelemetryPublishResult.failed(
+        topic: topic,
+        reason: TelemetryPublishFailureReason.exception,
+        errorMessage: '$error',
+      );
+    }
   }
 
   Future<bool> publishRegistration({
@@ -170,9 +211,12 @@ class MqttGatewayService {
   Future<void> disconnect() async {
     await _subscription?.cancel();
     _subscription = null;
+    await _messageController?.close();
+    _messageController = null;
     _client?.disconnect();
     _client = null;
     _connectionKey = null;
+    _subscribedTopics = const <String>{};
   }
 
   String _buildConnectionKey(GatewayConfig config) {

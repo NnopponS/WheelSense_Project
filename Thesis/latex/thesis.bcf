@@ -2399,25 +2399,32 @@
     <bcf:citekey order="18" intorder="1">Polar_VeritySense_Spec</bcf:citekey>
     <bcf:citekey order="18" intorder="2">PolarBLESDK</bcf:citekey>
     <bcf:citekey order="19" intorder="1">RaspberryPi5Specs</bcf:citekey>
-    <bcf:citekey order="20" intorder="1">Kaemarungsi2012RSSIAnalysis</bcf:citekey>
-    <bcf:citekey order="21" intorder="1">Bahl2000RADAR</bcf:citekey>
-    <bcf:citekey order="22" intorder="1">Cover1967NearestNeighbor</bcf:citekey>
-    <bcf:citekey order="23" intorder="1">Lara2013WearableHAR</bcf:citekey>
-    <bcf:citekey order="24" intorder="1">Chen2016XGBoost</bcf:citekey>
-    <bcf:citekey order="25" intorder="1">Sokolova2009ClassificationMetrics</bcf:citekey>
-    <bcf:citekey order="26" intorder="1">Lewis2020RAG</bcf:citekey>
-    <bcf:citekey order="27" intorder="1">Susskind2021NeuroSymbolic</bcf:citekey>
-    <bcf:citekey order="27" intorder="2">ColeloughRegli2025NeuroSymbolic</bcf:citekey>
-    <bcf:citekey order="28" intorder="1">ModelContextProtocol</bcf:citekey>
-    <bcf:citekey order="28" intorder="2">Anthropic2024MCP</bcf:citekey>
-    <bcf:citekey order="29" intorder="1">Bahl2000RADAR</bcf:citekey>
-    <bcf:citekey order="30" intorder="1">Kaemarungsi2012RSSIAnalysis</bcf:citekey>
-    <bcf:citekey order="31" intorder="1">Lara2013WearableHAR</bcf:citekey>
-    <bcf:citekey order="32" intorder="1">PolarBLESDK</bcf:citekey>
-    <bcf:citekey order="32" intorder="2">PolarVeritySenseWhitepaper</bcf:citekey>
+    <bcf:citekey order="20" intorder="1">FlutterDocs</bcf:citekey>
+    <bcf:citekey order="21" intorder="1">NextJS2024</bcf:citekey>
+    <bcf:citekey order="22" intorder="1">FastAPI2024</bcf:citekey>
+    <bcf:citekey order="23" intorder="1">PostgreSQL2024</bcf:citekey>
+    <bcf:citekey order="24" intorder="1">DockerCompose2024</bcf:citekey>
+    <bcf:citekey order="25" intorder="1">Ollama2024</bcf:citekey>
+    <bcf:citekey order="26" intorder="1">ModelContextProtocol</bcf:citekey>
+    <bcf:citekey order="27" intorder="1">Kaemarungsi2012RSSIAnalysis</bcf:citekey>
+    <bcf:citekey order="28" intorder="1">Bahl2000RADAR</bcf:citekey>
+    <bcf:citekey order="29" intorder="1">Cover1967NearestNeighbor</bcf:citekey>
+    <bcf:citekey order="30" intorder="1">Lara2013WearableHAR</bcf:citekey>
+    <bcf:citekey order="31" intorder="1">Chen2016XGBoost</bcf:citekey>
+    <bcf:citekey order="32" intorder="1">Sokolova2009ClassificationMetrics</bcf:citekey>
     <bcf:citekey order="33" intorder="1">Lewis2020RAG</bcf:citekey>
     <bcf:citekey order="34" intorder="1">Susskind2021NeuroSymbolic</bcf:citekey>
     <bcf:citekey order="34" intorder="2">ColeloughRegli2025NeuroSymbolic</bcf:citekey>
+    <bcf:citekey order="35" intorder="1">ModelContextProtocol</bcf:citekey>
+    <bcf:citekey order="35" intorder="2">Anthropic2024MCP</bcf:citekey>
+    <bcf:citekey order="36" intorder="1">Bahl2000RADAR</bcf:citekey>
+    <bcf:citekey order="37" intorder="1">Kaemarungsi2012RSSIAnalysis</bcf:citekey>
+    <bcf:citekey order="38" intorder="1">Lara2013WearableHAR</bcf:citekey>
+    <bcf:citekey order="39" intorder="1">PolarBLESDK</bcf:citekey>
+    <bcf:citekey order="39" intorder="2">PolarVeritySenseWhitepaper</bcf:citekey>
+    <bcf:citekey order="40" intorder="1">Lewis2020RAG</bcf:citekey>
+    <bcf:citekey order="41" intorder="1">Susskind2021NeuroSymbolic</bcf:citekey>
+    <bcf:citekey order="41" intorder="2">ColeloughRegli2025NeuroSymbolic</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">

@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'screens/alerts_screen.dart';
-import 'screens/gateway_status_screen.dart';
+import 'screens/operations_screen.dart';
+import 'screens/overview_screen.dart';
 import 'screens/pair_devices_screen.dart';
 import 'screens/portal_webview_screen.dart';
 import 'screens/server_setup_screen.dart';
@@ -46,62 +46,31 @@ class GatewayShell extends StatefulWidget {
 class _GatewayShellState extends State<GatewayShell>
     with WidgetsBindingObserver {
   final GatewayRuntimeService _runtime = GatewayRuntimeService();
-  int _selectedIndex = 1;
-
-  static const _destinations = <_ShellDestination>[
-    _ShellDestination(
-      label: 'Server',
-      icon: Icons.dns_outlined,
-      selectedIcon: Icons.dns,
-      screen: ServerSetupScreen(),
-    ),
-    _ShellDestination(
-      label: 'Sensors',
-      icon: Icons.sensors_outlined,
-      selectedIcon: Icons.sensors,
-      screen: PairDevicesScreen(),
-    ),
-    _ShellDestination(
-      label: 'Status',
-      icon: Icons.monitor_heart_outlined,
-      selectedIcon: Icons.monitor_heart,
-      screen: GatewayStatusScreen(),
-    ),
-    _ShellDestination(
-      label: 'Portal',
-      icon: Icons.web_asset_outlined,
-      selectedIcon: Icons.web_asset,
-      screen: PortalWebViewScreen(),
-      fullBleed: true,
-    ),
-    _ShellDestination(
-      label: 'Alerts',
-      icon: Icons.notifications_active_outlined,
-      selectedIcon: Icons.notifications_active,
-      screen: AlertsScreen(),
-    ),
-  ];
+  int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     if (widget.requestPermissionsOnOpen) {
-      unawaited(_runtime.requestPermissionsForAppOpen());
+      unawaited(_runtime.resumeGateway(autoStartBle: true));
+    } else {
+      unawaited(_runtime.loadConfig());
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (widget.requestPermissionsOnOpen && state == AppLifecycleState.resumed) {
-      unawaited(_runtime.requestPermissionsForAppOpen());
+      unawaited(_runtime.resumeGateway(autoStartBle: true));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.sizeOf(context).width >= 860;
-    final activeDestination = _destinations[_selectedIndex];
+    final destinations = _destinations();
+    final activeDestination = destinations[_selectedIndex];
 
     return GatewayServicesScope(
       runtime: _runtime,
@@ -122,7 +91,7 @@ class _GatewayShellState extends State<GatewayShell>
                     child: _BrandMark(),
                   ),
                   destinations: [
-                    for (final destination in _destinations)
+                    for (final destination in destinations)
                       NavigationRailDestination(
                         icon: Icon(destination.icon),
                         selectedIcon: Icon(destination.selectedIcon),
@@ -153,7 +122,7 @@ class _GatewayShellState extends State<GatewayShell>
                 onDestinationSelected: _selectDestination,
                 labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                 destinations: [
-                  for (final destination in _destinations)
+                  for (final destination in destinations)
                     NavigationDestination(
                       icon: Icon(destination.icon),
                       selectedIcon: Icon(destination.selectedIcon),
@@ -167,6 +136,48 @@ class _GatewayShellState extends State<GatewayShell>
 
   void _selectDestination(int index) {
     setState(() => _selectedIndex = index);
+  }
+
+  List<_ShellDestination> _destinations() {
+    return <_ShellDestination>[
+      _ShellDestination(
+        label: 'Overview',
+        icon: Icons.dashboard_outlined,
+        selectedIcon: Icons.dashboard,
+        screen: OverviewScreen(
+          onOpenDevices: () => _selectDestination(1),
+          onOpenSettings: () => _selectDestination(4),
+          onStartGateway: () {
+            unawaited(_runtime.resumeGateway(autoStartBle: true));
+          },
+        ),
+      ),
+      const _ShellDestination(
+        label: 'Devices',
+        icon: Icons.sensors_outlined,
+        selectedIcon: Icons.sensors,
+        screen: PairDevicesScreen(),
+      ),
+      _ShellDestination(
+        label: 'Operations',
+        icon: Icons.monitor_heart_outlined,
+        selectedIcon: Icons.monitor_heart,
+        screen: OperationsScreen(onOpenPortal: () => _selectDestination(3)),
+      ),
+      const _ShellDestination(
+        label: 'Portal',
+        icon: Icons.web_asset_outlined,
+        selectedIcon: Icons.web_asset,
+        screen: PortalWebViewScreen(),
+        fullBleed: true,
+      ),
+      const _ShellDestination(
+        label: 'Settings',
+        icon: Icons.tune_outlined,
+        selectedIcon: Icons.tune,
+        screen: ServerSetupScreen(),
+      ),
+    ];
   }
 
   @override
@@ -214,20 +225,17 @@ class _BrandMark extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
-              ),
-            ),
-            Text(
-              'WS',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.8,
+            Image.asset(
+              'assets/brand/logo.png',
+              width: 30,
+              height: 30,
+              errorBuilder: (_, _, _) => Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                ),
               ),
             ),
           ],

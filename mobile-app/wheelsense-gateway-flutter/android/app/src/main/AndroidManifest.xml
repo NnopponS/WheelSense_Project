@@ -19,7 +19,7 @@
     <application
         android:label="WheelSense"
         android:name="${applicationName}"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="false"
         android:icon="@drawable/ic_wheelsense_logo"
         android:roundIcon="@drawable/ic_wheelsense_logo">
         <activity

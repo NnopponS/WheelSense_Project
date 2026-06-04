@@ -135,14 +135,14 @@
 \label{sec:ch4_localization}
 การทดสอบการระบุตำแหน่งภายในอาคารใช้ข้อมูล RSSI จาก BLE node ในพื้นที่ทดลอง โดย gateway สแกนสัญญาณและส่งรายการ RSSI พร้อม timestamp เข้าสู่ backend เพื่อประเมินตำแหน่งด้วย fingerprint และ KNN ในกรณีที่ fingerprint ยังไม่พร้อมหรือค่าความมั่นใจต่ำ ระบบสามารถใช้ max-RSSI เป็น baseline หรือ fallback ได้ หัวข้อนี้จึงอธิบายสภาพพื้นที่ทดลอง วิธีจัดชุดข้อมูล ผลที่ได้ และข้อสังเกตจากความผันผวนของ RSSI ต่อเนื่องในรูปแบบเดียวกับการทดสอบส่วนอื่นของบทนี้
 
+พื้นที่ทดลองจากชุดข้อมูล RSSI แบ่งห้องหนึ่งออกเป็น 4 zone ขนาดประมาณ \(4 \times 4\) เมตรต่อ zone โดยใช้ฉากผ้าเป็นขอบเขตระหว่างพื้นที่ และติดตั้ง ESP32-S3 BLE anchor จำนวน 4 ตัวไว้บริเวณกึ่งกลางของแต่ละ zone ที่ระดับความสูงประมาณ 0.7 เมตร อุปกรณ์ tag คือ M5StickC Plus2 ที่โฆษณา BLE ด้วยอัตราประมาณ 5 Hz หรือคาบ 200 ms และอยู่ที่ระดับความสูงประมาณ 0.7 เมตรเช่นกัน ข้อมูลหนึ่งตัวอย่างประกอบด้วย timestamp และค่า RSSI จาก anchor ทั้ง 4 ตัวในรูปแบบ \((timestamp, r_1, r_2, r_3, r_4)\)
+
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.34\textwidth]{chapter4/user-location.png}
+    \includegraphics[width=0.22\textwidth,height=0.30\textheight,keepaspectratio]{chapter4/user-location.png}
     \caption{ตัวอย่างหน้าจอ mobile gateway ที่ใช้ตรวจสถานะตำแหน่งและข้อมูลจาก BLE node}
     \label{fig:ch4-user-location}
 \end{figure}
-
-พื้นที่ทดลองจากชุดข้อมูล RSSI แบ่งห้องหนึ่งออกเป็น 4 zone ขนาดประมาณ \(4 \times 4\) เมตรต่อ zone โดยใช้ฉากผ้าเป็นขอบเขตระหว่างพื้นที่ และติดตั้ง ESP32-S3 BLE anchor จำนวน 4 ตัวไว้บริเวณกึ่งกลางของแต่ละ zone ที่ระดับความสูงประมาณ 0.7 เมตร อุปกรณ์ tag คือ M5StickC Plus2 ที่โฆษณา BLE ด้วยอัตราประมาณ 5 Hz หรือคาบ 200 ms และอยู่ที่ระดับความสูงประมาณ 0.7 เมตรเช่นกัน ข้อมูลหนึ่งตัวอย่างประกอบด้วย timestamp และค่า RSSI จาก anchor ทั้ง 4 ตัวในรูปแบบ \((timestamp, r_1, r_2, r_3, r_4)\)
 
 ชุดทดลองแบ่งเป็น 3 กรณี กรณีละ 48 episode และใช้การแบ่งข้อมูลแบบเดียวกันคือ 13 episode สำหรับ train และ 35 episode สำหรับ test โดย Case 1 เป็นการตรวจ body orientation แบบ facing-in/facing-out, Case 2 เป็น boundary transition ระหว่างในและนอก zone และ Case 3 เป็น multi-zone trajectory ที่ต้องทำนายลำดับการเคลื่อนที่ผ่าน 4 zone วิธี KNN ใช้ \(k=5\) และ Euclidean distance สำหรับ Case 1 และ Case 2 จะทำนายจาก RSSI 4 มิติราย sample แล้วรวมผลเป็นระดับ episode ด้วยค่าเฉลี่ยของผลทำนาย ส่วน Case 3 แบ่ง episode เป็น 4 segment ต่อเนื่องและใช้ feature mean/std ของ RSSI จาก anchor ทั้ง 4 ตัวในแต่ละ segment เพื่อทำนายลำดับ zone
 
@@ -349,7 +349,7 @@
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-admin-contact.png}
+    \includegraphics[width=0.86\textwidth,height=0.56\textheight,keepaspectratio]{chapter3/dashboard-hmi/role-admin-contact.png}
     \caption[หน้าจอ HMI บทบาท Admin]{ภาพหน้าจอระบบในมุมมอง Admin สำหรับตรวจภาพรวม workspace, task, device, facility, alert และ EaseAI}
     \label{fig:ch4_hmi_admin_contact}
 \end{figure}
@@ -360,7 +360,7 @@
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-head-nurse-contact.png}
+    \includegraphics[width=0.86\textwidth,height=0.56\textheight,keepaspectratio]{chapter3/dashboard-hmi/role-head-nurse-contact.png}
     \caption[หน้าจอ HMI บทบาท Head Nurse]{ภาพหน้าจอระบบในมุมมอง Head Nurse ที่ใช้ในการประเมิน alert, patient profile, task และ floorplan}
     \label{fig:ch4_hmi_head_nurse_contact}
 \end{figure}
@@ -371,7 +371,7 @@
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-supervisor-contact.png}
+    \includegraphics[width=0.86\textwidth,height=0.56\textheight,keepaspectratio]{chapter3/dashboard-hmi/role-supervisor-contact.png}
     \caption[หน้าจอ HMI บทบาท Supervisor]{ภาพหน้าจอระบบในมุมมอง Supervisor สำหรับติดตามงาน เหตุการณ์ฉุกเฉิน บุคลากร และบริบทพื้นที่}
     \label{fig:ch4_hmi_supervisor_contact}
 \end{figure}
@@ -382,7 +382,7 @@
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-observer-contact.png}
+    \includegraphics[width=0.86\textwidth,height=0.56\textheight,keepaspectratio]{chapter3/dashboard-hmi/role-observer-contact.png}
     \caption[หน้าจอ HMI บทบาท Observer]{ภาพหน้าจอระบบในมุมมอง Observer สำหรับติดตามสถานะและรายงานข้อมูลแบบ read-only}
     \label{fig:ch4_hmi_observer_contact}
 \end{figure}
@@ -393,7 +393,7 @@
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{chapter3/dashboard-hmi/role-patient-contact.png}
+    \includegraphics[width=0.86\textwidth,height=0.56\textheight,keepaspectratio]{chapter3/dashboard-hmi/role-patient-contact.png}
     \caption[หน้าจอ HMI บทบาท Patient]{ภาพหน้าจอระบบในมุมมอง Patient ครอบคลุม personal dashboard, schedule, room controls และช่องทางขอความช่วยเหลือ}
     \label{fig:ch4_hmi_patient_contact}
 \end{figure}
@@ -404,7 +404,7 @@
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{chapter3/dashboard-hmi/admin-easeai-chat.png}
+    \includegraphics[width=0.82\textwidth,height=0.56\textheight,keepaspectratio]{chapter3/dashboard-hmi/admin-easeai-chat.png}
     \caption[หน้าจอ EaseAI บน Dashboard]{ภาพหน้าจอการสนทนากับ EaseAI สำหรับสืบค้นข้อมูลและเตรียมคำสั่งผ่านระบบ MCP}
     \label{fig:ch4_hmi_easeai}
 \end{figure}
@@ -481,6 +481,8 @@
 \label{sec:ch4_ai_latency}
 การวัด latency ของ AI/MCP pipeline ใช้เพื่อระบุคอขวดหลังจากปรับสถาปัตยกรรมจากแนวทางเดิมที่ใส่กฎ เครื่องมือ และตัวอย่างจำนวนมากไว้ใน prompt เดียว ไปสู่ pipeline แบบแยกส่วน 5 layer การวัดครั้งนี้ตัดตัวแปรด้าน UI และเครือข่ายภายนอกออก แล้ววัดเฉพาะเส้นทาง blocking หลัก ได้แก่ Layer 1 Intent Router, Layer 2 Context Assembler, Layer 4 Constrained LLM และ Layer 5 Execution Gate จำนวน 30 รอบ
 
+ผลในตารางที่~\ref{tab:ch4_ai_latency} ชี้ว่าคอขวดหลักอยู่ที่ Layer 4 Constrained LLM เพราะเป็นขั้นตอนเดียวที่ต้องสร้างคำตอบหรือ candidate ผ่านโมเดลภาษา ขณะที่ Layer 1, Layer 2 และ Layer 5 ใช้เวลารวมกันระดับไม่กี่ร้อยมิลลิวินาที เมื่อเทียบกับแนวทางเดิมที่บางงานใช้เวลาประมาณ 30--45 นาที การแยก logic ออกจาก LLM ช่วยลด p50 ของเส้นทางหลักเหลือประมาณ 14.59 วินาที อย่างไรก็ตาม p95 ยังอยู่ที่ 36.94 วินาที จึงยังควรลด tail latency ต่อไป
+
 \begin{table}[!htbp]
     \centering
     \caption{ผลการทดสอบ latency ของ AI/MCP pipeline (n=30)}
@@ -501,10 +503,8 @@
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.76\textwidth]{chapter4/plot-llm-ttft-tokens.png}
+    \includegraphics[width=0.56\textwidth,height=0.22\textheight,keepaspectratio]{chapter4/plot-llm-ttft-tokens.png}
     \caption{กราฟประกอบการวิเคราะห์เวลาแฝงของการประมวลผล LLM ใน pipeline}
     \label{fig:ch4-llm-latency-plot}
 \end{figure}
-
-ผลในตารางที่~\ref{tab:ch4_ai_latency} ชี้ว่าคอขวดหลักอยู่ที่ Layer 4 Constrained LLM เพราะเป็นขั้นตอนเดียวที่ต้องใช้การสร้างคำตอบหรือ candidate ผ่านโมเดลภาษา ขณะที่ Layer 1, Layer 2 และ Layer 5 ใช้เวลารวมกันระดับไม่กี่ร้อยมิลลิวินาที เมื่อเทียบกับบันทึกการพัฒนาแนวทางเดิมที่บางงานใช้เวลาประมาณ 30--45 นาที การแยก logic ออกจาก LLM ช่วยลด p50 ของเส้นทางหลักลงเหลือประมาณ 14.59 วินาที อย่างไรก็ตาม p95 ยังอยู่ที่ 36.94 วินาที จึงยังควรพัฒนา dynamic model multiplexing เพื่อไม่ให้คำสั่งง่ายต้องผ่านโมเดลขนาดเดียวกับงานที่ซับซ้อน
 \FloatBarrier

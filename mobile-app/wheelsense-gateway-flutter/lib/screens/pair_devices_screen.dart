@@ -25,8 +25,8 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   StreamSubscription<BleDeviceSnapshot>? _scanSubscription;
   StreamSubscription<String>? _m5Subscription;
   StreamSubscription<PolarTelemetrySample>? _polarSubscription;
+  StreamSubscription<GatewayConfig>? _configSubscription;
 
-  GatewayConfig _config = GatewayConfig.defaults();
   BleDeviceSnapshot? _m5Device;
   BleDeviceSnapshot? _polarDevice;
   String? _m5Error;
@@ -38,6 +38,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   bool _polarRelayActive = false;
   bool _m5Connecting = false;
   bool _polarConnecting = false;
+  bool _m5SetupCompletionMarked = false;
 
   @override
   void didChangeDependencies() {
@@ -54,11 +55,13 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     _scanSubscription?.cancel();
     _m5Subscription?.cancel();
     _polarSubscription?.cancel();
+    _configSubscription?.cancel();
     super.dispose();
   }
 
   Future<void> _loadInitialState() async {
     final runtime = GatewayServicesScope.of(context);
+    _configSubscription ??= runtime.configUpdates.listen(_applyConfigUpdate);
     final config = await runtime.loadConfig();
     final pairedM5 = await runtime.loadPairedM5Device();
     final pairedPolar = await runtime.loadPairedPolarDevice();
@@ -66,10 +69,28 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
       return;
     }
     setState(() {
-      _config = config;
+      _m5SetupCompletionMarked = config.setupCompleted;
       _m5Device = pairedM5;
       _polarDevice = pairedPolar;
     });
+  }
+
+  void _applyConfigUpdate(GatewayConfig config) {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _m5SetupCompletionMarked = config.setupCompleted;
+    });
+  }
+
+  Future<GatewayConfig> _loadLatestConfig() async {
+    final runtime = GatewayServicesScope.of(context);
+    final config = await runtime.loadConfig();
+    if (mounted) {
+      setState(() => _m5SetupCompletionMarked = config.setupCompleted);
+    }
+    return config;
   }
 
   @override
@@ -119,6 +140,25 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
             batteryPercent: latestM5?.batteryPercent,
             error: _m5Error,
             onTap: _handleM5Tap,
+            actions: [
+              OutlinedButton.icon(
+                onPressed: _m5Device == null || _m5Connecting
+                    ? null
+                    : _reconnectM5,
+                icon: const Icon(Icons.sync),
+                label: const Text('Reconnect'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _m5Device == null ? null : _renameM5,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Rename'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _m5Device == null ? null : _forgetM5,
+                icon: const Icon(Icons.link_off),
+                label: const Text('Forget'),
+              ),
+            ],
             metrics: [
               _SensorMetric(
                 label: 'Distance',
@@ -161,6 +201,25 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
             batteryPercent: latestPolar?.sensorBatteryPercent,
             error: _polarError,
             onTap: _handlePolarTap,
+            actions: [
+              OutlinedButton.icon(
+                onPressed: _polarDevice == null || _polarConnecting
+                    ? null
+                    : _reconnectPolar,
+                icon: const Icon(Icons.sync),
+                label: const Text('Reconnect'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _polarDevice == null ? null : _renamePolar,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Rename'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _polarDevice == null ? null : _forgetPolar,
+                icon: const Icon(Icons.link_off),
+                label: const Text('Forget'),
+              ),
+            ],
             metrics: [
               _SensorMetric(
                 label: 'Heart Rate',
@@ -256,7 +315,6 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     final runtime = GatewayServicesScope.of(context);
     final config = await runtime.loadConfig();
     setState(() {
-      _config = config;
       _devices.clear();
       _scanTarget = target;
       _scanning = true;
@@ -381,7 +439,11 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
       return;
     }
     final runtime = GatewayServicesScope.of(context);
+    final config = await _loadLatestConfig();
     await _m5Subscription?.cancel();
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _m5Device = device.name == 'Unnamed BLE Device'
           ? device.copyWith(name: 'M5StickC Plus2')
@@ -393,7 +455,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     });
 
     try {
-      final stream = await runtime.startM5TelemetryRelay(_config, _m5Device!);
+      final stream = await runtime.startM5TelemetryRelay(config, _m5Device!);
       _m5Subscription = stream.listen(
         (payload) {
           final sample = _parseM5(payload);
@@ -405,6 +467,10 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
             _m5RelayActive = true;
             _pushLimited(_m5Samples, sample);
           });
+          if (!_m5SetupCompletionMarked) {
+            _m5SetupCompletionMarked = true;
+            unawaited(runtime.markSetupCompleted());
+          }
         },
         onError: (Object error) {
           if (mounted) {
@@ -434,7 +500,11 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
       return;
     }
     final runtime = GatewayServicesScope.of(context);
+    final config = await _loadLatestConfig();
     await _polarSubscription?.cancel();
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _polarDevice = device.name == 'Unnamed BLE Device'
           ? device.copyWith(name: 'Polar Verity Sense')
@@ -447,7 +517,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
 
     try {
       final stream = await runtime.startPolarTelemetryRelay(
-        _config,
+        config,
         _polarDevice!,
       );
       if (mounted) {
@@ -502,6 +572,123 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     }
   }
 
+  void _reconnectM5() {
+    final device = _m5Device;
+    if (device == null) {
+      return;
+    }
+    unawaited(_pairM5(device));
+  }
+
+  void _reconnectPolar() {
+    final device = _polarDevice;
+    if (device == null) {
+      return;
+    }
+    unawaited(_pairPolar(device));
+  }
+
+  Future<void> _renameM5() async {
+    final device = _m5Device;
+    if (device == null) {
+      return;
+    }
+    final runtime = GatewayServicesScope.of(context);
+    final config = await _loadLatestConfig();
+    if (!mounted) {
+      return;
+    }
+    final name = await _askDeviceName(device.name);
+    if (!mounted || name == null || name.isEmpty) {
+      return;
+    }
+    await runtime.renameM5Device(config: config, device: device, name: name);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _m5Device = device.copyWith(name: name));
+  }
+
+  Future<void> _renamePolar() async {
+    final device = _polarDevice;
+    if (device == null) {
+      return;
+    }
+    final runtime = GatewayServicesScope.of(context);
+    final config = await _loadLatestConfig();
+    if (!mounted) {
+      return;
+    }
+    final name = await _askDeviceName(device.name);
+    if (!mounted || name == null || name.isEmpty) {
+      return;
+    }
+    await runtime.renamePolarDevice(config: config, device: device, name: name);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _polarDevice = device.copyWith(name: name));
+  }
+
+  Future<void> _forgetM5() async {
+    final runtime = GatewayServicesScope.of(context);
+    await _m5Subscription?.cancel();
+    await runtime.forgetM5Device();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _m5Device = null;
+      _m5RelayActive = false;
+      _m5Connecting = false;
+      _m5Samples.clear();
+    });
+  }
+
+  Future<void> _forgetPolar() async {
+    final runtime = GatewayServicesScope.of(context);
+    await _polarSubscription?.cancel();
+    await runtime.forgetPolarDevice();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _polarDevice = null;
+      _polarRelayActive = false;
+      _polarConnecting = false;
+      _polarSamples.clear();
+    });
+  }
+
+  Future<String?> _askDeviceName(String current) async {
+    final controller = TextEditingController(text: current);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Rename device'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Device name'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    return result;
+  }
+
   String _number(double? value) {
     return value == null ? '--' : value.toStringAsFixed(2);
   }
@@ -554,6 +741,7 @@ class _SensorDeviceCard extends StatelessWidget {
     required this.batteryPercent,
     required this.metrics,
     required this.onTap,
+    this.actions = const <Widget>[],
     this.error,
   });
 
@@ -566,6 +754,7 @@ class _SensorDeviceCard extends StatelessWidget {
   final int? batteryPercent;
   final List<_SensorMetric> metrics;
   final VoidCallback? onTap;
+  final List<Widget> actions;
   final String? error;
 
   @override
@@ -645,6 +834,10 @@ class _SensorDeviceCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (actions.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Wrap(spacing: 8, runSpacing: 8, children: actions),
+              ],
             ],
           ),
         ),

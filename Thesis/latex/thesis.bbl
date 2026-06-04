@@ -751,6 +751,219 @@
       \verb https://www.raspberrypi.com/products/raspberry-pi-5/
       \endverb
     \endentry
+    \entry{FlutterDocs}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=c047b10eee763afb6164e077cf1cc268}{%
+           family={{Flutter}},
+           familyi={F\bibinitperiod}}}%
+      }
+      \strng{namehash}{c047b10eee763afb6164e077cf1cc268}
+      \strng{fullhash}{c047b10eee763afb6164e077cf1cc268}
+      \strng{fullhashraw}{c047b10eee763afb6164e077cf1cc268}
+      \strng{bibnamehash}{c047b10eee763afb6164e077cf1cc268}
+      \strng{authorbibnamehash}{c047b10eee763afb6164e077cf1cc268}
+      \strng{authornamehash}{c047b10eee763afb6164e077cf1cc268}
+      \strng{authorfullhash}{c047b10eee763afb6164e077cf1cc268}
+      \strng{authorfullhashraw}{c047b10eee763afb6164e077cf1cc268}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Flutter {API} reference documentation}
+      \field{urlday}{22}
+      \field{urlmonth}{5}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://api.flutter.dev/
+      \endverb
+      \verb{url}
+      \verb https://api.flutter.dev/
+      \endverb
+    \endentry
+    \entry{NextJS2024}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=b611823488786b851b24fb05d8ab927d}{%
+           family={{Vercel, Inc.}},
+           familyi={V\bibinitperiod}}}%
+      }
+      \strng{namehash}{b611823488786b851b24fb05d8ab927d}
+      \strng{fullhash}{b611823488786b851b24fb05d8ab927d}
+      \strng{fullhashraw}{b611823488786b851b24fb05d8ab927d}
+      \strng{bibnamehash}{b611823488786b851b24fb05d8ab927d}
+      \strng{authorbibnamehash}{b611823488786b851b24fb05d8ab927d}
+      \strng{authornamehash}{b611823488786b851b24fb05d8ab927d}
+      \strng{authorfullhash}{b611823488786b851b24fb05d8ab927d}
+      \strng{authorfullhashraw}{b611823488786b851b24fb05d8ab927d}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Next.js: The {React} Framework for the Web}
+      \field{urlday}{20}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://nextjs.org/
+      \endverb
+      \verb{url}
+      \verb https://nextjs.org/
+      \endverb
+    \endentry
+    \entry{FastAPI2024}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=f5305ee02dd2a5c6215b53401b4a10b0}{%
+           family={Ramírez},
+           familyi={R\bibinitperiod},
+           given={Sebastián},
+           giveni={S\bibinitperiod}}}%
+      }
+      \strng{namehash}{f5305ee02dd2a5c6215b53401b4a10b0}
+      \strng{fullhash}{f5305ee02dd2a5c6215b53401b4a10b0}
+      \strng{fullhashraw}{f5305ee02dd2a5c6215b53401b4a10b0}
+      \strng{bibnamehash}{f5305ee02dd2a5c6215b53401b4a10b0}
+      \strng{authorbibnamehash}{f5305ee02dd2a5c6215b53401b4a10b0}
+      \strng{authornamehash}{f5305ee02dd2a5c6215b53401b4a10b0}
+      \strng{authorfullhash}{f5305ee02dd2a5c6215b53401b4a10b0}
+      \strng{authorfullhashraw}{f5305ee02dd2a5c6215b53401b4a10b0}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{FastAPI: Modern, Fast Web Framework for Building {APIs} with {Python} Based on Standard Type Hints}
+      \field{urlday}{20}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://fastapi.tiangolo.com/
+      \endverb
+      \verb{url}
+      \verb https://fastapi.tiangolo.com/
+      \endverb
+    \endentry
+    \entry{PostgreSQL2024}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=36423acfb135ffe286ea438eafcb0bc6}{%
+           family={{PostgreSQL Global Development Group}},
+           familyi={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{36423acfb135ffe286ea438eafcb0bc6}
+      \strng{fullhash}{36423acfb135ffe286ea438eafcb0bc6}
+      \strng{fullhashraw}{36423acfb135ffe286ea438eafcb0bc6}
+      \strng{bibnamehash}{36423acfb135ffe286ea438eafcb0bc6}
+      \strng{authorbibnamehash}{36423acfb135ffe286ea438eafcb0bc6}
+      \strng{authornamehash}{36423acfb135ffe286ea438eafcb0bc6}
+      \strng{authorfullhash}{36423acfb135ffe286ea438eafcb0bc6}
+      \strng{authorfullhashraw}{36423acfb135ffe286ea438eafcb0bc6}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{PostgreSQL: The World's Most Advanced Open Source Relational Database}
+      \field{urlday}{20}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.postgresql.org/
+      \endverb
+      \verb{url}
+      \verb https://www.postgresql.org/
+      \endverb
+    \endentry
+    \entry{DockerCompose2024}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=e6f3d214228cc5933c1a82019f7dc0e0}{%
+           family={{Docker, Inc.}},
+           familyi={D\bibinitperiod}}}%
+      }
+      \strng{namehash}{e6f3d214228cc5933c1a82019f7dc0e0}
+      \strng{fullhash}{e6f3d214228cc5933c1a82019f7dc0e0}
+      \strng{fullhashraw}{e6f3d214228cc5933c1a82019f7dc0e0}
+      \strng{bibnamehash}{e6f3d214228cc5933c1a82019f7dc0e0}
+      \strng{authorbibnamehash}{e6f3d214228cc5933c1a82019f7dc0e0}
+      \strng{authornamehash}{e6f3d214228cc5933c1a82019f7dc0e0}
+      \strng{authorfullhash}{e6f3d214228cc5933c1a82019f7dc0e0}
+      \strng{authorfullhashraw}{e6f3d214228cc5933c1a82019f7dc0e0}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Docker Compose: Define and Run Multi-Container {Docker} Applications}
+      \field{urlday}{20}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.docker.com/compose/
+      \endverb
+      \verb{url}
+      \verb https://docs.docker.com/compose/
+      \endverb
+    \endentry
+    \entry{Ollama2024}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=20fe3dec2f407118ec1a224dca65d737}{%
+           family={{Ollama contributors}},
+           familyi={O\bibinitperiod}}}%
+      }
+      \strng{namehash}{20fe3dec2f407118ec1a224dca65d737}
+      \strng{fullhash}{20fe3dec2f407118ec1a224dca65d737}
+      \strng{fullhashraw}{20fe3dec2f407118ec1a224dca65d737}
+      \strng{bibnamehash}{20fe3dec2f407118ec1a224dca65d737}
+      \strng{authorbibnamehash}{20fe3dec2f407118ec1a224dca65d737}
+      \strng{authornamehash}{20fe3dec2f407118ec1a224dca65d737}
+      \strng{authorfullhash}{20fe3dec2f407118ec1a224dca65d737}
+      \strng{authorfullhashraw}{20fe3dec2f407118ec1a224dca65d737}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Ollama: Get Up and Running with Large Language Models, Locally}
+      \field{urlday}{20}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://ollama.com/
+      \endverb
+      \verb{url}
+      \verb https://ollama.com/
+      \endverb
+    \endentry
+    \entry{ModelContextProtocol}{online}{}{}
+      \name{author}{1}{}{%
+        {{hash=ba3169d5deb7852d10d512a6d76194dd}{%
+           family={{Model Context Protocol contributors}},
+           familyi={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{ba3169d5deb7852d10d512a6d76194dd}
+      \strng{fullhash}{ba3169d5deb7852d10d512a6d76194dd}
+      \strng{fullhashraw}{ba3169d5deb7852d10d512a6d76194dd}
+      \strng{bibnamehash}{ba3169d5deb7852d10d512a6d76194dd}
+      \strng{authorbibnamehash}{ba3169d5deb7852d10d512a6d76194dd}
+      \strng{authornamehash}{ba3169d5deb7852d10d512a6d76194dd}
+      \strng{authorfullhash}{ba3169d5deb7852d10d512a6d76194dd}
+      \strng{authorfullhashraw}{ba3169d5deb7852d10d512a6d76194dd}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Model Context Protocol specification}
+      \field{urlday}{15}
+      \field{urlmonth}{4}
+      \field{urlyear}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://modelcontextprotocol.io
+      \endverb
+      \verb{url}
+      \verb https://modelcontextprotocol.io
+      \endverb
+    \endentry
     \entry{Kaemarungsi2012RSSIAnalysis}{article}{}{}
       \name{author}{2}{}{%
         {{hash=6a063ae3c32e19867659ad724ceec407}{%
@@ -878,8 +1091,8 @@
       \strng{authornamehash}{d65b36936e7747ba9b9752def8c1c52b}
       \strng{authorfullhash}{d65b36936e7747ba9b9752def8c1c52b}
       \strng{authorfullhashraw}{d65b36936e7747ba9b9752def8c1c52b}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{IEEE Communications Surveys and Tutorials}
@@ -914,8 +1127,8 @@
       \strng{authornamehash}{f79ceb030bcf791e5521f87ac6ada03b}
       \strng{authorfullhash}{f79ceb030bcf791e5521f87ac6ada03b}
       \strng{authorfullhashraw}{f79ceb030bcf791e5521f87ac6ada03b}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}
@@ -948,8 +1161,8 @@
       \strng{authornamehash}{7583d9686fbf26bcb2c9608545b6c971}
       \strng{authorfullhash}{7583d9686fbf26bcb2c9608545b6c971}
       \strng{authorfullhashraw}{7583d9686fbf26bcb2c9608545b6c971}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{Information Processing and Management}
@@ -1034,8 +1247,8 @@
       \strng{authornamehash}{f238c3bfc4b30650dd17e65c4aadfc66}
       \strng{authorfullhash}{2679e873d06671d191f16ea70f965605}
       \strng{authorfullhashraw}{2679e873d06671d191f16ea70f965605}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{booktitle}{Advances in Neural Information Processing Systems}
@@ -1091,8 +1304,8 @@
       \strng{authornamehash}{3843ff4ab1933a7a9ad4728bebaa9663}
       \strng{authorfullhash}{6e355a0c5bdd11ea6e727a6e4f07afa4}
       \strng{authorfullhashraw}{6e355a0c5bdd11ea6e727a6e4f07afa4}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{arXiv preprint arXiv:2109.06133}
@@ -1123,8 +1336,8 @@
       \strng{authornamehash}{67d2869f67fa4406e0cac86bc50a02a1}
       \strng{authorfullhash}{67d2869f67fa4406e0cac86bc50a02a1}
       \strng{authorfullhashraw}{67d2869f67fa4406e0cac86bc50a02a1}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{journaltitle}{arXiv preprint arXiv:2501.05435}
@@ -1132,36 +1345,6 @@
       \field{year}{2025}
       \verb{doi}
       \verb 10.48550/arXiv.2501.05435
-      \endverb
-    \endentry
-    \entry{ModelContextProtocol}{online}{}{}
-      \name{author}{1}{}{%
-        {{hash=ba3169d5deb7852d10d512a6d76194dd}{%
-           family={{Model Context Protocol contributors}},
-           familyi={M\bibinitperiod}}}%
-      }
-      \strng{namehash}{ba3169d5deb7852d10d512a6d76194dd}
-      \strng{fullhash}{ba3169d5deb7852d10d512a6d76194dd}
-      \strng{fullhashraw}{ba3169d5deb7852d10d512a6d76194dd}
-      \strng{bibnamehash}{ba3169d5deb7852d10d512a6d76194dd}
-      \strng{authorbibnamehash}{ba3169d5deb7852d10d512a6d76194dd}
-      \strng{authornamehash}{ba3169d5deb7852d10d512a6d76194dd}
-      \strng{authorfullhash}{ba3169d5deb7852d10d512a6d76194dd}
-      \strng{authorfullhashraw}{ba3169d5deb7852d10d512a6d76194dd}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{title}{Model Context Protocol specification}
-      \field{urlday}{15}
-      \field{urlmonth}{4}
-      \field{urlyear}{2026}
-      \field{urldateera}{ce}
-      \verb{urlraw}
-      \verb https://modelcontextprotocol.io
-      \endverb
-      \verb{url}
-      \verb https://modelcontextprotocol.io
       \endverb
     \endentry
     \entry{Anthropic2024MCP}{online}{}{}
@@ -1181,8 +1364,8 @@
       \strng{authornamehash}{f431db65cea024a5f19eab835afefee2}
       \strng{authorfullhash}{f431db65cea024a5f19eab835afefee2}
       \strng{authorfullhashraw}{f431db65cea024a5f19eab835afefee2}
-      \field{sortinit}{2}
-      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
       \field{title}{Model Context Protocol Specification}
