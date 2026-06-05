@@ -86,30 +86,28 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
       setState(() {
         _controller = null;
         _loadedPortalBaseUrl = effectiveConfig.portalBaseUrl;
-        _error = 'Portal URL is invalid. Update it in Settings.';
+        _error = context.text.portalUrlInvalidSettings;
       });
       return;
     }
     final controller =
-        GatewayWebViewService().buildPortalController(
-          effectiveConfig,
-        )..setNavigationDelegate(
-          NavigationDelegate(
-            onProgress: (progress) {
-              if (mounted) {
-                setState(() => _progress = progress);
-              }
-            },
-            onWebResourceError: (error) {
-              if (mounted && error.isForMainFrame == true) {
-                setState(() {
-                  _error =
-                      'Portal is unreachable. Check network or open externally.';
-                });
-              }
-            },
-          ),
-        );
+        GatewayWebViewService().buildPortalController(effectiveConfig)
+          ..setNavigationDelegate(
+            NavigationDelegate(
+              onProgress: (progress) {
+                if (mounted) {
+                  setState(() => _progress = progress);
+                }
+              },
+              onWebResourceError: (error) {
+                if (mounted && error.isForMainFrame == true) {
+                  setState(() {
+                    _error = context.text.portalUnreachable;
+                  });
+                }
+              },
+            ),
+          );
     if (!mounted) {
       return;
     }
@@ -129,9 +127,9 @@ class _PortalWebViewScreenState extends State<PortalWebViewScreen> {
     }
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open portal externally')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.text.couldNotOpenPortal)));
     }
   }
 }
@@ -151,6 +149,7 @@ class _PortalFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.text;
     final theme = Theme.of(context);
     return Center(
       child: Padding(
@@ -162,7 +161,10 @@ class _PortalFallback extends StatelessWidget {
             children: [
               const Icon(Icons.web_asset_off, size: 44),
               const SizedBox(height: 12),
-              Text('Portal unavailable', style: theme.textTheme.titleLarge),
+              Text(
+                strings.portalUnavailable,
+                style: theme.textTheme.titleLarge,
+              ),
               const SizedBox(height: 8),
               Text(message, textAlign: TextAlign.center),
               if (portalBaseUrl != null) ...[
@@ -176,13 +178,13 @@ class _PortalFallback extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: onRetry,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
+                    label: Text(strings.retry),
                   ),
                   const SizedBox(width: 10),
                   FilledButton.icon(
                     onPressed: onOpenExternal,
                     icon: const Icon(Icons.open_in_new),
-                    label: const Text('Open externally'),
+                    label: Text(strings.openExternally),
                   ),
                 ],
               ),

@@ -95,6 +95,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.text;
     final m5View = _selectedOrCandidate(
       _m5Device,
       (device) => device.looksLikeM5,
@@ -135,7 +136,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
               connecting: _m5Connecting,
               scanning: _scanning && _scanTarget == _ScanTarget.m5,
               error: _m5Error,
-              fallback: 'Tap to scan',
+              fallback: strings.devicesTapToScan,
             ),
             batteryPercent: latestM5?.batteryPercent,
             error: _m5Error,
@@ -146,32 +147,32 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
                     ? null
                     : _reconnectM5,
                 icon: const Icon(Icons.sync),
-                label: const Text('Reconnect'),
+                label: Text(strings.reconnect),
               ),
               OutlinedButton.icon(
                 onPressed: _m5Device == null ? null : _renameM5,
                 icon: const Icon(Icons.edit_outlined),
-                label: const Text('Rename'),
+                label: Text(strings.rename),
               ),
               OutlinedButton.icon(
                 onPressed: _m5Device == null ? null : _forgetM5,
                 icon: const Icon(Icons.link_off),
-                label: const Text('Forget'),
+                label: Text(strings.forget),
               ),
             ],
             metrics: [
               _SensorMetric(
-                label: 'Distance',
+                label: strings.distance,
                 value: _number(latestM5?.distanceM),
                 unit: 'm',
               ),
               _SensorMetric(
-                label: 'Velocity',
+                label: strings.velocity,
                 value: _number(latestM5?.velocityMs),
                 unit: 'm/s',
               ),
               _SensorMetric(
-                label: 'Accel',
+                label: strings.acceleration,
                 value: latestM5 == null
                     ? '--'
                     : (latestM5.accelMs2 / 9.80665).toStringAsFixed(2),
@@ -196,7 +197,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
               connecting: _polarConnecting,
               scanning: _scanning && _scanTarget == _ScanTarget.polar,
               error: _polarError,
-              fallback: 'Tap to scan',
+              fallback: strings.devicesTapToScan,
             ),
             batteryPercent: latestPolar?.sensorBatteryPercent,
             error: _polarError,
@@ -207,22 +208,22 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
                     ? null
                     : _reconnectPolar,
                 icon: const Icon(Icons.sync),
-                label: const Text('Reconnect'),
+                label: Text(strings.reconnect),
               ),
               OutlinedButton.icon(
                 onPressed: _polarDevice == null ? null : _renamePolar,
                 icon: const Icon(Icons.edit_outlined),
-                label: const Text('Rename'),
+                label: Text(strings.rename),
               ),
               OutlinedButton.icon(
                 onPressed: _polarDevice == null ? null : _forgetPolar,
                 icon: const Icon(Icons.link_off),
-                label: const Text('Forget'),
+                label: Text(strings.forget),
               ),
             ],
             metrics: [
               _SensorMetric(
-                label: 'Heart Rate',
+                label: strings.heartRate,
                 value: latestPolar == null
                     ? '--'
                     : '${latestPolar.heartRateBpm}',
@@ -231,7 +232,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
                 iconColor: WheelSenseColors.emergency,
               ),
               _SensorMetric(
-                label: 'PPG Signal',
+                label: strings.ppgSignal,
                 value: latestPolar?.ppgRatio == null
                     ? '--'
                     : latestPolar!.ppgRatio!.toStringAsFixed(2),
@@ -244,10 +245,10 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
         ),
         const SizedBox(height: 22),
         _SensorSection(
-          title: 'BLE Beacons',
+          title: strings.bleBeacons,
           action: FilledButton(
             onPressed: _scanning ? null : _scan,
-            child: Text(_scanning ? 'Scanning' : 'Scan Again'),
+            child: Text(_scanning ? strings.scanning : strings.scanAgain),
           ),
           child: _BeaconListCard(
             beacons: beacons,
@@ -270,22 +271,22 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     required String fallback,
   }) {
     if (error != null) {
-      return 'Needs attention';
+      return context.text.devicesNeedsAttention;
     }
     if (connected) {
-      return 'Connected';
+      return context.text.connected;
     }
     if (connecting) {
-      return 'Connecting...';
+      return context.text.devicesConnecting;
     }
     if (scanning) {
-      return 'Scanning nearby BLE';
+      return context.text.devicesScanningNearbyBle;
     }
     if (discovered) {
-      return 'Tap to connect';
+      return context.text.devicesTapToConnect;
     }
     if (device != null) {
-      return 'Tap to scan';
+      return context.text.devicesTapToScan;
     }
     return fallback;
   }
@@ -348,7 +349,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
               _scanning = false;
               _scanTarget = null;
             });
-            _show('BLE scan failed: $error');
+            _show(context.text.bleScanFailed(error));
           },
           onDone: () {
             if (mounted) {
@@ -360,13 +361,11 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
               if (missed == _ScanTarget.m5 &&
                   !_m5Connecting &&
                   !_m5RelayActive) {
-                _show('M5StickC Plus2 not found. Turn it on and scan again.');
+                _show(context.text.m5NotFound);
               } else if (missed == _ScanTarget.polar &&
                   !_polarConnecting &&
                   !_polarRelayActive) {
-                _show(
-                  'Polar Verity Sense not found. Turn it on and scan again.',
-                );
+                _show(context.text.polarNotFound);
               }
             }
           },
@@ -375,11 +374,11 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
 
   void _handleM5Tap() {
     if (_m5RelayActive) {
-      _show('M5StickC Plus2 is connected');
+      _show(context.text.m5Connected);
       return;
     }
     if (_m5Connecting || _scanning) {
-      _show(_m5Connecting ? 'Connecting to M5StickC Plus2' : 'Scanning BLE');
+      _show(_m5Connecting ? context.text.connectingM5 : context.text.scanning);
       return;
     }
     final device = _discoveredMatching(
@@ -395,12 +394,12 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
 
   void _handlePolarTap() {
     if (_polarRelayActive) {
-      _show('Polar Verity Sense is connected');
+      _show(context.text.polarConnected);
       return;
     }
     if (_polarConnecting || _scanning) {
       _show(
-        _polarConnecting ? 'Connecting to Polar Verity Sense' : 'Scanning BLE',
+        _polarConnecting ? context.text.connectingPolar : context.text.scanning,
       );
       return;
     }
@@ -434,8 +433,9 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
   }
 
   Future<void> _pairM5(BleDeviceSnapshot device) async {
+    final strings = context.text;
     if (!device.looksLikeM5) {
-      _show('${device.name} is not advertising the WheelSense M5 service');
+      _show(strings.notM5(device.name));
       return;
     }
     final runtime = GatewayServicesScope.of(context);
@@ -482,7 +482,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           }
         },
       );
-      _show('Waiting for M5StickC Plus2 telemetry');
+      _show(strings.waitingForM5Telemetry);
     } on Object catch (error) {
       if (mounted) {
         setState(() {
@@ -490,13 +490,14 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           _m5Error = '$error';
         });
       }
-      _show('M5 connection failed: $error');
+      _show(strings.m5ConnectionFailed(error));
     }
   }
 
   Future<void> _pairPolar(BleDeviceSnapshot device) async {
+    final strings = context.text;
     if (!device.looksLikePolar) {
-      _show('${device.name} is not a Polar Verity Sense / HR sensor');
+      _show(strings.notPolar(device.name));
       return;
     }
     final runtime = GatewayServicesScope.of(context);
@@ -544,7 +545,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           }
         },
       );
-      _show('Waiting for Polar Verity Sense data');
+      _show(strings.waitingForPolarData);
     } on Object catch (error) {
       if (mounted) {
         setState(() {
@@ -552,7 +553,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
           _polarError = '$error';
         });
       }
-      _show('Polar connection failed: $error');
+      _show(strings.polarConnectionFailed(error));
     }
   }
 
@@ -560,7 +561,7 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
     try {
       return M5TelemetrySample.fromPayload(payload);
     } on Object {
-      setState(() => _m5Error = 'M5 packet is not valid JSON telemetry');
+      setState(() => _m5Error = context.text.invalidM5Packet);
       return null;
     }
   }
@@ -666,20 +667,20 @@ class _PairDevicesScreenState extends State<PairDevicesScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Rename device'),
+          title: Text(context.text.renameDevice),
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Device name'),
+            decoration: InputDecoration(labelText: context.text.deviceName),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(context.text.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, controller.text.trim()),
-              child: const Text('Save'),
+              child: Text(context.text.save),
             ),
           ],
         );
@@ -955,6 +956,7 @@ class _BeaconListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.text;
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -966,12 +968,12 @@ class _BeaconListCard extends StatelessWidget {
                 child: CompactRowCard(
                   icon: scanning ? Icons.radar : Icons.bluetooth_disabled,
                   title: scanning
-                      ? 'Scanning nearby beacons'
-                      : 'No BLE beacons',
+                      ? strings.scanningNearbyBeacons
+                      : strings.noBleBeacons,
                   subtitle: scanning
-                      ? 'Detected WSN nodes will appear here.'
-                      : 'Tap Scan Again near WSN_ nodes.',
-                  meta: scanning ? 'Live' : 'Ready',
+                      ? strings.detectedWsnNodes
+                      : strings.tapScanNearWsn,
+                  meta: scanning ? strings.live : strings.ready,
                   severity: ClinicalSeverity.info,
                 ),
               ),

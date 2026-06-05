@@ -18,6 +18,7 @@ class OverviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.text;
     final runtime = GatewayServicesScope.of(context);
     return StreamBuilder<GatewayRuntimeSnapshot>(
       stream: runtime.snapshots,
@@ -26,30 +27,40 @@ class OverviewScreen extends StatelessWidget {
         final state = snapshot.data ?? runtime.snapshot;
         final status = state.status;
         final config = state.config;
+        final nextAction = _nextAction(
+          state: state,
+          strings: strings,
+          onOpenDevices: onOpenDevices,
+          onOpenSettings: onOpenSettings,
+          onStartGateway: onStartGateway,
+        );
         final setupItems = <_SetupItem>[
           _SetupItem(
-            title: 'Permissions',
+            title: strings.setupPermissions,
             detail: status.bleReady
-                ? 'Bluetooth permissions are ready'
-                : 'Bluetooth and notification permissions need attention',
+                ? strings.setupPermissionsReady
+                : strings.setupPermissionsNeeded,
             done: status.bleReady,
           ),
           _SetupItem(
-            title: 'Server and broker',
+            title: strings.setupServer,
             detail: status.mqttReady
-                ? '${config.mqttHost}:${config.mqttPort} connected'
-                : '${config.mqttHost}:${config.mqttPort} not connected',
+                ? strings.brokerConnected(
+                    '${config.mqttHost}:${config.mqttPort}',
+                  )
+                : strings.brokerNotConnected(
+                    '${config.mqttHost}:${config.mqttPort}',
+                  ),
             done: status.mqttReady,
           ),
           _SetupItem(
-            title: 'M5 gateway sensor',
-            detail: state.pairedM5Device?.name ?? 'Pair the WheelSense M5',
+            title: strings.setupM5,
+            detail: state.pairedM5Device?.name ?? strings.setupM5Pair,
             done: state.pairedM5Device != null,
           ),
           _SetupItem(
-            title: 'Polar sensor',
-            detail:
-                state.pairedPolarDevice?.name ?? 'Optional heart-rate relay',
+            title: strings.setupPolar,
+            detail: state.pairedPolarDevice?.name ?? strings.setupPolarOptional,
             done: true,
           ),
         ];
@@ -58,15 +69,32 @@ class OverviewScreen extends StatelessWidget {
           trailing: FilledButton.icon(
             onPressed: onStartGateway,
             icon: const Icon(Icons.play_arrow),
-            label: const Text('Start gateway'),
+            label: Text(strings.startGateway),
           ),
           children: [
+            SectionPanel(
+              title: strings.overviewNextStepTitle,
+              subtitle: nextAction.detail,
+              action: FilledButton.icon(
+                onPressed: nextAction.onPressed,
+                icon: Icon(nextAction.icon),
+                label: Text(nextAction.actionLabel),
+              ),
+              child: CompactRowCard(
+                icon: nextAction.icon,
+                title: nextAction.title,
+                subtitle: nextAction.detail,
+                meta: nextAction.meta,
+                severity: nextAction.severity,
+              ),
+            ),
+            const SizedBox(height: 12),
             ResponsiveGrid(
               children: [
                 MetricTile(
                   metric: MetricSnapshot(
-                    label: 'Gateway',
-                    value: _modeLabel(status.mode),
+                    label: strings.metricGateway,
+                    value: strings.modeLabel(status.mode),
                     detail: status.message,
                     icon: Icons.health_and_safety_outlined,
                     severity: _severity(status.mode),
@@ -74,13 +102,13 @@ class OverviewScreen extends StatelessWidget {
                 ),
                 MetricTile(
                   metric: MetricSnapshot(
-                    label: 'Telemetry sync',
+                    label: strings.metricTelemetrySync,
                     value: state.lastSuccessfulPublishAt == null
-                        ? 'Waiting'
-                        : 'Publishing',
+                        ? strings.waiting
+                        : strings.modeLabel(GatewayConnectionMode.connected),
                     detail: state.failedPublishCount == 0
-                        ? 'No publish failures recorded'
-                        : '${state.failedPublishCount} publish failures',
+                        ? strings.metricNoPublishFailures
+                        : strings.publishFailureCount(state.failedPublishCount),
                     icon: Icons.cloud_upload_outlined,
                     severity: state.failedPublishCount == 0
                         ? ClinicalSeverity.normal
@@ -89,13 +117,13 @@ class OverviewScreen extends StatelessWidget {
                 ),
                 MetricTile(
                   metric: MetricSnapshot(
-                    label: 'Patient link',
-                    value: config.linkedPersonType ?? 'Unlinked',
+                    label: strings.metricPatientLink,
+                    value: config.linkedPersonType ?? strings.unlinked,
                     detail: config.linkedPatientId != null
-                        ? 'Patient ${config.linkedPatientId}'
+                        ? strings.patientId(config.linkedPatientId!)
                         : config.linkedCaregiverId != null
-                        ? 'Caregiver ${config.linkedCaregiverId}'
-                        : 'Waiting for retained MQTT config',
+                        ? strings.caregiverId(config.linkedCaregiverId!)
+                        : strings.metricWaitingForRetainedConfig,
                     icon: Icons.link_outlined,
                     severity: config.alertsEnabled
                         ? ClinicalSeverity.normal
@@ -106,13 +134,12 @@ class OverviewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SectionPanel(
-              title: 'Gateway setup',
-              subtitle:
-                  'Complete these steps before leaving this phone as the ward gateway.',
+              title: strings.overviewSetupTitle,
+              subtitle: strings.overviewSetupSubtitle,
               action: TextButton.icon(
                 onPressed: onOpenSettings,
                 icon: const Icon(Icons.tune),
-                label: const Text('Open Settings'),
+                label: Text(strings.openSettings),
               ),
               child: Column(
                 children: [
@@ -123,7 +150,7 @@ class OverviewScreen extends StatelessWidget {
                           : Icons.radio_button_unchecked,
                       title: item.title,
                       subtitle: item.detail,
-                      meta: item.done ? 'Done' : 'Needed',
+                      meta: item.done ? strings.done : strings.needed,
                       severity: item.done
                           ? ClinicalSeverity.normal
                           : ClinicalSeverity.warning,
@@ -137,7 +164,7 @@ class OverviewScreen extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: onOpenDevices,
                           icon: const Icon(Icons.sensors),
-                          label: const Text('Open Devices'),
+                          label: Text(strings.openDevices),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -145,7 +172,7 @@ class OverviewScreen extends StatelessWidget {
                         child: FilledButton.icon(
                           onPressed: onStartGateway,
                           icon: const Icon(Icons.sync),
-                          label: const Text('Resume relay'),
+                          label: Text(strings.resumeRelay),
                         ),
                       ),
                     ],
@@ -155,21 +182,21 @@ class OverviewScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             SectionPanel(
-              title: 'Live state',
-              subtitle: 'Latest server-side context received through MQTT.',
+              title: strings.overviewLiveStateTitle,
+              subtitle: strings.overviewLiveStateSubtitle,
               child: Column(
                 children: [
                   CompactRowCard(
                     icon: Icons.meeting_room_outlined,
                     title:
                         state.latestRoomPrediction?.roomName ??
-                        'No room prediction',
+                        strings.noRoomPrediction,
                     subtitle: state.latestRoomPrediction == null
-                        ? 'Room updates appear after RSSI telemetry reaches the backend.'
+                        ? strings.noRoomPredictionDetail
                         : '${(state.latestRoomPrediction!.confidence * 100).round()}% via ${state.latestRoomPrediction!.modelType}',
                     meta: state.latestRoomPrediction == null
-                        ? 'Waiting'
-                        : 'Live',
+                        ? strings.waiting
+                        : strings.live,
                     severity: state.latestRoomPrediction == null
                         ? ClinicalSeverity.info
                         : ClinicalSeverity.normal,
@@ -177,11 +204,13 @@ class OverviewScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   CompactRowCard(
                     icon: Icons.notifications_active_outlined,
-                    title: '${state.alerts.length} live alerts',
+                    title: strings.liveAlerts(state.alerts.length),
                     subtitle: state.alerts.isEmpty
-                        ? 'No active alerts for this linked gateway.'
+                        ? strings.noActiveAlerts
                         : state.alerts.first.title,
-                    meta: config.alertsEnabled ? 'Subscribed' : 'Off',
+                    meta: config.alertsEnabled
+                        ? strings.subscribed
+                        : strings.off,
                     severity: state.alerts.isEmpty
                         ? ClinicalSeverity.info
                         : _alertSeverity(state.alerts.first.severity),
@@ -193,16 +222,6 @@ class OverviewScreen extends StatelessWidget {
         );
       },
     );
-  }
-
-  static String _modeLabel(GatewayConnectionMode mode) {
-    return switch (mode) {
-      GatewayConnectionMode.idle => 'Ready',
-      GatewayConnectionMode.scanning => 'Scanning',
-      GatewayConnectionMode.connected => 'Relaying',
-      GatewayConnectionMode.degraded => 'Degraded',
-      GatewayConnectionMode.error => 'Error',
-    };
   }
 
   static ClinicalSeverity _severity(GatewayConnectionMode mode) {
@@ -223,6 +242,68 @@ class OverviewScreen extends StatelessWidget {
       GatewayAlertSeverity.normal => ClinicalSeverity.normal,
     };
   }
+
+  static _NextAction _nextAction({
+    required GatewayRuntimeSnapshot state,
+    required GatewayStrings strings,
+    required VoidCallback onOpenDevices,
+    required VoidCallback onOpenSettings,
+    required VoidCallback onStartGateway,
+  }) {
+    if (!state.status.bleReady) {
+      return _NextAction(
+        title: strings.nextPermissionsTitle,
+        detail: strings.nextPermissionsDetail,
+        actionLabel: strings.startGateway,
+        meta: strings.needed,
+        icon: Icons.bluetooth_searching,
+        severity: ClinicalSeverity.warning,
+        onPressed: onStartGateway,
+      );
+    }
+    if (!state.status.mqttReady) {
+      return _NextAction(
+        title: strings.nextServerTitle,
+        detail: strings.nextServerDetail,
+        actionLabel: strings.openSettings,
+        meta: strings.needed,
+        icon: Icons.hub_outlined,
+        severity: ClinicalSeverity.warning,
+        onPressed: onOpenSettings,
+      );
+    }
+    if (state.pairedM5Device == null) {
+      return _NextAction(
+        title: strings.nextM5Title,
+        detail: strings.nextM5Detail,
+        actionLabel: strings.openDevices,
+        meta: strings.needed,
+        icon: Icons.sensors,
+        severity: ClinicalSeverity.warning,
+        onPressed: onOpenDevices,
+      );
+    }
+    if (!state.config.setupCompleted) {
+      return _NextAction(
+        title: strings.nextFirstPacketTitle,
+        detail: strings.nextFirstPacketDetail,
+        actionLabel: strings.openDevices,
+        meta: strings.waiting,
+        icon: Icons.sync,
+        severity: ClinicalSeverity.info,
+        onPressed: onOpenDevices,
+      );
+    }
+    return _NextAction(
+      title: strings.nextReadyTitle,
+      detail: strings.nextReadyDetail,
+      actionLabel: strings.resumeRelay,
+      meta: strings.ready,
+      icon: Icons.check_circle_outline,
+      severity: ClinicalSeverity.normal,
+      onPressed: onStartGateway,
+    );
+  }
 }
 
 class _SetupItem {
@@ -235,4 +316,24 @@ class _SetupItem {
   final String title;
   final String detail;
   final bool done;
+}
+
+class _NextAction {
+  const _NextAction({
+    required this.title,
+    required this.detail,
+    required this.actionLabel,
+    required this.meta,
+    required this.icon,
+    required this.severity,
+    required this.onPressed,
+  });
+
+  final String title;
+  final String detail;
+  final String actionLabel;
+  final String meta;
+  final IconData icon;
+  final ClinicalSeverity severity;
+  final VoidCallback onPressed;
 }

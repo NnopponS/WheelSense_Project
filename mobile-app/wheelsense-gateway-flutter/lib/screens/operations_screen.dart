@@ -29,6 +29,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.text;
     final runtime = GatewayServicesScope.of(context);
     return StreamBuilder<GatewayRuntimeSnapshot>(
       stream: runtime.snapshots,
@@ -42,18 +43,18 @@ class _OperationsScreenState extends State<OperationsScreen> {
               await runtime.bootstrap(config: config);
             },
             icon: const Icon(Icons.fact_check_outlined),
-            label: const Text('Run checks'),
+            label: Text(strings.operationsRunChecks),
           ),
           children: [
             ResponsiveGrid(
               children: [
                 MetricTile(
                   metric: MetricSnapshot(
-                    label: 'Alerts',
+                    label: strings.operationsAlerts,
                     value: '${state.alerts.length}',
                     detail: state.config.alertsEnabled
-                        ? 'Subscribed to live MQTT alerts'
-                        : 'Waiting for alert-enabled config',
+                        ? strings.alertsSubscribed
+                        : strings.alertsWaitingConfig,
                     icon: Icons.notifications_active_outlined,
                     severity: state.alerts.isEmpty
                         ? ClinicalSeverity.info
@@ -62,11 +63,16 @@ class _OperationsScreenState extends State<OperationsScreen> {
                 ),
                 MetricTile(
                   metric: MetricSnapshot(
-                    label: 'Room',
-                    value: state.latestRoomPrediction?.roomName ?? 'Unknown',
+                    label: strings.operationsRoom,
+                    value:
+                        state.latestRoomPrediction?.roomName ??
+                        strings.roomUnknown,
                     detail: state.latestRoomPrediction == null
-                        ? 'No server prediction yet'
-                        : '${(state.latestRoomPrediction!.confidence * 100).round()}% confidence',
+                        ? strings.noServerPredictionYet
+                        : strings.confidencePercent(
+                            (state.latestRoomPrediction!.confidence * 100)
+                                .round(),
+                          ),
                     icon: Icons.location_searching,
                     severity: state.latestRoomPrediction == null
                         ? ClinicalSeverity.info
@@ -75,11 +81,11 @@ class _OperationsScreenState extends State<OperationsScreen> {
                 ),
                 MetricTile(
                   metric: MetricSnapshot(
-                    label: 'Sync failures',
+                    label: strings.operationsSyncFailures,
                     value: '${state.failedPublishCount}',
                     detail:
                         state.lastPublishFailure?.reason.name ??
-                        'No failure recorded',
+                        strings.noFailureRecorded,
                     icon: Icons.sync_problem,
                     severity: state.failedPublishCount == 0
                         ? ClinicalSeverity.normal
@@ -90,15 +96,14 @@ class _OperationsScreenState extends State<OperationsScreen> {
             ),
             const SizedBox(height: 12),
             SectionPanel(
-              title: 'Live alerts',
-              subtitle: 'Alerts delivered for the linked patient or gateway.',
+              title: strings.operationsLiveAlertsTitle,
+              subtitle: strings.operationsLiveAlertsSubtitle,
               child: state.alerts.isEmpty
-                  ? const CompactRowCard(
+                  ? CompactRowCard(
                       icon: Icons.notifications_none,
-                      title: 'No live alerts',
-                      subtitle:
-                          'Alerts appear here after the backend publishes to the linked patient or gateway topic.',
-                      meta: 'Empty',
+                      title: strings.noLiveAlerts,
+                      subtitle: strings.noLiveAlertsDetail,
+                      meta: strings.empty,
                       severity: ClinicalSeverity.info,
                     )
                   : Column(
@@ -113,7 +118,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
                             subtitle: alert.description,
                             meta: _timeLabel(alert.timestamp),
                             severity: _severity(alert.severity),
-                            actionLabel: 'Portal',
+                            actionLabel: strings.portal,
                             onAction: widget.onOpenPortal,
                           ),
                           if (alert != state.alerts.last)
@@ -124,15 +129,14 @@ class _OperationsScreenState extends State<OperationsScreen> {
             ),
             const SizedBox(height: 12),
             SectionPanel(
-              title: 'Room prediction',
-              subtitle: 'Server-derived room confidence from RSSI telemetry.',
+              title: strings.roomPredictionTitle,
+              subtitle: strings.roomPredictionSubtitle,
               child: state.latestRoomPrediction == null
-                  ? const CompactRowCard(
+                  ? CompactRowCard(
                       icon: Icons.radar,
-                      title: 'Waiting for room data',
-                      subtitle:
-                          'Pair the gateway and publish RSSI telemetry to receive room predictions.',
-                      meta: 'Waiting',
+                      title: strings.waitingForRoomData,
+                      subtitle: strings.waitingForRoomDataDetail,
+                      meta: strings.waiting,
                       severity: ClinicalSeverity.info,
                     )
                   : Column(
@@ -158,13 +162,14 @@ class _OperationsScreenState extends State<OperationsScreen> {
             ),
             const SizedBox(height: 12),
             SectionPanel(
-              title: 'RSSI room scan',
-              subtitle:
-                  'Local BLE scan tool for WSN beacons and room evidence.',
+              title: strings.rssiRoomScan,
+              subtitle: strings.rssiRoomScanSubtitle,
               action: FilledButton.icon(
                 onPressed: _scanningRssi ? null : () => _startRssiScan(runtime),
                 icon: const Icon(Icons.radar),
-                label: Text(_scanningRssi ? 'Scanning' : 'Scan beacons'),
+                label: Text(
+                  _scanningRssi ? strings.scanning : strings.scanBeacons,
+                ),
               ),
               child: _scanPoints.isEmpty
                   ? CompactRowCard(
@@ -172,11 +177,10 @@ class _OperationsScreenState extends State<OperationsScreen> {
                           ? Icons.radar
                           : Icons.bluetooth_disabled,
                       title: _scanningRssi
-                          ? 'Scanning for RSSI beacons'
-                          : 'No local scan data',
-                      subtitle:
-                          'Nearby WSN_ nodes appear here with signal confidence.',
-                      meta: _scanningRssi ? 'Live' : 'Ready',
+                          ? strings.scanningForRssiBeacons
+                          : strings.noLocalScanData,
+                      subtitle: strings.nearbyWsnNodesAppear,
+                      meta: _scanningRssi ? strings.live : strings.ready,
                       severity: ClinicalSeverity.info,
                     )
                   : Column(
@@ -185,8 +189,10 @@ class _OperationsScreenState extends State<OperationsScreen> {
                           CompactRowCard(
                             icon: Icons.location_searching,
                             title: point.room,
-                            subtitle:
-                                '${point.beaconCount} beacons, best ${point.bestRssi} dBm',
+                            subtitle: strings.beaconSummary(
+                              point.beaconCount,
+                              point.bestRssi,
+                            ),
                             meta: '${(point.confidence * 100).round()}%',
                             severity: point.confidence >= 0.85
                                 ? ClinicalSeverity.normal
@@ -200,27 +206,29 @@ class _OperationsScreenState extends State<OperationsScreen> {
             ),
             const SizedBox(height: 12),
             SectionPanel(
-              title: 'Diagnostics',
+              title: strings.diagnostics,
               subtitle: state.status.message,
               child: Column(
                 children: [
                   _checkRow(
+                    strings: strings,
                     ready: state.status.bleReady,
-                    title: 'BLE adapter',
-                    detail: 'Bluetooth scan and connect permissions.',
+                    title: strings.bleAdapter,
+                    detail: strings.bleAdapterDetail,
                   ),
                   const SizedBox(height: 10),
                   _checkRow(
+                    strings: strings,
                     ready: state.status.mqttReady,
-                    title: 'MQTT broker',
-                    detail:
-                        'Registration, telemetry, config, alert, and room topics.',
+                    title: strings.settingsMqttBroker,
+                    detail: strings.mqttBrokerDetail,
                   ),
                   const SizedBox(height: 10),
                   _checkRow(
+                    strings: strings,
                     ready: state.status.backgroundReady,
-                    title: 'Android foreground service',
-                    detail: 'Keeps the gateway visible and recoverable.',
+                    title: strings.androidForegroundService,
+                    detail: strings.androidForegroundServiceDetail,
                   ),
                 ],
               ),
@@ -232,6 +240,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
   }
 
   static CompactRowCard _checkRow({
+    required GatewayStrings strings,
     required bool ready,
     required String title,
     required String detail,
@@ -240,7 +249,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
       icon: ready ? Icons.check_circle_outline : Icons.error_outline,
       title: title,
       subtitle: detail,
-      meta: ready ? 'Ready' : 'Fix',
+      meta: ready ? strings.ready : strings.fix,
       severity: ready ? ClinicalSeverity.normal : ClinicalSeverity.warning,
     );
   }
@@ -254,15 +263,16 @@ class _OperationsScreenState extends State<OperationsScreen> {
     };
   }
 
-  static String _timeLabel(DateTime value) {
+  String _timeLabel(DateTime value) {
+    final strings = context.text;
     final delta = DateTime.now().difference(value);
     if (delta.inMinutes < 1) {
-      return 'Now';
+      return strings.now;
     }
     if (delta.inHours < 1) {
-      return '${delta.inMinutes} min';
+      return strings.minutesAgo(delta.inMinutes);
     }
-    return '${delta.inHours} h';
+    return strings.hoursAgo(delta.inHours);
   }
 
   Future<void> _startRssiScan(GatewayRuntimeService runtime) async {

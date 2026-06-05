@@ -29,4 +29,22 @@ void main() {
     expect(find.text('Gateway setup'), findsOneWidget);
     expect(find.text('Open Settings'), findsOneWidget);
   });
+
+  testWidgets('Gateway shell renders Thai labels from saved preference', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'wheelsense.gateway.language.v1': 'th',
+    });
+
+    await tester.pumpWidget(
+      const WheelSenseGatewayApp(requestPermissionsOnOpen: false),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('ภาพรวม'), findsWidgets);
+    expect(find.text('อุปกรณ์'), findsWidgets);
+    expect(find.text('ตั้งค่าเกตเวย์'), findsOneWidget);
+    expect(find.text('เปิดการตั้งค่า'), findsOneWidget);
+  });
 }

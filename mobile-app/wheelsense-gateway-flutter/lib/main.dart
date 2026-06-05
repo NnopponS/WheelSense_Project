@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/operations_screen.dart';
 import 'screens/overview_screen.dart';
@@ -14,19 +15,56 @@ void main() {
   runApp(const WheelSenseGatewayApp());
 }
 
-class WheelSenseGatewayApp extends StatelessWidget {
+class WheelSenseGatewayApp extends StatefulWidget {
   const WheelSenseGatewayApp({super.key, this.requestPermissionsOnOpen = true});
 
   final bool requestPermissionsOnOpen;
 
   @override
+  State<WheelSenseGatewayApp> createState() => _WheelSenseGatewayAppState();
+}
+
+class _WheelSenseGatewayAppState extends State<WheelSenseGatewayApp> {
+  late final GatewayLocaleController _localeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _localeController = GatewayLocaleController();
+    unawaited(_localeController.load());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'WheelSense',
-      debugShowCheckedModeBanner: false,
-      theme: buildWheelSenseTheme(),
-      home: GatewayShell(requestPermissionsOnOpen: requestPermissionsOnOpen),
+    return GatewayLocaleScope(
+      controller: _localeController,
+      child: AnimatedBuilder(
+        animation: _localeController,
+        builder: (context, _) {
+          return MaterialApp(
+            onGenerateTitle: (context) => context.text.appTitle,
+            debugShowCheckedModeBanner: false,
+            theme: buildWheelSenseTheme(),
+            locale: Locale(_localeController.language.code),
+            supportedLocales: const [Locale('en'), Locale('th')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+            ],
+            home: GatewayShell(
+              requestPermissionsOnOpen: widget.requestPermissionsOnOpen,
+            ),
+          );
+        },
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _localeController.dispose();
+    super.dispose();
   }
 }
 
@@ -68,8 +106,9 @@ class _GatewayShellState extends State<GatewayShell>
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.text;
     final isWide = MediaQuery.sizeOf(context).width >= 860;
-    final destinations = _destinations();
+    final destinations = _destinations(strings);
     final activeDestination = destinations[_selectedIndex];
 
     return GatewayServicesScope(
@@ -138,10 +177,10 @@ class _GatewayShellState extends State<GatewayShell>
     setState(() => _selectedIndex = index);
   }
 
-  List<_ShellDestination> _destinations() {
+  List<_ShellDestination> _destinations(GatewayStrings strings) {
     return <_ShellDestination>[
       _ShellDestination(
-        label: 'Overview',
+        label: strings.navOverview,
         icon: Icons.dashboard_outlined,
         selectedIcon: Icons.dashboard,
         screen: OverviewScreen(
@@ -152,30 +191,30 @@ class _GatewayShellState extends State<GatewayShell>
           },
         ),
       ),
-      const _ShellDestination(
-        label: 'Devices',
+      _ShellDestination(
+        label: strings.navDevices,
         icon: Icons.sensors_outlined,
         selectedIcon: Icons.sensors,
-        screen: PairDevicesScreen(),
+        screen: const PairDevicesScreen(),
       ),
       _ShellDestination(
-        label: 'Operations',
+        label: strings.navOperations,
         icon: Icons.monitor_heart_outlined,
         selectedIcon: Icons.monitor_heart,
         screen: OperationsScreen(onOpenPortal: () => _selectDestination(3)),
       ),
-      const _ShellDestination(
-        label: 'Portal',
+      _ShellDestination(
+        label: strings.navPortal,
         icon: Icons.web_asset_outlined,
         selectedIcon: Icons.web_asset,
-        screen: PortalWebViewScreen(),
+        screen: const PortalWebViewScreen(),
         fullBleed: true,
       ),
-      const _ShellDestination(
-        label: 'Settings',
+      _ShellDestination(
+        label: strings.navSettings,
         icon: Icons.tune_outlined,
         selectedIcon: Icons.tune,
-        screen: ServerSetupScreen(),
+        screen: const ServerSetupScreen(),
       ),
     ];
   }
@@ -317,7 +356,7 @@ class _ConnectionPill extends StatelessWidget {
                   color: online ? const Color(0xFF15803D) : colors.secondary,
                 ),
                 const SizedBox(width: 8),
-                Text(_label(status.mode)),
+                Text(_label(context, status.mode)),
               ],
             ),
           ),
@@ -326,13 +365,7 @@ class _ConnectionPill extends StatelessWidget {
     );
   }
 
-  String _label(GatewayConnectionMode mode) {
-    return switch (mode) {
-      GatewayConnectionMode.connected => 'Relaying',
-      GatewayConnectionMode.scanning => 'Scanning',
-      GatewayConnectionMode.degraded => 'Degraded',
-      GatewayConnectionMode.error => 'Error',
-      GatewayConnectionMode.idle => 'Ready',
-    };
+  String _label(BuildContext context, GatewayConnectionMode mode) {
+    return GatewayLocaleScope.stringsOf(context).modeLabel(mode);
   }
 }

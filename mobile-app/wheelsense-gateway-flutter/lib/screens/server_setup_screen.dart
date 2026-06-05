@@ -50,13 +50,36 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.text;
+    final localeController = context.gatewayLocale;
     return ClinicalPage(
       children: [
+        SectionPanel(
+          title: strings.settingsLanguageTitle,
+          subtitle: strings.settingsLanguageSubtitle,
+          child: SegmentedButton<GatewayLanguage>(
+            segments: [
+              for (final language in GatewayLanguage.values)
+                ButtonSegment<GatewayLanguage>(
+                  value: language,
+                  label: Text(language.label),
+                  icon: language == GatewayLanguage.thai
+                      ? const Icon(Icons.translate)
+                      : const Icon(Icons.language),
+                ),
+            ],
+            selected: {localeController.language},
+            onSelectionChanged: (selection) {
+              unawaited(localeController.setLanguage(selection.first));
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
         ResponsiveGrid(
           children: [
             MetricTile(
               metric: MetricSnapshot(
-                label: 'Portal endpoint',
+                label: strings.settingsPortalEndpoint,
                 value: _hostLabel(_config.portalBaseUrl),
                 detail: _config.portalBaseUrl,
                 icon: Icons.cloud_done_outlined,
@@ -64,8 +87,10 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
             ),
             MetricTile(
               metric: MetricSnapshot(
-                label: 'MQTT broker',
-                value: _status.mqttReady ? 'Connected' : 'Not connected',
+                label: strings.settingsMqttBroker,
+                value: _status.mqttReady
+                    ? strings.connected
+                    : strings.notConnected,
                 detail: '${_config.mqttHost}:${_config.mqttPort}',
                 icon: Icons.hub_outlined,
                 severity: _status.mqttReady
@@ -75,9 +100,9 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
             ),
             MetricTile(
               metric: MetricSnapshot(
-                label: 'Gateway mode',
-                value: 'Production',
-                detail: 'BLE gateway, no native login required',
+                label: strings.settingsGatewayMode,
+                value: strings.production,
+                detail: strings.settingsGatewayModeDetail,
                 icon: Icons.security_outlined,
                 severity: ClinicalSeverity.info,
               ),
@@ -86,44 +111,43 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
         ),
         const SizedBox(height: 12),
         SectionPanel(
-          title: 'Server setup',
-          subtitle:
-              'Configure the portal and MQTT broker used by the mobile gateway.',
+          title: strings.settingsServerTitle,
+          subtitle: strings.settingsServerSubtitle,
           child: Column(
             children: [
               TextField(
                 controller: _portalController,
-                decoration: const InputDecoration(
-                  labelText: 'Portal base URL',
+                decoration: InputDecoration(
+                  labelText: strings.settingsPortalBaseUrl,
                   hintText: 'https://portal.wheelsense.example',
-                  prefixIcon: Icon(Icons.link),
+                  prefixIcon: const Icon(Icons.link),
                 ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: _mqttController,
-                decoration: const InputDecoration(
-                  labelText: 'MQTT broker',
+                decoration: InputDecoration(
+                  labelText: strings.settingsMqttBroker,
                   hintText: 'mqtts://mqtt.wheelsense.example:8883',
-                  prefixIcon: Icon(Icons.settings_ethernet),
+                  prefixIcon: const Icon(Icons.settings_ethernet),
                 ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: _gatewayController,
-                decoration: const InputDecoration(
-                  labelText: 'Gateway ID',
+                decoration: InputDecoration(
+                  labelText: strings.settingsGatewayId,
                   hintText: 'ward-a-gateway-01',
-                  prefixIcon: Icon(Icons.badge_outlined),
+                  prefixIcon: const Icon(Icons.badge_outlined),
                 ),
               ),
               if (_formError != null) ...[
                 const SizedBox(height: 10),
                 CompactRowCard(
                   icon: Icons.error_outline,
-                  title: 'Settings need attention',
+                  title: strings.settingsNeedAttention,
                   subtitle: _formError!,
-                  meta: 'Fix',
+                  meta: strings.fix,
                   severity: ClinicalSeverity.warning,
                 ),
               ],
@@ -134,7 +158,7 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _saving ? null : _applyLocalPreset,
                       icon: const Icon(Icons.developer_mode),
-                      label: const Text('Local dev preset'),
+                      label: Text(strings.settingsLocalPreset),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -142,7 +166,7 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _saving ? null : _reset,
                       icon: const Icon(Icons.restore),
-                      label: const Text('Reset'),
+                      label: Text(strings.reset),
                     ),
                   ),
                 ],
@@ -153,9 +177,9 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                   Expanded(
                     child: TextField(
                       controller: _userController,
-                      decoration: const InputDecoration(
-                        labelText: 'MQTT username',
-                        prefixIcon: Icon(Icons.person_outline),
+                      decoration: InputDecoration(
+                        labelText: strings.mqttUsername,
+                        prefixIcon: const Icon(Icons.person_outline),
                       ),
                     ),
                   ),
@@ -164,9 +188,9 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                     child: TextField(
                       controller: _passwordController,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'MQTT password',
-                        prefixIcon: Icon(Icons.key_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.mqttPassword,
+                        prefixIcon: const Icon(Icons.key_outlined),
                       ),
                     ),
                   ),
@@ -179,7 +203,7 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _saving ? null : _testConnection,
                       icon: const Icon(Icons.wifi_find),
-                      label: const Text('Test'),
+                      label: Text(strings.test),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -187,7 +211,7 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
                     child: FilledButton.icon(
                       onPressed: _saving ? null : _save,
                       icon: const Icon(Icons.save_outlined),
-                      label: Text(_saving ? 'Saving' : 'Save'),
+                      label: Text(_saving ? strings.saving : strings.save),
                     ),
                   ),
                 ],
@@ -272,7 +296,7 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
       passwordInput: _passwordController.text,
     );
     if (!result.isValid) {
-      setState(() => _formError = result.error);
+      setState(() => _formError = _localizedFormError(result.error));
       return null;
     }
     return result.config;
@@ -284,9 +308,22 @@ class _ServerSetupScreenState extends State<ServerSetupScreen> {
       _mqttController.text = 'mqtt://broker.emqx.io:1883';
       _userController.text = '';
       _passwordController.text = '';
-      _formError =
-          'Local dev preset uses cleartext URLs. It is intended for debug/profile builds, not release deployment.';
+      _formError = context.text.settingsLocalPresetWarning;
     });
+  }
+
+  String? _localizedFormError(String? error) {
+    if (error == null) {
+      return null;
+    }
+    final strings = context.text;
+    if (error.contains('Portal URL')) {
+      return strings.portalUrlInvalid;
+    }
+    if (error.contains('MQTT broker')) {
+      return strings.mqttUrlInvalid;
+    }
+    return error;
   }
 
   Future<void> _reset() async {
