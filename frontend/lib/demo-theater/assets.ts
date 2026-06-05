@@ -1,6 +1,16 @@
 export type DemoDirection = "north" | "south" | "east" | "west";
 export type DemoPatientAssetKey = "emika" | "krit" | "rattana" | "wichai";
 
+export type DemoPatientAssetProfile = {
+  id?: number | null;
+  name?: string | null;
+  gender?: string | null;
+  mobility_type?: string | null;
+  care_level?: string | null;
+};
+
+export const demoPatientAssetKeys: DemoPatientAssetKey[] = ["emika", "krit", "rattana", "wichai"];
+
 const ROOT = "/demo-theater";
 
 function asset(path: string): string {
@@ -140,11 +150,35 @@ export const demoTheaterAssets = {
   >,
 };
 
-export function patientAssetKeyForName(name: string | null | undefined): DemoPatientAssetKey {
+export function patientAssetKeyForName(name: string | null | undefined, fallbackIndex = 0): DemoPatientAssetKey {
+  const explicit = explicitPatientAssetKeyForName(name);
+  if (explicit) return explicit;
+  return demoPatientAssetKeys[Math.abs(fallbackIndex) % demoPatientAssetKeys.length];
+}
+
+export function patientAssetKeyForProfile(
+  profile: DemoPatientAssetProfile | null | undefined,
+  fallbackIndex = 0,
+): DemoPatientAssetKey {
+  const explicit = explicitPatientAssetKeyForName(profile?.name);
+  if (explicit) return explicit;
+
+  const mobility = (profile?.mobility_type ?? "").toLowerCase();
+  const gender = (profile?.gender ?? "").toLowerCase();
+  const careLevel = (profile?.care_level ?? "").toLowerCase();
+  if (mobility.includes("wheel") || careLevel === "critical") return "rattana";
+  if (gender.includes("male")) return fallbackIndex % 2 === 0 ? "krit" : "wichai";
+  if (gender.includes("female")) return fallbackIndex % 2 === 0 ? "emika" : "rattana";
+
+  const stableIndex = profile?.id != null ? profile.id : fallbackIndex;
+  return demoPatientAssetKeys[Math.abs(stableIndex) % demoPatientAssetKeys.length];
+}
+
+function explicitPatientAssetKeyForName(name: string | null | undefined): DemoPatientAssetKey | null {
   const normalized = (name ?? "").toLowerCase();
   if (normalized.includes("emika")) return "emika";
   if (normalized.includes("rattana")) return "rattana";
   if (normalized.includes("wichai")) return "wichai";
   if (normalized.includes("krit")) return "krit";
-  return "emika";
+  return null;
 }
