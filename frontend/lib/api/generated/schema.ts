@@ -5267,6 +5267,26 @@ export interface components {
             /** Updated At */
             updated_at?: string | null;
         };
+        /** DemoAlertResponse */
+        DemoAlertResponse: {
+            /** Alert Id */
+            alert_id: number;
+            /** Patient Id */
+            patient_id: number;
+            /** Room Id */
+            room_id?: number | null;
+            /**
+             * Room Name
+             * @default
+             */
+            room_name: string;
+            /** Alert Type */
+            alert_type: string;
+            /** Severity */
+            severity: string;
+            /** Status */
+            status: string;
+        };
         /** DemoControlActionOut */
         DemoControlActionOut: {
             /**
@@ -16185,9 +16205,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DemoAlertResponse"];
                 };
             };
             /** @description Validation Error */
@@ -16222,9 +16240,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DemoAlertResponse"];
                 };
             };
             /** @description Validation Error */

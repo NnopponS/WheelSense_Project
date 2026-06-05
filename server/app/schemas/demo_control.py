@@ -94,6 +94,16 @@ class DemoWorkflowAdvanceResponse(BaseModel):
     message: str
 
 
+class DemoAlertResponse(BaseModel):
+    alert_id: int
+    patient_id: int
+    room_id: Optional[int] = None
+    room_name: str = ""
+    alert_type: str
+    severity: str
+    status: str
+
+
 class DemoScenarioStartRequest(BaseModel):
     interval_ms: int = Field(default=2000, ge=250, le=60000)
 

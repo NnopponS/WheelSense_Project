@@ -511,7 +511,15 @@ class DemoControlService:
         from app.services.mqtt_publish import publish_alert_to_mqtt_background
 
         publish_alert_to_mqtt_background(alert)
-        return {"patient_id": patient.id, "room_id": patient.room_id, "alert_type": alert_type}
+        return {
+            "alert_id": alert.id,
+            "patient_id": patient.id,
+            "room_id": patient.room_id,
+            "room_name": room.name if room else "",
+            "alert_type": alert.alert_type,
+            "severity": alert.severity,
+            "status": alert.status,
+        }
 
     async def capture_room(
         self,

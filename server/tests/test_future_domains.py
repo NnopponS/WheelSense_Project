@@ -470,6 +470,57 @@ async def test_demo_control_state_exposes_simplified_visible_actions(client: Asy
 
 
 @pytest.mark.asyncio
+async def test_demo_control_patient_fall_returns_alert_context(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Demo Alert Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=2, name="L2", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    room = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Room 220", room_type="bedroom")
+    db_session.add(room)
+    await db_session.flush()
+    patient = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Emika",
+        last_name="Demo",
+        nickname="Emika",
+        care_level="normal",
+        is_active=True,
+        room_id=room.id,
+    )
+    db_session.add(patient)
+    await db_session.commit()
+    await db_session.refresh(room)
+    await db_session.refresh(patient)
+
+    with patch("app.services.mqtt_publish.publish_alert_to_mqtt_background") as publish_alert:
+        response = await client.post(
+            f"/api/demo/actors/patient/{patient.id}/fall",
+            json={"action": "fall", "note": "Projector trigger"},
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["patient_id"] == patient.id
+    assert body["room_id"] == room.id
+    assert body["room_name"] == "Room 220"
+    assert body["alert_type"] == "fall"
+    assert body["severity"] == "critical"
+    assert body["status"] == "active"
+    assert isinstance(body["alert_id"], int)
+    publish_alert.assert_called_once()
+
+    created = await db_session.get(Alert, body["alert_id"])
+    assert created is not None
+    assert created.patient_id == patient.id
+
+
+@pytest.mark.asyncio
 async def test_demo_control_patient_move_publishes_simulator_mqtt(
     client: AsyncClient,
     db_session: AsyncSession,

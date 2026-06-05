@@ -71,6 +71,14 @@ export type AlertAcknowledgeInput = components["schemas"]["AlertAcknowledge"];
 export type CareScheduleCreateInput = components["schemas"]["CareScheduleCreate"];
 export type CareTaskCreateInput = components["schemas"]["CareTaskCreate"];
 export type CareDirectiveCreateInput = components["schemas"]["CareDirectiveCreate"];
+export type DemoActorMoveInput = components["schemas"]["DemoActorMoveRequest"];
+export type DemoActorOut = components["schemas"]["DemoActorOut"];
+export type DemoAlertResponse = components["schemas"]["DemoAlertResponse"];
+export type DemoControlStateResponse = components["schemas"]["DemoControlStateOut"];
+export type DemoResetRequest = components["schemas"]["DemoResetRequest"];
+export type DemoResetResponse = components["schemas"]["DemoResetResponse"];
+export type DemoWorkflowAdvanceRequest = components["schemas"]["DemoWorkflowAdvanceRequest"];
+export type DemoWorkflowAdvanceResponse = components["schemas"]["DemoWorkflowAdvanceResponse"];
 
 export type GetPatientResponse = JsonResponse<
   operations["get_patient_api_patients__patient_id__get"]
@@ -84,6 +92,7 @@ export type ListPatientsResponse = JsonResponse<
 export type ListUsersResponse = JsonResponse<operations["read_users_api_users_get"]>;
 export type ListRoomsResponse = JsonResponse<operations["list_rooms_api_rooms_get"]>;
 export type ListAlertsResponse = JsonResponse<operations["list_alerts_api_alerts_get"]>;
+export type GetAlertResponse = JsonResponse<operations["get_alert_api_alerts__alert_id__get"]>;
 export type ListVitalReadingsResponse = JsonResponse<
   operations["list_vital_readings_api_vitals_readings_get"]
 >;
@@ -150,6 +159,9 @@ export type ListPharmacyOrdersResponse = JsonResponse<
 >;
 export type GetFloorplanPresenceResponse = JsonResponse<
   operations["get_floorplan_presence_api_floorplans_presence_get"]
+>;
+export type GetDemoControlStateResponse = JsonResponse<
+  operations["get_demo_control_state_api_demo_state_get"]
 >;
 
 export type UpdatePatientRequest = JsonRequest<

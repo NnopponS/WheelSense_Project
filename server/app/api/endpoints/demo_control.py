@@ -17,6 +17,7 @@ from app.models.core import Workspace
 from app.models.users import User
 from app.schemas.demo_control import (
     DemoActorMoveRequest,
+    DemoAlertResponse,
     DemoActorOut,
     DemoControlStateOut,
     DemoResetRequest,
@@ -146,7 +147,7 @@ async def move_demo_actor(
         raise _bad_request(exc) from exc
 
 
-@router.post("/actors/patient/{actor_id}/fall", response_model=dict)
+@router.post("/actors/patient/{actor_id}/fall", response_model=DemoAlertResponse)
 async def trigger_demo_patient_fall(
     actor_id: int,
     payload: DemoWorkflowAdvanceRequest | None = None,
@@ -166,7 +167,7 @@ async def trigger_demo_patient_fall(
         raise _bad_request(exc) from exc
 
 
-@router.post("/patients/{patient_id}/alerts", response_model=dict)
+@router.post("/patients/{patient_id}/alerts", response_model=DemoAlertResponse)
 async def trigger_demo_patient_alert(
     patient_id: int,
     payload: DemoWorkflowAdvanceRequest,

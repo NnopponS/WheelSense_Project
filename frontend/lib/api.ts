@@ -4,7 +4,6 @@
 
 import { API_BASE } from "./constants";
 import type {
-  DemoActorMoveRequest,
   Room,
   SmartDevice,
   WorkflowClaimRequest,
@@ -43,7 +42,16 @@ import type {
   CreateWorkflowTaskResponse,
   CreatePatientContactRequest,
   CreateUserRequest,
+  DemoActorMoveInput,
+  DemoActorOut,
+  DemoAlertResponse,
+  DemoResetRequest,
+  DemoResetResponse,
+  DemoWorkflowAdvanceRequest,
+  DemoWorkflowAdvanceResponse,
   GetAlertSummaryResponse,
+  GetAlertResponse,
+  GetDemoControlStateResponse,
   GetFloorplanPresenceResponse,
   GetVitalsAveragesResponse,
   GetWardSummaryResponse,
@@ -505,6 +513,9 @@ export const api = {
     const suffix = query.toString();
     return request<ListAlertsResponse>(suffix ? `/alerts?${suffix}` : "/alerts");
   },
+
+  getAlert: (alertId: number | string) =>
+    request<GetAlertResponse>(`/alerts/${encodeURIComponent(String(alertId))}`),
 
   listVitalReadings: (params?: { patient_id?: number; limit?: number }) => {
     const query = new URLSearchParams();
@@ -1014,8 +1025,53 @@ export const api = {
     return request<GetFloorplanPresenceResponse>(`/floorplans/presence?${query.toString()}`);
   },
 
-  moveDemoActor: (actorType: "patient" | "staff", actorId: number | string, payload: DemoActorMoveRequest) =>
-    request<unknown>(
+  getDemoControlState: () => request<GetDemoControlStateResponse>("/demo/state"),
+
+  resetDemoWorkspace: (payload: DemoResetRequest) =>
+    request<DemoResetResponse>("/demo/reset", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  triggerDemoPatientFall: (
+    actorId: number | string,
+    payload?: DemoWorkflowAdvanceRequest,
+  ) =>
+    request<DemoAlertResponse>(
+      `/demo/actors/patient/${encodeURIComponent(String(actorId))}/fall`,
+      {
+        method: "POST",
+        body: payload ? JSON.stringify(payload) : undefined,
+      },
+    ),
+
+  triggerDemoPatientAlert: (
+    patientId: number | string,
+    payload: DemoWorkflowAdvanceRequest,
+  ) =>
+    request<DemoAlertResponse>(
+      `/demo/patients/${encodeURIComponent(String(patientId))}/alerts`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
+
+  advanceDemoWorkflow: (
+    itemType: string,
+    itemId: number | string,
+    payload: DemoWorkflowAdvanceRequest,
+  ) =>
+    request<DemoWorkflowAdvanceResponse>(
+      `/demo/workflow/${encodeURIComponent(itemType)}/${encodeURIComponent(String(itemId))}/advance`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
+
+  moveDemoActor: (actorType: "patient" | "staff", actorId: number | string, payload: DemoActorMoveInput) =>
+    request<DemoActorOut>(
       `/demo/actors/${encodeURIComponent(actorType)}/${encodeURIComponent(String(actorId))}/move`,
       {
         method: "POST",
