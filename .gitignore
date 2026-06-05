@@ -95,3 +95,31 @@ frontend/test-results/
 
 # Local Netlify folder
 .netlify
+
+# Server debug/probe artifacts
+server/probe*.log
+server/import_time.log
+server/importtime_config.log
+server/pytest_help*.log
+server/.coverage
+server/__pycache__/
+server/scripts/__pycache__/
+
+# Frontend build/dev artifacts
+frontend/build*.log
+frontend/build_output*
+frontend/build_result*
+frontend/next-dev*.log
+frontend/tsconfig.tsbuildinfo
+frontend/.swc/
+frontend/tmp/
+
+# Mobile app build caches
+mobile-app/wheelsense-gateway-flutter/build/
+mobile-app/.android-sdk/
+mobile-app/wheelsense-gateway-flutter/.dart_tool/
+mobile-app/wheelsense-gateway-flutter/.flutter-plugins-dependencies
+Thesis/goal-assets/
+Thesis/IEEE-conference-WheelSense/
+Thesis/THESIS_CURRENT_REPAIR_COMMAND.md
+Thesis/oldsession.md

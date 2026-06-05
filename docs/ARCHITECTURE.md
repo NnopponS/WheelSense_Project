@@ -225,7 +225,7 @@ effective_scopes = allowed_scopes.intersection(requested_scopes)
   - **Legacy components removed**: `RoleTasksPage`, `TaskKanbanBoard` (old), `TaskCommandBar` (old), `RoutineTaskManager`, `PatientRoutineManager`
   - **Backward compatibility**: Old `CareTask`/`RoutineTask` systems remain functional during migration period
   - **API docs**: Swagger at `http://localhost:8000/docs` → "tasks" tag
-  - **Tests**: 27/27 unit tests passing (`server/test_tasks_quick.py`, `server/tests/test_tasks.py`)
+  - **Tests**: 27/27 unit tests passing (`server/tests/test_tasks.py`)
 - **Next.js 16 — dynamic `page` props**: On the App Router, segment **`params`** and **`searchParams`** passed into **server** `page` functions are **Promises** (must be `await`ed before use). **Client** `page.tsx` files should not take `params: Promise<…>` as props when anything enumerates page props (DevTools can trigger Next’s sync-dynamic-API warnings). Prefer **`useParams()`** for `[dynamic]` segments and **`useSearchParams()`** (wrapped in **`Suspense`** where Next requires it) for query-driven UI—for example `/admin/patients/[id]`, `/admin/caregivers/[id]`, `/admin/settings` (`SettingsClient` reads `?tab=`), and role alert queues (`?alert=<numeric id>` on `/head-nurse/alerts`, `/observer/alerts`, `/supervisor/emergency`). In-app alert toasts use JSX inside **`frontend/hooks/useNotifications.tsx`** (`.tsx` extension required for TS).
 
 ## Staff Operations Surfaces

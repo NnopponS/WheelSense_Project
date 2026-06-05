@@ -6,11 +6,14 @@ WheelSense is an IoT + clinical workflow platform for wheelchair monitoring, roo
 
 - `server/` - FastAPI backend, PostgreSQL models, MQTT ingestion, ML/localization, CLI, Home Assistant integration
 - `frontend/` - Next.js 16 web app with role-based dashboards and EaseAI chat (3-stage propose/confirm/execute)
-- `mobile-app/` - Flutter gateway app with BLE/Polar sensor pairing, MQTT forwarding, alerts, and web portal embedding
-- `firmware/` - PlatformIO firmware for the wheelchair device (`M5StickCPlus2`) and camera/beacon node (`Node_Tsimcam`)
-- `.agents/` - shared workflow memory and change logs for AI/humans
-- `.cursor/` - Cursor-specific skills, rules, and subagent prompts
-- `docs/` - architecture overview (`docs/ARCHITECTURE.md`), ADRs, design notes (`docs/design/`), and implementation plans (`docs/plans/`)
+- `mobile-app/wheelsense-gateway-flutter/` - Flutter gateway app with BLE/Polar sensor pairing, MQTT forwarding, alerts, and web portal embedding (see `mobile-app/BUILD_GUIDE.md`)
+- `firmware/` - PlatformIO firmware for the wheelchair device (`M5StickCPlus2_BLEGateway`) and camera/beacon node (`Node_Tsimcam`)
+- `e2e/` - Playwright end-to-end suite
+- `docs/` - architecture overview (`docs/ARCHITECTURE.md`), ADRs (`docs/adr/`), design notes (`docs/design/`), implementation plans (`docs/plans/`), wiki (`docs/wiki/`)
+- `scripts/` - repo-level scripts (e.g. plugin install)
+- `Thesis/` - local-only academic deliverable; not part of the platform build
+- `.agents/`, `.windsurf/`, `.skillshare/`, `.github/` - shared workflow memory, agent skills, and CI infrastructure (managed via `skillshare sync`)
+- `HANDOVER.md` - **start here** if you are new to the project
 
 ## Source Of Truth
 
@@ -19,7 +22,7 @@ Read the repo in this order:
 1. Runtime code in `server/`, `frontend/`, and `firmware/`
 2. `server/AGENTS.md` for backend architecture and operating rules
 3. `.agents/workflows/wheelsense.md` for cross-agent workflow and implementation patterns
-4. `.cursor/skills/*`, `.cursor/rules/*`, `.cursor/agents/*` for Cursor-specific wrappers
+4. `.windsurf/skills/*`, `.github/skills/*` for managed agent skills (sync via `skillshare`)
 5. `docs/adr/*` for accepted/proposed architectural decisions
 6. `docs/plans/*` and `.agents/changes/*` as planning/history, not runtime truth  
    See `docs/README.md` for a compact map of architecture, design drafts, and MCP docs.

@@ -11,6 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Repository organization and cleanup
 - Added LICENSE, CONTRIBUTING.md, CHANGELOG.md
 - CI/CD workflow configuration
+- `HANDOVER.md` at repo root: single-page index for new contributors
+- `frontend/generated/openapi/` directory holds OpenAPI snapshots (`openapi.json`, `openapi.locked.json`) previously stored as hidden files in `frontend/`
+
+### Changed
+- Repo-wide cleanup: removed debug probes, build logs, empty placeholder dirs
+  - `server/`: deleted `probe_*.py` (8), `server_tmp_probe_chain.py`, `trivial.py`, `test_tasks_quick.py`, `verify_tasks_migration.py`, and stray `*.log` / `.coverage` artifacts
+  - `frontend/`: deleted `build*.log`, `build_output*`, `build_result*`, `next-dev*.log`, empty `tmp/` and `test-results/`, regenerable `.swc/`
+  - Root: removed stray `debug-*.log`, `texput.log`, `thesis.log`, empty `archive/code-reviews/`, empty `.cursor/`
+- Moved `progress.txt` from repo root to `docs/plans/progress.txt`
+- `.gitignore`: added patterns for server probe/log/cache files and frontend build/dev artifacts
+
+### Removed (Thesis cleanup)
+- `Thesis/latex/`: deep cleanup, 56 tracked files removed (−19,486 lines) + 300+ untracked artifacts:
+  - All LaTeX build artifacts: `thesis.{aux,bbl,bcf,blg,lof,log,lot,out,toc,run.xml}` and 27 sub-`.aux` files
+  - `thesis_new.{pdf,bbl,bcf,blg,lof,log,lot,out,toc,run.xml}` — duplicate parallel build
+  - `appendixA-only.pdf` — old preview
+  - `latex-writing-guide.{tex,pdf}` and `doc/` — separate compile target, not part of thesis
+  - `biblatex-ieee.bib`, `ref.tex` — unused bibliography placeholders
+  - `content/frontmatter/ack_en.tex` — explicitly marked unused in source comments
+  - `scripts/` — figure-generation Python helpers (output already in `figures/`)
+  - `archive/` (158 files), `build-codex-{final,impl,layout,thesis}/`, `build_codex/`, 17 dated `build/` dirs — old snapshots
+  - Accidental dirs: `evidence/`, `image_ref/` (Thai-named source duplicates), `$od/`, `.tex-profile/`, `Thesis/latex/Thesis/`
+- `Thesis/latex/build/`: consolidated to single `build/latest/` (renamed from `pdf-preview-float-check-20260604-final2`, 6/4 22:54)
+- **Verified**: `thesis.pdf` byte-identical to pre-cleanup state. `\graphicspath` resolves to `./assets/figures/` and `./figures/`; appendix H/I/J references in `assets/appendices/{legacy-google-form,legacy-field,paperieee}/` preserved.
+
+### Known Issues
+- Two files named `seed_device_extras.py` exist (`server/` and `server/scripts/`) with **different bodies** for `seed_additional_sim_devices`. The Dockerfile ships only the root copy; Python imports resolve based on `sys.path` order. Reconcile before next release.
 
 ## [1.1.0] - 2026-04-20
 
