@@ -1022,19 +1022,37 @@ async def seed_smart_devices(
 ) -> int:
     """Seed deterministic smart-home entities per workspace/room."""
     seeded = 0
+    expected_entities: set[str] = set()
     specs = [
-        ("Room 401 Bedside Light", "light", "off", 0),
-        ("Room 401 Fan", "fan", "off", 0),
-        ("Room 402 Bedside Light", "light", "on", 1),
-        ("Nurses' Station Switch", "switch", "off", 10),
-        ("Dining Room AC", "climate", "cool", 7),
-        ("Garden Lounge Light", "light", "off", 11),
+        ("Room 401 Bedside Light", "light", "off", 0, "bedroom", "light"),
+        ("Room 401 AC", "climate", "off", 0, "bedroom", "AC"),
+        ("Room 401 TV", "switch", "off", 0, "bedroom", "tv"),
+        ("Room 401 Alarm", "switch", "off", 0, "bedroom", "alarm"),
+        ("Room 402 Bedside Light", "light", "on", 1, "livingroom", "light"),
+        ("Room 402 Fan", "fan", "off", 1, "livingroom", "fan"),
+        ("Room 402 AC", "climate", "off", 1, "livingroom", "AC"),
+        ("Room 402 TV", "switch", "off", 1, "livingroom", "tv"),
+        ("Bathroom Light", "light", "off", 6, "bathroom", "light"),
+        ("Kitchen / Dining Light", "light", "off", 7, "kitchen", "light"),
+        ("Kitchen / Dining Alarm", "switch", "off", 7, "kitchen", "alarm"),
+        ("Nurses' Station Switch", "switch", "off", 10, None, None),
+        ("Garden Lounge Light", "light", "off", 11, None, None),
     ]
-    for name, device_type, state, room_idx in specs:
+    for name, device_type, state, room_idx, legacy_room, legacy_appliance in specs:
         if room_idx >= len(rooms):
             continue
         room = rooms[room_idx]
         entity = f"{device_type}.ws{workspace_id}_room{room.id}_{name.lower().replace(' ', '_')}"
+        expected_entities.add(entity)
+        config: dict[str, object] = {"seed": True, "room_name": room.name}
+        if legacy_room and legacy_appliance:
+            config["legacy_firmware"] = {
+                "enabled": True,
+                "room": legacy_room,
+                "appliance": legacy_appliance,
+                "ha_enabled": False,
+                "transport": "public_mqtt",
+            }
         q = await session.execute(
             select(SmartDevice).where(
                 SmartDevice.workspace_id == workspace_id,
@@ -1051,7 +1069,7 @@ async def seed_smart_devices(
                 device_type=device_type,
                 is_active=True,
                 state=state,
-                config={"seed": True, "room_name": room.name},
+                config=config,
             )
             session.add(row)
         else:
@@ -1060,8 +1078,19 @@ async def seed_smart_devices(
             row.device_type = device_type
             row.is_active = True
             row.state = state
-            row.config = {"seed": True, "room_name": room.name}
+            row.config = config
         seeded += 1
+
+    if expected_entities:
+        stale_seeded = await session.execute(
+            select(SmartDevice).where(
+                SmartDevice.workspace_id == workspace_id,
+                SmartDevice.config["seed"].as_boolean().is_(True),
+            )
+        )
+        for row in stale_seeded.scalars().all():
+            if row.ha_entity_id not in expected_entities:
+                await session.delete(row)
 
     await session.commit()
     return seeded

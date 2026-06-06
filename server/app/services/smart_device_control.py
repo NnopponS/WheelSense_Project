@@ -80,12 +80,27 @@ def _ha_enabled(device: SmartDevice) -> bool:
     return True
 
 
+def _mirror_homeassistant_after_legacy(device: SmartDevice) -> bool:
+    cfg = device.config if isinstance(device.config, dict) else {}
+    legacy_cfg = cfg.get("legacy_firmware")
+    if isinstance(legacy_cfg, dict):
+        for key in ("mirror_homeassistant", "ha_mirror"):
+            value = legacy_cfg.get(key)
+            if value is not None:
+                return _config_bool(value)
+    for key in ("legacy_firmware_mirror_homeassistant", "mirror_homeassistant"):
+        value = cfg.get(key)
+        if value is not None:
+            return _config_bool(value)
+    return False
+
+
 def _delivery_message(result: SmartDeviceControlResult) -> str:
     transports: list[str] = []
+    if result.legacy_firmware_command is not None:
+        transports.append("public MQTT")
     if result.homeassistant_sent:
         transports.append("Home Assistant")
-    if result.legacy_firmware_command is not None:
-        transports.append("legacy firmware")
     return " and ".join(transports) if transports else "no transport"
 
 
@@ -97,22 +112,6 @@ async def control_smart_device_transports(
     action: str,
     parameters: dict[str, Any] | None = None,
 ) -> SmartDeviceControlResult:
-    ha_sent = False
-    ha_error: str | None = None
-    if _ha_enabled(device):
-        try:
-            ha_sent = await ha_service.call_service(
-                action=action,
-                entity_id=device.ha_entity_id,
-                service_data=parameters,
-            )
-            if not ha_sent:
-                ha_error = f"Home Assistant rejected command for {device.ha_entity_id}"
-        except Exception as exc:  # pragma: no cover - defensive around upstream client
-            ha_error = str(exc)
-    else:
-        ha_error = "Home Assistant disabled for this device"
-
     room = await session.get(Room, device.room_id) if device.room_id is not None else None
     legacy_command: LegacyFirmwareCommand | None = None
     legacy_error: str | None = None
@@ -125,6 +124,27 @@ async def control_smart_device_transports(
         )
     except Exception as exc:
         legacy_error = str(exc)
+
+    ha_sent = False
+    ha_error: str | None = None
+    should_call_ha = _ha_enabled(device) and (
+        legacy_command is None or _mirror_homeassistant_after_legacy(device)
+    )
+    if should_call_ha:
+        try:
+            ha_sent = await ha_service.call_service(
+                action=action,
+                entity_id=device.ha_entity_id,
+                service_data=parameters,
+            )
+            if not ha_sent:
+                ha_error = f"Home Assistant rejected command for {device.ha_entity_id}"
+        except Exception as exc:  # pragma: no cover - defensive around upstream client
+            ha_error = str(exc)
+    elif legacy_command is not None:
+        ha_error = "Skipped because public MQTT handled the command"
+    else:
+        ha_error = "Home Assistant disabled for this device"
 
     local_state = local_state_for_control_action(action, device.state)
     result = SmartDeviceControlResult(

@@ -33,7 +33,7 @@ from app.services.device_management import (
 )
 from app.models.activity import ActivityTimeline, Alert
 from app.models.base import utcnow
-from app.models.core import Device
+from app.models.core import Device, Room, SmartDevice
 from app.models.patients import PatientDeviceAssignment
 from app.models.telemetry import (
     IMUTelemetry,
@@ -44,8 +44,14 @@ from app.models.telemetry import (
     RSSIReading,
 )
 from app.models.vitals import VitalReading
+from app.services.legacy_firmware_control import (
+    LEGACY_ON_STATES,
+    legacy_appliance_for_device,
+    legacy_room_for_device,
+)
 
 logger = logging.getLogger("wheelsense.mqtt")
+MQTT_TOPIC_ROOTS = ("WheelSense", "wheelsense")
 
 # Key: "{workspace_id}:{patient_id}" — one localization state per patient (mobile + wheelchair share it).
 _room_tracker: dict[str, dict] = {}
@@ -58,6 +64,24 @@ _mobile_last_telemetry_mono: dict[str, float] = {}
 _rate_limiter: dict[str, tuple[int, float]] = {}
 MAX_MQTT_MESSAGES_PER_MINUTE = 120  # Per-device rate limit
 MAX_MQTT_PAYLOAD_SIZE = 64 * 1024  # 64KB max payload
+
+
+def _topic(root: str, *parts: str) -> str:
+    return "/".join((root, *parts))
+
+
+def _topic_parts(topic: str) -> list[str]:
+    return topic.split("/")
+
+
+def _is_wheelsense_topic(topic: str, *parts: str) -> bool:
+    actual = _topic_parts(topic)
+    return len(actual) == len(parts) + 1 and actual[0].lower() == "wheelsense" and actual[1:] == list(parts)
+
+
+def _starts_wheelsense_topic(topic: str, *parts: str) -> bool:
+    actual = _topic_parts(topic)
+    return len(actual) >= len(parts) + 1 and actual[0].lower() == "wheelsense" and actual[1 : len(parts) + 1] == list(parts)
 
 
 def _is_rate_limited(device_id: str) -> bool:
@@ -155,16 +179,18 @@ async def mqtt_listener():
                     settings.mqtt_tls,
                 )
 
-                await client.subscribe("WheelSense/data")
-                await client.subscribe("WheelSense/mobile/+/telemetry")
-                await client.subscribe("WheelSense/mobile/+/register")
-                await client.subscribe("WheelSense/mobile/+/walkstep")
-                await client.subscribe("WheelSense/camera/+/registration")
-                await client.subscribe("WheelSense/camera/+/status")
-                await client.subscribe("WheelSense/camera/+/photo")
-                await client.subscribe("WheelSense/camera/+/frame")
-                await client.subscribe("WheelSense/+/ack")
-                await client.subscribe("WheelSense/camera/+/ack")
+                for root in MQTT_TOPIC_ROOTS:
+                    await client.subscribe(_topic(root, "data"))
+                    await client.subscribe(_topic(root, "mobile", "+", "telemetry"))
+                    await client.subscribe(_topic(root, "mobile", "+", "register"))
+                    await client.subscribe(_topic(root, "mobile", "+", "walkstep"))
+                    await client.subscribe(_topic(root, "camera", "+", "registration"))
+                    await client.subscribe(_topic(root, "camera", "+", "status"))
+                    await client.subscribe(_topic(root, "camera", "+", "photo"))
+                    await client.subscribe(_topic(root, "camera", "+", "frame"))
+                    await client.subscribe(_topic(root, "+", "ack"))
+                    await client.subscribe(_topic(root, "camera", "+", "ack"))
+                    await client.subscribe(_topic(root, "central", "state_sync_request"))
 
                 async for message in client.messages:
                     topic = str(message.topic)
@@ -180,14 +206,16 @@ async def mqtt_listener():
                             logger.warning("Rate limit exceeded for device %s", device_id)
                             continue
 
-                        if topic == "WheelSense/data":
+                        if _is_wheelsense_topic(topic, "data"):
                             await _handle_telemetry(message.payload, client)
-                        elif topic.startswith("WheelSense/mobile/") and topic.endswith("/telemetry"):
+                        elif _starts_wheelsense_topic(topic, "mobile") and topic.endswith("/telemetry"):
                             await _handle_mobile_telemetry(message.payload, client)
-                        elif topic.startswith("WheelSense/mobile/") and topic.endswith("/register"):
+                        elif _starts_wheelsense_topic(topic, "mobile") and topic.endswith("/register"):
                             await _handle_mobile_registration(message.payload)
-                        elif topic.startswith("WheelSense/mobile/") and topic.endswith("/walkstep"):
+                        elif _starts_wheelsense_topic(topic, "mobile") and topic.endswith("/walkstep"):
                             await _handle_mobile_walkstep(message.payload)
+                        elif _is_wheelsense_topic(topic, "central", "state_sync_request"):
+                            await _handle_legacy_state_sync_request(client, message.payload)
                         elif topic.endswith("/ack"):
                             await _handle_device_ack(message.payload)
                         elif topic.endswith("/registration"):
@@ -1177,6 +1205,56 @@ async def _handle_device_ack(payload: bytes):
 
     async with AsyncSessionLocal() as session:
         await apply_command_ack(session, str(command_id), data)
+
+
+async def _handle_legacy_state_sync_request(client: aiomqtt.Client, payload: bytes):
+    try:
+        data = json.loads(payload or b"{}")
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON on legacy state_sync_request topic")
+        data = {}
+
+    async with AsyncSessionLocal() as session:
+        ws_id = await resolve_mqtt_auto_register_workspace_id(session)
+        if ws_id is None:
+            logger.warning("Legacy state sync skipped: workspace could not be resolved")
+            return
+
+        rows = list(
+            (
+                await session.execute(
+                    select(SmartDevice, Room)
+                    .join(Room, SmartDevice.room_id == Room.id, isouter=True)
+                    .where(
+                        SmartDevice.workspace_id == ws_id,
+                        SmartDevice.is_active.is_(True),
+                    )
+                    .order_by(SmartDevice.id.asc())
+                )
+            ).all()
+        )
+
+    grouped: dict[str, dict[str, bool]] = {}
+    for device, room in rows:
+        legacy_room = legacy_room_for_device(device, room)
+        if legacy_room is None:
+            continue
+        appliance = legacy_appliance_for_device(device)
+        grouped.setdefault(legacy_room, {})[appliance] = (
+            str(device.state or "").strip().lower() in LEGACY_ON_STATES
+        )
+
+    source_device = data.get("device_id") or "APPLIANCE_CENTRAL"
+    for room, appliances in grouped.items():
+        sync_payload = {
+            "type": "state_sync",
+            "device_id": source_device,
+            "room": room,
+            "appliances": appliances,
+            "timestamp": utcnow().isoformat(),
+        }
+        await client.publish(f"WheelSense/{room}/state_sync", json.dumps(sync_payload))
+    logger.info("Published legacy firmware state sync for %d rooms", len(grouped))
 
 
 async def _handle_camera_registration(payload: bytes):

@@ -208,7 +208,7 @@ async def test_control_device(mock_call_service, client: AsyncClient, setup_ha_d
 
 @patch("app.services.legacy_firmware_control.publish_mqtt", new_callable=AsyncMock)
 @patch("app.services.homeassistant.HomeAssistantService.call_service")
-async def test_control_device_falls_back_to_old_firmware_when_ha_fails(
+async def test_control_device_uses_old_firmware_before_ha_for_mapped_room(
     mock_call_service,
     mock_publish_mqtt,
     client: AsyncClient,
@@ -242,8 +242,10 @@ async def test_control_device_falls_back_to_old_firmware_when_ha_fails(
     data = response.json()
     assert data["status"] == "success"
     assert data["data"]["homeassistant"] == "failed"
+    assert data["data"]["homeassistant_error"] == "Skipped because public MQTT handled the command"
     assert data["data"]["legacy_firmware"]["topic"] == "WheelSense/bedroom/control"
     assert data["data"]["legacy_firmware"]["appliance"] == "light"
+    mock_call_service.assert_not_called()
     mock_publish_mqtt.assert_awaited_once()
     topic, payload = mock_publish_mqtt.await_args.args
     assert topic == "WheelSense/bedroom/control"
@@ -293,6 +295,50 @@ async def test_control_device_uses_legacy_config_override(
     assert payload["state"] is False
     await db_session.refresh(device)
     assert device.state == "off"
+
+
+@patch("app.services.legacy_firmware_control.publish_mqtt", new_callable=AsyncMock)
+@patch("app.services.homeassistant.HomeAssistantService.call_service")
+async def test_control_device_can_mirror_legacy_command_to_ha(
+    mock_call_service,
+    mock_publish_mqtt,
+    client: AsyncClient,
+    db_session,
+    admin_user: User,
+):
+    mock_call_service.return_value = True
+    room = Room(name="Room 402", room_type="bedroom", workspace_id=admin_user.workspace_id)
+    db_session.add(room)
+    await db_session.flush()
+    device = SmartDevice(
+        workspace_id=admin_user.workspace_id,
+        room_id=room.id,
+        name="Room 402 Fan",
+        ha_entity_id="fan.room_402_fan",
+        device_type="fan",
+        is_active=True,
+        state="off",
+        config={"legacy_firmware": {"enabled": True, "mirror_homeassistant": True}},
+    )
+    db_session.add(device)
+    await db_session.commit()
+    await db_session.refresh(device)
+
+    response = await client.post(
+        f"/api/ha/devices/{device.id}/control",
+        json={"action": "turn_on", "parameters": {}},
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()["data"]
+    assert data["homeassistant"] == "sent"
+    assert data["legacy_firmware"]["topic"] == "WheelSense/livingroom/control"
+    mock_publish_mqtt.assert_awaited_once()
+    mock_call_service.assert_called_once_with(
+        action="turn_on",
+        entity_id="fan.room_402_fan",
+        service_data={},
+    )
 
 @patch("app.services.homeassistant.HomeAssistantService.get_state")
 async def test_get_device_state(mock_get_state, client: AsyncClient, setup_ha_data):

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import json
 from datetime import datetime, UTC
 
-from app.models.core import Device, Workspace
+from app.models.core import Device, Room, SmartDevice, Workspace
 from app.models.core import DeviceCommandDispatch
 from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.telemetry import IMUTelemetry, MotionTrainingData, RSSIReading, RoomPrediction
@@ -19,6 +19,7 @@ from app.mqtt_handler import (
     _handle_mobile_registration,
     _handle_mobile_telemetry,
     _handle_device_ack,
+    _handle_legacy_state_sync_request,
     _handle_camera_registration,
     _handle_camera_status,
     mqtt_listener
@@ -617,6 +618,68 @@ async def test_telemetry_prunes_ble_stub_when_cam_has_ble_mac_reported_only(acti
             await session.execute(select(Device).where(Device.device_id == "CAM_PRUNE"))
         ).scalar_one_or_none()
         assert cam is not None
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_legacy_state_sync_request_publishes_current_room_states(active_workspace):
+    mock_client = AsyncMock()
+    async with _SessionFactory() as session:
+        bedroom = Room(
+            workspace_id=active_workspace.id,
+            name="Room 401",
+            room_type="bedroom",
+        )
+        kitchen = Room(
+            workspace_id=active_workspace.id,
+            name="Dining Room",
+            room_type="dining",
+        )
+        session.add_all([bedroom, kitchen])
+        await session.flush()
+        session.add_all(
+            [
+                SmartDevice(
+                    workspace_id=active_workspace.id,
+                    room_id=bedroom.id,
+                    name="Bedroom Light",
+                    ha_entity_id="light.bedroom",
+                    device_type="light",
+                    is_active=True,
+                    state="on",
+                    config={"legacy_firmware": {"enabled": True}},
+                ),
+                SmartDevice(
+                    workspace_id=active_workspace.id,
+                    room_id=kitchen.id,
+                    name="Kitchen Alarm",
+                    ha_entity_id="switch.kitchen_alarm",
+                    device_type="switch",
+                    is_active=True,
+                    state="off",
+                    config={
+                        "legacy_firmware": {
+                            "enabled": True,
+                            "room": "kitchen",
+                            "appliance": "alarm",
+                        }
+                    },
+                ),
+            ]
+        )
+        await session.commit()
+
+    await _handle_legacy_state_sync_request(
+        mock_client,
+        json.dumps({"device_id": "APPLIANCE_CENTRAL"}).encode(),
+    )
+
+    published = {
+        call.args[0]: json.loads(call.args[1])
+        for call in mock_client.publish.await_args_list
+    }
+    assert published["WheelSense/bedroom/state_sync"]["appliances"]["light"] is True
+    assert published["WheelSense/kitchen/state_sync"]["appliances"]["alarm"] is False
 
 
 @pytest.mark.asyncio

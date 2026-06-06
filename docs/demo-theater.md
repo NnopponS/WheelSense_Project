@@ -41,7 +41,7 @@ The projector board is intentionally larger than a single incident room so judge
 
 ## Old Firmware Device Bridge
 
-The normal smart-device control endpoint, `/api/ha/devices/{id}/control`, can also drive the old physical-model firmware. This keeps the current WheelSense UI/chat/device-control path while publishing the legacy board command the old firmware already understands:
+The normal smart-device control endpoint, `/api/ha/devices/{id}/control`, can also drive the old physical-model firmware. This keeps the current WheelSense UI/chat/AI device-control path while publishing the legacy board command the old firmware already understands:
 
 ```text
 WheelSense/<bedroom|livingroom|bathroom|kitchen>/control
@@ -67,7 +67,7 @@ For any other room or device, set `SmartDevice.config` explicitly:
 }
 ```
 
-Use `ha_enabled: false` when the device exists only on the old firmware board and should not try Home Assistant first. Without that flag, WheelSense tries Home Assistant and the old firmware bridge; the command succeeds if either transport succeeds.
+Use `ha_enabled: false` when the device exists only on the old firmware board. For mapped physical-model devices, WheelSense publishes public MQTT first and skips Home Assistant unless `mirror_homeassistant: true` is set. The command succeeds if either public MQTT or Home Assistant succeeds.
 
 ## License Notes
 

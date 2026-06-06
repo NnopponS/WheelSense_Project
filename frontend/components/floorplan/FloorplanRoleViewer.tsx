@@ -427,8 +427,6 @@ function PhysicalModelPixelOverlay({
   onControlDevice: (
     device: RoomSmartDeviceStateSummary,
     nextEnabled: boolean,
-    roomName: string | null,
-    roomId: number | null,
   ) => void;
 }) {
   const [animationTick, setAnimationTick] = useState(0);
@@ -621,8 +619,6 @@ function PhysicalModelPixelOverlay({
                             onControlDevice(
                               device,
                               !isOn,
-                              roomLabel,
-                              roomId,
                             );
                           }}
                           disabled={deviceBusyId === device.id}
@@ -733,8 +729,11 @@ function RoomInspectorContent({
   selectedPatients,
   selectedStaff,
   inspectorDevices,
+  deviceBusyId,
+  deviceControlMessage,
   captureBusy,
   captureMessage,
+  onControlDevice,
   requestCapture,
   refetchPresence,
 }: {
@@ -743,8 +742,14 @@ function RoomInspectorContent({
   selectedPatients: RoomOccupant[];
   selectedStaff: RoomOccupant[];
   inspectorDevices: Array<RoomSmartDeviceStateSummary | SmartDevice>;
+  deviceBusyId: number | null;
+  deviceControlMessage: string | null;
   captureBusy: boolean;
   captureMessage: string | null;
+  onControlDevice: (
+    device: RoomSmartDeviceStateSummary,
+    nextEnabled: boolean,
+  ) => void;
   requestCapture: () => void;
   refetchPresence: () => void;
 }) {
@@ -836,7 +841,7 @@ function RoomInspectorContent({
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Wifi className="h-4 w-4 text-primary" />
-          Home Assistant devices
+          Smart devices
         </div>
         {inspectorDevices.length === 0 ? (
           <div className="rounded-xl border border-dashed border-outline-variant/30 px-3 py-3 text-sm text-foreground-variant">
@@ -844,27 +849,57 @@ function RoomInspectorContent({
           </div>
         ) : (
           <div className="space-y-2">
-            {inspectorDevices.map((device) => (
-              <div
-                key={`room-device-${device.id}`}
-                className="rounded-xl border border-outline-variant/20 bg-surface-container-low/50 px-3 py-3"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{device.name}</p>
-                    <p className="mt-1 text-xs text-foreground-variant">
-                      {device.device_type}
-                      {"ha_entity_id" in device && device.ha_entity_id ? ` | ${device.ha_entity_id}` : ""}
-                    </p>
+            {inspectorDevices.map((device) => {
+              const isOn = isDeviceLikelyOn(device);
+              const isBusy = deviceBusyId === device.id;
+              const DeviceIcon = deviceIcon(device);
+              return (
+                <button
+                  key={`room-device-${device.id}`}
+                  type="button"
+                  disabled={device.is_active === false || isBusy}
+                  onClick={() =>
+                    onControlDevice(
+                      device,
+                      !isOn,
+                    )
+                  }
+                  className={`w-full rounded-xl border px-3 py-3 text-left transition-smooth ${
+                    isOn
+                      ? "border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15"
+                      : "border-outline-variant/20 bg-surface-container-low/50 hover:bg-surface-container"
+                  } disabled:cursor-not-allowed disabled:opacity-60`}
+                  title={`Turn ${isOn ? "off" : "on"} ${device.name}`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
+                          isOn
+                            ? "border-amber-400/50 bg-amber-400/15 text-amber-700 dark:text-amber-200"
+                            : "border-outline-variant/30 bg-surface-container text-foreground-variant"
+                        }`}
+                      >
+                        {isBusy ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <DeviceIcon className="h-4 w-4" />}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">{device.name}</p>
+                        <p className="mt-1 text-xs text-foreground-variant">
+                          {device.device_type}
+                          {"ha_entity_id" in device && device.ha_entity_id ? ` | ${device.ha_entity_id}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant={device.is_active === false ? "outline" : isOn ? "warning" : "secondary"}>
+                      {isBusy ? "sending" : isOn ? "on" : "off"}
+                    </Badge>
                   </div>
-                  <Badge variant={device.is_active === false ? "outline" : "secondary"}>
-                    {("state" in device && device.state) || "unknown"}
-                  </Badge>
-                </div>
-              </div>
-            ))}
+                </button>
+              );
+            })}
           </div>
         )}
+        {deviceControlMessage ? <p className="text-xs text-foreground-variant">{deviceControlMessage}</p> : null}
       </div>
 
       <div className="space-y-2">
@@ -1320,28 +1355,14 @@ export default function FloorplanRoleViewer({
     async (
       device: RoomSmartDeviceStateSummary,
       nextEnabled: boolean,
-      roomName: string | null,
-      roomId: number | null,
     ) => {
       const action = nextEnabled ? "turn_on" : "turn_off";
-      const mapping = getPhysicalModelMappingForRoomName(roomName);
       const tasks: Array<{ label: string; run: Promise<unknown> }> = [
         {
-          label: "Home Assistant",
+          label: "smart device bridge",
           run: api.controlSmartDevice(device.id, { action, parameters: {} }),
         },
       ];
-      if (mapping && roleBase === "/admin") {
-        tasks.push({
-          label: "physical model board",
-          run: api.post("/demo/physical-model/device-control", {
-            device_id: device.id,
-            room_alias: mapping.alias,
-            mapped_room_id: roomId ?? undefined,
-            action,
-          }),
-        });
-      }
 
       setDeviceControlBusyId(device.id);
       setDeviceControlMessage(`Sending ${action.replace("_", " ")} to ${device.name}...`);
@@ -1377,7 +1398,7 @@ export default function FloorplanRoleViewer({
         setDeviceControlBusyId(null);
       }
     },
-    [queryClient, refetchPresence, roleBase],
+    [queryClient, refetchPresence],
   );
 
   const inspectorOpen =
@@ -1612,8 +1633,8 @@ export default function FloorplanRoleViewer({
                   deviceBusyId={deviceControlBusyId}
                   actionMessage={deviceControlMessage}
                   onSelect={setSelectedId}
-                  onControlDevice={(device, nextEnabled, roomName, roomId) => {
-                    void controlFloorplanDevice(device, nextEnabled, roomName, roomId);
+                  onControlDevice={(device, nextEnabled) => {
+                    void controlFloorplanDevice(device, nextEnabled);
                   }}
                 />
               ) : (
@@ -1653,8 +1674,13 @@ export default function FloorplanRoleViewer({
                     selectedPatients={selectedPatients}
                     selectedStaff={selectedStaff}
                     inspectorDevices={inspectorDevices}
+                    deviceBusyId={deviceControlBusyId}
+                    deviceControlMessage={deviceControlMessage}
                     captureBusy={captureBusy}
                     captureMessage={captureMessage}
+                    onControlDevice={(device, nextEnabled) => {
+                      void controlFloorplanDevice(device, nextEnabled);
+                    }}
                     requestCapture={() => void requestCapture()}
                     refetchPresence={() => void refetchPresence()}
                   />
