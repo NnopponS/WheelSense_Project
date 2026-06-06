@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Route, Send, Shield, Trash2, Users } from "lucide-react";
+import { AlertTriangle, Bell, Lightbulb, MapPin, Route, Send, Shield, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { api, ApiError } from "@/lib/api";
 import { useTranslation } from "@/lib/i18n";
+import { buildPhysicalModelRooms, PHYSICAL_MODEL_ROOM_MAPPINGS } from "@/lib/physical-model-demo";
 import { withWorkspaceScope } from "@/lib/workspaceQuery";
 import DemoPanel from "@/components/admin/demo-control/DemoPanel";
+import FloorplanRoleViewer from "@/components/floorplan/FloorplanRoleViewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,12 +23,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Patient, Room, User } from "@/lib/types";
+import type { Patient, Room, SmartDevice, User } from "@/lib/types";
 import type { CreateAlertRequest, ListAlertsResponse } from "@/lib/api/task-scope-types";
 
 type Tone = "success" | "error" | "info";
 type ActorType = "patient" | "staff";
 type DemoAlertType = "manual_test" | "abnormal_hr" | "fall" | "low_battery" | "device_offline";
+type DevicePowerAction = "on" | "off";
+
+type PhysicalModelRoom = {
+  alias: string;
+  room_id: number;
+  room_name: string;
+  physical_zone: string;
+};
 
 type SimulatorStatusResp = {
   env_mode: string;
@@ -68,6 +78,18 @@ function roomLabel(room: Room) {
   return room.name || `Room #${room.id}`;
 }
 
+function matchesDeviceKind(device: SmartDevice, kind: string) {
+  const needle = kind.trim().toLowerCase();
+  const haystack = `${device.name} ${device.device_type} ${device.ha_entity_id ?? ""}`.toLowerCase();
+  if (needle === "aircon") return haystack.includes("air") || haystack.includes("climate") || haystack.includes("ac");
+  return haystack.includes(needle);
+}
+
+function isDeviceLikelyOn(device: SmartDevice) {
+  const state = (device.state ?? "").trim().toLowerCase();
+  return ["on", "heat", "cool", "fan_only", "dry", "auto"].includes(state);
+}
+
 export default function AdminDemoControlPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -82,10 +104,10 @@ export default function AdminDemoControlPage() {
     queryFn: () =>
       api.get(withWorkspaceScope("/users/search?roles=admin,head_nurse,supervisor,observer&limit=100", user?.workspace_id) as string),
   }).data ?? [];
-  const rooms = useQuery<Room[]>({
+  const roomsQuery = useQuery<Room[]>({
     queryKey: ["demo-control", "rooms", user?.workspace_id],
     queryFn: () => api.get(withWorkspaceScope("/rooms?limit=100", user?.workspace_id) as string),
-  }).data ?? [];
+  });
   const alerts = useQuery<ListAlertsResponse>({
     queryKey: ["demo-control", "alerts", user?.workspace_id],
     queryFn: () => api.get(withWorkspaceScope("/alerts?status=active&limit=20", user?.workspace_id) as string),
@@ -95,10 +117,24 @@ export default function AdminDemoControlPage() {
     queryFn: () => api.get("/demo/simulator/status"),
     enabled: user?.role === "admin",
   });
+  const physicalRoomsQuery = useQuery<PhysicalModelRoom[]>({
+    queryKey: ["demo-control", "physical-model-rooms", user?.workspace_id],
+    queryFn: () => api.get("/demo/physical-model/rooms"),
+    enabled: user?.role === "admin",
+  });
+  const smartDevices = useQuery<SmartDevice[]>({
+    queryKey: ["demo-control", "smart-devices", user?.workspace_id],
+    queryFn: () => api.listSmartDevices() as Promise<SmartDevice[]>,
+  }).data ?? [];
 
   const [actorType, setActorType] = useState<ActorType>("patient");
   const [actorId, setActorId] = useState("");
   const [roomId, setRoomId] = useState("");
+  const [physicalActorType, setPhysicalActorType] = useState<ActorType>("patient");
+  const [physicalActorId, setPhysicalActorId] = useState("");
+  const [physicalRoomAlias, setPhysicalRoomAlias] = useState("Bedroom");
+  const [physicalDeviceKind, setPhysicalDeviceKind] = useState("light");
+  const [physicalDeviceAction, setPhysicalDeviceAction] = useState<DevicePowerAction>("off");
 
   const [alertPatientId, setAlertPatientId] = useState("");
   const [alertType, setAlertType] = useState<DemoAlertType>("manual_test");
@@ -113,8 +149,28 @@ export default function AdminDemoControlPage() {
 
   const activePatients = patients.filter((item) => item.is_active);
   const staffUsers = users.filter((item) => item.role !== "patient");
+  const rooms = useMemo(() => roomsQuery.data ?? [], [roomsQuery.data]);
   const selectedAlertPatient = activePatients.find((p) => String(p.id) === alertPatientId);
   const isSimulatorUi = Boolean(simStatus.data?.is_simulator);
+  const physicalRooms = useMemo<PhysicalModelRoom[]>(() => {
+    if ((physicalRoomsQuery.data ?? []).length > 0) return physicalRoomsQuery.data ?? [];
+    return buildPhysicalModelRooms(rooms)
+      .filter((item) => item.room)
+      .map((item) => ({
+        alias: item.alias,
+        room_id: item.room!.id,
+        room_name: item.room!.name,
+        physical_zone: item.physicalZone,
+      }));
+  }, [physicalRoomsQuery.data, rooms]);
+  const selectedPhysicalRoom = physicalRooms.find((room) => room.alias === physicalRoomAlias) ?? physicalRooms[0] ?? null;
+  const selectedPhysicalRoomDevices = selectedPhysicalRoom
+    ? smartDevices.filter((device) => device.room_id === selectedPhysicalRoom.room_id && device.is_active !== false)
+    : [];
+  const selectedPhysicalDevice =
+    selectedPhysicalRoomDevices.find((device) => matchesDeviceKind(device, physicalDeviceKind)) ??
+    selectedPhysicalRoomDevices[0] ??
+    null;
 
   const metricLabel = (
     key: "demoControl.countPatients" | "demoControl.countStaff" | "demoControl.countRooms",
@@ -183,6 +239,62 @@ export default function AdminDemoControlPage() {
     );
   }
 
+  function handlePhysicalLocationEvent() {
+    if (!physicalActorId || !selectedPhysicalRoom) return;
+    void run(
+      "YOLO room event",
+      `Moved ${physicalActorType} #${physicalActorId} to ${selectedPhysicalRoom.alias}.`,
+      () =>
+        api.post("/demo/physical-model/location-events", {
+          room_alias: selectedPhysicalRoom.alias,
+          mapped_room_id: selectedPhysicalRoom.room_id,
+          actor_type: physicalActorType,
+          actor_id: Number(physicalActorId),
+          confidence: 0.94,
+          source: "yolo_mockup",
+          force_device_reminder: true,
+        }),
+    );
+  }
+
+  function handlePhysicalFall() {
+    if (physicalActorType !== "patient" || !physicalActorId) return;
+    void run(
+      "Physical fall trigger",
+      `Created fall alert for patient #${physicalActorId}.`,
+      () =>
+        api.triggerDemoPatientFall(physicalActorId, {
+          action: "fall",
+          note: `Physical model fall trigger in ${selectedPhysicalRoom?.alias ?? "mapped room"}.`,
+        }),
+    );
+  }
+
+  function handlePhysicalDeviceControl() {
+    if (!selectedPhysicalDevice) return;
+    const action = physicalDeviceAction === "on" ? "turn_on" : "turn_off";
+    void run(
+      `Device ${physicalDeviceAction}`,
+      `${action} sent to ${selectedPhysicalDevice.name} in ${selectedPhysicalRoom?.alias ?? "mapped room"}.`,
+      () => api.controlSmartDevice(selectedPhysicalDevice.id, { action, parameters: {} }),
+    );
+  }
+
+  function handlePhysicalScheduleReminder() {
+    if (!selectedPhysicalRoom) return;
+    void run(
+      "Schedule reminder",
+      `Sent head nurse reminder for ${selectedPhysicalRoom.alias}.`,
+      () =>
+        api.post("/demo/physical-model/schedule-reminder", {
+          room_alias: selectedPhysicalRoom.alias,
+          title: "Medicine time",
+          body: "Demo schedule reminder: check the resident, confirm the routine, and record completion.",
+          target_role: "head_nurse",
+        }),
+    );
+  }
+
   return (
     <div className="space-y-6 pb-8 animate-fade-in">
       <section className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-sm">
@@ -211,7 +323,143 @@ export default function AdminDemoControlPage() {
         </div>
       </section>
 
+      <FloorplanRoleViewer showPresence className="border-border/70 bg-card/90" />
+
       <div className="grid gap-4 lg:grid-cols-3">
+        <DemoPanel
+          badge="Physical Model"
+          title="Physical model"
+          description="Drive the 4-room physical model while keeping the 12-room WheelSense system as source of truth."
+          action={<MapPin className="h-4 w-4 text-muted-foreground" />}
+        >
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Actor type</Label>
+                <Select value={physicalActorType} onValueChange={(value) => setPhysicalActorType(value as ActorType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="patient">Patient</SelectItem>
+                    <SelectItem value="staff">Staff</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Physical room</Label>
+                <Select value={physicalRoomAlias} onValueChange={setPhysicalRoomAlias}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(physicalRooms.length > 0 ? physicalRooms : PHYSICAL_MODEL_ROOM_MAPPINGS).map((room) => (
+                      <SelectItem key={room.alias} value={room.alias}>
+                        {room.alias}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Actor</Label>
+              <Select value={physicalActorId} onValueChange={setPhysicalActorId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select actor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {physicalActorType === "patient"
+                    ? activePatients.map((item) => (
+                        <SelectItem key={item.id} value={String(item.id)}>
+                          {item.first_name} {item.last_name}
+                        </SelectItem>
+                      ))
+                    : staffUsers.map((item) => (
+                        <SelectItem key={item.id} value={String(item.id)}>
+                          {displayName(item)} ({item.role})
+                        </SelectItem>
+                      ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3 text-sm">
+              <p className="font-medium text-foreground">{selectedPhysicalRoom?.alias ?? physicalRoomAlias}</p>
+              <p className="mt-1 text-muted-foreground">
+                Maps to {selectedPhysicalRoom?.room_name ?? "waiting for Room 401/402/Bathroom/Dining Room"}.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {selectedPhysicalRoomDevices.length > 0 ? (
+                  selectedPhysicalRoomDevices.slice(0, 4).map((device) => (
+                    <Badge key={device.id} variant={isDeviceLikelyOn(device) ? "warning" : "outline"}>
+                      {device.name}: {device.state ?? "unknown"}
+                    </Badge>
+                  ))
+                ) : (
+                  <Badge variant="outline">No linked devices</Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button disabled={!physicalActorId || !selectedPhysicalRoom} onClick={handlePhysicalLocationEvent}>
+                <Route className="mr-2 h-4 w-4" />
+                YOLO move
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={physicalActorType !== "patient" || !physicalActorId}
+                onClick={handlePhysicalFall}
+              >
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Trigger fall
+              </Button>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Device</Label>
+                <Select value={physicalDeviceKind} onValueChange={setPhysicalDeviceKind}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">Light</SelectItem>
+                    <SelectItem value="fan">Fan</SelectItem>
+                    <SelectItem value="aircon">AC</SelectItem>
+                    <SelectItem value="switch">Switch</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Power</Label>
+                <Select value={physicalDeviceAction} onValueChange={(value) => setPhysicalDeviceAction(value as DevicePowerAction)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="on">On</SelectItem>
+                    <SelectItem value="off">Off</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button className="w-full" variant="outline" disabled={!selectedPhysicalDevice} onClick={handlePhysicalDeviceControl}>
+                  <Lightbulb className="mr-2 h-4 w-4" />
+                  Send
+                </Button>
+              </div>
+            </div>
+
+            <Button className="w-full" variant="secondary" disabled={!selectedPhysicalRoom} onClick={handlePhysicalScheduleReminder}>
+              <Bell className="mr-2 h-4 w-4" />
+              Trigger schedule reminder
+            </Button>
+          </div>
+        </DemoPanel>
+
         <DemoPanel
           badge="Clean State"
           title="Clean State"

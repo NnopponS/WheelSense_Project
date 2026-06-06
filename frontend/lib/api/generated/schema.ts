@@ -2942,6 +2942,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/demo/physical-model/rooms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Physical Model Rooms */
+        get: operations["get_physical_model_rooms_api_demo_physical_model_rooms_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/physical-model/location-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Physical Model Location Event */
+        post: operations["apply_physical_model_location_event_api_demo_physical_model_location_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/demo/physical-model/schedule-reminder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger Physical Model Schedule Reminder */
+        post: operations["trigger_physical_model_schedule_reminder_api_demo_physical_model_schedule_reminder_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/demo/reset": {
         parameters: {
             query?: never;
@@ -7357,6 +7408,112 @@ export interface components {
             timestamp: string;
             /** Url */
             url: string;
+        };
+        /** PhysicalModelDeviceSummaryOut */
+        PhysicalModelDeviceSummaryOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Device Type */
+            device_type: string;
+            /** State */
+            state: string;
+            /** Room Id */
+            room_id?: number | null;
+        };
+        /** PhysicalModelLocationEventIn */
+        PhysicalModelLocationEventIn: {
+            /** Room Alias */
+            room_alias: string;
+            /** Mapped Room Id */
+            mapped_room_id?: number | null;
+            /**
+             * Actor Type
+             * @default patient
+             * @enum {string}
+             */
+            actor_type: "patient" | "staff";
+            /** Actor Id */
+            actor_id: number;
+            /**
+             * Confidence
+             * @default 0.92
+             */
+            confidence: number;
+            /**
+             * Source
+             * @default yolo_mockup
+             */
+            source: string;
+            /**
+             * Force Device Reminder
+             * @default false
+             */
+            force_device_reminder: boolean;
+        };
+        /** PhysicalModelLocationEventOut */
+        PhysicalModelLocationEventOut: {
+            event: components["schemas"]["PhysicalModelLocationEventIn"];
+            mapped_room: components["schemas"]["PhysicalModelRoomOut"];
+            actor: components["schemas"]["DemoActorOut"];
+            /** Previous Room Id */
+            previous_room_id?: number | null;
+            /** Previous Room Name */
+            previous_room_name?: string | null;
+            /** Device Reminders */
+            device_reminders?: components["schemas"]["PhysicalModelWorkflowReminderOut"][];
+            /** Previous Room Devices */
+            previous_room_devices?: components["schemas"]["PhysicalModelDeviceSummaryOut"][];
+        };
+        /** PhysicalModelRoomOut */
+        PhysicalModelRoomOut: {
+            /** Alias */
+            alias: string;
+            /** Room Id */
+            room_id: number;
+            /** Room Name */
+            room_name: string;
+            /** Physical Zone */
+            physical_zone: string;
+        };
+        /** PhysicalModelScheduleReminderIn */
+        PhysicalModelScheduleReminderIn: {
+            /**
+             * Title
+             * @default Medication round due
+             */
+            title: string;
+            /**
+             * Body
+             * @default Demo schedule reminder: check the resident, confirm the routine, and record completion.
+             */
+            body: string;
+            /** Room Alias */
+            room_alias?: string | null;
+            /** Patient Id */
+            patient_id?: number | null;
+            /**
+             * Target Role
+             * @default head_nurse
+             */
+            target_role: string;
+        };
+        /** PhysicalModelScheduleReminderOut */
+        PhysicalModelScheduleReminderOut: {
+            room?: components["schemas"]["PhysicalModelRoomOut"] | null;
+            reminder: components["schemas"]["PhysicalModelWorkflowReminderOut"];
+        };
+        /** PhysicalModelWorkflowReminderOut */
+        PhysicalModelWorkflowReminderOut: {
+            /** Message Id */
+            message_id?: number | null;
+            /** Directive Id */
+            directive_id?: number | null;
+            /** Schedule Id */
+            schedule_id?: number | null;
+            /** Title */
+            title: string;
         };
         /** PredictRequest */
         PredictRequest: {
@@ -16111,6 +16268,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DemoControlStateOut"];
+                };
+            };
+        };
+    };
+    get_physical_model_rooms_api_demo_physical_model_rooms_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhysicalModelRoomOut"][];
+                };
+            };
+        };
+    };
+    apply_physical_model_location_event_api_demo_physical_model_location_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhysicalModelLocationEventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhysicalModelLocationEventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trigger_physical_model_schedule_reminder_api_demo_physical_model_schedule_reminder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhysicalModelScheduleReminderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhysicalModelScheduleReminderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

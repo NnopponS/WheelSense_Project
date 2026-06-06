@@ -622,6 +622,135 @@ async def test_demo_control_patient_move_survives_simulator_mqtt_failure(
 
 
 @pytest.mark.asyncio
+async def test_physical_model_rooms_map_to_existing_demo_rooms(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Physical Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    rooms = [
+        Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Room 401", room_type="bedroom"),
+        Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Room 402", room_type="lounge"),
+        Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Bathroom", room_type="bathroom"),
+        Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Dining Room", room_type="dining"),
+    ]
+    db_session.add_all(rooms)
+    await db_session.commit()
+
+    response = await client.get("/api/demo/physical-model/rooms")
+
+    assert response.status_code == 200, response.text
+    aliases = {row["alias"]: row["room_name"] for row in response.json()}
+    assert aliases == {
+        "Bedroom": "Room 401",
+        "Living Room": "Room 402",
+        "Bathroom": "Bathroom",
+        "Kitchen / Dining": "Dining Room",
+    }
+
+
+@pytest.mark.asyncio
+async def test_physical_model_location_event_moves_actor_and_reminds_for_devices(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Physical Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    bedroom = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Room 401", room_type="bedroom")
+    dining = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Dining Room", room_type="dining")
+    db_session.add_all([bedroom, dining])
+    await db_session.flush()
+    patient = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Sam",
+        last_name="Demo",
+        care_level="normal",
+        is_active=True,
+        room_id=bedroom.id,
+    )
+    light = SmartDevice(
+        workspace_id=admin_user.workspace_id,
+        room_id=bedroom.id,
+        name="Bedroom Light",
+        ha_entity_id="light.bedroom_demo",
+        device_type="light",
+        is_active=True,
+        state="on",
+        config={},
+    )
+    db_session.add_all([patient, light])
+    await db_session.commit()
+    await db_session.refresh(patient)
+    await db_session.refresh(dining)
+
+    response = await client.post(
+        "/api/demo/physical-model/location-events",
+        json={
+            "room_alias": "Kitchen / Dining",
+            "actor_type": "patient",
+            "actor_id": patient.id,
+            "confidence": 0.94,
+            "source": "yolo_mockup",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["mapped_room"]["room_id"] == dining.id
+    assert body["actor"]["room_id"] == dining.id
+    assert body["previous_room_name"] == "Bedroom"
+    assert body["previous_room_devices"][0]["name"] == "Bedroom Light"
+    assert body["device_reminders"][0]["message_id"] is not None
+    assert body["device_reminders"][0]["directive_id"] is not None
+    await db_session.refresh(patient)
+    assert patient.room_id == dining.id
+
+
+@pytest.mark.asyncio
+async def test_physical_model_schedule_reminder_creates_workflow_items(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Physical Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    room = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Room 401", room_type="bedroom")
+    db_session.add(room)
+    await db_session.commit()
+
+    response = await client.post(
+        "/api/demo/physical-model/schedule-reminder",
+        json={
+            "room_alias": "Bedroom",
+            "title": "Medicine time",
+            "body": "Give the morning medicine now.",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["room"]["alias"] == "Bedroom"
+    reminder = body["reminder"]
+    assert reminder["schedule_id"] is not None
+    assert reminder["message_id"] is not None
+    assert reminder["directive_id"] is not None
+
+
+@pytest.mark.asyncio
 async def test_future_domain_crud(client: AsyncClient, db_session: AsyncSession):
     patient = Patient(
         workspace_id=1,

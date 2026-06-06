@@ -60,6 +60,7 @@ export const DEMO_THEATER_SLOTS: DemoTheaterSlot[] = [
 export const DEMO_THEATER_RESIDENT_SLOT_COUNT = DEMO_THEATER_SLOTS.filter(
   (slot) => slot.role === "resident",
 ).length;
+export const DEMO_THEATER_SLOT_COUNT = DEMO_THEATER_SLOTS.length;
 
 export function rectCenter(rect: DemoTheaterRect): DemoTheaterPosition {
   return {
@@ -85,11 +86,10 @@ export function buildDemoTheaterRooms(input: {
 }): DemoTheaterRoomView[] {
   const selectedPatient = input.patients.find((patient) => patient.id === input.selectedPatientId) ?? null;
   const selectedRoomId = selectedPatient?.room_id ?? null;
-  const residentRooms = pickResidentRooms(input.rooms, input.patients, selectedRoomId);
-  let residentIndex = 0;
+  const visibleRooms = pickVisibleRooms(input.rooms, input.patients, selectedRoomId);
 
-  return DEMO_THEATER_SLOTS.map((slot) => {
-    const room = slot.role === "resident" ? residentRooms[residentIndex++] ?? null : null;
+  return DEMO_THEATER_SLOTS.map((slot, index) => {
+    const room = visibleRooms[index] ?? null;
     const patients = room
       ? input.patients.filter((patient) => patient.room_id === room.id)
       : [];
@@ -114,15 +114,26 @@ export function buildDemoTheaterStaff(input: {
 }): DemoTheaterStaffView[] {
   const station = input.rooms.find((room) => room.slot.role === "nurse_station") ?? input.rooms[0];
   const sharedCare = input.rooms.find((room) => room.slot.role === "shared_care") ?? station;
-  const actorByUserId = new Map(
-    input.demoActors
-      .filter((actor) => actor.actor_type === "staff" || actor.actor_type === "user")
-      .map((actor) => [actor.actor_id, actor]),
-  );
+  const staffActors = input.demoActors.filter((actor) => actor.actor_type === "staff" || actor.actor_type === "user");
+  const actorByUserId = new Map(staffActors.map((actor) => [actor.actor_id, actor]));
+  const userById = new Map(input.staffUsers.map((staff) => [staff.id, staff]));
+  const currentStaffUsers = [
+    ...input.staffUsers.filter((staff) => staff.is_active),
+    ...staffActors
+      .filter((actor) => !userById.has(actor.actor_id))
+      .map((actor) => ({
+        id: actor.actor_id,
+        username: `${actor.actor_type}-${actor.actor_id}`,
+        role: actor.role ?? "staff",
+        is_active: true,
+        caregiver_id: null,
+        patient_id: null,
+        display_name: actor.display_name,
+      })),
+  ];
 
-  return input.staffUsers
-    .filter((staff) => staff.is_active && staff.role !== "admin")
-    .slice(0, 6)
+  return currentStaffUsers
+    .filter((staff) => staff.role !== "patient")
     .map((staff, index) => {
       const actor = actorByUserId.get(staff.id) ?? null;
       const actorRoom = actor?.room_id
@@ -137,13 +148,12 @@ export function buildDemoTheaterStaff(input: {
 }
 
 export function roomOccupancyLabel(room: DemoTheaterRoomView): string {
-  if (room.slot.role !== "resident") return room.slot.fallbackName;
   if (room.patients.length === 0) return "Available";
   if (room.patients.length === 1) return "1 resident";
   return `${room.patients.length} residents`;
 }
 
-function pickResidentRooms(rooms: Room[], patients: Patient[], selectedRoomId: number | null): Room[] {
+function pickVisibleRooms(rooms: Room[], patients: Patient[], selectedRoomId: number | null): Room[] {
   const roomById = new Map(rooms.map((room) => [room.id, room]));
   const occupiedRoomIds = new Set(patients.map((patient) => patient.room_id).filter((id): id is number => id != null));
   const occupiedRooms = Array.from(occupiedRoomIds)
@@ -156,8 +166,8 @@ function pickResidentRooms(rooms: Room[], patients: Patient[], selectedRoomId: n
   const selectedRoom = selectedRoomId != null ? roomById.get(selectedRoomId) ?? null : null;
   const ordered = uniqueRooms([selectedRoom, ...occupiedRooms, ...otherRooms]);
 
-  if (ordered.length <= DEMO_THEATER_RESIDENT_SLOT_COUNT) return ordered;
-  const visible = ordered.slice(0, DEMO_THEATER_RESIDENT_SLOT_COUNT);
+  if (ordered.length <= DEMO_THEATER_SLOT_COUNT) return ordered;
+  const visible = ordered.slice(0, DEMO_THEATER_SLOT_COUNT);
   if (selectedRoom && !visible.some((room) => room.id === selectedRoom.id)) {
     visible[visible.length - 1] = selectedRoom;
   }

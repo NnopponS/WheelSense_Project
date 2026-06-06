@@ -5,11 +5,16 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  Bath,
+  BedDouble,
   Camera,
   Clock3,
+  Gamepad2,
+  House,
   MapPin,
   RefreshCcw,
   ShieldAlert,
+  Utensils,
   UserRound,
   Users,
   Wifi,
@@ -32,6 +37,11 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { matchFloorRoomFromLayoutLabel } from "@/lib/floorplanRoomResolve";
 import { floorplanRoomIdToNumeric } from "@/lib/monitoringWorkspace";
+import {
+  getPhysicalModelMappingForRoomName,
+  PHYSICAL_MODEL_ROOM_MAPPINGS,
+  type PhysicalModelRoomAlias,
+} from "@/lib/physical-model-demo";
 import type { Facility, Floor, Room, SmartDevice } from "@/lib/types";
 import FloorplanCanvas, {
   type FloorplanRoomChip,
@@ -101,6 +111,13 @@ type PresenceRoom = FloorplanPresenceOut["rooms"][number] & {
 
 type PresenceResponse = Omit<FloorplanPresenceOut, "rooms"> & {
   rooms: PresenceRoom[];
+};
+
+type ViewMode = "list" | "floorplan" | "pixel";
+
+type FloorplanRoomEntry = {
+  room: FloorplanRoomShape;
+  presenceRoom: PresenceRoom | null;
 };
 
 function safeRoomName(value: string | null | undefined): string {
@@ -280,6 +297,174 @@ function buildPresenceMeta(room: PresenceRoom, roleBase: string | null): Floorpl
   };
 }
 
+function physicalRoomIcon(alias: PhysicalModelRoomAlias) {
+  if (alias === "Bedroom") return BedDouble;
+  if (alias === "Living Room") return House;
+  if (alias === "Bathroom") return Bath;
+  return Utensils;
+}
+
+function isDeviceLikelyOn(device: RoomSmartDeviceStateSummary): boolean {
+  const state = (device.state ?? "").trim().toLowerCase();
+  return ["on", "heat", "cool", "fan_only", "dry", "auto"].includes(state);
+}
+
+function PhysicalModelPixelOverlay({
+  roomEntries,
+  roomMetaById,
+  selectedId,
+  onSelect,
+}: {
+  roomEntries: FloorplanRoomEntry[];
+  roomMetaById: Record<string, FloorplanRoomMeta>;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
+  const matchedEntryIds = new Set<string>();
+  const physicalRooms = PHYSICAL_MODEL_ROOM_MAPPINGS.map((mapping) => {
+    const entry =
+      roomEntries.find((candidate) => {
+        const name = candidate.presenceRoom?.room_name ?? candidate.room.label;
+        return getPhysicalModelMappingForRoomName(name)?.alias === mapping.alias;
+      }) ?? null;
+    if (entry) matchedEntryIds.add(entry.room.id);
+    return { mapping, entry };
+  });
+  const contextEntries = roomEntries.filter((entry) => !matchedEntryIds.has(entry.room.id)).slice(0, 8);
+
+  return (
+    <div className="space-y-3">
+      <div
+        className="rounded-xl border-2 border-slate-500 bg-slate-900 p-3 text-slate-100 shadow-inner"
+        style={{ imageRendering: "pixelated" }}
+      >
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Gamepad2 className="h-4 w-4 text-cyan-200" />
+            <span className="font-mono text-sm font-semibold uppercase tracking-wide">
+              Physical model overlay
+            </span>
+          </div>
+          <Badge variant="outline" className="border-cyan-200/50 bg-cyan-950/50 font-mono text-cyan-100">
+            4 mapped rooms
+          </Badge>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {physicalRooms.map(({ mapping, entry }) => {
+            const Icon = physicalRoomIcon(mapping.alias);
+            const presenceRoom = entry?.presenceRoom ?? null;
+            const meta = entry ? roomMetaById[entry.room.id] : null;
+            const occupants = getRoomOccupants(presenceRoom).slice(0, 5);
+            const devices = (presenceRoom?.smart_devices_summary ?? []).slice(0, 5);
+            const activeDevices = devices.filter(isDeviceLikelyOn).length;
+            const isSelected = Boolean(entry && entry.room.id === selectedId);
+            const toneClass =
+              meta?.tone === "critical"
+                ? "border-red-400 bg-red-950/70"
+                : meta?.tone === "warning"
+                  ? "border-amber-300 bg-amber-950/70"
+                  : meta?.tone === "success"
+                    ? "border-emerald-300 bg-emerald-950/70"
+                    : "border-slate-400 bg-slate-800";
+            return (
+              <button
+                key={mapping.alias}
+                type="button"
+                className={`min-h-[13rem] rounded-none border-4 p-3 text-left font-mono shadow-[inset_0_0_0_2px_rgba(255,255,255,0.12)] transition-colors ${
+                  isSelected ? "outline outline-4 outline-cyan-200" : ""
+                } ${toneClass}`}
+                onClick={() => onSelect(entry?.room.id ?? null)}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-sm font-bold text-white">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{mapping.alias}</span>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-slate-300">
+                      {presenceRoom?.room_name ?? entry?.room.label ?? mapping.sourceRoomNames[0]}
+                    </p>
+                  </div>
+                  <span className="border border-slate-300 bg-black/60 px-1.5 py-0.5 text-[10px] text-cyan-100">
+                    YOLO
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <div className="border border-slate-500 bg-black/35 p-2">
+                    <p className="text-slate-400">People</p>
+                    <p className="mt-1 text-lg font-bold text-white">{occupants.length}</p>
+                  </div>
+                  <div className="border border-slate-500 bg-black/35 p-2">
+                    <p className="text-slate-400">Devices on</p>
+                    <p className="mt-1 text-lg font-bold text-white">{activeDevices}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {occupants.length > 0 ? (
+                    occupants.map((occupant) => (
+                      <span
+                        key={`${occupant.actor_type}-${occupant.actor_id}`}
+                        className="border border-white/40 bg-black/60 px-1.5 py-0.5 text-[10px] text-white"
+                      >
+                        {occupant.display_name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[10px] text-slate-400">No visible occupant</span>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {devices.length > 0 ? (
+                    devices.map((device) => (
+                      <span
+                        key={device.id}
+                        className={`border px-1.5 py-0.5 text-[10px] ${
+                          isDeviceLikelyOn(device)
+                            ? "border-amber-200 bg-amber-500/20 text-amber-100"
+                            : "border-slate-500 bg-black/30 text-slate-300"
+                        }`}
+                      >
+                        {device.device_type}: {device.state ?? "unknown"}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[10px] text-slate-400">No linked devices</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {contextEntries.length > 0 ? (
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {contextEntries.map((entry) => {
+            const occupants = getRoomOccupants(entry.presenceRoom).slice(0, 2);
+            return (
+              <button
+                key={entry.room.id}
+                type="button"
+                className={`rounded-lg border p-3 text-left text-xs transition-colors ${
+                  entry.room.id === selectedId
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-surface-container-low"
+                }`}
+                onClick={() => onSelect(entry.room.id)}
+              >
+                <p className="truncate font-semibold">{entry.presenceRoom?.room_name ?? entry.room.label}</p>
+                <p className="mt-1 truncate text-muted-foreground">
+                  {occupants.map((item) => item.display_name).join(", ") || "Facility context"}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SummaryStat({
   icon: Icon,
   label,
@@ -361,10 +546,7 @@ function OccupantList({
   );
 }
 
-type RoomEntry = {
-  room: FloorplanRoomShape;
-  presenceRoom: PresenceRoom | null;
-};
+type RoomEntry = FloorplanRoomEntry;
 
 function RoomInspectorContent({
   selectedRoomEntry,
@@ -589,7 +771,7 @@ export default function FloorplanRoleViewer({
   const [facilityId, setFacilityId] = useState<number | "">(() => initialFacilityId ?? "");
   const [floorId, setFloorId] = useState<number | "">(() => initialFloorId ?? "");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "floorplan">("floorplan");
+  const [viewMode, setViewMode] = useState<ViewMode>("floorplan");
   const [captureMessage, setCaptureMessage] = useState<string | null>(null);
   const [captureBusy, setCaptureBusy] = useState(false);
 
@@ -929,6 +1111,15 @@ export default function FloorplanRoleViewer({
               >
                 Floorplan
               </Button>
+              <Button
+                type="button"
+                variant={viewMode === "pixel" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 text-xs px-3"
+                onClick={() => setViewMode("pixel")}
+              >
+                Pixel/Game
+              </Button>
             </div>
             <Badge variant="outline">{presenceRooms.length || rooms.length} rooms</Badge>
             <Badge variant="success">{occupiedRooms} occupied</Badge>
@@ -1087,6 +1278,13 @@ export default function FloorplanRoleViewer({
                     );
                   })}
                 </div>
+              ) : viewMode === "pixel" ? (
+                <PhysicalModelPixelOverlay
+                  roomEntries={roomEntries}
+                  roomMetaById={roomMetaById}
+                  selectedId={visibleSelectedId}
+                  onSelect={setSelectedId}
+                />
               ) : (
                 <FloorplanCanvas
                   readOnly

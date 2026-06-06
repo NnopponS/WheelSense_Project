@@ -91,6 +91,9 @@ const PATIENT_ROOM_OFFSETS: DemoTheaterPosition[] = [
   { x: 58, y: 59 },
   { x: 38, y: 61 },
   { x: 72, y: 55 },
+  { x: 50, y: 43 },
+  { x: 28, y: 47 },
+  { x: 78, y: 72 },
 ];
 
 const STAFF_ROOM_OFFSETS: Record<DemoTheaterRoomRole, DemoTheaterPosition[]> = {
@@ -98,24 +101,34 @@ const STAFF_ROOM_OFFSETS: Record<DemoTheaterRoomRole, DemoTheaterPosition[]> = {
     { x: 72, y: 62 },
     { x: 56, y: 58 },
     { x: 42, y: 60 },
+    { x: 66, y: 42 },
+    { x: 36, y: 74 },
   ],
   nurse_station: [
     { x: 51, y: 58 },
     { x: 67, y: 60 },
     { x: 34, y: 61 },
     { x: 79, y: 54 },
+    { x: 43, y: 42 },
+    { x: 58, y: 75 },
   ],
   shared_care: [
     { x: 38, y: 58 },
     { x: 61, y: 59 },
+    { x: 48, y: 43 },
+    { x: 72, y: 72 },
   ],
   therapy: [
     { x: 60, y: 61 },
     { x: 42, y: 57 },
+    { x: 74, y: 44 },
+    { x: 31, y: 73 },
   ],
   dining: [
     { x: 38, y: 61 },
     { x: 64, y: 58 },
+    { x: 50, y: 42 },
+    { x: 76, y: 72 },
   ],
 };
 
@@ -432,7 +445,7 @@ function PatientActor({
         frames={frames}
         intervalMs={isSelected && visualState === "falling" ? 145 : 220}
       />
-      <div className="demo-nameplate absolute -bottom-2 left-1/2 max-w-[8.5rem] -translate-x-1/2 truncate px-2 py-1 text-[9px]">
+      <div className="demo-nameplate absolute -top-3 left-1/2 z-40 max-w-[8.5rem] -translate-x-1/2 truncate px-2 py-1 text-[9px]">
         {patientName(patient)}
       </div>
     </div>
@@ -454,9 +467,6 @@ function TheaterRoom({
   acFrames: string[];
   deviceStates: Record<DeviceKind, boolean>;
 }) {
-  const visiblePatients = room.patients.slice(0, 3);
-  const extraPatientCount = Math.max(0, room.patients.length - visiblePatients.length);
-
   return (
     <div
       className={cn("demo-theater-room absolute", roomToneClass(room, roomTone))}
@@ -473,7 +483,7 @@ function TheaterRoom({
         {room.devices.length > 0 && <span>{room.devices.length} devices</span>}
       </div>
       <RoomFurniture acFrames={acFrames} deviceStates={deviceStates} room={room} />
-      {visiblePatients.map((patient, index) => (
+      {room.patients.map((patient, index) => (
         <PatientActor
           index={index}
           key={patient.id}
@@ -482,9 +492,6 @@ function TheaterRoom({
           visualState={patientVisual}
         />
       ))}
-      {extraPatientCount > 0 && (
-        <div className="demo-room-overflow">+{extraPatientCount}</div>
-      )}
     </div>
   );
 }
@@ -528,7 +535,7 @@ function StaffActor({
         frames={frames}
         intervalMs={staffVisual === "walking" && isResponder ? 120 : 190}
       />
-      <div className="demo-nameplate absolute -bottom-2 left-1/2 max-w-[8rem] -translate-x-1/2 truncate px-2 py-1 text-[9px]">
+      <div className="demo-nameplate absolute -top-3 left-1/2 z-40 max-w-[8rem] -translate-x-1/2 truncate px-2 py-1 text-[9px]">
         {staffView.user.display_name}
       </div>
     </div>
@@ -632,8 +639,7 @@ export default function DemoTheaterClient() {
   const activeAlertStatus = alertQuery.data?.status ?? (currentAlertId ? "active" : "none");
   const activeTaskStatus = currentTask?.status ?? "none";
   const isBusy = dispatchRunning || patientsQuery.isLoading || roomsQuery.isLoading;
-  const residentRoomCount = theaterRooms.filter((room) => room.slot.role === "resident").length;
-  const occupiedRoomCount = theaterRooms.filter((room) => room.slot.role === "resident" && room.patients.length > 0).length;
+  const visibleRoomCount = theaterRooms.filter((room) => room.room != null).length;
   const acFrames = deviceStates.ac
     ? demoTheaterAssets.devices.airconActive
     : demoTheaterAssets.devices.airconIdle;
@@ -895,11 +901,6 @@ export default function DemoTheaterClient() {
   return (
     <div className="demo-theater-shell min-h-[calc(100vh-5rem)] bg-[var(--demo-bg)] text-slate-100">
       <style>{`
-        @font-face {
-          font-family: DemoPixel;
-          src: url("${demoTheaterAssets.fontUrl}") format("truetype");
-          font-display: swap;
-        }
         .demo-theater-shell {
           --demo-bg: #0f1215;
           --demo-panel: #171c20;
@@ -912,14 +913,36 @@ export default function DemoTheaterClient() {
           --demo-amber: #f6cf73;
           --demo-danger: #f87171;
           --demo-success: #6ee7b7;
-          font-family: DemoPixel, ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
           letter-spacing: 0;
         }
         .demo-pixel {
-          font-family: DemoPixel, ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
           letter-spacing: 0;
         }
+        .demo-theater-main {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          gap: 16px;
+          width: 100%;
+          max-width: 1680px;
+          margin: 0 auto;
+          padding: 16px;
+        }
+        .demo-theater-stage-column {
+          flex: 999 1 820px;
+          min-width: 0;
+          max-width: 100%;
+        }
+        .demo-theater-controls {
+          flex: 1 0 360px;
+          min-width: min(100%, 360px);
+          max-width: 420px;
+        }
         .demo-theater-board {
+          width: 100%;
+          max-width: 100%;
           background:
             linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
             linear-gradient(0deg, rgba(255,255,255,0.025) 1px, transparent 1px),
@@ -1048,18 +1071,6 @@ export default function DemoTheaterClient() {
           text-align: center;
           text-shadow: 0 2px 0 #000;
         }
-        .demo-room-overflow {
-          position: absolute;
-          z-index: 28;
-          right: 8px;
-          bottom: 22px;
-          border: 1px solid rgba(255,255,255,0.18);
-          border-radius: 3px;
-          background: rgba(0,0,0,0.6);
-          color: white;
-          font-size: 9px;
-          padding: 4px 5px;
-        }
         .demo-panel {
           border: 3px solid rgba(159, 182, 199, 0.48);
           border-radius: 6px;
@@ -1090,6 +1101,13 @@ export default function DemoTheaterClient() {
             animation: none;
           }
         }
+        @media (max-width: 1280px) {
+          .demo-theater-stage-column,
+          .demo-theater-controls {
+            flex-basis: 100%;
+            max-width: 100%;
+          }
+        }
       `}</style>
 
       <section className="border-b-4 border-[var(--demo-line)] bg-[var(--demo-panel)] px-4 py-4 md:px-6">
@@ -1112,15 +1130,15 @@ export default function DemoTheaterClient() {
               Task {activeTaskStatus}
             </Badge>
             <Badge variant="outline" className="border-white/20 text-slate-200">
-              Rooms {occupiedRoomCount}/{residentRoomCount}
+              Rooms {visibleRoomCount}/{rooms.length || theaterRooms.length}
             </Badge>
           </div>
         </div>
       </section>
 
-      <main className="mx-auto grid max-w-[1680px] gap-4 px-4 py-4 2xl:grid-cols-[minmax(0,1fr)_380px]">
-        <section className="min-w-0">
-          <div className="demo-theater-board relative h-[560px] overflow-hidden rounded-[6px] border-4 border-[var(--demo-pixel-border)] shadow-2xl md:h-[620px] 2xl:aspect-[16/9] 2xl:h-auto 2xl:min-h-[480px]">
+      <main className="demo-theater-main">
+        <section className="demo-theater-stage-column">
+          <div className="demo-theater-board relative h-[560px] overflow-hidden rounded-[6px] border-4 border-[var(--demo-pixel-border)] shadow-2xl md:h-[640px]">
             <div className="demo-hall demo-hall-horizontal-top" />
             <div className="demo-hall demo-hall-horizontal-bottom" />
             <div className="demo-hall demo-hall-vertical" />
@@ -1170,7 +1188,7 @@ export default function DemoTheaterClient() {
           </div>
         </section>
 
-        <aside className="grid content-start gap-4">
+        <aside className="demo-theater-controls grid content-start gap-4">
           <section className="demo-panel p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -1258,8 +1276,8 @@ export default function DemoTheaterClient() {
                 Staff
               </div>
               <div className="rounded-[3px] border border-white/10 bg-black/30 px-2 py-2">
-                <div className="text-base text-white">{theaterRooms.length}</div>
-                Zones
+                <div className="text-base text-white">{visibleRoomCount}</div>
+                Rooms
               </div>
             </div>
           </section>

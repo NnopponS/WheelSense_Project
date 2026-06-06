@@ -28,6 +28,11 @@ from app.schemas.demo_control import (
     DemoScenarioStopRequest,
     DemoWorkflowAdvanceRequest,
     DemoWorkflowAdvanceResponse,
+    PhysicalModelLocationEventIn,
+    PhysicalModelLocationEventOut,
+    PhysicalModelRoomOut,
+    PhysicalModelScheduleReminderIn,
+    PhysicalModelScheduleReminderOut,
     SimulatorCommandIn,
     SimulatorCommandOut,
     SimulatorResetResponse,
@@ -39,6 +44,11 @@ from app.services.demo_control import (
     stop_demo_scenario,
 )
 from app.services.device_management import publish_mqtt
+from app.services.physical_model_demo import (
+    apply_location_event,
+    list_physical_rooms,
+    trigger_schedule_reminder,
+)
 
 router = APIRouter()
 logger = logging.getLogger("wheelsense.demo_control")
@@ -90,6 +100,51 @@ async def get_demo_control_state(
     _: User = Depends(RequireRole(["admin"])),
 ):
     return await demo_control_service.list_actor_state(db, ws.id)
+
+
+@router.get("/physical-model/rooms", response_model=list[PhysicalModelRoomOut])
+async def get_physical_model_rooms(
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(["admin"])),
+):
+    return await list_physical_rooms(db, ws.id)
+
+
+@router.post("/physical-model/location-events", response_model=PhysicalModelLocationEventOut)
+async def apply_physical_model_location_event(
+    payload: PhysicalModelLocationEventIn,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(["admin"])),
+):
+    try:
+        return await apply_location_event(
+            db,
+            ws.id,
+            actor_user_id=current_user.id,
+            event=payload,
+        )
+    except ValueError as exc:
+        raise _bad_request(exc) from exc
+
+
+@router.post("/physical-model/schedule-reminder", response_model=PhysicalModelScheduleReminderOut)
+async def trigger_physical_model_schedule_reminder(
+    payload: PhysicalModelScheduleReminderIn,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(["admin"])),
+):
+    try:
+        return await trigger_schedule_reminder(
+            db,
+            ws.id,
+            actor_user_id=current_user.id,
+            payload=payload,
+        )
+    except ValueError as exc:
+        raise _bad_request(exc) from exc
 
 
 @router.post("/reset", response_model=DemoResetResponse)

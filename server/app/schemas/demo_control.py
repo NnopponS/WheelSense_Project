@@ -30,6 +30,65 @@ class DemoControlStateOut(BaseModel):
     actions: list[DemoControlActionOut] = Field(default_factory=list)
 
 
+class PhysicalModelRoomOut(BaseModel):
+    alias: str
+    room_id: int
+    room_name: str
+    physical_zone: str
+
+
+class PhysicalModelLocationEventIn(BaseModel):
+    room_alias: str = Field(min_length=1, max_length=64)
+    mapped_room_id: Optional[int] = Field(default=None, ge=1)
+    actor_type: Literal["patient", "staff"] = "patient"
+    actor_id: int = Field(ge=1)
+    confidence: float = Field(default=0.92, ge=0.0, le=1.0)
+    source: str = Field(default="yolo_mockup", min_length=1, max_length=64)
+    force_device_reminder: bool = False
+
+
+class PhysicalModelDeviceSummaryOut(BaseModel):
+    id: int
+    name: str
+    device_type: str
+    state: str
+    room_id: Optional[int] = None
+
+
+class PhysicalModelWorkflowReminderOut(BaseModel):
+    message_id: Optional[int] = None
+    directive_id: Optional[int] = None
+    schedule_id: Optional[int] = None
+    title: str
+
+
+class PhysicalModelLocationEventOut(BaseModel):
+    event: PhysicalModelLocationEventIn
+    mapped_room: PhysicalModelRoomOut
+    actor: DemoActorOut
+    previous_room_id: Optional[int] = None
+    previous_room_name: Optional[str] = None
+    device_reminders: list[PhysicalModelWorkflowReminderOut] = Field(default_factory=list)
+    previous_room_devices: list[PhysicalModelDeviceSummaryOut] = Field(default_factory=list)
+
+
+class PhysicalModelScheduleReminderIn(BaseModel):
+    title: str = Field(default="Medication round due", min_length=1, max_length=128)
+    body: str = Field(
+        default="Demo schedule reminder: check the resident, confirm the routine, and record completion.",
+        min_length=1,
+        max_length=1000,
+    )
+    room_alias: Optional[str] = Field(default=None, max_length=64)
+    patient_id: Optional[int] = Field(default=None, ge=1)
+    target_role: str = Field(default="head_nurse", min_length=1, max_length=32)
+
+
+class PhysicalModelScheduleReminderOut(BaseModel):
+    room: Optional[PhysicalModelRoomOut] = None
+    reminder: PhysicalModelWorkflowReminderOut
+
+
 class DemoActorMoveRequest(BaseModel):
     room_id: int = Field(ge=1)
     note: str = ""

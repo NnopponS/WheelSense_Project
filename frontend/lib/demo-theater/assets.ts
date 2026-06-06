@@ -68,20 +68,14 @@ export const demoTheaterAssets = {
     nurse: {
       idle: directedRotations("characters/a_nurse"),
       phone: {
-        south: numberedFrames(
-          "characters/a_nurse/animations/playing_the_smart_phone-73a2ede8/south",
-          11,
-        ),
+        south: [asset("characters/a_nurse/rotations/south.png")],
       },
       walk: directedFrames("characters/a_nurse/animations/Walking-f30a6892", 6),
     },
     maleNurse: {
       idle: directedRotations("characters/a_male_nurse"),
       phone: {
-        south: numberedFrames(
-          "characters/a_male_nurse/animations/playing_the_smart_phone-291d73e2/south",
-          9,
-        ),
+        south: [asset("characters/a_male_nurse/rotations/south.png")],
       },
       walk: {
         north: numberedFrames("characters/a_male_nurse/animations/Walking-5950b10a/north", 6),
@@ -102,40 +96,22 @@ export const demoTheaterAssets = {
     krit: {
       label: "Krit",
       idle: numberedFrames("characters/Krit/animations/Breathing_Idle-fd118402/south", 4),
-      falling: numberedFrames(
-        "characters/Krit/animations/He_s_falling_on_the_floor-d53a0ac4/south",
-        9,
-      ),
-      helping: numberedFrames(
-        "characters/Krit/animations/The_female_nurse_is_helping_this_old_man_to_stand-e95526fb/south",
-        9,
-      ),
+      falling: numberedFrames("characters/Krit/animations/Breathing_Idle-fd118402/south", 4),
+      helping: [asset("characters/Krit/rotations/south.png")],
       recovered: [asset("characters/Krit/rotations/south.png")],
     },
     rattana: {
       label: "Rattana",
       idle: [asset("characters/Rattana/rotations/south.png")],
-      falling: numberedFrames(
-        "characters/Rattana/animations/Grandma_falling_down_on_the_floor_from_wheelchair.-b6b830c9/south",
-        9,
-      ),
-      helping: numberedFrames(
-        "characters/Rattana/animations/The_female_doctor_helping_the_grandma_to_sit_wheel-24d23c2a/south",
-        9,
-      ),
+      falling: [asset("characters/Rattana/rotations/south.png")],
+      helping: [asset("characters/Rattana/rotations/south.png")],
       recovered: [asset("characters/Rattana/rotations/south.png")],
     },
     wichai: {
       label: "Wichai",
       idle: [asset("characters/Wichai/rotations/south.png")],
-      falling: numberedFrames(
-        "characters/Wichai/animations/The_old_man_clutched_his_chest_hunched_over_and_wr-d4f1725f/south",
-        9,
-      ),
-      helping: numberedFrames(
-        "characters/Wichai/animations/The_doctor_doing_CPR_help_The_bedridden_Patient.-15603b38/south",
-        9,
-      ),
+      falling: [asset("characters/Wichai/rotations/south.png")],
+      helping: [asset("characters/Wichai/rotations/south.png")],
       recovered: [asset("characters/Wichai/rotations/south.png")],
     },
   } satisfies Record<
