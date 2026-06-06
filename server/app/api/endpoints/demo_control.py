@@ -28,6 +28,8 @@ from app.schemas.demo_control import (
     DemoScenarioStopRequest,
     DemoWorkflowAdvanceRequest,
     DemoWorkflowAdvanceResponse,
+    PhysicalModelDeviceControlIn,
+    PhysicalModelDeviceControlOut,
     PhysicalModelLocationEventIn,
     PhysicalModelLocationEventOut,
     PhysicalModelRoomOut,
@@ -46,6 +48,7 @@ from app.services.demo_control import (
 from app.services.device_management import publish_mqtt
 from app.services.physical_model_demo import (
     apply_location_event,
+    build_physical_model_device_control,
     list_physical_rooms,
     trigger_schedule_reminder,
 )
@@ -145,6 +148,38 @@ async def trigger_physical_model_schedule_reminder(
         )
     except ValueError as exc:
         raise _bad_request(exc) from exc
+
+
+@router.post("/physical-model/device-control", response_model=PhysicalModelDeviceControlOut)
+async def control_physical_model_device(
+    payload: PhysicalModelDeviceControlIn,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    _: User = Depends(RequireRole(["admin"])),
+):
+    """Mirror a mapped room device command to the 4-room physical model board.
+
+    The board contract comes from the archived model-mockup branch:
+    `WheelSense/<bedroom|bathroom|kitchen|livingroom>/control` with a JSON
+    appliance command. Normal HA control remains the source for device state.
+    """
+    try:
+        command = await build_physical_model_device_control(
+            db,
+            ws.id,
+            payload=payload,
+        )
+    except ValueError as exc:
+        raise _bad_request(exc) from exc
+
+    try:
+        await publish_mqtt(command.topic, command.payload)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to publish physical model board command: {exc}",
+        ) from exc
+    return command
 
 
 @router.post("/reset", response_model=DemoResetResponse)

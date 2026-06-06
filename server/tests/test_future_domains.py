@@ -751,6 +751,58 @@ async def test_physical_model_schedule_reminder_creates_workflow_items(
 
 
 @pytest.mark.asyncio
+async def test_physical_model_device_control_publishes_legacy_board_command(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Physical Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    room = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Room 402", room_type="living")
+    db_session.add(room)
+    await db_session.flush()
+    device = SmartDevice(
+        workspace_id=admin_user.workspace_id,
+        room_id=room.id,
+        name="Living Room AC",
+        ha_entity_id="climate.living_room_ac",
+        device_type="climate",
+        is_active=True,
+        state="off",
+        config={},
+    )
+    db_session.add(device)
+    await db_session.commit()
+
+    with patch("app.api.endpoints.demo_control.publish_mqtt", new_callable=AsyncMock) as publish:
+        response = await client.post(
+            "/api/demo/physical-model/device-control",
+            json={
+                "device_id": device.id,
+                "room_alias": "Living Room",
+                "mapped_room_id": room.id,
+                "action": "turn_on",
+            },
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["topic"] == "WheelSense/livingroom/control"
+    assert body["mapped_room"]["alias"] == "Living Room"
+    assert body["device"]["id"] == device.id
+    publish.assert_awaited_once()
+    topic, payload = publish.await_args.args
+    assert topic == "WheelSense/livingroom/control"
+    assert payload["room"] == "livingroom"
+    assert payload["appliance"] == "AC"
+    assert payload["state"] is True
+
+
+@pytest.mark.asyncio
 async def test_future_domain_crud(client: AsyncClient, db_session: AsyncSession):
     patient = Patient(
         workspace_id=1,

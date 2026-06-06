@@ -9,11 +9,16 @@ import {
   BedDouble,
   Camera,
   Clock3,
+  Fan,
   Gamepad2,
   House,
+  Lightbulb,
   MapPin,
   RefreshCcw,
   ShieldAlert,
+  Snowflake,
+  Siren,
+  Tv,
   Utensils,
   UserRound,
   Users,
@@ -22,8 +27,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
+import { demoTheaterAssets, patientAssetKeyForName } from "@/lib/demo-theater/assets";
+import {
+  DEMO_THEATER_SLOTS,
+  type DemoTheaterRoomRole,
+} from "@/lib/demo-theater/layout";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import type { FloorplanPresenceOut } from "@/lib/api/task-scope-types";
@@ -118,6 +128,21 @@ type ViewMode = "list" | "floorplan" | "pixel";
 type FloorplanRoomEntry = {
   room: FloorplanRoomShape;
   presenceRoom: PresenceRoom | null;
+};
+
+type DemoControlActorState = {
+  actor_type: string;
+  actor_id: number;
+  display_name: string;
+  role?: string | null;
+  room_id?: number | null;
+  room_name?: string | null;
+  source?: string | null;
+  updated_at?: string | null;
+};
+
+type DemoControlStateResponse = {
+  actors?: DemoControlActorState[];
 };
 
 function safeRoomName(value: string | null | undefined): string {
@@ -309,158 +334,312 @@ function isDeviceLikelyOn(device: RoomSmartDeviceStateSummary): boolean {
   return ["on", "heat", "cool", "fan_only", "dry", "auto"].includes(state);
 }
 
+function roomRoleIcon(role: DemoTheaterRoomRole) {
+  if (role === "nurse_station") return ShieldAlert;
+  if (role === "therapy") return Activity;
+  if (role === "shared_care") return Users;
+  if (role === "dining") return Utensils;
+  return BedDouble;
+}
+
+function deviceIcon(device: RoomSmartDeviceStateSummary) {
+  const label = `${device.device_type} ${device.name} ${device.ha_entity_id ?? ""}`.toLowerCase();
+  if (label.includes("fan")) return Fan;
+  if (label.includes("climate") || label.includes("air") || label.includes("ac")) return Snowflake;
+  if (label.includes("tv") || label.includes("television")) return Tv;
+  if (label.includes("alarm") || label.includes("siren")) return Siren;
+  return Lightbulb;
+}
+
+function deviceKindLabel(device: RoomSmartDeviceStateSummary): string {
+  const label = `${device.device_type} ${device.name} ${device.ha_entity_id ?? ""}`.toLowerCase();
+  if (label.includes("fan")) return "fan";
+  if (label.includes("climate") || label.includes("air") || label.includes("ac")) return "ac";
+  if (label.includes("tv") || label.includes("television")) return "tv";
+  if (label.includes("alarm") || label.includes("siren")) return "alarm";
+  return "light";
+}
+
+function actorSpriteSource(occupant: RoomOccupant, index: number, hasAlert: boolean, tick: number): string {
+  const isStaff = occupant.actor_type === "staff" || occupant.actor_type === "user";
+  if (isStaff) {
+    const staffAsset = index % 2 === 0 ? demoTheaterAssets.staff.nurse : demoTheaterAssets.staff.maleNurse;
+    const frames = staffAsset.walk.south.length > 0 ? staffAsset.walk.south : staffAsset.idle.south;
+    return frames[tick % frames.length];
+  }
+
+  const patientKey = patientAssetKeyForName(occupant.display_name, occupant.actor_id ?? index);
+  const patientAsset = demoTheaterAssets.patients[patientKey];
+  const frames = hasAlert ? patientAsset.falling : patientAsset.idle;
+  return frames[tick % frames.length];
+}
+
+function mergeRoomDevices(
+  presenceRoom: PresenceRoom | null,
+  devicesByRoomId: Record<number, RoomSmartDeviceStateSummary[]>,
+  roomId: number | null,
+): RoomSmartDeviceStateSummary[] {
+  const devices = presenceRoom?.smart_devices_summary ?? [];
+  const liveDevices = roomId != null ? devicesByRoomId[roomId] ?? [] : [];
+  const merged = new Map<number, RoomSmartDeviceStateSummary>();
+  for (const device of devices) merged.set(device.id, device);
+  for (const device of liveDevices) merged.set(device.id, device);
+  return Array.from(merged.values());
+}
+
+function numericRoomIdFromEntry(entry: FloorplanRoomEntry | null): number | null {
+  if (!entry) return null;
+  if (entry.presenceRoom?.room_id != null) return entry.presenceRoom.room_id;
+  const parsed = floorplanRoomIdToNumeric(entry.room.id);
+  if (parsed != null) return parsed;
+  return /^\d+$/.test(entry.room.id.trim()) ? Number(entry.room.id.trim()) : null;
+}
+
+function mergeOccupants(primary: RoomOccupant[], fallback: RoomOccupant[]): RoomOccupant[] {
+  const merged = new Map<string, RoomOccupant>();
+  for (const occupant of primary) merged.set(`${occupant.actor_type}-${occupant.actor_id}`, occupant);
+  for (const occupant of fallback) {
+    const type = occupant.actor_type === "user" ? "staff" : occupant.actor_type;
+    merged.set(`${type}-${occupant.actor_id}`, { ...occupant, actor_type: type });
+  }
+  return Array.from(merged.values());
+}
+
 function PhysicalModelPixelOverlay({
   roomEntries,
   roomMetaById,
+  devicesByRoomId,
+  demoOccupantsByRoomId,
   selectedId,
+  deviceBusyId,
+  actionMessage,
   onSelect,
+  onControlDevice,
 }: {
   roomEntries: FloorplanRoomEntry[];
   roomMetaById: Record<string, FloorplanRoomMeta>;
+  devicesByRoomId: Record<number, RoomSmartDeviceStateSummary[]>;
+  demoOccupantsByRoomId: Record<number, RoomOccupant[]>;
   selectedId: string | null;
+  deviceBusyId: number | null;
+  actionMessage: string | null;
   onSelect: (id: string | null) => void;
+  onControlDevice: (
+    device: RoomSmartDeviceStateSummary,
+    nextEnabled: boolean,
+    roomName: string | null,
+    roomId: number | null,
+  ) => void;
 }) {
-  const matchedEntryIds = new Set<string>();
-  const physicalRooms = PHYSICAL_MODEL_ROOM_MAPPINGS.map((mapping) => {
-    const entry =
-      roomEntries.find((candidate) => {
-        const name = candidate.presenceRoom?.room_name ?? candidate.room.label;
-        return getPhysicalModelMappingForRoomName(name)?.alias === mapping.alias;
-      }) ?? null;
-    if (entry) matchedEntryIds.add(entry.room.id);
-    return { mapping, entry };
-  });
-  const contextEntries = roomEntries.filter((entry) => !matchedEntryIds.has(entry.room.id)).slice(0, 8);
+  const [animationTick, setAnimationTick] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setAnimationTick((value) => (value + 1) % 10_000), 220);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const mappedRooms = new Set(PHYSICAL_MODEL_ROOM_MAPPINGS.map((mapping) => mapping.alias));
+  const boardEntries = DEMO_THEATER_SLOTS.map((slot, index) => ({
+    slot,
+    entry: roomEntries[index] ?? null,
+  }));
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div
-        className="rounded-xl border-2 border-slate-500 bg-slate-900 p-3 text-slate-100 shadow-inner"
+        className="rounded-xl border-4 border-slate-600 bg-slate-950 p-3 text-slate-100 shadow-inner"
         style={{ imageRendering: "pixelated" }}
       >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Gamepad2 className="h-4 w-4 text-cyan-200" />
-            <span className="font-mono text-sm font-semibold uppercase tracking-wide">
-              Physical model overlay
-            </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Gamepad2 className="h-4 w-4 text-cyan-200" />
+              <span className="font-mono text-sm font-semibold uppercase tracking-wide">
+                Realtime Pixel Facility Map
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-slate-300">
+              12-room WheelSense presence, actor action, alerts, and real device controls in one view.
+            </p>
           </div>
           <Badge variant="outline" className="border-cyan-200/50 bg-cyan-950/50 font-mono text-cyan-100">
-            4 mapped rooms
+            12 rooms / 4 physical
           </Badge>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {physicalRooms.map(({ mapping, entry }) => {
-            const Icon = physicalRoomIcon(mapping.alias);
+
+        {actionMessage ? (
+          <div className="mb-3 border border-cyan-200/40 bg-cyan-950/50 px-3 py-2 font-mono text-[11px] text-cyan-100">
+            {actionMessage}
+          </div>
+        ) : null}
+
+        <div className="relative h-[620px] overflow-hidden rounded-[6px] border-4 border-slate-500 bg-[#2f3937] shadow-[inset_0_0_0_6px_rgba(255,255,255,0.12)]">
+          <div className="absolute inset-0 opacity-35 [background-image:linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(rgba(255,255,255,.08)_1px,transparent_1px)] [background-size:34px_34px]" />
+          <div className="absolute left-[5%] right-[5%] top-[32%] h-[6%] border-4 border-dashed border-slate-300/70 bg-slate-950/45" />
+          <div className="absolute left-[5%] right-[5%] top-[63%] h-[6%] border-4 border-dashed border-slate-300/70 bg-slate-950/45" />
+          <div className="absolute left-[48.5%] top-[7%] h-[85%] w-[3.5%] border-4 border-dashed border-slate-300/70 bg-slate-950/45" />
+          <div className="absolute left-[44%] top-[47%] border border-slate-300/50 bg-black/70 px-2 py-1 font-mono text-[11px] text-slate-100">
+            Main Hallway
+          </div>
+
+          {boardEntries.map(({ slot, entry }) => {
             const presenceRoom = entry?.presenceRoom ?? null;
+            const roomLabel = presenceRoom?.room_name ?? entry?.room.label ?? slot.fallbackName;
+            const roomId = numericRoomIdFromEntry(entry);
+            const physicalMapping = getPhysicalModelMappingForRoomName(roomLabel);
+            const alias = physicalMapping?.alias ?? null;
+            const isPhysical = alias != null && mappedRooms.has(alias);
+            const Icon = alias ? physicalRoomIcon(alias) : roomRoleIcon(slot.role);
             const meta = entry ? roomMetaById[entry.room.id] : null;
-            const occupants = getRoomOccupants(presenceRoom).slice(0, 5);
-            const devices = (presenceRoom?.smart_devices_summary ?? []).slice(0, 5);
+            const occupants = mergeOccupants(
+              getRoomOccupants(presenceRoom),
+              roomId != null ? demoOccupantsByRoomId[roomId] ?? [] : [],
+            ).slice(0, 5);
+            const hasAlert = (presenceRoom?.alert_count ?? 0) > 0;
+            const devices = mergeRoomDevices(presenceRoom, devicesByRoomId, roomId).slice(0, 4);
             const activeDevices = devices.filter(isDeviceLikelyOn).length;
             const isSelected = Boolean(entry && entry.room.id === selectedId);
             const toneClass =
-              meta?.tone === "critical"
-                ? "border-red-400 bg-red-950/70"
-                : meta?.tone === "warning"
-                  ? "border-amber-300 bg-amber-950/70"
-                  : meta?.tone === "success"
-                    ? "border-emerald-300 bg-emerald-950/70"
-                    : "border-slate-400 bg-slate-800";
+              hasAlert || meta?.tone === "critical"
+                ? "border-red-400 bg-[#5b332e]"
+                : isSelected
+                  ? "border-cyan-200 bg-[#6c614a]"
+                  : slot.role === "nurse_station"
+                    ? "border-slate-300 bg-[#3d5560]"
+                    : slot.role === "shared_care"
+                      ? "border-slate-300 bg-[#4d563d]"
+                      : slot.role === "dining"
+                        ? "border-slate-300 bg-[#5b4b3d]"
+                        : "border-slate-300 bg-[#6e604c]";
+
             return (
-              <button
-                key={mapping.alias}
-                type="button"
-                className={`min-h-[13rem] rounded-none border-4 p-3 text-left font-mono shadow-[inset_0_0_0_2px_rgba(255,255,255,0.12)] transition-colors ${
-                  isSelected ? "outline outline-4 outline-cyan-200" : ""
-                } ${toneClass}`}
+              <div
+                key={slot.id}
+                role="button"
+                tabIndex={0}
+                className={`absolute overflow-hidden rounded-[4px] border-4 p-2 text-left font-mono text-white shadow-[inset_0_0_0_2px_rgba(0,0,0,0.28)] transition-colors ${toneClass}`}
+                style={{
+                  left: `${slot.rect.x}%`,
+                  top: `${slot.rect.y}%`,
+                  width: `${slot.rect.width}%`,
+                  height: `${slot.rect.height}%`,
+                }}
                 onClick={() => onSelect(entry?.room.id ?? null)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelect(entry?.room.id ?? null);
+                  }
+                }}
               >
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-1">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-sm font-bold text-white">
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{mapping.alias}</span>
+                    <div className="inline-flex max-w-full items-center gap-1 border border-black/50 bg-black/65 px-1.5 py-1 text-[10px] font-bold">
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{alias ?? roomLabel}</span>
                     </div>
-                    <p className="mt-1 truncate text-xs text-slate-300">
-                      {presenceRoom?.room_name ?? entry?.room.label ?? mapping.sourceRoomNames[0]}
-                    </p>
+                    {alias ? (
+                      <p className="mt-1 truncate text-[9px] text-cyan-100">{roomLabel}</p>
+                    ) : null}
                   </div>
-                  <span className="border border-slate-300 bg-black/60 px-1.5 py-0.5 text-[10px] text-cyan-100">
-                    YOLO
+                  {isPhysical ? (
+                    <span className="border border-cyan-100/70 bg-black/65 px-1 py-0.5 text-[9px] text-cyan-100">
+                      YOLO
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="absolute left-2 top-[38%] flex max-w-[48%] items-end gap-1 opacity-85">
+                  {(slot.role === "resident" || alias === "Bedroom" || alias === "Living Room") ? (
+                    <Image src={demoTheaterAssets.props.bedH} alt="" width={44} height={28} unoptimized className="h-7 w-auto" />
+                  ) : null}
+                  {slot.role === "nurse_station" ? (
+                    <Image src={demoTheaterAssets.props.nurseStation} alt="" width={54} height={42} unoptimized className="h-10 w-auto" />
+                  ) : null}
+                  {slot.role === "therapy" ? (
+                    <Image src={demoTheaterAssets.props.ivStand} alt="" width={30} height={44} unoptimized className="h-11 w-auto" />
+                  ) : null}
+                  {(slot.role === "shared_care" || slot.role === "dining") ? (
+                    <Image src={demoTheaterAssets.props.chair} alt="" width={30} height={34} unoptimized className="h-8 w-auto" />
+                  ) : null}
+                </div>
+
+                <div className="absolute bottom-10 left-2 right-2 flex min-h-[56px] items-end justify-center gap-1">
+                  {occupants.length > 0 ? (
+                    occupants.map((occupant, index) => (
+                      <div
+                        key={`${occupant.actor_type}-${occupant.actor_id}`}
+                        className="flex max-w-[4.2rem] flex-col items-center"
+                      >
+                        <Image
+                          src={actorSpriteSource(occupant, index, hasAlert, animationTick)}
+                          alt=""
+                          width={44}
+                          height={54}
+                          unoptimized
+                          className={`h-11 w-auto object-contain drop-shadow-[0_2px_0_rgba(0,0,0,0.55)] ${
+                            hasAlert && occupant.actor_type === "patient" ? "animate-pulse" : ""
+                          }`}
+                        />
+                        <span className="max-w-full truncate border border-black/50 bg-black/70 px-1 py-0.5 text-[9px] leading-none text-white">
+                          {occupant.display_name}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="border border-white/20 bg-black/40 px-1.5 py-0.5 text-[9px] text-slate-300">
+                      Available
+                    </span>
+                  )}
+                </div>
+
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2 text-[9px]">
+                  <span className="truncate text-slate-100">
+                    {occupants.length} people
+                  </span>
+                  <span className="truncate text-slate-100">
+                    {activeDevices}/{devices.length} devices on
                   </span>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                  <div className="border border-slate-500 bg-black/35 p-2">
-                    <p className="text-slate-400">People</p>
-                    <p className="mt-1 text-lg font-bold text-white">{occupants.length}</p>
-                  </div>
-                  <div className="border border-slate-500 bg-black/35 p-2">
-                    <p className="text-slate-400">Devices on</p>
-                    <p className="mt-1 text-lg font-bold text-white">{activeDevices}</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {occupants.length > 0 ? (
-                    occupants.map((occupant) => (
-                      <span
-                        key={`${occupant.actor_type}-${occupant.actor_id}`}
-                        className="border border-white/40 bg-black/60 px-1.5 py-0.5 text-[10px] text-white"
-                      >
-                        {occupant.display_name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-[10px] text-slate-400">No visible occupant</span>
-                  )}
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1">
+
+                <div className="absolute bottom-[1.65rem] left-2 right-2 flex flex-wrap justify-end gap-1">
                   {devices.length > 0 ? (
-                    devices.map((device) => (
-                      <span
-                        key={device.id}
-                        className={`border px-1.5 py-0.5 text-[10px] ${
-                          isDeviceLikelyOn(device)
-                            ? "border-amber-200 bg-amber-500/20 text-amber-100"
-                            : "border-slate-500 bg-black/30 text-slate-300"
-                        }`}
-                      >
-                        {device.device_type}: {device.state ?? "unknown"}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-[10px] text-slate-400">No linked devices</span>
-                  )}
+                    devices.map((device) => {
+                      const DeviceIcon = deviceIcon(device);
+                      const isOn = isDeviceLikelyOn(device);
+                      return (
+                        <button
+                          key={device.id}
+                          type="button"
+                          className={`inline-flex max-w-[6.7rem] items-center gap-1 border px-1.5 py-0.5 text-[9px] leading-none ${
+                            isOn
+                              ? "border-amber-100 bg-amber-500/35 text-amber-50"
+                              : "border-slate-300/70 bg-black/45 text-slate-100"
+                          } disabled:opacity-50`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onControlDevice(
+                              device,
+                              !isOn,
+                              roomLabel,
+                              roomId,
+                            );
+                          }}
+                          disabled={deviceBusyId === device.id}
+                          title={`Turn ${isOn ? "off" : "on"} ${device.name}`}
+                        >
+                          <DeviceIcon className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{deviceKindLabel(device)}: {isOn ? "on" : "off"}</span>
+                        </button>
+                      );
+                    })
+                  ) : null}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
       </div>
-
-      {contextEntries.length > 0 ? (
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          {contextEntries.map((entry) => {
-            const occupants = getRoomOccupants(entry.presenceRoom).slice(0, 2);
-            return (
-              <button
-                key={entry.room.id}
-                type="button"
-                className={`rounded-lg border p-3 text-left text-xs transition-colors ${
-                  entry.room.id === selectedId
-                    ? "border-primary bg-primary/10"
-                    : "border-border bg-surface-container-low"
-                }`}
-                onClick={() => onSelect(entry.room.id)}
-              >
-                <p className="truncate font-semibold">{entry.presenceRoom?.room_name ?? entry.room.label}</p>
-                <p className="mt-1 truncate text-muted-foreground">
-                  {occupants.map((item) => item.display_name).join(", ") || "Facility context"}
-                </p>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -756,6 +935,7 @@ export default function FloorplanRoleViewer({
 }: Props) {
   const { t } = useTranslation();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const roleBase = useMemo(() => {
     const seg = pathname.split("/").filter(Boolean)[0];
     if (
@@ -774,6 +954,8 @@ export default function FloorplanRoleViewer({
   const [viewMode, setViewMode] = useState<ViewMode>("floorplan");
   const [captureMessage, setCaptureMessage] = useState<string | null>(null);
   const [captureBusy, setCaptureBusy] = useState(false);
+  const [deviceControlBusyId, setDeviceControlBusyId] = useState<number | null>(null);
+  const [deviceControlMessage, setDeviceControlMessage] = useState<string | null>(null);
 
   const { data: facilities, isLoading: loadingFac } = useQuery({
     queryKey: ["shared", "floorplan-role-viewer", "facilities"],
@@ -847,6 +1029,25 @@ export default function FloorplanRoleViewer({
     retry: 3,
   });
 
+  const allRoomsEndpoint = effectiveFacilityId === "" ? null : "/rooms?limit=100";
+  const { data: allFacilityRooms } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "all-rooms", allRoomsEndpoint, compact],
+    queryFn: () => api.get<Room[]>(allRoomsEndpoint!),
+    enabled: !compact && Boolean(allRoomsEndpoint),
+    staleTime: allRoomsEndpoint ? getQueryStaleTimeMs("/rooms") : 0,
+    refetchInterval: allRoomsEndpoint ? getQueryPollingMs("/rooms") : false,
+    retry: 3,
+  });
+
+  const { data: demoControlState } = useQuery({
+    queryKey: ["shared", "floorplan-role-viewer", "demo-state", roleBase, compact],
+    queryFn: () => api.get<DemoControlStateResponse>("/demo/state"),
+    enabled: !compact && roleBase === "/admin",
+    staleTime: getQueryStaleTimeMs("/demo/state"),
+    refetchInterval: 5_000,
+    retry: false,
+  });
+
   const rooms = useMemo(() => {
     const fromLayout = normalizeFloorplanRooms(layoutRes?.layout_json);
     if (fromLayout.length > 0) return fromLayout;
@@ -891,6 +1092,23 @@ export default function FloorplanRoleViewer({
     refetchInterval: getQueryPollingMs("/ha/devices"),
     retry: false,
   });
+
+  const devicesByRoomId = useMemo<Record<number, RoomSmartDeviceStateSummary[]>>(() => {
+    const grouped: Record<number, RoomSmartDeviceStateSummary[]> = {};
+    for (const device of allSmartDevices ?? []) {
+      if (device.room_id == null) continue;
+      if (!grouped[device.room_id]) grouped[device.room_id] = [];
+      grouped[device.room_id].push({
+        id: device.id,
+        name: device.name,
+        device_type: device.device_type,
+        ha_entity_id: device.ha_entity_id,
+        state: device.state,
+        is_active: device.is_active,
+      });
+    }
+    return grouped;
+  }, [allSmartDevices]);
 
   useEffect(() => {
     if (compact || rooms.length === 0) return;
@@ -950,6 +1168,48 @@ export default function FloorplanRoleViewer({
       return { room, presenceRoom };
     });
   }, [floorRooms, presenceData?.rooms, rooms]);
+
+  const pixelRoomEntries = useMemo(() => {
+    if (!allFacilityRooms || allFacilityRooms.length === 0) return roomEntries;
+    const presenceRooms = presenceData?.rooms ?? [];
+    const byNumericId = new Map<number, PresenceRoom>();
+    const byLabel = new Map<string, PresenceRoom>();
+    for (const room of presenceRooms) {
+      byNumericId.set(room.room_id, room);
+      byLabel.set(safeRoomName(room.room_name), room);
+    }
+    return bootstrapRoomsFromDbFloor(allFacilityRooms).map((room) => {
+      const numericId = floorplanRoomIdToNumeric(room.id);
+      const presenceRoom =
+        (numericId != null ? byNumericId.get(numericId) : null) ??
+        byLabel.get(safeRoomName(room.label)) ??
+        null;
+      return { room, presenceRoom };
+    });
+  }, [allFacilityRooms, presenceData?.rooms, roomEntries]);
+
+  const demoOccupantsByRoomId = useMemo<Record<number, RoomOccupant[]>>(() => {
+    const grouped: Record<number, RoomOccupant[]> = {};
+    for (const actor of demoControlState?.actors ?? []) {
+      if (actor.room_id == null) continue;
+      if (!grouped[actor.room_id]) grouped[actor.room_id] = [];
+      const actorType = actor.actor_type === "user" ? "staff" : actor.actor_type;
+      grouped[actor.room_id].push({
+        actor_type: actorType,
+        actor_id: actor.actor_id,
+        display_name: actor.display_name || `${actorType} #${actor.actor_id}`,
+        subtitle: actor.source?.replace(/_/g, " ") ?? "demo state",
+        role: actor.role ?? null,
+        patient_id: actorType === "patient" ? actor.actor_id : null,
+        caregiver_id: actorType === "staff" ? actor.actor_id : null,
+        room_id: actor.room_id,
+        source: actor.source ?? "demo_state",
+        updated_at: actor.updated_at ?? null,
+        photo_url: null,
+      });
+    }
+    return grouped;
+  }, [demoControlState?.actors]);
 
   const roomMetaById = useMemo<Record<string, FloorplanRoomMeta>>(() => {
     const next: Record<string, FloorplanRoomMeta> = {};
@@ -1055,6 +1315,70 @@ export default function FloorplanRoleViewer({
       setCaptureBusy(false);
     }
   }
+
+  const controlFloorplanDevice = useCallback(
+    async (
+      device: RoomSmartDeviceStateSummary,
+      nextEnabled: boolean,
+      roomName: string | null,
+      roomId: number | null,
+    ) => {
+      const action = nextEnabled ? "turn_on" : "turn_off";
+      const mapping = getPhysicalModelMappingForRoomName(roomName);
+      const tasks: Array<{ label: string; run: Promise<unknown> }> = [
+        {
+          label: "Home Assistant",
+          run: api.controlSmartDevice(device.id, { action, parameters: {} }),
+        },
+      ];
+      if (mapping && roleBase === "/admin") {
+        tasks.push({
+          label: "physical model board",
+          run: api.post("/demo/physical-model/device-control", {
+            device_id: device.id,
+            room_alias: mapping.alias,
+            mapped_room_id: roomId ?? undefined,
+            action,
+          }),
+        });
+      }
+
+      setDeviceControlBusyId(device.id);
+      setDeviceControlMessage(`Sending ${action.replace("_", " ")} to ${device.name}...`);
+      try {
+        const results = await Promise.allSettled(tasks.map((task) => task.run));
+        const failed = results
+          .map((result, index) => ({ result, label: tasks[index].label }))
+          .filter((item) => item.result.status === "rejected");
+        const succeeded = results.length - failed.length;
+        await Promise.allSettled([
+          refetchPresence(),
+          queryClient.invalidateQueries({ queryKey: ["shared", "floorplan-role-viewer", "ha-devices"] }),
+        ]);
+        if (succeeded === 0) {
+          const first = failed[0]?.result;
+          const reason =
+            first?.status === "rejected" && first.reason instanceof ApiError
+              ? first.reason.message
+              : "Device control failed.";
+          setDeviceControlMessage(reason);
+          return;
+        }
+        if (failed.length > 0) {
+          setDeviceControlMessage(
+            `${device.name} command partly completed; ${failed.map((item) => item.label).join(", ")} failed.`,
+          );
+          return;
+        }
+        setDeviceControlMessage(`${device.name} is ${nextEnabled ? "on" : "off"}.`);
+      } catch (error) {
+        setDeviceControlMessage(error instanceof ApiError ? error.message : "Device control failed.");
+      } finally {
+        setDeviceControlBusyId(null);
+      }
+    },
+    [queryClient, refetchPresence, roleBase],
+  );
 
   const inspectorOpen =
     !compact &&
@@ -1280,10 +1604,17 @@ export default function FloorplanRoleViewer({
                 </div>
               ) : viewMode === "pixel" ? (
                 <PhysicalModelPixelOverlay
-                  roomEntries={roomEntries}
+                  roomEntries={pixelRoomEntries}
                   roomMetaById={roomMetaById}
+                  devicesByRoomId={devicesByRoomId}
+                  demoOccupantsByRoomId={demoOccupantsByRoomId}
                   selectedId={visibleSelectedId}
+                  deviceBusyId={deviceControlBusyId}
+                  actionMessage={deviceControlMessage}
                   onSelect={setSelectedId}
+                  onControlDevice={(device, nextEnabled, roomName, roomId) => {
+                    void controlFloorplanDevice(device, nextEnabled, roomName, roomId);
+                  }}
                 />
               ) : (
                 <FloorplanCanvas

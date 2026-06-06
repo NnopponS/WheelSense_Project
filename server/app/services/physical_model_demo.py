@@ -10,6 +10,8 @@ from app.models.core import Room, SmartDevice
 from app.models.patients import Patient
 from app.schemas.demo_control import (
     DemoActorOut,
+    PhysicalModelDeviceControlIn,
+    PhysicalModelDeviceControlOut,
     PhysicalModelDeviceSummaryOut,
     PhysicalModelLocationEventIn,
     PhysicalModelLocationEventOut,
@@ -39,6 +41,12 @@ PHYSICAL_MODEL_ROOM_ALIASES: tuple[PhysicalRoomAlias, ...] = (
 
 DEVICE_ON_STATES = {"on", "heat", "cool", "fan_only", "dry", "auto"}
 DEVICE_OFF_STATES = {"off", "unknown", "unavailable", "none", ""}
+PHYSICAL_BOARD_ROOM_TOPICS = {
+    "bedroom": "bedroom",
+    "living_room": "livingroom",
+    "bathroom": "bathroom",
+    "kitchen": "kitchen",
+}
 
 
 def _norm(value: str | None) -> str:
@@ -161,6 +169,80 @@ def _looks_on(device: SmartDevice) -> bool:
     if state in DEVICE_OFF_STATES:
         return False
     return False
+
+
+def _physical_board_appliance(device: SmartDevice) -> str:
+    label = _norm(f"{device.device_type} {device.name} {device.ha_entity_id}")
+    if "climate" in label or "aircon" in label or "air con" in label or " ac" in f" {label} ":
+        return "AC"
+    if "fan" in label:
+        return "fan"
+    if "tv" in label or "television" in label:
+        return "tv"
+    if "alarm" in label or "siren" in label:
+        return "alarm"
+    return "light"
+
+
+async def _resolve_physical_device_room(
+    session: AsyncSession,
+    ws_id: int,
+    payload: PhysicalModelDeviceControlIn,
+) -> tuple[SmartDevice, Room, PhysicalRoomAlias]:
+    device = await session.get(SmartDevice, payload.device_id)
+    if device is None or device.workspace_id != ws_id:
+        raise ValueError("Smart device not found in current workspace")
+    if not device.is_active:
+        raise ValueError("Smart device is marked inactive")
+    if device.room_id is None:
+        raise ValueError("Smart device is not linked to a room")
+
+    if payload.room_alias or payload.mapped_room_id is not None:
+        room, alias = await _resolve_room(
+            session,
+            ws_id,
+            room_alias=payload.room_alias,
+            mapped_room_id=payload.mapped_room_id,
+        )
+        if device.room_id != room.id:
+            raise ValueError("Smart device is not linked to the requested physical model room")
+        return device, room, alias
+
+    room = await session.get(Room, device.room_id)
+    if room is None or room.workspace_id != ws_id:
+        raise ValueError("Smart device room not found in current workspace")
+    alias = _room_alias_for_name(room.name)
+    if alias is None:
+        raise ValueError("Smart device room is not mapped to the physical model")
+    return device, room, alias
+
+
+async def build_physical_model_device_control(
+    session: AsyncSession,
+    ws_id: int,
+    *,
+    payload: PhysicalModelDeviceControlIn,
+) -> PhysicalModelDeviceControlOut:
+    device, room, alias = await _resolve_physical_device_room(session, ws_id, payload)
+    board_room = PHYSICAL_BOARD_ROOM_TOPICS.get(alias.physical_zone)
+    if board_room is None:
+        raise ValueError("Physical model room is not supported by the board controller")
+    state = payload.action in {"turn_on", "on"}
+    command: dict[str, object] = {
+        "type": "control",
+        "room": board_room,
+        "appliance": _physical_board_appliance(device),
+        "state": state,
+        "timestamp": utcnow().isoformat(),
+    }
+    if payload.value is not None:
+        command["value"] = payload.value
+    return PhysicalModelDeviceControlOut(
+        topic=f"WheelSense/{board_room}/control",
+        payload=command,
+        mapped_room=_room_out(room, alias),
+        device=_device_summary(device),
+    )
 
 
 async def _devices_requiring_reminder(

@@ -2993,6 +2993,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/demo/physical-model/device-control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Control Physical Model Device
+         * @description Mirror a mapped room device command to the 4-room physical model board.
+         *
+         *     The board contract comes from the archived model-mockup branch:
+         *     `WheelSense/<bedroom|bathroom|kitchen|livingroom>/control` with a JSON
+         *     appliance command. Normal HA control remains the source for device state.
+         */
+        post: operations["control_physical_model_device_api_demo_physical_model_device_control_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/demo/reset": {
         parameters: {
             query?: never;
@@ -7408,6 +7432,38 @@ export interface components {
             timestamp: string;
             /** Url */
             url: string;
+        };
+        /** PhysicalModelDeviceControlIn */
+        PhysicalModelDeviceControlIn: {
+            /** Device Id */
+            device_id: number;
+            /** Room Alias */
+            room_alias?: string | null;
+            /** Mapped Room Id */
+            mapped_room_id?: number | null;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "turn_on" | "turn_off" | "on" | "off";
+            /** Value */
+            value?: number | null;
+        };
+        /** PhysicalModelDeviceControlOut */
+        PhysicalModelDeviceControlOut: {
+            /**
+             * Status
+             * @default ok
+             */
+            status: string;
+            /** Topic */
+            topic: string;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            mapped_room: components["schemas"]["PhysicalModelRoomOut"];
+            device: components["schemas"]["PhysicalModelDeviceSummaryOut"];
         };
         /** PhysicalModelDeviceSummaryOut */
         PhysicalModelDeviceSummaryOut: {
@@ -16345,6 +16401,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PhysicalModelScheduleReminderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    control_physical_model_device_api_demo_physical_model_device_control_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhysicalModelDeviceControlIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhysicalModelDeviceControlOut"];
                 };
             };
             /** @description Validation Error */

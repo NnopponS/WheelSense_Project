@@ -105,7 +105,7 @@ export const ROLE_NAV_CONFIGS: Record<string, RoleNavConfig> = {
           href: "/admin/tasks",
           icon: ClipboardEdit,
           requiredCapability: "workflow.manage",
-          activeForPaths: ["/admin/workflow", "/admin/shift-checklists", "/admin/timeline", "/admin/messages", "/admin/demo-control", "/admin/demo-theater", "/admin/support", "/admin/alerts"],
+          activeForPaths: ["/admin/workflow", "/admin/shift-checklists", "/admin/timeline", "/admin/messages", "/admin/demo-control", "/admin/support", "/admin/alerts"],
         },
         {
           key: "nav.admin.system",

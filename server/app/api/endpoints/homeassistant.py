@@ -62,6 +62,15 @@ async def _get_smart_device_for_user(
             raise HTTPException(status_code=404, detail="Smart device not found")
     return device
 
+
+def _local_state_for_control_action(action: str) -> str | None:
+    service = action.split(".", 1)[1] if "." in action else action
+    if service == "turn_on":
+        return "on"
+    if service == "turn_off":
+        return "off"
+    return None
+
 @router.get("/devices", response_model=list[SmartDeviceResponse])
 async def list_smart_devices(
     db: AsyncSession = Depends(get_db),
@@ -215,7 +224,19 @@ async def control_smart_device(
             detail=f"Failed to communicate with HomeAssistant for {device.ha_entity_id}. Check HA token."
         )
 
-    # Note: In a real system, we might want to refresh the state from HA next.
+    local_state = _local_state_for_control_action(control.action)
+    if local_state is not None:
+        device.state = local_state
+        await db.commit()
+        await device_activity_service.log_event(
+            db,
+            ws.id,
+            "smart_control",
+            f"Smart device {device.name} set to {local_state}",
+            smart_device_id=device.id,
+            details={"action": control.action, "entity_id": device.ha_entity_id},
+        )
+
     return HAResponse(
         status="success",
         message=f"Command '{control.action}' sent to {device.name}",

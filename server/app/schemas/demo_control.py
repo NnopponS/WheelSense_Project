@@ -89,6 +89,22 @@ class PhysicalModelScheduleReminderOut(BaseModel):
     reminder: PhysicalModelWorkflowReminderOut
 
 
+class PhysicalModelDeviceControlIn(BaseModel):
+    device_id: int = Field(ge=1)
+    room_alias: Optional[str] = Field(default=None, max_length=64)
+    mapped_room_id: Optional[int] = Field(default=None, ge=1)
+    action: Literal["turn_on", "turn_off", "on", "off"]
+    value: Optional[int] = Field(default=None, ge=0, le=100)
+
+
+class PhysicalModelDeviceControlOut(BaseModel):
+    status: str = "ok"
+    topic: str
+    payload: dict[str, object]
+    mapped_room: PhysicalModelRoomOut
+    device: PhysicalModelDeviceSummaryOut
+
+
 class DemoActorMoveRequest(BaseModel):
     room_id: int = Field(ge=1)
     note: str = ""

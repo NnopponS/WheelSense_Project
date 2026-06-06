@@ -1,8 +1,8 @@
-# WheelSense Demo Theater
+# WheelSense Demo Control Pixel Overlay
 
 ## Purpose
 
-The admin route `/admin/demo-theater` is a 3 to 5 minute projector demo for the WheelSense nursing-home workflow. It uses a 2D pixel-art nursing-home board to show the same real system actions that judges should see on the phone and dashboard:
+The old standalone `/admin/demo-theater` route has been retired. The 3 to 5 minute projector demo now runs from `/admin/demo-control`, inside the realtime facility map's `Pixel/Game` overlay. It uses the same room, presence, alert, task, and smart-device data as the existing WheelSense system:
 
 1. Trigger a fall or emergency SOS for a resident.
 2. Create a real WheelSense alert and response task.
@@ -10,11 +10,11 @@ The admin route `/admin/demo-theater` is a 3 to 5 minute projector demo for the 
 4. Acknowledge the alert from the phone or projector rehearsal button.
 5. Move the staff actor toward the resident room while the task starts.
 6. Resolve the alert and complete the task when staff reaches the room.
-7. Toggle room light, fan, or AC using the Home Assistant smart-device control API when matching devices exist.
+7. Toggle room light, fan, or AC from the realtime map. The UI calls the Home Assistant smart-device control API, and mapped physical-model rooms also mirror the old board MQTT command.
 
 ## Asset Source
 
-The route treats `C:\Users\worap\Documents\EaseAI_NursingHome` as an asset source only. It does not run Godot, parse `.tscn` scenes, or execute `.gd` scripts.
+The overlay treats `C:\Users\worap\Documents\EaseAI_NursingHome` as an asset source only. It does not run Godot, parse `.tscn` scenes, or execute `.gd` scripts.
 
 Selected browser-friendly assets were copied into `frontend/public/demo-theater/`:
 
@@ -26,17 +26,18 @@ Selected browser-friendly assets were copied into `frontend/public/demo-theater/
 - `brand/easeai-icon.png`
 - `licenses/*`
 
-The frontend manifest is `frontend/lib/demo-theater/assets.ts`. The React screen animates PNG frames with CSS and `img` elements.
+The frontend manifest is `frontend/lib/demo-theater/assets.ts`. The realtime map overlay animates PNG frames with React/CSS and Next image elements.
 
 ## Scene Model
 
 The projector board is intentionally larger than a single incident room so judges can understand the system context before the fall happens.
 
 - `frontend/lib/demo-theater/layout.ts` builds a 12-zone pixel floor plan: 8 resident-room slots plus nurse station, therapy bay, shared care, and dining lounge.
-- Resident rooms are populated from the current `rooms`, `patients`, and smart-device API responses. If the system has more resident rooms than visible slots, the selected patient's room is always kept on the board.
-- Staff characters are populated from the current observer, supervisor, and head-nurse users. Demo actor room positions from `/api/demo/state` are used when available, so the scene can reflect backend actor movement.
+- `/admin/demo-control` renders those slots from `GET /api/floorplans/layout`, `GET /api/floorplans/presence`, `/api/demo/state`, and `/ha/devices`.
+- Staff and patient characters are populated from current realtime presence. Demo actor room positions from `/api/demo/state` are reflected through the presence feed, so the scene follows backend actor movement.
 - Patient sprites are chosen from the copied Emika, Krit, Rattana, and Wichai asset sets. Known names keep their matching sprite; other runtime patients receive a stable profile/id-based fallback so the cast does not all look identical.
-- The selected patient room owns the live incident state: danger flash, falling/getup/recovered animation, staff dispatch position, and light/fan/AC visual state.
+- Alert rooms flash red and switch patient sprites to falling animation. Staff sprites animate as active walking characters in their current rooms.
+- Four physical-model aliases are overlaid without renaming database rooms: `Room 401` as `Bedroom`, `Room 402` as `Living Room`, `Bathroom`, and `Dining Room` as `Kitchen / Dining`.
 
 ## License Notes
 
@@ -51,16 +52,16 @@ Before any public product release, replace the non-commercial Modern tiles asset
 
 Use one projector browser and one phone browser.
 
-1. Projector: open `/admin/demo-theater` as an admin.
+1. Projector: open `/admin/demo-control` as an admin and switch the realtime map selector to `Pixel/Game`.
 2. Phone: keep `/mobile-alert` ready as an observer, supervisor, or head nurse.
-3. Select Emika or Krit when available.
+3. Use the Physical Model controls on `/admin/demo-control` to choose a patient and mapped room.
 4. Press `Trigger fall`.
 5. Confirm the selected resident room flashes inside the larger nursing-home map and the patient sprite changes to falling.
 6. Open the `Caregiver phone` link. The phone route should land on the existing role-specific alert queue.
 7. Acknowledge the alert on the phone. For rehearsal, use `Simulate accept`.
 8. Confirm the staff sprite walks from the nurse station through the hallway to the patient room.
 9. Confirm the task moves in progress, then completed, and the alert resolves.
-10. Toggle light, fan, and AC. If mapped Home Assistant devices exist, the route calls `/api/ha/devices/{id}/control`; otherwise the board still shows a visual-only fallback.
+10. Toggle light, fan, and AC from the Pixel/Game map. If mapped Home Assistant devices exist, the route calls `/api/ha/devices/{id}/control`; for the 4 physical-model rooms it also publishes the legacy board command to `WheelSense/<room>/control`.
 
 ## Verification
 
