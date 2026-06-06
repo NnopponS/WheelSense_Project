@@ -77,10 +77,10 @@ from app.schemas.users import UserCreate, UserUpdate
 from app.services.activity import alert_service
 from app.services.analytics import AnalyticsService
 from app.services.auth import UserService
-from app.services.homeassistant import ha_service
 from app.services.medication import prescription_service, pharmacy_order_service
 from app.services.patient import patient_service
 from app.services.health_analysis import patient_health_analysis_service
+from app.services.smart_device_control import control_smart_device_transports
 from app.services.vitals import vital_reading_service, health_observation_service
 from app.services.workflow import (
     audit_trail_service,
@@ -844,14 +844,25 @@ async def control_room_smart_device(
         from app.api.endpoints.homeassistant import _get_smart_device_for_user
 
         device = await _get_smart_device_for_user(db, actor.workspace_id, device_id, current_user)
-        success = await ha_service.call_service(
-            action,
-            device.ha_entity_id,
-            {"value": value} if value is not None else None,
+        result = await control_smart_device_transports(
+            db,
+            ws_id=actor.workspace_id,
+            device=device,
+            action=action,
+            parameters={"value": value} if value is not None else None,
         )
-        if not success:
-            raise RuntimeError("Home Assistant command failed")
-        return {"device_id": device.id, "ha_entity_id": device.ha_entity_id, "action": action}
+        if not result.success:
+            raise RuntimeError(
+                "Smart device command failed. "
+                f"Home Assistant: {result.homeassistant_error or 'not sent'}. "
+                f"Legacy firmware: {result.legacy_firmware_error or 'not mapped for this command'}."
+            )
+        return {
+            "device_id": device.id,
+            "ha_entity_id": device.ha_entity_id,
+            "action": action,
+            **result.response_data(device),
+        }
 
 
 @mcp.tool(

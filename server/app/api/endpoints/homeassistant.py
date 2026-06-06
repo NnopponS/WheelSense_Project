@@ -19,6 +19,7 @@ from app.schemas.homeassistant import (
     HAResponse,
 )
 from app.services.homeassistant import ha_service
+from app.services.smart_device_control import control_smart_device_transports
 
 router = APIRouter()
 
@@ -61,15 +62,6 @@ async def _get_smart_device_for_user(
         if device.room_id != room_id:
             raise HTTPException(status_code=404, detail="Smart device not found")
     return device
-
-
-def _local_state_for_control_action(action: str) -> str | None:
-    service = action.split(".", 1)[1] if "." in action else action
-    if service == "turn_on":
-        return "on"
-    if service == "turn_off":
-        return "off"
-    return None
 
 @router.get("/devices", response_model=list[SmartDeviceResponse])
 async def list_smart_devices(
@@ -210,37 +202,28 @@ async def control_smart_device(
     if not device.is_active:
         raise HTTPException(status_code=400, detail="Smart device is marked inactive")
 
-    # Send command to Home Assistant
-    success = await ha_service.call_service(
+    result = await control_smart_device_transports(
+        db,
+        ws_id=ws.id,
+        device=device,
         action=control.action,
-        entity_id=device.ha_entity_id,
-        service_data=control.parameters
+        parameters=control.parameters,
     )
 
-    if not success:
-        # It could fail because HA is offline, or no token configured
+    if not result.success:
         raise HTTPException(
             status_code=502,
-            detail=f"Failed to communicate with HomeAssistant for {device.ha_entity_id}. Check HA token."
-        )
-
-    local_state = _local_state_for_control_action(control.action)
-    if local_state is not None:
-        device.state = local_state
-        await db.commit()
-        await device_activity_service.log_event(
-            db,
-            ws.id,
-            "smart_control",
-            f"Smart device {device.name} set to {local_state}",
-            smart_device_id=device.id,
-            details={"action": control.action, "entity_id": device.ha_entity_id},
+            detail=(
+                f"Failed to control {device.name}. "
+                f"Home Assistant: {result.homeassistant_error or 'not sent'}. "
+                f"Legacy firmware: {result.legacy_firmware_error or 'not mapped for this command'}."
+            ),
         )
 
     return HAResponse(
         status="success",
         message=f"Command '{control.action}' sent to {device.name}",
-        data={"entity_id": device.ha_entity_id}
+        data=result.response_data(device),
     )
 
 @router.get("/devices/{device_id}/state", response_model=HAResponse)

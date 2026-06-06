@@ -39,6 +39,36 @@ The projector board is intentionally larger than a single incident room so judge
 - Alert rooms flash red and switch patient sprites to falling animation. Staff sprites animate as active walking characters in their current rooms.
 - Four physical-model aliases are overlaid without renaming database rooms: `Room 401` as `Bedroom`, `Room 402` as `Living Room`, `Bathroom`, and `Dining Room` as `Kitchen / Dining`.
 
+## Old Firmware Device Bridge
+
+The normal smart-device control endpoint, `/api/ha/devices/{id}/control`, can also drive the old physical-model firmware. This keeps the current WheelSense UI/chat/device-control path while publishing the legacy board command the old firmware already understands:
+
+```text
+WheelSense/<bedroom|livingroom|bathroom|kitchen>/control
+```
+
+The bridge auto-maps the demo physical rooms:
+
+- `Room 401` / `Bedroom` -> `bedroom`
+- `Room 402` / `Living Room` -> `livingroom`
+- `Bathroom` -> `bathroom`
+- `Dining Room` / `Kitchen / Dining` -> `kitchen`
+
+For any other room or device, set `SmartDevice.config` explicitly:
+
+```json
+{
+  "legacy_firmware": {
+    "enabled": true,
+    "room": "livingroom",
+    "appliance": "fan",
+    "ha_enabled": false
+  }
+}
+```
+
+Use `ha_enabled: false` when the device exists only on the old firmware board and should not try Home Assistant first. Without that flag, WheelSense tries Home Assistant and the old firmware bridge; the command succeeds if either transport succeeds.
+
 ## License Notes
 
 The copied license/readme files are kept in `frontend/public/demo-theater/licenses/`.
@@ -61,7 +91,7 @@ Use one projector browser and one phone browser.
 7. Acknowledge the alert on the phone. For rehearsal, use `Simulate accept`.
 8. Confirm the staff sprite walks from the nurse station through the hallway to the patient room.
 9. Confirm the task moves in progress, then completed, and the alert resolves.
-10. Toggle light, fan, and AC from the Pixel/Game map. If mapped Home Assistant devices exist, the route calls `/api/ha/devices/{id}/control`; for the 4 physical-model rooms it also publishes the legacy board command to `WheelSense/<room>/control`.
+10. Toggle light, fan, and AC from the Pixel/Game map. If mapped Home Assistant devices exist, the route calls `/api/ha/devices/{id}/control`; mapped or configured old-firmware devices also publish the legacy board command to `WheelSense/<room>/control`.
 
 ## Verification
 
