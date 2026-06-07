@@ -30,6 +30,10 @@ import {
   type FloorplanRoomShape,
 } from "@/lib/floorplanLayout";
 import {
+  smartDeviceDisplayId,
+  smartDeviceDisplayName,
+} from "@/lib/smartDeviceDisplay";
+import {
   Building2,
   Camera,
   ChevronRight,
@@ -363,13 +367,10 @@ export default function FloorplansPanel({
         });
     return filtered.map((sd) => ({
       id: String(sd.id),
-      title: sd.name || sd.ha_entity_id || `Smart #${sd.id}`,
-      subtitle:
-        sd.room_id != null && sd.room_id !== selectedNumericRoomId
-          ? `${sd.ha_entity_id} · ${t("patients.roomPrefix")} #${sd.room_id}`
-          : sd.ha_entity_id,
+      title: smartDeviceDisplayName(sd),
+      subtitle: smartDeviceDisplayId(sd),
     }));
-  }, [smartDevicesList, smartDeviceSearch, selectedNumericRoomId, t]);
+  }, [smartDevicesList, smartDeviceSearch]);
 
   const smartEmptyPool = smartDevicesList.length === 0;
   const smartEmptyNoMatch =
@@ -1187,7 +1188,7 @@ export default function FloorplansPanel({
                             ) : (
                               <span className="font-medium">
                                 {smartDevicesInRoom
-                                  .map((sd) => sd.name?.trim() || sd.ha_entity_id)
+                                  .map((sd) => smartDeviceDisplayName(sd))
                                   .join(", ")}
                               </span>
                             )}
@@ -1393,7 +1394,7 @@ export default function FloorplansPanel({
                                     className="flex items-center gap-2 rounded-md border border-outline-variant/25 bg-surface-container-low/60 px-2 py-1.5 text-xs"
                                   >
                                     <span className="min-w-0 flex-1 truncate font-medium">
-                                      {sd.name || sd.ha_entity_id}
+                                      {smartDeviceDisplayName(sd)}
                                     </span>
                                     <button
                                       type="button"

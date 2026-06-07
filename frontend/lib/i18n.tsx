@@ -3919,7 +3919,7 @@ const translations = {
     th: "จะแสดงเมื่ออุปกรณ์มีค่าอุณหภูมิเป้าหมายที่ใช้งานได้",
   },
   "patient.roomControls.lastUpdated": { en: "Last updated", th: "อัปเดตล่าสุด" },
-  "patient.roomControls.entityId": { en: "Entity ID", th: "รหัสเอนทิตี" },
+  "patient.roomControls.entityId": { en: "Device ID", th: "รหัสอุปกรณ์" },
   "patient.roomControls.deviceType": { en: "Device type", th: "ประเภทอุปกรณ์" },
   "patient.roomControls.controlFailed": { en: "Could not send the command.", th: "ไม่สามารถส่งคำสั่งได้" },
   "patient.roomControls.refreshFailed": {

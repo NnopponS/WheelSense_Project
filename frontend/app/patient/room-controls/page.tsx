@@ -23,6 +23,10 @@ import type {
   ListSmartDevicesResponse,
 } from "@/lib/api/task-scope-types";
 import { useTranslation, type TranslationKey } from "@/lib/i18n";
+import {
+  smartDeviceDisplayId,
+  smartDeviceDisplayName,
+} from "@/lib/smartDeviceDisplay";
 
 type SmartDevice = ListSmartDevicesResponse[number];
 
@@ -477,6 +481,8 @@ function DeviceCard({
   const temperatureNumber = targetTemperature ?? toFiniteNumber(temperatureDraft);
   const temperatureValue = temperatureDraft ?? (temperatureNumber !== null ? String(temperatureNumber) : "");
   const canSetTemperature = kind === "climate" && targetTemperature !== null;
+  const displayName = smartDeviceDisplayName(device);
+  const displayId = smartDeviceDisplayId(device);
 
   return (
     <Card className="border-border/70">
@@ -487,8 +493,10 @@ function DeviceCard({
               <Icon className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0">
-              <CardTitle className="truncate text-base">{device.name}</CardTitle>
-              <CardDescription className="truncate font-mono text-sm">{device.ha_entity_id}</CardDescription>
+              <CardTitle className="truncate text-base">{displayName}</CardTitle>
+              <CardDescription className="truncate text-sm font-medium uppercase tracking-wide">
+                {displayId}
+              </CardDescription>
             </div>
           </div>
           <Badge variant={kind === "unsupported" ? "outline" : "secondary"}>{humanizeDeviceType(device.device_type)}</Badge>
@@ -504,7 +512,7 @@ function DeviceCard({
 
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <InfoTile label={t("patient.roomControls.entityId")} value={device.ha_entity_id} mono />
+          <InfoTile label={t("patient.roomControls.entityId")} value={displayId} />
           <InfoTile label={t("patient.roomControls.deviceType")} value={humanizeDeviceType(device.device_type)} />
           <InfoTile label={t("patient.roomControls.currentState")} value={currentState} />
           <InfoTile

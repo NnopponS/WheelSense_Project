@@ -52,6 +52,10 @@ import {
   PHYSICAL_MODEL_ROOM_MAPPINGS,
   type PhysicalModelRoomAlias,
 } from "@/lib/physical-model-demo";
+import {
+  smartDeviceDisplayId,
+  smartDeviceDisplayName,
+} from "@/lib/smartDeviceDisplay";
 import type { Facility, Floor, Room, SmartDevice } from "@/lib/types";
 import FloorplanCanvas, {
   type FloorplanRoomChip,
@@ -853,6 +857,7 @@ function RoomInspectorContent({
               const isOn = isDeviceLikelyOn(device);
               const isBusy = deviceBusyId === device.id;
               const DeviceIcon = deviceIcon(device);
+              const displayName = smartDeviceDisplayName(device);
               return (
                 <button
                   key={`room-device-${device.id}`}
@@ -864,29 +869,28 @@ function RoomInspectorContent({
                       !isOn,
                     )
                   }
-                  className={`w-full rounded-xl border px-3 py-3 text-left transition-smooth ${
+                  className={`group w-full rounded-xl border px-3.5 py-3 text-left shadow-sm transition-smooth hover:-translate-y-0.5 ${
                     isOn
-                      ? "border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/15"
-                      : "border-outline-variant/20 bg-surface-container-low/50 hover:bg-surface-container"
+                      ? "border-amber-500/45 bg-amber-500/10 hover:bg-amber-500/15"
+                      : "border-outline-variant/25 bg-surface-container-low/70 hover:border-primary/35 hover:bg-surface-container"
                   } disabled:cursor-not-allowed disabled:opacity-60`}
-                  title={`Turn ${isOn ? "off" : "on"} ${device.name}`}
+                  title={`Turn ${isOn ? "off" : "on"} ${displayName}`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <span
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
                           isOn
                             ? "border-amber-400/50 bg-amber-400/15 text-amber-700 dark:text-amber-200"
-                            : "border-outline-variant/30 bg-surface-container text-foreground-variant"
+                            : "border-outline-variant/30 bg-surface-container text-foreground-variant group-hover:border-primary/30 group-hover:text-primary"
                         }`}
                       >
                         {isBusy ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <DeviceIcon className="h-4 w-4" />}
                       </span>
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">{device.name}</p>
-                        <p className="mt-1 text-xs text-foreground-variant">
-                          {device.device_type}
-                          {"ha_entity_id" in device && device.ha_entity_id ? ` | ${device.ha_entity_id}` : ""}
+                        <p className="truncate font-semibold text-foreground">{displayName}</p>
+                        <p className="mt-1 text-xs font-medium uppercase tracking-wide text-foreground-variant">
+                          {smartDeviceDisplayId(device)}
                         </p>
                       </div>
                     </div>

@@ -7,6 +7,11 @@ import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefau
 import { refetchOrThrow } from "@/lib/refetchOrThrow";
 import { useTranslation } from "@/lib/i18n";
 import type { SmartDevice } from "@/lib/types";
+import {
+  smartDeviceDisplayId,
+  smartDeviceDisplayName,
+  smartDeviceTypeLabel,
+} from "@/lib/smartDeviceDisplay";
 import { Plus, Trash2 } from "lucide-react";
 
 export interface RoomSmartDevicesPanelProps {
@@ -188,8 +193,18 @@ function DeviceRow({
   const [active, setActive] = useState(device.is_active);
 
   return (
-    <li className="rounded-lg border border-outline-variant/25 p-3 space-y-2">
-      <p className="text-xs text-foreground-variant font-mono truncate">{device.ha_entity_id}</p>
+    <li className="rounded-xl border border-outline-variant/25 bg-surface-container-low/60 p-3 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-foreground">{smartDeviceDisplayName(device)}</p>
+          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-foreground-variant">
+            {smartDeviceDisplayId(device)}
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full border border-outline-variant/35 bg-surface-container px-2 py-1 text-xs font-medium text-foreground-variant">
+          {smartDeviceTypeLabel(device)}
+        </span>
+      </div>
       <div>
         <label className="text-xs text-foreground-variant">{t("monitoring.ha.name")}</label>
         <input

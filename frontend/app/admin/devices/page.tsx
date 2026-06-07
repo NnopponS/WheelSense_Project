@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { formatDateTime, formatRelativeTime } from "@/lib/datetime";
 import { getQueryPollingMs, getQueryStaleTimeMs } from "@/lib/queryEndpointDefaults";
 import { cn } from "@/lib/utils";
+import { smartDeviceDisplayId, smartDeviceDisplayName } from "@/lib/smartDeviceDisplay";
 
 function registryDeviceLabelSortKey(device: Device): string {
   return (device.display_name?.trim() || device.device_id).toLocaleLowerCase();
@@ -238,9 +239,9 @@ function DevicesPageContent() {
                         <SmartIcon className={`h-5 w-5 ${SMART_DEVICE_CARD_VISUAL.iconClass}`} />
                       </div>
                       <div className="min-w-0">
-                        <CardTitle className="truncate text-base">{device.name}</CardTitle>
-                        <p className="truncate font-mono text-sm text-muted-foreground">
-                          {device.ha_entity_id}
+                        <CardTitle className="truncate text-base">{smartDeviceDisplayName(device)}</CardTitle>
+                        <p className="truncate text-sm font-medium uppercase tracking-wide text-muted-foreground">
+                          {smartDeviceDisplayId(device)}
                         </p>
                       </div>
                     </div>
