@@ -15,6 +15,8 @@ _SessionFactory = _get_session_factory()
 
 # Import handlers
 from app.mqtt_handler import (
+    _is_wheelsense_topic,
+    _starts_wheelsense_topic,
     _handle_telemetry,
     _handle_mobile_registration,
     _handle_mobile_telemetry,
@@ -24,6 +26,16 @@ from app.mqtt_handler import (
     _handle_camera_status,
     mqtt_listener
 )
+
+
+def test_wheelsense_topic_helpers_accept_canonical_and_lowercase_roots():
+    assert _starts_wheelsense_topic("WheelSense/mobile/MOB_1/register", "mobile")
+    assert _starts_wheelsense_topic("wheelsense/mobile/MOB_1/register", "mobile")
+    assert _is_wheelsense_topic("WheelSense/data", "data")
+    assert _is_wheelsense_topic("wheelsense/central/state_sync_request", "central", "state_sync_request")
+
+    assert not _starts_wheelsense_topic("other/mobile/MOB_1/register", "mobile")
+    assert not _is_wheelsense_topic("wheelsense/mobile/MOB_1/register", "data")
 
 
 @pytest_asyncio.fixture

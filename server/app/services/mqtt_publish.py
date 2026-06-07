@@ -18,6 +18,7 @@ from app.models.core import Device
 from app.models.patients import PatientDeviceAssignment
 
 logger = logging.getLogger("wheelsense.mqtt_publish")
+MQTT_TOPIC_ROOTS = ("WheelSense", "wheelsense")
 
 
 def _connect_kwargs() -> dict[str, Any]:
@@ -51,6 +52,17 @@ async def mqtt_publish_json(topic: str, payload: dict[str, Any], *, retain: bool
         logger.exception("MQTT publish failed for topic %s", topic)
 
 
+async def mqtt_publish_json_topic_roots(
+    suffix: str,
+    payload: dict[str, Any],
+    *,
+    retain: bool = False,
+) -> None:
+    """Publish to canonical and lowercase WheelSense roots during mobile gateway migration."""
+    for root in MQTT_TOPIC_ROOTS:
+        await mqtt_publish_json(f"{root}/{suffix}", payload, retain=retain)
+
+
 def mqtt_publish_json_background(topic: str, payload: dict[str, Any], *, retain: bool = False) -> None:
     if not settings.mqtt_rest_publish_enabled:
         return
@@ -71,9 +83,9 @@ async def publish_alert_to_mqtt(alert) -> None:
         "timestamp": alert.timestamp.isoformat() if alert.timestamp else None,
     }
     if alert.patient_id is not None:
-        await mqtt_publish_json(f"WheelSense/alerts/{alert.patient_id}", body)
+        await mqtt_publish_json_topic_roots(f"alerts/{alert.patient_id}", body)
     elif alert.device_id:
-        await mqtt_publish_json(f"WheelSense/alerts/{alert.device_id}", body)
+        await mqtt_publish_json_topic_roots(f"alerts/{alert.device_id}", body)
 
 
 def publish_alert_to_mqtt_background(alert) -> None:
@@ -140,7 +152,7 @@ async def publish_mobile_device_config_with_payload(
     retain: bool = True,
 ) -> None:
     payload = build_mobile_mqtt_config_payload(linked_patient_id, linked_caregiver_id)
-    await mqtt_publish_json(f"WheelSense/config/{device_id}", payload, retain=retain)
+    await mqtt_publish_json_topic_roots(f"config/{device_id}", payload, retain=retain)
 
 
 async def publish_mobile_device_config(
@@ -190,8 +202,8 @@ async def publish_portal_config_all() -> None:
     """Broadcast portal URL to all mobiles (WheelSense/config/all). Retained for new subscribers."""
     if not (settings.portal_base_url or "").strip():
         return
-    await mqtt_publish_json(
-        "WheelSense/config/all",
+    await mqtt_publish_json_topic_roots(
+        "config/all",
         {"portal_base_url": str(settings.portal_base_url).strip().rstrip("/")},
         retain=True,
     )
