@@ -51,7 +51,7 @@ type GatewayAlert = {
 };
 
 const CONFIG_KEY = 'wheelsense.expo.gateway.config.v2';
-const PUBLIC_MQTT_URL = 'ws://broker.emqx.io:8083/mqtt';
+const PUBLIC_MQTT_URL = 'wss://broker.emqx.io:8084/mqtt';
 const LOCAL_MQTT_URL = 'ws://10.4.12.195:9001';
 const LOCAL_PORTAL_URL = 'http://10.4.12.195:3000';
 const TOPIC_ROOT = 'wheelsense';
@@ -91,7 +91,7 @@ const copy = {
     settings: 'Settings',
     title: 'WheelSense Gateway',
     subtitle: 'MQTT bridge for M5, Polar, alerts, and portal',
-    transportHint: 'Mobile uses EMQX WebSocket 8083. The server uses MQTT TCP 1883.',
+    transportHint: 'Mobile uses EMQX secure WebSocket 8084 (wss). The server uses MQTT TCP 1883.',
     start: 'Start gateway',
     stop: 'Stop',
     sendTest: 'Send test',
@@ -160,7 +160,7 @@ const copy = {
     settings: 'ตั้งค่า',
     title: 'WheelSense Gateway',
     subtitle: 'สะพาน MQTT สำหรับ M5, Polar, แจ้งเตือน และพอร์ทัล',
-    transportHint: 'มือถือใช้ EMQX WebSocket 8083 ส่วน server ใช้ MQTT TCP 1883',
+    transportHint: 'มือถือใช้ EMQX secure WebSocket 8084 (wss) ส่วน server ใช้ MQTT TCP 1883',
     start: 'เริ่มเกตเวย์',
     stop: 'หยุด',
     sendTest: 'ส่งทดสอบ',
@@ -913,7 +913,7 @@ export default function App() {
             {draft.mqttUrl.includes(':1883') ? (
               <View style={styles.transportWarning}>
                 <Text style={styles.transportWarningText}>
-                  ⚠ Port 1883 is TCP-only. Mobile needs WebSocket port 8083.{'\n'}
+                  ⚠ Port 1883 is TCP-only. Mobile needs secure WebSocket port 8084 (wss).{'\n'}
                   Tap "EMQX public" below to auto-correct.
                 </Text>
               </View>
@@ -1227,7 +1227,7 @@ function normalizeMqttUrl(value?: string) {
   // (either typed directly or saved from an older app version).
   // Port 1883 on broker.emqx.io is TCP MQTT only — not a WebSocket endpoint.
   if (lower.includes('broker.emqx.io:1883')) {
-    return defaultConfig.mqttUrl; // ws://broker.emqx.io:8083/mqtt
+    return defaultConfig.mqttUrl; // wss://broker.emqx.io:8084/mqtt
   }
 
   const websocketNormalized = normalizeMqttWebSocketUrl(trimmed);

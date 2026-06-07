@@ -16,7 +16,11 @@ type GatewayMqttClientOptions = {
 
 const MQTT_PROTOCOL_LEVEL = 4;
 const KEEP_ALIVE_SECONDS = 30;
-const PUBLIC_EMQX_WS_URL = 'ws://broker.emqx.io:8083/mqtt';
+// Use the secure WebSocket endpoint (TLS, port 8084). Release Android builds
+// block cleartext traffic, so the plaintext ws:// (8083) endpoint fails to
+// connect once the app is built in release mode. wss:// works in both debug
+// and release without any cleartext network exception.
+const PUBLIC_EMQX_WS_URL = 'wss://broker.emqx.io:8084/mqtt';
 
 export class GatewayMqttClient {
   private socket?: WebSocket;
@@ -208,6 +212,8 @@ export function normalizeMqttWebSocketUrl(value: string) {
   const trimmed = value.trim();
   const lower = trimmed.toLowerCase().replace(/\/+$/, '');
 
+  // Any broker.emqx.io variant (including the cleartext ws:// 8083 endpoint that
+  // fails in release builds) is remapped to the secure wss:// 8084 endpoint.
   if (
     lower === 'broker.emqx.io' ||
     lower === 'broker.emqx.io:1883' ||
@@ -222,17 +228,12 @@ export function normalizeMqttWebSocketUrl(value: string) {
     lower === 'ws://broker.emqx.io:1883' ||
     lower === 'ws://broker.emqx.io:1883/mqtt' ||
     lower === 'ws://broker.emqx.io:8083' ||
-    lower === 'ws://broker.emqx.io:8083/mqtt'
-  ) {
-    return PUBLIC_EMQX_WS_URL;
-  }
-
-  if (
+    lower === 'ws://broker.emqx.io:8083/mqtt' ||
     lower === 'wss://broker.emqx.io' ||
     lower === 'wss://broker.emqx.io:8084' ||
     lower === 'wss://broker.emqx.io:8084/mqtt'
   ) {
-    return 'wss://broker.emqx.io:8084/mqtt';
+    return PUBLIC_EMQX_WS_URL;
   }
 
   return trimmed;
