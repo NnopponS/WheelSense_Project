@@ -2273,7 +2273,7 @@ async def seed_sim_team_observer_access(
 
 
 async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
-    """Minimal seed for MQTT simulator + role UX: English rooms, 6 patients, 4 staff users, bootstrap admin."""
+    """Minimal seed for MQTT simulator + role UX: English rooms, patients, staff, and bootstrap admin."""
     async with AsyncSessionLocal() as session:
         ws = await ensure_workspace(session, workspace_name, reset)
 
@@ -2296,13 +2296,14 @@ async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
         facility, floors = await seed_facility(session, ws.id)
         rooms = await seed_rooms(session, ws.id, floors)
         await seed_floorplan_layouts(session, ws.id, facility, floors, rooms)
-        caregivers_by_key, _users_by_key = await seed_caregivers_and_users(session, ws.id)
+        caregivers_by_key, users_by_key = await seed_caregivers_and_users(session, ws.id)
         patients, devices = await seed_patients_and_devices(session, ws.id, rooms)
         patient_users = await seed_patient_users(session, ws.id, patients)
         extra_devices = await seed_additional_sim_devices(session, ws.id)
         devices.extend(extra_devices)
         room_node_mappings = await seed_room_node_mappings(session, ws.id, rooms)
         smart_devices_count = await seed_smart_devices(session, ws.id, rooms)
+        actor_positions = await seed_demo_actor_positions(session, ws.id, users_by_key, patients)
         access_rows = await seed_sim_team_observer_access(session, ws.id, caregivers_by_key, patients)
         await attach_bootstrap_admin_to_workspace(session, ws.id)
         workspace_id = ws.id
@@ -2310,7 +2311,10 @@ async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
     print("\n[OK] Sim team seed complete (simulator-ready).")
     print(f"Workspace id: {workspace_id} | name: {workspace_name}")
     print(f"Rooms: {len(rooms)} | Patients: {len(patients)} | Wheelchair devices + assignments: OK")
-    print(f"Smart devices: {smart_devices_count} | Room-node mappings: {room_node_mappings}")
+    print(
+        f"Smart devices: {smart_devices_count} | Room-node mappings: {room_node_mappings} | "
+        f"Actor positions: {actor_positions}"
+    )
     print(f"Observer patient access rows (new): {access_rows}")
     print("\nStaff logins (password is the username):")
     print("  ada.m      (admin)")
