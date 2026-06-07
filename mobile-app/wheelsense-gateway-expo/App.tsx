@@ -20,6 +20,15 @@ import { BleManager, Device } from 'react-native-ble-plx';
 import { WebView } from 'react-native-webview';
 
 import { GatewayMqttClient, GatewayMqttMessage, normalizeMqttWebSocketUrl } from './src/gatewayMqtt';
+import {
+  POLAR_HR_MEASUREMENT_SHORT,
+  POLAR_HR_MEASUREMENT_UUID,
+  POLAR_HR_SERVICE_SHORT,
+  POLAR_HR_SERVICE_UUID,
+  parseHeartRateBase64,
+  type HeartRateMeasurement,
+} from './src/ble/polarHr';
+import { NodeRssiStore, isNodeName, normalizeMac, type NodeRssiEntry } from './src/ble/nodeRssi';
 
 type Language = 'en' | 'th';
 type TabKey = 'home' | 'devices' | 'alerts' | 'portal' | 'settings';
@@ -50,7 +59,11 @@ const TOPIC_ROOT_ALIASES = [TOPIC_ROOT, 'WheelSense'] as const;
 const NOTIFICATION_CHANNEL_ID = 'gateway-alerts';
 const M5_SERVICE_UUID = '8f6e0001-b5a3-f393-e0a9-e50e24dcca9e';
 const M5_TELEMETRY_UUID = '8f6e0003-b5a3-f393-e0a9-e50e24dcca9e';
-const POLAR_SERVICE_UUID = '180d';
+const POLAR_SERVICE_UUID = POLAR_HR_SERVICE_SHORT;
+// Drop a node from rssi[] if it has not been seen within this window.
+const NODE_RSSI_TTL_MS = 12000;
+// Fallback cadence so rssi[] / hr reach the server even without M5 notifications.
+const PERIODIC_PUBLISH_MS = 3000;
 
 const defaultConfig: GatewayConfig = {
   deviceId: `wheelsense-expo-${Date.now().toString(36)}`,
@@ -130,6 +143,14 @@ const copy = {
     m5Detail: 'Wheelchair movement and RSSI companion',
     polarDetail: 'Optional heart-rate sensor',
     mqttUrl: 'MQTT WebSocket URL',
+    connectPolar: 'Connect Polar',
+    heartRate: 'Heart rate',
+    bpm: 'bpm',
+    nodes: 'Room nodes',
+    nodesDetail: 'WSN_* beacons in range',
+    noHr: 'No heart rate yet',
+    scanNodes: 'Scanning room nodes (WSN_*)',
+    polarConnected: 'Polar connected',
   },
   th: {
     home: 'หน้าแรก',
@@ -191,6 +212,14 @@ const copy = {
     m5Detail: 'ตัวส่งข้อมูลการเคลื่อนที่และ RSSI ของรถเข็น',
     polarDetail: 'เซนเซอร์ชีพจรเสริม',
     mqttUrl: 'MQTT WebSocket URL',
+    connectPolar: 'เชื่อมต่อ Polar',
+    heartRate: 'อัตราการเต้นหัวใจ',
+    bpm: 'ครั้ง/นาที',
+    nodes: 'โหนดในห้อง',
+    nodesDetail: 'บีคอน WSN_* ที่อยู่ในระยะ',
+    noHr: 'ยังไม่มีข้อมูลชีพจร',
+    scanNodes: 'กำลังสแกนโหนดในห้อง (WSN_*)',
+    polarConnected: 'เชื่อมต่อ Polar แล้ว',
   },
 } satisfies Record<Language, Record<string, string>>;
 
@@ -217,6 +246,9 @@ export default function App() {
   const [scanDevices, setScanDevices] = useState<Device[]>([]);
   const [scanning, setScanning] = useState(false);
   const [connectedM5, setConnectedM5] = useState<Device | null>(null);
+  const [connectedPolar, setConnectedPolar] = useState<Device | null>(null);
+  const [heartRate, setHeartRate] = useState<HeartRateMeasurement | null>(null);
+  const [nodeCount, setNodeCount] = useState(0);
   const [portalKey, setPortalKey] = useState(0);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState('');
@@ -225,7 +257,15 @@ export default function App() {
   const bleRef = useRef<BleManager | null>(null);
   const scanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const m5MonitorRef = useRef<{ remove: () => void } | null>(null);
+  const polarMonitorRef = useRef<{ remove: () => void } | null>(null);
   const seenAlertIdsRef = useRef<Set<string>>(new Set());
+  // Latest M5 BLE payload + HR, plus the live WSN_* node RSSI store and scan state.
+  const latestM5RawRef = useRef<string | null>(null);
+  const heartRateRef = useRef<HeartRateMeasurement | null>(null);
+  const nodeRssiRef = useRef<NodeRssiStore>(new NodeRssiStore());
+  const nodeScanActiveRef = useRef(false);
+  const discoveryRef = useRef<{ active: boolean; profile: 'm5' | 'polar' }>({ active: false, profile: 'm5' });
+  const publishTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const t = copy[config.language];
 
   const addLog = useCallback((entry: string) => {
@@ -269,9 +309,13 @@ export default function App() {
     return () => {
       mqttRef.current?.disconnect();
       m5MonitorRef.current?.remove();
+      polarMonitorRef.current?.remove();
       bleRef.current?.destroy();
       if (scanTimerRef.current) {
         clearTimeout(scanTimerRef.current);
+      }
+      if (publishTimerRef.current) {
+        clearInterval(publishTimerRef.current);
       }
     };
   }, []);
@@ -396,35 +440,76 @@ export default function App() {
   const stopGateway = useCallback(() => {
     mqttRef.current?.disconnect();
     mqttRef.current = null;
+    discoveryRef.current.active = false;
+    bleRef.current?.stopDeviceScan();
+    nodeScanActiveRef.current = false;
+    setScanning(false);
+    if (scanTimerRef.current) {
+      clearTimeout(scanTimerRef.current);
+      scanTimerRef.current = null;
+    }
+    nodeRssiRef.current.clear();
+    setNodeCount(0);
     setMode('offline');
     setMessage('Stopped');
     addLog('Gateway stopped');
   }, [addLog]);
 
+  // Assemble one unified mobile telemetry payload from all live sources:
+  // the latest M5 BLE frame, the WSN_* node RSSI snapshot, and the Polar HR.
   const publishTelemetry = useCallback(
-    (rawPayload: string, source: 'm5_ble' | 'manual_test') => {
+    (rawPayload: string | null, source: 'm5_ble' | 'manual_test' | 'periodic') => {
       if (!mqttRef.current?.isConnected) {
-        setMode('degraded');
-        setMessage('MQTT is not connected');
-        addLog('Telemetry skipped: MQTT offline');
+        if (source !== 'periodic') {
+          setMode('degraded');
+          setMessage('MQTT is not connected');
+          addLog('Telemetry skipped: MQTT offline');
+        }
         return;
       }
-      const decoded = safeJson(rawPayload);
+
+      const nodeRssi = nodeRssiRef.current.snapshot(NODE_RSSI_TTL_MS);
+      const hr = heartRateRef.current;
+      const decoded = rawPayload ? safeJson(rawPayload) : {};
+
+      // For periodic publishes with nothing new to report, stay quiet.
+      if (source === 'periodic' && !rawPayload && nodeRssi.length === 0 && !hr) {
+        return;
+      }
+
+      // rssi[] is sourced from the live node scan; merge any rssi embedded in the
+      // M5 frame as a fallback (node scan takes priority on duplicate node ids).
+      const mergedRssi = mergeRssi(nodeRssi, rawPayload ? normalizeRssi(decoded) : []);
+
       const topic = mqttTopic(TOPIC_ROOT, 'mobile', config.deviceId, 'telemetry');
-      const payload = {
+      const payload: Record<string, unknown> = {
         device_id: config.deviceId,
         device_type: 'mobile_phone',
         hardware_type: 'mobile_phone',
         app_mode: 'expo_ble_gateway',
         timestamp: new Date().toISOString(),
-        rssi: normalizeRssi(decoded),
-        m5: normalizeM5Telemetry(decoded, rawPayload, connectedM5, source),
-        gateway_payload: decoded,
+        rssi: mergedRssi,
       };
+
+      if (rawPayload) {
+        payload.m5 = normalizeM5Telemetry(decoded, rawPayload, connectedM5, source === 'manual_test' ? 'manual_test' : 'm5_ble');
+        payload.gateway_payload = decoded;
+      }
+
+      if (hr) {
+        // hr_source stays mobile_ble (standard GATT HR, no PPG stream).
+        payload.hr = { bpm: hr.bpm, rr_intervals_ms: hr.rrIntervalsMs };
+        payload.hr_source = 'mobile_ble';
+      }
+
       mqttRef.current.publish(topic, payload);
-      setLatestPayload(rawPayload);
+      if (rawPayload) {
+        setLatestPayload(rawPayload);
+      }
       setPublishCount((value) => value + 1);
-      addLog(`Telemetry published to ${topic}`);
+      if (source !== 'periodic') {
+        addLog(`Telemetry published to ${topic}`);
+      }
     },
     [addLog, config.deviceId, connectedM5],
   );
@@ -435,7 +520,6 @@ export default function App() {
         device_id: 'M5_EXPO_TEST',
         distance_m: Number((Math.random() * 3).toFixed(2)),
         battery: 87,
-        rssi: -51,
       }),
       'manual_test',
     );
@@ -446,14 +530,60 @@ export default function App() {
     return bleRef.current;
   }, []);
 
+  // Stop the pairing-discovery window but keep the continuous node scan alive.
   const stopScan = useCallback(() => {
-    bleRef.current?.stopDeviceScan();
+    discoveryRef.current.active = false;
     setScanning(false);
     if (scanTimerRef.current) {
       clearTimeout(scanTimerRef.current);
       scanTimerRef.current = null;
     }
   }, []);
+
+  // Fully stop the underlying BLE scan (node + discovery).
+  const stopAllScans = useCallback(() => {
+    stopScan();
+    bleRef.current?.stopDeviceScan();
+    nodeScanActiveRef.current = false;
+  }, [stopScan]);
+
+  // One persistent BLE scan feeds both the WSN_* node RSSI store and, while a
+  // discovery window is open, the M5/Polar pairing list.
+  const startNodeScan = useCallback(() => {
+    if (nodeScanActiveRef.current) {
+      return;
+    }
+    nodeScanActiveRef.current = true;
+    addLog('Node RSSI scan started (WSN_*)');
+    manager().startDeviceScan(null, { allowDuplicates: true }, (error, device) => {
+      if (error) {
+        nodeScanActiveRef.current = false;
+        addLog(`Scan error: ${error.message}`);
+        return;
+      }
+      if (!device) {
+        return;
+      }
+      const name = device.name ?? device.localName ?? '';
+      if (isNodeName(name) && typeof device.rssi === 'number') {
+        nodeRssiRef.current.observe(name, device.rssi, normalizeMac(device.id));
+      }
+      if (discoveryRef.current.active) {
+        const profile = discoveryRef.current.profile;
+        const uuids = device.serviceUUIDs ?? [];
+        const serviceHint = profile === 'm5' ? M5_SERVICE_UUID : POLAR_SERVICE_UUID;
+        const match =
+          uuids.some((uuid) => uuid.toLowerCase() === serviceHint) ||
+          (profile === 'm5' && /m5|stick|wheelsense/i.test(name)) ||
+          (profile === 'polar' && /polar|verity|heart/i.test(name));
+        if (match) {
+          setScanDevices((current) =>
+            current.some((item) => item.id === device.id) ? current : [...current, device].slice(0, 12),
+          );
+        }
+      }
+    });
+  }, [addLog, manager]);
 
   const scanBle = useCallback(
     async (profile: 'm5' | 'polar') => {
@@ -463,41 +593,17 @@ export default function App() {
         setMessage('Bluetooth permission denied');
         return;
       }
-      stopScan();
+      discoveryRef.current = { active: true, profile };
       setScanDevices([]);
       setScanning(true);
-      const serviceHint = profile === 'm5' ? M5_SERVICE_UUID : POLAR_SERVICE_UUID;
       addLog(`Scanning ${profile}`);
-
-      manager().startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
-        if (error) {
-          setMode('degraded');
-          setMessage(error.message);
-          stopScan();
-          return;
-        }
-        if (!device) {
-          return;
-        }
-        const name = device.name ?? device.localName ?? '';
-        const uuids = device.serviceUUIDs ?? [];
-        const match =
-          uuids.some((uuid) => uuid.toLowerCase() === serviceHint) ||
-          (profile === 'm5' && /m5|stick|wheelsense/i.test(name)) ||
-          (profile === 'polar' && /polar|verity|heart/i.test(name));
-        if (!match) {
-          return;
-        }
-        setScanDevices((current) => {
-          if (current.some((item) => item.id === device.id)) {
-            return current;
-          }
-          return [...current, device].slice(0, 12);
-        });
-      });
+      startNodeScan();
+      if (scanTimerRef.current) {
+        clearTimeout(scanTimerRef.current);
+      }
       scanTimerRef.current = setTimeout(stopScan, 12000);
     },
-    [addLog, manager, stopScan],
+    [addLog, startNodeScan, stopScan],
   );
 
   const connectM5 = useCallback(
@@ -517,7 +623,9 @@ export default function App() {
               return;
             }
             if (characteristic?.value) {
-              publishTelemetry(decodeBase64(characteristic.value), 'm5_ble');
+              const raw = decodeBase64(characteristic.value);
+              latestM5RawRef.current = raw;
+              publishTelemetry(raw, 'm5_ble');
             }
           },
         );
@@ -534,11 +642,89 @@ export default function App() {
   const disconnectM5 = useCallback(async () => {
     m5MonitorRef.current?.remove();
     m5MonitorRef.current = null;
+    latestM5RawRef.current = null;
     if (connectedM5) {
       await manager().cancelDeviceConnection(connectedM5.id).catch(() => undefined);
     }
     setConnectedM5(null);
   }, [connectedM5, manager]);
+
+  // Connect to the Polar Verity Sense and stream standard GATT heart rate.
+  const connectPolar = useCallback(
+    async (device: Device) => {
+      try {
+        stopScan();
+        const connected = await manager().connectToDevice(device.id, { timeout: 12000 });
+        await connected.discoverAllServicesAndCharacteristics();
+        polarMonitorRef.current?.remove();
+        polarMonitorRef.current = connected.monitorCharacteristicForService(
+          POLAR_HR_SERVICE_UUID,
+          POLAR_HR_MEASUREMENT_UUID,
+          (error, characteristic) => {
+            if (error) {
+              addLog(`Polar HR error: ${error.message}`);
+              return;
+            }
+            if (characteristic?.value) {
+              const hr = parseHeartRateBase64(characteristic.value);
+              if (hr) {
+                heartRateRef.current = hr;
+                setHeartRate(hr);
+              }
+            }
+          },
+        );
+        setConnectedPolar(connected);
+        addLog('Polar heart-rate notifications enabled');
+      } catch (error) {
+        setMode('degraded');
+        setMessage(errorMessage(error));
+      }
+    },
+    [addLog, manager, stopScan],
+  );
+
+  const disconnectPolar = useCallback(async () => {
+    polarMonitorRef.current?.remove();
+    polarMonitorRef.current = null;
+    heartRateRef.current = null;
+    setHeartRate(null);
+    if (connectedPolar) {
+      await manager().cancelDeviceConnection(connectedPolar.id).catch(() => undefined);
+    }
+    setConnectedPolar(null);
+  }, [connectedPolar, manager]);
+
+  // Pick the matching connect handler for a tapped scan result.
+  const connectDevice = useCallback(
+    (device: Device) => {
+      const name = device.name ?? device.localName ?? '';
+      if (/polar|verity|heart/i.test(name) || discoveryRef.current.profile === 'polar') {
+        return connectPolar(device);
+      }
+      return connectM5(device);
+    },
+    [connectM5, connectPolar],
+  );
+
+  // While the gateway is online, continuously scan WSN_* node beacons and
+  // publish merged telemetry (M5 + rssi[] + hr) on a fixed cadence so the
+  // server keeps receiving localization + vitals even between M5 frames.
+  useEffect(() => {
+    if (mode !== 'online') {
+      return;
+    }
+    startNodeScan();
+    const timer = setInterval(() => {
+      setNodeCount(nodeRssiRef.current.count(NODE_RSSI_TTL_MS));
+      publishTelemetry(latestM5RawRef.current, 'periodic');
+    }, PERIODIC_PUBLISH_MS);
+    publishTimerRef.current = timer;
+    return () => {
+      clearInterval(timer);
+      publishTimerRef.current = null;
+    };
+  }, [mode, startNodeScan, publishTelemetry]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -601,6 +787,22 @@ export default function App() {
 
         {tab === 'devices' ? (
           <>
+            <MetricGrid
+              items={[
+                {
+                  label: t.heartRate,
+                  value: heartRate ? `${heartRate.bpm} ${t.bpm}` : t.noHr,
+                  detail: connectedPolar ? t.polarConnected : t.polarDetail,
+                  severity: heartRate ? 'critical' : 'info',
+                },
+                {
+                  label: t.nodes,
+                  value: String(nodeCount),
+                  detail: t.nodesDetail,
+                  severity: nodeCount ? 'normal' : 'info',
+                },
+              ]}
+            />
             <DeviceCard
               image={require('./assets/devices/m5stickcplus2.png')}
               title={t.m5}
@@ -614,17 +816,18 @@ export default function App() {
             <DeviceCard
               image={require('./assets/devices/polar_verity_sense.png')}
               title={t.polar}
-              subtitle={t.polarDetail}
-              connected={false}
+              subtitle={connectedPolar ? `${t.connected}: ${connectedPolar.name ?? connectedPolar.id}` : t.polarDetail}
+              connected={Boolean(connectedPolar)}
             />
             <View style={styles.actions}>
               <ActionButton label={t.scanPolar} onPress={() => scanBle('polar')} disabled={scanning} variant="secondary" />
+              <ActionButton label={t.disconnect} onPress={disconnectPolar} variant="secondary" />
               <ActionButton label={t.stopScan} onPress={stopScan} variant="secondary" />
             </View>
-            <Panel title={scanning ? t.waiting : t.devices}>
+            <Panel title={scanning ? t.waiting : t.devices} subtitle={mode === 'online' ? t.scanNodes : undefined}>
               {scanDevices.length === 0 ? <Text style={styles.muted}>{t.noDevices}</Text> : null}
               {scanDevices.map((device) => (
-                <Pressable key={device.id} style={styles.deviceRow} onPress={() => connectM5(device)}>
+                <Pressable key={device.id} style={styles.deviceRow} onPress={() => connectDevice(device)}>
                   <View style={styles.rowContent}>
                     <Text style={styles.rowTitle}>{device.name ?? device.localName ?? 'BLE device'}</Text>
                     <Text style={styles.muted}>{device.id}</Text>
@@ -1169,6 +1372,19 @@ function normalizeRssi(decoded: unknown) {
     return [{ node: String(root.node ?? root.node_id ?? root.device_id ?? 'mobile_rssi'), rssi: single, mac: String(root.mac ?? '') }];
   }
   return [];
+}
+
+// Merge the live WSN_* node RSSI snapshot with any rssi embedded in the M5
+// frame. Node-scan entries win on duplicate node ids.
+function mergeRssi(primary: NodeRssiEntry[], fallback: NodeRssiEntry[]): NodeRssiEntry[] {
+  const byNode = new Map<string, NodeRssiEntry>();
+  for (const entry of fallback) {
+    byNode.set(entry.node, entry);
+  }
+  for (const entry of primary) {
+    byNode.set(entry.node, entry);
+  }
+  return Array.from(byNode.values());
 }
 
 function toAlert(event: GatewayMqttMessage): GatewayAlert {
