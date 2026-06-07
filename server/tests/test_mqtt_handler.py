@@ -6,6 +6,7 @@ from datetime import datetime, UTC
 
 from app.models.core import Device, Room, SmartDevice, Workspace
 from app.models.core import DeviceCommandDispatch
+from app.models.activity import Alert
 from app.models.patients import Patient, PatientDeviceAssignment
 from app.models.telemetry import IMUTelemetry, MotionTrainingData, RSSIReading, RoomPrediction
 from app.models.vitals import VitalReading
@@ -24,6 +25,7 @@ from app.mqtt_handler import (
     _handle_legacy_state_sync_request,
     _handle_camera_registration,
     _handle_camera_status,
+    _handle_physical_model_detection,
     mqtt_listener
 )
 
@@ -46,6 +48,61 @@ async def active_workspace():
         await session.commit()
         await session.refresh(ws)
         return ws
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_physical_model_detection_mqtt_creates_robert_fall(active_workspace):
+    async with _SessionFactory() as session:
+        room = Room(
+            workspace_id=active_workspace.id,
+            name="Room 402",
+            room_type="bedroom",
+        )
+        robert = Patient(
+            workspace_id=active_workspace.id,
+            first_name="Robert",
+            last_name="Lee",
+            nickname="Robert",
+            care_level="normal",
+            is_active=True,
+        )
+        session.add_all([room, robert])
+        await session.commit()
+        await session.refresh(room)
+        await session.refresh(robert)
+
+    with patch("app.services.mqtt_publish.publish_alert_to_mqtt_background") as publish_alert:
+        await _handle_physical_model_detection(
+            "livingroom",
+            json.dumps(
+                {
+                    "device_id": "CAM_LIVINGROOM",
+                    "room": "livingroom",
+                    "detected": True,
+                    "confidence": 0.88,
+                    "method": "yolo",
+                    "bbox": [1, 2, 30, 40],
+                }
+            ).encode(),
+        )
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        refreshed_robert = (
+            await session.execute(select(Patient).where(Patient.first_name == "Robert"))
+        ).scalar_one()
+        alerts = (await session.execute(select(Alert))).scalars().all()
+
+    assert refreshed_robert.room_id == room.id
+    assert len(alerts) == 1
+    assert alerts[0].alert_type == "fall"
+    assert alerts[0].severity == "critical"
+    assert alerts[0].patient_id == robert.id
+    assert alerts[0].device_id == "CAM_LIVINGROOM"
+    assert alerts[0].data["room_alias"] == "Living Room"
+    publish_alert.assert_called_once()
 
 
 @pytest.mark.asyncio

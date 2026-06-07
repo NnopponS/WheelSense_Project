@@ -44,11 +44,13 @@ from app.models.telemetry import (
     RSSIReading,
 )
 from app.models.vitals import VitalReading
+from app.schemas.demo_control import PhysicalModelYoloFallEventIn
 from app.services.legacy_firmware_control import (
     LEGACY_ON_STATES,
     legacy_appliance_for_device,
     legacy_room_for_device,
 )
+from app.services.physical_model_demo import apply_yolo_fall_event
 
 logger = logging.getLogger("wheelsense.mqtt")
 MQTT_TOPIC_ROOTS = ("WheelSense", "wheelsense")
@@ -84,6 +86,13 @@ def _starts_wheelsense_topic(topic: str, *parts: str) -> bool:
     return len(actual) >= len(parts) + 1 and actual[0].lower() == "wheelsense" and actual[1 : len(parts) + 1] == list(parts)
 
 
+def _physical_detection_room_from_topic(topic: str) -> str | None:
+    actual = _topic_parts(topic)
+    if len(actual) == 3 and actual[0].lower() == "wheelsense" and actual[2] == "detection":
+        return actual[1]
+    return None
+
+
 def _is_rate_limited(device_id: str) -> bool:
     """Check if device has exceeded rate limit. Returns True if should block."""
     now = time.monotonic()
@@ -115,6 +124,12 @@ def _extract_device_id_from_topic(topic: str, payload: bytes) -> str | None:
     if len(parts) >= 3:
         if parts[1] == "mobile" or parts[1] == "camera":
             return parts[2]
+        if len(parts) == 3 and parts[2] == "detection":
+            try:
+                data = json.loads(payload)
+                return data.get("device_id")
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                pass
         # For WheelSense/data, extract from payload
         if parts[1] == "data":
             try:
@@ -191,6 +206,7 @@ async def mqtt_listener():
                     await client.subscribe(_topic(root, "+", "ack"))
                     await client.subscribe(_topic(root, "camera", "+", "ack"))
                     await client.subscribe(_topic(root, "central", "state_sync_request"))
+                    await client.subscribe(_topic(root, "+", "detection"))
 
                 async for message in client.messages:
                     topic = str(message.topic)
@@ -216,6 +232,8 @@ async def mqtt_listener():
                             await _handle_mobile_walkstep(message.payload)
                         elif _is_wheelsense_topic(topic, "central", "state_sync_request"):
                             await _handle_legacy_state_sync_request(client, message.payload)
+                        elif (physical_room := _physical_detection_room_from_topic(topic)) is not None:
+                            await _handle_physical_model_detection(physical_room, message.payload)
                         elif topic.endswith("/ack"):
                             await _handle_device_ack(message.payload)
                         elif topic.endswith("/registration"):
@@ -466,6 +484,62 @@ def _to_bool(value, default=False):
     if normalized in {"0", "false", "no", "n"}:
         return False
     return default
+
+
+async def _handle_physical_model_detection(room_from_topic: str, payload: bytes):
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON on physical model detection topic")
+        return
+
+    detected = _to_bool(data.get("detected", data.get("wheelchair_detected")), False)
+    if not detected:
+        return
+
+    confidence = _to_float(data.get("confidence"))
+    if confidence is None:
+        confidence = 0.0
+    confidence = max(0.0, min(1.0, confidence))
+    event = PhysicalModelYoloFallEventIn(
+        room_alias=str(data.get("room") or data.get("physical_zone") or room_from_topic),
+        room=str(data.get("room") or room_from_topic),
+        physical_zone=str(data.get("physical_zone") or room_from_topic),
+        patient_name=str(data.get("patient_name") or "Robert"),
+        detected=True,
+        confidence=confidence,
+        source=str(data.get("source") or "yolo_mockup"),
+        device_id=str(data["device_id"]) if data.get("device_id") else None,
+        method=str(data.get("method") or "yolo"),
+        bbox=data.get("bbox"),
+        frame_size=data.get("frame_size") if isinstance(data.get("frame_size"), dict) else None,
+    )
+
+    async with AsyncSessionLocal() as session:
+        ws_id = await resolve_mqtt_auto_register_workspace_id(session)
+        if ws_id is None:
+            logger.warning("Physical model detection skipped: workspace could not be resolved")
+            return
+        try:
+            result = await apply_yolo_fall_event(
+                session,
+                ws_id,
+                actor_user_id=None,
+                event=event,
+            )
+        except ValueError as exc:
+            logger.warning("Physical model detection skipped: %s", exc)
+            return
+
+    if result.status == "alert_created":
+        logger.warning(
+            "Physical model YOLO detection created Robert fall alert: room=%s confidence=%.2f alert=%s",
+            result.mapped_room.alias if result.mapped_room else room_from_topic,
+            confidence,
+            result.alert.alert_id if result.alert else None,
+        )
+    else:
+        logger.debug("Physical model YOLO detection ignored: %s", result.reason)
 
 
 def _direction_value(value):

@@ -181,7 +181,7 @@ class DemoControlService:
         actor_type: str,
         actor_id: int,
         room_id: int,
-        updated_by_user_id: int,
+        updated_by_user_id: int | None,
         note: str = "",
     ) -> dict:
         normalized_type = _normalize_actor_type(actor_type)
@@ -476,21 +476,28 @@ class DemoControlService:
         ws_id: int,
         *,
         patient_id: int,
-        actor_user_id: int,
+        actor_user_id: int | None,
         alert_type: str = "fall",
+        title: str | None = None,
+        description: str | None = None,
+        data: dict | None = None,
+        device_id: str | None = None,
     ) -> dict:
         patient = await session.get(Patient, patient_id)
         if patient is None or patient.workspace_id != ws_id:
             raise ValueError("Patient not found")
         room = await session.get(Room, patient.room_id) if patient.room_id else None
+        alert_data = {"room_id": patient.room_id, "room_name": room.name if room else ""}
+        alert_data.update(data or {})
         alert = Alert(
             workspace_id=ws_id,
             patient_id=patient.id,
+            device_id=device_id,
             alert_type=alert_type,
             severity="critical" if alert_type == "fall" else "warning",
-            title=f"Demo {alert_type.replace('_', ' ').title()} alert",
-            description="Triggered from demo controller",
-            data={"room_id": patient.room_id, "room_name": room.name if room else ""},
+            title=title or f"Demo {alert_type.replace('_', ' ').title()} alert",
+            description=description or "Triggered from demo controller",
+            data=alert_data,
             status="active",
         )
         session.add(alert)

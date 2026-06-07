@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -70,6 +70,42 @@ class PhysicalModelLocationEventOut(BaseModel):
     previous_room_name: Optional[str] = None
     device_reminders: list[PhysicalModelWorkflowReminderOut] = Field(default_factory=list)
     previous_room_devices: list[PhysicalModelDeviceSummaryOut] = Field(default_factory=list)
+
+
+class DemoAlertResponse(BaseModel):
+    alert_id: int
+    patient_id: int
+    room_id: Optional[int] = None
+    room_name: str = ""
+    alert_type: str
+    severity: str
+    status: str
+
+
+class PhysicalModelYoloFallEventIn(BaseModel):
+    room_alias: Optional[str] = Field(default=None, max_length=64)
+    room: Optional[str] = Field(default=None, max_length=64)
+    physical_zone: Optional[str] = Field(default=None, max_length=64)
+    mapped_room_id: Optional[int] = Field(default=None, ge=1)
+    patient_id: Optional[int] = Field(default=None, ge=1)
+    patient_name: str = Field(default="Robert", min_length=1, max_length=128)
+    detected: bool = True
+    confidence: float = Field(default=0.92, ge=0.0, le=1.0)
+    source: str = Field(default="yolo_mockup", min_length=1, max_length=64)
+    device_id: Optional[str] = Field(default=None, max_length=128)
+    method: Optional[str] = Field(default="yolo", max_length=64)
+    bbox: Optional[Any] = None
+    frame_size: Optional[dict[str, Any]] = None
+    force: bool = False
+
+
+class PhysicalModelYoloFallEventOut(BaseModel):
+    event: PhysicalModelYoloFallEventIn
+    status: Literal["alert_created", "ignored"]
+    mapped_room: Optional[PhysicalModelRoomOut] = None
+    patient: Optional[DemoActorOut] = None
+    alert: Optional[DemoAlertResponse] = None
+    reason: Optional[str] = None
 
 
 class PhysicalModelScheduleReminderIn(BaseModel):
@@ -167,16 +203,6 @@ class DemoWorkflowAdvanceResponse(BaseModel):
     status: str
     action: str
     message: str
-
-
-class DemoAlertResponse(BaseModel):
-    alert_id: int
-    patient_id: int
-    room_id: Optional[int] = None
-    room_name: str = ""
-    alert_type: str
-    severity: str
-    status: str
 
 
 class DemoScenarioStartRequest(BaseModel):

@@ -35,6 +35,8 @@ from app.schemas.demo_control import (
     PhysicalModelRoomOut,
     PhysicalModelScheduleReminderIn,
     PhysicalModelScheduleReminderOut,
+    PhysicalModelYoloFallEventIn,
+    PhysicalModelYoloFallEventOut,
     SimulatorCommandIn,
     SimulatorCommandOut,
     SimulatorResetResponse,
@@ -48,6 +50,7 @@ from app.services.demo_control import (
 from app.services.device_management import publish_mqtt
 from app.services.physical_model_demo import (
     apply_location_event,
+    apply_yolo_fall_event,
     build_physical_model_device_control,
     list_physical_rooms,
     trigger_schedule_reminder,
@@ -123,6 +126,24 @@ async def apply_physical_model_location_event(
 ):
     try:
         return await apply_location_event(
+            db,
+            ws.id,
+            actor_user_id=current_user.id,
+            event=payload,
+        )
+    except ValueError as exc:
+        raise _bad_request(exc) from exc
+
+
+@router.post("/physical-model/yolo-fall-events", response_model=PhysicalModelYoloFallEventOut)
+async def apply_physical_model_yolo_fall_event(
+    payload: PhysicalModelYoloFallEventIn,
+    db: AsyncSession = Depends(get_db),
+    ws: Workspace = Depends(get_current_user_workspace),
+    current_user: User = Depends(RequireRole(["admin"])),
+):
+    try:
+        return await apply_yolo_fall_event(
             db,
             ws.id,
             actor_user_id=current_user.id,

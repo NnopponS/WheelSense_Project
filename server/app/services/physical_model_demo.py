@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
 from sqlalchemy import or_, select
@@ -9,6 +10,7 @@ from app.models.care import DemoActorPosition
 from app.models.core import Room, SmartDevice
 from app.models.patients import Patient
 from app.schemas.demo_control import (
+    DemoAlertResponse,
     DemoActorOut,
     PhysicalModelDeviceControlIn,
     PhysicalModelDeviceControlOut,
@@ -19,6 +21,8 @@ from app.schemas.demo_control import (
     PhysicalModelScheduleReminderIn,
     PhysicalModelScheduleReminderOut,
     PhysicalModelWorkflowReminderOut,
+    PhysicalModelYoloFallEventIn,
+    PhysicalModelYoloFallEventOut,
 )
 from app.schemas.workflow import CareDirectiveCreate, CareScheduleCreate, RoleMessageCreate
 from app.services.demo_control import demo_control_service
@@ -47,10 +51,15 @@ PHYSICAL_BOARD_ROOM_TOPICS = {
     "bathroom": "bathroom",
     "kitchen": "kitchen",
 }
+YOLO_FALL_COOLDOWN_SECONDS = 30.0
+_yolo_fall_cooldown: dict[str, float] = {}
 
 
 def _norm(value: str | None) -> str:
-    return (value or "").strip().lower().replace("_", " ").replace("-", " ")
+    normalized = (value or "").strip().lower().replace("_", " ").replace("-", " ")
+    if normalized == "livingroom":
+        return "living room"
+    return normalized
 
 
 def _room_alias_for_name(room_name: str) -> PhysicalRoomAlias | None:
@@ -150,6 +159,83 @@ async def _room_name(session: AsyncSession, ws_id: int, room_id: int | None) -> 
         return None
     alias = _room_alias_for_name(room.name)
     return alias.alias if alias else room.name
+
+
+def _patient_display_name(patient: Patient) -> str:
+    return patient.nickname or f"{patient.first_name} {patient.last_name}".strip() or f"Patient #{patient.id}"
+
+
+def _patient_actor(patient: Patient, room: Room | None) -> DemoActorOut:
+    return DemoActorOut(
+        actor_type="patient",
+        actor_id=patient.id,
+        display_name=_patient_display_name(patient),
+        role="patient",
+        room_id=patient.room_id,
+        room_name=room.name if room else None,
+        source="room_assignment",
+        updated_at=patient.updated_at,
+    )
+
+
+def _patient_name_variants(patient: Patient) -> set[str]:
+    return {
+        _norm(patient.first_name),
+        _norm(patient.last_name),
+        _norm(patient.nickname),
+        _norm(f"{patient.first_name} {patient.last_name}".strip()),
+    }
+
+
+async def _resolve_yolo_patient(
+    session: AsyncSession,
+    ws_id: int,
+    *,
+    patient_id: int | None,
+    patient_name: str,
+) -> Patient:
+    if patient_id is not None:
+        patient = await session.get(Patient, patient_id)
+        if patient is None or patient.workspace_id != ws_id or not patient.is_active:
+            raise ValueError("YOLO fall patient not found in current workspace")
+        return patient
+
+    target = _norm(patient_name)
+    patients = list(
+        (
+            await session.execute(
+                select(Patient)
+                .where(Patient.workspace_id == ws_id, Patient.is_active.is_(True))
+                .order_by(Patient.id.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    for patient in patients:
+        if target in _patient_name_variants(patient):
+            return patient
+    for patient in patients:
+        haystack = " ".join(_patient_name_variants(patient))
+        if target and target in haystack:
+            return patient
+    raise ValueError(f"Patient '{patient_name}' not found in current workspace")
+
+
+def _yolo_cooldown_key(ws_id: int, patient_id: int, physical_zone: str) -> str:
+    return f"{ws_id}:{patient_id}:{physical_zone}"
+
+
+def _yolo_cooldown_reason(key: str, *, force: bool) -> str | None:
+    if force:
+        return None
+    last = _yolo_fall_cooldown.get(key)
+    if last is None:
+        return None
+    remaining = YOLO_FALL_COOLDOWN_SECONDS - (time.monotonic() - last)
+    if remaining <= 0:
+        return None
+    return f"YOLO fall event ignored during cooldown ({remaining:.0f}s remaining)"
 
 
 def _device_summary(device: SmartDevice) -> PhysicalModelDeviceSummaryOut:
@@ -404,6 +490,96 @@ async def apply_location_event(
         previous_room_name=previous_room_name,
         previous_room_devices=[_device_summary(device) for device in reminder_devices],
         device_reminders=reminders,
+    )
+
+
+async def apply_yolo_fall_event(
+    session: AsyncSession,
+    ws_id: int,
+    *,
+    actor_user_id: int | None,
+    event: PhysicalModelYoloFallEventIn,
+) -> PhysicalModelYoloFallEventOut:
+    room_selector = event.room_alias or event.physical_zone or event.room
+    if room_selector is None and event.mapped_room_id is None:
+        raise ValueError("YOLO fall event requires room_alias, room, physical_zone, or mapped_room_id")
+
+    room, alias = await _resolve_room(
+        session,
+        ws_id,
+        room_alias=room_selector,
+        mapped_room_id=event.mapped_room_id,
+    )
+    mapped_room = _room_out(room, alias)
+
+    if not event.detected:
+        return PhysicalModelYoloFallEventOut(
+            event=event,
+            status="ignored",
+            mapped_room=mapped_room,
+            reason="YOLO event did not detect a resident",
+        )
+
+    patient = await _resolve_yolo_patient(
+        session,
+        ws_id,
+        patient_id=event.patient_id,
+        patient_name=event.patient_name,
+    )
+    cooldown_key = _yolo_cooldown_key(ws_id, patient.id, alias.physical_zone)
+    cooldown_reason = _yolo_cooldown_reason(cooldown_key, force=event.force)
+    if cooldown_reason:
+        current_room = await session.get(Room, patient.room_id) if patient.room_id else None
+        return PhysicalModelYoloFallEventOut(
+            event=event,
+            status="ignored",
+            mapped_room=mapped_room,
+            patient=_patient_actor(patient, current_room),
+            reason=cooldown_reason,
+        )
+
+    patient_name = _patient_display_name(patient)
+    actor = await demo_control_service.move_actor(
+        session,
+        ws_id,
+        actor_type="patient",
+        actor_id=patient.id,
+        room_id=room.id,
+        updated_by_user_id=actor_user_id,
+        note=f"{event.source} YOLO fall detection ({event.confidence:.0%})",
+    )
+    alert = await demo_control_service.trigger_alert(
+        session,
+        ws_id,
+        patient_id=patient.id,
+        actor_user_id=actor_user_id,
+        alert_type="fall",
+        device_id=event.device_id,
+        title=f"Physical model fall detected - {patient_name}",
+        description=(
+            f"YOLO physical model detected {patient_name} in {alias.alias} "
+            f"({room.name}) at {event.confidence:.0%} confidence. "
+            "Treat as a fall emergency for the demo."
+        ),
+        data={
+            "source": event.source,
+            "physical_model": True,
+            "room_alias": alias.alias,
+            "physical_zone": alias.physical_zone,
+            "detection_confidence": event.confidence,
+            "detection_method": event.method,
+            "bbox": event.bbox,
+            "frame_size": event.frame_size,
+        },
+    )
+    if not event.force:
+        _yolo_fall_cooldown[cooldown_key] = time.monotonic()
+    return PhysicalModelYoloFallEventOut(
+        event=event,
+        status="alert_created",
+        mapped_room=mapped_room,
+        patient=DemoActorOut.model_validate(actor),
+        alert=DemoAlertResponse.model_validate(alert),
     )
 
 

@@ -2976,6 +2976,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/demo/physical-model/yolo-fall-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Physical Model Yolo Fall Event */
+        post: operations["apply_physical_model_yolo_fall_event_api_demo_physical_model_yolo_fall_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/demo/physical-model/schedule-reminder": {
         parameters: {
             query?: never;
@@ -7570,6 +7587,71 @@ export interface components {
             schedule_id?: number | null;
             /** Title */
             title: string;
+        };
+        /** PhysicalModelYoloFallEventIn */
+        PhysicalModelYoloFallEventIn: {
+            /** Room Alias */
+            room_alias?: string | null;
+            /** Room */
+            room?: string | null;
+            /** Physical Zone */
+            physical_zone?: string | null;
+            /** Mapped Room Id */
+            mapped_room_id?: number | null;
+            /** Patient Id */
+            patient_id?: number | null;
+            /**
+             * Patient Name
+             * @default Robert
+             */
+            patient_name: string;
+            /**
+             * Detected
+             * @default true
+             */
+            detected: boolean;
+            /**
+             * Confidence
+             * @default 0.92
+             */
+            confidence: number;
+            /**
+             * Source
+             * @default yolo_mockup
+             */
+            source: string;
+            /** Device Id */
+            device_id?: string | null;
+            /**
+             * Method
+             * @default yolo
+             */
+            method: string | null;
+            /** Bbox */
+            bbox?: unknown | null;
+            /** Frame Size */
+            frame_size?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Force
+             * @default false
+             */
+            force: boolean;
+        };
+        /** PhysicalModelYoloFallEventOut */
+        PhysicalModelYoloFallEventOut: {
+            event: components["schemas"]["PhysicalModelYoloFallEventIn"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "alert_created" | "ignored";
+            mapped_room?: components["schemas"]["PhysicalModelRoomOut"] | null;
+            patient?: components["schemas"]["DemoActorOut"] | null;
+            alert?: components["schemas"]["DemoAlertResponse"] | null;
+            /** Reason */
+            reason?: string | null;
         };
         /** PredictRequest */
         PredictRequest: {
@@ -16368,6 +16450,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PhysicalModelLocationEventOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_physical_model_yolo_fall_event_api_demo_physical_model_yolo_fall_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhysicalModelYoloFallEventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhysicalModelYoloFallEventOut"];
                 };
             };
             /** @description Validation Error */

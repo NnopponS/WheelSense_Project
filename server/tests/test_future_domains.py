@@ -717,6 +717,71 @@ async def test_physical_model_location_event_moves_actor_and_reminds_for_devices
 
 
 @pytest.mark.asyncio
+async def test_physical_model_yolo_detection_creates_robert_fall_alert(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Physical Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    room_402 = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Room 402", room_type="bedroom")
+    db_session.add(room_402)
+    await db_session.flush()
+    robert = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Robert",
+        last_name="Lee",
+        nickname="Robert",
+        care_level="normal",
+        is_active=True,
+        room_id=None,
+    )
+    db_session.add(robert)
+    await db_session.commit()
+    await db_session.refresh(room_402)
+    await db_session.refresh(robert)
+
+    with patch("app.services.mqtt_publish.publish_alert_to_mqtt_background") as publish_alert:
+        response = await client.post(
+            "/api/demo/physical-model/yolo-fall-events",
+            json={
+                "room": "livingroom",
+                "patient_name": "Robert",
+                "detected": True,
+                "confidence": 0.91,
+                "source": "yolo_mockup",
+                "device_id": "CAM_LIVINGROOM",
+                "bbox": [10, 20, 80, 120],
+                "force": True,
+            },
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "alert_created"
+    assert body["mapped_room"]["room_id"] == room_402.id
+    assert body["patient"]["display_name"] == "Robert"
+    assert body["patient"]["room_id"] == room_402.id
+    assert body["alert"]["patient_id"] == robert.id
+    assert body["alert"]["room_id"] == room_402.id
+    assert body["alert"]["alert_type"] == "fall"
+    publish_alert.assert_called_once()
+
+    await db_session.refresh(robert)
+    assert robert.room_id == room_402.id
+    created = await db_session.get(Alert, body["alert"]["alert_id"])
+    assert created is not None
+    assert created.title == "Physical model fall detected - Robert"
+    assert created.device_id == "CAM_LIVINGROOM"
+    assert created.data["room_alias"] == "Living Room"
+    assert created.data["physical_zone"] == "living_room"
+
+
+@pytest.mark.asyncio
 async def test_physical_model_schedule_reminder_creates_workflow_items(
     client: AsyncClient,
     db_session: AsyncSession,

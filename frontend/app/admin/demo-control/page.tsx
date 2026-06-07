@@ -90,6 +90,11 @@ function isDeviceLikelyOn(device: SmartDevice) {
   return ["on", "heat", "cool", "fan_only", "dry", "auto"].includes(state);
 }
 
+function isRobertPatient(patient: Patient) {
+  const haystack = `${patient.first_name ?? ""} ${patient.last_name ?? ""} ${patient.nickname ?? ""}`.toLowerCase();
+  return haystack.includes("robert");
+}
+
 export default function AdminDemoControlPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -171,6 +176,7 @@ export default function AdminDemoControlPage() {
     selectedPhysicalRoomDevices.find((device) => matchesDeviceKind(device, physicalDeviceKind)) ??
     selectedPhysicalRoomDevices[0] ??
     null;
+  const robertPatient = activePatients.find(isRobertPatient) ?? null;
 
   const metricLabel = (
     key: "demoControl.countPatients" | "demoControl.countStaff" | "demoControl.countRooms",
@@ -239,20 +245,24 @@ export default function AdminDemoControlPage() {
     );
   }
 
-  function handlePhysicalLocationEvent() {
-    if (!physicalActorId || !selectedPhysicalRoom) return;
+  function handlePhysicalYoloFall() {
+    if (!selectedPhysicalRoom || !robertPatient) return;
     void run(
-      "YOLO room event",
-      `Moved ${physicalActorType} #${physicalActorId} to ${selectedPhysicalRoom.alias}.`,
+      "YOLO Robert fall",
+      `Detected Robert in ${selectedPhysicalRoom.alias}; emergency sent to caregiver/head nurse.`,
       () =>
-        api.post("/demo/physical-model/location-events", {
+        api.post("/demo/physical-model/yolo-fall-events", {
           room_alias: selectedPhysicalRoom.alias,
+          room: selectedPhysicalRoom.physical_zone,
+          physical_zone: selectedPhysicalRoom.physical_zone,
           mapped_room_id: selectedPhysicalRoom.room_id,
-          actor_type: physicalActorType,
-          actor_id: Number(physicalActorId),
+          patient_id: robertPatient.id,
+          patient_name: "Robert",
+          detected: true,
           confidence: 0.94,
           source: "yolo_mockup",
-          force_device_reminder: true,
+          method: "yolo",
+          force: true,
         }),
     );
   }
@@ -400,21 +410,24 @@ export default function AdminDemoControlPage() {
                 ) : (
                   <Badge variant="outline">No linked devices</Badge>
                 )}
+                <Badge variant={robertPatient ? "secondary" : "destructive"}>
+                  Robert {robertPatient ? `#${robertPatient.id}` : "missing"}
+                </Badge>
               </div>
             </div>
 
             <div className="grid gap-2 sm:grid-cols-2">
-              <Button disabled={!physicalActorId || !selectedPhysicalRoom} onClick={handlePhysicalLocationEvent}>
-                <Route className="mr-2 h-4 w-4" />
-                YOLO move
+              <Button disabled={!selectedPhysicalRoom || !robertPatient} onClick={handlePhysicalYoloFall}>
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                YOLO Robert fall
               </Button>
               <Button
-                variant="destructive"
+                variant="outline"
                 disabled={physicalActorType !== "patient" || !physicalActorId}
                 onClick={handlePhysicalFall}
               >
                 <AlertTriangle className="mr-2 h-4 w-4" />
-                Trigger fall
+                Manual fall
               </Button>
             </div>
 
