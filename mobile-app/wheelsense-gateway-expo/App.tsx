@@ -151,6 +151,10 @@ const copy = {
     noHr: 'No heart rate yet',
     scanNodes: 'Scanning room nodes (WSN_*)',
     polarConnected: 'Polar connected',
+    m5DevicesFound: 'M5 devices found',
+    polarDevicesFound: 'Polar devices found',
+    scanningM5: 'Scanning M5…',
+    scanningPolar: 'Scanning Polar…',
   },
   th: {
     home: 'หน้าแรก',
@@ -220,6 +224,10 @@ const copy = {
     noHr: 'ยังไม่มีข้อมูลชีพจร',
     scanNodes: 'กำลังสแกนโหนดในห้อง (WSN_*)',
     polarConnected: 'เชื่อมต่อ Polar แล้ว',
+    m5DevicesFound: 'พบอุปกรณ์ M5',
+    polarDevicesFound: 'พบอุปกรณ์ Polar',
+    scanningM5: 'กำลังสแกน M5…',
+    scanningPolar: 'กำลังสแกน Polar…',
   },
 } satisfies Record<Language, Record<string, string>>;
 
@@ -243,8 +251,10 @@ export default function App() {
   const [latestPayload, setLatestPayload] = useState('');
   const [publishCount, setPublishCount] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
-  const [scanDevices, setScanDevices] = useState<Device[]>([]);
+  const [scanM5Devices, setScanM5Devices] = useState<Device[]>([]);
+  const [scanPolarDevices, setScanPolarDevices] = useState<Device[]>([]);
   const [scanning, setScanning] = useState(false);
+  const [scanProfile, setScanProfile] = useState<'m5' | 'polar' | null>(null);
   const [connectedM5, setConnectedM5] = useState<Device | null>(null);
   const [connectedPolar, setConnectedPolar] = useState<Device | null>(null);
   const [heartRate, setHeartRate] = useState<HeartRateMeasurement | null>(null);
@@ -534,6 +544,7 @@ export default function App() {
   const stopScan = useCallback(() => {
     discoveryRef.current.active = false;
     setScanning(false);
+    setScanProfile(null);
     if (scanTimerRef.current) {
       clearTimeout(scanTimerRef.current);
       scanTimerRef.current = null;
@@ -576,8 +587,12 @@ export default function App() {
           uuids.some((uuid) => uuid.toLowerCase() === serviceHint) ||
           (profile === 'm5' && /m5|stick|wheelsense/i.test(name)) ||
           (profile === 'polar' && /polar|verity|heart/i.test(name));
-        if (match) {
-          setScanDevices((current) =>
+        if (match && profile === 'm5') {
+          setScanM5Devices((current) =>
+            current.some((item) => item.id === device.id) ? current : [...current, device].slice(0, 12),
+          );
+        } else if (match && profile === 'polar') {
+          setScanPolarDevices((current) =>
             current.some((item) => item.id === device.id) ? current : [...current, device].slice(0, 12),
           );
         }
@@ -594,7 +609,12 @@ export default function App() {
         return;
       }
       discoveryRef.current = { active: true, profile };
-      setScanDevices([]);
+      setScanProfile(profile);
+      if (profile === 'm5') {
+        setScanM5Devices([]);
+      } else {
+        setScanPolarDevices([]);
+      }
       setScanning(true);
       addLog(`Scanning ${profile}`);
       startNodeScan();
@@ -697,9 +717,8 @@ export default function App() {
 
   // Pick the matching connect handler for a tapped scan result.
   const connectDevice = useCallback(
-    (device: Device) => {
-      const name = device.name ?? device.localName ?? '';
-      if (/polar|verity|heart/i.test(name) || discoveryRef.current.profile === 'polar') {
+    (device: Device, profile: 'm5' | 'polar') => {
+      if (profile === 'polar') {
         return connectPolar(device);
       }
       return connectM5(device);
@@ -803,39 +822,79 @@ export default function App() {
                 },
               ]}
             />
-            <DeviceCard
-              image={require('./assets/devices/m5stickcplus2.png')}
-              title={t.m5}
-              subtitle={connectedM5 ? `${t.connected}: ${connectedM5.name ?? connectedM5.id}` : t.m5Detail}
-              connected={Boolean(connectedM5)}
-            />
-            <View style={styles.actions}>
-              <ActionButton label={t.scanM5} onPress={() => scanBle('m5')} disabled={scanning} />
-              <ActionButton label={t.disconnect} onPress={disconnectM5} variant="secondary" />
+
+            {/* M5 Section */}
+            <View style={styles.deviceSection}>
+              <DeviceCard
+                image={require('./assets/devices/m5stickcplus2.png')}
+                title={t.m5}
+                subtitle={connectedM5 ? `${t.connected}: ${connectedM5.name ?? connectedM5.id}` : t.m5Detail}
+                connected={Boolean(connectedM5)}
+              />
+              <View style={styles.actions}>
+                <ActionButton
+                  label={scanning && scanProfile === 'm5' ? t.scanningM5 : t.scanM5}
+                  onPress={() => scanBle('m5')}
+                  disabled={scanning && scanProfile !== 'm5'}
+                />
+                <ActionButton label={t.disconnect} onPress={disconnectM5} variant="secondary" />
+                {scanning && scanProfile === 'm5' ? (
+                  <ActionButton label={t.stopScan} onPress={stopScan} variant="secondary" />
+                ) : null}
+              </View>
+              {scanM5Devices.length > 0 ? (
+                <View style={styles.scanResults}>
+                  <Text style={styles.scanLabel}>{t.m5DevicesFound}</Text>
+                  {scanM5Devices.map((device) => (
+                    <Pressable key={device.id} style={styles.deviceRow} onPress={() => connectDevice(device, 'm5')}>
+                      <View style={styles.rowContent}>
+                        <Text style={styles.rowTitle}>{device.name ?? device.localName ?? 'BLE device'}</Text>
+                        <Text style={styles.muted}>{device.id}</Text>
+                      </View>
+                      <Text style={styles.badge}>{t.connected}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
             </View>
-            <DeviceCard
-              image={require('./assets/devices/polar_verity_sense.png')}
-              title={t.polar}
-              subtitle={connectedPolar ? `${t.connected}: ${connectedPolar.name ?? connectedPolar.id}` : t.polarDetail}
-              connected={Boolean(connectedPolar)}
-            />
-            <View style={styles.actions}>
-              <ActionButton label={t.scanPolar} onPress={() => scanBle('polar')} disabled={scanning} variant="secondary" />
-              <ActionButton label={t.disconnect} onPress={disconnectPolar} variant="secondary" />
-              <ActionButton label={t.stopScan} onPress={stopScan} variant="secondary" />
+
+            <View style={styles.sectionDivider} />
+
+            {/* Polar Section */}
+            <View style={styles.deviceSection}>
+              <DeviceCard
+                image={require('./assets/devices/polar_verity_sense.png')}
+                title={t.polar}
+                subtitle={connectedPolar ? `${t.connected}: ${connectedPolar.name ?? connectedPolar.id}` : t.polarDetail}
+                connected={Boolean(connectedPolar)}
+              />
+              <View style={styles.actions}>
+                <ActionButton
+                  label={scanning && scanProfile === 'polar' ? t.scanningPolar : t.scanPolar}
+                  onPress={() => scanBle('polar')}
+                  disabled={scanning && scanProfile !== 'polar'}
+                  variant="secondary"
+                />
+                <ActionButton label={t.disconnect} onPress={disconnectPolar} variant="secondary" />
+                {scanning && scanProfile === 'polar' ? (
+                  <ActionButton label={t.stopScan} onPress={stopScan} variant="secondary" />
+                ) : null}
+              </View>
+              {scanPolarDevices.length > 0 ? (
+                <View style={styles.scanResults}>
+                  <Text style={styles.scanLabel}>{t.polarDevicesFound}</Text>
+                  {scanPolarDevices.map((device) => (
+                    <Pressable key={device.id} style={styles.deviceRow} onPress={() => connectDevice(device, 'polar')}>
+                      <View style={styles.rowContent}>
+                        <Text style={styles.rowTitle}>{device.name ?? device.localName ?? 'BLE device'}</Text>
+                        <Text style={styles.muted}>{device.id}</Text>
+                      </View>
+                      <Text style={styles.badge}>{t.connected}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
             </View>
-            <Panel title={scanning ? t.waiting : t.devices} subtitle={mode === 'online' ? t.scanNodes : undefined}>
-              {scanDevices.length === 0 ? <Text style={styles.muted}>{t.noDevices}</Text> : null}
-              {scanDevices.map((device) => (
-                <Pressable key={device.id} style={styles.deviceRow} onPress={() => connectDevice(device)}>
-                  <View style={styles.rowContent}>
-                    <Text style={styles.rowTitle}>{device.name ?? device.localName ?? 'BLE device'}</Text>
-                    <Text style={styles.muted}>{device.id}</Text>
-                  </View>
-                  <Text style={styles.badge}>{t.connected}</Text>
-                </Pressable>
-              ))}
-            </Panel>
           </>
         ) : null}
 
@@ -990,6 +1049,22 @@ function PortalPanel({
             javaScriptEnabled
             domStorageEnabled
             startInLoadingState
+            cacheEnabled={false}
+            incognito={false}
+            injectedJavaScript={`
+              (function() {
+                let meta = document.querySelector('meta[name="viewport"]');
+                if (!meta) {
+                  meta = document.createElement('meta');
+                  meta.setAttribute('name', 'viewport');
+                  document.head.appendChild(meta);
+                }
+                meta.setAttribute('content', 'width=device-width, initial-scale=0.85, maximum-scale=3.0, user-scalable=yes');
+              })();
+              true;
+            `}
+            setBuiltInZoomControls={true}
+            setDisplayZoomControls={false}
             onLoadStart={() => {
               setPortalLoading(true);
               setPortalError('');
@@ -1569,6 +1644,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   deviceImage: { width: 74, height: 74, marginRight: 12 },
+  deviceSection: { marginBottom: 4 },
+  sectionDivider: { height: 1, backgroundColor: '#E2E8F0', marginVertical: 16, marginHorizontal: 4 },
+  scanResults: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DCE7F5',
+    padding: 10,
+    marginTop: 10,
+  },
+  scanLabel: { color: '#64748B', fontSize: 12, fontWeight: '800', marginBottom: 8 },
   statusLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   statusDotOnline: { backgroundColor: '#15803D' },
