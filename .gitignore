@@ -119,6 +119,13 @@ mobile-app/wheelsense-gateway-flutter/build/
 mobile-app/.android-sdk/
 mobile-app/wheelsense-gateway-flutter/.dart_tool/
 mobile-app/wheelsense-gateway-flutter/.flutter-plugins-dependencies
+mobile-app/wheelsense-gateway-expo/node_modules/
+mobile-app/wheelsense-gateway-expo/.expo/
+mobile-app/wheelsense-gateway-expo/android/
+mobile-app/wheelsense-gateway-expo/ios/
+mobile-app/wheelsense-gateway-expo/build/
+mobile-app/wheelsense-gateway-expo/dist/
+mobile-app/wheelsense-gateway-expo/web-build/
 Thesis/goal-assets/
 Thesis/IEEE-conference-WheelSense/
 Thesis/THESIS_CURRENT_REPAIR_COMMAND.md
