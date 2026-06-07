@@ -299,10 +299,17 @@ class FloorplanPresenceService:
                         )
                     )
                     caregiver_by_id = {caregiver.id: caregiver for caregiver in caregivers.scalars().all()}
-            for position in position_rows:
+            seen_staff_positions: set[int] = set()
+            for position in sorted(
+                position_rows,
+                key=lambda row: (row.actor_id, 0 if row.actor_type == "staff" else 1),
+            ):
                 user = staff_people.get(position.actor_id)
                 if user is None or position.room_id is None:
                     continue
+                if position.actor_id in seen_staff_positions:
+                    continue
+                seen_staff_positions.add(position.actor_id)
                 caregiver = caregiver_by_id.get(user.caregiver_id or -1)
                 display_name = user.username
                 if caregiver is not None:

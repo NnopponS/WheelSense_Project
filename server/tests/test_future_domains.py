@@ -462,6 +462,63 @@ async def test_demo_control_moves_staff_actor(
 
 
 @pytest.mark.asyncio
+async def test_demo_control_move_staff_collapses_legacy_user_position(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Demo Control Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=1, name="L1", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    old_room = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Old Room", room_type="bedroom")
+    new_room = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="New Room", room_type="bedroom")
+    observer = User(
+        workspace_id=admin_user.workspace_id,
+        username="legacy_user_position_observer",
+        hashed_password=get_password_hash("password123"),
+        role="observer",
+        is_active=True,
+    )
+    db_session.add_all([old_room, new_room, observer])
+    await db_session.flush()
+    db_session.add(
+        DemoActorPosition(
+            workspace_id=admin_user.workspace_id,
+            actor_type="user",
+            actor_id=observer.id,
+            room_id=old_room.id,
+            source="legacy",
+            note="legacy alias",
+        )
+    )
+    await db_session.commit()
+    await db_session.refresh(new_room)
+    await db_session.refresh(observer)
+
+    response = await client.post(
+        f"/api/demo/actors/staff/{observer.id}/move",
+        json={"room_id": new_room.id, "note": "Canonical move"},
+    )
+
+    assert response.status_code == 200, response.text
+    positions = (
+        await db_session.execute(
+            select(DemoActorPosition).where(
+                DemoActorPosition.workspace_id == admin_user.workspace_id,
+                DemoActorPosition.actor_id == observer.id,
+                DemoActorPosition.actor_type.in_(["staff", "user"]),
+            )
+        )
+    ).scalars().all()
+    assert len(positions) == 1
+    assert positions[0].actor_type == "staff"
+    assert positions[0].room_id == new_room.id
+
+
+@pytest.mark.asyncio
 async def test_demo_control_state_exposes_simplified_visible_actions(client: AsyncClient):
     response = await client.get("/api/demo/state")
     assert response.status_code == 200, response.text

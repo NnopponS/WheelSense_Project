@@ -62,6 +62,15 @@ def _normalize_actor_type(actor_type: str) -> str:
     raise ValueError("actor_type must be 'patient', 'staff', or 'user'")
 
 
+def _choose_staff_position(rows: list[DemoActorPosition]) -> tuple[DemoActorPosition | None, list[DemoActorPosition]]:
+    """Prefer the canonical staff row and treat user rows as legacy aliases."""
+    if not rows:
+        return None, []
+    canonical = next((row for row in rows if row.actor_type == "staff"), rows[0])
+    duplicates = [row for row in rows if row is not canonical]
+    return canonical, duplicates
+
+
 def _workflow_target(
     *,
     target_mode: str | None,
@@ -131,7 +140,11 @@ class DemoControlService:
                 )
             )
         ).scalars().all()
-        position_by_actor_id = {row.actor_id: row for row in position_rows}
+        position_by_actor_id: dict[int, DemoActorPosition] = {}
+        for row in position_rows:
+            existing = position_by_actor_id.get(row.actor_id)
+            if existing is None or (existing.actor_type != "staff" and row.actor_type == "staff"):
+                position_by_actor_id[row.actor_id] = row
 
         actors: list[dict] = []
         for patient in patients:
@@ -227,7 +240,7 @@ class DemoControlService:
         if user is None or user.workspace_id != ws_id or user.role not in STAFF_ROLES:
             raise ValueError("Staff user not found in current workspace")
 
-        position = (
+        position_rows = (
             await session.execute(
                 select(DemoActorPosition).where(
                     DemoActorPosition.workspace_id == ws_id,
@@ -238,7 +251,8 @@ class DemoControlService:
                     ),
                 )
             )
-        ).scalar_one_or_none()
+        ).scalars().all()
+        position, duplicate_positions = _choose_staff_position(list(position_rows))
         if position is None:
             position = DemoActorPosition(
                 workspace_id=ws_id,
@@ -257,6 +271,8 @@ class DemoControlService:
             position.source = "manual"
             position.updated_by_user_id = updated_by_user_id
             session.add(position)
+            for duplicate in duplicate_positions:
+                await session.delete(duplicate)
 
         await audit_trail_service.log_event(
             session,

@@ -53,7 +53,6 @@ import {
   type PhysicalModelRoomAlias,
 } from "@/lib/physical-model-demo";
 import {
-  smartDeviceDisplayId,
   smartDeviceDisplayName,
 } from "@/lib/smartDeviceDisplay";
 import type { Facility, Floor, Room, SmartDevice } from "@/lib/types";
@@ -266,10 +265,38 @@ function presenceHrefForOccupant(o: RoomOccupant, roleBase: string | null): stri
   return null;
 }
 
-function buildPresenceMeta(room: PresenceRoom, roleBase: string | null): FloorplanRoomMeta {
-  const occupants = getRoomOccupants(room);
-  const patientCount = occupants.filter((item) => item.actor_type === "patient").length;
-  const staffCount = occupants.filter((item) => item.actor_type === "staff").length;
+function buildOccupantOnlyMeta(occupants: RoomOccupant[], roleBase: string | null): FloorplanRoomMeta {
+  const patientCount = occupants.filter(isPatientOccupant).length;
+  const staffCount = occupants.filter(isStaffOccupant).length;
+  const chips: FloorplanRoomChip[] = [];
+  if (patientCount > 0) {
+    chips.push({ label: `${patientCount} patient${patientCount > 1 ? "s" : ""}`, tone: "success" });
+  }
+  if (staffCount > 0) {
+    chips.push({ label: `${staffCount} staff`, tone: "info" });
+  }
+  const head = occupants.slice(0, 3);
+  return {
+    chips: chips.length > 0 ? chips : [{ label: "No live occupants", tone: "info" }],
+    detailLines:
+      occupants.length > 0
+        ? [occupants.slice(0, 2).map((item) => item.display_name).join(", "), "Demo actor state"]
+        : ["No occupants in live feed"],
+    presenceDots: head.map((item) => item.display_name),
+    presenceHrefs: head.map((item) => presenceHrefForOccupant(item, roleBase)),
+    presenceAvatarUrls: head.map((item) => item.photo_url?.trim() || null),
+    tone: occupants.length > 0 ? "success" : "info",
+  };
+}
+
+function buildPresenceMeta(
+  room: PresenceRoom,
+  roleBase: string | null,
+  occupantOverride?: RoomOccupant[],
+): FloorplanRoomMeta {
+  const occupants = occupantOverride ?? getRoomOccupants(room);
+  const patientCount = occupants.filter(isPatientOccupant).length;
+  const staffCount = occupants.filter(isStaffOccupant).length;
   const detailLines: string[] = [];
   const occupantNames = occupants.slice(0, 2).map((item) => item.display_name);
 
@@ -364,10 +391,46 @@ function deviceKindLabel(device: RoomSmartDeviceStateSummary): string {
   return "light";
 }
 
+function normalizedActorType(actorType: string): string {
+  return actorType === "user" ? "staff" : actorType;
+}
+
+function occupantKey(occupant: RoomOccupant): string {
+  const type = normalizedActorType(occupant.actor_type);
+  const id =
+    type === "patient"
+      ? occupant.patient_id ?? occupant.actor_id
+      : occupant.user_id ?? occupant.caregiver_id ?? occupant.actor_id;
+  return `${type}-${id}`;
+}
+
+function isStaffOccupant(occupant: RoomOccupant): boolean {
+  return normalizedActorType(occupant.actor_type) === "staff";
+}
+
+function isPatientOccupant(occupant: RoomOccupant): boolean {
+  return normalizedActorType(occupant.actor_type) === "patient";
+}
+
+function isMalePresentingName(name: string | null | undefined): boolean {
+  const normalized = (name ?? "").toLowerCase();
+  return [
+    "dan",
+    "jason",
+    "krit",
+    "marcus",
+    "robert",
+    "sam",
+    "wichai",
+  ].some((token) => normalized.includes(token));
+}
+
 function actorSpriteSource(occupant: RoomOccupant, index: number, hasAlert: boolean, tick: number): string {
-  const isStaff = occupant.actor_type === "staff" || occupant.actor_type === "user";
+  const isStaff = isStaffOccupant(occupant);
   if (isStaff) {
-    const staffAsset = index % 2 === 0 ? demoTheaterAssets.staff.nurse : demoTheaterAssets.staff.maleNurse;
+    const staffAsset = isMalePresentingName(occupant.display_name)
+      ? demoTheaterAssets.staff.maleNurse
+      : demoTheaterAssets.staff.nurse;
     const frames = staffAsset.walk.south.length > 0 ? staffAsset.walk.south : staffAsset.idle.south;
     return frames[tick % frames.length];
   }
@@ -401,10 +464,13 @@ function numericRoomIdFromEntry(entry: FloorplanRoomEntry | null): number | null
 
 function mergeOccupants(primary: RoomOccupant[], fallback: RoomOccupant[]): RoomOccupant[] {
   const merged = new Map<string, RoomOccupant>();
-  for (const occupant of primary) merged.set(`${occupant.actor_type}-${occupant.actor_id}`, occupant);
+  for (const occupant of primary) {
+    const type = normalizedActorType(occupant.actor_type);
+    merged.set(occupantKey(occupant), { ...occupant, actor_type: type });
+  }
   for (const occupant of fallback) {
-    const type = occupant.actor_type === "user" ? "staff" : occupant.actor_type;
-    merged.set(`${type}-${occupant.actor_id}`, { ...occupant, actor_type: type });
+    const type = normalizedActorType(occupant.actor_type);
+    merged.set(occupantKey({ ...occupant, actor_type: type }), { ...occupant, actor_type: type });
   }
   return Array.from(merged.values());
 }
@@ -496,9 +562,13 @@ function PhysicalModelPixelOverlay({
             const occupants = mergeOccupants(
               getRoomOccupants(presenceRoom),
               roomId != null ? demoOccupantsByRoomId[roomId] ?? [] : [],
-            ).slice(0, 5);
+            );
+            const visibleOccupants = occupants.slice(0, 3);
+            const overflowOccupants = Math.max(0, occupants.length - visibleOccupants.length);
             const hasAlert = (presenceRoom?.alert_count ?? 0) > 0;
-            const devices = mergeRoomDevices(presenceRoom, devicesByRoomId, roomId).slice(0, 4);
+            const devices = mergeRoomDevices(presenceRoom, devicesByRoomId, roomId);
+            const visibleDevices = devices.slice(0, 3);
+            const overflowDevices = Math.max(0, devices.length - visibleDevices.length);
             const activeDevices = devices.filter(isDeviceLikelyOn).length;
             const isSelected = Boolean(entry && entry.room.id === selectedId);
             const toneClass =
@@ -551,7 +621,7 @@ function PhysicalModelPixelOverlay({
                   ) : null}
                 </div>
 
-                <div className="absolute left-2 top-[38%] flex max-w-[48%] items-end gap-1 opacity-85">
+                <div className="absolute left-2 top-[38%] flex max-w-[42%] items-end gap-1 opacity-75">
                   {(slot.role === "resident" || alias === "Bedroom" || alias === "Living Room") ? (
                     <Image src={demoTheaterAssets.props.bedH} alt="" width={44} height={28} unoptimized className="h-7 w-auto" />
                   ) : null}
@@ -566,12 +636,13 @@ function PhysicalModelPixelOverlay({
                   ) : null}
                 </div>
 
-                <div className="absolute bottom-10 left-2 right-2 flex min-h-[56px] items-end justify-center gap-1">
-                  {occupants.length > 0 ? (
-                    occupants.map((occupant, index) => (
+                <div className="absolute bottom-10 left-1.5 right-1.5 flex min-h-[52px] items-end justify-center gap-0.5">
+                  {visibleOccupants.length > 0 ? (
+                    <>
+                    {visibleOccupants.map((occupant, index) => (
                       <div
                         key={`${occupant.actor_type}-${occupant.actor_id}`}
-                        className="flex max-w-[4.2rem] flex-col items-center"
+                        className="flex max-w-[3.6rem] flex-col items-center"
                       >
                         <Image
                           src={actorSpriteSource(occupant, index, hasAlert, animationTick)}
@@ -579,15 +650,21 @@ function PhysicalModelPixelOverlay({
                           width={44}
                           height={54}
                           unoptimized
-                          className={`h-11 w-auto object-contain drop-shadow-[0_2px_0_rgba(0,0,0,0.55)] ${
-                            hasAlert && occupant.actor_type === "patient" ? "animate-pulse" : ""
+                          className={`h-10 w-auto object-contain drop-shadow-[0_2px_0_rgba(0,0,0,0.55)] ${
+                            hasAlert && isPatientOccupant(occupant) ? "animate-pulse" : ""
                           }`}
                         />
-                        <span className="max-w-full truncate border border-black/50 bg-black/70 px-1 py-0.5 text-[9px] leading-none text-white">
+                        <span className="max-w-full truncate border border-black/50 bg-black/75 px-1 py-0.5 text-[8px] leading-none text-white">
                           {occupant.display_name}
                         </span>
                       </div>
-                    ))
+                    ))}
+                    {overflowOccupants > 0 ? (
+                      <span className="mb-1 border border-white/30 bg-black/70 px-1.5 py-1 text-[9px] leading-none text-white">
+                        +{overflowOccupants}
+                      </span>
+                    ) : null}
+                    </>
                   ) : (
                     <span className="border border-white/20 bg-black/40 px-1.5 py-0.5 text-[9px] text-slate-300">
                       Available
@@ -604,16 +681,18 @@ function PhysicalModelPixelOverlay({
                   </span>
                 </div>
 
-                <div className="absolute bottom-[1.65rem] left-2 right-2 flex flex-wrap justify-end gap-1">
-                  {devices.length > 0 ? (
-                    devices.map((device) => {
+                <div className="absolute right-2 top-[3.15rem] flex max-w-[45%] flex-wrap justify-end gap-1">
+                  {visibleDevices.length > 0 ? (
+                    <>
+                    {visibleDevices.map((device) => {
                       const DeviceIcon = deviceIcon(device);
                       const isOn = isDeviceLikelyOn(device);
+                      const kind = deviceKindLabel(device);
                       return (
                         <button
                           key={device.id}
                           type="button"
-                          className={`inline-flex max-w-[6.7rem] items-center gap-1 border px-1.5 py-0.5 text-[9px] leading-none ${
+                          className={`inline-flex h-6 w-6 items-center justify-center border text-[9px] leading-none shadow-[0_1px_0_rgba(0,0,0,0.55)] ${
                             isOn
                               ? "border-amber-100 bg-amber-500/35 text-amber-50"
                               : "border-slate-300/70 bg-black/45 text-slate-100"
@@ -626,13 +705,18 @@ function PhysicalModelPixelOverlay({
                             );
                           }}
                           disabled={deviceBusyId === device.id}
-                          title={`Turn ${isOn ? "off" : "on"} ${device.name}`}
+                          title={`${kind}: ${device.name} (${isOn ? "on" : "off"})`}
                         >
                           <DeviceIcon className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{deviceKindLabel(device)}: {isOn ? "on" : "off"}</span>
                         </button>
                       );
-                    })
+                    })}
+                    {overflowDevices > 0 ? (
+                      <span className="inline-flex h-6 min-w-6 items-center justify-center border border-slate-300/70 bg-black/55 px-1 text-[9px] text-slate-100">
+                        +{overflowDevices}
+                      </span>
+                    ) : null}
+                    </>
                   ) : null}
                 </div>
               </div>
@@ -889,9 +973,6 @@ function RoomInspectorContent({
                       </span>
                       <div className="min-w-0">
                         <p className="truncate font-semibold text-foreground">{displayName}</p>
-                        <p className="mt-1 text-xs font-medium uppercase tracking-wide text-foreground-variant">
-                          {smartDeviceDisplayId(device)}
-                        </p>
                       </div>
                     </div>
                     <Badge variant={device.is_active === false ? "outline" : isOn ? "warning" : "secondary"}>
@@ -1253,21 +1334,32 @@ export default function FloorplanRoleViewer({
   const roomMetaById = useMemo<Record<string, FloorplanRoomMeta>>(() => {
     const next: Record<string, FloorplanRoomMeta> = {};
     for (const entry of roomEntries) {
+      const roomId = numericRoomIdFromEntry(entry);
+      const mergedOccupants = mergeOccupants(
+        getRoomOccupants(entry.presenceRoom),
+        roomId != null ? demoOccupantsByRoomId[roomId] ?? [] : [],
+      );
       if (entry.presenceRoom) {
-        next[entry.room.id] = buildPresenceMeta(entry.presenceRoom, roleBase);
+        next[entry.room.id] = buildPresenceMeta(entry.presenceRoom, roleBase, mergedOccupants);
+      } else if (mergedOccupants.length > 0) {
+        next[entry.room.id] = buildOccupantOnlyMeta(mergedOccupants, roleBase);
       }
     }
     return next;
-  }, [roomEntries, roleBase]);
+  }, [demoOccupantsByRoomId, roomEntries, roleBase]);
 
   const presenceRooms = useMemo(() => presenceData?.rooms ?? [], [presenceData?.rooms]);
   const occupiedRooms = useMemo(
     () =>
-      presenceRooms.filter((room) => {
-        const occupants = getRoomOccupants(room);
-        return occupants.length > 0 || Boolean(room.patient_hint) || Boolean(room.prediction_hint);
+      roomEntries.filter((entry) => {
+        const roomId = numericRoomIdFromEntry(entry);
+        const occupants = mergeOccupants(
+          getRoomOccupants(entry.presenceRoom),
+          roomId != null ? demoOccupantsByRoomId[roomId] ?? [] : [],
+        );
+        return occupants.length > 0 || Boolean(entry.presenceRoom?.patient_hint) || Boolean(entry.presenceRoom?.prediction_hint);
       }).length,
-    [presenceRooms],
+    [demoOccupantsByRoomId, roomEntries],
   );
   const totalAlerts = useMemo(
     () => presenceRooms.reduce((sum, room) => sum + (room.alert_count ?? 0), 0),
@@ -1304,29 +1396,37 @@ export default function FloorplanRoleViewer({
   );
 
   const selectedPresenceRoom = selectedRoomEntry?.presenceRoom ?? null;
+  const selectedNumericRoomId = useMemo(
+    () => numericRoomIdFromEntry(selectedRoomEntry),
+    [selectedRoomEntry],
+  );
   const selectedOccupants = useMemo(
-    () => getRoomOccupants(selectedPresenceRoom),
-    [selectedPresenceRoom],
+    () =>
+      mergeOccupants(
+        getRoomOccupants(selectedPresenceRoom),
+        selectedNumericRoomId != null ? demoOccupantsByRoomId[selectedNumericRoomId] ?? [] : [],
+      ),
+    [demoOccupantsByRoomId, selectedNumericRoomId, selectedPresenceRoom],
   );
   const selectedPatients = useMemo(
-    () => selectedOccupants.filter((item) => item.actor_type === "patient"),
+    () => selectedOccupants.filter(isPatientOccupant),
     [selectedOccupants],
   );
   const selectedStaff = useMemo(
-    () => selectedOccupants.filter((item) => item.actor_type === "staff"),
+    () => selectedOccupants.filter(isStaffOccupant),
     [selectedOccupants],
   );
 
   const inspectorDevices = useMemo(() => {
-    if (!selectedPresenceRoom) return [] as Array<RoomSmartDeviceStateSummary | SmartDevice>;
+    if (selectedNumericRoomId == null) return [] as Array<RoomSmartDeviceStateSummary | SmartDevice>;
     const liveDevices = (allSmartDevices ?? []).filter(
-      (device) => device.room_id === selectedPresenceRoom.room_id,
+      (device) => device.room_id === selectedNumericRoomId,
     );
-    if ((selectedPresenceRoom.smart_devices_summary?.length ?? 0) === 0) {
+    if ((selectedPresenceRoom?.smart_devices_summary?.length ?? 0) === 0) {
       return liveDevices;
     }
     const liveById = new Map(liveDevices.map((device) => [device.id, device]));
-    return selectedPresenceRoom.smart_devices_summary!.map((device) => {
+    return selectedPresenceRoom!.smart_devices_summary!.map((device) => {
       const live = liveById.get(device.id);
       return live
         ? {
@@ -1336,7 +1436,7 @@ export default function FloorplanRoleViewer({
           }
         : device;
     });
-  }, [allSmartDevices, selectedPresenceRoom]);
+  }, [allSmartDevices, selectedNumericRoomId, selectedPresenceRoom]);
 
   async function requestCapture() {
     if (!selectedPresenceRoom?.camera_summary?.capture_available) return;
@@ -1580,8 +1680,8 @@ export default function FloorplanRoleViewer({
               roomMetaById={roomMetaById}
             />
             <p className="mt-2 text-xs text-foreground-variant">
-              {selectedRoomEntry?.presenceRoom
-                ? `${selectedRoomEntry.room.label}: ${getRoomOccupants(selectedRoomEntry.presenceRoom)
+              {selectedRoomEntry
+                ? `${selectedRoomEntry.room.label}: ${selectedOccupants
                     .slice(0, 3)
                     .map((item) => item.display_name)
                     .join(", ") || "No visible occupants"}`

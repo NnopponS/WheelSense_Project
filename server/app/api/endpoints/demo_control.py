@@ -216,6 +216,16 @@ async def reset_demo_workspace(
             detail="Unsupported profile; use 'show-demo', 'clean-state', or 'clean-slate'.",
         )
 
+    if settings.is_simulator_mode:
+        from app.services.simulator_reset import reset_simulator_workspace
+
+        result = await reset_simulator_workspace(ws.name)
+        return DemoResetResponse(
+            profile=payload.profile,
+            status="ok",
+            message=result["message"],
+        )
+
     from scripts.seed_demo import run_seed
 
     await run_seed(ws.name, True)

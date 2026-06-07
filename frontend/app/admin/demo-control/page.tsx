@@ -135,8 +135,6 @@ export default function AdminDemoControlPage() {
   const [actorType, setActorType] = useState<ActorType>("patient");
   const [actorId, setActorId] = useState("");
   const [roomId, setRoomId] = useState("");
-  const [physicalActorType, setPhysicalActorType] = useState<ActorType>("patient");
-  const [physicalActorId, setPhysicalActorId] = useState("");
   const [physicalRoomAlias, setPhysicalRoomAlias] = useState("Bedroom");
   const [physicalDeviceKind, setPhysicalDeviceKind] = useState("light");
   const [physicalDeviceAction, setPhysicalDeviceAction] = useState<DevicePowerAction>("off");
@@ -168,6 +166,15 @@ export default function AdminDemoControlPage() {
         physical_zone: item.physicalZone,
       }));
   }, [physicalRoomsQuery.data, rooms]);
+  const physicalRoomOptions = useMemo<PhysicalModelRoom[]>(() => {
+    if (physicalRooms.length > 0) return physicalRooms;
+    return PHYSICAL_MODEL_ROOM_MAPPINGS.map((mapping) => ({
+      alias: mapping.alias,
+      room_id: 0,
+      room_name: mapping.sourceRoomNames[0] ?? mapping.alias,
+      physical_zone: mapping.physicalZone,
+    }));
+  }, [physicalRooms]);
   const selectedPhysicalRoom = physicalRooms.find((room) => room.alias === physicalRoomAlias) ?? physicalRooms[0] ?? null;
   const selectedPhysicalRoomDevices = selectedPhysicalRoom
     ? smartDevices.filter((device) => device.room_id === selectedPhysicalRoom.room_id && device.is_active !== false)
@@ -268,14 +275,23 @@ export default function AdminDemoControlPage() {
   }
 
   function handlePhysicalFall() {
-    if (physicalActorType !== "patient" || !physicalActorId) return;
+    if (!selectedPhysicalRoom || !robertPatient) return;
     void run(
-      "Physical fall trigger",
-      `Created fall alert for patient #${physicalActorId}.`,
+      "Manual Robert fall",
+      `Created Robert fall alert in ${selectedPhysicalRoom.alias}.`,
       () =>
-        api.triggerDemoPatientFall(physicalActorId, {
-          action: "fall",
-          note: `Physical model fall trigger in ${selectedPhysicalRoom?.alias ?? "mapped room"}.`,
+        api.post("/demo/physical-model/yolo-fall-events", {
+          room_alias: selectedPhysicalRoom.alias,
+          room: selectedPhysicalRoom.physical_zone,
+          physical_zone: selectedPhysicalRoom.physical_zone,
+          mapped_room_id: selectedPhysicalRoom.room_id,
+          patient_id: robertPatient.id,
+          patient_name: "Robert",
+          detected: true,
+          confidence: 1,
+          source: "demo_control",
+          method: "manual",
+          force: true,
         }),
     );
   }
@@ -343,56 +359,39 @@ export default function AdminDemoControlPage() {
           action={<MapPin className="h-4 w-4 text-muted-foreground" />}
         >
           <div className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Actor type</Label>
-                <Select value={physicalActorType} onValueChange={(value) => setPhysicalActorType(value as ActorType)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="patient">Patient</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Physical room</Label>
-                <Select value={physicalRoomAlias} onValueChange={setPhysicalRoomAlias}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(physicalRooms.length > 0 ? physicalRooms : PHYSICAL_MODEL_ROOM_MAPPINGS).map((room) => (
-                      <SelectItem key={room.alias} value={room.alias}>
-                        {room.alias}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Fixed physical patient</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    YOLO/mock camera detection always demos Robert, so the judge sees one clear resident flow.
+                  </p>
+                </div>
+                <Badge variant={robertPatient ? "secondary" : "destructive"}>
+                  Robert {robertPatient ? `#${robertPatient.id}` : "missing"}
+                </Badge>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Actor</Label>
-              <Select value={physicalActorId} onValueChange={setPhysicalActorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select actor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {physicalActorType === "patient"
-                    ? activePatients.map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {item.first_name} {item.last_name}
-                        </SelectItem>
-                      ))
-                    : staffUsers.map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {displayName(item)} ({item.role})
-                        </SelectItem>
-                      ))}
-                </SelectContent>
-              </Select>
+              <Label>Physical room</Label>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {physicalRoomOptions.map((room) => (
+                  <Button
+                    key={room.alias}
+                    type="button"
+                    variant={physicalRoomAlias === room.alias ? "default" : "outline"}
+                    className="h-auto justify-start px-3 py-3 text-left"
+                    onClick={() => setPhysicalRoomAlias(room.alias)}
+                  >
+                    <MapPin className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold">{room.alias}</span>
+                      <span className="block truncate text-xs opacity-75">{room.room_name}</span>
+                    </span>
+                  </Button>
+                ))}
+              </div>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-surface-container-low/50 p-3 text-sm">
@@ -423,11 +422,11 @@ export default function AdminDemoControlPage() {
               </Button>
               <Button
                 variant="outline"
-                disabled={physicalActorType !== "patient" || !physicalActorId}
+                disabled={!selectedPhysicalRoom || !robertPatient}
                 onClick={handlePhysicalFall}
               >
                 <AlertTriangle className="mr-2 h-4 w-4" />
-                Manual fall
+                Manual Robert fall
               </Button>
             </div>
 

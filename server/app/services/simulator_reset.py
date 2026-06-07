@@ -7,6 +7,7 @@ clearing dynamic data and re-seeding baseline demo data.
 from __future__ import annotations
 
 import asyncio
+import os
 from typing import Any
 
 from sqlalchemy import delete, func, select
@@ -136,8 +137,17 @@ async def reset_simulator_workspace(workspace_name: str | None = None) -> dict[s
         )
         await session.commit()
     
-    # Re-seed baseline data
-    workspace_id = await run_sim_team_seed(target_workspace, reset=False)
+    # Re-seed baseline data without deleting the workspace/users, so existing
+    # admin/head-nurse browser sessions remain valid after Clean State.
+    previous_force = os.environ.get("SIM_FORCE_SEED")
+    os.environ["SIM_FORCE_SEED"] = "1"
+    try:
+        workspace_id = await run_sim_team_seed(target_workspace, reset=False)
+    finally:
+        if previous_force is None:
+            os.environ.pop("SIM_FORCE_SEED", None)
+        else:
+            os.environ["SIM_FORCE_SEED"] = previous_force
     
     return {
         "action": "reset",
