@@ -64,6 +64,7 @@ async def test_observer_acknowledges_alert_for_assigned_patient(
     )
     assert ack.status_code == 200, ack.text
     assert ack.json()["status"] == "acknowledged"
+    assert ack.json()["acknowledged_by"] == caregiver_id
 
 
 @pytest.mark.asyncio

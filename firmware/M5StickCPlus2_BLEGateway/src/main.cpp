@@ -10,6 +10,8 @@
 #include <esp_gap_ble_api.h>
 #include <esp_system.h>
 #include <math.h>
+#include <AXP2101.h>
+#include <esp_task_wdt.h>
 
 #define FIRMWARE_VERSION "4.0.0-ble-gateway"
 
@@ -28,7 +30,6 @@ constexpr uint8_t COMMAND_TARGET = 1;
 constexpr uint8_t ROOM_TARGET = 2;
 constexpr uint8_t TIME_TARGET = 3;
 constexpr uint8_t HOLD_PIN = 4;
-constexpr uint8_t BATTERY_ADC_PIN = 38;
 constexpr uint8_t BUTTON_A_PIN = 37;
 constexpr uint8_t BUTTON_B_PIN = 39;
 constexpr uint8_t BUTTON_C_PIN = 35;
@@ -100,6 +101,7 @@ enum class ScreenMode : uint8_t {
 };
 
 ScreenMode screenMode = ScreenMode::dashboard;
+ScreenMode lastScreenMode = ScreenMode::dashboard;
 uint8_t dashboardPage = 0;
 uint8_t menuIndex = 0;
 
@@ -136,6 +138,7 @@ struct SensorFrame {
 SensorFrame sensorFrame;
 ImuDriver imuDriver = ImuDriver::none;
 uint8_t imuAddress = 0;
+AXP2101 PMIC;
 
 struct PendingWrite {
   String payload;
@@ -232,8 +235,16 @@ void initPowerAndButtons() {
   pinMode(BUTTON_A_PIN, INPUT);
   pinMode(BUTTON_B_PIN, INPUT);
   pinMode(BUTTON_C_PIN, INPUT);
-  pinMode(BATTERY_ADC_PIN, INPUT);
-  analogSetPinAttenuation(BATTERY_ADC_PIN, ADC_11db);
+  
+  // Initialize AXP2101 PMIC for battery reading
+  Wire.begin();
+  PMIC.begin();
+  PMIC.setPowerOutPut(AXP2101_DCDC1, AXP2101_ON);
+  PMIC.setPowerOutPut(AXP2101_DCDC3, AXP2101_ON);
+  PMIC.setPowerOutPut(AXP2101_ALDO1, AXP2101_ON);
+  PMIC.setPowerOutPut(AXP2101_ALDO2, AXP2101_ON);
+  PMIC.setPowerOutPut(AXP2101_BLDO1, AXP2101_ON);
+  PMIC.setPowerOutPut(AXP2101_BLDO2, AXP2101_ON);
 }
 
 void initDisplay() {
@@ -439,9 +450,11 @@ void drawMetricRow(int y, const char* label, const String& value, uint16_t value
   display.setTextDatum(TL_DATUM);
 }
 
-void drawDashboard() {
+void drawDashboard(bool clear = true) {
   const int w = display.width();
-  clearDisplay();
+  if (clear) {
+    clearDisplay();
+  }
   drawHeader(dashboardPage == 0 ? "Dashboard" : "IMU Raw");
 
   if (dashboardPage == 0) {
@@ -542,9 +555,16 @@ void redrawScreen(bool force = false) {
     return;
   }
   lastDisplayMs = now;
+  
+  // Only clear screen when screen mode changes or forced
+  const bool screenChanged = (screenMode != lastScreenMode);
+  if (force || screenChanged) {
+    lastScreenMode = screenMode;
+  }
+  
   switch (screenMode) {
     case ScreenMode::dashboard:
-      drawDashboard();
+      drawDashboard(force || screenChanged);
       break;
     case ScreenMode::menu:
       drawMenu();
@@ -698,7 +718,7 @@ void beginImu() {
   Serial.println("[IMU] No supported internal IMU detected");
 }
 
-bool readMpu6886(SensorFrame& out) {
+bool readMpu6886(SensorFrame& out, bool applyOffset = true) {
   uint8_t buf[14];
   if (!i2cRead(imuAddress, 0x3B, buf, sizeof(buf))) {
     return false;
@@ -710,11 +730,11 @@ bool readMpu6886(SensorFrame& out) {
   out.az = be16(&buf[4]) * accelScale;
   out.gx = be16(&buf[8]) * gyroScale;
   out.gy = be16(&buf[10]) * gyroScale;
-  out.gz = be16(&buf[12]) * gyroScale - gyroZOffset;
+  out.gz = be16(&buf[12]) * gyroScale - (applyOffset ? gyroZOffset : 0.0f);
   return true;
 }
 
-bool readBmi270(SensorFrame& out) {
+bool readBmi270(SensorFrame& out, bool applyOffset = true) {
   uint8_t buf[12];
   if (!i2cRead(imuAddress, 0x0C, buf, sizeof(buf))) {
     return false;
@@ -726,7 +746,7 @@ bool readBmi270(SensorFrame& out) {
   out.az = le16(&buf[4]) * accelScale;
   out.gx = le16(&buf[6]) * gyroScale;
   out.gy = le16(&buf[8]) * gyroScale;
-  out.gz = le16(&buf[10]) * gyroScale - gyroZOffset;
+  out.gz = le16(&buf[10]) * gyroScale - (applyOffset ? gyroZOffset : 0.0f);
   return true;
 }
 
@@ -739,14 +759,17 @@ void updateSensors() {
     ok = readBmi270(sensorFrame);
   }
   sensorFrame.imuValid = ok;
-  const uint32_t rawMv = analogReadMilliVolts(BATTERY_ADC_PIN);
-  sensorFrame.batteryVoltageMv = rawMv > 0 ? static_cast<int>(rawMv * 2) : -1;
+  
+  // Read battery from AXP2101 PMIC
+  const int rawMv = PMIC.getBatteryVoltage();
+  const bool validRaw = (rawMv >= 3000 && rawMv <= 4500);
+  sensorFrame.batteryVoltageMv = validRaw ? rawMv : -1;
   if (sensorFrame.batteryVoltageMv > 0) {
     sensorFrame.batteryPercent = constrain(map(sensorFrame.batteryVoltageMv, 3300, 4200, 0, 100), 0, 100);
   } else {
     sensorFrame.batteryPercent = -1;
   }
-  sensorFrame.charging = false;
+  sensorFrame.charging = PMIC.isCharging();
 
   if (!ok) {
     return;
@@ -789,12 +812,12 @@ void calibrateImu() {
     SensorFrame frame;
     bool ok = false;
     if (imuDriver == ImuDriver::mpu6886) {
-      ok = readMpu6886(frame);
+      ok = readMpu6886(frame, false); // Read raw values without offset
     } else if (imuDriver == ImuDriver::bmi270) {
-      ok = readBmi270(frame);
+      ok = readBmi270(frame, false); // Read raw values without offset
     }
     if (ok) {
-      sumZ += frame.gz + gyroZOffset;
+      sumZ += frame.gz;
       samples++;
     }
     delay(2);
@@ -815,7 +838,7 @@ void updateDeviceInfo() {
   doc["device_id"] = deviceId;
   doc["device_name"] = deviceName;
   doc["device_type"] = "wheelchair";
-  doc["hardware_type"] = "companion_m5";
+  doc["hardware_type"] = "wheelchair";
   doc["firmware"] = FIRMWARE_VERSION;
   doc["model"] = "M5StickCPlus2";
   doc["transport"] = "ble";
@@ -932,13 +955,6 @@ bool takeWrite(uint8_t target, PendingWrite& out) {
 }
 
 class ServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer*) override {
-    centralConnected = true;
-    pairMode = false;
-    Serial.println("[BLE] Central connected");
-    redrawScreen(true);
-  }
-
   void onConnect(BLEServer*, esp_ble_gatts_cb_param_t* param) override {
     centralConnected = true;
     pairMode = false;
@@ -947,16 +963,9 @@ class ServerCallbacks : public BLEServerCallbacks {
     redrawScreen(true);
   }
 
-  void onDisconnect(BLEServer*) override {
-    centralConnected = false;
-    Serial.println("[BLE] Central disconnected; advertising");
-    delay(100);
-    BLEDevice::startAdvertising();
-    redrawScreen(true);
-  }
-
   void onDisconnect(BLEServer*, esp_ble_gatts_cb_param_t*) override {
     centralConnected = false;
+    activeConnId = 0;
     Serial.println("[BLE] Central disconnected; advertising");
     delay(100);
     BLEDevice::startAdvertising();
@@ -970,7 +979,9 @@ class WriteCallbacks : public BLECharacteristicCallbacks {
 
   void onWrite(BLECharacteristic* characteristic) override {
     std::string raw = characteristic->getValue();
-    queueWrite(target_, String(raw.c_str()));
+    if (!raw.empty()) {
+      queueWrite(target_, String(raw.c_str(), raw.length()));
+    }
   }
 
  private:
@@ -1096,7 +1107,7 @@ void notifyTelemetry(uint32_t nowMs) {
   doc["device_id"] = deviceId;
   doc["device_name"] = deviceName;
   doc["device_type"] = "wheelchair";
-  doc["hardware_type"] = "companion_m5";
+  doc["hardware_type"] = "wheelchair";
   doc["firmware"] = FIRMWARE_VERSION;
   doc["model"] = "M5StickCPlus2";
   doc["seq"] = telemetrySeq;
@@ -1306,6 +1317,11 @@ void handleButtons() {
 void setup() {
   Serial.begin(115200);
   delay(100);
+  
+  // Initialize Task Watchdog Timer (5 second timeout)
+  esp_task_wdt_init(5, true);
+  esp_task_wdt_add(NULL);
+  
   initPowerAndButtons();
   initDisplay();
   loadConfig();
@@ -1321,6 +1337,10 @@ void setup() {
 
 void loop() {
   const uint32_t now = millis();
+  
+  // Reset watchdog timer
+  esp_task_wdt_reset();
+  
   updateSensors();
   handleButtons();
   PendingWrite event;

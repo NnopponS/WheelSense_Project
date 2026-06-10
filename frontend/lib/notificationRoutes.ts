@@ -12,6 +12,7 @@ export function alertsInboxPath(role: AppRole): string {
     case "patient":
       return "/patient";
     case "admin":
+      return "/admin/alerts";
     case "head_nurse":
       return "/head-nurse/alerts";
     default:

@@ -1,0 +1,188 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e15]:
+      - generic [ref=e16]:
+        - img [ref=e18]:
+          - generic [ref=e21]: W
+        - generic [ref=e22]:
+          - heading "WheelSense" [level=1] [ref=e23]
+          - paragraph [ref=e24]: Smart Care Platform
+      - navigation [ref=e25]:
+        - generic [ref=e27]:
+          - link "System Overview" [ref=e28] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e29]
+            - generic [ref=e34]: System Overview
+          - link "People" [ref=e35] [cursor=pointer]:
+            - /url: /admin/personnel
+            - img [ref=e36]
+            - generic [ref=e41]: People
+          - link "Facilities" [ref=e42] [cursor=pointer]:
+            - /url: /admin/facility-management
+            - img [ref=e43]
+            - generic [ref=e46]: Facilities
+          - link "Devices" [ref=e47] [cursor=pointer]:
+            - /url: /admin/devices
+            - img [ref=e48]
+            - generic [ref=e50]: Devices
+          - link "Operations" [ref=e51] [cursor=pointer]:
+            - /url: /admin/tasks
+            - img [ref=e52]
+            - generic [ref=e57]: Operations
+        - button "More" [ref=e60]:
+          - img [ref=e61]
+          - generic [ref=e65]: More
+          - img [ref=e66]
+      - button "Sign Out" [ref=e69]:
+        - img [ref=e70]
+        - generic [ref=e73]: Sign Out
+      - link "ada.m Admin" [ref=e75] [cursor=pointer]:
+        - /url: /account
+        - generic [ref=e76]:
+          - paragraph [ref=e77]: ada.m
+          - paragraph [ref=e78]: Admin
+    - generic [ref=e79]:
+      - banner [ref=e80]:
+        - generic [ref=e81]:
+          - generic [ref=e83]:
+            - img
+            - textbox "Search..." [ref=e84]
+          - generic [ref=e85]:
+            - button "Act as Admin" [ref=e88]:
+              - img [ref=e89]
+              - generic [ref=e95]:
+                - generic [ref=e96]: Act as
+                - generic [ref=e97]: Admin
+              - img [ref=e98]
+            - generic [ref=e100]:
+              - img [ref=e101]
+              - text: SIM
+            - group "Language" [ref=e104]:
+              - img [ref=e105]
+              - button "Switch to English" [pressed] [ref=e108]: EN
+              - button "Switch to Thai" [ref=e109]: TH
+            - button "Toggle theme" [ref=e111]:
+              - img
+            - button "Sound off" [ref=e112]:
+              - img
+            - button "Notifications" [ref=e114]:
+              - img
+            - generic [ref=e117]:
+              - link "Open account settings" [ref=e118] [cursor=pointer]:
+                - /url: /account
+              - generic [ref=e119]:
+                - paragraph [ref=e120]: ada.m
+                - paragraph [ref=e121]: Admin
+      - main [ref=e122]:
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - img [ref=e127]
+                - text: Alerts
+              - heading "Alert Center" [level=2] [ref=e130]
+              - paragraph [ref=e131]: Triage active, acknowledged, and resolved alerts from one operational table.
+            - generic [ref=e132]:
+              - generic [ref=e133]:
+                - img
+                - textbox "Search alerts" [ref=e134]
+              - combobox [ref=e135]:
+                - generic: All status
+                - img [ref=e136]
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - generic [ref=e141]:
+                - generic [ref=e142]:
+                  - paragraph [ref=e143]: Total alerts
+                  - paragraph [ref=e144]: "2"
+                - img [ref=e146]
+              - generic [ref=e150]:
+                - generic [ref=e151]:
+                  - paragraph [ref=e152]: Active
+                  - paragraph [ref=e153]: "0"
+                - img [ref=e155]
+              - generic [ref=e161]:
+                - generic [ref=e162]:
+                  - paragraph [ref=e163]: Acknowledged
+                  - paragraph [ref=e164]: "2"
+                - img [ref=e166]
+              - generic [ref=e170]:
+                - generic [ref=e171]:
+                  - paragraph [ref=e172]: Critical
+                  - paragraph [ref=e173]: "2"
+                - img [ref=e175]
+            - generic [ref=e177]:
+              - generic [ref=e178]:
+                - heading "Alert Center" [level=3] [ref=e179]
+                - generic [ref=e180]:
+                  - button "Export CSV" [ref=e181]:
+                    - img
+                    - generic [ref=e182]: Export CSV
+                  - paragraph [ref=e183]: 2 matches
+              - generic [ref=e184]:
+                - table [ref=e187]:
+                  - rowgroup [ref=e188]:
+                    - row "Alert Severity Status Time Patient" [ref=e189]:
+                      - columnheader "Alert" [ref=e190]:
+                        - button "Alert" [ref=e267]:
+                          - text: Alert
+                          - img
+                      - columnheader "Severity" [ref=e192]
+                      - columnheader "Status" [ref=e193]
+                      - columnheader "Time" [ref=e194]:
+                        - button "Time" [ref=e268]:
+                          - text: Time
+                          - img
+                      - columnheader "Patient" [ref=e196]
+                      - columnheader [ref=e197]
+                  - rowgroup [ref=e198]:
+                    - 'row "Demo Fall alert Triggered from demo controller critical acknowledged 07 Jun 2026, 22:45 3 minutes ago #72 Resolve" [ref=e269]':
+                      - cell "Demo Fall alert Triggered from demo controller" [ref=e200]:
+                        - generic [ref=e270]:
+                          - paragraph [ref=e271]: Demo Fall alert
+                          - paragraph [ref=e272]: Triggered from demo controller
+                      - cell "critical" [ref=e204]:
+                        - generic [ref=e273]: critical
+                      - cell "acknowledged" [ref=e274]:
+                        - generic [ref=e275]: acknowledged
+                      - cell "07 Jun 2026, 22:45 3 minutes ago" [ref=e208]:
+                        - generic [ref=e276]:
+                          - paragraph [ref=e277]: 07 Jun 2026, 22:45
+                          - paragraph [ref=e278]: 3 minutes ago
+                      - cell "#72" [ref=e212]
+                      - cell "Resolve" [ref=e279]:
+                        - button "Resolve" [ref=e281]
+                    - 'row "Physical model fall detected - Robert YOLO physical model detected Robert in Bedroom (Room 401) at 94% confidence. Treat as a fall emergency for the demo. critical acknowledged 07 Jun 2026, 22:20 28 minutes ago #70 Resolve" [ref=e282]':
+                      - cell "Physical model fall detected - Robert YOLO physical model detected Robert in Bedroom (Room 401) at 94% confidence. Treat as a fall emergency for the demo." [ref=e218]:
+                        - generic [ref=e283]:
+                          - paragraph [ref=e284]: Physical model fall detected - Robert
+                          - paragraph [ref=e285]: YOLO physical model detected Robert in Bedroom (Room 401) at 94% confidence. Treat as a fall emergency for the demo.
+                      - cell "critical" [ref=e222]:
+                        - generic [ref=e286]: critical
+                      - cell "acknowledged" [ref=e224]:
+                        - generic [ref=e287]: acknowledged
+                      - cell "07 Jun 2026, 22:20 28 minutes ago" [ref=e288]:
+                        - generic [ref=e289]:
+                          - paragraph [ref=e290]: 07 Jun 2026, 22:20
+                          - paragraph [ref=e291]: 28 minutes ago
+                      - cell "#70" [ref=e230]
+                      - cell "Resolve" [ref=e231]:
+                        - button "Resolve" [ref=e293]
+                - generic [ref=e234]:
+                  - paragraph [ref=e235]: Page 1 of 1
+                  - generic [ref=e236]:
+                    - button "Previous" [disabled]
+                    - button "Next" [disabled]
+    - button "Open EaseAI chat" [ref=e237]:
+      - img [ref=e238]
+      - generic [ref=e241]: Ask EaseAI
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e294]:
+        - button "Close toast" [ref=e295] [cursor=pointer]:
+          - img [ref=e296]
+        - img [ref=e300]
+        - generic [ref=e303]: Alert acknowledged. You are marked as the responding staff member.
+  - button "Open Next.js Dev Tools" [ref=e11] [cursor=pointer]:
+    - img [ref=e12]
+  - alert [ref=e242]

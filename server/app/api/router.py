@@ -113,6 +113,11 @@ api_router.include_router(
     dependencies=[Depends(get_current_active_user)],
 )
 api_router.include_router(
+    demo_control.internal_router,
+    prefix="/demo",
+    tags=["demo-control-internal"],
+)
+api_router.include_router(
     demo_control.router,
     prefix="/demo",
     tags=["demo-control"],

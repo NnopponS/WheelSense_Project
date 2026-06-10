@@ -17,6 +17,10 @@ This file reflects the variables currently read by `server/app/config.py` and th
 | `MQTT_BROKER` | `localhost` | MQTT hostname |
 | `MQTT_PORT` | `1883` | MQTT port |
 | `PORTAL_BASE_URL` | empty | Public HTTPS base URL of the web app (e.g. a Cloudflare quick tunnel). When set, the API publishes it on MQTT `WheelSense/config/all` at startup and includes it in per-device `WheelSense/config/{device_id}` payloads after patient pairing so the mobile WebView can load the portal off-LAN. |
+| `CAMERA_STREAM_WS_PUBLIC_BASE_URL` | empty | Public WebSocket origin sent to TsimCam over MQTT for YOLO streaming. Set this to a URL reachable from the phone-hotspot network, for example `ws://203.0.113.10:8765` or `wss://camera.example.com`; the server appends `/ws/camera/{room}`. Empty falls back to a local/dev URL derived from `SERVER_BASE_URL`. |
+| `CAMERA_STREAM_DEFAULT_FPS` | `8` | Default frame rate sent in camera `camera_stream_config`. |
+| `CAMERA_STREAM_DEFAULT_ROOM` | `livingroom` | Fallback room slug when the camera registration and registry have no room binding. |
+| `CAMERA_STREAM_AUTO_START` | `true` | When `true`, registration/status/ready ack publishes stream config automatically. |
 | `MQTT_USER` | empty | MQTT username |
 | `MQTT_PASSWORD` | empty | MQTT password |
 | `MQTT_TLS` | `false` | Enable TLS for MQTT |

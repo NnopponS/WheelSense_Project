@@ -234,10 +234,18 @@ docker compose logs -f homeassistant
 | `WheelSense/camera/{device_id}/registration` | camera -> server | camera registration |
 | `WheelSense/camera/{device_id}/status` | camera -> server | camera heartbeat/status |
 | `WheelSense/camera/{device_id}/photo` | camera -> server | photo chunks |
+| `WheelSense/camera/{device_id}/frame` | camera -> server | legacy raw JPEG fallback; continuous YOLO video should use WebSocket |
 | `WheelSense/camera/{device_id}/ack` | camera -> server | command acknowledgement |
-| `WheelSense/camera/{device_id}/control` | server -> camera | capture/stream/resolution commands |
+| `WheelSense/camera/{device_id}/control` | server -> camera | capture/stream/resolution commands and immediate `camera_stream_config` |
+| `WheelSense/config/{device_id}` | server -> firmware/mobile | retained config; for cameras includes `websocket_url` when stream config is available |
+| `WheelSense/central/registration` | CucumberRS -> server | appliance controller registration |
+| `WheelSense/central/status` | CucumberRS -> server | all-room appliance controller status |
+| `WheelSense/{bedroom|bathroom|kitchen|livingroom}/status` | CucumberRS -> server | per-room appliance status |
+| `WheelSense/{bedroom|bathroom|kitchen|livingroom}/control` | server -> CucumberRS | room appliance control (`light`, `AC`, `fan`, `tv`, `alarm`) |
 | `WheelSense/vitals/{patient_id}` | server -> subscribers | vital broadcasts derived from telemetry |
 | `WheelSense/alerts/{patient_id}` or `WheelSense/alerts/{device_id}` | server -> subscribers | fall/alert broadcasts |
+
+For phone-hotspot camera deployments, set `CAMERA_STREAM_WS_PUBLIC_BASE_URL` to the externally reachable YOLO WebSocket origin. The backend appends `/ws/camera/{room}` and sends the final URL to TsimCam over public MQTT.
 
 `WheelSense/data` **`polar_hr`** payloads and persisted `vital_readings` rows use heart rate, R-R, SpO₂, and sensor battery only—the **`skin_temperature` column was dropped** (Alembic revision **`v6w7x8y9z0a1`**). After upgrading images or pulling main, run `alembic upgrade head` so PostgreSQL matches the ORM.
 

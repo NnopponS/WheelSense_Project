@@ -3457,12 +3457,12 @@ const translations = {
   "notifications.emptyTitle": { en: "No notifications", th: "ไม่มีการแจ้งเตือน" },
   "notifications.emptySubtitle": { en: "You're all caught up!", th: "คุณอ่านครบแล้ว" },
   "notifications.drawerInboxAdminHint": {
-    en: "Alert queue: Head Nurse / clinical inbox (shared with admins).",
-    th: "คิวแจ้งเตือน: Head Nurse / clinical (ใช้ร่วมกับผู้ดูแลระบบ)",
+    en: "Admin alert queue for workspace triage.",
+    th: "คิวแจ้งเตือนผู้ดูแลระบบสำหรับการคัดแยกในเวิร์กสเปซ",
   },
   "notifications.drawerInboxHeadNurseHint": {
-    en: "Clinical alert queue; admins use the same inbox in this workspace.",
-    th: "คิวแจ้งเตือนทางคลินิก — ผู้ดูแลระบบใช้กล่องเดียวกันในเวิร์กสเปซนี้",
+    en: "Clinical alert queue for care-team triage.",
+    th: "คิวแจ้งเตือนทางคลินิกสำหรับทีมดูแล",
   },
   "notifications.drawerInboxImpersonationLead": {
     en: "Acting as",
@@ -3484,6 +3484,15 @@ const translations = {
   "notifications.toastOpenQueue": { en: "Open in queue", th: "เปิดในคิว" },
   "notifications.toastAcknowledge": { en: "Acknowledge", th: "รับทราบ" },
   "notifications.toastAckFailed": { en: "Could not acknowledge alert.", th: "รับทราบไม่สำเร็จ" },
+  "notifications.emergencyOverlayKicker": { en: "Emergency alert", th: "แจ้งเตือนฉุกเฉิน" },
+  "notifications.emergencyOverlayAlert": { en: "Alert", th: "แจ้งเตือน" },
+  "notifications.emergencyOverlayPatient": { en: "Patient", th: "ผู้ป่วย" },
+  "notifications.emergencyOverlayOpenQueue": { en: "Open queue", th: "เปิดคิว" },
+  "notifications.emergencyOverlayAcknowledge": { en: "I'm coming", th: "กำลังไปช่วย" },
+  "notifications.emergencyOverlayAckSuccess": {
+    en: "Alert acknowledged. You are marked as the responding staff member.",
+    th: "รับทราบแล้ว ระบบบันทึกว่าคุณเป็นเจ้าหน้าที่ที่กำลังไปช่วย",
+  },
   "notifications.toastPatientNameFallback": {
     en: "Patient #{id}",
     th: "ผู้ป่วย #{id}",

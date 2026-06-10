@@ -1,5 +1,11 @@
 import nextConfig from "../next.config";
 import {
+  alertsInboxPath,
+  alertsInboxUrl,
+  workflowTasksPath,
+  staffMessagesPath,
+} from "./notificationRoutes";
+import {
   getAccountManagementPath,
   getAlertsPath,
   getCaregiversPath,
@@ -40,6 +46,22 @@ describe("role route helpers", () => {
     expect(getDevicesPath("supervisor")).toBe("/supervisor/devices");
     expect(getMonitoringPath("observer", 12)).toBe("/observer/floorplans?room=12");
     expect(getAlertsPath("head_nurse", 3)).toBe("/head-nurse/alerts?room=3");
+  });
+});
+
+describe("notification route helpers", () => {
+  it("routes alerts to each role's own alert inbox", () => {
+    expect(alertsInboxPath("admin")).toBe("/admin/alerts");
+    expect(alertsInboxPath("head_nurse")).toBe("/head-nurse/alerts");
+    expect(alertsInboxPath("supervisor")).toBe("/supervisor/emergency");
+    expect(alertsInboxPath("observer")).toBe("/observer/alerts");
+    expect(alertsInboxUrl("admin", 42)).toBe("/admin/alerts?alert=42");
+  });
+
+  it("keeps staff task and message routes role-aware", () => {
+    expect(workflowTasksPath("admin")).toBe("/head-nurse/tasks");
+    expect(staffMessagesPath("admin")).toBe("/admin/messages");
+    expect(staffMessagesPath("supervisor")).toBe("/supervisor/messages");
   });
 });
 

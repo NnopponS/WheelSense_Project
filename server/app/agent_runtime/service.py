@@ -17,7 +17,7 @@ from sqlalchemy import select
 from app.api.dependencies import assert_patient_record_access_db, resolve_current_user_from_token
 from app.config import settings
 from app.db.session import AsyncSessionLocal
-from app.models.core import Workspace
+from app.models.core import Room, SmartDevice, Workspace
 from app.mcp.server import execute_workspace_tool
 from app.schemas.agent_runtime import (
     AgentRuntimeExecuteResponse,
@@ -68,6 +68,227 @@ from app.agent_runtime.task_request import normalize_task_create_title as normal
 logger = logging.getLogger("wheelsense.agent_runtime")
 
 _AI_RESPONSE_TIMEOUT_SECONDS = 45
+
+_ROOM_CONTROL_ALIAS_TARGETS: dict[str, str] = {
+    "bedroom": "room 401",
+    "living room": "room 402",
+    "livingroom": "room 402",
+    "bathroom": "bathroom",
+    "dining": "dining room",
+    "dining room": "dining room",
+    "kitchen": "dining room",
+    "kitchen dining": "dining room",
+    "kitchen / dining": "dining room",
+    "main hall": "main hall",
+    "physiotherapy": "physiotherapy room",
+    "physiotherapy room": "physiotherapy room",
+    "nurse station": "nurses station",
+    "nurses station": "nurses station",
+    "nursing station": "nurses station",
+    "garden": "garden lounge",
+    "garden lounge": "garden lounge",
+}
+
+
+def _room_control_base_text(value: str) -> str:
+    text = (value or "").strip().lower()
+    text = text.replace("&", " and ").replace("'", "")
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _normalize_room_control_text(value: str) -> str:
+    text = _room_control_base_text(value)
+    text = _room_control_base_text(_ROOM_CONTROL_ALIAS_TARGETS.get(text, text))
+    text = re.sub(r"\b(?:the|room|area|zone)\b", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = _room_control_base_text(_ROOM_CONTROL_ALIAS_TARGETS.get(text, text))
+    text = re.sub(r"\b(?:the|room|area|zone)\b", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _room_alias_keys(room: Room) -> set[str]:
+    name = _normalize_room_control_text(str(room.name or ""))
+    aliases = {name}
+    if name == "nurses station":
+        aliases.update({"nurse station", "nursing station"})
+    if name == "dining":
+        aliases.update({"kitchen", "kitchen dining", "kitchen / dining"})
+    if name == "401":
+        aliases.add("bedroom")
+    if name == "402":
+        aliases.update({"living room", "livingroom"})
+    return {_normalize_room_control_text(alias) for alias in aliases if alias}
+
+
+def _parse_room_smart_device_command(message: str) -> dict[str, str] | None:
+    text = (message or "").strip()
+    if not text:
+        return None
+    lowered = text.lower()
+
+    action = ""
+    if (
+        "ปิด" in text
+        or re.search(r"\b(?:turn|switch)\s+off\b|\boff\b|\bdisable\b", lowered)
+    ):
+        action = "turn_off"
+    elif (
+        "เปิด" in text
+        or re.search(r"\b(?:turn|switch)\s+on\b|\bon\b|\benable\b", lowered)
+    ):
+        action = "turn_on"
+    if not action:
+        return None
+
+    device_kind = ""
+    if "ไฟ" in text or re.search(r"\b(?:light|lamp)\b", lowered):
+        device_kind = "light"
+    elif "แอร์" in text or re.search(r"\b(?:ac|air\s*con|aircon|air\s*conditioner|climate)\b", lowered):
+        device_kind = "climate"
+    elif "พัดลม" in text or re.search(r"\bfan\b", lowered):
+        device_kind = "fan"
+    elif "ทีวี" in text or re.search(r"\b(?:tv|television)\b", lowered):
+        device_kind = "tv"
+    elif "สัญญาณ" in text or re.search(r"\balarm\b", lowered):
+        device_kind = "alarm"
+    elif re.search(r"\bswitch\b", lowered):
+        device_kind = "switch"
+    if not device_kind:
+        return None
+
+    room_query = ""
+    for alias in sorted(_ROOM_CONTROL_ALIAS_TARGETS, key=len, reverse=True):
+        if re.search(rf"\b{re.escape(alias)}\b", lowered):
+            room_query = alias
+            break
+
+    room_match = re.search(r"ห้อง\s*([A-Za-z0-9][A-Za-z0-9\s/'-]{1,80})", text, flags=re.IGNORECASE)
+    if room_match:
+        room_query = room_match.group(1)
+    if not room_query:
+        room_match = re.search(
+            r"\b(?:room|area|zone)\s+([A-Za-z0-9][A-Za-z0-9\s/'-]{1,80})",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if room_match:
+            room_query = room_match.group(1)
+    if not room_query:
+        return None
+
+    cleaned_room_query = re.sub(
+        r"\b(?:light|lamp|fan|ac|air\s*con|aircon|air\s*conditioner|climate|tv|television|alarm|switch|on|off|turn|switch|enable|disable)\b.*$",
+        "",
+        room_query,
+        flags=re.IGNORECASE,
+    ).strip(" /'-")
+    if cleaned_room_query:
+        room_query = cleaned_room_query
+    elif room_query not in _ROOM_CONTROL_ALIAS_TARGETS:
+        return None
+
+    return {
+        "action": action,
+        "device_kind": device_kind,
+        "room_query": room_query,
+    }
+
+
+def _smart_device_kind_score(device: SmartDevice, requested_kind: str) -> int:
+    kind = (requested_kind or "").strip().lower()
+    text = f"{device.name} {device.device_type} {device.ha_entity_id}".lower()
+    device_type = str(device.device_type or "").lower()
+    if not kind:
+        return 1
+    if kind == "tv":
+        return 100 if "tv" in text or "television" in text else 0
+    if kind == "alarm":
+        return 100 if "alarm" in text else 0
+    if kind == "light":
+        if device_type == "light":
+            return 100
+        if "light" in text or "lamp" in text:
+            return 90
+        return 0
+    if kind == "switch":
+        if device_type == "switch":
+            return 100
+        if "switch" in text:
+            return 90
+        return 0
+    if kind == "climate":
+        if device_type == "climate":
+            return 100
+        if re.search(r"\b(?:ac|aircon|air conditioner|climate)\b", text):
+            return 90
+        return 0
+    if kind == "fan":
+        if device_type == "fan":
+            return 100
+        if "fan" in text:
+            return 90
+        return 0
+    return 0
+
+
+async def _resolve_room_smart_device_command(
+    db,
+    workspace_id: int,
+    parsed: dict[str, str],
+) -> tuple[Room, SmartDevice] | None:
+    room_key = _normalize_room_control_text(parsed.get("room_query", ""))
+    if not room_key:
+        return None
+    rooms = (
+        await db.execute(select(Room).where(Room.workspace_id == workspace_id).order_by(Room.id.asc()))
+    ).scalars().all()
+    matched_rooms = [room for room in rooms if room_key in _room_alias_keys(room)]
+    if not matched_rooms:
+        matched_rooms = [
+            room
+            for room in rooms
+            if any(room_key in alias or alias in room_key for alias in _room_alias_keys(room))
+        ]
+    if len(matched_rooms) != 1:
+        return None
+
+    room = matched_rooms[0]
+    devices = (
+        await db.execute(
+            select(SmartDevice)
+            .where(
+                SmartDevice.workspace_id == workspace_id,
+                SmartDevice.room_id == room.id,
+                SmartDevice.is_active.is_(True),
+            )
+            .order_by(SmartDevice.id.asc())
+        )
+    ).scalars().all()
+    if not devices:
+        return None
+
+    requested_kind = parsed.get("device_kind", "")
+    scored = [
+        (score, device)
+        for device in devices
+        if (score := _smart_device_kind_score(device, requested_kind)) > 0
+    ]
+    if not scored and requested_kind == "light":
+        switch_fallbacks = [device for device in devices if str(device.device_type or "").lower() == "switch"]
+        if len(switch_fallbacks) == 1:
+            return room, switch_fallbacks[0]
+    if not scored:
+        return None
+    scored.sort(key=lambda item: (-item[0], item[1].id or 0))
+    return room, scored[0][1]
+
+
+def _action_label(action: str, locale: str) -> str:
+    if locale == "th":
+        return "ปิด" if action == "turn_off" else "เปิด"
+    return "turn off" if action == "turn_off" else "turn on"
+
 
 def _is_task_management_create_request(message: str) -> bool:
     text = message or ""
@@ -880,6 +1101,17 @@ def _is_patient_timeline_request(message: str) -> bool:
     )
 
 
+def _is_patient_list_request(message: str) -> bool:
+    lowered = (message or "").lower()
+    has_patient = bool(re.search(r"\bpatients?\b", lowered)) or any(
+        token in message for token in ("ผู้ป่วย", "คนไข้")
+    )
+    has_list = bool(re.search(r"\b(list|show|display|visible|all)\b", lowered)) or any(
+        token in message for token in ("รายการ", "ทั้งหมด", "มองเห็น", "แสดง", "ดู")
+    )
+    return has_patient and has_list
+
+
 def _is_device_status_request(message: str) -> bool:
     lowered = (message or "").lower()
     has_thai_device = "อุปกรณ์" in message
@@ -943,6 +1175,42 @@ def _patient_location_line(row: dict[str, Any]) -> str:
     if room_name:
         return f"- {patient_display_name(row)}: {room_name}"
     return f"- {patient_display_name(row)}: no room/location recorded"
+
+
+def _patient_roster_line(row: dict[str, Any]) -> str:
+    parts = [patient_display_name(row)]
+    room = row.get("room")
+    room_name = room.get("name") if isinstance(room, dict) else None
+    room_name = room_name or row.get("room_name") or row.get("room_id")
+    if room_name:
+        parts.append(f"room {room_name}")
+    care_level = row.get("care_level")
+    if care_level:
+        parts.append(f"care {care_level}")
+    status = row.get("status")
+    if status:
+        parts.append(str(status))
+    elif row.get("is_active") is False:
+        parts.append("inactive")
+    return "- " + " | ".join(str(part) for part in parts if str(part).strip())
+
+
+def _patient_list_reply(locale: str, patients: list[dict[str, Any]]) -> str:
+    if not patients:
+        return (
+            "ยังไม่พบผู้ป่วยที่คุณมองเห็นในระบบตอนนี้"
+            if locale == "th"
+            else "I do not see any visible patients for your account right now."
+        )
+    heading = (
+        f"ผู้ป่วยที่คุณมองเห็นตอนนี้ ({len(patients)} ราย):"
+        if locale == "th"
+        else f"Visible patients ({len(patients)}):"
+    )
+    lines = [_patient_roster_line(row) for row in patients[:12]]
+    if len(patients) > 12:
+        lines.append(f"- ...and {len(patients) - 12} more")
+    return heading + "\n" + "\n".join(lines)
 
 
 def _timeline_sections(tool_results: list[tuple[str, Any]]) -> list[str]:
@@ -1117,6 +1385,110 @@ def _page_context_reply(locale: str, page_context: dict[str, Any]) -> str:
     return f"You are currently on {label}" + (f" for role {role}" if role else "")
 
 
+async def _try_deterministic_room_control_plan(
+    *,
+    actor_access_token: str,
+    message: str,
+    conversation_id: int | None,
+) -> AgentRuntimeProposeResponse | None:
+    parsed = _parse_room_smart_device_command(message)
+    if parsed is None:
+        return None
+
+    async with AsyncSessionLocal() as db:
+        user, workspace = await _load_runtime_actor_context(db, actor_access_token)
+        resolved = await _resolve_room_smart_device_command(db, workspace.id, parsed)
+        if resolved is None:
+            return None
+        room, device = resolved
+
+    locale = response_locale_for_text(message)
+    action = parsed["action"]
+    action_label = _action_label(action, locale)
+    summary = (
+        f"{action_label} {device.name} ใน {room.name}"
+        if locale == "th"
+        else f"{action_label.title()} {device.name} in {room.name}"
+    )
+    step = ExecutionPlanStep(
+        id=f"step-1-control-room-smart-device-{device.id}",
+        title=summary,
+        tool_name="control_room_smart_device",
+        arguments={"device_id": int(device.id), "action": action},
+        risk_level="medium",
+        permission_basis=["room_controls.use"],
+        affected_entities=[
+            {"type": "room", "id": int(room.id), "name": room.name},
+            {"type": "smart_device", "id": int(device.id), "name": device.name},
+        ],
+        requires_confirmation=True,
+    )
+    plan = ExecutionPlan(
+        playbook="device-control",
+        summary=summary,
+        reasoning_target="low",
+        model_target="deterministic:room_smart_device_control",
+        risk_level="medium",
+        steps=[step],
+        permission_basis=["room_controls.use"],
+        affected_entities=step.affected_entities,
+    )
+    steps_payload = [
+        {
+            "intent": step.title,
+            "tool_name": step.tool_name,
+            "arguments": step.arguments,
+            "permission_basis": step.permission_basis,
+            "affected_entities": step.affected_entities,
+            "risk_level": step.risk_level,
+        }
+    ]
+    action_payload = ChatActionProposeIn(
+        conversation_id=conversation_id,
+        title=summary,
+        action_type="mcp_plan",
+        tool_name=None,
+        tool_arguments={},
+        summary=summary,
+        proposed_changes={
+            "mode": "plan",
+            "execution_plan": plan.model_dump(mode="json"),
+            "steps": steps_payload,
+            "affected_entities": plan.affected_entities,
+            "permission_basis": plan.permission_basis,
+            "reasoning_target": plan.reasoning_target,
+            "model_target": plan.model_target,
+            "intent_confidence": 0.96,
+        },
+    )
+    reply = (
+        f"พบ {device.name} ใน {room.name} แล้ว กรุณายืนยันเพื่อ{action_label}อุปกรณ์นี้"
+        if locale == "th"
+        else f"I found {device.name} in {room.name}. Please confirm to {action_label} it."
+    )
+    _get_or_create_context(conversation_id).add_message("user", message)
+    return AgentRuntimeProposeResponse(
+        mode="plan",
+        assistant_reply=reply,
+        plan=plan,
+        action_payload=action_payload.model_dump(mode="json"),
+        grounding=attach_response_cards(
+            {
+                "confidence": 0.96,
+                "classification_method": "deterministic_room_smart_device_control",
+                "resolved_room": {"id": int(room.id), "name": room.name},
+                "resolved_device": {
+                    "id": int(device.id),
+                    "name": device.name,
+                    "device_type": device.device_type,
+                    "ha_entity_id": device.ha_entity_id,
+                },
+            },
+            cards_for_plan(plan),
+        ),
+    )
+
+
 async def _try_deterministic_read_answer(
     *,
     actor_access_token: str,
@@ -1131,6 +1503,7 @@ async def _try_deterministic_read_answer(
     """
     wants_timeline = _is_patient_timeline_request(message)
     wants_location = _is_patient_location_request(message)
+    wants_patient_list = _is_patient_list_request(message)
     wants_device_status = _is_device_status_request(message)
     wants_device_inventory = _is_device_inventory_request(message)
     wants_system_status = _is_system_status_request(message)
@@ -1138,9 +1511,12 @@ async def _try_deterministic_read_answer(
     wants_identity = _is_identity_request(message)
     wants_page_context = _is_page_context_request(message)
     wants_patient_navigation = _is_patient_detail_navigation_request(message)
+    if wants_patient_list and (wants_timeline or wants_location or wants_patient_navigation):
+        wants_patient_list = False
     if not (
         wants_timeline
         or wants_location
+        or wants_patient_list
         or wants_device_status
         or wants_device_inventory
         or wants_system_status
@@ -1194,6 +1570,26 @@ async def _try_deterministic_read_answer(
                         description=reply,
                     )
                 ],
+            ),
+        )
+
+    if wants_patient_list:
+        roster = await _call_mcp_tool(actor_access_token, "list_visible_patients", {})
+        _ingest_patient_context_from_tool_result(conversation_id, "list_visible_patients", roster, {})
+        patients = [row for row in roster if isinstance(row, dict)] if isinstance(roster, list) else []
+        return AgentRuntimeProposeResponse(
+            mode="answer",
+            assistant_reply=_patient_list_reply(locale, patients),
+            grounding=attach_response_cards(
+                {
+                    "tool_names": ["list_visible_patients"],
+                    "tool_results": [
+                        {"tool_name": "list_visible_patients", "result": roster}
+                    ],
+                    "confidence": 0.97,
+                    "classification_method": grounding_method,
+                },
+                cards_for_tool_results([("list_visible_patients", roster)]),
             ),
         )
 
@@ -1840,6 +2236,17 @@ async def propose_turn(
                 clarification_cards,
             ),
         )
+
+    try:
+        deterministic_room_control = await _try_deterministic_room_control_plan(
+            actor_access_token=actor_access_token,
+            message=message,
+            conversation_id=conversation_id,
+        )
+        if deterministic_room_control is not None:
+            return deterministic_room_control
+    except Exception:
+        logger.exception("Deterministic room smart-device control failed; falling back to normal runtime")
 
     try:
         deterministic_read = await _try_deterministic_read_answer(

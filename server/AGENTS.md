@@ -39,7 +39,7 @@ WheelSense is an IoT platform for wheelchair monitoring, localization, patient w
 High-level flow:
 
 1. `firmware/M5StickCPlus2_BLEGateway` publishes IMU, motion, RSSI, and battery telemetry over BLE to the Flutter phone gateway, which forwards data to MQTT/backend services
-2. `firmware/Node_Tsimcam` publishes camera registration, status, and image payloads to MQTT
+2. `firmware/Node_Tsimcam` publishes camera registration/status/ready ack to public MQTT, receives a YOLO WebSocket endpoint from the server, then streams JPEG frames over WebSocket
 3. `server/app/mqtt_handler.py` ingests MQTT data, resolves the registered device, writes DB rows, and triggers derived flows
 4. FastAPI exposes REST endpoints for the web app and operator tools
 5. `server/app/mcp_server.py` / `server/app/mcp/*` expose the authenticated MCP surface with workspace tools in `_WORKSPACE_TOOL_REGISTRY`, 6 prompts, 4 resources
@@ -51,7 +51,7 @@ High-level flow:
 - Protected APIs must scope by `current_user.workspace_id`
 - Do not use `Workspace.is_active` as runtime authorization scope
 - Do not accept client-supplied `workspace_id` for workspace-bound writes
-- MQTT wheelchair telemetry (`WheelSense/data`): resolve an existing `Device`, or **auto-register** one when `MQTT_AUTO_REGISTER_DEVICES` is enabled and a target workspace is resolvable (see `server/docs/ENV.md`). When `MQTT_AUTO_REGISTER_BLE_NODES` is true, `rssi[]` entries with `WSN_*` + `mac` also **auto-register** a node (`device_id` `BLE_<12 hex MAC>`) in that wheelchair’s workspace. When `MQTT_MERGE_BLE_CAMERA_BY_MAC` is true, camera registration/status JSON with `ble_mac` matching a `BLE_*` stub **renames** that stub to the camera `device_id` (e.g. `CAM_*`); matching uses stub `config.ble_mac` **or** the 12-hex MAC encoded in `BLE_<MAC>` **device_id** when config is missing. When merge and prior lookup miss, the same **`MQTT_AUTO_REGISTER_DEVICES`** + single-workspace (or `MQTT_AUTO_REGISTER_WORKSPACE_ID`) rule **creates** the `CAM_*` registry row on first camera `/registration` or `/status`. Room `node_device_id` references are updated on merge. Camera topics then use the merged or registered `device_id`. A canonical `CAM_*` row suppresses new `BLE_<MAC>` stubs when the same radio MAC is already stored on that row under `config.ble_mac` **or** `config.ble_mac_reported` (BLE→CAM merge may only set the latter); after each `rssi[]` batch, redundant `BLE_<MAC>` stubs are **pruned** when a non–`BLE_*` node already claims that MAC.
+- MQTT wheelchair telemetry (`WheelSense/data`): resolve an existing `Device`, or **auto-register** one when `MQTT_AUTO_REGISTER_DEVICES` is enabled and a target workspace is resolvable (see `server/docs/ENV.md`). When `MQTT_AUTO_REGISTER_BLE_NODES` is true, `rssi[]` entries with `WSN_*` + `mac` also **auto-register** a node (`device_id` `BLE_<12 hex MAC>`) in that wheelchair’s workspace. When `MQTT_MERGE_BLE_CAMERA_BY_MAC` is true, camera registration/status JSON with `ble_mac` matching a `BLE_*` stub **renames** that stub to the camera `device_id` (e.g. `CAM_*`); matching uses stub `config.ble_mac` **or** the 12-hex MAC encoded in `BLE_<MAC>` **device_id** when config is missing. When merge and prior lookup miss, the same **`MQTT_AUTO_REGISTER_DEVICES`** + single-workspace (or `MQTT_AUTO_REGISTER_WORKSPACE_ID`) rule **creates** `CAM_*` or `TSIM_*` camera registry rows on first camera `/registration` or `/status`. Room `node_device_id` references are updated on merge. Camera registration/status/ready ack publishes a retained `camera_stream_config` to `WheelSense/config/{device_id}` plus an immediate control message containing `websocket_url`; set `CAMERA_STREAM_WS_PUBLIC_BASE_URL` to the public YOLO WebSocket origin for phone-hotspot deployments. YOLO fall events prefer `Room.node_device_id == event.device_id`, so the camera binding is authoritative for room mapping. A canonical `CAM_*`/`TSIM_*` row suppresses new `BLE_<MAC>` stubs when the same radio MAC is already stored on that row under `config.ble_mac` **or** `config.ble_mac_reported` (BLE→CAM merge may only set the latter); after each `rssi[]` batch, redundant `BLE_<MAC>` stubs are **pruned** when a non–`BLE_*` node already claims that MAC.
 - Strongest-RSSI room prediction is operationally “ready” only when four records agree inside the same workspace: wheelchair device assignment (`PatientDeviceAssignment`), node alias resolution (`WSN_*` -> canonical node `device_id`), room-to-node binding (`Room.node_device_id`), and patient roster room (`Patient.room_id`). Admins can inspect and repair the default baseline from `GET/POST /api/localization/readiness*`; the repair path also forces workspace localization strategy to `max_rssi` and backfills `Room 101` into the floorplan layout when missing.
 - MQTT writes inherit scope from `device.workspace_id`
 - Business logic belongs in services, not in route handlers
@@ -383,8 +383,14 @@ Topics currently used by runtime code:
 | `WheelSense/camera/{device_id}/registration` | camera -> server | camera registration |
 | `WheelSense/camera/{device_id}/status` | camera -> server | camera heartbeat |
 | `WheelSense/camera/{device_id}/photo` | camera -> server | photo chunks |
+| `WheelSense/camera/{device_id}/frame` | camera -> server | legacy raw JPEG fallback; WebSocket is preferred for continuous stream |
 | `WheelSense/camera/{device_id}/ack` | camera -> server | camera command ack |
-| `WheelSense/camera/{device_id}/control` | server -> camera | capture/stream/resolution commands |
+| `WheelSense/camera/{device_id}/control` | server -> camera | capture/stream/resolution commands; also immediate `camera_stream_config` |
+| `WheelSense/central/registration` | CucumberRS -> server | appliance controller registration |
+| `WheelSense/central/status` | CucumberRS -> server | all-room appliance controller status |
+| `WheelSense/{bedroom|bathroom|kitchen|livingroom}/status` | CucumberRS -> server | per-room appliance status, synced to matching smart devices |
+| `WheelSense/central/state_sync_request` | CucumberRS -> server | request retained/current smart-device state sync |
+| `WheelSense/{bedroom|bathroom|kitchen|livingroom}/state_sync` | server -> CucumberRS | current room appliance states |
 | `WheelSense/vitals/{patient_id}` | server -> subscribers | derived vital broadcasts |
 
 **Planned (not implemented; see `docs/adr/0012-room-native-actuators-mqtt.md`):** dedicated **room actuator** MQTT prefixes (for example `WheelSense/room/{room_id}/actuator/command` and optional `.../actuator/ack`) for non–Home Assistant hardware. Those commands must flow through a future workspace-scoped REST surface that resolves a **registered room gateway device** before publish, with rate limits and audit logging. They are intentionally separate from wheelchair `WheelSense/{device_id}/control` semantics.
@@ -403,6 +409,7 @@ The camera firmware also listens to:
 
 - `WheelSense/config/{device_id}`
 - `WheelSense/config/all`
+- `WheelSense/camera/{device_id}/control`
 
 The **WheelSense mobile app** (development build with native MQTT) subscribes to:
 
@@ -430,7 +437,9 @@ The **WheelSense mobile app** (development build with native MQTT) subscribes to
 
 ### Camera flow
 
-- registration/status topics update the registered camera device
+- registration/status/ready-ack topics update the registered camera device and publish `camera_stream_config`
+- continuous fall-detection video goes to the YOLO WebSocket service; MQTT frame ingest remains a snapshot/legacy fallback
+- YOLO fall room resolution prefers the camera device binding (`Room.node_device_id`) before payload room strings
 - photo chunks are assembled into persisted photo records
 - REST and MCP paths can send camera control commands over MQTT
 

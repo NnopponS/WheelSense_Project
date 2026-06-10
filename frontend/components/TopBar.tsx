@@ -20,6 +20,7 @@ import RoleSwitcher from "./RoleSwitcher";
 import UserAvatar from "./shared/UserAvatar";
 import { NotificationBell } from "./NotificationBell";
 import { NotificationDrawer } from "./NotificationDrawer";
+import { EmergencyAlertOverlay } from "@/components/notifications/EmergencyAlertOverlay";
 
 type SimulatorStatus = {
   env_mode: string;
@@ -48,6 +49,9 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [alertSoundOn, setAlertSoundOn] = useState(() => getAlertSoundEnabled());
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, hasNewNotifications } = useNotifications();
+  const canAcknowledgeEmergencyAlerts = Boolean(
+    user && ["admin", "head_nurse", "supervisor", "observer"].includes(user.role),
+  );
   const { data: simulatorStatus } = useQuery({
     queryKey: ["shell", "topbar", "demo-simulator-status"],
     queryFn: () => api.get<SimulatorStatus>("/demo/simulator/status"),
@@ -203,6 +207,10 @@ export default function TopBar({ title, subtitle, onMenuClick }: TopBarProps) {
         onMarkAllAsRead={markAllAsRead}
         onClearAll={clearAll}
         inboxContextHint={notificationInboxHint}
+      />
+      <EmergencyAlertOverlay
+        notifications={notifications}
+        canAcknowledge={canAcknowledgeEmergencyAlerts}
       />
     </header>
   );

@@ -6,6 +6,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <WebSocketsClient.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <WebServer.h>
@@ -41,7 +42,7 @@
 #define BOOT_BUTTON_PIN 0
 
 // ===== Config =====
-#define FIRMWARE_VERSION  "3.0.0"
+#define FIRMWARE_VERSION  "3.1.0"
 #define NODE_PREFIX       "WSN_"
 #define DEFAULT_MQTT      "broker.emqx.io"
 #define DEFAULT_MQTT_PORT 1883
@@ -63,18 +64,22 @@
 Preferences prefs;
 WiFiClient wifiClient;
 PubSubClient mqtt(wifiClient);
+WebSocketsClient webSocket;
 WebServer server(80);
 DNSServer dnsServer;
 BLEServer* pBLEServer = nullptr;
 
 String deviceId;
 String nodeId;
+String roomSlug;
 String wifiSSID, wifiPass;
 String mqttBroker, mqttUser, mqttPass;
+String websocketUrl;
 int mqttPort = DEFAULT_MQTT_PORT;
 bool setupDone = false;
 bool configMode = false;
 bool streamEnabled = false;  // Server controls this via MQTT
+bool wsConnected = false;
 int captureIntervalMs = 0;   // 0 = no periodic capture
 unsigned long configModeStartTime = 0;
 
@@ -106,6 +111,7 @@ void loadConfig() {
     prefs.begin("wscam", true);
     deviceId   = prefs.getString("devId", "");
     nodeId     = prefs.getString("nodeId", "");
+    roomSlug   = prefs.getString("room", "livingroom");
     wifiSSID   = prefs.getString("ssid", "");
     wifiPass   = prefs.getString("pass", "");
     mqttBroker = prefs.getString("mqttBrk", DEFAULT_MQTT);
@@ -123,12 +129,14 @@ void loadConfig() {
         deviceId = String(buf);
     }
     if (nodeId.length() == 0) nodeId = NODE_PREFIX "001";
+    if (roomSlug.length() == 0) roomSlug = "livingroom";
 }
 
 void saveConfig() {
     prefs.begin("wscam", false);
     prefs.putString("devId", deviceId);
     prefs.putString("nodeId", nodeId);
+    prefs.putString("room", roomSlug);
     prefs.putString("ssid", wifiSSID);
     prefs.putString("pass", wifiPass);
     prefs.putString("mqttBrk", mqttBroker);
@@ -299,6 +307,14 @@ function toggleSSID() {
 <h2>&#x2699;&#xFE0F; Device Info</h2>
 <label>Node ID</label>
 <input name="nodeId" value="%NODE_ID%" maxlength="20">
+<label>Room</label>
+<select name="room">
+<option value="livingroom"%ROOM_LIVING_SEL%>Living Room / Room 402</option>
+<option value="bedroom"%ROOM_BED_SEL%>Bedroom / Room 401</option>
+<option value="bathroom"%ROOM_BATH_SEL%>Bathroom</option>
+<option value="kitchen"%ROOM_KITCH_SEL%>Kitchen / Dining</option>
+</select>
+<p class="help">Used by YOLO so a fall from this camera maps to this room.</p>
 </div>
 
 <button class="btn" type="submit">&#x1F4BE; Save &amp; Reboot</button>
@@ -380,6 +396,10 @@ void startConfigPortal() {
         page.replace("%MQTT_USER%", mqttUser);
         page.replace("%MQTT_PASS%", mqttPass);
         page.replace("%NODE_ID%", nodeId);
+        page.replace("%ROOM_LIVING_SEL%", roomSlug == "livingroom" ? " selected" : "");
+        page.replace("%ROOM_BED_SEL%", roomSlug == "bedroom" ? " selected" : "");
+        page.replace("%ROOM_BATH_SEL%", roomSlug == "bathroom" ? " selected" : "");
+        page.replace("%ROOM_KITCH_SEL%", roomSlug == "kitchen" ? " selected" : "");
         page.replace("%FW_VER%", FIRMWARE_VERSION);
         server.send(200, "text/html", page);
     });
@@ -395,6 +415,7 @@ void startConfigPortal() {
         if (server.hasArg("mqttPort")) mqttPort   = server.arg("mqttPort").toInt();
         if (server.hasArg("mqttUser")) mqttUser   = server.arg("mqttUser");
         if (server.hasArg("mqttPass")) mqttPass   = server.arg("mqttPass");
+        if (server.hasArg("room"))     roomSlug   = server.arg("room");
         setupDone = true;
         saveConfig();
         
@@ -461,6 +482,167 @@ void publishAck(const String &commandId, const String &command, const String &st
     serializeJson(doc, body);
     String topic = "WheelSense/camera/" + deviceId + "/ack";
     mqtt.publish(topic.c_str(), body.c_str());
+}
+
+void publishCameraEvent(const String &type, const String &status, const String &message) {
+    if (!mqtt.connected()) return;
+    StaticJsonDocument<512> doc;
+    doc["type"] = type;
+    doc["device_id"] = deviceId;
+    doc["node_id"] = nodeId;
+    doc["room"] = roomSlug;
+    doc["status"] = status;
+    doc["message"] = message;
+    doc["ip_address"] = WiFi.localIP().toString();
+    doc["firmware"] = FIRMWARE_VERSION;
+    doc["timestamp_ms"] = millis();
+    String body;
+    serializeJson(doc, body);
+    String topic = "WheelSense/camera/" + deviceId + "/ack";
+    mqtt.publish(topic.c_str(), body.c_str());
+}
+
+bool parseWebSocketUrl(const String &url, String &host, uint16_t &port, String &path, bool &useSsl) {
+    String u = url;
+    u.trim();
+    int schemeEnd = u.indexOf("://");
+    if (schemeEnd < 0) return false;
+    String scheme = u.substring(0, schemeEnd);
+    scheme.toLowerCase();
+    useSsl = scheme == "wss";
+    if (scheme != "ws" && scheme != "wss") return false;
+
+    String rest = u.substring(schemeEnd + 3);
+    int pathStart = rest.indexOf('/');
+    String hostPort = pathStart >= 0 ? rest.substring(0, pathStart) : rest;
+    path = pathStart >= 0 ? rest.substring(pathStart) : "/";
+    if (path.length() == 0) path = "/";
+
+    port = useSsl ? 443 : 80;
+    if (hostPort.startsWith("[")) {
+        int close = hostPort.indexOf(']');
+        if (close < 0) return false;
+        host = hostPort.substring(1, close);
+        if (hostPort.length() > close + 2 && hostPort.charAt(close + 1) == ':') {
+            port = (uint16_t)hostPort.substring(close + 2).toInt();
+        }
+    } else {
+        int colon = hostPort.lastIndexOf(':');
+        if (colon > 0) {
+            host = hostPort.substring(0, colon);
+            port = (uint16_t)hostPort.substring(colon + 1).toInt();
+        } else {
+            host = hostPort;
+        }
+    }
+    return host.length() > 0 && port > 0;
+}
+
+void sendWebSocketHello() {
+    if (!wsConnected) return;
+    StaticJsonDocument<512> doc;
+    doc["type"] = "camera_hello";
+    doc["device_id"] = deviceId;
+    doc["node_id"] = nodeId;
+    doc["room"] = roomSlug;
+    doc["device_type"] = "camera";
+    doc["hardware_type"] = "node";
+    doc["firmware"] = FIRMWARE_VERSION;
+    doc["ip_address"] = WiFi.localIP().toString();
+    doc["source"] = "public_mqtt_stream_config";
+    String body;
+    serializeJson(doc, body);
+    webSocket.sendTXT(body);
+}
+
+void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
+    (void)payload;
+    (void)length;
+    switch (type) {
+        case WStype_CONNECTED:
+            wsConnected = true;
+            Serial.printf("[WS] Connected: %s\n", websocketUrl.c_str());
+            sendWebSocketHello();
+            publishCameraEvent("websocket_status", "connected", "websocket_connected");
+            break;
+        case WStype_DISCONNECTED:
+            if (wsConnected) Serial.println("[WS] Disconnected");
+            wsConnected = false;
+            break;
+        case WStype_TEXT:
+            Serial.println("[WS] Text response received");
+            break;
+        default:
+            break;
+    }
+}
+
+void connectWebSocket() {
+    if (websocketUrl.length() == 0 || WiFi.status() != WL_CONNECTED) return;
+    String host, path;
+    uint16_t port = 0;
+    bool useSsl = false;
+    if (!parseWebSocketUrl(websocketUrl, host, port, path, useSsl)) {
+        Serial.printf("[WS] Invalid URL: %s\n", websocketUrl.c_str());
+        publishCameraEvent("websocket_status", "error", "invalid_websocket_url");
+        return;
+    }
+
+    webSocket.disconnect();
+    wsConnected = false;
+    webSocket.onEvent(webSocketEvent);
+    webSocket.setReconnectInterval(3000);
+    webSocket.enableHeartbeat(15000, 3000, 2);
+    if (useSsl) {
+        webSocket.beginSSL(host.c_str(), port, path.c_str());
+    } else {
+        webSocket.begin(host.c_str(), port, path.c_str());
+    }
+    Serial.printf("[WS] Connecting to %s:%u%s\n", host.c_str(), port, path.c_str());
+}
+
+void applyStreamConfig(JsonDocument &doc, bool enableDefault) {
+    if (doc.containsKey("room")) {
+        String nextRoom = doc["room"].as<String>();
+        if (nextRoom.length() == 0) nextRoom = "livingroom";
+        if (nextRoom != roomSlug) {
+            roomSlug = nextRoom;
+            saveConfig();
+        }
+    }
+    if (doc.containsKey("websocket_url")) {
+        String nextUrl = doc["websocket_url"].as<String>();
+        if (nextUrl != websocketUrl) {
+            websocketUrl = nextUrl;
+            webSocket.disconnect();
+            wsConnected = false;
+        }
+    }
+    if (doc.containsKey("fps")) {
+        int fps = doc["fps"] | 0;
+        if (fps > 0) captureIntervalMs = max(50, 1000 / fps);
+    }
+    if (doc.containsKey("interval_ms")) {
+        int interval = doc["interval_ms"] | captureIntervalMs;
+        if (interval > 0) captureIntervalMs = interval;
+    }
+    if (captureIntervalMs <= 0) captureIntervalMs = 125;
+
+    bool requested = doc.containsKey("stream_enabled") ? (doc["stream_enabled"] | enableDefault) : enableDefault;
+    if (requested) {
+        streamEnabled = true;
+        if (websocketUrl.length() > 0) connectWebSocket();
+        publishCameraEvent(
+            "stream_config_applied",
+            "ok",
+            websocketUrl.length() > 0 ? "websocket_endpoint_received" : "stream_enabled_without_websocket"
+        );
+    } else {
+        streamEnabled = false;
+        webSocket.disconnect();
+        wsConnected = false;
+        publishCameraEvent("stream_config_applied", "ok", "stream_disabled");
+    }
 }
 
 bool publishPhotoChunked(camera_fb_t *fb, String &errorCode) {
@@ -573,7 +755,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     memcpy(msg, payload, length);
     msg[length] = '\0';
 
-    StaticJsonDocument<512> doc;
+    StaticJsonDocument<1024> doc;
     if (deserializeJson(doc, msg) != DeserializationError::Ok) return;
 
     String topicStr(topic);
@@ -582,17 +764,25 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     if (topicStr == controlTopic) {
         String cmd = doc["command"] | doc["cmd"] | "";
         String commandId = doc["command_id"] | "";
+        String msgType = doc["type"] | "";
         cmd.toLowerCase();
+        msgType.toLowerCase();
+        if (cmd.length() == 0 && msgType == "camera_stream_config") {
+            cmd = "start_websocket_stream";
+        }
 
-        if (cmd == "start_stream") {
-            captureIntervalMs = doc["interval_ms"] | 200;  // ~5 FPS default
-            streamEnabled = true;
-            Serial.printf("[MQTT] Stream started: %dms interval\n", captureIntervalMs);
+        if (cmd == "start_stream" || cmd == "start_websocket_stream") {
+            applyStreamConfig(doc, true);
+            Serial.printf("[MQTT] Stream started: %dms interval, WS=%s\n",
+                          captureIntervalMs,
+                          websocketUrl.length() > 0 ? websocketUrl.c_str() : "(mqtt fallback)");
             publishAck(commandId, cmd, "ok", "stream_started");
         }
         else if (cmd == "stop_stream") {
             streamEnabled = false;
             captureIntervalMs = 0;
+            webSocket.disconnect();
+            wsConnected = false;
             Serial.println("[MQTT] Stream stopped");
             publishAck(commandId, cmd, "ok", "stream_stopped");
         }
@@ -638,6 +828,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     // Config topic
     String cfgTopic = String("WheelSense/config/") + deviceId;
     if (topicStr == cfgTopic || topicStr == "WheelSense/config/all") {
+        String cmd = doc["command"] | "";
+        String msgType = doc["type"] | "";
+        cmd.toLowerCase();
+        msgType.toLowerCase();
+        if (doc.containsKey("websocket_url") || cmd == "start_websocket_stream" || msgType == "camera_stream_config") {
+            applyStreamConfig(doc, true);
+        }
         if (doc.containsKey("wifi_ssid"))     wifiSSID   = doc["wifi_ssid"].as<String>();
         if (doc.containsKey("wifi_password")) wifiPass   = doc["wifi_password"].as<String>();
         if (doc.containsKey("mqtt_broker"))   mqttBroker = doc["mqtt_broker"].as<String>();
@@ -677,14 +874,16 @@ bool connectMQTT() {
         mqtt.subscribe("WheelSense/config/all");
 
         // Register
-        StaticJsonDocument<512> reg;
+        StaticJsonDocument<768> reg;
         reg["type"] = "device_registration";
         reg["device_id"] = deviceId;
         reg["node_id"] = nodeId;
+        reg["room"] = roomSlug;
         reg["device_type"] = "camera";
         reg["hardware_type"] = "node";
         reg["ip_address"] = WiFi.localIP().toString();
         reg["firmware"] = FIRMWARE_VERSION;
+        reg["stream_transport"] = "websocket";
         {
             String bmac = getBleMacString();
             if (bmac.length() > 0) {
@@ -695,13 +894,14 @@ bool connectMQTT() {
         serializeJson(reg, body);
         String regTopic = "WheelSense/camera/" + deviceId + "/registration";
         mqtt.publish(regTopic.c_str(), body.c_str(), true);
+        publishCameraEvent("camera_ready", "ready", "mqtt_registered");
     }
     return ok;
 }
 
 void sendStatus() {
     if (!mqtt.connected()) return;
-    StaticJsonDocument<512> doc;
+    StaticJsonDocument<1024> doc;
     float batteryV = 0.0f;
     int batteryPct = 0;
     bool hasBattery = readBatteryStatus(batteryV, batteryPct);
@@ -709,6 +909,7 @@ void sendStatus() {
     doc["type"] = "status";
     doc["device_id"] = deviceId;
     doc["node_id"] = nodeId;
+    doc["room"] = roomSlug;
     doc["device_type"] = "camera";
     doc["hardware_type"] = "node";
     doc["status"] = configMode ? "config" : "online";
@@ -717,6 +918,9 @@ void sendStatus() {
     doc["heap"] = ESP.getFreeHeap();
     doc["frames_captured"] = framesCaptured;
     doc["stream_enabled"] = streamEnabled;
+    doc["stream_transport"] = websocketUrl.length() > 0 ? "websocket" : "mqtt_frame_fallback";
+    doc["websocket_connected"] = wsConnected;
+    doc["websocket_url"] = websocketUrl;
     doc["capture_interval_ms"] = captureIntervalMs;
     doc["uptime_s"] = millis() / 1000;
     doc["firmware"] = FIRMWARE_VERSION;
@@ -754,7 +958,9 @@ void setupStatusPage() {
             "<h1>WheelSense Camera</h1><table>"
             "<tr><td>Device</td><td>" + deviceId + "</td></tr>"
             "<tr><td>Node</td><td>" + nodeId + "</td></tr>"
+            "<tr><td>Room</td><td>" + roomSlug + "</td></tr>"
             "<tr><td>Stream</td><td>" + String(streamEnabled ? "ON" : "OFF") + "</td></tr>"
+            "<tr><td>WebSocket</td><td>" + String(wsConnected ? "OK" : "NO") + "</td></tr>"
             "<tr><td>Frames</td><td>" + String(framesCaptured) + "</td></tr>"
             "<tr><td>MQTT</td><td>" + String(mqtt.connected() ? "OK" : "NO") + "</td></tr>"
             "<tr><td>Heap</td><td>" + String(ESP.getFreeHeap()) + "</td></tr>"
@@ -866,6 +1072,7 @@ void loop() {
 
     server.handleClient();
     if (mqtt.connected()) mqtt.loop();
+    if (websocketUrl.length() > 0) webSocket.loop();
 
     // Reconnect MQTT
     if (!mqtt.connected() && (now - lastMqttReconnect > 5000)) {
@@ -873,22 +1080,31 @@ void loop() {
         connectMQTT();
     }
 
-    // Periodic JPEG capture to MQTT (when server enables streaming)
+    // Periodic JPEG stream. WebSocket is primary; MQTT frame publish is only legacy fallback.
     if (streamEnabled && captureIntervalMs > 0 && (now - lastCaptureMs >= (unsigned long)captureIntervalMs)) {
-        camera_fb_t* fb = esp_camera_fb_get();
-        if (fb && mqtt.connected()) {
-            String topic = "WheelSense/camera/" + deviceId + "/frame";
-            if (fb->len < MQTT_BUF_SIZE) {
-                mqtt.beginPublish(topic.c_str(), fb->len, false);
-                mqtt.write(fb->buf, fb->len);
-                mqtt.endPublish();
-                framesCaptured++;
+        if (websocketUrl.length() > 0 && !wsConnected) {
+            lastCaptureMs = now;
+        } else {
+            camera_fb_t* fb = esp_camera_fb_get();
+            if (fb && websocketUrl.length() > 0 && wsConnected) {
+                if (webSocket.sendBIN(fb->buf, fb->len)) {
+                    framesCaptured++;
+                }
+                esp_camera_fb_return(fb);
+            } else if (fb && mqtt.connected()) {
+                String topic = "WheelSense/camera/" + deviceId + "/frame";
+                if (fb->len < MQTT_BUF_SIZE) {
+                    mqtt.beginPublish(topic.c_str(), fb->len, false);
+                    mqtt.write(fb->buf, fb->len);
+                    mqtt.endPublish();
+                    framesCaptured++;
+                }
+                esp_camera_fb_return(fb);
+            } else if (fb) {
+                esp_camera_fb_return(fb);
             }
-            esp_camera_fb_return(fb);
-        } else if (fb) {
-            esp_camera_fb_return(fb);
+            lastCaptureMs = now;
         }
-        lastCaptureMs = now;
     }
 
     // Status report

@@ -15,9 +15,17 @@ services:
       context: .
       dockerfile: docker/cf-tunnel-publish/Dockerfile
     restart: unless-stopped
+    # Inherit MQTT_BROKER (and other vars) from the same .env the app uses, so the
+    # tunnel can never publish portal_base_url to a different broker than the app
+    # and mobile clients. Without this the environment default below (mosquitto)
+    # silently diverged from the app's broker.emqx.io, so the retained
+    # WheelSense/config/all message landed on the wrong broker.
+    env_file:
+      - .env
     environment:
       TUNNEL_TARGET_URL: ${CF_TUNNEL_TARGET_URL:-http://wheelsense-platform-web:3000}
-      MQTT_BROKER: ${MQTT_BROKER:-mosquitto}
+      # MQTT_BROKER intentionally NOT set here — it comes from env_file (.env) so it
+      # always matches the server app. run.py falls back to localhost if unset.
       MQTT_PORT: ${MQTT_PORT:-1883}
       MQTT_USER: ${MQTT_USER:-}
       MQTT_PASSWORD: ${MQTT_PASSWORD:-}

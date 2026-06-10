@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import verify_password
 from app.config import settings
-from app.models import CareGiver, PatientDeviceAssignment, User
+from app.models import CareGiver, CareGiverPatientAccess, PatientDeviceAssignment, User
 from scripts.seed_demo import (
     DEMO_ROOM_NODE_COUNT,
     ensure_workspace,
@@ -18,6 +18,7 @@ from scripts.seed_demo import (
     seed_patients_and_devices,
     seed_room_node_mappings,
     seed_rooms,
+    seed_sim_team_observer_access,
 )
 
 
@@ -37,6 +38,12 @@ async def test_seed_demo_creates_english_cohort_and_portrait_placeholders(
     patients, devices = await seed_patients_and_devices(db_session, workspace.id, rooms)
     patient_users = await seed_patient_users(db_session, workspace.id, patients)
     mapped_nodes = await seed_room_node_mappings(db_session, workspace.id, rooms)
+    access_created = await seed_sim_team_observer_access(
+        db_session,
+        workspace.id,
+        caregivers_by_role,
+        patients,
+    )
 
     assert facility.name == "WheelSense Care Center"
     assert [room.name for room in rooms] == [
@@ -72,6 +79,7 @@ async def test_seed_demo_creates_english_cohort_and_portrait_placeholders(
     assert [device.device_id for device in devices] == [f"SIM_WHEEL_{idx:02d}" for idx in range(1, 7)]
     assert mapped_nodes == DEMO_ROOM_NODE_COUNT
     assert all(room.node_device_id for room in rooms)
+    assert access_created == len(patients) * 3
 
     staff_rows = (
         await db_session.execute(
@@ -113,6 +121,23 @@ async def test_seed_demo_creates_english_cohort_and_portrait_placeholders(
     for user in staff_user_rows:
         assert verify_password(user.username, user.hashed_password)
         assert user.profile_image_url.startswith("/api/public/profile-images/")
+
+    staff_access_rows = (
+        await db_session.execute(
+            select(CareGiverPatientAccess).where(
+                CareGiverPatientAccess.workspace_id == workspace.id,
+                CareGiverPatientAccess.caregiver_id.in_(
+                    [
+                        caregivers_by_role["demo_supervisor"].id,
+                        caregivers_by_role["demo_observer"].id,
+                        caregivers_by_role["demo_observer2"].id,
+                    ]
+                ),
+                CareGiverPatientAccess.is_active.is_(True),
+            )
+        )
+    ).scalars().all()
+    assert len(staff_access_rows) == len(patients) * 3
 
     expected_patient_usernames = {
         "eleanor.p",

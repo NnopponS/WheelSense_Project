@@ -85,6 +85,13 @@ class Settings(BaseSettings):
     server_base_url: str = "http://127.0.0.1:8000"
     # Public web URL for mobile WebView (e.g. Cloudflare quick tunnel). Published to MQTT config when set.
     portal_base_url: str = ""
+    # Public WebSocket base URL used by camera firmware for YOLO streaming.
+    # Set to the externally reachable YOLO service origin, for example
+    # ws://example-host:8765 or wss://camera.example.com.
+    camera_stream_ws_public_base_url: str = ""
+    camera_stream_default_room: str = "livingroom"
+    camera_stream_default_fps: int = 8
+    camera_stream_auto_start: bool = True
     agent_runtime_url: str = "http://127.0.0.1:8010"
     internal_service_secret: str = ""
     mcp_allowed_origins: str = ""

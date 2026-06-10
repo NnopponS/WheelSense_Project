@@ -1,0 +1,165 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - img [ref=e6]:
+          - generic [ref=e9]: W
+        - generic [ref=e10]:
+          - heading "WheelSense" [level=1] [ref=e11]
+          - paragraph [ref=e12]: Smart Care Platform
+      - navigation [ref=e13]:
+        - generic [ref=e15]:
+          - link "System Overview" [ref=e16] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e17]
+            - generic [ref=e22]: System Overview
+          - link "People" [ref=e23] [cursor=pointer]:
+            - /url: /admin/personnel
+            - img [ref=e24]
+            - generic [ref=e29]: People
+          - link "Facilities" [ref=e30] [cursor=pointer]:
+            - /url: /admin/facility-management
+            - img [ref=e31]
+            - generic [ref=e34]: Facilities
+          - link "Devices" [ref=e35] [cursor=pointer]:
+            - /url: /admin/devices
+            - img [ref=e36]
+            - generic [ref=e38]: Devices
+          - link "Operations" [ref=e39] [cursor=pointer]:
+            - /url: /admin/tasks
+            - img [ref=e40]
+            - generic [ref=e45]: Operations
+        - button "More" [ref=e48]:
+          - img [ref=e49]
+          - generic [ref=e53]: More
+          - img [ref=e54]
+      - button "Sign Out" [ref=e57]:
+        - img [ref=e58]
+        - generic [ref=e61]: Sign Out
+      - link "ada.m Admin" [ref=e63] [cursor=pointer]:
+        - /url: /account
+        - generic [ref=e64]:
+          - paragraph [ref=e65]: ada.m
+          - paragraph [ref=e66]: Admin
+    - generic [ref=e67]:
+      - banner [ref=e68]:
+        - generic [ref=e69]:
+          - generic [ref=e71]:
+            - img
+            - textbox "Search..." [ref=e72]
+          - generic [ref=e73]:
+            - button "Act as Admin" [ref=e76]:
+              - img [ref=e77]
+              - generic [ref=e83]:
+                - generic [ref=e84]: Act as
+                - generic [ref=e85]: Admin
+              - img [ref=e86]
+            - generic [ref=e174]:
+              - img [ref=e175]
+              - text: SIM
+            - group "Language" [ref=e89]:
+              - img [ref=e90]
+              - button "Switch to English" [pressed] [ref=e93]: EN
+              - button "Switch to Thai" [ref=e94]: TH
+            - button "Toggle theme" [ref=e96]:
+              - img
+            - button "Sound off" [ref=e97]:
+              - img
+            - button "Notifications" [ref=e99]:
+              - img
+              - generic [ref=e212]: "1"
+            - generic [ref=e100]:
+              - link "Open account settings" [ref=e101] [cursor=pointer]:
+                - /url: /account
+              - generic [ref=e102]:
+                - paragraph [ref=e103]: ada.m
+                - paragraph [ref=e104]: Admin
+      - main [ref=e105]:
+        - generic [ref=e106]:
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - img [ref=e110]
+                - text: Alerts
+              - heading "Alert Center" [level=2] [ref=e113]
+              - paragraph [ref=e114]: Triage active, acknowledged, and resolved alerts from one operational table.
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - img
+                - textbox "Search alerts" [ref=e117]
+              - combobox [ref=e118]:
+                - generic: All status
+                - img [ref=e119]
+          - generic [ref=e121]:
+            - generic [ref=e122]:
+              - generic [ref=e124]:
+                - generic [ref=e125]:
+                  - paragraph [ref=e126]: Total alerts
+                  - paragraph [ref=e127]: "1"
+                - img [ref=e129]
+              - generic [ref=e133]:
+                - generic [ref=e134]:
+                  - paragraph [ref=e135]: Active
+                  - paragraph [ref=e136]: "0"
+                - img [ref=e138]
+              - generic [ref=e144]:
+                - generic [ref=e145]:
+                  - paragraph [ref=e146]: Acknowledged
+                  - paragraph [ref=e147]: "1"
+                - img [ref=e149]
+              - generic [ref=e153]:
+                - generic [ref=e154]:
+                  - paragraph [ref=e155]: Critical
+                  - paragraph [ref=e156]: "1"
+                - img [ref=e158]
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - heading "Alert Center" [level=3] [ref=e162]
+                - generic [ref=e163]:
+                  - button "Export CSV" [ref=e177]:
+                    - img
+                    - generic [ref=e178]: Export CSV
+                  - paragraph [ref=e164]: 1 match
+              - generic [ref=e165]:
+                - table [ref=e180]:
+                  - rowgroup [ref=e181]:
+                    - row "Alert Severity Status Time Patient" [ref=e182]:
+                      - columnheader "Alert" [ref=e183]:
+                        - button "Alert" [ref=e184]:
+                          - text: Alert
+                          - img
+                      - columnheader "Severity" [ref=e185]
+                      - columnheader "Status" [ref=e186]
+                      - columnheader "Time" [ref=e187]:
+                        - button "Time" [ref=e188]:
+                          - text: Time
+                          - img
+                      - columnheader "Patient" [ref=e189]
+                      - columnheader [ref=e190]
+                  - rowgroup [ref=e191]:
+                    - 'row "Physical model fall detected - Robert YOLO physical model detected Robert in Bedroom (Room 401) at 94% confidence. Treat as a fall emergency for the demo. critical acknowledged 07 Jun 2026, 22:20 24 minutes ago #70 Resolve" [ref=e192]':
+                      - cell "Physical model fall detected - Robert YOLO physical model detected Robert in Bedroom (Room 401) at 94% confidence. Treat as a fall emergency for the demo." [ref=e193]:
+                        - generic [ref=e194]:
+                          - paragraph [ref=e195]: Physical model fall detected - Robert
+                          - paragraph [ref=e196]: YOLO physical model detected Robert in Bedroom (Room 401) at 94% confidence. Treat as a fall emergency for the demo.
+                      - cell "critical" [ref=e197]:
+                        - generic [ref=e198]: critical
+                      - cell "acknowledged" [ref=e199]:
+                        - generic [ref=e200]: acknowledged
+                      - cell "07 Jun 2026, 22:20 24 minutes ago" [ref=e201]:
+                        - generic [ref=e202]:
+                          - paragraph [ref=e203]: 07 Jun 2026, 22:20
+                          - paragraph [ref=e204]: 24 minutes ago
+                      - cell "#70" [ref=e205]
+                      - cell "Resolve" [ref=e206]:
+                        - button "Resolve" [ref=e208]
+                - generic [ref=e209]:
+                  - paragraph [ref=e210]: Page 1 of 1
+                  - generic [ref=e211]:
+                    - button "Previous" [disabled]
+                    - button "Next" [disabled]
+    - button "Open EaseAI chat" [ref=e168]:
+      - img [ref=e169]
+      - generic [ref=e172]: Ask EaseAI
+  - region "Notifications alt+T"
+  - alert [ref=e173]

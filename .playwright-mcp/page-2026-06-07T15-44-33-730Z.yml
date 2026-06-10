@@ -1,0 +1,451 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e56]:
+    - complementary [ref=e57]:
+      - generic [ref=e58]:
+        - img [ref=e60]:
+          - generic [ref=e63]: W
+        - generic [ref=e64]:
+          - heading "WheelSense" [level=1] [ref=e65]
+          - paragraph [ref=e66]: Smart Care Platform
+      - navigation [ref=e67]:
+        - generic [ref=e69]:
+          - link "System Overview" [ref=e70] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e71]
+            - generic [ref=e76]: System Overview
+          - link "People" [ref=e78] [cursor=pointer]:
+            - /url: /admin/personnel
+            - img [ref=e79]
+            - generic [ref=e84]: People
+          - link "Facilities" [ref=e85] [cursor=pointer]:
+            - /url: /admin/facility-management
+            - img [ref=e86]
+            - generic [ref=e89]: Facilities
+          - link "Devices" [ref=e90] [cursor=pointer]:
+            - /url: /admin/devices
+            - img [ref=e91]
+            - generic [ref=e93]: Devices
+          - link "Operations" [ref=e94] [cursor=pointer]:
+            - /url: /admin/tasks
+            - img [ref=e95]
+            - generic [ref=e100]: Operations
+        - button "More" [ref=e102]:
+          - img [ref=e103]
+          - generic [ref=e107]: More
+          - img [ref=e108]
+      - button "Sign Out" [ref=e111]:
+        - img [ref=e112]
+        - generic [ref=e115]: Sign Out
+      - link "ada.m Admin" [ref=e117] [cursor=pointer]:
+        - /url: /account
+        - generic [ref=e118]:
+          - paragraph [ref=e119]: ada.m
+          - paragraph [ref=e120]: Admin
+    - generic [ref=e121]:
+      - banner [ref=e122]:
+        - generic [ref=e123]:
+          - generic [ref=e125]:
+            - img
+            - textbox "Search..." [ref=e126]
+          - generic [ref=e127]:
+            - button "Act as Admin" [ref=e130]:
+              - img [ref=e131]
+              - generic [ref=e137]:
+                - generic [ref=e138]: Act as
+                - generic [ref=e139]: Admin
+              - img [ref=e140]
+            - generic [ref=e142]:
+              - img [ref=e143]
+              - text: SIM
+            - group "Language" [ref=e146]:
+              - img [ref=e147]
+              - button "Switch to English" [pressed] [ref=e150]: EN
+              - button "Switch to Thai" [ref=e151]: TH
+            - button "Toggle theme" [ref=e153]:
+              - img
+            - button "Sound off" [ref=e154]:
+              - img
+            - button "Notifications" [ref=e156]:
+              - img
+            - generic [ref=e157]:
+              - link "Open account settings" [ref=e158] [cursor=pointer]:
+                - /url: /account
+              - generic [ref=e159]:
+                - paragraph [ref=e160]: ada.m
+                - paragraph [ref=e161]: Admin
+      - main [ref=e162]:
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - generic [ref=e165]:
+              - generic [ref=e166]:
+                - img [ref=e167]
+                - text: Admin system overview
+              - generic [ref=e170]:
+                - heading "System Overview" [level=2] [ref=e171]
+                - paragraph [ref=e172]: Desktop-first governance, setup, and health monitoring. System status is separated from configuration and daily care operations.
+            - generic [ref=e173]:
+              - button "Export CSV" [ref=e174]:
+                - img
+                - generic [ref=e175]: Export CSV
+              - link "Alerts" [ref=e176] [cursor=pointer]:
+                - /url: /admin/alerts
+                - img
+                - text: Alerts
+              - link "Work" [ref=e177] [cursor=pointer]:
+                - /url: /admin/tasks
+                - img
+                - text: Work
+              - link "Support" [ref=e178] [cursor=pointer]:
+                - /url: /admin/support
+                - img
+                - text: Support
+              - link "Users" [ref=e179] [cursor=pointer]:
+                - /url: /admin/users
+                - img
+                - text: Users
+              - link "Devices" [ref=e180] [cursor=pointer]:
+                - /url: /admin/devices
+                - img
+                - text: Devices
+              - link "Audit" [ref=e181] [cursor=pointer]:
+                - /url: /admin/audit
+                - img
+                - text: Audit
+              - link "Settings" [ref=e182] [cursor=pointer]:
+                - /url: /admin/settings
+                - img
+                - text: Settings
+          - region "Realtime facility map" [ref=e183]:
+            - generic [ref=e184]:
+              - generic [ref=e185]:
+                - generic [ref=e186]:
+                  - img [ref=e188]
+                  - generic [ref=e191]:
+                    - paragraph [ref=e192]: Realtime facility map
+                    - paragraph [ref=e193]: Open room status, active alerts, and device presence without leaving the dashboard.
+                - generic [ref=e194]:
+                  - generic [ref=e195]:
+                    - generic [ref=e196]:
+                      - img [ref=e197]
+                      - generic [ref=e199]: Emergency
+                    - paragraph [ref=e200]: "0"
+                  - generic [ref=e201]:
+                    - generic [ref=e202]:
+                      - img [ref=e203]
+                      - generic [ref=e208]: People
+                    - paragraph [ref=e209]: "12"
+                  - generic [ref=e210]:
+                    - generic [ref=e211]:
+                      - img [ref=e212]
+                      - generic [ref=e215]: Mode
+                    - paragraph [ref=e216]: Find
+              - button "Open map" [ref=e218]:
+                - text: Open map
+                - img
+          - generic [ref=e219]:
+            - generic [ref=e220]:
+              - generic [ref=e221]:
+                - heading "System health" [level=3] [ref=e222]
+                - paragraph [ref=e223]: Service health is tracked separately from menu access and configuration.
+              - generic [ref=e224]:
+                - generic [ref=e225]:
+                  - generic [ref=e226]:
+                    - paragraph [ref=e227]: Healthy services
+                    - paragraph [ref=e228]: 4/4
+                  - generic [ref=e229]:
+                    - paragraph [ref=e230]: Fleet online
+                    - paragraph [ref=e231]: 6/18
+                  - generic [ref=e232]:
+                    - paragraph [ref=e233]: Smart bridge
+                    - paragraph [ref=e234]: 13/13
+                  - generic [ref=e235]:
+                    - paragraph [ref=e236]: Recent events
+                    - paragraph [ref=e237]: "6"
+                - table [ref=e240]:
+                  - rowgroup [ref=e241]:
+                    - row "Service Status Detail Open" [ref=e242]:
+                      - columnheader "Service" [ref=e243]
+                      - columnheader "Status" [ref=e244]
+                      - columnheader "Detail" [ref=e245]
+                      - columnheader "Open" [ref=e246]
+                  - rowgroup [ref=e247]:
+                    - row "API Healthy Request layer and workspace scoping are available. Open" [ref=e248]:
+                      - cell "API" [ref=e249]
+                      - cell "Healthy" [ref=e250]:
+                        - generic [ref=e251]: Healthy
+                      - cell "Request layer and workspace scoping are available." [ref=e252]
+                      - cell "Open" [ref=e253]:
+                        - link "Open" [ref=e254] [cursor=pointer]:
+                          - /url: /admin/settings
+                          - text: Open
+                          - img
+                    - row "Database Healthy Admin and fleet records are readable. Open" [ref=e255]:
+                      - cell "Database" [ref=e256]
+                      - cell "Healthy" [ref=e257]:
+                        - generic [ref=e258]: Healthy
+                      - cell "Admin and fleet records are readable." [ref=e259]
+                      - cell "Open" [ref=e260]:
+                        - link "Open" [ref=e261] [cursor=pointer]:
+                          - /url: /admin/audit
+                          - text: Open
+                          - img
+                    - row "MQTT Broker Healthy 18 registered device(s) and recent signals are present. Open" [ref=e262]:
+                      - cell "MQTT Broker" [ref=e263]
+                      - cell "Healthy" [ref=e264]:
+                        - generic [ref=e265]: Healthy
+                      - cell "18 registered device(s) and recent signals are present." [ref=e266]
+                      - cell "Open" [ref=e267]:
+                        - link "Open" [ref=e268] [cursor=pointer]:
+                          - /url: /admin/device-health
+                          - text: Open
+                          - img
+                    - row "Automation pipeline Healthy Platform automation services are available for admin operations. Open" [ref=e269]:
+                      - cell "Automation pipeline" [ref=e270]
+                      - cell "Healthy" [ref=e271]:
+                        - generic [ref=e272]: Healthy
+                      - cell "Platform automation services are available for admin operations." [ref=e273]
+                      - cell "Open" [ref=e274]:
+                        - link "Open" [ref=e275] [cursor=pointer]:
+                          - /url: /admin/settings
+                          - text: Open
+                          - img
+                    - row "Devices Needs review 6/18 online Open" [ref=e276]:
+                      - cell "Devices" [ref=e277]
+                      - cell "Needs review" [ref=e278]:
+                        - generic [ref=e279]: Needs review
+                      - cell "6/18 online" [ref=e280]
+                      - cell "Open" [ref=e281]:
+                        - link "Open" [ref=e282] [cursor=pointer]:
+                          - /url: /admin/devices
+                          - text: Open
+                          - img
+                    - row "Smart bridge Healthy 13/13 online Open" [ref=e283]:
+                      - cell "Smart bridge" [ref=e284]
+                      - cell "Healthy" [ref=e285]:
+                        - generic [ref=e286]: Healthy
+                      - cell "13/13 online" [ref=e287]
+                      - cell "Open" [ref=e288]:
+                        - link "Open" [ref=e289] [cursor=pointer]:
+                          - /url: /admin/devices?tab=smart_home
+                          - text: Open
+                          - img
+            - generic [ref=e290]:
+              - generic [ref=e291]:
+                - heading "Governance menu map" [level=3] [ref=e292]
+                - paragraph [ref=e293]: Admin access is grouped by purpose so setup, operations, and system control stay separate.
+              - table [ref=e297]:
+                - rowgroup [ref=e298]:
+                  - row "Group Pages Summary" [ref=e299]:
+                    - columnheader "Group" [ref=e300]
+                    - columnheader "Pages" [ref=e301]
+                    - columnheader "Summary" [ref=e302]
+                - rowgroup [ref=e303]:
+                  - row "People 2 destination(s) Users 12/12 active accounts Patients 6 patient account(s) Identity, account access, and patient records." [ref=e304]:
+                    - cell "People 2 destination(s)" [ref=e305]:
+                      - generic [ref=e306]:
+                        - img [ref=e308]
+                        - generic [ref=e313]:
+                          - paragraph [ref=e314]: People
+                          - paragraph [ref=e315]: 2 destination(s)
+                    - cell "Users 12/12 active accounts Patients 6 patient account(s)" [ref=e316]:
+                      - generic [ref=e317]:
+                        - generic [ref=e318]:
+                          - link "Users" [ref=e319] [cursor=pointer]:
+                            - /url: /admin/users
+                            - text: Users
+                            - img
+                          - generic [ref=e320]: 12/12 active accounts
+                        - generic [ref=e321]:
+                          - link "Patients" [ref=e322] [cursor=pointer]:
+                            - /url: /admin/patients
+                            - text: Patients
+                            - img
+                          - generic: 6 patient account(s)
+                    - cell "Identity, account access, and patient records." [ref=e323]
+                  - row "Places 1 destination(s) Facilities Site, room, and floor configuration Facilities, rooms, and floorplan setup." [ref=e324]:
+                    - cell "Places 1 destination(s)" [ref=e325]:
+                      - generic [ref=e326]:
+                        - img [ref=e328]
+                        - generic [ref=e330]:
+                          - paragraph [ref=e331]: Places
+                          - paragraph [ref=e332]: 1 destination(s)
+                    - cell "Facilities Site, room, and floor configuration" [ref=e333]:
+                      - generic [ref=e335]:
+                        - link "Facilities" [ref=e336] [cursor=pointer]:
+                          - /url: /admin/facility-management
+                          - text: Facilities
+                          - img
+                        - generic: Site, room, and floor configuration
+                    - cell "Facilities, rooms, and floorplan setup." [ref=e337]
+                  - row "Devices 3 destination(s) Devices 6/18 online Smart devices 13/13 online Device health Broker signal is healthy Fleet status, device health, and smart home bridge." [ref=e338]:
+                    - cell "Devices 3 destination(s)" [ref=e339]:
+                      - generic [ref=e340]:
+                        - img [ref=e342]
+                        - generic [ref=e344]:
+                          - paragraph [ref=e345]: Devices
+                          - paragraph [ref=e346]: 3 destination(s)
+                    - cell "Devices 6/18 online Smart devices 13/13 online Device health Broker signal is healthy" [ref=e347]:
+                      - generic [ref=e348]:
+                        - generic [ref=e349]:
+                          - link "Devices" [ref=e350] [cursor=pointer]:
+                            - /url: /admin/devices
+                            - text: Devices
+                            - img
+                          - generic [ref=e351]: 6/18 online
+                        - generic [ref=e352]:
+                          - link "Smart devices" [ref=e353] [cursor=pointer]:
+                            - /url: /admin/devices?tab=smart_home
+                            - text: Smart devices
+                            - img
+                          - generic: 13/13 online
+                        - generic [ref=e354]:
+                          - link "Device health" [ref=e355] [cursor=pointer]:
+                            - /url: /admin/device-health
+                            - text: Device health
+                            - img
+                          - generic: Broker signal is healthy
+                    - cell "Fleet status, device health, and smart home bridge." [ref=e356]
+                  - row "Operations 3 destination(s) Alerts System issues and escalations Audit 6 recent event(s) Demo control Reset and scenario control Alerts, audit trail, and demo control." [ref=e357]:
+                    - cell "Operations 3 destination(s)" [ref=e358]:
+                      - generic [ref=e359]:
+                        - img [ref=e361]
+                        - generic [ref=e363]:
+                          - paragraph [ref=e364]: Operations
+                          - paragraph [ref=e365]: 3 destination(s)
+                    - cell "Alerts System issues and escalations Audit 6 recent event(s) Demo control Reset and scenario control" [ref=e366]:
+                      - generic [ref=e367]:
+                        - generic [ref=e368]:
+                          - link "Alerts" [ref=e369] [cursor=pointer]:
+                            - /url: /admin/alerts
+                            - text: Alerts
+                            - img
+                          - generic [ref=e370]: System issues and escalations
+                        - generic [ref=e371]:
+                          - link "Audit" [ref=e372] [cursor=pointer]:
+                            - /url: /admin/audit
+                            - text: Audit
+                            - img
+                          - generic [ref=e373]: 6 recent event(s)
+                        - generic [ref=e374]:
+                          - link "Demo control" [ref=e375] [cursor=pointer]:
+                            - /url: /admin/demo-control
+                            - text: Demo control
+                            - img
+                          - generic: Reset and scenario control
+                    - cell "Alerts, audit trail, and demo control." [ref=e376]
+                  - row "System 1 destination(s) Settings Integration, security, and configuration Platform settings and governance." [ref=e377]:
+                    - cell "System 1 destination(s)" [ref=e378]:
+                      - generic [ref=e379]:
+                        - img [ref=e381]
+                        - generic [ref=e384]:
+                          - paragraph [ref=e385]: System
+                          - paragraph [ref=e386]: 1 destination(s)
+                    - cell "Settings Integration, security, and configuration" [ref=e387]:
+                      - generic [ref=e389]:
+                        - link "Settings" [ref=e390] [cursor=pointer]:
+                          - /url: /admin/settings
+                          - text: Settings
+                          - img
+                        - generic: Integration, security, and configuration
+                    - cell "Platform settings and governance." [ref=e391]
+          - generic [ref=e392]:
+            - generic [ref=e393]:
+              - generic [ref=e394]:
+                - heading "Fleet detail" [level=3] [ref=e395]
+                - paragraph [ref=e396]: Device management stays in a detail table instead of being mixed into the overview controls.
+              - table [ref=e399]:
+                - rowgroup [ref=e400]:
+                  - row "Hardware Total Online Offline Open" [ref=e401]:
+                    - columnheader "Hardware" [ref=e402]
+                    - columnheader "Total" [ref=e403]
+                    - columnheader "Online" [ref=e404]
+                    - columnheader "Offline" [ref=e405]
+                    - columnheader "Open" [ref=e406]
+                - rowgroup [ref=e407]:
+                  - row "Wheelchairs 6 6 0 Open" [ref=e408]:
+                    - cell "Wheelchairs" [ref=e409]
+                    - cell "6" [ref=e410]
+                    - cell "6" [ref=e411]
+                    - cell "0" [ref=e412]
+                    - cell "Open" [ref=e413]:
+                      - link "Open" [ref=e414] [cursor=pointer]:
+                        - /url: /admin/devices?tab=wheelchair
+                        - text: Open
+                        - img
+                  - row "Nodes 11 0 11 Open" [ref=e415]:
+                    - cell "Nodes" [ref=e416]
+                    - cell "11" [ref=e417]
+                    - cell "0" [ref=e418]
+                    - cell "11" [ref=e419]
+                    - cell "Open" [ref=e420]:
+                      - link "Open" [ref=e421] [cursor=pointer]:
+                        - /url: /admin/devices?tab=node
+                        - text: Open
+                        - img
+                  - row "Polar Sense 0 0 0 Open" [ref=e422]:
+                    - cell "Polar Sense" [ref=e423]
+                    - cell "0" [ref=e424]
+                    - cell "0" [ref=e425]
+                    - cell "0" [ref=e426]
+                    - cell "Open" [ref=e427]:
+                      - link "Open" [ref=e428] [cursor=pointer]:
+                        - /url: /admin/devices?tab=polar_sense
+                        - text: Open
+                        - img
+                  - row "Mobile phones 1 0 1 Open" [ref=e429]:
+                    - cell "Mobile phones" [ref=e430]
+                    - cell "1" [ref=e431]
+                    - cell "0" [ref=e432]
+                    - cell "1" [ref=e433]
+                    - cell "Open" [ref=e434]:
+                      - link "Open" [ref=e435] [cursor=pointer]:
+                        - /url: /admin/devices?tab=mobile_phone
+                        - text: Open
+                        - img
+                  - row "Smart devices 13 13 0 Open" [ref=e436]:
+                    - cell "Smart devices" [ref=e437]
+                    - cell "13" [ref=e438]
+                    - cell "13" [ref=e439]
+                    - cell "0" [ref=e440]
+                    - cell "Open" [ref=e441]:
+                      - link "Open" [ref=e442] [cursor=pointer]:
+                        - /url: /admin/devices?tab=smart_home
+                        - text: Open
+                        - img
+            - generic [ref=e443]:
+              - generic [ref=e444]:
+                - heading "Recent governance activity" [level=3] [ref=e445]
+                - paragraph [ref=e446]: Audit trail and recent device changes are kept as a compact detail list.
+              - generic [ref=e447]:
+                - table [ref=e449]:
+                  - rowgroup [ref=e450]:
+                    - row "Event Summary Time" [ref=e451]:
+                      - columnheader "Event" [ref=e452]
+                      - columnheader "Summary" [ref=e453]
+                      - columnheader "Time" [ref=e454]
+                  - rowgroup [ref=e455]:
+                    - row "registry_deleted Device SIM_PHONE_05 removed from workspace registry 6/7/2026, 10:19:38 PM" [ref=e456]:
+                      - cell "registry_deleted" [ref=e457]
+                      - cell "Device SIM_PHONE_05 removed from workspace registry" [ref=e458]
+                      - cell "6/7/2026, 10:19:38 PM" [ref=e459]
+                    - row "registry_deleted Device SIM_PHONE_04 removed from workspace registry 6/7/2026, 10:19:33 PM" [ref=e460]:
+                      - cell "registry_deleted" [ref=e461]
+                      - cell "Device SIM_PHONE_04 removed from workspace registry" [ref=e462]
+                      - cell "6/7/2026, 10:19:33 PM" [ref=e463]
+                    - row "registry_deleted Device SIM_PHONE_03 removed from workspace registry 6/7/2026, 10:19:30 PM" [ref=e464]:
+                      - cell "registry_deleted" [ref=e465]
+                      - cell "Device SIM_PHONE_03 removed from workspace registry" [ref=e466]
+                      - cell "6/7/2026, 10:19:30 PM" [ref=e467]
+                    - row "registry_deleted Device SIM_PHONE_02 removed from workspace registry 6/7/2026, 10:19:25 PM" [ref=e468]:
+                      - cell "registry_deleted" [ref=e469]
+                      - cell "Device SIM_PHONE_02 removed from workspace registry" [ref=e470]
+                      - cell "6/7/2026, 10:19:25 PM" [ref=e471]
+                - link "View full audit" [ref=e473] [cursor=pointer]:
+                  - /url: /admin/audit
+                  - text: View full audit
+                  - img
+    - button "Open EaseAI chat" [ref=e474]:
+      - img [ref=e475]
+      - generic [ref=e478]: Ask EaseAI
+  - region "Notifications alt+T"
+  - alert [ref=e2]

@@ -225,13 +225,13 @@ async def ensure_camera_device_from_mqtt_registration(
     device_id: str,
     data: dict[str, Any],
 ) -> Device | None:
-    """Create a CAM_* node row on first MQTT registration/status when auto-register resolves a workspace."""
+    """Create a camera node row on first MQTT registration/status when auto-register resolves a workspace."""
     if not settings.mqtt_auto_register_devices:
         return None
     if not _is_valid_mqtt_device_id(device_id):
         return None
     did = str(device_id).strip()
-    if not did.upper().startswith("CAM_"):
+    if not did.upper().startswith(("CAM_", "TSIM_")):
         return None
     existing = await get_registered_device_for_ingest(session, did)
     if existing is not None:

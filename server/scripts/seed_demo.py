@@ -2236,11 +2236,22 @@ async def seed_sim_team_observer_access(
     caregivers_by_key: dict[str, CareGiver],
     patients: list[Patient],
 ) -> int:
-    """Grant both sim observers visibility to all seeded patients (non-admin roles need access rows)."""
-    observer_keys = ("demo_observer", "demo_observer2", "nina.p", "jason.k", "sim_observer1", "sim_observer2")
+    """Grant sim floor staff visibility to all seeded patients (non-admin roles need access rows)."""
+    staff_keys = (
+        "supervisor",
+        "demo_supervisor",
+        "marcus.l",
+        "sim_supervisor",
+        "demo_observer",
+        "demo_observer2",
+        "nina.p",
+        "jason.k",
+        "sim_observer1",
+        "sim_observer2",
+    )
     created = 0
     seen_caregiver_ids: set[int] = set()
-    for key in observer_keys:
+    for key in staff_keys:
         cg = caregivers_by_key.get(key)
         if not cg:
             continue
@@ -2315,7 +2326,7 @@ async def run_sim_team_seed(workspace_name: str, reset: bool) -> int:
         f"Smart devices: {smart_devices_count} | Room-node mappings: {room_node_mappings} | "
         f"Actor positions: {actor_positions}"
     )
-    print(f"Observer patient access rows (new): {access_rows}")
+    print(f"Floor-staff patient access rows (new): {access_rows}")
     print("\nStaff logins (password is the username):")
     print("  ada.m      (admin)")
     print("  helen.b    (head_nurse)")
@@ -2356,6 +2367,7 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
             if seed_demo_alerts
             else 0
         )
+        staff_access_rows = await seed_sim_team_observer_access(session, ws.id, caregivers_by_role, patients)
         schedules, tasks, directives = await seed_workflow(
             session, ws.id, users_by_role, patients, rooms
         )
@@ -2386,7 +2398,7 @@ async def run_seed(workspace_name: str, reset: bool) -> None:
         f"{smart_devices_count} | Room-node mappings: {room_node_mappings} | "
         f"Actor positions: {actor_positions} | Photo snapshots: {photo_snapshots} | "
         f"Specialists: {specialists} | Prescriptions: {prescriptions} | "
-        f"Pharmacy orders: {pharmacy_orders}\n"
+        f"Pharmacy orders: {pharmacy_orders} | Staff access rows: {staff_access_rows}\n"
     )
     print("Demo credentials:")
     bootstrap_username = os.getenv("BOOTSTRAP_ADMIN_USERNAME", "admin")

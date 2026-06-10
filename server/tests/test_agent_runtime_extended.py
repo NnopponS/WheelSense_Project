@@ -17,7 +17,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.mcp.context import McpActorContext, actor_scope
-from app.models.core import Workspace
+from app.models.core import Room, SmartDevice, Workspace
 from app.models.users import User
 from app.schemas.agent_runtime import (
     AgentRuntimeExecuteRequest,
@@ -35,6 +35,7 @@ from app.agent_runtime.service import (
     _collect_ai_reply,
     _format_grounded_answer,
     _plan_for_message,
+    _try_deterministic_room_control_plan,
     _tool_result_payload,
     _get_or_create_context,
     execute_plan,
@@ -711,6 +712,58 @@ async def test_propose_resolves_multi_patient_location_and_timeline_in_english(
 
 
 @pytest.mark.asyncio
+async def test_propose_list_visible_patients_uses_deterministic_roster_reply(
+    runtime_test_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    roster = [
+        {
+            "id": 31,
+            "first_name": "Robert",
+            "last_name": "Chen",
+            "nickname": "Robert",
+            "room_id": 402,
+            "room_name": "Room 402",
+            "care_level": "standard",
+            "is_active": True,
+        },
+        {
+            "id": 32,
+            "first_name": "Grace",
+            "last_name": "Wilson",
+            "nickname": "Grace",
+            "room_id": 405,
+            "room_name": "Room 405",
+            "care_level": "high",
+            "is_active": True,
+        },
+    ]
+    mock_call = AsyncMock(return_value=roster)
+    monkeypatch.setattr("app.agent_runtime.service._call_mcp_tool", mock_call)
+    monkeypatch.setattr(
+        "app.services.ai_chat.collect_grounded_tool_answer",
+        AsyncMock(side_effect=AssertionError("patient roster should not need LLM summarization")),
+    )
+
+    result = await propose_turn(
+        actor_access_token=f"token_{runtime_test_user.id}",
+        message="List Visible Patients",
+        messages=[ChatMessagePart(role="user", content="List Visible Patients")],
+        conversation_id=9032,
+    )
+
+    assert result.mode == "answer"
+    assert result.assistant_reply.startswith("Visible patients (2):")
+    assert "Robert Chen" in result.assistant_reply
+    assert "Grace Wilson" in result.assistant_reply
+    assert "list_visible_patients" not in result.assistant_reply
+    assert result.grounding["tool_names"] == ["list_visible_patients"]
+    assert result.grounding["response_cards"][0]["kind"] == "data_table"
+    assert result.grounding["response_cards"][0]["source"] == "list_visible_patients"
+    mock_call.assert_awaited_once_with(f"token_{runtime_test_user.id}", "list_visible_patients", {})
+
+
+@pytest.mark.asyncio
 async def test_propose_resolves_thai_phonetic_patient_timeline(
     runtime_test_user: User,
     monkeypatch: pytest.MonkeyPatch,
@@ -818,6 +871,120 @@ async def test_propose_device_inventory_uses_deterministic_mcp_read(
     assert result.assistant_reply.startswith("อุปกรณ์ในระบบตอนนี้:")
     assert "Wheelchair 01" in result.assistant_reply
     mock_call.assert_awaited_once_with(f"token_{runtime_test_user.id}", "list_devices", {})
+
+
+@pytest.mark.asyncio
+async def test_propose_thai_room_light_command_resolves_nursing_station_switch(
+    db_session: AsyncSession,
+    runtime_test_user: User,
+    runtime_test_workspace: Workspace,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    room = Room(
+        workspace_id=runtime_test_workspace.id,
+        name="Nurses' Station",
+        room_type="clinic",
+    )
+    db_session.add(room)
+    await db_session.flush()
+    device = SmartDevice(
+        workspace_id=runtime_test_workspace.id,
+        room_id=room.id,
+        name="Nurses' Station Switch",
+        ha_entity_id="switch.ws1_room11_nurses_station_switch",
+        device_type="switch",
+        is_active=True,
+        state="on",
+        config={"seed": True},
+    )
+    db_session.add(device)
+    await db_session.flush()
+
+    class SessionCtx:
+        async def __aenter__(self):
+            return db_session
+
+        async def __aexit__(self, *_exc):
+            return False
+
+    monkeypatch.setattr("app.agent_runtime.service.AsyncSessionLocal", lambda: SessionCtx())
+    monkeypatch.setattr(
+        "app.agent_runtime.service._load_runtime_actor_context",
+        AsyncMock(return_value=(runtime_test_user, runtime_test_workspace)),
+    )
+
+    result = await _try_deterministic_room_control_plan(
+        actor_access_token=f"token_{runtime_test_user.id}",
+        message="ปิดไฟห้อง Nursing station",
+        conversation_id=9060,
+    )
+
+    assert result is not None
+    assert result.mode == "plan"
+    assert result.plan is not None
+    step = result.plan.steps[0]
+    assert step.tool_name == "control_room_smart_device"
+    assert step.arguments == {"device_id": device.id, "action": "turn_off"}
+    assert result.grounding["classification_method"] == "deterministic_room_smart_device_control"
+    assert result.grounding["resolved_room"]["name"] == "Nurses' Station"
+    assert result.grounding["resolved_device"]["name"] == "Nurses' Station Switch"
+
+
+@pytest.mark.asyncio
+async def test_propose_living_room_light_command_resolves_room_402_light(
+    db_session: AsyncSession,
+    runtime_test_user: User,
+    runtime_test_workspace: Workspace,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    room = Room(
+        workspace_id=runtime_test_workspace.id,
+        name="Room 402",
+        room_type="bedroom",
+    )
+    db_session.add(room)
+    await db_session.flush()
+    device = SmartDevice(
+        workspace_id=runtime_test_workspace.id,
+        room_id=room.id,
+        name="Room 402 Bedside Light",
+        ha_entity_id="light.ws1_room402_bedside",
+        device_type="light",
+        is_active=True,
+        state="on",
+        config={"seed": True},
+    )
+    db_session.add(device)
+    await db_session.flush()
+
+    class SessionCtx:
+        async def __aenter__(self):
+            return db_session
+
+        async def __aexit__(self, *_exc):
+            return False
+
+    monkeypatch.setattr("app.agent_runtime.service.AsyncSessionLocal", lambda: SessionCtx())
+    monkeypatch.setattr(
+        "app.agent_runtime.service._load_runtime_actor_context",
+        AsyncMock(return_value=(runtime_test_user, runtime_test_workspace)),
+    )
+
+    result = await _try_deterministic_room_control_plan(
+        actor_access_token=f"token_{runtime_test_user.id}",
+        message="Turn off living room light",
+        conversation_id=9061,
+    )
+
+    assert result is not None
+    assert result.mode == "plan"
+    assert result.plan is not None
+    step = result.plan.steps[0]
+    assert step.tool_name == "control_room_smart_device"
+    assert step.arguments == {"device_id": device.id, "action": "turn_off"}
+    assert result.grounding["classification_method"] == "deterministic_room_smart_device_control"
+    assert result.grounding["resolved_room"]["name"] == "Room 402"
+    assert result.grounding["resolved_device"]["name"] == "Room 402 Bedside Light"
 
 
 @pytest.mark.asyncio

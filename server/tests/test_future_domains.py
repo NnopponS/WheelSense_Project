@@ -7,10 +7,11 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import get_db
 from app.config import settings
 from app.core.security import create_access_token, get_password_hash
 from app.models.caregivers import CareGiver
@@ -836,6 +837,158 @@ async def test_physical_model_yolo_detection_creates_robert_fall_alert(
     assert created.device_id == "CAM_LIVINGROOM"
     assert created.data["room_alias"] == "Living Room"
     assert created.data["physical_zone"] == "living_room"
+
+
+@pytest.mark.asyncio
+async def test_physical_model_yolo_detection_maps_room_from_camera_device(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+):
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Physical Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    bedroom = Room(
+        workspace_id=admin_user.workspace_id,
+        floor_id=fl.id,
+        name="Room 401",
+        room_type="bedroom",
+        node_device_id="CAM_BEDROOM",
+    )
+    living = Room(
+        workspace_id=admin_user.workspace_id,
+        floor_id=fl.id,
+        name="Room 402",
+        room_type="living",
+        node_device_id="CAM_LIVING",
+    )
+    db_session.add_all([bedroom, living])
+    db_session.add(
+        Device(
+            workspace_id=admin_user.workspace_id,
+            device_id="CAM_BEDROOM",
+            device_type="camera",
+            hardware_type="node",
+        )
+    )
+    robert = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Robert",
+        last_name="Lee",
+        nickname="Robert",
+        care_level="normal",
+        is_active=True,
+        room_id=None,
+    )
+    db_session.add(robert)
+    await db_session.commit()
+    await db_session.refresh(bedroom)
+
+    with patch("app.services.mqtt_publish.publish_alert_to_mqtt_background") as publish_alert:
+        response = await client.post(
+            "/api/demo/physical-model/yolo-fall-events",
+            json={
+                "patient_name": "Robert",
+                "detected": True,
+                "confidence": 0.92,
+                "source": "real_yolo_camera_service",
+                "device_id": "CAM_BEDROOM",
+                "force": True,
+            },
+        )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "alert_created"
+    assert body["mapped_room"]["room_id"] == bedroom.id
+    assert body["mapped_room"]["alias"] == "Bedroom"
+    assert body["alert"]["room_id"] == bedroom.id
+    assert body["alert"]["alert_type"] == "fall"
+    publish_alert.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_internal_physical_model_yolo_detection_uses_service_secret(
+    client: AsyncClient,
+    db_session: AsyncSession,
+    admin_user: User,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(settings, "internal_service_secret", "test-internal-secret")
+
+    fac = Facility(workspace_id=admin_user.workspace_id, name="Physical Facility", address="", description="", config={})
+    db_session.add(fac)
+    await db_session.flush()
+    fl = Floor(workspace_id=admin_user.workspace_id, facility_id=fac.id, floor_number=4, name="L4", map_data={})
+    db_session.add(fl)
+    await db_session.flush()
+    bathroom = Room(workspace_id=admin_user.workspace_id, floor_id=fl.id, name="Bathroom", room_type="bathroom")
+    db_session.add(bathroom)
+    await db_session.flush()
+    robert = Patient(
+        workspace_id=admin_user.workspace_id,
+        first_name="Robert",
+        last_name="Lee",
+        nickname="Robert",
+        care_level="normal",
+        is_active=True,
+        room_id=None,
+    )
+    db_session.add(robert)
+    await db_session.commit()
+
+    payload = {
+        "room_alias": "Bathroom",
+        "patient_name": "Robert",
+        "detected": True,
+        "confidence": 0.93,
+        "source": "real_yolo_camera_service",
+        "device_id": "TSIM_004",
+        "bbox": [4, 8, 120, 160],
+        "frame_size": {"width": 640, "height": 480},
+        "force": True,
+    }
+
+    async def _override_db():
+        yield db_session
+
+    from app.main import app
+
+    app.dependency_overrides[get_db] = _override_db
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as no_auth_client:
+            unauthorized = await no_auth_client.post(
+                f"/api/demo/physical-model/yolo-fall-events/internal?workspace_id={admin_user.workspace_id}",
+                json=payload,
+            )
+            assert unauthorized.status_code == 401
+
+            with patch("app.services.mqtt_publish.publish_alert_to_mqtt_background") as publish_alert:
+                response = await no_auth_client.post(
+                    f"/api/demo/physical-model/yolo-fall-events/internal?workspace_id={admin_user.workspace_id}",
+                    json=payload,
+                    headers={"X-WheelSense-Internal-Secret": "test-internal-secret"},
+                )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["status"] == "alert_created"
+    assert body["mapped_room"]["room_id"] == bathroom.id
+    assert body["patient"]["display_name"] == "Robert"
+    assert body["alert"]["alert_type"] == "fall"
+    assert body["event"]["source"] == "real_yolo_camera_service"
+    publish_alert.assert_called_once()
+
+    authenticated_without_secret = await client.post(
+            f"/api/demo/physical-model/yolo-fall-events/internal?workspace_id={admin_user.workspace_id}",
+            json=payload,
+        )
+    assert authenticated_without_secret.status_code == 401
 
 
 @pytest.mark.asyncio

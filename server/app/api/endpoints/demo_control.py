@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import (
@@ -57,6 +58,7 @@ from app.services.physical_model_demo import (
 )
 
 router = APIRouter()
+internal_router = APIRouter()
 logger = logging.getLogger("wheelsense.demo_control")
 
 SIMULATOR_MQTT_CONTROL_TOPIC = "WheelSense/sim/control"
@@ -64,6 +66,35 @@ SIMULATOR_MQTT_CONTROL_TOPIC = "WheelSense/sim/control"
 
 def _bad_request(exc: ValueError) -> HTTPException:
     return HTTPException(status_code=400, detail=str(exc))
+
+
+def _require_internal_secret(header_value: str | None) -> None:
+    expected = settings.internal_service_secret.strip()
+    if not expected:
+        raise HTTPException(status_code=503, detail="Internal service secret is not configured")
+    if header_value != expected:
+        raise HTTPException(status_code=401, detail="Invalid internal service secret")
+
+
+async def _resolve_internal_workspace(
+    db: AsyncSession,
+    *,
+    workspace_id: int | None,
+    workspace_name: str | None,
+) -> Workspace:
+    if workspace_id is not None:
+        workspace = await db.get(Workspace, workspace_id)
+        if workspace is None:
+            raise HTTPException(status_code=404, detail="Workspace not found")
+        return workspace
+
+    query = select(Workspace).order_by(Workspace.id.asc())
+    if workspace_name:
+        query = query.where(Workspace.name == workspace_name)
+    workspace = (await db.execute(query.limit(1))).scalar_one_or_none()
+    if workspace is None:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return workspace
 
 
 async def _publish_simulator_move_actor(ws: Workspace, actor: dict) -> None:
@@ -147,6 +178,34 @@ async def apply_physical_model_yolo_fall_event(
             db,
             ws.id,
             actor_user_id=current_user.id,
+            event=payload,
+        )
+    except ValueError as exc:
+        raise _bad_request(exc) from exc
+
+
+@internal_router.post("/physical-model/yolo-fall-events/internal", response_model=PhysicalModelYoloFallEventOut)
+async def apply_physical_model_yolo_fall_event_internal(
+    payload: PhysicalModelYoloFallEventIn,
+    workspace_id: int | None = Query(default=None, ge=1),
+    workspace_name: str | None = Query(default=None, max_length=128),
+    db: AsyncSession = Depends(get_db),
+    x_wheelsense_internal_secret: str | None = Header(default=None),
+):
+    """Accept YOLO detections from the physical-model camera service.
+
+    This endpoint is intentionally machine-to-machine. The camera service cannot
+    rely on a browser admin session, but it still needs to create the same demo
+    fall alert as the authenticated control page.
+    """
+
+    _require_internal_secret(x_wheelsense_internal_secret)
+    ws = await _resolve_internal_workspace(db, workspace_id=workspace_id, workspace_name=workspace_name)
+    try:
+        return await apply_yolo_fall_event(
+            db,
+            ws.id,
+            actor_user_id=None,
             event=payload,
         )
     except ValueError as exc:

@@ -7,7 +7,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.care import DemoActorPosition
-from app.models.core import Room, SmartDevice
+from app.models.core import Device, Room, SmartDevice
 from app.models.patients import Patient
 from app.schemas.demo_control import (
     DemoAlertResponse,
@@ -116,6 +116,52 @@ async def _resolve_room(
         if _norm(room.name) in accepted_names:
             return room, alias
     raise ValueError(f"Room for physical model alias '{alias.alias}' not found")
+
+
+async def _resolve_room_for_camera_device(
+    session: AsyncSession,
+    ws_id: int,
+    device_id: str | None,
+) -> tuple[Room, PhysicalRoomAlias] | None:
+    did = (device_id or "").strip()
+    if not did:
+        return None
+
+    room = (
+        await session.execute(
+            select(Room)
+            .where(Room.workspace_id == ws_id, Room.node_device_id == did)
+            .order_by(Room.id.asc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if room is not None:
+        alias = _room_alias_for_name(room.name) or _room_alias_for_name(room.room_type)
+        if alias is None:
+            alias = PhysicalRoomAlias(room.name, "custom", (room.name,))
+        return room, alias
+
+    device = (
+        await session.execute(
+            select(Device)
+            .where(Device.workspace_id == ws_id, Device.device_id == did)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    cfg = device.config if device is not None and isinstance(device.config, dict) else {}
+    mapped_room_id = cfg.get("mapped_room_id") or cfg.get("room_id")
+    if mapped_room_id is not None:
+        try:
+            return await _resolve_room(session, ws_id, mapped_room_id=int(mapped_room_id))
+        except (TypeError, ValueError):
+            pass
+    room_hint = cfg.get("room") or cfg.get("room_alias") or cfg.get("physical_zone")
+    if room_hint:
+        try:
+            return await _resolve_room(session, ws_id, room_alias=str(room_hint))
+        except ValueError:
+            return None
+    return None
 
 
 async def list_physical_rooms(session: AsyncSession, ws_id: int) -> list[PhysicalModelRoomOut]:
@@ -501,15 +547,19 @@ async def apply_yolo_fall_event(
     event: PhysicalModelYoloFallEventIn,
 ) -> PhysicalModelYoloFallEventOut:
     room_selector = event.room_alias or event.physical_zone or event.room
-    if room_selector is None and event.mapped_room_id is None:
+    resolved_from_camera = await _resolve_room_for_camera_device(session, ws_id, event.device_id)
+    if resolved_from_camera is None and room_selector is None and event.mapped_room_id is None:
         raise ValueError("YOLO fall event requires room_alias, room, physical_zone, or mapped_room_id")
 
-    room, alias = await _resolve_room(
-        session,
-        ws_id,
-        room_alias=room_selector,
-        mapped_room_id=event.mapped_room_id,
-    )
+    if resolved_from_camera is not None and event.mapped_room_id is None:
+        room, alias = resolved_from_camera
+    else:
+        room, alias = await _resolve_room(
+            session,
+            ws_id,
+            room_alias=room_selector,
+            mapped_room_id=event.mapped_room_id,
+        )
     mapped_room = _room_out(room, alias)
 
     if not event.detected:

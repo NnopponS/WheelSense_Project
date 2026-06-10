@@ -1,0 +1,23 @@
+{
+  "managed": {
+    "build-web-apps": "symlink",
+    "debug": "symlink",
+    "docs-sync": "symlink",
+    "e2e": "symlink",
+    "game-studio": "symlink",
+    "implement": "symlink",
+    "memory-update": "symlink",
+    "plan": "symlink",
+    "review": "symlink",
+    "security": "symlink",
+    "skill-ops": "symlink",
+    "superpowers": "symlink",
+    "tdd": "symlink",
+    "wheelsense-architecture": "symlink",
+    "wheelsense-core": "symlink",
+    "wheelsense-mobile-app": "symlink",
+    "wheelsense-thesis-writing": "symlink",
+    "which-agent": "symlink"
+  },
+  "updated_at": "2026-06-07T17:55:23.0593172+07:00"
+}

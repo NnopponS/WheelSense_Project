@@ -43,6 +43,8 @@ services:
       INTENT_LLM_NORMALIZE_ENABLED: ${INTENT_LLM_NORMALIZE_ENABLED:-false}
       SERVER_BASE_URL: ${SERVER_BASE_URL:-http://wheelsense-platform-server:8000}
       PORTAL_BASE_URL: ${PORTAL_BASE_URL:-}
+      CAMERA_STREAM_WS_PUBLIC_BASE_URL: ${CAMERA_STREAM_WS_PUBLIC_BASE_URL:-}
+      CAMERA_STREAM_DEFAULT_FPS: ${CAMERA_STREAM_DEFAULT_FPS:-8}
       AGENT_RUNTIME_URL: ${AGENT_RUNTIME_URL:-http://wheelsense-agent-runtime:8010}
       INTERNAL_SERVICE_SECRET: ${INTERNAL_SERVICE_SECRET:-wheelsense-internal-dev-secret}
       MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-http://localhost:3000}
@@ -93,6 +95,30 @@ services:
       EASEAI_PIPELINE_V2: ${EASEAI_PIPELINE_V2:-true}
       AGENT_ROUTING_MODE: ${AGENT_ROUTING_MODE:-llm_tools}
       AGENT_LLM_ROUTER_MODEL: ${AGENT_LLM_ROUTER_MODEL:-}
+    depends_on:
+      wheelsense-platform-server:
+        condition: service_started
+
+  yolo-camera-service:
+    container_name: wheelsense-yolo-camera-service
+    build:
+      context: ./yolo-camera-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8020:8020"
+      - "8765:8020"
+    environment:
+      WHEELSENSE_API_BASE_URL: http://wheelsense-platform-server:8000
+      WHEELSENSE_INTERNAL_SECRET: ${INTERNAL_SERVICE_SECRET:-wheelsense-internal-dev-secret}
+      WHEELSENSE_WORKSPACE_NAME: ${YOLO_WORKSPACE_NAME:-WheelSense Demo Workspace}
+      WHEELSENSE_WORKSPACE_ID: ${YOLO_WORKSPACE_ID:-}
+      PATIENT_NAME: ${YOLO_PATIENT_NAME:-Robert}
+      DEVICE_ID: ${YOLO_DEVICE_ID:-TSIM_004}
+      YOLO_MODEL_PATH: /app/models/yolov8-model/best.pt
+      YOLO_CONFIDENCE_THRESHOLD: ${YOLO_CONFIDENCE_THRESHOLD:-0.5}
+      YOLO_DEVICE: ${YOLO_DEVICE:-cpu}
+      YOLO_FALL_COOLDOWN_SECONDS: ${YOLO_FALL_COOLDOWN_SECONDS:-30}
     depends_on:
       wheelsense-platform-server:
         condition: service_started

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import json
 from datetime import datetime, UTC
 
+from app.config import settings
 from app.models.core import Device, Room, SmartDevice, Workspace
 from app.models.core import DeviceCommandDispatch
 from app.models.activity import Alert
@@ -23,6 +24,8 @@ from app.mqtt_handler import (
     _handle_mobile_telemetry,
     _handle_device_ack,
     _handle_legacy_state_sync_request,
+    _handle_legacy_room_status,
+    _handle_central_controller_status,
     _handle_camera_registration,
     _handle_camera_status,
     _handle_physical_model_detection,
@@ -753,6 +756,103 @@ async def test_legacy_state_sync_request_publishes_current_room_states(active_wo
 
 @pytest.mark.asyncio
 @patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_cucumber_room_status_syncs_legacy_smart_device_state(active_workspace):
+    async with _SessionFactory() as session:
+        living = Room(
+            workspace_id=active_workspace.id,
+            name="Room 402",
+            room_type="living",
+        )
+        session.add(living)
+        await session.flush()
+        session.add(
+            SmartDevice(
+                workspace_id=active_workspace.id,
+                room_id=living.id,
+                name="Living Room Light",
+                ha_entity_id="light.living_room",
+                device_type="light",
+                is_active=True,
+                state="on",
+                config={"legacy_firmware": {"enabled": True}},
+            )
+        )
+        await session.commit()
+
+    await _handle_legacy_room_status(
+        "livingroom",
+        json.dumps(
+            {
+                "type": "room_status",
+                "room": "livingroom",
+                "device_id": "APPLIANCE_CENTRAL",
+                "appliances": {"light": False},
+            }
+        ).encode(),
+    )
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        device = (
+            await session.execute(select(SmartDevice).where(SmartDevice.name == "Living Room Light"))
+        ).scalar_one()
+        assert device.state == "off"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_cucumber_central_status_registers_controller_and_syncs_rooms(active_workspace):
+    async with _SessionFactory() as session:
+        kitchen = Room(
+            workspace_id=active_workspace.id,
+            name="Dining Room",
+            room_type="dining",
+        )
+        session.add(kitchen)
+        await session.flush()
+        session.add(
+            SmartDevice(
+                workspace_id=active_workspace.id,
+                room_id=kitchen.id,
+                name="Kitchen Alarm",
+                ha_entity_id="switch.kitchen_alarm",
+                device_type="switch",
+                is_active=True,
+                state="off",
+                config={"legacy_firmware": {"enabled": True, "room": "kitchen", "appliance": "alarm"}},
+            )
+        )
+        await session.commit()
+
+    await _handle_central_controller_status(
+        json.dumps(
+            {
+                "type": "central_status",
+                "device_id": "APPLIANCE_CENTRAL",
+                "device_type": "appliance_controller_central",
+                "ip_address": "172.20.10.20",
+                "rooms": [{"name": "kitchen", "appliances": {"alarm": True}}],
+            }
+        ).encode()
+    )
+
+    async with _SessionFactory() as session:
+        from sqlalchemy import select
+
+        controller = (
+            await session.execute(select(Device).where(Device.device_id == "APPLIANCE_CENTRAL"))
+        ).scalar_one()
+        device = (
+            await session.execute(select(SmartDevice).where(SmartDevice.name == "Kitchen Alarm"))
+        ).scalar_one()
+        assert controller.hardware_type == "appliance_controller"
+        assert controller.ip_address == "172.20.10.20"
+        assert device.state == "on"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
 async def test_handle_camera_registration(active_workspace):
     payload = {
         "device_id": "CAM_1",
@@ -788,6 +888,100 @@ async def test_handle_camera_registration(active_workspace):
     async with _SessionFactory() as session:
         device = (await session.execute(select(Device).where(Device.device_id == "CAM_1"))).scalar_one_or_none()
         assert device.ip_address == "10.0.0.5"
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_camera_registration_publishes_websocket_stream_config(active_workspace, monkeypatch):
+    monkeypatch.setattr(settings, "camera_stream_ws_public_base_url", "wss://camera.example")
+    monkeypatch.setattr(settings, "camera_stream_default_fps", 10)
+    mock_client = AsyncMock()
+
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id="CAM_LIVING",
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+            )
+        )
+        session.add(
+            Room(
+                workspace_id=active_workspace.id,
+                name="Room 402",
+                room_type="living",
+                node_device_id="CAM_LIVING",
+            )
+        )
+        await session.commit()
+
+    payload = {
+        "device_id": "CAM_LIVING",
+        "node_id": "WSN_402",
+        "ip_address": "172.20.10.5",
+        "firmware": "3.1.0",
+    }
+    await _handle_camera_registration(json.dumps(payload).encode(), client=mock_client)
+
+    published = {
+        call.args[0]: json.loads(call.args[1])
+        for call in mock_client.publish.await_args_list
+    }
+    config = published["WheelSense/camera/CAM_LIVING/control"]
+    assert config["type"] == "camera_stream_config"
+    assert config["command"] == "start_websocket_stream"
+    assert config["room"] == "livingroom"
+    assert config["websocket_url"] == "wss://camera.example/ws/camera/livingroom"
+    assert config["fps"] == 10
+    assert published["WheelSense/config/CAM_LIVING"] == config
+    retained = [
+        call
+        for call in mock_client.publish.await_args_list
+        if call.args[0] == "WheelSense/config/CAM_LIVING"
+    ][0]
+    assert retained.kwargs["retain"] is True
+
+
+@pytest.mark.asyncio
+@patch("app.mqtt_handler.AsyncSessionLocal", new=_SessionFactory)
+async def test_camera_ready_ack_requests_websocket_stream_config(active_workspace, monkeypatch):
+    monkeypatch.setattr(settings, "camera_stream_ws_public_base_url", "ws://public-host:8765")
+    mock_client = AsyncMock()
+
+    async with _SessionFactory() as session:
+        session.add(
+            Device(
+                device_id="CAM_ACK",
+                workspace_id=active_workspace.id,
+                device_type="camera",
+                hardware_type="node",
+                config={"room": "bathroom"},
+            )
+        )
+        session.add(
+            Room(
+                workspace_id=active_workspace.id,
+                name="Bathroom",
+                room_type="bathroom",
+            )
+        )
+        await session.commit()
+
+    await _handle_device_ack(
+        json.dumps({"type": "request_stream_config", "status": "stream_config_requested"}).encode(),
+        topic="WheelSense/camera/CAM_ACK/ack",
+        client=mock_client,
+    )
+
+    published = {
+        call.args[0]: json.loads(call.args[1])
+        for call in mock_client.publish.await_args_list
+    }
+    assert published["WheelSense/camera/CAM_ACK/control"]["room"] == "bathroom"
+    assert published["WheelSense/camera/CAM_ACK/control"]["websocket_url"] == (
+        "ws://public-host:8765/ws/camera/bathroom"
+    )
 
 
 @pytest.mark.asyncio

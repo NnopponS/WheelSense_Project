@@ -47,6 +47,7 @@ export function AlertToastCard({
       sonnerToast.dismiss(toastId);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "alerts"] }),
         queryClient.invalidateQueries({ queryKey: ["head-nurse", "alerts"] }),
         queryClient.invalidateQueries({ queryKey: ["observer", "alerts"] }),
         queryClient.invalidateQueries({ queryKey: ["supervisor", "emergency"] }),

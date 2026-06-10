@@ -42,6 +42,23 @@ Provisioning note:
 - Publish status topic: `WheelSense/camera/{device_id}/status`
 - Publish command ack topic: `WheelSense/camera/{device_id}/ack`
 
+Hotspot / dynamic-IP stream discovery:
+- Camera AP mode is still used to set WiFi (phone hotspot), MQTT broker, node ID, and room.
+- Camera publishes retained registration and a ready ack over public MQTT.
+- The server responds on `WheelSense/camera/{device_id}/control` and retained `WheelSense/config/{device_id}` with:
+  - `type = camera_stream_config`
+  - `command = start_websocket_stream`
+  - `websocket_url = ws://.../ws/camera/{room}` or `wss://...`
+  - `room`
+  - `stream_enabled`
+  - `fps` / `interval_ms`
+- Firmware sends JPEG frames as WebSocket binary messages to the returned URL. Public MQTT is used for discovery/control, not continuous video frames.
+
+WebSocket metadata:
+- On connect, firmware sends JSON text with `type = camera_hello`, `device_id`, `node_id`, `room`, `firmware`, and `ip_address`.
+- The YOLO service maps `/ws/camera/{room}` or metadata `room` to the physical model room.
+- Backend also treats `Room.node_device_id == device_id` as authoritative for "which camera saw the fall".
+
 Snapshot transport:
 - Primary (ADR-0005 compatible): chunked JSON on `WheelSense/camera/{device_id}/photo`
 - Compatible fallback: raw JPEG on `WheelSense/camera/{device_id}/frame`
@@ -65,3 +82,21 @@ Node status extensions:
 - Optional battery fields when hardware ADC is configured:
   - `battery_pct`
   - `battery_voltage_v`
+
+## CucumberRS appliance controller
+
+- Subscribe wildcard room control topic: `WheelSense/+/control`
+- Subscribe wildcard state sync topic: `WheelSense/+/state_sync`
+- Publish central registration topic: `WheelSense/central/registration`
+- Publish central status topic: `WheelSense/central/status`
+- Publish room status topics: `WheelSense/{bedroom|bathroom|kitchen|livingroom}/status`
+- Publish state sync request topic: `WheelSense/central/state_sync_request`
+
+Room control payload:
+- `type = control`
+- `room = bedroom | bathroom | kitchen | livingroom`
+- `appliance = light | AC | fan | tv | alarm`
+- optional `state = true | false`
+- optional `value` for brightness, temperature, speed, or volume
+
+The backend publishes these room control commands from smart-device control and syncs board-reported room status back into matching `SmartDevice.state` rows.

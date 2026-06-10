@@ -9,6 +9,7 @@ import time
 import uuid
 from contextlib import suppress
 from datetime import datetime
+from urllib.parse import quote, urlsplit
 
 import aiomqtt
 from sqlalchemy import select
@@ -47,6 +48,7 @@ from app.models.vitals import VitalReading
 from app.schemas.demo_control import PhysicalModelYoloFallEventIn
 from app.services.legacy_firmware_control import (
     LEGACY_ON_STATES,
+    LEGACY_ROOM_TOPICS,
     legacy_appliance_for_device,
     legacy_room_for_device,
 )
@@ -91,6 +93,100 @@ def _physical_detection_room_from_topic(topic: str) -> str | None:
     if len(actual) == 3 and actual[0].lower() == "wheelsense" and actual[2] == "detection":
         return actual[1]
     return None
+
+
+def _legacy_room_topic_part(topic: str, suffix: str) -> str | None:
+    actual = _topic_parts(topic)
+    if len(actual) != 3 or actual[0].lower() != "wheelsense" or actual[2] != suffix:
+        return None
+    room = actual[1]
+    if room in {"camera", "mobile", "data", "config", "central", "alerts", "vitals", "room"}:
+        return None
+    return room
+
+
+def _normalize_camera_room_slug(value: object | None) -> str:
+    raw = str(value or "").strip()
+    normalized = raw.lower().replace("_", " ").replace("-", " ")
+    normalized = " ".join(normalized.split())
+    if not normalized:
+        normalized = settings.camera_stream_default_room or "livingroom"
+    if "401" in normalized or normalized == "bedroom":
+        return "bedroom"
+    if "402" in normalized or normalized in {"livingroom", "living room", "living"}:
+        return "livingroom"
+    if normalized in {"bathroom", "bath room"}:
+        return "bathroom"
+    if normalized in {
+        "kitchen",
+        "dining",
+        "dining room",
+        "kitchen dining",
+        "kitchen / dining",
+    }:
+        return "kitchen"
+    return raw or "livingroom"
+
+
+def _camera_ws_base_url() -> str:
+    explicit = (settings.camera_stream_ws_public_base_url or "").strip()
+    if explicit:
+        return explicit.rstrip("/")
+
+    base = (settings.server_base_url or "http://127.0.0.1:8000").strip()
+    parsed = urlsplit(base)
+    scheme = "wss" if parsed.scheme == "https" else "ws"
+    host = parsed.hostname or "127.0.0.1"
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    return f"{scheme}://{host}:8765"
+
+
+def _build_camera_stream_config_payload(device: Device, room: str) -> dict:
+    fps = max(1, min(int(settings.camera_stream_default_fps or 8), 20))
+    room_slug = _normalize_camera_room_slug(room)
+    websocket_url = f"{_camera_ws_base_url()}/ws/camera/{quote(room_slug, safe='')}"
+    return {
+        "type": "camera_stream_config",
+        "command": "start_websocket_stream",
+        "device_id": device.device_id,
+        "room": room_slug,
+        "room_alias": room_slug,
+        "room_id": None,
+        "websocket_url": websocket_url,
+        "stream_enabled": bool(settings.camera_stream_auto_start),
+        "fps": fps,
+        "interval_ms": int(1000 / fps),
+        "sync_only": True,
+        "timestamp": utcnow().isoformat(),
+    }
+
+
+async def _resolve_camera_stream_room(session, device: Device, data: dict) -> tuple[str, int | None]:
+    for key in ("room", "room_alias", "physical_zone"):
+        value = data.get(key)
+        if value:
+            return _normalize_camera_room_slug(value), None
+
+    cfg = device.config if isinstance(device.config, dict) else {}
+    for key in ("room", "room_alias", "physical_zone"):
+        value = cfg.get(key)
+        if value:
+            return _normalize_camera_room_slug(value), None
+
+    result = await session.execute(
+        select(Room)
+        .where(
+            Room.workspace_id == device.workspace_id,
+            Room.node_device_id == device.device_id,
+        )
+        .limit(1)
+    )
+    room = result.scalar_one_or_none()
+    if room is not None:
+        return _normalize_camera_room_slug(room.name or room.room_type), room.id
+
+    return _normalize_camera_room_slug(settings.camera_stream_default_room), None
 
 
 def _is_rate_limited(device_id: str) -> bool:
@@ -203,6 +299,8 @@ async def mqtt_listener():
                     await client.subscribe(_topic(root, "camera", "+", "status"))
                     await client.subscribe(_topic(root, "camera", "+", "photo"))
                     await client.subscribe(_topic(root, "camera", "+", "frame"))
+                    await client.subscribe(_topic(root, "+", "registration"))
+                    await client.subscribe(_topic(root, "+", "status"))
                     await client.subscribe(_topic(root, "+", "ack"))
                     await client.subscribe(_topic(root, "camera", "+", "ack"))
                     await client.subscribe(_topic(root, "central", "state_sync_request"))
@@ -235,11 +333,17 @@ async def mqtt_listener():
                         elif (physical_room := _physical_detection_room_from_topic(topic)) is not None:
                             await _handle_physical_model_detection(physical_room, message.payload)
                         elif topic.endswith("/ack"):
-                            await _handle_device_ack(message.payload)
+                            await _handle_device_ack(message.payload, topic=topic, client=client)
+                        elif _is_wheelsense_topic(topic, "central", "registration"):
+                            await _handle_central_controller_registration(message.payload)
+                        elif _is_wheelsense_topic(topic, "central", "status"):
+                            await _handle_central_controller_status(message.payload)
+                        elif (status_room := _legacy_room_topic_part(topic, "status")) is not None:
+                            await _handle_legacy_room_status(status_room, message.payload)
                         elif topic.endswith("/registration"):
-                            await _handle_camera_registration(message.payload)
+                            await _handle_camera_registration(message.payload, client=client, topic=topic)
                         elif topic.endswith("/status"):
-                            await _handle_camera_status(message.payload)
+                            await _handle_camera_status(message.payload, client=client, topic=topic)
                         elif topic.endswith("/photo"):
                             await _handle_photo_chunk(message.payload)
                         elif topic.endswith("/frame"):
@@ -1266,7 +1370,11 @@ async def _handle_camera_frame(topic: str, payload: bytes, save_dir: str | None 
     await _persist_photo_bytes(device_id, photo_id, payload, save_dir)
 
 
-async def _handle_device_ack(payload: bytes):
+async def _handle_device_ack(
+    payload: bytes,
+    topic: str | None = None,
+    client: aiomqtt.Client | None = None,
+):
     try:
         data = json.loads(payload)
     except json.JSONDecodeError:
@@ -1274,6 +1382,15 @@ async def _handle_device_ack(payload: bytes):
         return
     command_id = data.get("command_id")
     if not command_id:
+        parts = _topic_parts(topic or "")
+        if len(parts) == 4 and parts[0].lower() == "wheelsense" and parts[1] == "camera":
+            command = str(data.get("command") or data.get("type") or "").strip().lower()
+            status = str(data.get("status") or "").strip().lower()
+            if command in {"camera_ready", "request_stream_config"} or status in {
+                "ready",
+                "stream_config_requested",
+            }:
+                await _build_and_publish_camera_stream_config_by_id(client, parts[2], data)
         return
     from app.services.device_management import apply_command_ack
 
@@ -1331,12 +1448,224 @@ async def _handle_legacy_state_sync_request(client: aiomqtt.Client, payload: byt
     logger.info("Published legacy firmware state sync for %d rooms", len(grouped))
 
 
-async def _handle_camera_registration(payload: bytes):
+def _legacy_room_topic_slug(value: object | None) -> str | None:
+    normalized = str(value or "").strip().lower().replace("_", " ").replace("-", " ")
+    if normalized == "livingroom":
+        normalized = "livingroom"
+    return LEGACY_ROOM_TOPICS.get(normalized)
+
+
+def _legacy_appliance_payload_value(appliances: dict, appliance: str) -> object | None:
+    candidates = [appliance]
+    if appliance == "AC":
+        candidates.extend(["ac", "aircon", "air con", "climate"])
+    for key in candidates:
+        if key in appliances:
+            return appliances[key]
+    lower = {str(key).strip().lower(): value for key, value in appliances.items()}
+    for key in candidates:
+        lk = key.strip().lower()
+        if lk in lower:
+            return lower[lk]
+    return None
+
+
+def _legacy_status_value_to_bool(value: object) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    normalized = str(value or "").strip().lower()
+    if normalized in LEGACY_ON_STATES or normalized in {"1", "true", "yes"}:
+        return True
+    if normalized in {"0", "false", "no", "off", "unknown", "unavailable", ""}:
+        return False
+    return None
+
+
+async def _sync_legacy_room_appliance_states(
+    session,
+    ws_id: int,
+    legacy_room: str,
+    appliances: dict,
+) -> int:
+    rows = list(
+        (
+            await session.execute(
+                select(SmartDevice, Room)
+                .join(Room, SmartDevice.room_id == Room.id, isouter=True)
+                .where(
+                    SmartDevice.workspace_id == ws_id,
+                    SmartDevice.is_active.is_(True),
+                )
+            )
+        ).all()
+    )
+    changed = 0
+    for device, room in rows:
+        if legacy_room_for_device(device, room) != legacy_room:
+            continue
+        appliance = legacy_appliance_for_device(device)
+        raw_value = _legacy_appliance_payload_value(appliances, appliance)
+        if raw_value is None:
+            continue
+        is_on = _legacy_status_value_to_bool(raw_value)
+        if is_on is None:
+            continue
+        new_state = "on" if is_on else "off"
+        if device.state != new_state:
+            device.state = new_state  # type: ignore[assignment]
+            session.add(device)
+            changed += 1
+    return changed
+
+
+async def _upsert_central_controller(data: dict, *, status_payload: bool) -> int | None:
+    device_id = str(data.get("device_id") or "APPLIANCE_CENTRAL").strip()[:32]
+    if not device_id:
+        return None
+
+    async with AsyncSessionLocal() as session:
+        device = await get_registered_device_for_ingest(session, device_id)
+        if device is None:
+            ws_id = await resolve_mqtt_auto_register_workspace_id(session)
+            if ws_id is None:
+                logger.warning("Central appliance controller skipped: workspace could not be resolved")
+                return None
+            device = Device(
+                workspace_id=ws_id,
+                device_id=device_id,
+                device_type="appliance_controller",
+                hardware_type="appliance_controller",
+                display_name="CucumberRS Appliance Controller",
+                ip_address=str(data.get("ip_address") or "")[:45],
+                firmware=str(data.get("firmware") or data.get("version") or "")[:16],
+                last_seen=utcnow(),
+                config={},
+            )
+            session.add(device)
+            await session.flush()
+
+        device.device_type = "appliance_controller"  # type: ignore[assignment]
+        device.hardware_type = "appliance_controller"  # type: ignore[assignment]
+        device.display_name = device.display_name or "CucumberRS Appliance Controller"  # type: ignore[assignment]
+        if data.get("ip_address"):
+            device.ip_address = str(data.get("ip_address"))[:45]  # type: ignore[assignment]
+        if data.get("firmware") or data.get("version"):
+            device.firmware = str(data.get("firmware") or data.get("version"))[:16]  # type: ignore[assignment]
+        device.last_seen = utcnow()  # type: ignore[assignment]
+        cfg = dict(device.config or {})
+        cfg["controller_type"] = data.get("device_type") or "appliance_controller_central"
+        if isinstance(data.get("rooms"), list):
+            cfg["rooms"] = data["rooms"]
+        if status_payload:
+            cfg["central_status"] = {"payload": data, "updated_at": utcnow().isoformat()}
+        device.config = cfg  # type: ignore[assignment]
+
+        changed = 0
+        if status_payload and isinstance(data.get("rooms"), list):
+            for room_payload in data["rooms"]:
+                if not isinstance(room_payload, dict):
+                    continue
+                legacy_room = _legacy_room_topic_slug(room_payload.get("name"))
+                appliances = room_payload.get("appliances")
+                if legacy_room and isinstance(appliances, dict):
+                    changed += await _sync_legacy_room_appliance_states(
+                        session,
+                        device.workspace_id,
+                        legacy_room,
+                        appliances,
+                    )
+        await session.commit()
+        if changed:
+            logger.info("Synced %d smart-device states from central appliance status", changed)
+        return device.workspace_id
+
+
+async def _handle_central_controller_registration(payload: bytes):
+    try:
+        data = json.loads(payload or b"{}")
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON on central controller registration topic")
+        return
+    await _upsert_central_controller(data, status_payload=False)
+
+
+async def _handle_central_controller_status(payload: bytes):
+    try:
+        data = json.loads(payload or b"{}")
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON on central controller status topic")
+        return
+    await _upsert_central_controller(data, status_payload=True)
+
+
+async def _handle_legacy_room_status(room_from_topic: str, payload: bytes):
+    try:
+        data = json.loads(payload or b"{}")
+    except json.JSONDecodeError:
+        logger.warning("Invalid JSON on legacy room status topic")
+        return
+    appliances = data.get("appliances")
+    if not isinstance(appliances, dict):
+        return
+    legacy_room = _legacy_room_topic_slug(data.get("room") or room_from_topic)
+    if legacy_room is None:
+        return
+    async with AsyncSessionLocal() as session:
+        ws_id = await resolve_mqtt_auto_register_workspace_id(session)
+        if ws_id is None:
+            logger.warning("Legacy room status skipped: workspace could not be resolved")
+            return
+        changed = await _sync_legacy_room_appliance_states(session, ws_id, legacy_room, appliances)
+        await session.commit()
+    if changed:
+        logger.info("Synced %d smart-device states from %s room status", changed, legacy_room)
+
+
+async def _publish_camera_stream_config(
+    client: aiomqtt.Client | None,
+    payload: dict | None,
+) -> None:
+    if client is None or not payload:
+        return
+    device_id = str(payload.get("device_id") or "").strip()
+    if not device_id:
+        return
+    body = json.dumps(payload, separators=(",", ":"))
+    await client.publish(f"WheelSense/camera/{device_id}/control", body)
+    await client.publish(f"WheelSense/config/{device_id}", body, retain=True)
+
+
+async def _build_and_publish_camera_stream_config_by_id(
+    client: aiomqtt.Client | None,
+    device_id: str,
+    data: dict | None = None,
+) -> None:
+    if client is None or not settings.camera_stream_auto_start:
+        return
+    async with AsyncSessionLocal() as session:
+        device = await get_registered_device_for_ingest(session, device_id)
+        if not device:
+            return
+        room, room_id = await _resolve_camera_stream_room(session, device, data or {})
+        payload = _build_camera_stream_config_payload(device, room)
+        payload["room_id"] = room_id
+    await _publish_camera_stream_config(client, payload)
+
+
+async def _handle_camera_registration(
+    payload: bytes,
+    client: aiomqtt.Client | None = None,
+    topic: str | None = None,
+):
     data = json.loads(payload)
+    topic_room = _legacy_room_topic_part(topic or "", "registration")
+    if topic_room and not data.get("room"):
+        data["room"] = topic_room
     device_id = data.get("device_id", "")
     if not device_id:
         return
 
+    stream_config_payload: dict | None = None
     async with AsyncSessionLocal() as session:
         device = await get_registered_device_for_ingest(session, device_id)
         if not device:
@@ -1354,9 +1683,23 @@ async def _handle_camera_registration(payload: bytes):
         device.last_seen = utcnow()  # type: ignore[assignment]
         cfg = dict(device.config or {})
         cfg["node_id"] = data.get("node_id", cfg.get("node_id", ""))
+        if data.get("room") or data.get("room_alias") or data.get("physical_zone"):
+            cfg["room"] = _normalize_camera_room_slug(
+                data.get("room") or data.get("room_alias") or data.get("physical_zone")
+            )
         ble_raw = data.get("ble_mac") or data.get("ble_mac_address")
         if ble_raw:
             cfg["ble_mac"] = str(ble_raw).strip()
+        if settings.camera_stream_auto_start:
+            room, room_id = await _resolve_camera_stream_room(session, device, data)
+            stream_config_payload = _build_camera_stream_config_payload(device, room)
+            stream_config_payload["room_id"] = room_id
+            cfg["camera_stream"] = {
+                "room": stream_config_payload["room"],
+                "room_id": room_id,
+                "websocket_url": stream_config_payload["websocket_url"],
+                "updated_at": stream_config_payload["timestamp"],
+            }
         device.config = cfg  # type: ignore[assignment]
         await remove_ble_stubs_superseded_by_camera_payload(
             session, device.workspace_id, device_id, data
@@ -1379,14 +1722,23 @@ async def _handle_camera_registration(payload: bytes):
             device_id,
             data.get("ip_address", "?"),
         )
+    await _publish_camera_stream_config(client, stream_config_payload)
 
 
-async def _handle_camera_status(payload: bytes):
+async def _handle_camera_status(
+    payload: bytes,
+    client: aiomqtt.Client | None = None,
+    topic: str | None = None,
+):
     data = json.loads(payload)
+    topic_room = _legacy_room_topic_part(topic or "", "status")
+    if topic_room and not data.get("room"):
+        data["room"] = topic_room
     device_id = data.get("device_id", "")
     if not device_id:
         return
 
+    stream_config_payload: dict | None = None
     async with AsyncSessionLocal() as session:
         device = await get_registered_device_for_ingest(session, device_id)
         if not device:
@@ -1399,15 +1751,30 @@ async def _handle_camera_status(payload: bytes):
             logger.warning("Camera status dropped for unregistered device: %s", device_id)
             return
         ble_raw = data.get("ble_mac") or data.get("ble_mac_address")
+        cfg = dict(device.config or {})
         if ble_raw:
-            cfg = dict(device.config or {})
             cfg["ble_mac"] = str(ble_raw).strip()
-            device.config = cfg  # type: ignore[assignment]
+        if data.get("room") or data.get("room_alias") or data.get("physical_zone"):
+            cfg["room"] = _normalize_camera_room_slug(
+                data.get("room") or data.get("room_alias") or data.get("physical_zone")
+            )
+        if settings.camera_stream_auto_start:
+            room, room_id = await _resolve_camera_stream_room(session, device, data)
+            stream_config_payload = _build_camera_stream_config_payload(device, room)
+            stream_config_payload["room_id"] = room_id
+            cfg["camera_stream"] = {
+                "room": stream_config_payload["room"],
+                "room_id": room_id,
+                "websocket_url": stream_config_payload["websocket_url"],
+                "updated_at": stream_config_payload["timestamp"],
+            }
+        device.config = cfg  # type: ignore[assignment]
         await remove_ble_stubs_superseded_by_camera_payload(
             session, device.workspace_id, device_id, data
         )
         await _upsert_node_status_snapshot(session, device, _normalize_node_status_payload(data))
         await session.commit()
+    await _publish_camera_stream_config(client, stream_config_payload)
 
 
 # ---------------------------------------------------------------------------
